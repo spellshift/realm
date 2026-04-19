@@ -33,7 +33,7 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
-        cache-dependency-path: tavern/internal/www/package-lock.json
+        cache-dependency-path: tests/e2e/package-lock.json
 
     - name: 📦 Install System Dependencies
       run: |
@@ -48,7 +48,7 @@ jobs:
       env:
         HTTP_LISTEN_ADDR: ":8000"
       run: |
-        ./tavern_bin &
+        ./tavern_bin > tavern.log 2>&1 &
         echo "Waiting for Tavern to start..."
         # Wait for port 8000
         timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 8000
