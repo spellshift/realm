@@ -37,6 +37,7 @@ export const GET_BEACON_FILTER_OPTIONS = gql`
                     id
                     name
                     primaryIP
+                    externalIP
                 }
             }
         }
