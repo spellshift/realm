@@ -581,8 +581,12 @@ export const useShellTerminal = (
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
                             portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
+                        } else if (msg.signal === WebsocketControlFlowSignal.PortalDowngrade) {
+                            portalIdRef.current = null;
+                            setPortalId(null);
+                            content = "Portal closed. Reverting to non-interactive mode.\n";
+                            color = "\x1b[38;5;178m"; // Purple
                         }
-                        // Handle other control signals if needed
                         break;
                     case WebsocketMessageKind.OutputFromOtherStream:
                         content = msg.output;
