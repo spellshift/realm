@@ -29,12 +29,14 @@ query: |
       ) {
         startTimestamp
         count
+        callbackCount
         groupByHosts {
           host {
             id
             name
           }
           count
+          callbackCount
         }
       }
     }
@@ -43,23 +45,29 @@ expected:
   metrics:
     beaconTimelineChart:
       - startTimestamp: "2024-01-22T14:50:00Z"
-        count: 3
+        count: 2
+        callbackCount: 3
         groupByHosts:
           - host:
               id: "1010"
               name: "db1"
-            count: 2
+            count: 1
+            callbackCount: 2
           - host:
               id: "1011"
               name: "db2"
             count: 1
+            callbackCount: 1
       - startTimestamp: "2024-01-22T14:55:00Z"
         count: 1
+        callbackCount: 1
         groupByHosts:
           - host:
               id: "1011"
               name: "db2"
             count: 1
+            callbackCount: 1
       - startTimestamp: "2024-01-22T15:00:00Z"
         count: 0
+        callbackCount: 0
         groupByHosts: []

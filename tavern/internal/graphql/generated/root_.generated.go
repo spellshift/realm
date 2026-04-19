@@ -131,14 +131,16 @@ type ComplexityRoot struct {
 	}
 
 	BeaconTimelineBucket struct {
+		CallbackCount  func(childComplexity int) int
 		Count          func(childComplexity int) int
 		GroupByHosts   func(childComplexity int) int
 		StartTimestamp func(childComplexity int) int
 	}
 
 	BeaconTimelineHostBucket struct {
-		Count func(childComplexity int) int
-		Host  func(childComplexity int) int
+		CallbackCount func(childComplexity int) int
+		Count         func(childComplexity int) int
+		Host          func(childComplexity int) int
 	}
 
 	BuildProfile struct {
@@ -1289,6 +1291,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BeaconHistoryEdge.Node(childComplexity), true
 
+	case "BeaconTimelineBucket.callbackCount":
+		if e.ComplexityRoot.BeaconTimelineBucket.CallbackCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.CallbackCount(childComplexity), true
+
 	case "BeaconTimelineBucket.count":
 		if e.ComplexityRoot.BeaconTimelineBucket.Count == nil {
 			break
@@ -1309,6 +1318,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp(childComplexity), true
+
+	case "BeaconTimelineHostBucket.callbackCount":
+		if e.ComplexityRoot.BeaconTimelineHostBucket.CallbackCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineHostBucket.CallbackCount(childComplexity), true
 
 	case "BeaconTimelineHostBucket.count":
 		if e.ComplexityRoot.BeaconTimelineHostBucket.Count == nil {
@@ -13625,6 +13641,7 @@ type TomeTaskMetrics {
 
 type BeaconTimelineBucket {
   count: Int!
+  callbackCount: Int!
   startTimestamp: Time!
   groupByHosts: [BeaconTimelineHostBucket!]!
 }
@@ -13632,6 +13649,7 @@ type BeaconTimelineBucket {
 type BeaconTimelineHostBucket {
   host: Host!
   count: Int!
+  callbackCount: Int!
 }
 
 type QuestTimelineBucket {

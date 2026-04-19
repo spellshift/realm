@@ -17,13 +17,15 @@ import (
 
 type BeaconTimelineBucket struct {
 	Count          int                         `json:"count"`
+	CallbackCount  int                         `json:"callbackCount"`
 	StartTimestamp time.Time                   `json:"startTimestamp"`
 	GroupByHosts   []*BeaconTimelineHostBucket `json:"groupByHosts"`
 }
 
 type BeaconTimelineHostBucket struct {
-	Host  *ent.Host `json:"host"`
-	Count int       `json:"count"`
+	Host          *ent.Host `json:"host"`
+	Count         int       `json:"count"`
+	CallbackCount int       `json:"callbackCount"`
 }
 
 // Input for a tome configuration in a build profile.

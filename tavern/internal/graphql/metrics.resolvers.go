@@ -197,6 +197,9 @@ func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.M
 
 	// Group histories into buckets
 	hostCounts := make(map[int64]map[int]*models.BeaconTimelineHostBucket)
+	// Track unique beacons per bucket and per host-bucket
+	beaconsPerBucket := make(map[int64]map[int]struct{})
+	beaconsPerHostBucket := make(map[int64]map[int]map[int]struct{}) // bucketTime -> hostID -> set of beaconIDs
 	for _, h := range histories {
 		// Find the bucket timestamp for this history
 		if h.CreatedAt.Before(start) {
@@ -208,22 +211,53 @@ func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.M
 		bucketTimeUnix := start.Add(time.Duration(bucketIndex) * granularity).Unix()
 
 		if bucket, exists := bucketMap[bucketTimeUnix]; exists {
-			bucket.Count++
+			bucket.CallbackCount++
 
-			if h.Edges.Beacon != nil && h.Edges.Beacon.Edges.Host != nil {
-				host := h.Edges.Beacon.Edges.Host
-				if hostCounts[bucketTimeUnix] == nil {
-					hostCounts[bucketTimeUnix] = make(map[int]*models.BeaconTimelineHostBucket)
+			if h.Edges.Beacon != nil {
+				// Track unique beacons per bucket
+				if beaconsPerBucket[bucketTimeUnix] == nil {
+					beaconsPerBucket[bucketTimeUnix] = make(map[int]struct{})
 				}
+				beaconsPerBucket[bucketTimeUnix][h.Edges.Beacon.ID] = struct{}{}
 
-				if hb, exists := hostCounts[bucketTimeUnix][host.ID]; exists {
-					hb.Count++
-				} else {
-					hostCounts[bucketTimeUnix][host.ID] = &models.BeaconTimelineHostBucket{
-						Host:  host,
-						Count: 1,
+				if h.Edges.Beacon.Edges.Host != nil {
+					host := h.Edges.Beacon.Edges.Host
+					if hostCounts[bucketTimeUnix] == nil {
+						hostCounts[bucketTimeUnix] = make(map[int]*models.BeaconTimelineHostBucket)
 					}
+
+					if hb, exists := hostCounts[bucketTimeUnix][host.ID]; exists {
+						hb.CallbackCount++
+					} else {
+						hostCounts[bucketTimeUnix][host.ID] = &models.BeaconTimelineHostBucket{
+							Host:          host,
+							CallbackCount: 1,
+						}
+					}
+
+					// Track unique beacons per host-bucket
+					if beaconsPerHostBucket[bucketTimeUnix] == nil {
+						beaconsPerHostBucket[bucketTimeUnix] = make(map[int]map[int]struct{})
+					}
+					if beaconsPerHostBucket[bucketTimeUnix][host.ID] == nil {
+						beaconsPerHostBucket[bucketTimeUnix][host.ID] = make(map[int]struct{})
+					}
+					beaconsPerHostBucket[bucketTimeUnix][host.ID][h.Edges.Beacon.ID] = struct{}{}
 				}
+			}
+		}
+	}
+
+	// Set beacon counts (unique beacons) per bucket
+	for _, bucket := range buckets {
+		bucket.Count = len(beaconsPerBucket[bucket.StartTimestamp.Unix()])
+	}
+
+	// Set beacon counts (unique beacons) per host-bucket
+	for bucketTimeUnix, hostMap := range beaconsPerHostBucket {
+		for hostID, beaconSet := range hostMap {
+			if hb, exists := hostCounts[bucketTimeUnix][hostID]; exists {
+				hb.Count = len(beaconSet)
 			}
 		}
 	}

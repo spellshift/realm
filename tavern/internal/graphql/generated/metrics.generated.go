@@ -117,6 +117,35 @@ func (ec *executionContext) fieldContext_BeaconTimelineBucket_count(_ context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _BeaconTimelineBucket_callbackCount(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineBucket) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconTimelineBucket_callbackCount,
+		func(ctx context.Context) (any, error) {
+			return obj.CallbackCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BeaconTimelineBucket_callbackCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BeaconTimelineBucket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BeaconTimelineBucket_startTimestamp(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineBucket) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -174,6 +203,8 @@ func (ec *executionContext) fieldContext_BeaconTimelineBucket_groupByHosts(_ con
 				return ec.fieldContext_BeaconTimelineHostBucket_host(ctx, field)
 			case "count":
 				return ec.fieldContext_BeaconTimelineHostBucket_count(ctx, field)
+			case "callbackCount":
+				return ec.fieldContext_BeaconTimelineHostBucket_callbackCount(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BeaconTimelineHostBucket", field.Name)
 		},
@@ -279,6 +310,35 @@ func (ec *executionContext) fieldContext_BeaconTimelineHostBucket_count(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _BeaconTimelineHostBucket_callbackCount(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineHostBucket) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconTimelineHostBucket_callbackCount,
+		func(ctx context.Context) (any, error) {
+			return obj.CallbackCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BeaconTimelineHostBucket_callbackCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BeaconTimelineHostBucket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Metrics_questTimelineChart(ctx context.Context, field graphql.CollectedField, obj *models.Metrics) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -355,6 +415,8 @@ func (ec *executionContext) fieldContext_Metrics_beaconTimelineChart(ctx context
 			switch field.Name {
 			case "count":
 				return ec.fieldContext_BeaconTimelineBucket_count(ctx, field)
+			case "callbackCount":
+				return ec.fieldContext_BeaconTimelineBucket_callbackCount(ctx, field)
 			case "startTimestamp":
 				return ec.fieldContext_BeaconTimelineBucket_startTimestamp(ctx, field)
 			case "groupByHosts":
@@ -863,6 +925,11 @@ func (ec *executionContext) _BeaconTimelineBucket(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "callbackCount":
+			out.Values[i] = ec._BeaconTimelineBucket_callbackCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "startTimestamp":
 			out.Values[i] = ec._BeaconTimelineBucket_startTimestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -914,6 +981,11 @@ func (ec *executionContext) _BeaconTimelineHostBucket(ctx context.Context, sel a
 			}
 		case "count":
 			out.Values[i] = ec._BeaconTimelineHostBucket_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "callbackCount":
+			out.Values[i] = ec._BeaconTimelineHostBucket_callbackCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
