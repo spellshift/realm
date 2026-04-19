@@ -192,7 +192,7 @@ const NotificationBell = () => {
                         <Tabs colorScheme="purple" isFitted>
                             <TabList borderColor="gray.700">
                                 {activeTabs.map(tab => (
-                                    <Tab key={tab} fontSize="xs" py={3} _focus={{ outline: 'none' }}>{tab}</Tab>
+                                    <Tab key={tab} fontSize="xs" py={3} color="white" _focus={{ outline: 'none' }}>{tab}</Tab>
                                 ))}
                             </TabList>
                             <TabPanels>
