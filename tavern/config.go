@@ -183,6 +183,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	client.Host.Use(ent.HookDeriveHostEvents())
 	client.Task.Use(ent.HookDeriveQuestEvents())
 	client.Event.Use(ent.HookDeriveNotifications())
+	client.User.Use(ent.HookDeriveUserRequestEvents())
 	return client, nil
 }
 

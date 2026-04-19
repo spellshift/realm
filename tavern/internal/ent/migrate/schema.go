@@ -213,10 +213,11 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "timestamp", Type: field.TypeInt64},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED", "NEW_USER_REQUEST"}},
 		{Name: "beacon_events", Type: field.TypeInt, Nullable: true},
 		{Name: "host_events", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_events", Type: field.TypeInt, Nullable: true},
+		{Name: "user_events", Type: field.TypeInt, Nullable: true},
 	}
 	// EventsTable holds the schema information for the "events" table.
 	EventsTable = &schema.Table{
@@ -240,6 +241,12 @@ var (
 				Symbol:     "events_quests_events",
 				Columns:    []*schema.Column{EventsColumns[7]},
 				RefColumns: []*schema.Column{QuestsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_users_events",
+				Columns:    []*schema.Column{EventsColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -1094,6 +1101,7 @@ func init() {
 	EventsTable.ForeignKeys[0].RefTable = BeaconsTable
 	EventsTable.ForeignKeys[1].RefTable = HostsTable
 	EventsTable.ForeignKeys[2].RefTable = QuestsTable
+	EventsTable.ForeignKeys[3].RefTable = UsersTable
 	EventsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

@@ -29,6 +29,7 @@ func (Event) Fields() []ent.Field {
 				"HOST_ACCESS_RECOVERED",
 				"HOST_ACCESS_LOST",
 				"QUEST_COMPLETED",
+				"NEW_USER_REQUEST",
 			).
 			Comment("Type of event"),
 	}
@@ -49,6 +50,10 @@ func (Event) Edges() []ent.Edge {
 			Ref("events").
 			Unique().
 			Comment("Quest associated with this event"),
+		edge.From("user", User.Type).
+			Ref("events").
+			Unique().
+			Comment("User associated with this event"),
 		edge.From("notifications", Notification.Type).
 			Ref("event").
 			Annotations(

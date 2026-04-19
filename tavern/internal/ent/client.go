@@ -1901,6 +1901,22 @@ func (c *EventClient) QueryQuest(e *Event) *QuestQuery {
 	return query
 }
 
+// QueryUser queries the user edge of a Event.
+func (c *EventClient) QueryUser(e *Event) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, event.UserTable, event.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryNotifications queries the notifications edge of a Event.
 func (c *EventClient) QueryNotifications(e *Event) *NotificationQuery {
 	query := (&NotificationClient{config: c.config}).Query()
@@ -5541,6 +5557,22 @@ func (c *UserClient) QuerySubscribedHosts(u *User) *HostQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, user.SubscribedHostsTable, user.SubscribedHostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvents queries the events edge of a User.
+func (c *UserClient) QueryEvents(u *User) *EventQuery {
+	query := (&EventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.EventsTable, user.EventsColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
