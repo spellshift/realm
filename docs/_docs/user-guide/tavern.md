@@ -25,3 +25,58 @@ The `TAVERN_API_TOKEN` is a separate token used for authenticating CLI tools and
 You typically need to use the `TAVERN_API_TOKEN` in scenarios where you are running tools on a remote machine (like a Kali VM via SSH) and cannot perform the standard Remote Device Authentication (RDA) flow. By default, CLI tools will use the RDA flow to authenticate.
 
 To enable the legacy local browser-based OAuth flow, you can set the `TAVERN_USE_BROWSER_OAUTH=1` environment variable. In a standard local setup with this variable set, CLI tools might pop open a browser window to authenticate. However, when you are SSH'd into a remote box, this isn't possible, which is why the default is the RDA flow. The `TAVERN_API_TOKEN` provides a way to bypass these limitations altogether.
+
+## MCP (Model Context Protocol) Integration
+
+Tavern supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), allowing AI assistants and LLM-based tools to interact with your Tavern deployment. The MCP server must be enabled by an administrator (see the [Admin Guide](/admin-guide/tavern#ai-mcp-server)).
+
+### Connecting an MCP Client
+
+Once the MCP server is enabled on your Tavern instance, you can connect any MCP-compatible client using the Streamable HTTP transport.
+
+#### Connection Details
+
+- **Endpoint:** `https://<your-tavern-url>/mcp`
+- **Transport:** Streamable HTTP
+- **Authentication:** Use your Tavern session cookie or API access token
+
+#### Example Configuration
+
+Add the following to your MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "tavern": {
+      "url": "https://<your-tavern-url>/mcp",
+      "headers": {
+        "X-Tavern-Access-Token": "<your-access-token>"
+      }
+    }
+  }
+}
+```
+
+Replace `<your-tavern-url>` with the URL of your Tavern deployment and `<your-access-token>` with your personal access token from Tavern.
+
+### Available Tools
+
+The MCP server exposes the following tools. Tools are annotated as **read-only** or **write** to indicate whether they modify server state. Write tools will request user confirmation before executing.
+
+| Tool | Description | Parameters | Access |
+| ---- | ----------- | ---------- | ------ |
+| `list_quests` | List all quests in Tavern | None | Read-only |
+| `quest_output` | Get the output of specific quests | `ids` (array of quest ID strings) | Read-only |
+| `list_tomes` | List all available tomes and their required parameters | None | Read-only |
+| `create_quest` | Create a new quest targeting specific beacons | `name`, `beacon_ids`, `parameters`, `tome_id` | Write |
+| `list_hosts` | List all hosts with their beacons and tags | None | Read-only |
+| `wait_for_quest` | Wait for all tasks in a quest to finish (polls for up to 10 min) | `quest_id` | Read-only |
+| `graphql_query` | Execute a raw GraphQL query against the Tavern API (queries only — mutations are rejected) | `query`, `variables` (optional) | Read-only |
+
+### Typical Workflow
+
+1. Use `list_hosts` to discover available hosts and their beacon IDs
+2. Use `list_tomes` to find the right tome for your operation
+3. Use `create_quest` to create a quest targeting specific beacons with the chosen tome
+4. Use `wait_for_quest` to wait for the quest to complete
+5. Use `quest_output` to retrieve the results

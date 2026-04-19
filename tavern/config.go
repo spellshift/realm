@@ -119,8 +119,10 @@ var (
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
+	// EnvEnableAIMCP enables the AI MCP (Model Context Protocol) server endpoint.
 	EnvEnablePProf   = EnvBool{"ENABLE_PPROF"}
 	EnvEnableMetrics = EnvBool{"ENABLE_METRICS"}
+	EnvEnableAIMCP   = EnvBool{"ENABLE_AI_MCP"}
 
 	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
 )
@@ -389,6 +391,11 @@ func (cfg *Config) IsTestDataEnabled() bool {
 // IsTestRunAndExitEnabled returns true if a value for the "ENABLE_TEST_RUN_AND_EXIT" environment variable is set.
 func (cfg *Config) IsTestRunAndExitEnabled() bool {
 	return EnvEnableTestRunAndExit.IsSet()
+}
+
+// IsMCPEnabled returns true if the AI MCP endpoint has been enabled.
+func (cfg *Config) IsMCPEnabled() bool {
+	return EnvEnableAIMCP.IsSet()
 }
 
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be
