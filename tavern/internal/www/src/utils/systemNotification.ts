@@ -31,8 +31,8 @@ export const initNotificationServiceWorker = async (): Promise<void> => {
     if ('serviceWorker' in navigator && !swRegistration) {
         try {
             swRegistration = await navigator.serviceWorker.register('/notification-sw.js');
-        } catch {
-            // SW registration failed — will fall back to `new Notification()`.
+        } catch (err) {
+            console.warn('Notification service worker registration failed; falling back to Notification API.', err);
         }
     }
 };

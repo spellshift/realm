@@ -41,19 +41,28 @@ self.addEventListener('notificationclick', (event) => {
 
     event.waitUntil(
         self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            // Try to focus an existing tab
-            for (const client of clientList) {
-                if (client.url && 'focus' in client) {
-                    client.focus();
-                    if (url) {
-                        client.postMessage({ type: 'NOTIFICATION_CLICK', url });
+            if (clientList.length === 0) {
+                // No existing tab — open a new one
+                if (url && self.clients.openWindow) {
+                    return self.clients.openWindow(url);
+                }
+                return;
+            }
+
+            // Prefer a tab already on the target URL, otherwise pick the first available.
+            var target = clientList[0];
+            if (url) {
+                for (var i = 0; i < clientList.length; i++) {
+                    if (clientList[i].url && clientList[i].url.includes(url)) {
+                        target = clientList[i];
+                        break;
                     }
-                    return;
                 }
             }
-            // No existing tab — open a new one
-            if (url && self.clients.openWindow) {
-                return self.clients.openWindow(url);
+
+            target.focus();
+            if (url) {
+                target.postMessage({ type: 'NOTIFICATION_CLICK', url });
             }
         })
     );
