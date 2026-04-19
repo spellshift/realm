@@ -2,7 +2,6 @@ package cdn
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,8 +23,9 @@ var MaxChunkSize = 31 * 1024 * 1024
 
 // serveChunkedContent writes the content to w in chunks of at most MaxChunkSize bytes,
 // flushing after each chunk to ensure data is sent to the client incrementally.
+// By not setting Content-Length, Go's net/http automatically uses Transfer-Encoding: chunked,
+// which bypasses GCP Cloud Run's 32 MiB response size limit.
 func serveChunkedContent(w http.ResponseWriter, content []byte, modTime time.Time) {
-	w.Header().Set("Content-Length", strconv.Itoa(len(content)))
 	if !modTime.IsZero() {
 		w.Header().Set("Last-Modified", modTime.UTC().Format(http.TimeFormat))
 	}
