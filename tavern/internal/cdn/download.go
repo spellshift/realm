@@ -35,7 +35,9 @@ func serveChunkedContent(w http.ResponseWriter, content []byte, modTime time.Tim
 		if end > len(content) {
 			end = len(content)
 		}
-		w.Write(content[offset:end])
+		if _, err := w.Write(content[offset:end]); err != nil {
+			return
+		}
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
 		}
