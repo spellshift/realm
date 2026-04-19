@@ -23,6 +23,7 @@ export interface TagContextProps {
     hosts: Array<FilterBarOption & HostNode>;
     principals: Array<FilterBarOption>;
     primaryIPs: Array<FilterBarOption>;
+    externalIPs: Array<FilterBarOption>;
     platforms: Array<FilterBarOption>;
     transports: Array<FilterBarOption>;
     onlineOfflineStatus: Array<FilterBarOption>;

@@ -108,6 +108,12 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Hosts the user is subscribed to."),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Events associated with the user."),
 	}
 }
 

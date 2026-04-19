@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { ArrowDownToLine, Share, BookOpen, Copy, FilePlus } from "lucide-react";
+import { ArrowDownToLine, Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
+import { useMutation } from "@apollo/client";
 import moment from "moment";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtualized-table/types";
@@ -9,10 +10,11 @@ import { AssetNode } from "../../utils/interfacesQuery";
 import Button from "../../components/tavern-base-ui/button/Button";
 import UserImageAndName from "../../components/UserImageAndName";
 import { truncateAssetName } from "./utils";
-import { GET_ASSET_DETAIL_QUERY } from "./queries";
+import { GET_ASSET_DETAIL_QUERY, DELETE_ASSET } from "./queries";
 import { AssetDetailQueryResponse } from "./types";
 import AssetAccordion from "./components/AssetAccordion";
 import { formatBytes } from "../../utils/utils";
+import { useAuthorization } from "../../context/AuthorizationContext";
 
 interface AssetsTableProps {
     assetIds: string[];
@@ -24,6 +26,29 @@ interface AssetsTableProps {
 
 export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLink, onAssetUpdate }: AssetsTableProps) => {
     const toast = useToast();
+    const { data: authData } = useAuthorization();
+    const isAdmin = authData?.me?.isAdmin ?? false;
+
+    const [deleteAsset] = useMutation(DELETE_ASSET, {
+        onCompleted: () => {
+            toast({
+                title: "Asset deleted",
+                status: "success",
+                duration: 2000,
+                isClosable: true,
+            });
+            onAssetUpdate();
+        },
+        onError: (err) => {
+            toast({
+                title: "Failed to delete asset",
+                description: err.message,
+                status: "error",
+                duration: 4000,
+                isClosable: true,
+            });
+        },
+    });
 
     const handleCopy = useCallback((text: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -181,6 +206,21 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                             aria-label="Create Link"
                         />
                     </Tooltip>
+                    {isAdmin && (
+                        <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : "Delete"} bg="white" color="black">
+                            <Button
+                                buttonVariant="ghost"
+                                buttonStyle={{ color: "gray", size: "xs" }}
+                                leftIcon={<Trash2 className="w-4 h-4" />}
+                                disabled={asset.tomes.totalCount > 0}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteAsset({ variables: { assetID: asset.id } });
+                                }}
+                                aria-label="Delete"
+                            />
+                        </Tooltip>
+                    )}
                 </div>
             ),
             renderSkeleton: () => (
@@ -190,7 +230,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 </div>
             ),
         },
-    ], [handleCopy, onCreateLink]);
+    ], [handleCopy, onCreateLink, isAdmin, deleteAsset]);
 
     return (
         <VirtualizedTable<AssetNode, AssetDetailQueryResponse>
