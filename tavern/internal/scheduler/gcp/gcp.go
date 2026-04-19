@@ -18,6 +18,35 @@ func init() {
 	scheduler.Register("gcp", &Driver{})
 }
 
+// jobIterator abstracts iteration over Cloud Scheduler jobs.
+type jobIterator interface {
+	Next() (*schedulerpb.Job, error)
+}
+
+// cloudClient abstracts the GCP Cloud Scheduler API for testability.
+type cloudClient interface {
+	CreateJob(ctx context.Context, req *schedulerpb.CreateJobRequest) (*schedulerpb.Job, error)
+	ListJobs(ctx context.Context, req *schedulerpb.ListJobsRequest) jobIterator
+	Close() error
+}
+
+// gcpClient wraps the real GCP Cloud Scheduler client to satisfy cloudClient.
+type gcpClient struct {
+	inner *cloudscheduler.CloudSchedulerClient
+}
+
+func (c *gcpClient) CreateJob(ctx context.Context, req *schedulerpb.CreateJobRequest) (*schedulerpb.Job, error) {
+	return c.inner.CreateJob(ctx, req)
+}
+
+func (c *gcpClient) ListJobs(ctx context.Context, req *schedulerpb.ListJobsRequest) jobIterator {
+	return c.inner.ListJobs(ctx, req)
+}
+
+func (c *gcpClient) Close() error {
+	return c.inner.Close()
+}
+
 // Driver implements scheduler.Driver for Google Cloud Scheduler.
 type Driver struct{}
 
@@ -44,14 +73,14 @@ func (d *Driver) Open(ctx context.Context, uri *url.URL) (scheduler.Scheduler, e
 	}
 
 	return &Scheduler{
-		client: client,
+		client: &gcpClient{inner: client},
 		parent: parent,
 	}, nil
 }
 
 // Scheduler is a GCP Cloud Scheduler implementation of scheduler.Scheduler.
 type Scheduler struct {
-	client *cloudscheduler.CloudSchedulerClient
+	client cloudClient
 	parent string // e.g. "projects/my-proj/locations/us-central1"
 }
 
