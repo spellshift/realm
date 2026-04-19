@@ -432,6 +432,7 @@ type ComplexityRoot struct {
 		CreateShell                 func(childComplexity int, input ent.CreateShellInput) int
 		CreateTag                   func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome                  func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteAllNotifications      func(childComplexity int) int
 		DeleteBuilder               func(childComplexity int, builderID int) int
 		DeleteTome                  func(childComplexity int, tomeID int) int
 		DisableLink                 func(childComplexity int, linkID int) int
@@ -2771,6 +2772,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateTome(childComplexity, args["input"].(ent.CreateTomeInput)), true
+
+	case "Mutation.deleteAllNotifications":
+		if e.ComplexityRoot.Mutation.DeleteAllNotifications == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteAllNotifications(childComplexity), true
 
 	case "Mutation.deleteBuilder":
 		if e.ComplexityRoot.Mutation.DeleteBuilder == nil {
@@ -13314,6 +13322,7 @@ scalar Uint64
     ###
     markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
     markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
+    deleteAllNotifications: Boolean! @requireRole(role: ADMIN)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
