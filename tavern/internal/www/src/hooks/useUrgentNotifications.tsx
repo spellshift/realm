@@ -83,7 +83,12 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
         const cleanup = onServiceWorkerNotificationClick((url) => {
             if (url) {
                 window.focus();
-                navigate(url);
+                try {
+                    const parsed = new URL(url);
+                    navigate(parsed.pathname + parsed.search + parsed.hash);
+                } catch {
+                    navigate(url);
+                }
             }
         });
         return cleanup;
