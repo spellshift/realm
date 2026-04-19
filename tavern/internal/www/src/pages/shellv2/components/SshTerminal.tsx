@@ -9,10 +9,11 @@ interface SshTerminalProps {
   target: string;
   pivotId?: number;
   shellId: string;
+  isActive?: boolean;
   onConnectionStatusChange?: (status: "connecting" | "connected" | "disconnected") => void;
 }
 
-const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, shellId, onConnectionStatusChange }) => {
+const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, shellId, isActive, onConnectionStatusChange }) => {
   const termRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -100,6 +101,12 @@ const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, sh
       term.dispose();
     };
   }, [portalId, target]);
+
+  useEffect(() => {
+    if (isActive) {
+      termInstance.current?.focus();
+    }
+  }, [isActive]);
 
   return (
     <div className="flex-grow flex flex-col relative rounded border border-[#333] h-full overflow-hidden">

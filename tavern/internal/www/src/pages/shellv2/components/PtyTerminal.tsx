@@ -8,10 +8,11 @@ interface PtyTerminalProps {
   portalId: number;
   pivotId?: number;
   shellId: string;
+  isActive?: boolean;
   onConnectionStatusChange?: (status: "connecting" | "connected" | "disconnected") => void;
 }
 
-const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId, onConnectionStatusChange }) => {
+const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId, isActive, onConnectionStatusChange }) => {
   const termRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -100,6 +101,12 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId, o
       term.dispose();
     };
   }, [portalId, pivotId, shellId]);
+
+  useEffect(() => {
+    if (isActive) {
+      termInstance.current?.focus();
+    }
+  }, [isActive]);
 
   return (
     <div className="flex-grow flex flex-col relative rounded border border-[#333] h-full overflow-hidden">

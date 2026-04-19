@@ -100,6 +100,12 @@ const ShellV2 = () => {
 
     useTabHotkeys(totalTabs, setTabIndex);
 
+    useEffect(() => {
+        if (tabIndex === 0) {
+            focusTerminal();
+        }
+    }, [tabIndex, focusTerminal]);
+
     const toast = useToast();
 
     const [closePortalMutation] = useMutation(CLOSE_PORTAL_MUTATION);
@@ -211,13 +217,13 @@ const ShellV2 = () => {
                         onTooltipMouseLeave={handleTooltipMouseLeave}
                     />
                 </TabPanel>
-                {portalTabs.map(tab => (
+                {portalTabs.map((tab, idx) => (
                     <TabPanel key={tab.id} flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
                         {tab.type === "ssh" && (portalId || tab.pivotId) && (
-                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
+                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                         {tab.type === "pty" && (portalId || tab.pivotId) && (
-                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
+                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                     </TabPanel>
                 ))}
