@@ -1084,7 +1084,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 ### pivot.ssh_deploy
 
-`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<str>, payload_dst: Optional<str>) -> List<Dict>`
+`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<str>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
 
 The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
 
@@ -1094,6 +1094,8 @@ The **pivot.ssh_deploy** method deploys a payload and/or command across a set of
 - `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
 - `payload` is an optional local path to a binary to copy to the remote system.
 - `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/<basename(payload)>`.
+- `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
+- `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
 
 `ssh_deploy` returns a list of per-host result dictionaries:
 

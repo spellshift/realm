@@ -174,9 +174,20 @@ impl PivotLibrary for StdPivotLibrary {
         privesc_cmd: Option<String>,
         payload: Option<String>,
         payload_dst: Option<String>,
+        timeout: Option<i64>,
+        retries: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        ssh_deploy_impl::ssh_deploy(ips, credentials, cmd, privesc_cmd, payload, payload_dst)
-            .map_err(|e| e.to_string())
+        ssh_deploy_impl::ssh_deploy(
+            ips,
+            credentials,
+            cmd,
+            privesc_cmd,
+            payload,
+            payload_dst,
+            timeout,
+            retries,
+        )
+        .map_err(|e| e.to_string())
     }
 }
 

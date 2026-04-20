@@ -1,0 +1,38 @@
+name: SSH Deploy
+description: Deploy a payload and/or command to a set of hosts via SSH, trying each credential in order.
+author: kcarretto
+support_model: FIRST_PARTY
+tactic: LATERAL_MOVEMENT
+paramdefs:
+- name: ips
+  type: list
+  label: IPs / CIDRs
+  placeholder: "[10.0.0.1, 10.0.0.0/24]"
+- name: credentials
+  type: list
+  label: Credentials (list of {principal, password})
+  placeholder: '[{"principal": "root", "password": "toor"}]'
+- name: cmd
+  type: string
+  label: Command to run on the remote host
+  placeholder: id
+- name: privesc_cmd
+  type: string
+  label: Optional privilege escalation command (leave blank to skip)
+  placeholder: sudo -n -s
+- name: payload
+  type: string
+  label: Optional local payload path to copy (leave blank to skip)
+  placeholder: /tmp/implant
+- name: payload_dst
+  type: string
+  label: Optional remote destination path for the payload (leave blank for /tmp/<basename>)
+  placeholder: /tmp/implant
+- name: timeout
+  type: int
+  label: Optional per-connection SSH timeout in seconds (leave blank for default 5)
+  placeholder: "5"
+- name: retries
+  type: int
+  label: Optional number of additional retry passes on connection failures (leave blank for default 0)
+  placeholder: "0"

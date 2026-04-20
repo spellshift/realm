@@ -113,6 +113,26 @@ struct DeployOutcome {
     stderr: String,
 }
 
+const DEFAULT_TIMEOUT_SECS: u64 = 5;
+const DEFAULT_RETRIES: u32 = 0;
+
+fn resolve_timeout_secs(timeout: Option<i64>) -> Result<u64> {
+    match timeout {
+        None => Ok(DEFAULT_TIMEOUT_SECS),
+        Some(t) if t <= 0 => Err(anyhow!("timeout must be a positive integer, got {t}")),
+        Some(t) => Ok(t as u64),
+    }
+}
+
+fn resolve_retries(retries: Option<i64>) -> Result<u32> {
+    match retries {
+        None => Ok(DEFAULT_RETRIES),
+        Some(r) if r < 0 => Err(anyhow!("retries must be non-negative, got {r}")),
+        Some(r) => Ok(r as u32),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn handle_deploy_host(
     target: String,
     credentials: Vec<Credential>,
@@ -120,75 +140,81 @@ async fn handle_deploy_host(
     privesc_cmd: Option<String>,
     payload: Option<String>,
     payload_dst: Option<String>,
+    timeout_secs: u64,
+    retries: u32,
 ) -> Result<DeployOutcome> {
     const SSH_PORT: u16 = 22;
-    const CONNECT_TIMEOUT_SECS: u64 = 5;
 
     let mut last_err: Option<String> = None;
-    for cred in credentials {
-        let connect = tokio::time::timeout(
-            std::time::Duration::from_secs(CONNECT_TIMEOUT_SECS),
-            Session::connect(
-                cred.principal.clone(),
-                Some(cred.password.clone()),
-                None,
-                None,
-                format!("{target}:{SSH_PORT}"),
-            ),
-        )
-        .await;
+    let attempts = retries.saturating_add(1);
+    for attempt in 0..attempts {
+        for cred in &credentials {
+            let connect = tokio::time::timeout(
+                std::time::Duration::from_secs(timeout_secs),
+                Session::connect(
+                    cred.principal.clone(),
+                    Some(cred.password.clone()),
+                    None,
+                    None,
+                    format!("{target}:{SSH_PORT}"),
+                ),
+            )
+            .await;
 
-        let mut ssh = match connect {
-            Ok(Ok(s)) => s,
-            Ok(Err(e)) => {
-                last_err = Some(format!("auth failed for '{}': {e}", cred.principal));
-                continue;
-            }
-            Err(_) => {
-                last_err = Some(format!("connection to {target} timed out"));
-                continue;
-            }
-        };
+            let mut ssh = match connect {
+                Ok(Ok(s)) => s,
+                Ok(Err(e)) => {
+                    last_err = Some(format!("auth failed for '{}': {e}", cred.principal));
+                    continue;
+                }
+                Err(_) => {
+                    last_err = Some(format!("connection to {target} timed out"));
+                    continue;
+                }
+            };
 
-        // Optional payload copy.
-        if let Some(src) = payload.as_deref() {
-            let dst = resolve_payload_dst(src, payload_dst.as_deref());
-            if let Err(e) = ssh.copy(src, &dst).await {
-                let _ = ssh.close().await;
-                return Err(anyhow!("failed to copy payload to {target}:{dst}: {e}"));
+            // Optional payload copy.
+            if let Some(src) = payload.as_deref() {
+                let dst = resolve_payload_dst(src, payload_dst.as_deref());
+                if let Err(e) = ssh.copy(src, &dst).await {
+                    let _ = ssh.close().await;
+                    return Err(anyhow!("failed to copy payload to {target}:{dst}: {e}"));
+                }
+                // Best-effort chmod so the payload is executable. Shell-quote the
+                // destination to avoid metacharacter expansion by the remote shell.
+                let quoted_dst = shell_quote(&dst);
+                let _ = ssh.call(&format!("chmod +x {quoted_dst}")).await;
             }
-            // Best-effort chmod so the payload is executable. Shell-quote the
-            // destination to avoid metacharacter expansion by the remote shell.
-            let quoted_dst = shell_quote(&dst);
-            let _ = ssh.call(&format!("chmod +x {quoted_dst}")).await;
+
+            // Determine if we are root; if not and privesc is provided, run it first.
+            let mut effective_cmd = cmd.clone();
+            if let Some(ref privesc) = privesc_cmd {
+                let whoami = ssh.call("id -u").await;
+                let is_root = matches!(
+                    whoami,
+                    Ok(ref r) if r.output().map(|s| s.trim() == "0").unwrap_or(false)
+                );
+                if !is_root {
+                    effective_cmd = format!("{privesc} && {cmd}");
+                }
+            }
+
+            let result = ssh.call(&effective_cmd).await;
+            let _ = ssh.close().await;
+
+            let run = match result {
+                Ok(r) => r,
+                Err(e) => return Err(anyhow!("command execution on {target} failed: {e}")),
+            };
+
+            return Ok(DeployOutcome {
+                principal: cred.principal.clone(),
+                stdout: run.output().unwrap_or_default(),
+                stderr: run.error().unwrap_or_default(),
+            });
         }
-
-        // Determine if we are root; if not and privesc is provided, run it first.
-        let mut effective_cmd = cmd.clone();
-        if let Some(ref privesc) = privesc_cmd {
-            let whoami = ssh.call("id -u").await;
-            let is_root = matches!(
-                whoami,
-                Ok(ref r) if r.output().map(|s| s.trim() == "0").unwrap_or(false)
-            );
-            if !is_root {
-                effective_cmd = format!("{privesc} && {cmd}");
-            }
-        }
-
-        let result = ssh.call(&effective_cmd).await;
-        let _ = ssh.close().await;
-
-        let run = match result {
-            Ok(r) => r,
-            Err(e) => return Err(anyhow!("command execution on {target} failed: {e}")),
-        };
-
-        return Ok(DeployOutcome {
-            principal: cred.principal,
-            stdout: run.output().unwrap_or_default(),
-            stderr: run.error().unwrap_or_default(),
-        });
+        // Avoid unused-variable warning when retries == 0.
+        let _ = attempt;
     }
 
     Err(anyhow!(
@@ -215,6 +241,7 @@ fn make_result(
     m
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn ssh_deploy(
     ips: Vec<String>,
     credentials: Vec<BTreeMap<String, Value>>,
@@ -222,9 +249,13 @@ pub fn ssh_deploy(
     privesc_cmd: Option<String>,
     payload: Option<String>,
     payload_dst: Option<String>,
+    timeout: Option<i64>,
+    retries: Option<i64>,
 ) -> Result<Vec<BTreeMap<String, Value>>> {
     let creds = parse_credentials(credentials)?;
     let targets = expand_targets(ips)?;
+    let timeout_secs = resolve_timeout_secs(timeout)?;
+    let retry_count = resolve_retries(retries)?;
 
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -239,6 +270,8 @@ pub fn ssh_deploy(
             privesc_cmd.clone(),
             payload.clone(),
             payload_dst.clone(),
+            timeout_secs,
+            retry_count,
         ));
         match outcome {
             Ok(out) => results.push(make_result(
@@ -364,6 +397,8 @@ mod tests {
             None,
             None,
             None,
+            None,
+            None,
         );
         assert!(res.is_err());
 
@@ -374,6 +409,62 @@ mod tests {
             None,
             None,
             None,
+            None,
+            None,
+        );
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_resolve_timeout_defaults() {
+        assert_eq!(resolve_timeout_secs(None).unwrap(), DEFAULT_TIMEOUT_SECS);
+        assert_eq!(resolve_timeout_secs(Some(10)).unwrap(), 10);
+    }
+
+    #[test]
+    fn test_resolve_timeout_invalid() {
+        assert!(resolve_timeout_secs(Some(0)).is_err());
+        assert!(resolve_timeout_secs(Some(-1)).is_err());
+    }
+
+    #[test]
+    fn test_resolve_retries_defaults() {
+        assert_eq!(resolve_retries(None).unwrap(), DEFAULT_RETRIES);
+        assert_eq!(resolve_retries(Some(0)).unwrap(), 0);
+        assert_eq!(resolve_retries(Some(3)).unwrap(), 3);
+    }
+
+    #[test]
+    fn test_resolve_retries_invalid() {
+        assert!(resolve_retries(Some(-1)).is_err());
+    }
+
+    #[test]
+    fn test_ssh_deploy_invalid_timeout() {
+        let res = ssh_deploy(
+            vec!["127.0.0.1".into()],
+            vec![cred("root", "pw")],
+            "echo hi".into(),
+            None,
+            None,
+            None,
+            Some(0),
+            None,
+        );
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_ssh_deploy_invalid_retries() {
+        let res = ssh_deploy(
+            vec!["127.0.0.1".into()],
+            vec![cred("root", "pw")],
+            "echo hi".into(),
+            None,
+            None,
+            None,
+            None,
+            Some(-1),
         );
         assert!(res.is_err());
     }

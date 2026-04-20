@@ -183,6 +183,11 @@ pub trait PivotLibrary {
     ///   copy to the remote system.
     /// - `payload_dst` (`Option<str>`): Optional destination path on the remote
     ///   system for the payload. Defaults to `/tmp/<basename(payload)>`.
+    /// - `timeout` (`Option<int>`): Optional per-connection timeout in seconds
+    ///   applied to each SSH authentication attempt. Defaults to `5`.
+    /// - `retries` (`Option<int>`): Optional number of additional retry passes
+    ///   over the full credential list on hosts that failed to connect.
+    ///   Defaults to `0` (i.e. each credential is tried once per host).
     ///
     /// **Returns**
     /// - `List<Dict>`: One result dictionary per target IP with the keys:
@@ -204,6 +209,8 @@ pub trait PivotLibrary {
         privesc_cmd: Option<String>,
         payload: Option<String>,
         payload_dst: Option<String>,
+        timeout: Option<i64>,
+        retries: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
