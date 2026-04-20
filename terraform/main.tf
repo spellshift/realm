@@ -213,6 +213,11 @@ variable "enable_metrics" {
   description = "Enable prometheus sidecar and Tavern metrics collection"
   default = false
 }
+variable "enable_mcp" {
+  type = bool
+  description = "Enable the AI MCP (Model Context Protocol) server endpoint"
+  default = false
+}
 
 provider "google" {
   project = var.gcp_project
@@ -481,6 +486,10 @@ resource "google_cloud_run_service" "tavern" {
         env {
           name = "ENABLE_METRICS"
           value = var.enable_metrics ? "1" : ""
+        }
+        env {
+          name = "ENABLE_AI_MCP"
+          value = var.enable_mcp ? "1" : ""
         }
       }
 
