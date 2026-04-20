@@ -135,6 +135,7 @@ transports:
   - URI: <string>
     type: <grpc|http1|dns|icmp>
     interval: <integer> # optional, seconds
+    jitter: <float>     # optional, [0.0, 1.0], defaults to 0.0
     extra: <json_string> # required (use "" if none)
 server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
 ```
@@ -174,6 +175,7 @@ Imix supports pluggable transports making it easy to adapt to your environment. 
 ### global configuration options
 - `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
 - `interval`: the number of seconds between callbacks.
+- `jitter`: a float in the range `[0.0, 1.0]` that introduces randomness into the callback interval. Each cycle, the effective interval is reduced by up to `jitter * interval` seconds, so a value of `0.5` means callbacks may occur anywhere between 50% and 100% of the configured interval. Defaults to `0.0` (no jitter).
 - `extra`: JSON dictionary for transport specific configuration. These are outlined below:
 
 ### grpc
