@@ -31,7 +31,7 @@ func startServer(t *testing.T, user, password, pubkeyFile string) (int, func()) 
 	port, err := getFreePort()
 	require.NoError(t, err)
 
-	listener, err := Run(fmt.Sprintf("0.0.0.0:%d", port), user, password, pubkeyFile)
+	listener, err := Run(fmt.Sprintf("0.0.0.0:%d", port), user, password, pubkeyFile, false)
 	require.NoError(t, err)
 
 	// Wait a moment for the server goroutine to start listening
@@ -225,4 +225,26 @@ func TestSSHEcho_PublicKeyAuth(t *testing.T) {
 	}
 	_, err = ssh.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port), invalidConfig)
 	require.Error(t, err)
+}
+
+func TestSSHEcho_SystemAuth_RejectsInvalidCredentials(t *testing.T) {
+	port, err := getFreePort()
+	require.NoError(t, err)
+
+	listener, err := Run(fmt.Sprintf("0.0.0.0:%d", port), "", "", "", true)
+	require.NoError(t, err)
+	defer listener.Close()
+
+	time.Sleep(500 * time.Millisecond)
+
+	// Attempt to connect with invalid credentials should fail
+	clientConfig := &ssh.ClientConfig{
+		User: "nonexistent_user_12345",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("wrong_password"),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+	_, err = ssh.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port), clientConfig)
+	require.Error(t, err, "system auth should reject invalid credentials")
 }
