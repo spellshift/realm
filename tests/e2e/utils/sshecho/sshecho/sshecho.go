@@ -15,13 +15,24 @@ import (
 )
 
 // Run starts the SSH echo server on the given address, with optional user, password, and public key file for auth.
+// If systemAuth is true, password authentication is performed against the system (e.g. PAM) instead of
+// using the hardcoded user/password. In this mode, the user and password flags are ignored for password auth.
 // It returns a net.Listener that can be closed to stop the server.
-func Run(addr string, user string, password string, pubkeyFile string) (net.Listener, error) {
+func Run(addr string, user string, password string, pubkeyFile string, systemAuth bool) (net.Listener, error) {
 	config := &ssh.ServerConfig{
 		NoClientAuth: true,
 	}
 
-	if user != "" && password != "" {
+	if systemAuth {
+		config.NoClientAuth = false
+		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			if err := pamAuthenticate(c.User(), string(pass)); err != nil {
+				return nil, fmt.Errorf("system auth rejected for %q: %w", c.User(), err)
+			}
+			return nil, nil
+		}
+		log.Println("System authentication (PAM) enabled")
+	} else if user != "" && password != "" {
 		config.NoClientAuth = false
 		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			if c.User() == user && string(pass) == password {
