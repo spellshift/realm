@@ -52,6 +52,48 @@ fn parse_credentials(credentials: Vec<BTreeMap<String, Value>>) -> Result<Vec<Cr
     Ok(parsed)
 }
 
+const DEFAULT_SSH_PORT: u16 = 22;
+
+/// Split an entry into its host portion and an optional port.
+///
+/// Supports:
+///   - `1.2.3.4`              -> ("1.2.3.4", None)
+///   - `1.2.3.4:2222`         -> ("1.2.3.4", Some(2222))
+///   - `[::1]`                -> ("::1", None)
+///   - `[::1]:2222`           -> ("::1", Some(2222))
+///   - `::1`                  -> ("::1", None)  (bare IPv6, no port)
+fn split_host_port(s: &str) -> Result<(String, Option<u16>)> {
+    // Bracketed IPv6: [addr] or [addr]:port
+    if let Some(rest) = s.strip_prefix('[') {
+        let end = rest
+            .find(']')
+            .ok_or_else(|| anyhow!("invalid bracketed address '{s}': missing ']'"))?;
+        let host = &rest[..end];
+        let after = &rest[end + 1..];
+        if after.is_empty() {
+            return Ok((host.to_string(), None));
+        }
+        let port_str = after.strip_prefix(':').ok_or_else(|| {
+            anyhow!("invalid bracketed address '{s}': expected ':port' after ']'")
+        })?;
+        let port: u16 = port_str
+            .parse()
+            .map_err(|e| anyhow!("invalid port in '{s}': {e}"))?;
+        return Ok((host.to_string(), Some(port)));
+    }
+
+    // Unbracketed: a single ':' indicates ipv4:port; multiple ':' is a bare IPv6.
+    let colons = s.matches(':').count();
+    if colons == 1 {
+        let (host, port_str) = s.split_once(':').unwrap();
+        let port: u16 = port_str
+            .parse()
+            .map_err(|e| anyhow!("invalid port in '{s}': {e}"))?;
+        return Ok((host.to_string(), Some(port)));
+    }
+    Ok((s.to_string(), None))
+}
+
 fn expand_targets(ips: Vec<String>) -> Result<Vec<String>> {
     if ips.is_empty() {
         return Err(anyhow!("ips list cannot be empty"));
@@ -64,19 +106,39 @@ fn expand_targets(ips: Vec<String>) -> Result<Vec<String>> {
             return Err(anyhow!("ips contains an empty entry"));
         }
 
-        if trimmed.contains('/') {
-            let net = IpNetwork::from_str(trimmed)
+        // Separate optional CIDR suffix from the host[:port] portion.
+        // Supports forms like `10.0.0.1/24` and `10.0.0.1:2222/24`.
+        let (host_port, cidr_suffix) = match trimmed.split_once('/') {
+            Some((hp, cidr)) => (hp, Some(cidr)),
+            None => (trimmed, None),
+        };
+
+        let (host, port) = split_host_port(host_port)?;
+        let port = port.unwrap_or(DEFAULT_SSH_PORT);
+
+        if let Some(cidr) = cidr_suffix {
+            let cidr_str = format!("{host}/{cidr}");
+            let net = IpNetwork::from_str(&cidr_str)
                 .map_err(|e| anyhow!("invalid CIDR '{trimmed}': {e}"))?;
             for addr in net.iter() {
-                out.push(addr.to_string());
+                out.push(format_target(&addr, port));
             }
         } else {
-            let _ = IpAddr::from_str(trimmed)
+            let addr = IpAddr::from_str(&host)
                 .map_err(|e| anyhow!("invalid IP address '{trimmed}': {e}"))?;
-            out.push(trimmed.to_string());
+            out.push(format_target(&addr, port));
         }
     }
     Ok(out)
+}
+
+/// Format an `IpAddr` with a port, bracketing IPv6 addresses as required by
+/// the `host:port` convention.
+fn format_target(addr: &IpAddr, port: u16) -> String {
+    match addr {
+        IpAddr::V4(v4) => format!("{v4}:{port}"),
+        IpAddr::V6(v6) => format!("[{v6}]:{port}"),
+    }
 }
 
 fn resolve_payload_dst(payload: &str, payload_dst: Option<&str>) -> String {
@@ -143,8 +205,6 @@ async fn handle_deploy_host(
     timeout_secs: u64,
     retries: u32,
 ) -> Result<DeployOutcome> {
-    const SSH_PORT: u16 = 22;
-
     let mut last_err: Option<String> = None;
     let attempts = retries.saturating_add(1);
     for attempt in 0..attempts {
@@ -156,7 +216,7 @@ async fn handle_deploy_host(
                     Some(cred.password.clone()),
                     None,
                     None,
-                    format!("{target}:{SSH_PORT}"),
+                    target.clone(),
                 ),
             )
             .await;
@@ -331,7 +391,7 @@ mod tests {
     #[test]
     fn test_expand_targets_single_ip() {
         let t = expand_targets(vec!["10.0.0.1".into()]).unwrap();
-        assert_eq!(t, vec!["10.0.0.1".to_string()]);
+        assert_eq!(t, vec!["10.0.0.1:22".to_string()]);
     }
 
     #[test]
@@ -339,8 +399,8 @@ mod tests {
         let t = expand_targets(vec!["192.168.1.0/30".into()]).unwrap();
         // /30 yields 4 addresses.
         assert_eq!(t.len(), 4);
-        assert!(t.contains(&"192.168.1.0".to_string()));
-        assert!(t.contains(&"192.168.1.3".to_string()));
+        assert!(t.contains(&"192.168.1.0:22".to_string()));
+        assert!(t.contains(&"192.168.1.3:22".to_string()));
     }
 
     #[test]
@@ -352,6 +412,38 @@ mod tests {
     fn test_expand_targets_invalid() {
         assert!(expand_targets(vec!["not-an-ip".into()]).is_err());
         assert!(expand_targets(vec!["10.0.0.1/40".into()]).is_err());
+    }
+
+    #[test]
+    fn test_expand_targets_host_port() {
+        let t = expand_targets(vec!["127.0.0.1:2222".into()]).unwrap();
+        assert_eq!(t, vec!["127.0.0.1:2222".to_string()]);
+    }
+
+    #[test]
+    fn test_expand_targets_cidr_with_port() {
+        let t = expand_targets(vec!["10.0.0.1:2222/30".into()]).unwrap();
+        assert_eq!(t.len(), 4);
+        assert!(t.contains(&"10.0.0.0:2222".to_string()));
+        assert!(t.contains(&"10.0.0.3:2222".to_string()));
+    }
+
+    #[test]
+    fn test_expand_targets_ipv6_bracketed() {
+        let t = expand_targets(vec!["[::1]:2222".into()]).unwrap();
+        assert_eq!(t, vec!["[::1]:2222".to_string()]);
+    }
+
+    #[test]
+    fn test_expand_targets_ipv6_bare() {
+        let t = expand_targets(vec!["::1".into()]).unwrap();
+        assert_eq!(t, vec!["[::1]:22".to_string()]);
+    }
+
+    #[test]
+    fn test_expand_targets_invalid_port() {
+        assert!(expand_targets(vec!["127.0.0.1:notaport".into()]).is_err());
+        assert!(expand_targets(vec!["127.0.0.1:99999".into()]).is_err());
     }
 
     #[test]
