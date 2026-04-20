@@ -91,6 +91,22 @@ fn resolve_payload_dst(payload: &str, payload_dst: Option<&str>) -> String {
     format!("/tmp/{basename}")
 }
 
+/// Single-quote a string for safe inclusion in a POSIX shell command.
+fn shell_quote(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('\'');
+    for ch in s.chars() {
+        if ch == '\'' {
+            // Close quote, insert an escaped single quote, reopen quote.
+            out.push_str("'\\''");
+        } else {
+            out.push(ch);
+        }
+    }
+    out.push('\'');
+    out
+}
+
 struct DeployOutcome {
     principal: String,
     stdout: String,
@@ -141,8 +157,10 @@ async fn handle_deploy_host(
                 let _ = ssh.close().await;
                 return Err(anyhow!("failed to copy payload to {target}:{dst}: {e}"));
             }
-            // Best-effort chmod so the payload is executable.
-            let _ = ssh.call(&format!("chmod +x {dst}")).await;
+            // Best-effort chmod so the payload is executable. Shell-quote the
+            // destination to avoid metacharacter expansion by the remote shell.
+            let quoted_dst = shell_quote(&dst);
+            let _ = ssh.call(&format!("chmod +x {quoted_dst}")).await;
         }
 
         // Determine if we are root; if not and privesc is provided, run it first.
@@ -317,6 +335,24 @@ mod tests {
             resolve_payload_dst("/home/user/implant", Some("/var/tmp/agent")),
             "/var/tmp/agent".to_string()
         );
+    }
+
+    #[test]
+    fn test_shell_quote_plain() {
+        assert_eq!(shell_quote("/tmp/payload"), "'/tmp/payload'");
+    }
+
+    #[test]
+    fn test_shell_quote_with_metachars() {
+        // Metacharacters like ; $ ` are preserved literally inside single quotes.
+        assert_eq!(shell_quote("/tmp/a;rm -rf /"), "'/tmp/a;rm -rf /'");
+        assert_eq!(shell_quote("/tmp/$(whoami)"), "'/tmp/$(whoami)'");
+    }
+
+    #[test]
+    fn test_shell_quote_with_single_quote() {
+        // A single quote must close, escape, and reopen.
+        assert_eq!(shell_quote("/tmp/a'b"), "'/tmp/a'\\''b'");
     }
 
     #[test]
