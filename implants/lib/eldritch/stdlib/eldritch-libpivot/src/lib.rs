@@ -160,6 +160,59 @@ pub trait PivotLibrary {
     /// - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
+    #[allow(clippy::too_many_arguments)]
+    #[eldritch_method]
+    /// Deploys a payload and/or command across a set of hosts via SSH.
+    ///
+    /// For each target (IP or CIDR range), this method attempts the provided
+    /// credentials in order until one succeeds. Once authenticated, an optional
+    /// payload is copied via SFTP to the destination path, and then `cmd` is
+    /// executed. If the effective user is not `root` and `privesc_cmd` is
+    /// provided, the privilege escalation command is executed before `cmd`.
+    ///
+    /// **Parameters**
+    /// - `ips` (`List<str>`): Non-empty list of IP addresses and/or CIDR ranges
+    ///   (e.g. `["10.0.0.1", "10.0.0.0/24"]`). All entries must be valid.
+    /// - `credentials` (`List<Dict>`): Non-empty list of credential dictionaries
+    ///   of the form `{"principal": "<user>", "password": "<password>"}`,
+    ///   attempted in order on each host.
+    /// - `cmd` (`str`): Command to run on the remote system (ideally as root).
+    /// - `privesc_cmd` (`Option<str>`): Optional privilege escalation command
+    ///   to run when the effective user is not root.
+    /// - `payload` (`Option<str>`): Optional local path to a binary payload to
+    ///   copy to the remote system.
+    /// - `payload_dst` (`Option<str>`): Optional destination path on the remote
+    ///   system for the payload. Defaults to `/tmp/<basename(payload)>`.
+    /// - `timeout` (`Option<int>`): Optional per-connection timeout in seconds
+    ///   applied to each SSH authentication attempt. Defaults to `5`.
+    /// - `retries` (`Option<int>`): Optional number of additional retry passes
+    ///   over the full credential list on hosts that failed to connect.
+    ///   Defaults to `0` (i.e. each credential is tried once per host).
+    ///
+    /// **Returns**
+    /// - `List<Dict>`: One result dictionary per target IP with the keys:
+    ///   - `ip` (`str`)
+    ///   - `status` (`str`): `"success"` or `"failed"`
+    ///   - `principal` (`str`): Credential principal used on success (empty on failure).
+    ///   - `stdout` (`str`)
+    ///   - `stderr` (`str`)
+    ///   - `error` (`str`): Error detail on failure (empty on success).
+    ///
+    /// **Errors**
+    /// - Returns an error string if `ips` or `credentials` is empty, or if any
+    ///   entry in `ips` or `credentials` is malformed.
+    fn ssh_deploy(
+        &self,
+        ips: Vec<String>,
+        credentials: Vec<BTreeMap<String, Value>>,
+        cmd: String,
+        privesc_cmd: Option<String>,
+        payload: Option<String>,
+        payload_dst: Option<String>,
+        timeout: Option<i64>,
+        retries: Option<i64>,
+    ) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
     #[eldritch_method]
     /// Sends arbitrary data to a host via TCP or UDP and waits for a response.
     ///
