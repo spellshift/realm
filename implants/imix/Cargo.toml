@@ -46,6 +46,7 @@ rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
 rand = { workspace = true }
 async-trait = { workspace = true }
+rustls = { workspace = true }
 eldritch-libchain = { workspace = true, features = ["stdlib"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]

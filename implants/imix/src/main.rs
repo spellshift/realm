@@ -41,6 +41,13 @@ async fn main() -> Result<()> {
 
     run::init_logger();
 
+    // Install the default Rustls crypto provider (ring) at process startup.
+    // This is required when using proxy connectors (hyper_http_proxy) with Rustls 0.23,
+    // which checks for a process-level CryptoProvider rather than an inline one.
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .ok();
+
     #[cfg(feature = "install")]
     {
         #[cfg(debug_assertions)]
