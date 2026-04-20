@@ -15,7 +15,7 @@ func pamAuthenticate(username, password string) error {
 		case pam.PromptEchoOff:
 			return password, nil
 		case pam.PromptEchoOn:
-			return username, nil
+			return "", nil
 		case pam.ErrorMsg, pam.TextInfo:
 			return "", nil
 		default:
