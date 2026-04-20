@@ -1082,6 +1082,34 @@ If the connection is successful but the copy writes a file error will be returne
 ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
 
+### pivot.ssh_deploy
+
+`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<str>, payload_dst: Optional<str>) -> List<Dict>`
+
+The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
+
+- `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `["10.0.0.1", "10.0.0.0/24"]`). All entries must be valid.
+- `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
+- `cmd` is the command to run on the remote system (ideally as root).
+- `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
+- `payload` is an optional local path to a binary to copy to the remote system.
+- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/<basename(payload)>`.
+
+`ssh_deploy` returns a list of per-host result dictionaries:
+
+```json
+[
+    {
+        "ip": "10.0.0.1",
+        "status": "success",
+        "principal": "root",
+        "stdout": "uid=0(root) gid=0(root) groups=0(root)\n",
+        "stderr": "",
+        "error": ""
+    }
+]
+```
+
 ### pivot.ssh_exec
 
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`

@@ -4,6 +4,7 @@ pub mod ncat_impl;
 pub mod port_scan_impl;
 pub mod reverse_shell_pty_impl;
 pub mod ssh_copy_impl;
+pub mod ssh_deploy_impl;
 pub mod ssh_exec_impl;
 
 use alloc::collections::BTreeMap;
@@ -163,6 +164,19 @@ impl PivotLibrary for StdPivotLibrary {
         protocol: String,
     ) -> Result<String, String> {
         ncat_impl::ncat(address, port as i32, data, protocol).map_err(|e| e.to_string())
+    }
+
+    fn ssh_deploy(
+        &self,
+        ips: Vec<String>,
+        credentials: Vec<BTreeMap<String, Value>>,
+        cmd: String,
+        privesc_cmd: Option<String>,
+        payload: Option<String>,
+        payload_dst: Option<String>,
+    ) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        ssh_deploy_impl::ssh_deploy(ips, credentials, cmd, privesc_cmd, payload, payload_dst)
+            .map_err(|e| e.to_string())
     }
 }
 
