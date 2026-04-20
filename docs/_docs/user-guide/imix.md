@@ -135,7 +135,7 @@ transports:
   - URI: <string>
     type: <grpc|http1|dns|icmp>
     interval: <integer> # optional, seconds
-    jitter: <float>     # optional, [0.0, 1.0], defaults to 0.0
+    jitter: <float>     # optional, percentage eg 0.20 for 20%, defaults to 0.0
     extra: <json_string> # required (use "" if none)
 server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
 ```
