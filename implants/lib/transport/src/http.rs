@@ -384,6 +384,9 @@ impl HTTP {
 
         // Read and unmarshal the response
         let body_bytes = Self::read_response_body(response).await?;
+        if body_bytes.is_empty() {
+            return Err(anyhow::anyhow!("Empty response body from server"));
+        }
         let response_msg = unmarshal_with_codec::<Req, Resp>(&body_bytes)?;
 
         Ok(response_msg)

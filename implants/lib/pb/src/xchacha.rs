@@ -100,10 +100,6 @@ fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
 }
 
 fn decrypt_impl(ct_vec: Vec<u8>) -> Result<Vec<u8>> {
-    if ct_vec.is_empty() {
-        return Ok(vec![]);
-    }
-
     if ct_vec.len() < PUBKEY_LEN + NONCE_LEN {
         anyhow::bail!("Message too small to contain public key and nonce");
     }
