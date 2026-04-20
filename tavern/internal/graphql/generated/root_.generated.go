@@ -481,6 +481,26 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	OAuthClient struct {
+		ClientID       func(childComplexity int) int
+		ClientName     func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		RedirectUris   func(childComplexity int) int
+	}
+
+	OAuthClientConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	OAuthClientEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	PageInfo struct {
 		EndCursor       func(childComplexity int) int
 		HasNextPage     func(childComplexity int) int
@@ -3139,6 +3159,83 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.NotificationEdge.Node(childComplexity), true
 
+	case "OAuthClient.clientID":
+		if e.ComplexityRoot.OAuthClient.ClientID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClient.ClientID(childComplexity), true
+
+	case "OAuthClient.clientName":
+		if e.ComplexityRoot.OAuthClient.ClientName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClient.ClientName(childComplexity), true
+
+	case "OAuthClient.createdAt":
+		if e.ComplexityRoot.OAuthClient.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClient.CreatedAt(childComplexity), true
+
+	case "OAuthClient.id":
+		if e.ComplexityRoot.OAuthClient.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClient.ID(childComplexity), true
+
+	case "OAuthClient.lastModifiedAt":
+		if e.ComplexityRoot.OAuthClient.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClient.LastModifiedAt(childComplexity), true
+
+	case "OAuthClient.redirectUris":
+		if e.ComplexityRoot.OAuthClient.RedirectUris == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClient.RedirectUris(childComplexity), true
+
+	case "OAuthClientConnection.edges":
+		if e.ComplexityRoot.OAuthClientConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClientConnection.Edges(childComplexity), true
+
+	case "OAuthClientConnection.pageInfo":
+		if e.ComplexityRoot.OAuthClientConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClientConnection.PageInfo(childComplexity), true
+
+	case "OAuthClientConnection.totalCount":
+		if e.ComplexityRoot.OAuthClientConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClientConnection.TotalCount(childComplexity), true
+
+	case "OAuthClientEdge.cursor":
+		if e.ComplexityRoot.OAuthClientEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClientEdge.Cursor(childComplexity), true
+
+	case "OAuthClientEdge.node":
+		if e.ComplexityRoot.OAuthClientEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OAuthClientEdge.Node(childComplexity), true
+
 	case "PageInfo.endCursor":
 		if e.ComplexityRoot.PageInfo.EndCursor == nil {
 			break
@@ -5128,6 +5225,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLinkWhereInput,
 		ec.unmarshalInputNotificationOrder,
 		ec.unmarshalInputNotificationWhereInput,
+		ec.unmarshalInputOAuthClientOrder,
+		ec.unmarshalInputOAuthClientWhereInput,
 		ec.unmarshalInputPortalOrder,
 		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
@@ -9387,6 +9486,156 @@ input NotificationWhereInput {
   """
   hasEvent: Boolean
   hasEventWith: [EventWhereInput!]
+}
+type OAuthClient implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Unique identifier for the OAuth client
+  """
+  clientID: String!
+  """
+  Human-readable name of the OAuth client
+  """
+  clientName: String
+  """
+  Allowed redirect URIs for the OAuth client
+  """
+  redirectUris: [String!]!
+}
+"""
+A connection to a list of items.
+"""
+type OAuthClientConnection {
+  """
+  A list of edges.
+  """
+  edges: [OAuthClientEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type OAuthClientEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: OAuthClient
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for OAuthClient connections
+"""
+input OAuthClientOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order OAuthClients.
+  """
+  field: OAuthClientOrderField!
+}
+"""
+Properties by which OAuthClient connections can be ordered.
+"""
+enum OAuthClientOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLIENT_ID
+}
+"""
+OAuthClientWhereInput is used for filtering OAuthClient objects.
+Input was generated by ent.
+"""
+input OAuthClientWhereInput {
+  not: OAuthClientWhereInput
+  and: [OAuthClientWhereInput!]
+  or: [OAuthClientWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  client_id field predicates
+  """
+  clientID: String
+  clientIDNEQ: String
+  clientIDIn: [String!]
+  clientIDNotIn: [String!]
+  clientIDGT: String
+  clientIDGTE: String
+  clientIDLT: String
+  clientIDLTE: String
+  clientIDContains: String
+  clientIDHasPrefix: String
+  clientIDHasSuffix: String
+  clientIDEqualFold: String
+  clientIDContainsFold: String
+  """
+  client_name field predicates
+  """
+  clientName: String
+  clientNameNEQ: String
+  clientNameIn: [String!]
+  clientNameNotIn: [String!]
+  clientNameGT: String
+  clientNameGTE: String
+  clientNameLT: String
+  clientNameLTE: String
+  clientNameContains: String
+  clientNameHasPrefix: String
+  clientNameHasSuffix: String
+  clientNameIsNil: Boolean
+  clientNameNotNil: Boolean
+  clientNameEqualFold: String
+  clientNameContainsFold: String
 }
 """
 Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.

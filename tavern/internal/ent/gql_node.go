@@ -30,6 +30,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/oauthclient"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -123,6 +124,11 @@ var notificationImplementors = []string{"Notification", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Notification) IsNode() {}
+
+var oauthclientImplementors = []string{"OAuthClient", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*OAuthClient) IsNode() {}
 
 var portalImplementors = []string{"Portal", "Node"}
 
@@ -373,6 +379,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(notification.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, notificationImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case oauthclient.Table:
+		query := c.OAuthClient.Query().
+			Where(oauthclient.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, oauthclientImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -786,6 +801,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Notification.Query().
 			Where(notification.IDIn(ids...))
 		query, err := query.CollectFields(ctx, notificationImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case oauthclient.Table:
+		query := c.OAuthClient.Query().
+			Where(oauthclient.IDIn(ids...))
+		query, err := query.CollectFields(ctx, oauthclientImplementors...)
 		if err != nil {
 			return nil, err
 		}

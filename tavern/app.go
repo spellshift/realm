@@ -411,6 +411,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// GraphQL Handler (shared with MCP)
 	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
 
+	// Determine the issuer for MCP OAuth (derive from OAUTH_DOMAIN if set)
+	mcpOAuthIssuer := EnvOAuthDomain.String()
+	if mcpOAuthIssuer != "" && !strings.HasPrefix(mcpOAuthIssuer, "http") {
+		mcpOAuthIssuer = "https://" + mcpOAuthIssuer
+	}
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -455,6 +461,27 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 				client,
 				cfg.userProfiles,
 			),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		// MCP DCR OAuth endpoints (RFC 8414 / RFC 7591)
+		"/.well-known/oauth-authorization-server": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthServerMetadataHandler(mcpOAuthIssuer),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/oauth/register": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthDCRHandler(client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/oauth/token": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthTokenHandler(client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/oauth/mcp/authorize": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthMCPAuthorizeHandler(client),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -534,7 +561,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		slog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
 		mcpHandler := tavernmcp.NewHandler(client, Version, gqlHandler)
 		routes["/mcp/"] = tavernhttp.Endpoint{
-			Handler: mcpHandler,
+			Handler:         mcpHandler,
+			WWWAuthenticate: `Bearer realm="Tavern"`,
 		}
 	}
 

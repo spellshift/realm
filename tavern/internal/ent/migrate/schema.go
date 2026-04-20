@@ -483,6 +483,53 @@ var (
 			},
 		},
 	}
+	// OauthClientsColumns holds the columns for the "oauth_clients" table.
+	OauthClientsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "client_id", Type: field.TypeString, Unique: true},
+		{Name: "client_name", Type: field.TypeString, Nullable: true},
+		{Name: "redirect_uris", Type: field.TypeJSON},
+	}
+	// OauthClientsTable holds the schema information for the "oauth_clients" table.
+	OauthClientsTable = &schema.Table{
+		Name:       "oauth_clients",
+		Columns:    OauthClientsColumns,
+		PrimaryKey: []*schema.Column{OauthClientsColumns[0]},
+	}
+	// OauthCodesColumns holds the columns for the "oauth_codes" table.
+	OauthCodesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "code", Type: field.TypeString, Unique: true},
+		{Name: "redirect_uri", Type: field.TypeString},
+		{Name: "code_challenge", Type: field.TypeString},
+		{Name: "code_challenge_method", Type: field.TypeString, Default: "S256"},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "claimed", Type: field.TypeBool, Default: false},
+		{Name: "oauth_client_oauth_codes", Type: field.TypeInt},
+		{Name: "oauth_code_user", Type: field.TypeInt},
+	}
+	// OauthCodesTable holds the schema information for the "oauth_codes" table.
+	OauthCodesTable = &schema.Table{
+		Name:       "oauth_codes",
+		Columns:    OauthCodesColumns,
+		PrimaryKey: []*schema.Column{OauthCodesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "oauth_codes_oauth_clients_oauth_codes",
+				Columns:    []*schema.Column{OauthCodesColumns[7]},
+				RefColumns: []*schema.Column{OauthClientsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "oauth_codes_users_user",
+				Columns:    []*schema.Column{OauthCodesColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// PortalsColumns holds the columns for the "portals" table.
 	PortalsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -1049,6 +1096,8 @@ var (
 		HostProcessesTable,
 		LinksTable,
 		NotificationsTable,
+		OauthClientsTable,
+		OauthCodesTable,
 		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
@@ -1137,6 +1186,14 @@ func init() {
 	NotificationsTable.ForeignKeys[0].RefTable = UsersTable
 	NotificationsTable.ForeignKeys[1].RefTable = EventsTable
 	NotificationsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	OauthClientsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	OauthCodesTable.ForeignKeys[0].RefTable = OauthClientsTable
+	OauthCodesTable.ForeignKeys[1].RefTable = UsersTable
+	OauthCodesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable
