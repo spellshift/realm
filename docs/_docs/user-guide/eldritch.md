@@ -1086,7 +1086,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 ### pivot.ssh_deploy
 
-`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<str>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
+`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
 
 The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
 
@@ -1094,8 +1094,8 @@ The **pivot.ssh_deploy** method deploys a payload and/or command across a set of
 - `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
 - `cmd` is the command to run on the remote system (ideally as root).
 - `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
-- `payload` is an optional local path to a binary to copy to the remote system.
-- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/<basename(payload)>`.
+- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read_binary(path)` or `assets.read_binary(name)`.
+- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.
 - `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
 - `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
 
