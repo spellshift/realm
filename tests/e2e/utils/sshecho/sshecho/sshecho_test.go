@@ -151,6 +151,25 @@ func TestSSHEcho_NoAuth(t *testing.T) {
 	testInteractiveShell(t, port, clientConfig)
 }
 
+// TestSSHEcho_NoAuth_AcceptsPassword verifies that when the server is started
+// without explicit auth flags it still accepts clients that attempt password
+// authentication (e.g. the russh-based pivot.ssh_deploy, which always sends
+// a password auth request even against a "no-auth" server).
+func TestSSHEcho_NoAuth_AcceptsPassword(t *testing.T) {
+	port, cancel := startServer(t, "", "", "")
+	defer cancel()
+
+	clientConfig := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("anything"),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	testInteractiveShell(t, port, clientConfig)
+}
+
 func TestSSHEcho_PasswordAuth(t *testing.T) {
 	port, cancel := startServer(t, "user1", "pass1", "")
 	defer cancel()
