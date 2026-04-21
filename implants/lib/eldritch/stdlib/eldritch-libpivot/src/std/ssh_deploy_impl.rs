@@ -654,20 +654,65 @@ pub fn ssh_deploy(
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
+    // Reuse the runtime's handle to spawn one tokio task per target so that
+    // hosts are deployed to concurrently rather than serially.
+    let handle = runtime.handle().clone();
+
+    let target_count = targets.len();
+    let per_target: Vec<(String, Vec<DeployOutcome>)> = runtime.block_on(async move {
+        // Bounded channel sized to the number of targets so that senders
+        // never block regardless of receive cadence. `expand_targets`
+        // guarantees `target_count >= 1` here, which is required because
+        // `mpsc::channel(0)` panics.
+        let (tx, mut rx) =
+            tokio::sync::mpsc::channel::<(usize, Vec<DeployOutcome>)>(target_count);
+
+        for (idx, target) in targets.iter().enumerate() {
+            let tx = tx.clone();
+            let target = target.clone();
+            let creds = creds.clone();
+            let cmd = cmd.clone();
+            let privesc_cmd = privesc_cmd.clone();
+            let payload = payload.clone();
+            let payload_dst = payload_dst.clone();
+
+            handle.spawn(async move {
+                let outcomes = handle_deploy_host(
+                    target,
+                    creds,
+                    cmd,
+                    privesc_cmd,
+                    payload,
+                    payload_dst,
+                    timeout_secs,
+                    retry_count,
+                )
+                .await;
+                // Ignore send errors: the receiver is only dropped after the
+                // runtime shuts down, at which point the result would be
+                // discarded anyway.
+                let _ = tx.send((idx, outcomes)).await;
+            });
+        }
+        // Drop the original sender so `rx.recv()` returns `None` once every
+        // spawned task has delivered (or dropped) its sender clone.
+        drop(tx);
+
+        let mut collected: Vec<Option<Vec<DeployOutcome>>> =
+            (0..target_count).map(|_| None).collect();
+        while let Some((idx, outcomes)) = rx.recv().await {
+            collected[idx] = Some(outcomes);
+        }
+        targets
+            .into_iter()
+            .zip(collected.into_iter())
+            .map(|(target, outcomes)| (target, outcomes.unwrap_or_default()))
+            .collect()
+    });
 
     // One row per (target, credential) combination actually attempted.
     let mut results: Vec<BTreeMap<String, Value>> = Vec::new();
-    for target in targets {
-        let outcomes = runtime.block_on(handle_deploy_host(
-            target.clone(),
-            creds.clone(),
-            cmd.clone(),
-            privesc_cmd.clone(),
-            payload.clone(),
-            payload_dst.clone(),
-            timeout_secs,
-            retry_count,
-        ));
+    for (target, outcomes) in per_target {
         for outcome in outcomes {
             results.push(make_result(
                 &target,
