@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
@@ -39,6 +40,18 @@ func Run(addr string, user string, password string, pubkeyFile string, systemAut
 				return nil, nil
 			}
 			return nil, fmt.Errorf("password rejected for %q", c.User())
+		}
+	} else if pubkeyFile == "" {
+		// Default/test mode: no explicit auth configured. Accept both the
+		// "none" method (for clients that dial without credentials) and
+		// any password (for clients such as the russh-based
+		// pivot.ssh_deploy that always attempt password authentication).
+		// Without a PasswordCallback, such clients would fail with
+		// "ssh: no authentication methods available" even though the
+		// server intends to accept them.
+		config.NoClientAuth = true
+		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			return nil, nil
 		}
 	}
 
@@ -209,6 +222,42 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 					channel.SendRequest("exit-status", false, ssh.Marshal(struct{ uint32 }{0}))
 					channel.Close()
 					return
+
+				case "subsystem":
+					var subsysReq struct {
+						Name string
+					}
+					if err := ssh.Unmarshal(req.Payload, &subsysReq); err != nil {
+						log.Printf("Failed to unmarshal subsystem payload: %v", err)
+						req.Reply(false, nil)
+						continue
+					}
+
+					if subsysReq.Name != "sftp" {
+						log.Printf("Rejected subsystem: %s\n", subsysReq.Name)
+						req.Reply(false, nil)
+						continue
+					}
+
+					log.Printf("Accepted subsystem request: %s\n", subsysReq.Name)
+					req.Reply(true, nil)
+
+					go func() {
+						defer channel.Close()
+
+						server, err := sftp.NewServer(channel)
+						if err != nil {
+							log.Printf("failed to start sftp server: %v\n", err)
+							return
+						}
+						defer server.Close()
+
+						if err := server.Serve(); err != nil && err != io.EOF {
+							log.Printf("sftp server exited with error: %v\n", err)
+							return
+						}
+						log.Printf("sftp session closed\n")
+					}()
 
 				default:
 					log.Printf("Rejected request type: %s\n", req.Type)

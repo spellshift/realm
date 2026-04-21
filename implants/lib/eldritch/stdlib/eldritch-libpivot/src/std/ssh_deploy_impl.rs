@@ -552,4 +552,82 @@ mod tests {
         );
         assert!(res.is_err());
     }
+
+    /// Manual/local integration test: run
+    ///   `go run ./tests/e2e/utils/sshecho -p 2223`
+    /// from the repo root, then execute
+    ///   `cargo test -p eldritch-libpivot ssh_deploy_against_sshecho -- --ignored --nocapture`
+    /// to verify that `pivot.ssh_deploy` can authenticate against the
+    /// default-mode sshecho server and execute a command.
+    #[test]
+    #[ignore]
+    fn ssh_deploy_against_sshecho() {
+        let res = ssh_deploy(
+            vec!["127.0.0.1:2223".into()],
+            vec![cred("root", "changeme")],
+            "whoami".into(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("ssh_deploy call failed");
+        assert_eq!(res.len(), 1);
+        let row = &res[0];
+        assert_eq!(
+            row.get("status"),
+            Some(&Value::String("success".to_string())),
+            "ssh_deploy row: {row:?}"
+        );
+        assert_eq!(
+            row.get("stdout"),
+            Some(&Value::String("root\n".to_string())),
+            "ssh_deploy row: {row:?}"
+        );
+    }
+
+    /// Manual/local integration test: run
+    ///   `go run ./tests/e2e/utils/sshecho -p 2224 -u alice -pass secret`
+    /// from the repo root, then execute
+    ///   `cargo test -p eldritch-libpivot ssh_deploy_against_sshecho_bad_password \
+    ///       -- --ignored --nocapture`
+    /// to verify that a rejected password results in a clear
+    /// authentication error (rather than the previous
+    /// "Channel send error" symptom caused by silently accepting a
+    /// failed auth handshake).
+    #[test]
+    #[ignore]
+    fn ssh_deploy_against_sshecho_bad_password() {
+        let res = ssh_deploy(
+            vec!["127.0.0.1:2224".into()],
+            vec![cred("alice", "wrong")],
+            "whoami".into(),
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .expect("ssh_deploy call should return per-host result, not panic");
+        assert_eq!(res.len(), 1);
+        let row = &res[0];
+        assert_eq!(
+            row.get("status"),
+            Some(&Value::String("failed".to_string())),
+            "ssh_deploy row: {row:?}"
+        );
+        let error = match row.get("error") {
+            Some(Value::String(s)) => s.clone(),
+            other => panic!("unexpected error value: {other:?}"),
+        };
+        assert!(
+            error.contains("auth"),
+            "expected auth error, got: {error:?}"
+        );
+        assert!(
+            !error.contains("Channel send error"),
+            "should no longer surface as 'Channel send error', got: {error:?}"
+        );
+    }
 }

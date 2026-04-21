@@ -226,15 +226,31 @@ impl Session {
         // Try key auth first
         if let Some(local_key) = key {
             let key_pair = decode_secret_key(&local_key, key_password)?;
-            let _auth_res: bool = session
-                .authenticate_publickey(user, Arc::new(key_pair))
+            let auth_res: bool = session
+                .authenticate_publickey(user.clone(), Arc::new(key_pair))
                 .await?;
+            if !auth_res {
+                return Err(anyhow::anyhow!(
+                    "publickey authentication rejected for {}@{}",
+                    user,
+                    addrs
+                ));
+            }
             return Ok(Self { session });
         }
 
         // If key auth doesn't work try password auth
         if let Some(local_pass) = password {
-            let _auth_res: bool = session.authenticate_password(user, local_pass).await?;
+            let auth_res: bool = session
+                .authenticate_password(user.clone(), local_pass)
+                .await?;
+            if !auth_res {
+                return Err(anyhow::anyhow!(
+                    "password authentication rejected for {}@{}",
+                    user,
+                    addrs
+                ));
+            }
             return Ok(Self { session });
         }
 
