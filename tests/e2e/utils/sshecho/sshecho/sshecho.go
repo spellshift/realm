@@ -40,6 +40,18 @@ func Run(addr string, user string, password string, pubkeyFile string, systemAut
 			}
 			return nil, fmt.Errorf("password rejected for %q", c.User())
 		}
+	} else if pubkeyFile == "" {
+		// Default/test mode: no explicit auth configured. Accept both the
+		// "none" method (for clients that dial without credentials) and
+		// any password (for clients such as the russh-based
+		// pivot.ssh_deploy that always attempt password authentication).
+		// Without a PasswordCallback, such clients would fail with
+		// "ssh: no authentication methods available" even though the
+		// server intends to accept them.
+		config.NoClientAuth = true
+		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			return nil, nil
+		}
 	}
 
 	if pubkeyFile != "" {
