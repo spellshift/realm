@@ -141,16 +141,11 @@ fn format_target(addr: &IpAddr, port: u16) -> String {
     }
 }
 
-fn resolve_payload_dst(payload: &str, payload_dst: Option<&str>) -> String {
+fn resolve_payload_dst(payload_dst: Option<&str>) -> String {
     if let Some(dst) = payload_dst {
         return dst.to_string();
     }
-    // Default to /tmp/<basename>.
-    let basename = std::path::Path::new(payload)
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("payload");
-    format!("/tmp/{basename}")
+    "/tmp/payload".to_string()
 }
 
 /// Single-quote a string for safe inclusion in a POSIX shell command.
@@ -200,7 +195,7 @@ async fn handle_deploy_host(
     credentials: Vec<Credential>,
     cmd: String,
     privesc_cmd: Option<String>,
-    payload: Option<String>,
+    payload: Option<Vec<u8>>,
     payload_dst: Option<String>,
     timeout_secs: u64,
     retries: u32,
@@ -234,9 +229,9 @@ async fn handle_deploy_host(
             };
 
             // Optional payload copy.
-            if let Some(src) = payload.as_deref() {
-                let dst = resolve_payload_dst(src, payload_dst.as_deref());
-                if let Err(e) = ssh.copy(src, &dst).await {
+            if let Some(bytes) = payload.as_deref() {
+                let dst = resolve_payload_dst(payload_dst.as_deref());
+                if let Err(e) = ssh.copy_bytes(bytes, &dst).await {
                     let _ = ssh.close().await;
                     return Err(anyhow!("failed to copy payload to {target}:{dst}: {e}"));
                 }
@@ -307,7 +302,7 @@ pub fn ssh_deploy(
     credentials: Vec<BTreeMap<String, Value>>,
     cmd: String,
     privesc_cmd: Option<String>,
-    payload: Option<String>,
+    payload: Option<Vec<u8>>,
     payload_dst: Option<String>,
     timeout: Option<i64>,
     retries: Option<i64>,
@@ -448,16 +443,13 @@ mod tests {
 
     #[test]
     fn test_resolve_payload_dst_default() {
-        assert_eq!(
-            resolve_payload_dst("/home/user/implant", None),
-            "/tmp/implant".to_string()
-        );
+        assert_eq!(resolve_payload_dst(None), "/tmp/payload".to_string());
     }
 
     #[test]
     fn test_resolve_payload_dst_override() {
         assert_eq!(
-            resolve_payload_dst("/home/user/implant", Some("/var/tmp/agent")),
+            resolve_payload_dst(Some("/var/tmp/agent")),
             "/var/tmp/agent".to_string()
         );
     }

@@ -59,6 +59,19 @@ def optional_int(raw):
         return None
     return int(s)
 
+def optional_payload(raw):
+    """Read an optional asset name into bytes for pivot.ssh_deploy.
+
+    Returns None if no asset name is provided, otherwise returns the asset
+    contents as bytes via assets.read_binary.
+    """
+    if raw == None:
+        return None
+    s = str(raw)
+    if s == "":
+        return None
+    return assets.read_binary(s)
+
 def ssh_deploy_tome():
     ips = parse_ips(input_params.get("ips"))
     credentials = parse_credentials(input_params.get("credentials"))
@@ -69,7 +82,7 @@ def ssh_deploy_tome():
         credentials,
         cmd,
         optional_str(input_params.get("privesc_cmd")),
-        optional_str(input_params.get("payload")),
+        optional_payload(input_params.get("payload")),
         optional_str(input_params.get("payload_dst")),
         optional_int(input_params.get("timeout")),
         optional_int(input_params.get("retries")),

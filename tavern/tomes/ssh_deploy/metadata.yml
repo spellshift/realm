@@ -22,8 +22,8 @@ paramdefs:
   placeholder: sudo -n -s
 - name: payload
   type: string
-  label: Optional local payload path to copy (leave blank to skip)
-  placeholder: /tmp/implant
+  label: Optional payload asset name to deploy (leave blank to skip)
+  placeholder: example/linux/test-file
 - name: payload_dst
   type: string
   label: Optional remote destination path for the payload (leave blank for /tmp/<basename>)

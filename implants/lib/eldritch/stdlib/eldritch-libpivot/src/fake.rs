@@ -96,7 +96,7 @@ impl PivotLibrary for PivotLibraryFake {
         _credentials: Vec<BTreeMap<String, Value>>,
         _cmd: String,
         _privesc_cmd: Option<String>,
-        _payload: Option<String>,
+        _payload: Option<Vec<u8>>,
         _payload_dst: Option<String>,
         _timeout: Option<i64>,
         _retries: Option<i64>,
