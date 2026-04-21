@@ -66,7 +66,4 @@ def http_get_and_execute(url, proxy):
         return
 
 
-proxy = input_params.get('proxy', '')
-if proxy == '':
-    proxy = None
-http_get_and_execute(input_params['url'], proxy)
+http_get_and_execute(input_params['url'], input_params.get('proxy') or None)
