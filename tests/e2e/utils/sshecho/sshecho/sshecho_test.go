@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/pkg/sftp"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
@@ -225,6 +227,51 @@ func TestSSHEcho_PublicKeyAuth(t *testing.T) {
 	}
 	_, err = ssh.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port), invalidConfig)
 	require.Error(t, err)
+}
+
+func TestSSHEcho_SFTPSubsystem(t *testing.T) {
+	port, cancel := startServer(t, "", "", "")
+	defer cancel()
+
+	clientConfig := &ssh.ClientConfig{
+		User:            "test",
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port), clientConfig)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	client, err := sftp.NewClient(conn)
+	require.NoError(t, err)
+	defer client.Close()
+
+	// Exercise the SFTP subsystem by writing a file via SFTP and reading it back.
+	tmpDir, err := os.MkdirTemp("", "sshecho-sftp-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	remotePath := filepath.Join(tmpDir, "hello.txt")
+
+	f, err := client.Create(remotePath)
+	require.NoError(t, err)
+
+	content := []byte("hello from sftp\n")
+	_, err = f.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	got, err := os.ReadFile(remotePath)
+	require.NoError(t, err)
+	require.Equal(t, content, got)
+
+	// Non-sftp subsystems should be rejected.
+	session, err := conn.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	err = session.RequestSubsystem("not-sftp")
+	require.Error(t, err, "non-sftp subsystems should be rejected")
 }
 
 func TestSSHEcho_SystemAuth_RejectsInvalidCredentials(t *testing.T) {

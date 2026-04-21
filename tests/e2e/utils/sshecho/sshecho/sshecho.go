@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
@@ -209,6 +210,42 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 					channel.SendRequest("exit-status", false, ssh.Marshal(struct{ uint32 }{0}))
 					channel.Close()
 					return
+
+				case "subsystem":
+					var subsysReq struct {
+						Name string
+					}
+					if err := ssh.Unmarshal(req.Payload, &subsysReq); err != nil {
+						log.Printf("Failed to unmarshal subsystem payload: %v", err)
+						req.Reply(false, nil)
+						continue
+					}
+
+					if subsysReq.Name != "sftp" {
+						log.Printf("Rejected subsystem: %s\n", subsysReq.Name)
+						req.Reply(false, nil)
+						continue
+					}
+
+					log.Printf("Accepted subsystem request: %s\n", subsysReq.Name)
+					req.Reply(true, nil)
+
+					go func() {
+						defer channel.Close()
+
+						server, err := sftp.NewServer(channel)
+						if err != nil {
+							log.Printf("failed to start sftp server: %v\n", err)
+							return
+						}
+						defer server.Close()
+
+						if err := server.Serve(); err != nil && err != io.EOF {
+							log.Printf("sftp server exited with error: %v\n", err)
+							return
+						}
+						log.Printf("sftp session closed\n")
+					}()
 
 				default:
 					log.Printf("Rejected request type: %s\n", req.Type)
