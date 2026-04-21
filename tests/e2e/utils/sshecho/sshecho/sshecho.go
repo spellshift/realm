@@ -1,8 +1,8 @@
 package sshecho
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/rsa"
 	"fmt"
 	"io"
 	"log"
@@ -10,24 +10,48 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
 
 // Run starts the SSH echo server on the given address, with optional user, password, and public key file for auth.
+// If systemAuth is true, password authentication is performed against the system (e.g. PAM) instead of
+// using the hardcoded user/password. In this mode, the user and password flags are ignored for password auth.
 // It returns a net.Listener that can be closed to stop the server.
-func Run(addr string, user string, password string, pubkeyFile string) (net.Listener, error) {
+func Run(addr string, user string, password string, pubkeyFile string, systemAuth bool) (net.Listener, error) {
 	config := &ssh.ServerConfig{
 		NoClientAuth: true,
 	}
 
-	if user != "" && password != "" {
+	if systemAuth {
+		config.NoClientAuth = false
+		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			if err := pamAuthenticate(c.User(), string(pass)); err != nil {
+				return nil, fmt.Errorf("system auth rejected for %q: %w", c.User(), err)
+			}
+			return nil, nil
+		}
+		log.Println("System authentication (PAM) enabled")
+	} else if user != "" && password != "" {
 		config.NoClientAuth = false
 		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			if c.User() == user && string(pass) == password {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("password rejected for %q", c.User())
+		}
+	} else if pubkeyFile == "" {
+		// Default/test mode: no explicit auth configured. Accept both the
+		// "none" method (for clients that dial without credentials) and
+		// any password (for clients such as the russh-based
+		// pivot.ssh_deploy that always attempt password authentication).
+		// Without a PasswordCallback, such clients would fail with
+		// "ssh: no authentication methods available" even though the
+		// server intends to accept them.
+		config.NoClientAuth = true
+		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			return nil, nil
 		}
 	}
 
@@ -50,7 +74,12 @@ func Run(addr string, user string, password string, pubkeyFile string) (net.List
 		}
 	}
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	// Use Ed25519 for the host key. RSA keys created via ssh.NewSignerFromKey
+	// advertise only the legacy "ssh-rsa" (SHA-1) algorithm, which modern SSH
+	// clients (including the russh-based pivot.ssh_deploy) reject, causing a
+	// "No common key algorithm" handshake failure. Ed25519 is widely supported
+	// and avoids this negotiation issue.
+	_, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %v", err)
 	}
@@ -193,6 +222,42 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 					channel.SendRequest("exit-status", false, ssh.Marshal(struct{ uint32 }{0}))
 					channel.Close()
 					return
+
+				case "subsystem":
+					var subsysReq struct {
+						Name string
+					}
+					if err := ssh.Unmarshal(req.Payload, &subsysReq); err != nil {
+						log.Printf("Failed to unmarshal subsystem payload: %v", err)
+						req.Reply(false, nil)
+						continue
+					}
+
+					if subsysReq.Name != "sftp" {
+						log.Printf("Rejected subsystem: %s\n", subsysReq.Name)
+						req.Reply(false, nil)
+						continue
+					}
+
+					log.Printf("Accepted subsystem request: %s\n", subsysReq.Name)
+					req.Reply(true, nil)
+
+					go func() {
+						defer channel.Close()
+
+						server, err := sftp.NewServer(channel)
+						if err != nil {
+							log.Printf("failed to start sftp server: %v\n", err)
+							return
+						}
+						defer server.Close()
+
+						if err := server.Serve(); err != nil && err != io.EOF {
+							log.Printf("sftp server exited with error: %v\n", err)
+							return
+						}
+						log.Printf("sftp session closed\n")
+					}()
 
 				default:
 					log.Printf("Rejected request type: %s\n", req.Type)

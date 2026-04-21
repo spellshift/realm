@@ -89,4 +89,25 @@ impl PivotLibrary for PivotLibraryFake {
     ) -> Result<String, String> {
         Ok("fake response".into())
     }
+
+    fn ssh_deploy(
+        &self,
+        _ips: Vec<String>,
+        _credentials: Vec<BTreeMap<String, Value>>,
+        _cmd: String,
+        _privesc_cmd: Option<String>,
+        _payload: Option<Vec<u8>>,
+        _payload_dst: Option<String>,
+        _timeout: Option<i64>,
+        _retries: Option<i64>,
+    ) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let mut map = BTreeMap::new();
+        map.insert("ip".into(), Value::String("127.0.0.1".to_string()));
+        map.insert("status".into(), Value::String("success".to_string()));
+        map.insert("principal".into(), Value::String("root".to_string()));
+        map.insert("stdout".into(), Value::String("fake output".to_string()));
+        map.insert("stderr".into(), Value::String("".to_string()));
+        map.insert("error".into(), Value::String("".to_string()));
+        Ok(vec![map])
+    }
 }

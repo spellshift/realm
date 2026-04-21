@@ -1082,6 +1082,44 @@ If the connection is successful but the copy writes a file error will be returne
 ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
 
+### pivot.ssh_deploy
+
+`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
+
+The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
+
+- `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `["10.0.0.1", "10.0.0.0/24"]`). Each entry may include an optional SSH port using `host:port` syntax (e.g. `"127.0.0.1:2222"` or `"10.0.0.1:2222/24"` to apply port `2222` to every host in the range). IPv6 addresses with a port must be bracketed (e.g. `"[::1]:2222"`). When no port is supplied the default SSH port `22` is used. All entries must be valid.
+- `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
+- `cmd` is the command to run on the remote system (ideally as root).
+- `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
+- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read_binary(path)` or `assets.read_binary(name)`.
+- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.
+- `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
+- `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
+
+`ssh_deploy` returns a list of per-attempt result dictionaries — one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.
+
+```json
+[
+    {
+        "ip": "10.0.0.1",
+        "status": "failed",
+        "principal": "admin",
+        "stdout": "",
+        "stderr": "",
+        "error": "authentication failed for 'admin' at 10.0.0.1:22: password authentication rejected for admin@10.0.0.1:22"
+    },
+    {
+        "ip": "10.0.0.1",
+        "status": "success",
+        "principal": "root",
+        "stdout": "uid=0(root) gid=0(root) groups=0(root)\n",
+        "stderr": "",
+        "error": ""
+    }
+]
+```
+
 ### pivot.ssh_exec
 
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`

@@ -136,6 +136,7 @@ fn test_pivot_bindings() {
             "reverse_shell_repl",
             // "smb_exec", // Not implemented in Fake
             "ssh_copy",
+            "ssh_deploy",
             "ssh_exec",
         ],
     );

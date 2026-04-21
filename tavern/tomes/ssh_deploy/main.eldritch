@@ -1,0 +1,94 @@
+def _strip_quotes(s):
+    s = s.strip()
+    if len(s) >= 2 and s[0] == '"' and s[-1] == '"':
+        return s[1:-1]
+    if len(s) >= 2 and s[0] == "'" and s[-1] == "'":
+        return s[1:-1]
+    return s
+
+def parse_ips(raw):
+    """Parse the ips input param into a list of strings.
+
+    Accepts either a JSON array (e.g. `["10.0.0.1", "10.0.0.0/24"]`) or a
+    simple bracketed, comma separated list (e.g. `[10.0.0.1, 10.0.0.0/24]`).
+    """
+    if raw == None:
+        return []
+    s = str(raw).strip()
+    if s == "":
+        return []
+    if s.startswith("[") and s.endswith("]"):
+        # Strip brackets and split on comma; works for both JSON-style and
+        # bare comma separated values. Each entry has surrounding quotes
+        # stripped so JSON-style inputs also work.
+        inner = s.removeprefix("[").removesuffix("]")
+        out = []
+        for part in inner.split(","):
+            cleaned = _strip_quotes(part)
+            if cleaned != "":
+                out.append(cleaned)
+        return out
+    return [s]
+
+def parse_credentials(raw):
+    """Parse the credentials input param into a list of {principal, password} dicts.
+
+    The input must be a JSON array of objects, e.g.
+    `[{"principal": "root", "password": "toor"}]`.
+    """
+    if raw == None:
+        return []
+    s = str(raw).strip()
+    if s == "":
+        return []
+    return crypto.from_json(s)
+
+def optional_str(raw):
+    if raw == None:
+        return None
+    s = str(raw)
+    if s == "":
+        return None
+    return s
+
+def optional_int(raw):
+    if raw == None:
+        return None
+    s = str(raw).strip()
+    if s == "":
+        return None
+    return int(s)
+
+def optional_payload(raw):
+    """Read an optional asset name into bytes for pivot.ssh_deploy.
+
+    Returns None if no asset name is provided, otherwise returns the asset
+    contents as bytes via assets.read_binary.
+    """
+    if raw == None:
+        return None
+    s = str(raw)
+    if s == "":
+        return None
+    return assets.read_binary(s)
+
+def ssh_deploy_tome():
+    ips = parse_ips(input_params.get("ips"))
+    credentials = parse_credentials(input_params.get("credentials"))
+    cmd = str(input_params.get("cmd", ""))
+
+    results = pivot.ssh_deploy(
+        ips,
+        credentials,
+        cmd,
+        optional_str(input_params.get("privesc_cmd")),
+        optional_payload(input_params.get("payload")),
+        optional_str(input_params.get("payload_dst")),
+        optional_int(input_params.get("timeout")),
+        optional_int(input_params.get("retries")),
+    )
+
+    tprint(results)
+
+ssh_deploy_tome()
+
