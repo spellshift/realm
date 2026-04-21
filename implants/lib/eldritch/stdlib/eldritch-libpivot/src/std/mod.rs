@@ -20,10 +20,42 @@ use eldritch_macros::eldritch_library_impl;
 use russh::{Disconnect, client};
 use russh_keys::{decode_secret_key, key};
 use russh_sftp::client::SftpSession;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 // Deps for Agent
 use eldritch_agent::{Agent, Context};
+
+/// Process-wide tokio runtime used by `ssh_deploy` when the caller is not
+/// already running inside a tokio context. Built lazily on first use and
+/// reused across invocations so we never construct a new runtime per call.
+/// Multi-threaded by construction so the worker pool can execute in parallel.
+static SSH_DEPLOY_RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
+
+/// Return a handle to a multi-threaded tokio runtime suitable for driving
+/// the concurrent `ssh_deploy` worker pool. Prefers the caller's ambient
+/// runtime (via [`tokio::runtime::Handle::try_current`]) when one exists
+/// — matching the guidance that we should reuse an existing runtime rather
+/// than construct a new one — and otherwise falls back to the lazily-built
+/// shared [`SSH_DEPLOY_RUNTIME`].
+fn ssh_deploy_runtime_handle() -> Result<tokio::runtime::Handle> {
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        return Ok(handle);
+    }
+    if let Some(rt) = SSH_DEPLOY_RUNTIME.get() {
+        return Ok(rt.handle().clone());
+    }
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
+    // If another thread raced us to install the runtime, discard ours and
+    // use theirs so there is a single shared runtime for the process.
+    let _ = SSH_DEPLOY_RUNTIME.set(rt);
+    Ok(SSH_DEPLOY_RUNTIME
+        .get()
+        .expect("runtime installed above")
+        .handle()
+        .clone())
+}
 
 #[derive(Default)]
 #[eldritch_library_impl(PivotLibrary)]
@@ -176,8 +208,11 @@ impl PivotLibrary for StdPivotLibrary {
         payload_dst: Option<String>,
         timeout: Option<i64>,
         retries: Option<i64>,
+        workers: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let handle = ssh_deploy_runtime_handle().map_err(|e| e.to_string())?;
         ssh_deploy_impl::ssh_deploy(
+            &handle,
             ips,
             credentials,
             cmd,
@@ -186,6 +221,7 @@ impl PivotLibrary for StdPivotLibrary {
             payload_dst,
             timeout,
             retries,
+            workers,
         )
         .map_err(|e| e.to_string())
     }

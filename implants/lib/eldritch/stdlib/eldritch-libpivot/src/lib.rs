@@ -189,6 +189,11 @@ pub trait PivotLibrary {
     /// - `retries` (`Option<int>`): Optional number of additional retry passes
     ///   over the full credential list on hosts that failed to connect.
     ///   Defaults to `0` (i.e. each credential is tried once per host).
+    /// - `workers` (`Option<int>`): Optional maximum number of concurrent
+    ///   hosts to process at once. Hosts are distributed across a worker
+    ///   pool; the pool size is `min(len(ips), workers)` so fewer targets
+    ///   than workers never spawns idle workers. Defaults to `10` and must
+    ///   be a positive integer.
     ///
     /// **Returns**
     /// - `List<Dict>`: One result dictionary per target IP with the keys:
@@ -212,6 +217,7 @@ pub trait PivotLibrary {
         payload_dst: Option<String>,
         timeout: Option<i64>,
         retries: Option<i64>,
+        workers: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]

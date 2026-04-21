@@ -1084,9 +1084,9 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 ### pivot.ssh_deploy
 
-`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
+`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>, workers: Optional<int>) -> List<Dict>`
 
-The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
+The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`. Hosts are processed concurrently by a worker pool so that large target lists complete quickly without requiring serial connection attempts.
 
 - `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `["10.0.0.1", "10.0.0.0/24"]`). Each entry may include an optional SSH port using `host:port` syntax (e.g. `"127.0.0.1:2222"` or `"10.0.0.1:2222/24"` to apply port `2222` to every host in the range). IPv6 addresses with a port must be bracketed (e.g. `"[::1]:2222"`). When no port is supplied the default SSH port `22` is used. All entries must be valid.
 - `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
@@ -1096,6 +1096,7 @@ The **pivot.ssh_deploy** method deploys a payload and/or command across a set of
 - `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.
 - `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
 - `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
+- `workers` is the maximum number of hosts that will be processed concurrently. Each target is assigned to one worker and the effective pool size is `min(len(ips), workers)`, so specifying more workers than targets never spawns idle workers. Defaults to `10` and must be positive.
 
 `ssh_deploy` returns a list of per-attempt result dictionaries — one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.
 

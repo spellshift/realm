@@ -2,6 +2,7 @@ use crate::std::Session;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::{Result, anyhow};
 use eldritch_core::Value;
@@ -10,6 +11,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use tokio::sync::{Mutex, mpsc};
 
 #[derive(Clone, Debug)]
 struct Credential {
@@ -187,6 +189,11 @@ struct DeployOutcome {
 const DEFAULT_TIMEOUT_SECS: u64 = 5;
 const DEFAULT_RETRIES: u32 = 0;
 const PROBE_TIMEOUT_SECS: u64 = 5;
+/// Default maximum number of concurrent SSH workers when the caller does not
+/// specify `workers`. Chosen to be high enough to hide per-host network
+/// latency on small fleets while remaining conservative with respect to
+/// sockets and memory on a beacon.
+const DEFAULT_WORKERS: usize = 10;
 
 fn resolve_timeout_secs(timeout: Option<i64>) -> Result<u64> {
     match timeout {
@@ -201,6 +208,19 @@ fn resolve_retries(retries: Option<i64>) -> Result<u32> {
         None => Ok(DEFAULT_RETRIES),
         Some(r) if r < 0 => Err(anyhow!("retries must be non-negative, got {r}")),
         Some(r) => Ok(r as u32),
+    }
+}
+
+/// Resolve the caller-supplied `workers` value, applying the default when
+/// unset. Negative or zero values are rejected. The returned value is the
+/// user's *requested* worker ceiling; the actual pool size is further
+/// clamped to `num_targets` by [`ssh_deploy`] so that we never spawn idle
+/// workers ("1 worker per target ip up to the limit of workers").
+fn resolve_workers(workers: Option<i64>) -> Result<usize> {
+    match workers {
+        None => Ok(DEFAULT_WORKERS),
+        Some(w) if w <= 0 => Err(anyhow!("workers must be a positive integer, got {w}")),
+        Some(w) => Ok(w as usize),
     }
 }
 
@@ -637,6 +657,7 @@ fn make_result(
 
 #[allow(clippy::too_many_arguments)]
 pub fn ssh_deploy(
+    runtime: &tokio::runtime::Handle,
     ips: Vec<String>,
     credentials: Vec<BTreeMap<String, Value>>,
     cmd: String,
@@ -645,32 +666,39 @@ pub fn ssh_deploy(
     payload_dst: Option<String>,
     timeout: Option<i64>,
     retries: Option<i64>,
+    workers: Option<i64>,
 ) -> Result<Vec<BTreeMap<String, Value>>> {
     let creds = parse_credentials(credentials)?;
     let targets = expand_targets(ips)?;
     let timeout_secs = resolve_timeout_secs(timeout)?;
     let retry_count = resolve_retries(retries)?;
+    let workers_limit = resolve_workers(workers)?;
 
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
+    // 1 worker per target, up to the caller's `workers` ceiling. There is no
+    // benefit to spawning more workers than there is work to do. We rely on
+    // the caller-provided runtime (which is assumed to be multi-threaded) to
+    // actually execute those workers in parallel across cores.
+    let pool_size = workers_limit.min(targets.len()).max(1);
 
-    // One row per (target, credential) combination actually attempted.
-    let mut results: Vec<BTreeMap<String, Value>> = Vec::new();
-    for target in targets {
-        let outcomes = runtime.block_on(handle_deploy_host(
-            target.clone(),
-            creds.clone(),
-            cmd.clone(),
-            privesc_cmd.clone(),
-            payload.clone(),
-            payload_dst.clone(),
-            timeout_secs,
-            retry_count,
-        ));
+    let results = runtime.block_on(run_worker_pool(
+        targets.clone(),
+        creds,
+        cmd,
+        privesc_cmd,
+        payload,
+        payload_dst,
+        timeout_secs,
+        retry_count,
+        pool_size,
+    ));
+
+    // Flatten per-target outcomes into the user-facing row format while
+    // preserving the caller's input ordering of targets.
+    let mut rows: Vec<BTreeMap<String, Value>> = Vec::new();
+    for (target, outcomes) in targets.iter().zip(results.into_iter()) {
         for outcome in outcomes {
-            results.push(make_result(
-                &target,
+            rows.push(make_result(
+                target,
                 outcome.status,
                 &outcome.principal,
                 &outcome.stdout,
@@ -679,8 +707,144 @@ pub fn ssh_deploy(
             ));
         }
     }
+    Ok(rows)
+}
 
-    Ok(results)
+/// A single unit of work dispatched to the worker pool: the target we are
+/// deploying to, and the index into the caller-provided target list so the
+/// coordinator can reassemble per-host outcomes in input order.
+struct Job {
+    index: usize,
+    target: String,
+}
+
+/// Run the worker pool and return one `Vec<DeployOutcome>` per input target,
+/// positioned at the same index as the target.
+///
+/// Workers follow a classic "share by communicating" pattern:
+///   * The coordinator sends every [`Job`] onto a job channel and then
+///     closes its sending end.
+///   * `pool_size` worker tasks pull from the shared receiver (serialized by
+///     a `tokio::sync::Mutex` around the `mpsc::Receiver`) until the channel
+///     is drained.
+///   * Each worker sends its `(index, outcomes)` pair onto a results
+///     channel; the coordinator collects them and drops them into the
+///     correct output slot.
+///
+/// No mutable state is shared between workers other than the short-lived
+/// lock used to pull the next job from the receiver; all outcome data flows
+/// through channels.
+#[allow(clippy::too_many_arguments)]
+async fn run_worker_pool(
+    targets: Vec<String>,
+    credentials: Vec<Credential>,
+    cmd: String,
+    privesc_cmd: Option<String>,
+    payload: Option<Vec<u8>>,
+    payload_dst: Option<String>,
+    timeout_secs: u64,
+    retries: u32,
+    pool_size: usize,
+) -> Vec<Vec<DeployOutcome>> {
+    let total = targets.len();
+
+    // Per-host outcomes, indexed by input position. Populated by the
+    // coordinator as workers report back, so no locking is required.
+    let mut outcomes_by_index: Vec<Vec<DeployOutcome>> = (0..total).map(|_| Vec::new()).collect();
+
+    if total == 0 {
+        return outcomes_by_index;
+    }
+
+    // Bounded job channel: capacity = total so the coordinator can hand off
+    // every job without blocking even if no worker has yet picked any up.
+    let (job_tx, job_rx) = mpsc::channel::<Job>(total);
+    let job_rx = Arc::new(Mutex::new(job_rx));
+
+    // Results channel carries (index, outcomes) so the coordinator can place
+    // each worker's output into the correct slot regardless of completion
+    // order.
+    let (result_tx, mut result_rx) = mpsc::channel::<(usize, Vec<DeployOutcome>)>(total);
+
+    // Immutable per-job inputs are wrapped in `Arc` so each worker can share
+    // a read-only view without deep-cloning the full vectors (credentials,
+    // payload bytes) on every job.
+    let credentials = Arc::new(credentials);
+    let cmd = Arc::new(cmd);
+    let privesc_cmd = Arc::new(privesc_cmd);
+    let payload = Arc::new(payload);
+    let payload_dst = Arc::new(payload_dst);
+
+    for _ in 0..pool_size {
+        let rx = Arc::clone(&job_rx);
+        let tx = result_tx.clone();
+        let credentials = Arc::clone(&credentials);
+        let cmd = Arc::clone(&cmd);
+        let privesc_cmd = Arc::clone(&privesc_cmd);
+        let payload = Arc::clone(&payload);
+        let payload_dst = Arc::clone(&payload_dst);
+        tokio::spawn(async move {
+            loop {
+                // Pop the next job. The lock is held only for the duration
+                // of `recv` and released before the long-running SSH work.
+                let job = {
+                    let mut guard = rx.lock().await;
+                    guard.recv().await
+                };
+                let Some(job) = job else {
+                    // Channel closed and drained: no more work.
+                    break;
+                };
+                let outcomes = handle_deploy_host(
+                    job.target,
+                    (*credentials).clone(),
+                    (*cmd).clone(),
+                    (*privesc_cmd).clone(),
+                    (*payload).clone(),
+                    (*payload_dst).clone(),
+                    timeout_secs,
+                    retries,
+                )
+                .await;
+                if tx.send((job.index, outcomes)).await.is_err() {
+                    // Coordinator went away; nothing more to do.
+                    break;
+                }
+            }
+        });
+    }
+
+    // Drop our result sender so the receiver sees `None` once every worker
+    // has exited.
+    drop(result_tx);
+
+    // Dispatch all jobs. We clone target strings into each `Job` rather than
+    // draining `targets`, because the caller needs the original ordering to
+    // build the final row list.
+    for (index, target) in targets.iter().enumerate() {
+        // `send` only fails if every receiver has dropped, which would only
+        // happen if every worker panicked. Treat that as a no-op; any
+        // missing slots will simply have no rows in the final output.
+        if job_tx
+            .send(Job {
+                index,
+                target: target.clone(),
+            })
+            .await
+            .is_err()
+        {
+            break;
+        }
+    }
+    // Closing the job channel lets workers observe end-of-work and exit.
+    drop(job_tx);
+
+    // Collect results. Workers have already filled each slot exactly once.
+    while let Some((index, outcomes)) = result_rx.recv().await {
+        outcomes_by_index[index] = outcomes;
+    }
+
+    outcomes_by_index
 }
 
 #[cfg(test)]
@@ -692,6 +856,22 @@ mod tests {
         m.insert("principal".into(), Value::String(principal.into()));
         m.insert("password".into(), Value::String(password.into()));
         m
+    }
+
+    /// A multi-threaded tokio runtime shared across tests. Built once via
+    /// `OnceLock` so we are never constructing a fresh runtime inside the
+    /// `ssh_deploy` path under test.
+    fn test_runtime_handle() -> tokio::runtime::Handle {
+        use std::sync::OnceLock;
+        static RT: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
+        RT.get_or_init(|| {
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .expect("build test runtime")
+        })
+        .handle()
+        .clone()
     }
 
     #[test]
@@ -814,9 +994,11 @@ mod tests {
     #[test]
     fn test_ssh_deploy_validates_inputs() {
         let res = ssh_deploy(
+            &test_runtime_handle(),
             vec![],
             vec![cred("root", "pw")],
             "echo hi".into(),
+            None,
             None,
             None,
             None,
@@ -826,9 +1008,11 @@ mod tests {
         assert!(res.is_err());
 
         let res = ssh_deploy(
+            &test_runtime_handle(),
             vec!["127.0.0.1".into()],
             vec![],
             "echo hi".into(),
+            None,
             None,
             None,
             None,
@@ -865,6 +1049,7 @@ mod tests {
     #[test]
     fn test_ssh_deploy_invalid_timeout() {
         let res = ssh_deploy(
+            &test_runtime_handle(),
             vec!["127.0.0.1".into()],
             vec![cred("root", "pw")],
             "echo hi".into(),
@@ -873,6 +1058,7 @@ mod tests {
             None,
             Some(0),
             None,
+            None,
         );
         assert!(res.is_err());
     }
@@ -880,6 +1066,7 @@ mod tests {
     #[test]
     fn test_ssh_deploy_invalid_retries() {
         let res = ssh_deploy(
+            &test_runtime_handle(),
             vec!["127.0.0.1".into()],
             vec![cred("root", "pw")],
             "echo hi".into(),
@@ -888,8 +1075,78 @@ mod tests {
             None,
             None,
             Some(-1),
+            None,
         );
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_resolve_workers_defaults() {
+        assert_eq!(resolve_workers(None).unwrap(), DEFAULT_WORKERS);
+        assert_eq!(resolve_workers(Some(1)).unwrap(), 1);
+        assert_eq!(resolve_workers(Some(64)).unwrap(), 64);
+    }
+
+    #[test]
+    fn test_resolve_workers_invalid() {
+        assert!(resolve_workers(Some(0)).is_err());
+        assert!(resolve_workers(Some(-1)).is_err());
+    }
+
+    #[test]
+    fn test_ssh_deploy_invalid_workers() {
+        let res = ssh_deploy(
+            &test_runtime_handle(),
+            vec!["127.0.0.1".into()],
+            vec![cred("root", "pw")],
+            "echo hi".into(),
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(0),
+        );
+        assert!(res.is_err());
+    }
+
+    /// Drive the worker pool against many targets with a tiny per-attempt
+    /// timeout so every target "fails fast". This exercises the
+    /// share-by-communicating plumbing (job channel, results channel,
+    /// index-preserving collation) end-to-end without needing a real SSH
+    /// server, and verifies that the pool returns one row per target in
+    /// input order.
+    #[test]
+    fn test_ssh_deploy_worker_pool_preserves_order() {
+        // Use RFC 5737 TEST-NET-1 addresses so connection attempts fail
+        // immediately (no listener) rather than hanging on routable hosts.
+        let ips: Vec<String> = (1..=20).map(|i| format!("192.0.2.{i}:22")).collect();
+        let res = ssh_deploy(
+            &test_runtime_handle(),
+            ips.clone(),
+            vec![cred("root", "pw")],
+            "true".into(),
+            None,
+            None,
+            None,
+            Some(1), // 1s per connection timeout
+            None,
+            Some(8), // 8 workers; pool_size = min(8, 20) = 8
+        )
+        .expect("ssh_deploy should return per-host failures, not error out");
+        assert_eq!(res.len(), ips.len());
+        for (row, expected_ip) in res.iter().zip(ips.iter()) {
+            assert_eq!(
+                row.get("ip"),
+                Some(&Value::String(expected_ip.clone())),
+                "row out of order or missing: {row:?}"
+            );
+            assert_eq!(
+                row.get("status"),
+                Some(&Value::String("failed".to_string())),
+                "row: {row:?}"
+            );
+        }
     }
 
     /// Manual/local integration test: run
@@ -902,9 +1159,11 @@ mod tests {
     #[ignore]
     fn ssh_deploy_against_sshecho() {
         let res = ssh_deploy(
+            &test_runtime_handle(),
             vec!["127.0.0.1:2223".into()],
             vec![cred("root", "changeme")],
             "whoami".into(),
+            None,
             None,
             None,
             None,
@@ -939,9 +1198,11 @@ mod tests {
     #[ignore]
     fn ssh_deploy_against_sshecho_bad_password() {
         let res = ssh_deploy(
+            &test_runtime_handle(),
             vec!["127.0.0.1:2224".into()],
             vec![cred("alice", "wrong")],
             "whoami".into(),
+            None,
             None,
             None,
             None,

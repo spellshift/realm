@@ -36,3 +36,7 @@ paramdefs:
   type: int
   label: Optional number of additional retry passes on connection failures (leave blank for default 0)
   placeholder: "0"
+- name: workers
+  type: int
+  label: Optional maximum number of hosts to connect to concurrently (leave blank for default 10)
+  placeholder: "10"

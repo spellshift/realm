@@ -86,6 +86,7 @@ def ssh_deploy_tome():
         optional_str(input_params.get("payload_dst")),
         optional_int(input_params.get("timeout")),
         optional_int(input_params.get("retries")),
+        optional_int(input_params.get("workers")),
     )
 
     tprint(results)

@@ -100,6 +100,7 @@ impl PivotLibrary for PivotLibraryFake {
         _payload_dst: Option<String>,
         _timeout: Option<i64>,
         _retries: Option<i64>,
+        _workers: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
         let mut map = BTreeMap::new();
         map.insert("ip".into(), Value::String("127.0.0.1".to_string()));
