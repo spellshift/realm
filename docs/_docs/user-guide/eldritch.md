@@ -1097,10 +1097,18 @@ The **pivot.ssh_deploy** method deploys a payload and/or command across a set of
 - `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
 - `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
 
-`ssh_deploy` returns a list of per-host result dictionaries:
+`ssh_deploy` returns a list of per-attempt result dictionaries — one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.
 
 ```json
 [
+    {
+        "ip": "10.0.0.1",
+        "status": "failed",
+        "principal": "admin",
+        "stdout": "",
+        "stderr": "",
+        "error": "authentication failed for 'admin' at 10.0.0.1:22: password authentication rejected for admin@10.0.0.1:22"
+    },
     {
         "ip": "10.0.0.1",
         "status": "success",
