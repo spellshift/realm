@@ -95,6 +95,10 @@ const cache = new InMemoryCache({
         activeShells: relayStylePagination(),
       },
     },
+    Metrics: {
+      keyFields: false,
+      merge: true,
+    },
   },
 });
 

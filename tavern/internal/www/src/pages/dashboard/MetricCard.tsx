@@ -1,7 +1,7 @@
 import { FC, ReactNode } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, MoveRight } from "lucide-react";
 
-type TrendDirection = "up" | "down";
+type TrendDirection = "up" | "down" | "same";
 
 interface MetricCardProps {
     label?: string;
@@ -14,6 +14,7 @@ interface MetricCardProps {
 const TREND_ICON: Record<TrendDirection, ReactNode> = {
     up: <TrendingUp className="w-4 h-4 text-green-600" />,
     down: <TrendingDown className="w-4 h-4 text-red-600" />,
+    same: <MoveRight className="w-4 h-4 text-gray-600" />,
 };
 
 export const MetricCard: FC<MetricCardProps> = ({ label, count, timeframe, trend, trendValue }) => {

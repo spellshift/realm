@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@apollo/client";
 import moment from "moment";
 import { TIME_RANGES, TIME_RANGE_CONFIG, TimeRange, computeTimeWindow } from "../utils/timeRange";
-import { ALL_TACTICS, GET_QUEST_TIMELINE_CHART, GET_QUEST_FILTERED_TIMELINE_CHART } from "./config";
+import { ALL_TACTICS, GET_QUEST_TIMELINE_CHART } from "./config";
 import { computeMetric } from "./computeMetric";
 import { ChartDataPoint, QuestTimelineChartResponse } from "../utils/types";
 
@@ -26,16 +26,7 @@ export const useQuestTimelineChart = () => {
         {
             variables: queryVariables,
             fetchPolicy: "cache-and-network",
-            pollInterval: 5000,
-        }
-    );
-
-    const { data: outputData } = useQuery<QuestTimelineChartResponse>(
-        GET_QUEST_FILTERED_TIMELINE_CHART,
-        {
-            variables: { ...queryVariables, where: { hasTasksWith: [{ outputNotNil: true }] } },
-            fetchPolicy: "cache-and-network",
-            pollInterval: 5000,
+            pollInterval: 30000,
         }
     );
 

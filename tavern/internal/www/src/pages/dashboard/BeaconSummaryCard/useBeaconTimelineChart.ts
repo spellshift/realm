@@ -26,7 +26,7 @@ export const useBeaconTimelineChart = () => {
         {
             variables: queryVariables,
             fetchPolicy: "cache-and-network",
-            pollInterval: 5000,
+            pollInterval: 30000,
         }
     );
 

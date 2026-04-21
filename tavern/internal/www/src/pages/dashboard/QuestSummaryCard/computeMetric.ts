@@ -2,7 +2,7 @@ import { TimelineDataPoint } from "../utils/types";
 
 export type TimelineMetric = {
     count: number;
-    trend?: "up" | "down";
+    trend?: "up" | "down" | "same";
     timeframe?: string;
     trendValue?: string;
 };
@@ -17,8 +17,8 @@ export const computeMetric = (chartData: TimelineDataPoint[]): TimelineMetric =>
     const start = buckets[0];
     const end = buckets[buckets.length - 1];
 
-    const trend: "up" | "down" | undefined =
-        end.total === start.total ? undefined : end.total > start.total ? "up" : "down";
+    const trend: "up" | "down" | "same" | undefined =
+        end.total === start.total ? "same" : end.total > start.total ? "up" : "down";
 
     const trendValue = start.total === 0
         ? undefined

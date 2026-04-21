@@ -4,6 +4,8 @@ import { FileTerminal } from "lucide-react";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { QuestSummaryCard } from "./QuestSummaryCard";
 import { BeaconSummaryCard } from "./BeaconSummaryCard";
+import { TagSummaryCard } from "./TagSummaryCard";
+import { ErrorBoundary } from "../../components/ErrorBoundary";
 
 export const Dashboard = () => {
     const { openModal } = useCreateQuestModal();
@@ -26,8 +28,9 @@ export const Dashboard = () => {
                 </div>
             </div>
             <div className="flex flex-col gap-2">
-                <QuestSummaryCard />
-                <BeaconSummaryCard />
+                <ErrorBoundary><QuestSummaryCard /></ErrorBoundary>
+                <ErrorBoundary><BeaconSummaryCard /></ErrorBoundary>
+                <ErrorBoundary><TagSummaryCard /></ErrorBoundary>
             </div>
         </>
     );
