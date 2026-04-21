@@ -29,6 +29,13 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+const (
+	// winrmEnvelopeSize is the maximum SOAP envelope size in bytes sent to WinRM.
+	winrmEnvelopeSize = 153600
+	// ioBufferSize is the size of the read buffer used for stdout/stderr streams.
+	ioBufferSize = 1024
+)
+
 // PivotSession represents an active WinRM session that can be shared among multiple websockets.
 type PivotSession struct {
 	PivotID       int
@@ -353,7 +360,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Build WinRM client with custom Dial that routes through the portal
-		params := winrmlib.NewParameters("PT60S", "en-US", 153600)
+		params := winrmlib.NewParameters("PT60S", "en-US", winrmEnvelopeSize)
 		params.Dial = dial
 
 		endpoint := winrmlib.NewEndpoint(host, winrmPort, false, true, nil, nil, nil, 30*time.Second)
@@ -426,7 +433,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Background goroutine: stdout -> broadcast to websockets
 		go func() {
-			buf := make([]byte, 1024)
+			buf := make([]byte, ioBufferSize)
 			for {
 				n, err := cmd.Stdout.Read(buf)
 				if n > 0 {
@@ -444,7 +451,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Background goroutine: stderr -> broadcast to websockets
 		go func() {
-			buf := make([]byte, 1024)
+			buf := make([]byte, ioBufferSize)
 			for {
 				n, err := cmd.Stderr.Read(buf)
 				if n > 0 {
