@@ -16,3 +16,7 @@ paramdefs:
   type: bool
   label: Should TLS certificates be ignored
   placeholder: "False"
+- name: proxy
+  type: string
+  label: Optional proxy URL to route the request through (leave blank for no proxy)
+  placeholder: "http://127.0.0.1:8080"

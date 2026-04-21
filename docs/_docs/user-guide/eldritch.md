@@ -936,21 +936,23 @@ The `http` library allows the agent to send HTTP and HTTPS requests over the net
 
 The HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`).
 
+All methods accept an optional `proxy` parameter, which is the URL of a proxy (e.g. `http://127.0.0.1:8080`) that requests will be routed through. If omitted, no proxy is used.
+
 ### http.download
 
-`http.download(uri: str, dst: str, allow_insecure: Option<bool>) -> None`
+`http.download(uri: str, dst: str, allow_insecure: Option<bool>, proxy: Option<str>) -> None`
 
 The **http.download** method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten.
 
 ### http.get
 
-`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>, proxy: Option<str>) -> str`
 
 The **http.get** method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 
 ### http.post
 
-`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>, proxy: Option<str>) -> str`
 
 The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 

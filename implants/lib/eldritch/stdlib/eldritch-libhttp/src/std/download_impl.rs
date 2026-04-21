@@ -4,7 +4,12 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-pub fn download(mut uri: String, dst: String, allow_insecure: Option<bool>) -> Result<(), String> {
+pub fn download(
+    mut uri: String,
+    dst: String,
+    allow_insecure: Option<bool>,
+    proxy: Option<String>,
+) -> Result<(), String> {
     if !uri.starts_with("http://") && !uri.starts_with("https://") {
         uri = format!("https://{}", uri);
     }
@@ -15,8 +20,14 @@ pub fn download(mut uri: String, dst: String, allow_insecure: Option<bool>) -> R
         .map_err(|e| format!("Failed to create runtime: {e}"))?;
 
     runtime.block_on(async {
-        let client = reqwest::Client::builder()
-            .danger_accept_invalid_certs(allow_insecure.unwrap_or(false))
+        let mut builder =
+            reqwest::Client::builder().danger_accept_invalid_certs(allow_insecure.unwrap_or(false));
+        if let Some(proxy_url) = proxy {
+            let p = reqwest::Proxy::all(&proxy_url)
+                .map_err(|e| format!("Invalid proxy URL {proxy_url}: {e}"))?;
+            builder = builder.proxy(p);
+        }
+        let client = builder
             .build()
             .map_err(|e| format!("Failed to build client: {e}"))?;
 
@@ -65,6 +76,7 @@ mod tests {
             "this-domain-will-not-exist-ever-123.com".to_string(),
             path,
             None,
+            None,
         );
         let err = res.unwrap_err();
         assert!(
@@ -87,7 +99,7 @@ mod tests {
 
         let url = server.url("/foo").to_string();
 
-        download(url, path.clone(), None).unwrap();
+        download(url, path.clone(), None, None).unwrap();
 
         let content = read_to_string(&path).unwrap();
         assert_eq!(content, "test body");

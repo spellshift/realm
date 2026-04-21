@@ -1,16 +1,20 @@
-def get_http_file(remote_src, local_dst, insecure):
+def get_http_file(remote_src, local_dst, insecure, proxy):
     if file.is_dir(file.parent_dir(local_dst)):
         if file.is_file(local_dst):
             file.remove(local_dst)
-        http.download(remote_src, local_dst, insecure)
+        http.download(remote_src, local_dst, insecure, proxy)
     else:
         eprint("Specified path has no parent directory")
 
 def main():
+    proxy = input_params.get('proxy', '')
+    if proxy == '':
+        proxy = None
     get_http_file(
         input_params['url'],
         input_params['dst'],
-        input_params['insecure'].lower() == "true"
+        input_params['insecure'].lower() == "true",
+        proxy,
     )
 
 main()
