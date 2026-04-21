@@ -60,17 +60,17 @@ def optional_int(raw):
     return int(s)
 
 def optional_payload(raw):
-    """Read an optional local payload path into bytes for pivot.ssh_deploy.
+    """Read an optional asset name into bytes for pivot.ssh_deploy.
 
-    Returns None if no path is provided, otherwise returns the file contents
-    as bytes via file.read_binary.
+    Returns None if no asset name is provided, otherwise returns the asset
+    contents as bytes via assets.read_binary.
     """
     if raw == None:
         return None
     s = str(raw)
     if s == "":
         return None
-    return file.read_binary(s)
+    return assets.read_binary(s)
 
 def ssh_deploy_tome():
     ips = parse_ips(input_params.get("ips"))
