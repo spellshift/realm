@@ -179,10 +179,11 @@ pub trait PivotLibrary {
     /// - `cmd` (`str`): Command to run on the remote system (ideally as root).
     /// - `privesc_cmd` (`Option<str>`): Optional privilege escalation command
     ///   to run when the effective user is not root.
-    /// - `payload` (`Option<str>`): Optional local path to a binary payload to
-    ///   copy to the remote system.
+    /// - `payload` (`Option<bytes>`): Optional raw payload bytes to copy to
+    ///   the remote system (for example the result of `file.read_binary(...)`
+    ///   or `assets.read_binary(...)`).
     /// - `payload_dst` (`Option<str>`): Optional destination path on the remote
-    ///   system for the payload. Defaults to `/tmp/<basename(payload)>`.
+    ///   system for the payload. Defaults to `/tmp/payload`.
     /// - `timeout` (`Option<int>`): Optional per-connection timeout in seconds
     ///   applied to each SSH authentication attempt. Defaults to `5`.
     /// - `retries` (`Option<int>`): Optional number of additional retry passes
@@ -207,7 +208,7 @@ pub trait PivotLibrary {
         credentials: Vec<BTreeMap<String, Value>>,
         cmd: String,
         privesc_cmd: Option<String>,
-        payload: Option<String>,
+        payload: Option<Vec<u8>>,
         payload_dst: Option<String>,
         timeout: Option<i64>,
         retries: Option<i64>,

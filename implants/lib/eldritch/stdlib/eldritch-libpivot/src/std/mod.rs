@@ -172,7 +172,7 @@ impl PivotLibrary for StdPivotLibrary {
         credentials: Vec<BTreeMap<String, Value>>,
         cmd: String,
         privesc_cmd: Option<String>,
-        payload: Option<String>,
+        payload: Option<Vec<u8>>,
         payload_dst: Option<String>,
         timeout: Option<i64>,
         retries: Option<i64>,
@@ -254,6 +254,19 @@ impl Session {
         let mut dst_file = sftp.create(dst).await?;
         let mut src_file = tokio::io::BufReader::new(tokio::fs::File::open(src).await?);
         let _bytes_copied = tokio::io::copy_buf(&mut src_file, &mut dst_file).await?;
+
+        Ok(())
+    }
+
+    pub async fn copy_bytes(&mut self, src: &[u8], dst: &str) -> anyhow::Result<()> {
+        let mut channel = self.session.channel_open_session().await?;
+        channel.request_subsystem(true, "sftp").await.unwrap();
+        let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
+
+        let _ = sftp.remove_file(dst).await;
+        let mut dst_file = sftp.create(dst).await?;
+        let mut src_reader = src;
+        let _bytes_copied = tokio::io::copy(&mut src_reader, &mut dst_file).await?;
 
         Ok(())
     }
