@@ -1,8 +1,8 @@
 package sshecho
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/rsa"
 	"fmt"
 	"io"
 	"log"
@@ -61,7 +61,12 @@ func Run(addr string, user string, password string, pubkeyFile string, systemAut
 		}
 	}
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	// Use Ed25519 for the host key. RSA keys created via ssh.NewSignerFromKey
+	// advertise only the legacy "ssh-rsa" (SHA-1) algorithm, which modern SSH
+	// clients (including the russh-based pivot.ssh_deploy) reject, causing a
+	// "No common key algorithm" handshake failure. Ed25519 is widely supported
+	// and avoids this negotiation issue.
+	_, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %v", err)
 	}
