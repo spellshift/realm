@@ -166,6 +166,15 @@ fn shell_quote(s: &str) -> String {
     out
 }
 
+/// Outcome of a single `(ip, principal)` credential attempt against a host.
+///
+/// Each attempted credential produces one `DeployOutcome`. A `status` of
+/// `"success"` means the SSH handshake, authentication, optional payload
+/// copy, and command execution all completed (and `stdout`/`stderr` carry the
+/// remote command's output). A `status` of `"failed"` means one of those
+/// steps failed; `error` carries a human-readable description of the
+/// failure, including (for negotiation errors) the server's advertised
+/// algorithm list obtained via a raw KEXINIT probe.
 #[derive(Debug, Clone)]
 struct DeployOutcome {
     principal: String,
@@ -213,7 +222,10 @@ struct ServerAlgos {
 /// Read a single `uint32`-prefixed, comma-separated name-list from an SSH
 /// binary packet payload at offset `i`, advancing `i` past the list.
 fn read_namelist(payload: &[u8], i: &mut usize) -> Result<Vec<String>> {
-    if payload.len() < *i + 4 {
+    let len_end = i
+        .checked_add(4)
+        .ok_or_else(|| anyhow!("name-list offset overflow"))?;
+    if payload.len() < len_end {
         return Err(anyhow!("truncated name-list length"));
     }
     let len = u32::from_be_bytes([
@@ -222,13 +234,16 @@ fn read_namelist(payload: &[u8], i: &mut usize) -> Result<Vec<String>> {
         payload[*i + 2],
         payload[*i + 3],
     ]) as usize;
-    *i += 4;
-    if payload.len() < *i + len {
+    *i = len_end;
+    let data_end = i
+        .checked_add(len)
+        .ok_or_else(|| anyhow!("name-list length overflow"))?;
+    if payload.len() < data_end {
         return Err(anyhow!("truncated name-list"));
     }
-    let s = core::str::from_utf8(&payload[*i..*i + len])
+    let s = core::str::from_utf8(&payload[*i..data_end])
         .map_err(|e| anyhow!("invalid name-list utf8: {e}"))?;
-    *i += len;
+    *i = data_end;
     if s.is_empty() {
         Ok(Vec::new())
     } else {
@@ -405,7 +420,7 @@ async fn describe_connect_error(err: &anyhow::Error, target: &str, principal: &s
             }
             russh::Error::Disconnect => {
                 return format!(
-                    "connection to {target} was closed by the remote server during SSH handshake/authentication as '{principal}'; this typically indicates the credentials were rejected or the server's MaxAuthTries was exceeded"
+                    "connection to {target} was closed by the remote server during SSH handshake/authentication as '{principal}'; this typically indicates the credentials were rejected or a server-side authentication limit was reached"
                 );
             }
             russh::Error::HUP => {
