@@ -101,6 +101,7 @@ const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inline
                             marginRight:  showCopyButton ? "2rem" : "0rem",
                             borderRadius: "0.375rem",
                             fontSize: "0.8rem",
+                            whiteSpace: "pre",
                             overflowX: "auto",
                         }}
                     >
