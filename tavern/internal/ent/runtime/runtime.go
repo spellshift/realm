@@ -21,6 +21,8 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/oauthclient"
+	"realm.pub/tavern/internal/ent/oauthcode"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -412,6 +414,47 @@ func init() {
 	notificationDescArchived := notificationFields[2].Descriptor()
 	// notification.DefaultArchived holds the default value on creation for the archived field.
 	notification.DefaultArchived = notificationDescArchived.Default.(bool)
+	oauthclientMixin := schema.OAuthClient{}.Mixin()
+	oauthclientMixinFields0 := oauthclientMixin[0].Fields()
+	_ = oauthclientMixinFields0
+	oauthclientFields := schema.OAuthClient{}.Fields()
+	_ = oauthclientFields
+	// oauthclientDescCreatedAt is the schema descriptor for created_at field.
+	oauthclientDescCreatedAt := oauthclientMixinFields0[0].Descriptor()
+	// oauthclient.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oauthclient.DefaultCreatedAt = oauthclientDescCreatedAt.Default.(func() time.Time)
+	// oauthclientDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	oauthclientDescLastModifiedAt := oauthclientMixinFields0[1].Descriptor()
+	// oauthclient.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	oauthclient.DefaultLastModifiedAt = oauthclientDescLastModifiedAt.Default.(func() time.Time)
+	// oauthclient.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	oauthclient.UpdateDefaultLastModifiedAt = oauthclientDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// oauthclientDescClientID is the schema descriptor for client_id field.
+	oauthclientDescClientID := oauthclientFields[0].Descriptor()
+	// oauthclient.ClientIDValidator is a validator for the "client_id" field. It is called by the builders before save.
+	oauthclient.ClientIDValidator = oauthclientDescClientID.Validators[0].(func(string) error)
+	oauthcodeFields := schema.OAuthCode{}.Fields()
+	_ = oauthcodeFields
+	// oauthcodeDescCode is the schema descriptor for code field.
+	oauthcodeDescCode := oauthcodeFields[0].Descriptor()
+	// oauthcode.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	oauthcode.CodeValidator = oauthcodeDescCode.Validators[0].(func(string) error)
+	// oauthcodeDescRedirectURI is the schema descriptor for redirect_uri field.
+	oauthcodeDescRedirectURI := oauthcodeFields[1].Descriptor()
+	// oauthcode.RedirectURIValidator is a validator for the "redirect_uri" field. It is called by the builders before save.
+	oauthcode.RedirectURIValidator = oauthcodeDescRedirectURI.Validators[0].(func(string) error)
+	// oauthcodeDescCodeChallenge is the schema descriptor for code_challenge field.
+	oauthcodeDescCodeChallenge := oauthcodeFields[2].Descriptor()
+	// oauthcode.CodeChallengeValidator is a validator for the "code_challenge" field. It is called by the builders before save.
+	oauthcode.CodeChallengeValidator = oauthcodeDescCodeChallenge.Validators[0].(func(string) error)
+	// oauthcodeDescCodeChallengeMethod is the schema descriptor for code_challenge_method field.
+	oauthcodeDescCodeChallengeMethod := oauthcodeFields[3].Descriptor()
+	// oauthcode.DefaultCodeChallengeMethod holds the default value on creation for the code_challenge_method field.
+	oauthcode.DefaultCodeChallengeMethod = oauthcodeDescCodeChallengeMethod.Default.(string)
+	// oauthcodeDescClaimed is the schema descriptor for claimed field.
+	oauthcodeDescClaimed := oauthcodeFields[5].Descriptor()
+	// oauthcode.DefaultClaimed holds the default value on creation for the claimed field.
+	oauthcode.DefaultClaimed = oauthcodeDescClaimed.Default.(bool)
 	portalMixin := schema.Portal{}.Mixin()
 	portalMixinFields0 := portalMixin[0].Fields()
 	_ = portalMixinFields0
