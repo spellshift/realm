@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -71,8 +72,27 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 	if options.CachePath != "" {
 		tokenData, err := os.ReadFile(options.CachePath)
 		if err == nil {
-			slog.Debug("Loaded authentication credentials from cache", "path", options.CachePath)
-			return Token(tokenData), nil
+			cachedToken := Token(tokenData)
+			valid, valErr := validateToken(ctx, tavernURL, cachedToken)
+			switch {
+			case valErr != nil:
+				// Unable to verify the cached token (e.g. network error).
+				// Return the cached value optimistically rather than
+				// forcing a re-authentication for transient failures.
+				slog.Warn("failed to verify cached auth token, using cached value", "path", options.CachePath, "error", valErr)
+				return cachedToken, nil
+			case valid:
+				slog.Debug("Loaded authentication credentials from cache", "path", options.CachePath)
+				return cachedToken, nil
+			default:
+				// Cached credentials were rejected by the server. Remove the
+				// stale cache file and fall through so a fresh authentication
+				// flow can proceed without the invalid cache interfering.
+				slog.Warn("cached auth token was rejected, removing cache file and re-authenticating", "path", options.CachePath)
+				if rmErr := os.Remove(options.CachePath); rmErr != nil && !os.IsNotExist(rmErr) {
+					slog.Warn("failed to remove invalid credential cache", "path", options.CachePath, "error", rmErr)
+				}
+			}
 		} else if !os.IsNotExist(err) {
 			slog.Warn("failed to read credential cache", "path", options.CachePath, "error", err)
 		}
@@ -168,6 +188,51 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		}
 		return token, nil
 	}
+}
+
+// validateToken verifies that the provided token is still accepted by the tavern
+// server at tavernURL. It returns (true, nil) if the server accepts the token,
+// (false, nil) if the server explicitly rejects it as unauthorized, and an error
+// if the request could not be completed (e.g. network failure, invalid URL).
+//
+// Validation is performed by issuing a minimal GraphQL request against the
+// tavern `/graphql` endpoint, which already requires authentication. Relying on
+// an endpoint that is inherently authenticated avoids turning an otherwise
+// unauthenticated endpoint (such as `/status`) into a dedicated token
+// validity oracle.
+//
+// Callers should retain the cached credentials when an error is returned so that
+// transient failures do not evict otherwise-valid credentials from the cache.
+func validateToken(ctx context.Context, tavernURL string, token Token) (bool, error) {
+	u, err := url.Parse(tavernURL)
+	if err != nil {
+		return false, fmt.Errorf("%w: %v", ErrInvalidURL, err)
+	}
+	u.Path = "/graphql"
+	u.RawQuery = ""
+
+	reqCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	// Minimal authenticated GraphQL query. The `me` query requires an
+	// authenticated user and is used purely to probe whether the cached
+	// token is accepted by the server's auth middleware.
+	body := strings.NewReader(`{"query":"{ me { id } }"}`)
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPost, u.String(), body)
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	token.Authenticate(req)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+	// Drain the body so the underlying connection can be reused.
+	io.Copy(io.Discard, resp.Body)
+
+	return resp.StatusCode != http.StatusUnauthorized, nil
 }
 
 // newTokenHandler returns an HTTP handler that parses a token from an HTTP request.
