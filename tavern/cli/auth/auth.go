@@ -230,7 +230,7 @@ func validateToken(ctx context.Context, tavernURL string, token Token) (bool, er
 	}
 	defer resp.Body.Close()
 	// Drain the body so the underlying connection can be reused.
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	return resp.StatusCode != http.StatusUnauthorized, nil
 }

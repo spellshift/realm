@@ -229,7 +229,11 @@ func TestAuthenticate_CacheInvalidIsCleanedUp(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	_, _ = auth.Authenticate(ctx, nil, srv.URL, auth.WithCacheFile(cachePath))
+	_, err := auth.Authenticate(ctx, nil, srv.URL, auth.WithCacheFile(cachePath))
+	// The remote device auth flow cannot complete in this test, so we
+	// expect Authenticate to surface a deadline-related error. We only
+	// care that the cache file was cleaned up before that happened.
+	assert.Error(t, err, "expected Authenticate to return an error once RDA times out")
 
 	// Cache file must be removed after the server rejects the cached token.
 	_, statErr := os.Stat(cachePath)
