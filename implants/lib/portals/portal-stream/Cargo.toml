@@ -4,6 +4,7 @@ version = "0.4.0"
 edition = "2024"
 
 [features]
+verbose-logging = ["pb/verbose-logging"]
 default = ["tokio"]
 tokio = ["dep:tokio"]
 

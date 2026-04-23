@@ -9,6 +9,7 @@ eldritch-macros = { workspace = true }
 regex = { workspace = true, optional = true }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging"]
 default = ["stdlib"]
 stdlib = ["dep:regex"]
 fake_bindings = []

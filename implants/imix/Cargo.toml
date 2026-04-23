@@ -7,6 +7,7 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
+verbose-logging = ["portal-stream/verbose-logging", "eldritch/verbose-logging", "eldritch-agent/verbose-logging", "transport/verbose-logging", "pb/verbose-logging", "eldritch-libchain/verbose-logging", "transport/verbose-logging"]
 default = ["install", "grpc", "http1", "dns", "doh", "icmp", "tcp-bind"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]

@@ -59,7 +59,7 @@ impl Transport for TcpBindTransport {
             .map(|t| t.uri.clone())
             .ok_or_else(|| anyhow!("No transports configured"))?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::info!("[tcp-bind] new() with uri: {}", uri);
 
         // Expect URI to look like tcp://0.0.0.0:8443
@@ -75,13 +75,13 @@ impl Transport for TcpBindTransport {
             ));
         };
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::info!("[tcp-bind] bind address: {}", addr);
 
         // If we already have a cached channel for this addr, reuse it.
         if let Some((cached_addr, _stream, cached_grpc)) = TCP_BIND_CACHE.get() {
             if cached_addr == &addr {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::debug!("[tcp-bind] reusing cached gRPC channel for {}", addr);
                 return Ok(Self {
                     grpc: Some(cached_grpc.clone()),
@@ -96,7 +96,7 @@ impl Transport for TcpBindTransport {
         }
 
         // First call: bind the listener using synchronous std API (safe to call outside async context).
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::info!(
             "[tcp-bind] binding TCP listener at {} — waiting for Agent A to connect",
             addr
@@ -112,24 +112,24 @@ impl Transport for TcpBindTransport {
         let channel = endpoint.connect_with_connector_lazy(tower::service_fn(
             move |uri: tonic::transport::Uri| {
                 let stream_clone = stream_for_connector.clone();
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::debug!("[tcp-bind] connector called for uri: {}", uri);
                 async move {
                     use tokio_stream::StreamExt;
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "verbose-logging")]
                     log::debug!("[tcp-bind] connector: waiting for next TCP connection...");
                     let mut guard = stream_clone.lock().await;
                     if let Some(conn) = guard.next().await {
                         match conn {
                             Ok(c) => {
-                                #[cfg(debug_assertions)]
+                                #[cfg(feature = "verbose-logging")]
                                 log::info!(
                                     "[tcp-bind] connector: accepted connection from Agent A"
                                 );
                                 Ok(hyper_util::rt::TokioIo::new(c))
                             }
                             Err(e) => {
-                                #[cfg(debug_assertions)]
+                                #[cfg(feature = "verbose-logging")]
                                 log::error!("[tcp-bind] connector: accept error: {}", e);
                                 Err(std::io::Error::new(
                                     std::io::ErrorKind::Other,
@@ -138,7 +138,7 @@ impl Transport for TcpBindTransport {
                             }
                         }
                     } else {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "verbose-logging")]
                         log::error!("[tcp-bind] connector: TCP listener stream closed");
                         Err(std::io::Error::new(
                             std::io::ErrorKind::BrokenPipe,
@@ -150,7 +150,7 @@ impl Transport for TcpBindTransport {
         ));
 
         let grpc = tonic::client::Grpc::new(channel);
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::info!("[tcp-bind] gRPC channel created, transport ready");
 
         // Cache the stream + channel for future cycles.
@@ -160,7 +160,7 @@ impl Transport for TcpBindTransport {
     }
 
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::debug!("[tcp-bind] claim_tasks()");
         let resp = self.claim_tasks_impl(request).await?;
         Ok(resp.into_inner())
@@ -217,7 +217,7 @@ impl Transport for TcpBindTransport {
         &mut self,
         request: ReportOutputRequest,
     ) -> Result<ReportOutputResponse> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::debug!("[tcp-bind] report_output()");
         let resp = self.report_output_impl(request).await?;
         Ok(resp.into_inner())
@@ -300,24 +300,24 @@ impl Transport for TcpBindTransport {
 impl TcpBindTransport {
     async fn check_ready(&mut self) -> Result<(), tonic::Status> {
         if self.grpc.is_none() {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "verbose-logging")]
             log::error!("[tcp-bind] check_ready: grpc client is None");
             return Err(tonic::Status::new(
                 tonic::Code::FailedPrecondition,
                 "grpc client not created".to_string(),
             ));
         }
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::debug!("[tcp-bind] check_ready: waiting for gRPC channel to be ready...");
         self.grpc.as_mut().unwrap().ready().await.map_err(|e| {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "verbose-logging")]
             log::error!("[tcp-bind] check_ready: channel not ready: {}", e);
             tonic::Status::new(
                 tonic::Code::Unknown,
                 format!("Service was not ready: {}", e),
             )
         })?;
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::debug!("[tcp-bind] check_ready: channel ready");
         Ok(())
     }

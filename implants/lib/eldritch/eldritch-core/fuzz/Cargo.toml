@@ -29,3 +29,6 @@ path = "fuzz_targets/operations.rs"
 
 [workspace]
 members = ["."]
+
+[features]
+verbose-logging = []

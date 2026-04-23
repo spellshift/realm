@@ -22,7 +22,7 @@ pub async fn handle_udp(
 
     let target_addr = format!("{}:{}", dst_addr, dst_port);
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "verbose-logging")]
     log::debug!("Setting up UDP for {}", target_addr);
 
     // Bind to 0.0.0.0:0
@@ -30,7 +30,7 @@ pub async fn handle_udp(
         .await
         .context("Failed to bind UDP")?;
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "verbose-logging")]
     log::debug!("UDP bound to {:?}", socket.local_addr());
 
     socket
@@ -38,7 +38,7 @@ pub async fn handle_udp(
         .await
         .context("Failed to connect UDP")?;
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "verbose-logging")]
     log::info!("UDP connected to {}", target_addr);
 
     let socket = Arc::new(socket);
@@ -53,7 +53,7 @@ pub async fn handle_udp(
     let out_tx_clone = out_tx.clone();
     let dst_addr_clone = dst_addr.clone();
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "verbose-logging")]
     let addr_for_read = target_addr.clone();
 
     let read_task = tokio::spawn(async move {
@@ -64,7 +64,7 @@ pub async fn handle_udp(
                     let data = buf[0..n].to_vec();
                     let mote = sequencer.new_udp_mote(data, dst_addr_clone.clone(), dst_port);
                     if out_tx_clone.send(mote).await.is_err() {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "verbose-logging")]
                         log::warn!(
                             "Failed to send UDP mote to C2 (channel closed) for {}",
                             addr_for_read
@@ -73,7 +73,7 @@ pub async fn handle_udp(
                     }
                 }
                 Err(_e) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "verbose-logging")]
                     log::error!("failed to read from udp socket ({}): {_e:?}", addr_for_read);
                 }
             }
@@ -88,7 +88,7 @@ pub async fn handle_udp(
             match socket.send(&udp.data).await {
                 Ok(_) => {}
                 Err(_e) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "verbose-logging")]
                     log::error!("failed to write udp to {}: {_e:?}", target_addr);
 
                     break;

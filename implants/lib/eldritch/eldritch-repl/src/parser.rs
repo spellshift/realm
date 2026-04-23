@@ -18,7 +18,7 @@ impl InputParser {
     }
 
     pub fn parse(&mut self, data: &[u8]) -> Vec<Input> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::debug!("Received raw bytes: {data:02x?}");
 
         self.buffer.extend_from_slice(data);
@@ -60,7 +60,7 @@ impl InputParser {
                             if let Some(input) = self.parse_csi(seq) {
                                 inputs.push(input);
                             } else {
-                                #[cfg(debug_assertions)]
+                                #[cfg(feature = "verbose-logging")]
                                 log::warn!("Ignored CSI sequence: {seq:02x?}");
                             }
                             // Consume
@@ -69,7 +69,7 @@ impl InputParser {
                             // Incomplete CSI or very long garbage
                             if self.buffer.len() > 32 {
                                 // Safety valve: sequence too long, probably garbage. Consume ESC and continue.
-                                #[cfg(debug_assertions)]
+                                #[cfg(feature = "verbose-logging")]
                                 log::warn!(
                                     "Dropping long incomplete CSI buffer: {:02x?}",
                                     &self.buffer[..32]
@@ -91,7 +91,7 @@ impl InputParser {
                         if let Some(input) = self.parse_ss3(code) {
                             inputs.push(input);
                         } else {
-                            #[cfg(debug_assertions)]
+                            #[cfg(feature = "verbose-logging")]
                             log::warn!("Ignored SS3 sequence: {seq:02x?}");
                             #[cfg(not(debug_assertions))]
                             let _ = seq;
@@ -101,7 +101,7 @@ impl InputParser {
                     _ => {
                         // Unknown Escape Sequence or Alt+Key
                         // To be safe and avoid "random characters injected", we consume ESC and the next char.
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "verbose-logging")]
                         log::warn!("Unknown Escape sequence start: 1b {second:02x}");
                         self.buffer.drain(0..2);
                     }
@@ -125,7 +125,7 @@ impl InputParser {
                     x if x >= 0x20 => inputs.push(Input::Char(x as char)),
                     _ => {
                         // Other control codes? Ignore them to prevent weirdness
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "verbose-logging")]
                         log::debug!("Ignored control char: {b:02x}");
                     }
                 }

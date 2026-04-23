@@ -4,6 +4,7 @@ version = "0.0.5"
 edition = "2021"
 
 [features]
+verbose-logging = ["pb/verbose-logging"]
 default = []
 grpc = ["pb/grpc"]
 doh = ["dep:hickory-resolver"]

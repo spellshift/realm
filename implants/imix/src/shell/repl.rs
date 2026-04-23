@@ -107,7 +107,7 @@ pub async fn run_repl_reverse_shell(
     let (output_tx, output_rx) = tokio::sync::mpsc::channel(100);
     let (input_tx, mut input_rx) = tokio::sync::mpsc::channel(100);
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "verbose-logging")]
     log::info!("starting repl_reverse_shell (context={:?})", context);
 
     let context_val = match &context {
@@ -126,7 +126,7 @@ pub async fn run_repl_reverse_shell(
         })
         .await
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::error!("failed to send initial registration message: {_err}");
     }
 
@@ -316,7 +316,7 @@ pub async fn run_repl_reverse_shell(
             let mut pending_render = false;
 
             for (i, input) in inputs.iter().enumerate() {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::info!("Handling input: {input:?}");
                 let action = repl.handle_input(input.clone());
                 match action {

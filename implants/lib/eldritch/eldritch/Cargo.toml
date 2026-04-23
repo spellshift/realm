@@ -29,6 +29,7 @@ pb = { workspace = true, optional = true }
 eldritch-repl = { workspace = true, default-features = false }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging", "eldritch-agent/verbose-logging", "eldritch-libagent/verbose-logging", "eldritch-libassets/verbose-logging", "eldritch-libcrypto/verbose-logging", "eldritch-libfile/verbose-logging", "eldritch-libhttp/verbose-logging", "eldritch-libpivot/verbose-logging", "eldritch-libprocess/verbose-logging", "eldritch-librandom/verbose-logging", "eldritch-libregex/verbose-logging", "eldritch-libreport/verbose-logging", "eldritch-libsys/verbose-logging", "eldritch-libtime/verbose-logging", "eldritch-libchain/verbose-logging", "pb/verbose-logging", "eldritch-repl/verbose-logging", "eldritch-mockagent/verbose-logging"]
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
 fake_bindings = [

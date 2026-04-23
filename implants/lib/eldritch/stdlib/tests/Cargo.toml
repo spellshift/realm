@@ -12,3 +12,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 spin = { version = "0.10.0", features = ["rwlock"] }
 log = "0.4"
+
+[features]
+verbose-logging = ["eldritch/verbose-logging", "eldritch-core/verbose-logging"]

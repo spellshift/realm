@@ -18,6 +18,7 @@ xcap = { workspace = true, optional = true }
 image = { version = "0.25", optional = true }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging", "eldritch-agent/verbose-logging", "pb/verbose-logging", "eldritch-libprocess/verbose-logging"]
 default = ["stdlib"]
 stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image"]
 fake_bindings = []

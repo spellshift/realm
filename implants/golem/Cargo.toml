@@ -25,3 +25,6 @@ tempfile = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }
+
+[features]
+verbose-logging = ["pb/verbose-logging", "eldritch-core/verbose-logging", "eldritch-macros/verbose-logging", "eldritch/verbose-logging", "eldritch-agent/verbose-logging"]

@@ -33,6 +33,7 @@ tempfile = { workspace = true }
 eldritch-agent = { workspace = true }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging", "eldritch-agent/verbose-logging", "pb/verbose-logging", "eldritch-mockagent/verbose-logging", "eldritch-agent/verbose-logging"]
 default = ["stdlib"]
 stdlib = [
     "dep:eldritch-agent",

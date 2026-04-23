@@ -32,6 +32,7 @@ windows-sys = { workspace = true, features = [
 ] }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging"]
 default = ["stdlib"]
 stdlib = ["dep:sysinfo", "dep:whoami", "dep:local-ip-address", "dep:hex"]
 fake_bindings = []

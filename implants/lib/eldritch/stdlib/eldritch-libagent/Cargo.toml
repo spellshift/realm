@@ -17,6 +17,7 @@ prost-types = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging", "eldritch-agent/verbose-logging", "pb/verbose-logging", "eldritch-mockagent/verbose-logging"]
 default = ["stdlib"]
 stdlib = ["dep:eldritch-agent", "dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types"]
 fake_bindings = []
