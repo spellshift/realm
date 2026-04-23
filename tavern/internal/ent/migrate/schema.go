@@ -851,7 +851,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "description", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "author", Type: field.TypeString},
 		{Name: "support_model", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "FIRST_PARTY", "COMMUNITY"}, Default: "UNSPECIFIED"},
 		{Name: "tactic", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "RECON", "RESOURCE_DEVELOPMENT", "INITIAL_ACCESS", "EXECUTION", "PERSISTENCE", "PRIVILEGE_ESCALATION", "DEFENSE_EVASION", "CREDENTIAL_ACCESS", "DISCOVERY", "LATERAL_MOVEMENT", "COLLECTION", "COMMAND_AND_CONTROL", "EXFILTRATION", "IMPACT"}, Default: "UNSPECIFIED"},
