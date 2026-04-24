@@ -31,7 +31,7 @@ const PortalsHeader = () => {
                     <span>Download the SOCKS5 proxy client for your platform</span>
                 </div>
                 <a href={`/assets/download/${downloadAsset}`} download onClick={(e) => e.stopPropagation()}>
-                    <Button buttonStyle={{ color: "purple", size: 'sm' }} buttonVariant="solid">
+                    <Button buttonStyle={{ color: "purple", size: 'sm' }} buttonVariant="outline">
                         <DownloadIcon className="w-4 h-4 mr-2" />
                         Download socks5
                     </Button>
