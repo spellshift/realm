@@ -14,13 +14,20 @@ pub fn get(
     query_params: Option<BTreeMap<String, String>>,
     headers: Option<BTreeMap<String, String>>,
     allow_insecure: Option<bool>,
+    proxy: Option<String>,
 ) -> Result<BTreeMap<String, Value>, String> {
     if !uri.starts_with("http://") && !uri.starts_with("https://") {
         uri = format!("https://{}", uri);
     }
 
-    let client = Client::builder()
-        .danger_accept_invalid_certs(allow_insecure.unwrap_or(false))
+    let mut builder =
+        Client::builder().danger_accept_invalid_certs(allow_insecure.unwrap_or(false));
+    if let Some(proxy_url) = proxy {
+        let p = reqwest::Proxy::all(&proxy_url)
+            .map_err(|e| format!("Invalid proxy URL {proxy_url}: {e}"))?;
+        builder = builder.proxy(p);
+    }
+    let client = builder
         .build()
         .map_err(|e| format!("Failed to build client: {e}"))?;
 
@@ -92,7 +99,7 @@ mod tests {
 
         let url = server.url("/foo").to_string();
 
-        let res = get(url, None, None, None).unwrap();
+        let res = get(url, None, None, None, None).unwrap();
 
         assert_eq!(res.get("status_code").unwrap(), &Value::Int(200));
 
@@ -108,6 +115,7 @@ mod tests {
         // If we provide an unroutable domain, it will fail to connect but should try https.
         let res = get(
             "this-domain-will-not-exist-ever-123.com".to_string(),
+            None,
             None,
             None,
             None,
@@ -136,7 +144,7 @@ mod tests {
         let mut params = BTreeMap::new();
         params.insert("q".into(), "search".into());
 
-        let res = get(url, Some(params), None, None).unwrap();
+        let res = get(url, Some(params), None, None, None).unwrap();
         assert_eq!(res.get("status_code").unwrap(), &Value::Int(200));
     }
 }
