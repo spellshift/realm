@@ -41,6 +41,9 @@ export const useBeaconTimelineChart = () => {
         return buckets.slice(firstNonZeroIndex).map((bucket) => ({
             timestamp: bucket.startTimestamp,
             displayLabel: moment(bucket.startTimestamp).format(config.formatString),
+            tooltipLabel: config.tooltipFormatString
+                ? moment(bucket.startTimestamp).format(config.tooltipFormatString)
+                : undefined,
             total: bucket.count,
         }));
     }, [data, config.formatString]);
