@@ -46,7 +46,7 @@ export const useBeaconTimelineChart = () => {
                 : undefined,
             total: bucket.count,
         }));
-    }, [data, config.formatString]);
+    }, [data, config]);
 
     const beaconMetric = useMemo(() => computeMetric(chartData), [chartData]);
 
