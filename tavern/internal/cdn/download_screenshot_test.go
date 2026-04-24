@@ -67,8 +67,8 @@ func TestDownloadScreenshot(t *testing.T) {
 			wantBody:   []byte(fmt.Sprintf("%s\n", cdn.ErrInvalidFileID.Error())),
 		},
 		{
-			name:   "Cached",
-			reqURL: fmt.Sprintf("/download/%d", existingScreenshot.ID),
+			name:       "Cached",
+			reqURL:     fmt.Sprintf("/download/%d", existingScreenshot.ID),
 			wantStatus: cdn.ErrFileNotModified.StatusCode,
 			wantBody:   []byte(fmt.Sprintf("%s\n", cdn.ErrFileNotModified.Error())),
 		},

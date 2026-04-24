@@ -14,7 +14,7 @@ import (
 // TestCreateTestData ensures createTestData runs without error and creates at least one beacon.
 func TestCreateTestData(t *testing.T) {
 	var (
-		ctx            = context.Background()
+		ctx = context.Background()
 	)
 	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
