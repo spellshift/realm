@@ -16,7 +16,7 @@ const TaskTome: FC<TaskTomeProps> = ({ tome }) => {
         <div className="text-sm max-h-80 overflow-y-scroll overflow-x-scroll py-1" aria-label="task output">
             <CodeBlock
                 code={displayValue}
-                language="md"
+                language="python"
             />
         </div>
     );
