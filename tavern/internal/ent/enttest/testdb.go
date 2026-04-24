@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"realm.pub/tavern/internal/ent"
 	entsql "entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/ent"
 
 	// The mattn driver
 	_ "github.com/mattn/go-sqlite3"

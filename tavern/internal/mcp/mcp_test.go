@@ -1,4 +1,4 @@
-package mcp_test
+package mcp
 
 import (
 	"context"
@@ -7,14 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
+	"strconv"
+
 	"github.com/mark3labs/mcp-go/mcp"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/tome"
-	tavernmcp "realm.pub/tavern/internal/mcp"
 )
 
 // setupTestDB creates a test ent client with schema migrations applied.
@@ -26,7 +29,7 @@ func setupTestDB(t *testing.T) *ent.Client {
 // setupTestHandler creates the MCP HTTP handler backed by a test database.
 func setupTestHandler(t *testing.T, client *ent.Client) http.Handler {
 	t.Helper()
-	return tavernmcp.NewHandler(client, "test", nil)
+	return NewHandler(client, "test", nil)
 }
 
 // TestNewHandler verifies the MCP handler can be created without error.
@@ -89,6 +92,9 @@ func TestListQuestsHandler(t *testing.T) {
 	client := setupTestDB(t)
 	defer client.Close()
 
+	// Set client in context
+	ctx = context.WithValue(ctx, contextKey{}, client)
+
 	// Create a tome
 	testTome := client.Tome.Create().
 		SetName("test-tome").
@@ -108,13 +114,20 @@ func TestListQuestsHandler(t *testing.T) {
 		SetEldritchAtCreation("print('hello')").
 		SaveX(ctx)
 
-	// Verify quest was created
-	quests, err := client.Quest.Query().WithTome().All(ctx)
+	// Call the handler
+	req := mcp.CallToolRequest{}
+	result, err := handleListQuests(ctx, req)
 	require.NoError(t, err)
-	assert.Len(t, quests, 1)
-	assert.Equal(t, "test-quest", quests[0].Name)
-	assert.NotNil(t, quests[0].Edges.Tome)
-	assert.Equal(t, "test-tome", quests[0].Edges.Tome.Name)
+	assert.False(t, result.IsError)
+
+	// Parse JSON and verify
+	require.Len(t, result.Content, 1)
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+
+	assert.Contains(t, txt.Text, "test-quest")
+	assert.Contains(t, txt.Text, "test-tome")
+	assert.Contains(t, txt.Text, `{\"key\":\"value\"}`)
 }
 
 // TestListHostsHandler tests the list_hosts tool by creating test data.
@@ -122,6 +135,9 @@ func TestListHostsHandler(t *testing.T) {
 	ctx := context.Background()
 	client := setupTestDB(t)
 	defer client.Close()
+
+	// Set client in context
+	ctx = context.WithValue(ctx, contextKey{}, client)
 
 	// Create a host
 	host := client.Host.Create().
@@ -145,13 +161,21 @@ func TestListHostsHandler(t *testing.T) {
 		AddHosts(host).
 		SaveX(ctx)
 
-	// Verify data was created
-	hosts, err := client.Host.Query().WithBeacons().WithTags().All(ctx)
+	// Call the handler
+	req := mcp.CallToolRequest{}
+	result, err := handleListHosts(ctx, req)
 	require.NoError(t, err)
-	assert.Len(t, hosts, 1)
-	assert.Equal(t, "test-host", hosts[0].Name)
-	assert.Len(t, hosts[0].Edges.Beacons, 1)
-	assert.Len(t, hosts[0].Edges.Tags, 1)
+	assert.False(t, result.IsError)
+
+	// Parse JSON and verify
+	require.Len(t, result.Content, 1)
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+
+	assert.Contains(t, txt.Text, "test-host")
+	assert.Contains(t, txt.Text, "test-tag")
+	assert.Contains(t, txt.Text, "192.168.1.1")
+	assert.Contains(t, txt.Text, "test-host-id")
 }
 
 // TestListTomesHandler tests the list_tomes tool by creating test data.
@@ -159,6 +183,9 @@ func TestListTomesHandler(t *testing.T) {
 	ctx := context.Background()
 	client := setupTestDB(t)
 	defer client.Close()
+
+	// Set client in context
+	ctx = context.WithValue(ctx, contextKey{}, client)
 
 	// Create tomes
 	client.Tome.Create().
@@ -180,9 +207,21 @@ func TestListTomesHandler(t *testing.T) {
 		SetHash("hash2").
 		SaveX(ctx)
 
-	tomes, err := client.Tome.Query().All(ctx)
+	// Call the handler
+	req := mcp.CallToolRequest{}
+	result, err := handleListTomes(ctx, req)
 	require.NoError(t, err)
-	assert.Len(t, tomes, 2)
+	assert.False(t, result.IsError)
+
+	// Parse JSON and verify
+	require.Len(t, result.Content, 1)
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+
+	assert.Contains(t, txt.Text, "tome-1")
+	assert.Contains(t, txt.Text, "tome-2")
+	assert.Contains(t, txt.Text, "First tome")
+	assert.Contains(t, txt.Text, `[{\"name\":\"param1\",\"type\":\"string\"}]`)
 }
 
 // TestCreateQuestHandler tests the create_quest tool by creating a quest.
@@ -190,6 +229,9 @@ func TestCreateQuestHandler(t *testing.T) {
 	ctx := context.Background()
 	client := setupTestDB(t)
 	defer client.Close()
+
+	// Set client in context
+	ctx = context.WithValue(ctx, contextKey{}, client)
 
 	// Create a tome
 	testTome := client.Tome.Create().
@@ -213,20 +255,24 @@ func TestCreateQuestHandler(t *testing.T) {
 		SetTransport(c2pb.Transport_TRANSPORT_UNSPECIFIED).
 		SaveX(ctx)
 
-	// Create a quest directly to validate the pattern
-	q := client.Quest.Create().
-		SetName("mcp-quest").
-		SetParameters(`{"key":"value"}`).
-		SetTomeID(testTome.ID).
-		SetParamDefsAtCreation(testTome.ParamDefs).
-		SetEldritchAtCreation(testTome.Eldritch).
-		SaveX(ctx)
+	// Build MCP request
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"name":       "mcp-quest",
+				"beacon_ids": []any{strconv.Itoa(testBeacon.ID)},
+				"parameters": `{"key":"value"}`,
+				"tome_id":    strconv.Itoa(testTome.ID),
+			},
+		},
+	}
 
-	// Create a task for the beacon
-	client.Task.Create().
-		SetQuestID(q.ID).
-		SetBeaconID(testBeacon.ID).
-		SaveX(ctx)
+	mcpSrv := mcpserver.NewMCPServer("test", "1.0.0")
+
+	// Call the handler
+	result, err := handleCreateQuest(mcpSrv)(ctx, req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError, "tool call returned an error: %v", result)
 
 	// Verify quest and tasks
 	createdQuest, err := client.Quest.Query().WithTasks().All(ctx)
@@ -234,6 +280,13 @@ func TestCreateQuestHandler(t *testing.T) {
 	assert.Len(t, createdQuest, 1)
 	assert.Equal(t, "mcp-quest", createdQuest[0].Name)
 	assert.Len(t, createdQuest[0].Edges.Tasks, 1)
+
+	// Verify the result text contains the new quest ID
+	require.Len(t, result.Content, 1)
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, txt.Text, fmt.Sprintf(`"id":%d`, createdQuest[0].ID))
+	assert.Contains(t, txt.Text, `"name":"mcp-quest"`)
 }
 
 // TestQuestOutputHandler tests the quest_output tool by creating quests with task output.
@@ -241,6 +294,9 @@ func TestQuestOutputHandler(t *testing.T) {
 	ctx := context.Background()
 	client := setupTestDB(t)
 	defer client.Close()
+
+	// Set client in context
+	ctx = context.WithValue(ctx, contextKey{}, client)
 
 	// Create a tome
 	testTome := client.Tome.Create().
@@ -281,18 +337,29 @@ func TestQuestOutputHandler(t *testing.T) {
 		SetExecFinishedAt(time.Now()).
 		SaveX(ctx)
 
-	// Verify output is queryable
-	quests, err := client.Quest.Query().
-		WithTasks(func(tq *ent.TaskQuery) {
-			tq.WithBeacon(func(bq *ent.BeaconQuery) {
-				bq.WithHost()
-			})
-		}).
-		All(ctx)
+	// Build MCP request
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"ids": []any{strconv.Itoa(q.ID)},
+			},
+		},
+	}
+
+	// Call the handler
+	result, err := handleQuestOutput(ctx, req)
 	require.NoError(t, err)
-	assert.Len(t, quests, 1)
-	assert.Len(t, quests[0].Edges.Tasks, 1)
-	assert.Equal(t, "task output result", quests[0].Edges.Tasks[0].Output)
+	assert.False(t, result.IsError)
+
+	// Parse JSON and verify
+	require.Len(t, result.Content, 1)
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+
+	assert.Contains(t, txt.Text, "output-quest")
+	assert.Contains(t, txt.Text, "task output result")
+	assert.Contains(t, txt.Text, "test-beacon")
+	assert.Contains(t, txt.Text, "test-host")
 }
 
 // TestWaitForQuestHandler tests the wait_for_quest tool with already-finished tasks.
@@ -300,6 +367,9 @@ func TestWaitForQuestHandler(t *testing.T) {
 	ctx := context.Background()
 	client := setupTestDB(t)
 	defer client.Close()
+
+	// Set client in context
+	ctx = context.WithValue(ctx, contextKey{}, client)
 
 	// Create a tome
 	testTome := client.Tome.Create().
@@ -339,15 +409,27 @@ func TestWaitForQuestHandler(t *testing.T) {
 		SetExecFinishedAt(time.Now()).
 		SaveX(ctx)
 
-	// Verify the quest tasks are finished
-	quest, err := client.Quest.Query().
-		WithTasks(func(tq *ent.TaskQuery) {
-			tq.WithBeacon()
-		}).
-		Only(ctx)
+	// Build MCP request
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"quest_id": strconv.Itoa(q.ID),
+			},
+		},
+	}
+
+	// Call the handler
+	result, err := handleWaitForQuest(ctx, req)
 	require.NoError(t, err)
-	assert.Len(t, quest.Edges.Tasks, 1)
-	assert.False(t, quest.Edges.Tasks[0].ExecFinishedAt.IsZero())
+	assert.False(t, result.IsError)
+
+	// Parse JSON and verify
+	require.Len(t, result.Content, 1)
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+
+	assert.Contains(t, txt.Text, "finished-quest")
+	assert.Contains(t, txt.Text, "test-beacon")
 }
 
 // TestParseIntIDs tests the ParseIntIDs helper.
@@ -392,7 +474,7 @@ func TestParseIntIDs(t *testing.T) {
 					Arguments: tc.input,
 				},
 			}
-			ids, err := tavernmcp.ParseIntIDs(req, tc.key)
+			ids, err := ParseIntIDs(req, tc.key)
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
@@ -479,7 +561,7 @@ func TestGraphQLQueryValidation(t *testing.T) {
 
 			// Call the handler directly (no GraphQL handler in context — will
 			// error at execution time for valid queries, but validation still runs).
-			result, err := tavernmcp.HandleGraphQLQueryForTest(context.Background(), req)
+			result, err := HandleGraphQLQueryForTest(context.Background(), req)
 			require.NoError(t, err)
 
 			if tc.expectErr {
