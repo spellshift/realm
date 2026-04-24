@@ -5,7 +5,7 @@ import { useFilters } from "../context/FilterContext/FilterContext";
 import { GET_USER_QUERY } from "../utils/queries";
 
 const UserFilterBar = () => {
-    const { filters, updateFilters, isLocked } = useFilters();
+    const { filters, updateFilters } = useFilters();
     const { data, loading } = useQuery<UserQueryTopLevel>(GET_USER_QUERY);
 
     const options = data?.users.edges.map((edge) => ({
