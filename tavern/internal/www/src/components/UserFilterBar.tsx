@@ -19,7 +19,7 @@ const UserFilterBar = () => {
         <div className="flex flex-col gap-1">
             <label className="text-gray-700 font-medium">User</label>
             <Select
-                isDisabled={isLocked || loading}
+                isDisabled={loading}
                 isLoading={loading}
                 isClearable
                 placeholder="Filter by User"
