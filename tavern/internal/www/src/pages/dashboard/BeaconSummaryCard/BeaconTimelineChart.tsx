@@ -58,7 +58,7 @@ export const BeaconTimelineChart: FC<BeaconTimelineChartProps> = ({ loading, cha
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                     dataKey="displayLabel"
-                    interval={tickInterval - 1}
+                    interval={tickInterval}
                     tick={{ fill: "#6b7280", fontSize: 12 }}
                     tickLine={{ stroke: "#e5e7eb" }}
                     axisLine={{ stroke: "#e5e7eb" }}
@@ -72,6 +72,7 @@ export const BeaconTimelineChart: FC<BeaconTimelineChartProps> = ({ loading, cha
                 <Tooltip
                     contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
                     labelStyle={{ fontWeight: 600, color: "#111827" }}
+                    labelFormatter={(label, payload) => payload?.[0]?.payload?.tooltipLabel ?? label}
                 />
                 <Line
                     type="monotone"
