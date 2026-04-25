@@ -54,7 +54,7 @@ type QueryResolver interface {
 	Metrics(ctx context.Context) (*models.Metrics, error)
 }
 type QuestResolver interface {
-	Diffs(ctx context.Context, obj *ent.Quest) ([]*models.TaskDiff, error)
+	Diffs(ctx context.Context, obj *ent.Quest, where *ent.TaskWhereInput) ([]*models.TaskDiff, error)
 }
 type ShellTaskResolver interface {
 	SequenceID(ctx context.Context, obj *ent.ShellTask) (int, error)
@@ -1368,6 +1368,17 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		return nil, err
 	}
 	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Quest_diffs_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg0
 	return args, nil
 }
 
@@ -13741,7 +13752,8 @@ func (ec *executionContext) _Quest_diffs(ctx context.Context, field graphql.Coll
 		field,
 		ec.fieldContext_Quest_diffs,
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Quest().Diffs(ctx, obj)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Quest().Diffs(ctx, obj, fc.Args["where"].(*ent.TaskWhereInput))
 		},
 		nil,
 		ec.marshalNTaskDiff2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTaskDiffᚄ,
@@ -13750,7 +13762,7 @@ func (ec *executionContext) _Quest_diffs(ctx context.Context, field graphql.Coll
 	)
 }
 
-func (ec *executionContext) fieldContext_Quest_diffs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Quest_diffs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Quest",
 		Field:      field,
@@ -13769,6 +13781,17 @@ func (ec *executionContext) fieldContext_Quest_diffs(_ context.Context, field gr
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TaskDiff", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Quest_diffs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
