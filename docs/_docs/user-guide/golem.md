@@ -149,7 +149,20 @@ file_list(input_params['path'])
 
 ## Golem embedded files
 
-The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in Eldritch. In addition to programmatic access the embedded files can be automatically executed at run time. If no other option is specified `-i` or a file path, golem will iterate over every instance of `main.eldritch` in the embedded assets launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
+The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in Eldritch.
+
+**To embed tomes in Golem**, place your tome directories in `implants/golem/embedded/`. Each tome should contain a `main.eldritch` file. For example:
+```
+implants/golem/embedded/
+├── my_tome/
+│   └── main.eldritch
+└── another_tome/
+    ├── main.eldritch
+    └── assets/
+        └── data.txt
+```
+
+In addition to programmatic access, the embedded files can be automatically executed at run time. If no other option is specified (`-i` or a file path), golem will iterate over every instance of `main.eldritch` in the embedded assets, launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
 
 ## Golem as a stage 0
 
