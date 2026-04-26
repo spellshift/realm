@@ -48,11 +48,23 @@ Building in the dev container limits variables that might cause issues and is th
 
 ## Setting encryption key
 
-By default imix will automatically collect the IMIX_CALLBACK_URI server's public key during the build process. This can be overridden by manually setting the `IMIX_SERVER_PUBKEY` environment variable but should only be necessary when using redirectors. Redirectors have no visibility into the realm encryption by design, this means that agents must be compiled with the upstream tavern instance's public key.
+By default, imix will automatically fetch the server's public key from the `IMIX_CALLBACK_URI` during the build process by querying the `/status` endpoint.
 
-A server's public key can be found using:
+**Important:** This automatic fetch only works when connecting **directly to Tavern**. If you're using a **redirector**, you must manually set the `IMIX_SERVER_PUBKEY` environment variable because:
+- Redirectors forward traffic but don't expose Tavern's `/status` endpoint
+- Redirectors have no visibility into Realm's encryption by design
+- Agents must be compiled with the **upstream Tavern instance's** public key, not the redirector's address
+
+To manually set the server public key, query your **Tavern instance directly** (not the redirector):
+
 ```bash
-export IMIX_SERVER_PUBKEY="$(curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey')"
+# Query Tavern directly (not the redirector)
+export IMIX_SERVER_PUBKEY="$(curl http://your-tavern-server:8000/status | jq -r '.Pubkey')"
+```
+
+Then build your agent:
+```bash
+cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
 ### Linux
@@ -67,6 +79,8 @@ export IMIX_CALLBACK_URI="http://localhost"
 
 cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
+
+Compiled binary will be located at: `implants/target/x86_64-unknown-linux-musl/release/imix`
 
 ### MacOS
 
@@ -104,6 +118,8 @@ export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 cargo zigbuild  --release --target aarch64-apple-darwin
 ```
 
+Compiled binary will be located at: `implants/target/aarch64-apple-darwin/release/imix`
+
 
 ### Windows
 
@@ -120,6 +136,10 @@ cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
 cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```
+
+- Compiled `imix.exe` will be located at: `implants/target/x86_64-pc-windows-gnu/release/imix.exe`
+- Compiled service binary (built with `--features win_service`) will also be located at: `implants/target/x86_64-pc-windows-gnu/release/imix.exe` — build these separately and rename/copy as needed
+- Compiled DLL will be located at: `implants/target/x86_64-pc-windows-gnu/release/imix.dll`
 
 
 ## Advanced Configuration (IMIX_CONFIG)
