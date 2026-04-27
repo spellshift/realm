@@ -96,6 +96,7 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
         "https" => crate::c2::transport::Type::TransportGrpc,
         "http" => crate::c2::transport::Type::TransportGrpc,
         "tcp" => crate::c2::transport::Type::TransportTcpBind,
+        "smb" => crate::c2::transport::Type::TransportSmbBind,
         _ => crate::c2::transport::Type::TransportUnspecified,
     }
 }
@@ -385,6 +386,18 @@ mod tests {
     fn test_transport_type_detection_dns() {
         let dns_type = get_transport_type("dns://8.8.8.8");
         assert_eq!(dns_type, crate::c2::transport::Type::TransportDns);
+    }
+
+    #[test]
+    fn test_transport_type_detection_tcp_bind() {
+        let tcp_type = get_transport_type("tcp://0.0.0.0:8443");
+        assert_eq!(tcp_type, crate::c2::transport::Type::TransportTcpBind);
+    }
+
+    #[test]
+    fn test_transport_type_detection_smb_bind() {
+        let smb_type = get_transport_type("smb://my_pipe");
+        assert_eq!(smb_type, crate::c2::transport::Type::TransportSmbBind);
     }
 
     #[test]

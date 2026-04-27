@@ -30,6 +30,7 @@ message Transport {
         TRANSPORT_UDS = 4;
         TRANSPORT_TCP_BIND = 5;
         TRANSPORT_ICMP = 6;
+        TRANSPORT_SMB_BIND = 7;
     }
 
     Type type = 3;

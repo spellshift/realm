@@ -33,6 +33,11 @@ mod tcp_bind;
 #[cfg(feature = "tcp-bind")]
 pub use tcp_bind::TcpBindTransport;
 
+#[cfg(feature = "smb-bind")]
+mod smb_bind;
+#[cfg(feature = "smb-bind")]
+pub use smb_bind::SmbBindTransport;
+
 mod transport;
 pub use transport::Transport;
 
@@ -92,6 +97,12 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
             return Ok(Box::new(tcp_bind::TcpBindTransport::new(config)?));
             #[cfg(not(feature = "tcp-bind"))]
             return Err(anyhow!("TCP Bind transport not enabled"));
+        }
+        Ok(TransportType::TransportSmbBind) => {
+            #[cfg(feature = "smb-bind")]
+            return Ok(Box::new(smb_bind::SmbBindTransport::new(config)?));
+            #[cfg(not(feature = "smb-bind"))]
+            return Err(anyhow!("SMB Bind transport not enabled"));
         }
         Ok(TransportType::TransportIcmp) => {
             #[cfg(feature = "icmp")]
@@ -209,6 +220,19 @@ mod tests {
                 uri
             );
         }
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "smb-bind")]
+    async fn test_routes_to_smb_bind_transport() {
+        let config = create_test_config(
+            "smb://test_pipe",
+            TransportType::TransportSmbBind as i32,
+            "{}",
+        );
+        let result = create_transport(config);
+        assert!(result.is_ok(), "smb://test_pipe did not resolve to SmbBind");
+        assert_eq!(result.unwrap().name(), "smb-bind");
     }
 
     #[tokio::test]

@@ -6010,6 +6010,7 @@ enum BeaconTransport_Type @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Tra
   TRANSPORT_GRPC
   TRANSPORT_HTTP1
   TRANSPORT_ICMP
+  TRANSPORT_SMB_BIND
   TRANSPORT_TCP_BIND
   TRANSPORT_UDS
   TRANSPORT_UNSPECIFIED

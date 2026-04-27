@@ -20,6 +20,9 @@ func (Transport_Type) Values() []string {
 
 // Value provides the DB a string from int.
 func (p Transport_Type) Value() (driver.Value, error) {
+	if name, ok := Transport_Type_name[int32(p)]; ok {
+		return name, nil
+	}
 	return p.String(), nil
 }
 
@@ -50,6 +53,10 @@ func (p *Transport_Type) Scan(val any) error {
 
 // MarshalGQL writes a formatted string value for GraphQL.
 func (p Transport_Type) MarshalGQL(w io.Writer) {
+	if name, ok := Transport_Type_name[int32(p)]; ok {
+		graphql.MarshalString(name).MarshalGQL(w)
+		return
+	}
 	graphql.MarshalString(p.String()).MarshalGQL(w)
 }
 

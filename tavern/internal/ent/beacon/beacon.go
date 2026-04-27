@@ -145,12 +145,10 @@ var (
 
 // TransportValidator is a validator for the "transport" field enum values. It is called by the builders before save.
 func TransportValidator(t c2pb.Transport_Type) error {
-	switch t.String() {
-	case "TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_ICMP", "TRANSPORT_TCP_BIND", "TRANSPORT_UDS", "TRANSPORT_UNSPECIFIED":
+	if _, ok := c2pb.Transport_Type_name[int32(t)]; ok {
 		return nil
-	default:
-		return fmt.Errorf("beacon: invalid enum value for transport field: %q", t)
 	}
+	return fmt.Errorf("beacon: invalid enum value for transport field: %q", t)
 }
 
 // OrderOption defines the ordering options for the Beacon queries.

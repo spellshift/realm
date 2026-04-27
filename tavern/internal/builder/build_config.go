@@ -96,6 +96,10 @@ func TransportTypeToString(t c2pb.Transport_Type) string {
 		return "dns"
 	case c2pb.Transport_TRANSPORT_ICMP:
 		return "icmp"
+	case c2pb.Transport_TRANSPORT_TCP_BIND:
+		return "tcp_bind"
+	case c2pb.Transport_TRANSPORT_SMB_BIND:
+		return "smb_bind"
 	default:
 		return "unspecified"
 	}

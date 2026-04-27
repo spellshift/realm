@@ -132,6 +132,7 @@ const (
 	Transport_TRANSPORT_UDS         Transport_Type = 4
 	Transport_TRANSPORT_TCP_BIND    Transport_Type = 5
 	Transport_TRANSPORT_ICMP        Transport_Type = 6
+	Transport_TRANSPORT_SMB_BIND    Transport_Type = 7
 )
 
 // Enum value maps for Transport_Type.
@@ -144,6 +145,7 @@ var (
 		4: "TRANSPORT_UDS",
 		5: "TRANSPORT_TCP_BIND",
 		6: "TRANSPORT_ICMP",
+		7: "TRANSPORT_SMB_BIND",
 	}
 	Transport_Type_value = map[string]int32{
 		"TRANSPORT_UNSPECIFIED": 0,
@@ -153,6 +155,7 @@ var (
 		"TRANSPORT_UDS":         4,
 		"TRANSPORT_TCP_BIND":    5,
 		"TRANSPORT_ICMP":        6,
+		"TRANSPORT_SMB_BIND":    7,
 	}
 )
 

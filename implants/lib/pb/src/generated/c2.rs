@@ -40,6 +40,7 @@ pub mod transport {
         TransportUds = 4,
         TransportTcpBind = 5,
         TransportIcmp = 6,
+        TransportSmbBind = 7,
     }
     impl Type {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -55,6 +56,7 @@ pub mod transport {
                 Self::TransportUds => "TRANSPORT_UDS",
                 Self::TransportTcpBind => "TRANSPORT_TCP_BIND",
                 Self::TransportIcmp => "TRANSPORT_ICMP",
+                Self::TransportSmbBind => "TRANSPORT_SMB_BIND",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -67,6 +69,7 @@ pub mod transport {
                 "TRANSPORT_UDS" => Some(Self::TransportUds),
                 "TRANSPORT_TCP_BIND" => Some(Self::TransportTcpBind),
                 "TRANSPORT_ICMP" => Some(Self::TransportIcmp),
+                "TRANSPORT_SMB_BIND" => Some(Self::TransportSmbBind),
                 _ => None,
             }
         }
