@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useMutation } from '@apollo/client';
 import SshTerminal from './components/SshTerminal';
 import PtyTerminal from './components/PtyTerminal';
+import WinrmTerminal from './components/WinrmTerminal';
 import { CLOSE_PORTAL_MUTATION } from './graphql';
 import { WifiOff } from 'lucide-react';
 
@@ -168,6 +169,10 @@ const ShellV2 = () => {
         handleOpenPortalTab("ssh", target);
     };
 
+    const handleWinrmConnect = (target: string) => {
+        handleOpenPortalTab("winrm", target);
+    };
+
     const handlePtyOpen = () => {
         handleOpenPortalTab("pty", "PTY");
     };
@@ -227,6 +232,9 @@ const ShellV2 = () => {
                         {tab.type === "pty" && (portalId || tab.pivotId) && (
                             <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
+                        {tab.type === "winrm" && (portalId || tab.pivotId) && (
+                            <WinrmTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
+                        )}
                     </TabPanel>
                 ))}
             </TabPanels>
@@ -244,6 +252,7 @@ const ShellV2 = () => {
                     onNewPortal={handleNewPortal}
                     onClosePortal={handleClosePortal}
                     onSshConnect={handleSshConnect}
+                    onWinrmConnect={handleWinrmConnect}
                     onPtyOpen={handlePtyOpen}
                     onSendCtrlC={sendCtrlC}
                     onSendCtrlR={sendCtrlR}

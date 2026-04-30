@@ -57,6 +57,7 @@ describe("ShellHeader", () => {
         onExport: vi.fn(),
         onNewPortal: vi.fn(),
         onSshConnect: vi.fn(),
+        onWinrmConnect: vi.fn(),
         onPtyOpen: vi.fn(),
         onSendCtrlC: vi.fn(),
         onSendCtrlR: vi.fn(),
