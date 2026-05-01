@@ -1,20 +1,21 @@
-package mcp_test
+package mcp
 
 import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/tome"
-	tavernmcp "realm.pub/tavern/internal/mcp"
 )
 
 // setupTestDB creates a test ent client with schema migrations applied.
@@ -26,7 +27,7 @@ func setupTestDB(t *testing.T) *ent.Client {
 // setupTestHandler creates the MCP HTTP handler backed by a test database.
 func setupTestHandler(t *testing.T, client *ent.Client) http.Handler {
 	t.Helper()
-	return tavernmcp.NewHandler(client, "test", nil)
+	return NewHandler(client, "test", nil)
 }
 
 // TestNewHandler verifies the MCP handler can be created without error.
@@ -392,7 +393,7 @@ func TestParseIntIDs(t *testing.T) {
 					Arguments: tc.input,
 				},
 			}
-			ids, err := tavernmcp.ParseIntIDs(req, tc.key)
+			ids, err := ParseIntIDs(req, tc.key)
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
@@ -479,7 +480,7 @@ func TestGraphQLQueryValidation(t *testing.T) {
 
 			// Call the handler directly (no GraphQL handler in context — will
 			// error at execution time for valid queries, but validation still runs).
-			result, err := tavernmcp.HandleGraphQLQueryForTest(context.Background(), req)
+			result, err := HandleGraphQLQueryForTest(context.Background(), req)
 			require.NoError(t, err)
 
 			if tc.expectErr {
@@ -502,4 +503,237 @@ func TestGraphQLQueryValidation(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestHandleListHosts tests edge cases for the list_hosts tool.
+func TestHandleListHosts(t *testing.T) {
+	// Missing client
+	res, err := handleListHosts(context.Background(), mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "internal error: no database client")
+
+	// Success case (empty db)
+	client := setupTestDB(t)
+	defer client.Close()
+	ctx := context.WithValue(context.Background(), contextKey{}, client)
+	res, err = handleListHosts(ctx, mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
+	assert.Equal(t, "[]", res.Content[0].(mcp.TextContent).Text)
+}
+
+// TestHandleListQuests tests edge cases for the list_quests tool.
+func TestHandleListQuests(t *testing.T) {
+	// Missing client
+	res, err := handleListQuests(context.Background(), mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "internal error: no database client")
+
+	// Success case (empty db)
+	client := setupTestDB(t)
+	defer client.Close()
+	ctx := context.WithValue(context.Background(), contextKey{}, client)
+	res, err = handleListQuests(ctx, mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
+	assert.Equal(t, "[]", res.Content[0].(mcp.TextContent).Text)
+}
+
+// TestHandleListTomes tests edge cases for the list_tomes tool.
+func TestHandleListTomes(t *testing.T) {
+	// Missing client
+	res, err := handleListTomes(context.Background(), mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "internal error: no database client")
+
+	// Success case (empty db)
+	client := setupTestDB(t)
+	defer client.Close()
+	ctx := context.WithValue(context.Background(), contextKey{}, client)
+	res, err = handleListTomes(ctx, mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
+	assert.Equal(t, "[]", res.Content[0].(mcp.TextContent).Text)
+}
+
+// TestHandleWaitForQuest tests edge cases for the wait_for_quest tool.
+func TestHandleWaitForQuest(t *testing.T) {
+	// Missing client
+	res, err := handleWaitForQuest(context.Background(), mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "internal error: no database client")
+
+	client := setupTestDB(t)
+	defer client.Close()
+	ctx := context.WithValue(context.Background(), contextKey{}, client)
+
+	// Missing quest_id
+	res, err = handleWaitForQuest(ctx, mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "invalid quest_id")
+
+	// Invalid quest_id
+	res, err = handleWaitForQuest(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"quest_id": "abc"}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "quest_id must be a number")
+
+	// Missing quest
+	res, err = handleWaitForQuest(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"quest_id": "999"}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "not found")
+
+	// Quest with no tasks
+	testTome := client.Tome.Create().
+		SetName("test-tome").
+		SetDescription("A test tome").
+		SetAuthor("test-author").
+		SetSupportModel(tome.SupportModelCOMMUNITY).
+		SetEldritch("print('hello')").
+		SetHash("abc123").
+		SaveX(ctx)
+	quest := client.Quest.Create().SetName("empty").SetTome(testTome).SetParameters("{}").SetParamDefsAtCreation("[]").SetEldritchAtCreation("").SaveX(ctx)
+	res, err = handleWaitForQuest(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"quest_id": strconv.Itoa(quest.ID)}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "has no tasks")
+
+	// Test timeout logic by sending cancelled context
+	testHost := client.Host.Create().SetIdentifier("wait-host").SetPlatform(c2pb.Host_PLATFORM_UNSPECIFIED).SaveX(ctx)
+	testBeacon := client.Beacon.Create().SetHost(testHost).SetTransport(c2pb.Transport_TRANSPORT_UNSPECIFIED).SaveX(ctx)
+	taskCtx, cancel := context.WithCancel(ctx)
+	client.Task.Create().SetQuest(quest).SetBeacon(testBeacon).SaveX(ctx)
+	cancel() // Cancel the context to simulate timeout
+	res, err = handleWaitForQuest(taskCtx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"quest_id": strconv.Itoa(quest.ID)}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "failed to query quest: context canceled")
+}
+
+// TestHandleQuestOutput tests edge cases for the quest_output tool.
+func TestHandleQuestOutput(t *testing.T) {
+	// Missing client
+	res, err := handleQuestOutput(context.Background(), mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "internal error: no database client")
+
+	client := setupTestDB(t)
+	defer client.Close()
+	ctx := context.WithValue(context.Background(), contextKey{}, client)
+
+	// Missing ids
+	res, err = handleQuestOutput(ctx, mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "invalid ids")
+}
+
+// TestHandleCreateQuest edge cases
+func TestHandleCreateQuestEdgeCases(t *testing.T) {
+	mockSrv := mcpserver.NewMCPServer("test", "1.0", mcpserver.WithElicitation())
+	handler := handleCreateQuest(mockSrv)
+
+	// Missing client
+	res, err := handler(context.Background(), mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "internal error: no database client")
+
+	client := setupTestDB(t)
+	defer client.Close()
+	ctx := context.WithValue(context.Background(), contextKey{}, client)
+
+	// Missing name
+	res, err = handler(ctx, mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "invalid name")
+
+	// Missing beacon_ids
+	res, err = handler(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"name": "test"}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "invalid beacon_ids")
+
+	// Empty beacon_ids
+	res, err = handler(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"name": "test", "beacon_ids": []interface{}{}}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "must provide at least one beacon id")
+
+	// Missing parameters
+	res, err = handler(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"name": "test", "beacon_ids": []interface{}{"1"}}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "invalid parameters")
+
+	// Missing tome_id
+	res, err = handler(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"name": "test", "beacon_ids": []interface{}{"1"}, "parameters": "{}"}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "invalid tome_id")
+
+	// Invalid tome_id (not number)
+	res, err = handler(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"name": "test", "beacon_ids": []interface{}{"1"}, "parameters": "{}", "tome_id": "abc"}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "tome_id must be a number")
+
+	// Missing tome (from db)
+	res, err = handler(ctx, mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"name": "test", "beacon_ids": []interface{}{"1"}, "parameters": "{}", "tome_id": "999"}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "failed to load tome")
+}
+
+// TestHandleGraphQLQueryEdgeCases tests edge cases for the graphql_query tool
+func TestHandleGraphQLQueryEdgeCases(t *testing.T) {
+	// Missing query
+	res, err := handleGraphQLQuery(context.Background(), mcp.CallToolRequest{})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "invalid query")
+
+	// Parse failure
+	res, err = handleGraphQLQuery(context.Background(), mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"query": "query { "}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "failed to parse")
+
+	// No GraphQL handler in context
+	res, err = handleGraphQLQuery(context.Background(), mcp.CallToolRequest{
+		Params: mcp.CallToolParams{Arguments: map[string]interface{}{"query": "query { __schema { types { name } } }"}},
+	})
+	require.NoError(t, err)
+	assert.True(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "no GraphQL handler available")
 }
