@@ -5,6 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+print_debug = []
+
 [dependencies]
 uuid = { workspace = true, features = ["v4", "v5", "fast-rng"] }
 log = { workspace = true }

@@ -114,7 +114,7 @@ pub fn get_id_with_selectors(selectors: Vec<Box<dyn HostIDSelector>>) -> Uuid {
                 return res;
             }
             None => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::debug!("Unique selector {} failed", selector.get_name());
             }
         }

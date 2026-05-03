@@ -3,6 +3,11 @@ fn main() {
     // value is always in sync with the environment.
     println!("cargo:rerun-if-env-changed=IMIX_UNIQUE");
 
+    println!("cargo:rerun-if-env-changed=IMIX_DEBUG");
+    if std::env::var("IMIX_DEBUG").unwrap_or_default() == "true" {
+        println!("cargo:rustc-cfg=feature=\"print_debug\"");
+    }
+
     let val = match std::env::var("IMIX_UNIQUE") {
         Ok(v) => v,
         // Not set — nothing to bake in; the binary will fall back to defaults().

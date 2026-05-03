@@ -1,11 +1,4 @@
 fn main() {
-    #[cfg(target_os = "windows")]
-    static_vcruntime::metabuild();
-
-    if std::env::var("CARGO_FEATURE_TOKIO_CONSOLE").is_ok() {
-        println!("cargo:rustc-cfg=tokio_unstable");
-    }
-
     println!("cargo:rerun-if-env-changed=IMIX_DEBUG");
     if std::env::var("IMIX_DEBUG").unwrap_or_default() == "true" {
         println!("cargo:rustc-cfg=feature=\"print_debug\"");

@@ -3,6 +3,9 @@ name = "guardrails"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+print_debug = []
+
 [dependencies]
 log = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
