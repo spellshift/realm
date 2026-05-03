@@ -170,6 +170,20 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
     }))
 }
 
+/// Default development public key (base64-encoded). Matches the fallback key in xchacha.rs.
+/// This key is only used for development builds when no server is available.
+const DEFAULT_DEV_PUBKEY: &str = "pR56vDJZb9b3BL3ZvCXIvgK0r2vCk7FiZ1RjeEhJVyU=";
+
+fn emit_default_pubkey(reason: &str) {
+    println!("cargo:warning={}", reason);
+    println!(
+        "cargo:warning=Using default development public key. \
+         This key is NOT suitable for production use. \
+         Set IMIX_SERVER_PUBKEY or ensure Tavern is reachable to use the real key."
+    );
+    println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", DEFAULT_DEV_PUBKEY);
+}
+
 fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     // Check if server pubkey was provided via YAML config
     if let Some(ref config) = yaml_config {
@@ -209,27 +223,30 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     let response = match reqwest::blocking::get(&status_url) {
         Ok(resp) => resp,
         Err(e) => {
-            println!("cargo:warning=Failed to connect to {}: {}", status_url, e);
+            emit_default_pubkey(&format!(
+                "Failed to connect to {}: {}",
+                status_url, e
+            ));
             return;
         }
     };
 
     if !response.status().is_success() {
-        println!(
-            "cargo:warning=Failed to fetch status from {}: HTTP {}",
+        emit_default_pubkey(&format!(
+            "Failed to fetch status from {}: HTTP {}",
             status_url,
             response.status()
-        );
+        ));
         return;
     }
 
     let json = match response.json::<serde_json::Value>() {
         Ok(json) => json,
         Err(e) => {
-            println!(
-                "cargo:warning=Failed to parse JSON response from {}: {}",
+            emit_default_pubkey(&format!(
+                "Failed to parse JSON response from {}: {}",
                 status_url, e
-            );
+            ));
             return;
         }
     };
@@ -237,10 +254,10 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     let pubkey = match json.get("Pubkey").and_then(|v| v.as_str()) {
         Some(key) => key,
         None => {
-            println!(
-                "cargo:warning=Pubkey field not found in response from {}",
+            emit_default_pubkey(&format!(
+                "Pubkey field not found in response from {}",
                 status_url
-            );
+            ));
             return;
         }
     };
