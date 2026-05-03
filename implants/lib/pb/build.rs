@@ -205,8 +205,15 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     // Construct the status endpoint URL
     let status_url = format!("{}/status", base_uri);
 
-    // Make a GET request to /status
-    let response = match reqwest::blocking::get(&status_url) {
+    // Make a GET request to /status using HTTP/1.1 to ensure unencrypted requests work
+    let client = match reqwest::blocking::Client::builder().http1_only().build() {
+        Ok(c) => c,
+        Err(e) => {
+            println!("cargo:warning=Failed to build HTTP client: {}", e);
+            return;
+        }
+    };
+    let response = match client.get(&status_url).send() {
         Ok(resp) => resp,
         Err(e) => {
             println!("cargo:warning=Failed to connect to {}: {}", status_url, e);
