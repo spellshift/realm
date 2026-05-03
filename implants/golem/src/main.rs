@@ -8,6 +8,9 @@ use eldritch::assets::{
     std::{EmbeddedAssets, StdAssetsLibrary},
 };
 use eldritch::conversion::ToValue;
+#[cfg(feature = "quiet")]
+use eldritch::{ForeignValue, Interpreter, NoopPrinter};
+#[cfg(not(feature = "quiet"))]
 use eldritch::{ForeignValue, Interpreter, StdoutPrinter};
 use eldritch_agent::Context;
 use pb::c2::TaskContext;
@@ -42,7 +45,10 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
     // Register the libraries that we need. Basically the same as interp.with_task_context but
     // with our custom assets library
     let agent = Arc::new(AgentFake {});
+    #[cfg(not(feature = "quiet"))]
     let mut interp = Interpreter::new_with_printer(Arc::new(StdoutPrinter)).with_default_libs();
+    #[cfg(feature = "quiet")]
+    let mut interp = Interpreter::new_with_printer(Arc::new(NoopPrinter)).with_default_libs();
     let task_context = TaskContext {
         task_id: 0,
         jwt: String::new(),
