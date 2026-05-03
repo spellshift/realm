@@ -81,7 +81,7 @@ fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
     let ciphertext: Vec<u8> = match cipher.encrypt(&nonce, pt_vec.as_slice()) {
         Ok(ct) => ct,
         Err(err) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::debug!(
                 "encode error unable to read bytes while encrypting: {:?}",
                 err
@@ -145,7 +145,7 @@ pub struct ChachaCodec<T, U>(PhantomData<(T, U)>, ChaChaSvc);
 
 impl<T, U> Default for ChachaCodec<T, U> {
     fn default() -> Self {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!("Loaded custom codec with xchacha encryption");
         Self(PhantomData, ChaChaSvc::default())
     }
@@ -186,7 +186,7 @@ where
     fn encode(&mut self, item: Self::Item, buf: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
         if !buf.has_remaining_mut() {
             // This should never happen but if it does the agent will be unable to queue new messages to the buffer until it's drained.
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::debug!("DANGER can't add to the buffer.");
         }
 
@@ -220,7 +220,7 @@ where
         let bytes_read = match reader.read_to_end(&mut bytes_in) {
             Ok(n) => n,
             Err(err) => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::debug!(
                     "decode error unable to read bytes from decode reader: {:?}",
                     err

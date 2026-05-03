@@ -62,19 +62,19 @@ impl TaskRegistry {
         let runtime_handle = tokio::runtime::Handle::current();
 
         // 2. Spawn thread
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::info!("Spawning Task: {0}", task_context.clone().task_id);
 
         thread::spawn(move || {
             if let Some(tome) = task.tome {
                 execute_task(context, tome, agent, runtime_handle);
             } else {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::warn!("Task {0} has no tome", task_context.clone().task_id);
             }
 
             // Cleanup
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("Completed Task: {0}", task_context.clone().task_id);
             let mut tasks = tasks_registry.lock().unwrap();
             tasks.remove(&task_context.task_id);
@@ -112,7 +112,7 @@ impl TaskRegistry {
         } else {
             // Task might have finished already, or this is an orphan subtask.
             // In the future we might want to track these anyway.
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::warn!("Attempted to register subtask '{name}' for non-existent task {task_id}");
         }
     }
@@ -133,7 +133,7 @@ impl TaskRegistry {
     pub fn stop(&self, task_id: i64) {
         let mut tasks = self.tasks.lock().unwrap();
         if let Some(handle) = tasks.remove(&task_id) {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("Task {task_id} stop requested (thread may persist)");
 
             let subtasks = handle.subtasks.read().unwrap();
@@ -195,7 +195,7 @@ fn execute_task(
     match runtime_handle.block_on(consumer_join_handle) {
         Ok(_) => {}
         Err(_e) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!(
                 "task={0} failed to wait for output consumer to join: {_e}",
                 task_id
@@ -245,7 +245,7 @@ fn report_start(context: Context, agent: &Arc<dyn Agent>) {
         _ => return, // Only reporting for TaskContext
     };
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("task={task_id} Started execution");
 
     match agent.report_output(ReportOutputRequest {
@@ -264,7 +264,7 @@ fn report_start(context: Context, agent: &Arc<dyn Agent>) {
     }) {
         Ok(_) => {}
         Err(_e) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("task={task_id} failed to report task start: {_e}");
         }
     }
@@ -283,7 +283,7 @@ fn spawn_output_consumer(
             _ => return, // Only reporting for TaskContext
         };
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::info!("task={} Started output stream", task_id);
         let mut rx_open = true;
         let mut error_rx_open = true;
@@ -309,7 +309,7 @@ fn spawn_output_consumer(
                             }) {
                                 Ok(_) => {}
                                 Err(_e) => {
-                                    #[cfg(debug_assertions)]
+                                    #[cfg(feature = "print_debug")]
                                     log::error!("task={task_id} failed to report output: {_e}");
                                 }
                             }
@@ -338,7 +338,7 @@ fn spawn_output_consumer(
                             }) {
                                 Ok(_) => {}
                                 Err(_e) => {
-                                    #[cfg(debug_assertions)]
+                                    #[cfg(feature = "print_debug")]
                                     log::error!("task={task_id} failed to report error: {_e}");
                                 }
                             }
@@ -379,7 +379,7 @@ fn report_panic(context: Context, agent: &Arc<dyn Agent>, err: String) {
     }) {
         Ok(_) => {}
         Err(_e) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("task={task_id} failed to report error: {_e}");
         }
     }
@@ -393,7 +393,7 @@ fn report_result(context: Context, result: Result<Value, String>, agent: &Arc<dy
 
     match result {
         Ok(v) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("task={task_id} Success: {v}");
 
             let _ = agent.report_output(ReportOutputRequest {
@@ -412,7 +412,7 @@ fn report_result(context: Context, result: Result<Value, String>, agent: &Arc<dy
             });
         }
         Err(e) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("task={task_id} Error: {e}");
 
             match agent.report_output(ReportOutputRequest {
@@ -431,7 +431,7 @@ fn report_result(context: Context, result: Result<Value, String>, agent: &Arc<dy
             }) {
                 Ok(_) => {}
                 Err(_e) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("task={task_id} failed to report task error: {_e}");
                 }
             }

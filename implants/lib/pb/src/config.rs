@@ -149,7 +149,7 @@ pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
                     .with_context(|| format!("Failed to parse jitter parameter '{}'", value))?;
             }
             _ => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::debug!("Ignoring unknown query parameter: {}", key);
             }
         }
@@ -186,7 +186,7 @@ fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
             if let Some(res) = host_unique::from_imix_unique(json.to_owned()) {
                 return res;
             } else {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!(
                     "Error parsing uniqueness string (should have been caught at build time"
                 );
@@ -204,7 +204,7 @@ fn parse_guardrails() -> Vec<Box<dyn Guardrail>> {
             if let Some(res) = guardrails::from_imix_guardrails(json.to_owned()) {
                 return res;
             } else {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!(
                     "Error parsing guardrails string (should have been caught at build time)"
                 );
@@ -249,7 +249,7 @@ impl Config {
 
         let guardrails = parse_guardrails();
         if !guardrails::check_guardrails(guardrails) {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("Guardrails failed, exiting");
             std::process::exit(0);
         }
@@ -280,12 +280,12 @@ impl Config {
                         h.primary_ip = fresh_ip;
                     }
                     None => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("host struct was never initialized, failed to set primary ip");
                     }
                 },
                 None => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("beacon struct was never initialized, failed to set primary ip");
                 }
             }
@@ -331,7 +331,7 @@ fn get_primary_ip() -> String {
             None => String::from(""),
         },
         Err(_err) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("failed to get primary ip: {_err}");
 
             String::from("")
