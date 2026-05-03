@@ -9,7 +9,10 @@ imix = []
 grpc = []
 http1 = []
 dns = []
-print_debug = []
+print_debug = [
+    "host_unique/print_debug",
+    "guardrails/print_debug",
+]
 
 
 [dependencies]

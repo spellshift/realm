@@ -93,7 +93,7 @@ impl InputParser {
                         } else {
                             #[cfg(feature = "print_debug")]
                             log::warn!("Ignored SS3 sequence: {seq:02x?}");
-                            #[cfg(not(debug_assertions))]
+                            #[cfg(not(feature = "print_debug"))]
                             let _ = seq;
                         }
                         self.buffer.drain(0..3);

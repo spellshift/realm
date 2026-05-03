@@ -21,6 +21,7 @@ tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 print_debug = [
     "transport/print_debug",
     "pb/print_debug",
+    "eldritch/print_debug",
     "eldritch-libchain/print_debug",
 ]
 

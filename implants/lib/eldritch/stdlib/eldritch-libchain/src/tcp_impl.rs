@@ -48,7 +48,7 @@ async fn handle_request(
     if let Err(e) = agent_clone.forward_raw(path_clone, rx_in, tx_out).await {
         #[cfg(feature = "print_debug")]
         log::error!("tcp forward_raw error: {}", e);
-        #[cfg(not(debug_assertions))]
+        #[cfg(not(feature = "print_debug"))]
         let _ = e;
     }
 
