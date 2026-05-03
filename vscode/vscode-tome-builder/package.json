@@ -1,81 +1,70 @@
 {
   "name": "tome-builder",
   "displayName": "Realm Tome Builder",
-  "description": "AI-powered assistant for creating Realm Tomes",
-  "version": "0.0.1",
+  "description": "AI-powered custom DSL assistant for creating Realm Tomes via MCP",
+  "version": "0.1.0",
   "publisher": "realm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spellshift/realm.git"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Machine Learning"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
+    "languages": [
       {
-        "command": "tomeBuilder.openChat",
-        "title": "Open Tome Builder Chat"
+        "id": "eldritch",
+        "aliases": [
+          "Eldritch",
+          "eldritch"
+        ],
+        "extensions": [
+          ".tome",
+          ".eldritch"
+        ],
+        "configuration": "./syntaxes/eldritch.configuration.json"
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "tome-builder-view",
-          "title": "Tome Builder",
-          "icon": "$(beaker)"
-        }
-      ]
-    },
-    "views": {
-      "tome-builder-view": [
-        {
-          "id": "tome-builder-chat",
-          "name": "Chat",
-          "type": "webview"
-        }
-      ]
-    },
-    "configuration": {
-      "title": "Tome Builder",
-      "properties": {
-        "tomeBuilder.llm.provider": {
-          "type": "string",
-          "enum": [
-            "gemini",
-            "openai",
-            "anthropic"
-          ],
-          "default": "gemini",
-          "description": "The LLM provider to use."
-        },
-        "tomeBuilder.llm.model": {
-          "type": "string",
-          "default": "gemini-2.0-flash-exp",
-          "description": "The model ID to use."
-        },
-        "tomeBuilder.llm.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "API Key for the LLM provider."
-        }
+    "grammars": [
+      {
+        "language": "eldritch",
+        "scopeName": "source.eldritch",
+        "path": "./syntaxes/eldritch.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "tomeBuilder.registerMcp",
+        "title": "Tome Builder: Register MCP Server for AI extensions"
+      }
+    ],
+    "mcpServers": {
+      "tome-builder": {
+        "command": "node",
+        "args": [
+          "./mcp-server/dist/index.js"
+        ]
       }
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "build-mcp": "cd mcp-server && npm install && npm run build"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.80.0",
     "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "@modelcontextprotocol/sdk": "^0.6.1",
-    "zod": "^3.25.76"
   }
 }
