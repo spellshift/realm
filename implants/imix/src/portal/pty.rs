@@ -121,7 +121,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                     continue;
                 }
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("PTY read error for {}: {}", stream_id_clone, _err);
                     break;
                 }

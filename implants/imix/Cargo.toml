@@ -18,6 +18,11 @@ win_service = []
 install = []
 quiet = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
+print_debug = [
+    "transport/print_debug",
+    "pb/print_debug",
+    "eldritch/print_debug",
+]
 
 [dependencies]
 tokio = { workspace = true, features = [

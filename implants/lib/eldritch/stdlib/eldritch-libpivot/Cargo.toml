@@ -49,3 +49,4 @@ stdlib = [
     "pnet",
 ]
 fake_bindings = []
+print_debug = []

@@ -226,7 +226,7 @@ impl Transport for GRPC {
         request: FetchAssetRequest,
         tx: Sender<FetchAssetResponse>,
     ) -> Result<()> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         let filename = request.name.clone();
         let resp = self.fetch_asset_impl(request).await?;
         let mut stream = resp.into_inner();
@@ -241,7 +241,7 @@ impl Transport for GRPC {
                         }
                     },
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("failed to download file: {}: {}", filename, _err);
 
                         return;
@@ -250,7 +250,7 @@ impl Transport for GRPC {
                 match tx.send(msg) {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!(
                             "failed to send downloaded file chunk: {}: {}",
                             filename,
@@ -316,7 +316,7 @@ impl Transport for GRPC {
             while let Some(msg) = match resp_stream.message().await {
                 Ok(m) => m,
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to receive gRPC stream response: {}", _err);
 
                     None
@@ -325,7 +325,7 @@ impl Transport for GRPC {
                 match tx.send(msg).await {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("failed to queue pty input: {}", _err);
 
                         return;
@@ -354,7 +354,7 @@ impl Transport for GRPC {
             while let Some(msg) = match resp_stream.message().await {
                 Ok(m) => m,
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to receive gRPC stream response: {}", _err);
 
                     None
@@ -363,7 +363,7 @@ impl Transport for GRPC {
                 match tx.send(msg).await {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("failed to queue portal input: {}", _err);
 
                         return;
@@ -428,13 +428,13 @@ impl Transport for GRPC {
             while let Some(msg) = match resp_stream.message().await {
                 Ok(m) => m,
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to receive gRPC stream response: {}", _err);
                     None
                 }
             } {
                 if tx.send(msg).await.is_err() {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to queue remote input");
                     return;
                 }

