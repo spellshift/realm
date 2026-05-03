@@ -16,7 +16,6 @@ icmp = ["transport/icmp"]
 tcp-bind = ["transport/tcp-bind"]
 win_service = []
 install = []
-quiet = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 print_debug = [
     "transport/print_debug",

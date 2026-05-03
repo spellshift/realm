@@ -26,6 +26,7 @@ Building in the dev container limits variables that might cause issues and is th
 | IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
 | IMIX_GUARDRAILS | JSON list of guardrail objects; if set, Imix exits at startup unless at least one guardrail passes. See [Guardrails](#guardrails) for details. | - | No |
 | IMIX_CONFIG | YAML-formatted advanced configuration string for multiple transports. When set, overrides `IMIX_CALLBACK_URI`, `IMIX_CALLBACK_INTERVAL`, and `IMIX_TRANSPORT_EXTRA_*`. See [Advanced Configuration](#advanced-configuration-imix_config) for details. | - | No |
+| IMIX_DEBUG | Debug output mode: `tomes` (print tome execution), `all` (print all debug output including imix internals) | `all` in debug builds, none in release | No |
 
 
 Imix has run-time configuration, that may be specified using environment variables during execution.
