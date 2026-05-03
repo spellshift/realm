@@ -12,6 +12,7 @@ dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 icmp = ["dep:rand", "dep:libc"]
 mock = ["dep:mockall"]
 tcp-bind = ["tokio-stream/net"]
+print_debug = []
 
 [dependencies]
 pb = { workspace = true }

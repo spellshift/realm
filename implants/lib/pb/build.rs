@@ -298,6 +298,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
     println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
     println!("cargo:rerun-if-env-changed=PROTOC");
+    println!("cargo:rerun-if-env-changed=IMIX_DEBUG");
+    let profile = std::env::var("PROFILE").unwrap_or_default();
+    let imix_debug = std::env::var("IMIX_DEBUG").unwrap_or_default();
+    if profile == "debug" || imix_debug == "true" {
+        println!("cargo:rustc-cfg=feature=\"print_debug\"");
+    }
 
     // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
     let yaml_config = parse_yaml_config()?;

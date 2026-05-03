@@ -143,7 +143,7 @@ impl DNS {
     /// Send packet and get response
     async fn send_packet(&self, packet: ConvPacket) -> Result<Vec<u8>> {
         let subdomain = self.build_subdomain(&packet).map_err(|e| {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!(
                 "DNS: Failed to build subdomain for packet type={}, seq={}: {}",
                 packet.r#type,
@@ -158,7 +158,7 @@ impl DNS {
         self.try_dns_query(&self.dns_server, &query, txid)
             .await
             .map_err(|e| {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!(
                     "DNS: Query failed for packet type={}, seq={}, conv_id={}: {}",
                     packet.r#type,
@@ -403,7 +403,7 @@ impl DNS {
 
         let data_crc = conv::calculate_crc32(request_data);
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: Request size={} bytes, chunks={}, chunk_size={} bytes, crc32={:#x}",
             request_data.len(),
@@ -433,7 +433,7 @@ impl DNS {
         let mut init_payload_bytes = Vec::new();
         init_payload.encode(&mut init_payload_bytes)?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: INIT packet - conv_id={}, method={}, total_chunks={}, file_size={}, data_crc32={:#x}",
             conv_id, method_code, total_chunks, data_size, data_crc
@@ -485,7 +485,7 @@ impl DNS {
                 }
             }
         } else {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::debug!(
                 "DNS: Unknown response format ({} bytes), retrying chunk",
                 response_data.len()
@@ -589,7 +589,7 @@ impl DNS {
             }
             (seq_num, Err(e)) => {
                 let err_msg = e.to_string();
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("Failed to send chunk {}: {}", seq_num, err_msg);
 
                 // If packet is too long, this is a fatal error
@@ -635,7 +635,7 @@ impl DNS {
                 }
                 *retries += 1;
 
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::debug!(
                     "DNS: Retrying chunk {} (attempt {}/{}) for conv_id={}",
                     nack_seq,
@@ -682,7 +682,7 @@ impl DNS {
                             }
                         }
                         Err(e) => {
-                            #[cfg(debug_assertions)]
+                            #[cfg(feature = "print_debug")]
                             log::debug!(
                                 "DNS: Retry failed for chunk {} in conv_id={}: {}",
                                 nack_seq,
@@ -702,7 +702,7 @@ impl DNS {
 
     /// Send COMPLETE packet to server to confirm successful receipt and cleanup conversation
     async fn send_complete_packet(&mut self, conv_id: &str) -> Result<()> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!("DNS: Sending COMPLETE packet for conv_id={}", conv_id);
 
         let complete_packet = ConvPacket {
@@ -724,7 +724,7 @@ impl DNS {
 
     /// Fetch response from server, handling potentially chunked responses
     async fn fetch_response(&mut self, conv_id: &str, total_chunks: usize) -> Result<Vec<u8>> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: All {} chunks acknowledged, sending FETCH",
             total_chunks
@@ -747,7 +747,7 @@ impl DNS {
             )
         })?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: FETCH response received ({} bytes)",
             end_response.len()
@@ -784,7 +784,7 @@ impl DNS {
         let expected_crc = metadata.data_crc32;
         let mut full_response = Vec::new();
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: Fetching chunked response - {} chunks, expected_crc={:#x}, conv_id={}",
             total_chunks,
@@ -984,7 +984,7 @@ impl Transport for DNS {
             record_type,
         };
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::info!(
             "DNS transport initialized - server={}, domain={}, record_type={:?}",
             dns_server,

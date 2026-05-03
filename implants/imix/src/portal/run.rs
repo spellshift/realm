@@ -33,10 +33,10 @@ pub async fn run(
     // Note: We use a separate task for transport since it might be long-running
     let transport_handle = tokio::spawn(async move {
         if let Err(_e) = transport.create_portal(req_rx, resp_tx).await {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("Portal transport error: {}", _e);
         }
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::info!("Portal transport loop exited");
     });
 
@@ -68,7 +68,7 @@ pub async fn run(
         })
         .await
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::error!("Failed to send initial portal registration: {}", _e);
         return Err(anyhow::anyhow!(
             "Failed to send initial portal registration"
@@ -86,21 +86,21 @@ pub async fn run(
                             // Handle global Close message
                             if let Some(Payload::Bytes(bytes_payload)) = &mote.payload {
                                 if bytes_payload.kind == BytesPayloadKind::Close as i32 && mote.stream_id.is_empty() {
-                                    #[cfg(debug_assertions)]
+                                    #[cfg(feature = "print_debug")]
                                     log::info!("Received global close portal mote, shutting down portal loop");
                                     break;
                                 }
                             }
 
                             if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx, &mut pty_manager).await {
-                                #[cfg(debug_assertions)]
+                                #[cfg(feature = "print_debug")]
                                 log::error!("Error handling incoming mote: {}", _e);
                             }
                          }
                     }
                     None => {
                         // Transport closed
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::info!("Transport channel closed (resp_rx), shutting down portal loop");
                         break;
                     }
@@ -122,13 +122,13 @@ pub async fn run(
                             mote: Some(mote),
                         };
                         if let Err(_e) = req_tx.send(req).await {
-                            #[cfg(debug_assertions)]
+                            #[cfg(feature = "print_debug")]
                             log::error!("Failed to send outgoing mote to transport: {}", _e);
                             break;
                         }
                     }
                     None => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::info!("Outgoing mote channel (out_rx) closed");
                         break; // All handlers closed? Unlikely.
                     }
@@ -158,7 +158,7 @@ async fn handle_incoming_mote(
     if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
         && bytes_payload.kind == BytesPayloadKind::Trace as i32
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::trace!("portal trace mote received: {:?}", &bytes_payload.clone());
 
         // 1. Add Agent Recv Event
@@ -201,7 +201,7 @@ async fn handle_incoming_mote(
 
     // Get or create context
     if !streams.contains_key(&stream_id) {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         {
             let seq_id = mote.seq_id;
             let size = mote.payload.as_ref().map_or(0, |p| match p {
@@ -225,10 +225,10 @@ async fn handle_incoming_mote(
 
         let task = tokio::spawn(async move {
             if let Err(_e) = stream_handler(stream_id_clone.clone(), rx, out_tx_clone).await {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("Stream handler error for {}: {}", stream_id_clone, _e);
             }
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("Stream handler finished for {}", stream_id_clone);
         });
         tasks.push(task);
@@ -244,7 +244,7 @@ async fn handle_incoming_mote(
                 if ctx.tx.send(m).await.is_err() {
                     // Handler closed, maybe remove stream?
                     // For now, we just ignore/log
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::warn!("Stream handler closed for {}", stream_id);
                 }
             }
@@ -296,13 +296,13 @@ async fn stream_handler(
             Payload::Udp(_) => udp::handle_udp(first_mote, rx, out_tx, sequencer).await,
             Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
             Payload::Shell(_) => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::warn!("Shell payloads should have been intercepted before stream handler");
                 Ok(())
             }
         }
     } else {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::warn!("Received mote with no payload for stream {}", stream_id);
         Ok(())
     }
