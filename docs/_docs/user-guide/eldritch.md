@@ -769,6 +769,32 @@ Here is an example of the Dict layout:
 ]
 ```
 
+### file.list_named_pipes
+
+`file.list_named_pipes() -> List<str>`
+
+The **file.list_named_pipes** method enumerates all named pipes on the system.
+
+On **Windows**, enumerates the `\\.\pipe\` namespace using `FindFirstFileW`/`FindNextFileW`. Returns pipe names (e.g. `"mypipe"`, not the full `\\.\pipe\mypipe` path).
+
+On **Linux**, scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs, and `/proc/*/fd` for pipe file descriptors. Returns full FIFO paths and `pipe:[inode]` identifiers for abstract pipes.
+
+```python
+# List all named pipes
+pipes = file.list_named_pipes()
+for pipe in pipes:
+    print(pipe)
+```
+
+On **Linux**, additionally scans `/proc/*/fd` for `pipe:[inode]` entries (abstract pipes not visible in filesystem).
+
+| OS | Supported |
+| --- | --- |
+| Windows | Yes |
+| Linux | Yes |
+| macOS | Yes (FIFOs only, no `/proc` scan) |
+| BSD | Yes (FIFOs only, no `/proc` scan) |
+
 ### file.list_recent
 
 `file.list_recent(path: str, limit: int) -> List<str>`
@@ -835,6 +861,24 @@ file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` 
 file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
+### file.read_named_pipe
+
+`file.read_named_pipe(name: str, timeout: int = 5) -> str`
+
+The **file.read_named_pipe** method reads data from a named pipe.
+
+On **Windows**, `name` is the pipe name (e.g. `"mypipe"`) which expands to `\\.\pipe\mypipe`. A full path like `\\.\pipe\mypipe` is also accepted. Opens via `std::fs`, uses `PeekNamedPipe` polling loop with timeout.
+
+On **Unix** (Linux, macOS, BSD), `name` is the full path to a FIFO (e.g. `"/tmp/mypipe"`). Opens with `O_NONBLOCK` and uses `poll()` to wait for data.
+
+The optional `timeout` parameter specifies the maximum number of seconds to wait for data (default: 5). Set to `0` for a non-blocking read that returns whatever data is immediately available.
+
+```python
+data = file.read_named_pipe("mypipe", timeout=10) # read from a named pipe
+data = file.read_named_pipe("/tmp/mypipe", timeout=5) # read from a FIFO with default 5s timeout
+data = file.read_named_pipe("mypipe", timeout=0) # non-blocking one-shot read (0s timeout may not return pipe data queued in RAM on windows, use the default 5s timeout)
+```
+
 ### file.remove
 
 `file.remove(path: str) -> None`
@@ -866,7 +910,7 @@ The **file.temp_file** method returns the path of a new temporary file with a ra
 The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
 
 ### file.template
-  
+
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
