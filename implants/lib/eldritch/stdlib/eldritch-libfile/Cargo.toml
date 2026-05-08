@@ -36,10 +36,12 @@ spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = { workspace = true, features = ["user", "fs"] }
+libc = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_Storage_FileSystem",
+    "Win32_System_Pipes",
     "Win32_System_SystemServices",
 ] }

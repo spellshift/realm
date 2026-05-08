@@ -159,6 +159,20 @@ pub trait FileLibrary {
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    /// Lists all named pipes on the system.
+    ///
+    /// On Windows, enumerates `\\.\pipe\` using `FindFirstFileW`/`FindNextFileW`.
+    /// On Linux, scans `/proc/*/fd` for pipe file descriptors and `/tmp` for FIFOs.
+    /// Returns pipe names, not full paths on Windows. Returns FIFO paths on Linux.
+    ///
+    /// **Returns**
+    /// - `List<str>`: Named pipe names (Windows) or FIFO paths (Linux).
+    ///
+    /// **Errors**
+    /// - Returns an error string if enumeration fails or the platform is unsupported.
+    fn list_named_pipes(&self) -> Result<Vec<String>, String>;
+
+    #[eldritch_method]
     /// Lists files in a directory recursively, sorted by most recent modification time.
     ///
     /// **Parameters**
@@ -241,6 +255,25 @@ pub trait FileLibrary {
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
     fn read_binary(&self, path: String) -> Result<Value, String>;
+
+    #[eldritch_method]
+    /// Reads data from a named pipe.
+    ///
+    /// On Windows, connects to `\\.\pipe\<name>`. On Linux, opens the FIFO at `<name>`.
+    ///
+    /// **Parameters**
+    /// - `name` (`str`): The pipe name. On Windows this is just the pipe name (e.g. `"mypipe"`),
+    ///   which gets expanded to `\\.\pipe\mypipe`. On Linux, this is the full path to the FIFO
+    ///   (e.g. `"/tmp/mypipe"`).
+    /// - `timeout` (`Option<int>`): Maximum seconds to wait for data. Defaults to 5.
+    ///   Set to 0 for non-blocking read (return whatever is available immediately).
+    ///
+    /// **Returns**
+    /// - `str`: The data read from the pipe as a UTF-8 string.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the pipe cannot be opened, the read times out, or the data is not valid UTF-8.
+    fn read_named_pipe(&self, name: String, timeout: Option<i64>) -> Result<String, String>;
 
     #[eldritch_method]
     /// Returns the current working directory of the process.

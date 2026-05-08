@@ -201,6 +201,13 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
+    fn list_named_pipes(&self) -> Result<Vec<String>, String> {
+        Ok(alloc::vec![
+            "fake_pipe1".to_string(),
+            "fake_pipe2".to_string()
+        ])
+    }
+
     fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
         let mut root = self.root.lock();
         let path_str = path.unwrap_or_else(|| {
@@ -317,6 +324,10 @@ impl FileLibrary for FileLibraryFake {
         } else {
             Err("File not found".to_string())
         }
+    }
+
+    fn read_named_pipe(&self, _name: String, _timeout: Option<i64>) -> Result<String, String> {
+        Ok("Some pipe data".to_string())
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {

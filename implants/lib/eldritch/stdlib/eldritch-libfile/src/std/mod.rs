@@ -15,6 +15,7 @@ pub mod follow_impl;
 pub mod is_dir_impl;
 pub mod is_file_impl;
 pub mod list_impl;
+pub mod list_named_pipes_impl;
 pub mod list_recent_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
@@ -22,6 +23,7 @@ pub mod parent_dir_impl;
 pub mod pwd_impl;
 pub mod read_binary_impl;
 pub mod read_impl;
+pub mod read_named_pipe_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
@@ -80,6 +82,10 @@ impl FileLibrary for StdFileLibrary {
         list_impl::list(path)
     }
 
+    fn list_named_pipes(&self) -> Result<Vec<String>, String> {
+        list_named_pipes_impl::list_named_pipes()
+    }
+
     fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
         list_recent_impl::list_recent(path, limit)
     }
@@ -102,6 +108,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn read_binary(&self, path: String) -> Result<Value, String> {
         read_binary_impl::read_binary(path).map(Value::Bytes)
+    }
+
+    fn read_named_pipe(&self, name: String, timeout: Option<i64>) -> Result<String, String> {
+        read_named_pipe_impl::read_named_pipe(name, timeout)
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {
