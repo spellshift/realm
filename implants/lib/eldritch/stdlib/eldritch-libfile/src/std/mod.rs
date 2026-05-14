@@ -82,8 +82,8 @@ impl FileLibrary for StdFileLibrary {
         list_impl::list(path)
     }
 
-    fn list_named_pipes(&self) -> Result<Vec<String>, String> {
-        list_named_pipes_impl::list_named_pipes()
+    fn list_named_pipes(&self, detailed: Option<bool>) -> Result<Value, String> {
+        list_named_pipes_impl::list_named_pipes(detailed)
     }
 
     fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
@@ -110,8 +110,8 @@ impl FileLibrary for StdFileLibrary {
         read_binary_impl::read_binary(path).map(Value::Bytes)
     }
 
-    fn read_named_pipe(&self, name: String, timeout: Option<i64>) -> Result<String, String> {
-        read_named_pipe_impl::read_named_pipe(name, timeout)
+    fn read_named_pipe(&self, name: String, max_bytes: Option<i64>) -> Result<String, String> {
+        read_named_pipe_impl::read_named_pipe(name, max_bytes)
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {

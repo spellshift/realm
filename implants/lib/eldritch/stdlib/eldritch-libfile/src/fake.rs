@@ -201,11 +201,13 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
-    fn list_named_pipes(&self) -> Result<Vec<String>, String> {
-        Ok(alloc::vec![
-            "fake_pipe1".to_string(),
-            "fake_pipe2".to_string()
-        ])
+    fn list_named_pipes(&self, _detailed: Option<bool>) -> Result<Value, String> {
+        Ok(Value::List(alloc::sync::Arc::new(spin::RwLock::new(
+            alloc::vec![
+                Value::String("fake_pipe1".to_string()),
+                Value::String("fake_pipe2".to_string()),
+            ],
+        ))))
     }
 
     fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
@@ -326,7 +328,7 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
-    fn read_named_pipe(&self, _name: String, _timeout: Option<i64>) -> Result<String, String> {
+    fn read_named_pipe(&self, _name: String, _max_bytes: Option<i64>) -> Result<String, String> {
         Ok("Some pipe data".to_string())
     }
 

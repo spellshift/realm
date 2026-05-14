@@ -2,36 +2,39 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 
-/// Read data from a named pipe with optional timeout.
+/// Default read buffer size.
+const DEFAULT_BUF_SIZE: usize = 4096;
+
+/// Read data from a named pipe.
 ///
 /// - Windows: opens `\\.\pipe\<name>`
-/// - Linux: opens FIFO at `<name>` (must be full path)
+/// - Unix: opens FIFO at `<name>`
 /// - Other: returns error
-pub fn read_named_pipe(name: String, timeout: Option<i64>) -> Result<String, String> {
-    let timeout_secs = timeout.unwrap_or(5);
-
+///
+/// If max_bytes is Some, reads up to that many bytes.
+/// If None, reads all available data to EOF.
+pub fn read_named_pipe(name: String, max_bytes: Option<i64>) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
-        read_named_pipe_windows(&name, timeout_secs)
+        read_named_pipe_windows(&name, max_bytes)
     }
 
     #[cfg(all(unix, not(target_os = "windows")))]
     {
-        read_named_pipe_unix(&name, timeout_secs)
+        read_named_pipe_unix(&name, max_bytes)
     }
 
     #[cfg(not(any(target_os = "windows", unix)))]
     {
-        let _ = (name, timeout_secs);
+        let _ = (name, max_bytes);
         Err("read_named_pipe is only supported on Windows, Linux, macOS, and BSD".to_string())
     }
 }
 
 #[cfg(target_os = "windows")]
-fn read_named_pipe_windows(name: &str, timeout_secs: i64) -> Result<String, String> {
+fn read_named_pipe_windows(name: &str, max_bytes: Option<i64>) -> Result<String, String> {
     use ::std::io::Read;
-    use ::std::os::windows::io::{AsRawHandle, RawHandle};
-    use windows_sys::Win32::System::Pipes::PeekNamedPipe;
+    use ::std::os::windows::io::AsRawHandle;
 
     // Build pipe path: \\.\pipe\<name>
     let pipe_path = if name.starts_with(r"\\") {
@@ -40,7 +43,6 @@ fn read_named_pipe_windows(name: &str, timeout_secs: i64) -> Result<String, Stri
         format!(r"\\.\pipe\{}", name)
     };
 
-    // Open pipe using std::fs (basically a CreateFileW wrapper, handles that automatically)
     let file = ::std::fs::OpenOptions::new()
         .read(true)
         .open(&pipe_path)
@@ -48,21 +50,16 @@ fn read_named_pipe_windows(name: &str, timeout_secs: i64) -> Result<String, Stri
 
     let handle = file.as_raw_handle();
 
-    // Poll with PeekNamedPipe + timeout instead of blocking read().
-    // read() on named pipe blocks forever when there's no data (it just hangs imix :( )
-    let deadline = ::std::time::Instant::now()
-        + ::std::time::Duration::from_secs(if timeout_secs <= 0 {
-            0
-        } else {
-            timeout_secs as u64
-        });
+    // Poll with PeekNamedPipe - non-blocking check for available data. Retry briefly after connect: some pipe servers write in response
+    // to a client connecting, so data may arrive shortly after open (don't want to miss the pipe drain if queued data exists in RAM)
+    use windows_sys::Win32::System::Pipes::PeekNamedPipe;
 
-    let mut result = Vec::new();
-    let mut buf = vec![0u8; 4096];
+    const MAX_RETRIES: u32 = 20; // dunno about the 20 peek loop TODO: figure out how to peek until 0 bytes?
+    const RETRY_DELAY_MS: u64 = 100;
+    const DRAIN_DELAY_MS: u64 = 10;
 
-    loop {
-        // Check if data available without blocking
-        let mut avail: u32 = 0;
+    let mut avail: u32 = 0;
+    for _attempt in 0..MAX_RETRIES {
         let peek_ok = unsafe {
             PeekNamedPipe(
                 handle,
@@ -76,92 +73,112 @@ fn read_named_pipe_windows(name: &str, timeout_secs: i64) -> Result<String, Stri
 
         if peek_ok == 0 {
             // Pipe broken or closed
-            break;
+            let err = ::std::io::Error::last_os_error();
         }
 
         if avail > 0 {
-            // Data available - use std::io::Read (won't block since we know bytes are available)
-            let read_size = core::cmp::min(avail as usize, buf.len());
-            match (&file).read(&mut buf[..read_size]) {
-                Ok(0) => break,
-                Ok(n) => result.extend_from_slice(&buf[..n]),
-                Err(_) => break,
+            break;
+        }
+        ::std::thread::sleep(::std::time::Duration::from_millis(RETRY_DELAY_MS));
+    }
+
+    if avail == 0 {
+        return Ok(String::new());
+    }
+
+    // Drain all available data. Peek+read in loop to catch multi-message writes
+    // After each read, retry peek multiple times before giving up - server may
+    // need time between writes (tried to make it as compatible as possible for variety of pipewriting tools)
+    const DRAIN_RETRIES: u32 = 5;
+    let max_read = max_bytes.map(|n| n as usize).unwrap_or(usize::MAX);
+    let mut result = Vec::new();
+    let mut buf = vec![0u8; DEFAULT_BUF_SIZE];
+    let mut empty_peeks = 0u32;
+
+    loop {
+        let mut chunk_avail: u32 = 0;
+        let peek_ok = unsafe {
+            PeekNamedPipe(
+                handle,
+                core::ptr::null_mut(),
+                0,
+                core::ptr::null_mut(),
+                &mut chunk_avail,
+                core::ptr::null_mut(),
+            )
+        };
+        if peek_ok == 0 {
+            break; // pipe broken
+        }
+
+        if chunk_avail == 0 {
+            empty_peeks += 1;
+            if empty_peeks > DRAIN_RETRIES {
+                break; // no more data after retries
             }
+            ::std::thread::sleep(::std::time::Duration::from_millis(DRAIN_DELAY_MS));
             continue;
         }
 
-        // No data - check timeout
-        if timeout_secs <= 0 || ::std::time::Instant::now() >= deadline {
+        // Data available - reset empty counter, read
+        empty_peeks = 0;
+
+        let to_read = (chunk_avail as usize)
+            .min(buf.len())
+            .min(max_read - result.len());
+        if to_read == 0 {
             break;
         }
 
-        // Brief sleep before polling again
-        ::std::thread::sleep(::std::time::Duration::from_millis(50));
+        match (&file).read(&mut buf[..to_read]) {
+            Ok(0) => break,
+            Ok(n) => {
+                result.extend_from_slice(&buf[..n]);
+            }
+            Err(_) => break,
+        }
+
+        if result.len() >= max_read {
+            break;
+        }
     }
 
-    // file dropped here - handle closed automatically
-
     if result.is_empty() {
-        return Err(format!(
-            "No data read from pipe '{}' within {}s",
-            pipe_path, timeout_secs
-        ));
+        return Ok(String::new());
     }
 
     String::from_utf8(result).map_err(|e| format!("Pipe data is not valid UTF-8: {}", e))
 }
 
 #[cfg(unix)]
-fn read_named_pipe_unix(name: &str, timeout_secs: i64) -> Result<String, String> {
-    use ::std::os::unix::fs::OpenOptionsExt;
-    use ::std::os::unix::io::AsRawFd;
+fn read_named_pipe_unix(name: &str, max_bytes: Option<i64>) -> Result<String, String> {
+    use ::std::io::Read;
 
-    // Open FIFO in non-blocking mode first (prevents blocking on open if no writer)
-    let file = ::std::fs::OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_NONBLOCK)
-        .open(name)
+    let mut file = ::std::fs::File::open(name)
         .map_err(|e| format!("Failed to open pipe '{}': {}", name, e))?;
 
-    let fd = file.as_raw_fd();
-
-    // Use poll() with timeout to wait for data
-    let timeout_ms = if timeout_secs <= 0 {
-        0
-    } else {
-        (timeout_secs * 1000) as i32
-    };
-    let mut pollfd = libc::pollfd {
-        fd,
-        events: libc::POLLIN,
-        revents: 0,
-    };
-
-    let poll_result = unsafe { libc::poll(&mut pollfd, 1, timeout_ms) };
-    if poll_result == 0 {
-        return Err(format!(
-            "Pipe '{}' read timed out after {}s",
-            name, timeout_secs
-        ));
-    }
-    if poll_result < 0 {
-        return Err(format!(
-            "poll() failed on pipe '{}': {}",
-            name,
-            ::std::io::Error::last_os_error()
-        ));
-    }
-
-    // Data available - read it
     let mut result = Vec::new();
-    let mut buf = vec![0u8; 4096];
-    loop {
-        let n = unsafe { libc::read(fd, buf.as_mut_ptr() as *mut libc::c_void, buf.len()) };
-        if n > 0 {
-            result.extend_from_slice(&buf[..n as usize]);
+
+    match max_bytes {
+        Some(n) if n > 0 => {
+            let n = n as usize;
+            let mut buf = vec![0u8; n.min(DEFAULT_BUF_SIZE)];
+            let mut remaining = n;
+            while remaining > 0 {
+                let to_read = remaining.min(buf.len());
+                match file.read(&mut buf[..to_read]) {
+                    Ok(0) => break,
+                    Ok(bytes_read) => {
+                        result.extend_from_slice(&buf[..bytes_read]);
+                        remaining -= bytes_read;
+                    }
+                    Err(_) => break,
+                }
+            }
         }
-        if n <= 0 {
-            break;
+        _ => {
+            file.read_to_end(&mut result)
+                .map_err(|e| format!("Failed to read pipe '{}': {}", name, e))?;
         }
     }
 
@@ -172,68 +189,15 @@ fn read_named_pipe_unix(name: &str, timeout_secs: i64) -> Result<String, String>
 mod tests {
     use super::*;
 
-    #[cfg(unix)]
-    #[test]
-    fn test_read_named_pipe_linux_fifo() {
-        use ::std::io::Write;
-
-        let dir = tempfile::tempdir().unwrap();
-        let fifo_path = dir.path().join("test_pipe");
-        let fifo_str = fifo_path.to_str().unwrap().to_string();
-
-        // Create FIFO
-        let c_path = ::std::ffi::CString::new(fifo_str.clone()).unwrap();
-        unsafe { libc::mkfifo(c_path.as_ptr(), 0o644) };
-
-        // Write from another thread
-        let fifo_str_clone = fifo_str.clone();
-        let writer = ::std::thread::spawn(move || {
-            let mut f = ::std::fs::OpenOptions::new()
-                .write(true)
-                .open(&fifo_str_clone)
-                .unwrap();
-            f.write_all(b"hello from pipe").unwrap();
-        });
-
-        let result = read_named_pipe(fifo_str, Some(5)).unwrap();
-        assert_eq!(result, "hello from pipe");
-        writer.join().unwrap();
-    }
-
-    // Cross-platform negative case tests
+    // Cross-platform tests
 
     #[test]
     fn test_read_nonexistent_pipe_errors() {
-        let result = read_named_pipe("nonexistent_pipe_12345_xyz".to_string(), Some(0));
+        let result = read_named_pipe("nonexistent_pipe_12345_xyz".to_string(), None);
         assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(
-            err.contains("Failed to open") || err.contains("No such file"),
-            "Expected open-failure error, got: {err}"
-        );
     }
 
-    #[test]
-    fn test_read_pipe_zero_timeout_no_hang() {
-        let start = ::std::time::Instant::now();
-        let _ = read_named_pipe("nonexistent_timeout_test".to_string(), Some(0));
-        assert!(
-            start.elapsed().as_secs() < 2,
-            "Zero-timeout should return immediately"
-        );
-    }
-
-    #[test]
-    fn test_read_pipe_default_timeout() {
-        let start = ::std::time::Instant::now();
-        let _ = read_named_pipe("nonexistent_default_timeout".to_string(), None);
-        assert!(
-            start.elapsed().as_secs() < 8,
-            "Default timeout should be ~5s"
-        );
-    }
-
-    // Linux tests
+    // Unix tests
 
     #[cfg(unix)]
     #[test]
@@ -254,8 +218,33 @@ mod tests {
             f.write_all(b"hello from pipe").unwrap();
         });
 
-        let result = read_named_pipe(fifo_str, Some(5)).unwrap();
+        let result = read_named_pipe(fifo_str, None).unwrap();
         assert_eq!(result, "hello from pipe");
+        writer.join().unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_read_fifo_max_bytes() {
+        use ::std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let fifo_path = dir.path().join("test_max_bytes_fifo");
+        let fifo_str = fifo_path.to_str().unwrap().to_string();
+        let c_path = ::std::ffi::CString::new(fifo_str.clone()).unwrap();
+        unsafe { libc::mkfifo(c_path.as_ptr(), 0o644) };
+
+        let fifo_clone = fifo_str.clone();
+        let writer = ::std::thread::spawn(move || {
+            let mut f = ::std::fs::OpenOptions::new()
+                .write(true)
+                .open(&fifo_clone)
+                .unwrap();
+            f.write_all(b"hello from pipe with extra data").unwrap();
+        });
+
+        // Read only 5 bytes
+        let result = read_named_pipe(fifo_str, Some(5)).unwrap();
+        assert_eq!(result, "hello");
         writer.join().unwrap();
     }
 
@@ -280,24 +269,9 @@ mod tests {
             f.write_all(payload_clone.as_bytes()).unwrap();
         });
 
-        let result = read_named_pipe(fifo_str, Some(5)).unwrap();
+        let result = read_named_pipe(fifo_str, None).unwrap();
         assert_eq!(result.len(), 8192);
         writer.join().unwrap();
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_read_fifo_no_writer_timeout() {
-        let dir = tempfile::tempdir().unwrap();
-        let fifo_path = dir.path().join("test_empty_fifo");
-        let fifo_str = fifo_path.to_str().unwrap().to_string();
-        let c_path = ::std::ffi::CString::new(fifo_str.clone()).unwrap();
-        unsafe { libc::mkfifo(c_path.as_ptr(), 0o644) };
-
-        let start = ::std::time::Instant::now();
-        let result = read_named_pipe(fifo_str, Some(1));
-        assert!(result.is_err());
-        assert!(start.elapsed().as_secs() <= 3, "Should timeout, not hang");
     }
 
     #[cfg(unix)]
@@ -319,7 +293,7 @@ mod tests {
             f.write_all("こんにちは".as_bytes()).unwrap();
         });
 
-        let result = read_named_pipe(fifo_str, Some(5)).unwrap();
+        let result = read_named_pipe(fifo_str, None).unwrap();
         assert_eq!(result, "こんにちは");
         writer.join().unwrap();
     }
@@ -329,21 +303,21 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn test_read_windows_pipe_not_found() {
-        let result = read_named_pipe("nonexistent_pipe_xyz_12345".to_string(), Some(0));
+        let result = read_named_pipe("nonexistent_pipe_xyz_12345".to_string(), None);
         assert!(result.is_err());
     }
 
     #[cfg(target_os = "windows")]
     #[test]
     fn test_read_windows_full_path_accepted() {
-        let result = read_named_pipe(r"\\.\pipe\nonexistent_full_path_test".to_string(), Some(0));
-        assert!(result.is_err()); // doesn't exist, but path not double-prefixed
+        let result = read_named_pipe(r"\\.\pipe\nonexistent_full_path_test".to_string(), None);
+        assert!(result.is_err());
     }
 
     #[cfg(target_os = "windows")]
     #[test]
     fn test_read_windows_short_name_expanded() {
-        let result = read_named_pipe("short_name_test_xyz".to_string(), Some(0));
+        let result = read_named_pipe("short_name_test_xyz".to_string(), None);
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(

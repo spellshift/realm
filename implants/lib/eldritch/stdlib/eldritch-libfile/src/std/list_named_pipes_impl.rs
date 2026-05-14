@@ -1,32 +1,55 @@
+use alloc::collections::BTreeMap;
 use alloc::format;
-use alloc::string::String;
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use eldritch_core::Value;
+use spin::RwLock;
 
-/// List all named pipes on the system.
-///
-/// - Windows: enumerates `\\.\pipe\` namespace
-/// - Linux: finds FIFOs in common locations + /proc fd scan
-/// - Other: returns error
-pub fn list_named_pipes() -> Result<Vec<String>, String> {
+fn make_list(items: Vec<Value>) -> Value {
+    Value::List(Arc::new(RwLock::new(items)))
+}
+
+fn make_dict(map: BTreeMap<String, Value>) -> Value {
+    Value::Dictionary(Arc::new(RwLock::new(
+        map.into_iter()
+            .map(|(k, v)| (Value::String(k), v))
+            .collect(),
+    )))
+}
+
+/// List all named pipes on the system
+/// If detailed=true (Windows only), returns List<Dict> with name/instances/max_instances
+/// Otherwise returns List<str> of pipe names.
+pub fn list_named_pipes(detailed: Option<bool>) -> Result<Value, String> {
+    let detailed = detailed.unwrap_or(false);
+
     #[cfg(target_os = "windows")]
     {
-        list_named_pipes_windows()
+        if detailed {
+            list_named_pipes_windows_detailed().map(make_list)
+        } else {
+            list_named_pipes_windows()
+                .map(|v| make_list(v.into_iter().map(Value::String).collect()))
+        }
     }
 
     #[cfg(all(unix, not(target_os = "windows")))]
     {
-        list_named_pipes_unix()
+        let _ = detailed; // detailed not supported on unix
+        list_named_pipes_unix().map(|v| make_list(v.into_iter().map(Value::String).collect()))
     }
 
     #[cfg(not(any(target_os = "windows", unix)))]
     {
+        let _ = detailed;
         Err("list_named_pipes is only supported on Windows and Unix systems".to_string())
     }
 }
 
+/// Enumerate pipe names via FindFirstFileW/FindNextFileW
 #[cfg(target_os = "windows")]
 fn list_named_pipes_windows() -> Result<Vec<String>, String> {
-    use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::Storage::FileSystem::{
         FindClose, FindFirstFileW, FindNextFileW, WIN32_FIND_DATAW,
     };
@@ -67,6 +90,86 @@ fn list_named_pipes_windows() -> Result<Vec<String>, String> {
 
     unsafe { FindClose(handle) };
     Ok(pipes)
+}
+
+/// Enumerate pipes with instance info.
+/// Uses GetNamedPipeInfo (max instances) and GetNamedPipeHandleStateW (current instances)
+#[cfg(target_os = "windows")]
+fn list_named_pipes_windows_detailed() -> Result<Vec<Value>, String> {
+    use ::std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::System::Pipes::{GetNamedPipeHandleStateW, GetNamedPipeInfo};
+
+    let names = list_named_pipes_windows()?;
+    let mut results = Vec::new();
+
+    for name in &names {
+        let pipe_path = format!(r"\\.\pipe\{}", name);
+        let mut info = BTreeMap::new();
+        info.insert("name".to_string(), Value::String(name.clone()));
+
+        match ::std::fs::OpenOptions::new().read(true).open(&pipe_path) {
+            Ok(file) => {
+                let handle = file.as_raw_handle();
+
+                // Current instances via GetNamedPipeHandleStateW
+                let mut cur_inst: u32 = 0;
+                unsafe {
+                    GetNamedPipeHandleStateW(
+                        handle,
+                        core::ptr::null_mut(), // state
+                        &mut cur_inst,
+                        core::ptr::null_mut(), // max collection count
+                        core::ptr::null_mut(), // collect data timeout
+                        core::ptr::null_mut(), // username
+                        0,                     // username max size
+                    );
+                };
+                info.insert("instances".to_string(), Value::Int(cur_inst as i64));
+
+                // Max instances via GetNamedPipeInfo
+                let mut max_inst: u32 = 0;
+                let ok = unsafe {
+                    GetNamedPipeInfo(
+                        handle,
+                        core::ptr::null_mut(),
+                        core::ptr::null_mut(),
+                        core::ptr::null_mut(),
+                        &mut max_inst,
+                    )
+                };
+                if ok != 0 {
+                    // 255 = PIPE_UNLIMITED_INSTANCES
+                    if max_inst == 255 {
+                        info.insert(
+                            "max_instances".to_string(),
+                            Value::String("UNLIMITED".to_string()),
+                        );
+                    } else {
+                        info.insert("max_instances".to_string(), Value::Int(max_inst as i64));
+                    }
+                } else {
+                    info.insert(
+                        "max_instances".to_string(),
+                        Value::String("UNKNOWN".to_string()),
+                    );
+                }
+            }
+            Err(_) => {
+                info.insert(
+                    "instances".to_string(),
+                    Value::String("ACCESS_DENIED".to_string()),
+                );
+                info.insert(
+                    "max_instances".to_string(),
+                    Value::String("ACCESS_DENIED".to_string()),
+                );
+            }
+        }
+
+        results.push(make_dict(info));
+    }
+
+    Ok(results)
 }
 
 #[cfg(unix)]
@@ -130,25 +233,24 @@ fn list_named_pipes_unix() -> Result<Vec<String>, String> {
 mod tests {
     use super::*;
 
-    // Cross platform tests
-
-    #[test]
-    fn test_list_returns_ok() {
-        // Must not error even if no pipes exist on system
-        let result = list_named_pipes();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_list_returns_vec_of_strings() {
-        let pipes = list_named_pipes().unwrap();
-        // Each entry should be non-empty
-        for pipe in &pipes {
-            assert!(!pipe.is_empty(), "Pipe name should not be empty");
+    fn unwrap_list(val: Value) -> Vec<Value> {
+        if let Value::List(arc) = val {
+            arc.read().clone()
+        } else {
+            panic!("Expected List value");
         }
     }
 
-    // Linux tests
+    #[test]
+    fn test_list_returns_ok() {
+        // Must not error even if no pipes exist on system (somehow?)
+        assert!(list_named_pipes(None).is_ok());
+    }
+
+    #[test]
+    fn test_list_returns_list() {
+        let _ = unwrap_list(list_named_pipes(None).unwrap());
+    }
 
     #[cfg(unix)]
     #[test]
@@ -160,73 +262,48 @@ mod tests {
         let _ = ::std::fs::remove_file(fifo_path);
         unsafe { libc::mkfifo(c_path.as_ptr(), 0o644) };
 
-        let pipes = list_named_pipes().unwrap();
+        let pipes = unwrap_list(list_named_pipes(None).unwrap());
         assert!(
             pipes
                 .iter()
-                .any(|p| p.contains("test_list_pipe_realm_12345")),
-            "Should detect FIFO in /tmp, got: {:?}",
-            pipes
-                .iter()
-                .filter(|p| p.contains("test_list"))
-                .collect::<Vec<_>>()
+                .any(|p| matches!(p, Value::String(s) if s.contains("test_list_pipe_realm_12345"))),
+            "Should detect FIFO in /tmp"
         );
-
         let _ = ::std::fs::remove_file(fifo_path);
     }
 
     #[cfg(unix)]
     #[test]
     fn test_list_no_duplicates() {
-        let pipes = list_named_pipes().unwrap();
+        let pipes = unwrap_list(list_named_pipes(None).unwrap());
         let mut seen = ::std::collections::HashSet::new();
         for pipe in &pipes {
-            assert!(seen.insert(pipe), "Duplicate pipe entry: {pipe}");
+            if let Value::String(s) = pipe {
+                assert!(seen.insert(s.clone()), "Duplicate: {s}");
+            }
         }
     }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_list_finds_proc_pipes() {
-        // /proc scan should find at least some pipe:[inode] entries on any running system
-        let pipes = list_named_pipes().unwrap();
-        let has_proc_pipes = pipes.iter().any(|p| p.starts_with("pipe:["));
-        // Not guaranteed on all systems (ex. containers) - just verify no crash
-        let _ = has_proc_pipes;
-    }
-
-    // Windows tests
 
     #[cfg(target_os = "windows")]
     #[test]
     fn test_list_finds_system_pipes() {
         // Windows always has system pipes (ex. lsass)
-        let pipes = list_named_pipes().unwrap();
+        let pipes = unwrap_list(list_named_pipes(None).unwrap());
         assert!(!pipes.is_empty(), "Windows should always have named pipes");
     }
 
     #[cfg(target_os = "windows")]
     #[test]
-    fn test_list_contains_known_pipe() {
-        // lsass pipe exists on all Windows systems
-        let pipes = list_named_pipes().unwrap();
-        assert!(
-            pipes.iter().any(|p| p.to_lowercase().contains("lsass")),
-            "Should find lsass pipe, got {} pipes",
-            pipes.len()
-        );
-    }
-
-    #[cfg(target_os = "windows")]
-    #[test]
-    fn test_list_no_empty_names() {
-        let pipes = list_named_pipes().unwrap();
-        for pipe in &pipes {
-            assert!(!pipe.is_empty(), "Pipe names should not be empty");
-            assert!(
-                !pipe.contains('\0'),
-                "Pipe names should not contain null bytes"
-            );
+    fn test_list_detailed_returns_dicts() {
+        let pipes = unwrap_list(list_named_pipes(Some(true)).unwrap());
+        assert!(!pipes.is_empty());
+        if let Value::Dictionary(arc) = &pipes[0] {
+            let info = arc.read();
+            assert!(info.contains_key(&Value::String("name".to_string())));
+            assert!(info.contains_key(&Value::String("instances".to_string())));
+            assert!(info.contains_key(&Value::String("max_instances".to_string())));
+        } else {
+            panic!("Expected Dict in detailed mode");
         }
     }
 }

@@ -36,6 +36,8 @@ spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = { workspace = true, features = ["user", "fs"] }
+
+[target.'cfg(unix)'.dev-dependencies]
 libc = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
