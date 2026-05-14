@@ -771,29 +771,37 @@ Here is an example of the Dict layout:
 
 ### file.list_named_pipes
 
-`file.list_named_pipes() -> List<str>`
+`file.list_named_pipes(detailed: Optional<bool> = False) -> List<str> | List<Dict>`
 
 The **file.list_named_pipes** method enumerates all named pipes on the system.
 
-On **Windows**, enumerates the `\\.\pipe\` namespace using `FindFirstFileW`/`FindNextFileW`. Returns pipe names (e.g. `"mypipe"`, not the full `\\.\pipe\mypipe` path).
+On **Windows**, enumerates the `\\.\pipe\` namespace. With `detailed=True`, opens each pipe to query instance count and max instances via `GetNamedPipeHandleState`/`GetNamedPipeInfo`.
 
-On **Linux**, scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs, and `/proc/*/fd` for pipe file descriptors. Returns full FIFO paths and `pipe:[inode]` identifiers for abstract pipes.
+On **Unix** (Linux, macOS, BSD), scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs. On Linux additionally scans `/proc/*/fd` for `pipe:[inode]` entries. `detailed` param is ignored on Unix.
 
 ```python
-# List all named pipes
+# Simple list of pipe names
 pipes = file.list_named_pipes()
 for pipe in pipes:
     print(pipe)
+
+# Detailed list with instance info (Windows only)
+pipes = file.list_named_pipes(detailed=True)
+for pipe in pipes:
+    print(f"{pipe['name']}: {pipe['instances']}/{pipe['max_instances']}")
 ```
 
-On **Linux**, additionally scans `/proc/*/fd` for `pipe:[inode]` entries (abstract pipes not visible in filesystem).
+Detailed mode dict fields:
+- `name` (str): Pipe name
+- `instances` (int or str): Current instance count, or `"ACCESS_DENIED"` if pipe couldn't be opened
+- `max_instances` (int or str): Maximum instances, `"UNLIMITED"`, `"UNKNOWN"`, or `"ACCESS_DENIED"`
 
 | OS | Supported |
 | --- | --- |
-| Windows | Yes |
-| Linux | Yes |
-| macOS | Yes (FIFOs only, no `/proc` scan) |
-| BSD | Yes (FIFOs only, no `/proc` scan) |
+| Windows | Yes (detailed + simple) |
+| Linux | Yes (simple only) |
+| macOS | Yes (FIFOs only, simple) |
+| BSD | Yes (FIFOs only, simple) |
 
 ### file.list_recent
 
@@ -863,20 +871,31 @@ file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file o
 
 ### file.read_named_pipe
 
-`file.read_named_pipe(name: str, timeout: int = 5) -> str`
+`file.read_named_pipe(name: str, max_bytes: Optional<int> = None) -> str`
 
 The **file.read_named_pipe** method reads data from a named pipe.
 
-On **Windows**, `name` is the pipe name (e.g. `"mypipe"`) which expands to `\\.\pipe\mypipe`. A full path like `\\.\pipe\mypipe` is also accepted. Opens via `std::fs`, uses `PeekNamedPipe` polling loop with timeout.
+On **Windows**, `name` is the pipe name (e.g. `"mypipe"`) which expands to `\\.\pipe\mypipe`. A full path like `\\.\pipe\mypipe` is also accepted.
 
-On **Unix** (Linux, macOS, BSD), `name` is the full path to a FIFO (e.g. `"/tmp/mypipe"`). Opens with `O_NONBLOCK` and uses `poll()` to wait for data.
+On **Unix** (Linux, macOS, BSD), `name` is the full path to a FIFO (e.g. `"/tmp/mypipe"`).
 
-The optional `timeout` parameter specifies the maximum number of seconds to wait for data (default: 5). Set to `0` for a non-blocking read that returns whatever data is immediately available.
+The optional `max_bytes` parameter limits the number of bytes read. If not specified, reads all available data to EOF. For time-based reads, use chunked reads in a loop:
 
 ```python
-data = file.read_named_pipe("mypipe", timeout=10) # read from a named pipe
-data = file.read_named_pipe("/tmp/mypipe", timeout=5) # read from a FIFO with default 5s timeout
-data = file.read_named_pipe("mypipe", timeout=0) # non-blocking one-shot read (0s timeout may not return pipe data queued in RAM on windows, use the default 5s timeout)
+# Read all data from pipe
+data = file.read_named_pipe("mypipe")
+
+# Read up to 1024 bytes
+chunk = file.read_named_pipe("/tmp/mypipe", max_bytes=1024)
+
+# Time-based chunked read pattern
+result = ""
+stop = time.now() + 10
+while time.now() < stop:
+    chunk = file.read_named_pipe("/tmp/mypipe", max_bytes=4096)
+    if len(chunk) == 0:
+        break
+    result = result + chunk
 ```
 
 ### file.remove
