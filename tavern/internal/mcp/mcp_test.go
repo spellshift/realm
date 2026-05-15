@@ -4,10 +4,12 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -115,6 +117,13 @@ func TestListQuestsHandler(t *testing.T) {
 	assert.Equal(t, "test-quest", quests[0].Name)
 	assert.NotNil(t, quests[0].Edges.Tome)
 	assert.Equal(t, "test-tome", quests[0].Edges.Tome.Name)
+
+	// Test actual handler
+	req := mcp.CallToolRequest{}
+	res, err := tavernmcp.HandleListQuestsForTest(tavernmcp.ContextWithClientForTest(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "test-quest")
 }
 
 // TestListHostsHandler tests the list_hosts tool by creating test data.
@@ -152,6 +161,13 @@ func TestListHostsHandler(t *testing.T) {
 	assert.Equal(t, "test-host", hosts[0].Name)
 	assert.Len(t, hosts[0].Edges.Beacons, 1)
 	assert.Len(t, hosts[0].Edges.Tags, 1)
+
+	// Test actual handler
+	req := mcp.CallToolRequest{}
+	res, err := tavernmcp.HandleListHostsForTest(tavernmcp.ContextWithClientForTest(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "test-host")
 }
 
 // TestListTomesHandler tests the list_tomes tool by creating test data.
@@ -183,6 +199,14 @@ func TestListTomesHandler(t *testing.T) {
 	tomes, err := client.Tome.Query().All(ctx)
 	require.NoError(t, err)
 	assert.Len(t, tomes, 2)
+
+	// Test actual handler
+	req := mcp.CallToolRequest{}
+	res, err := tavernmcp.HandleListTomesForTest(tavernmcp.ContextWithClientForTest(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "tome-1")
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "tome-2")
 }
 
 // TestCreateQuestHandler tests the create_quest tool by creating a quest.
@@ -234,6 +258,25 @@ func TestCreateQuestHandler(t *testing.T) {
 	assert.Len(t, createdQuest, 1)
 	assert.Equal(t, "mcp-quest", createdQuest[0].Name)
 	assert.Len(t, createdQuest[0].Edges.Tasks, 1)
+
+	// Test actual handler with no elicitation (err no active session)
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"name": "handler-quest",
+				"beacon_ids": []any{fmt.Sprintf("%d", testBeacon.ID)},
+				"parameters": "{}",
+				"tome_id": fmt.Sprintf("%d", testTome.ID),
+			},
+		},
+	}
+
+	mcpSrv := mcpserver.NewMCPServer("test", "1.0.0")
+
+	res, err := tavernmcp.HandleCreateQuestForTest(mcpSrv)(tavernmcp.ContextWithClientForTest(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "handler-quest")
 }
 
 // TestQuestOutputHandler tests the quest_output tool by creating quests with task output.
@@ -293,6 +336,18 @@ func TestQuestOutputHandler(t *testing.T) {
 	assert.Len(t, quests, 1)
 	assert.Len(t, quests[0].Edges.Tasks, 1)
 	assert.Equal(t, "task output result", quests[0].Edges.Tasks[0].Output)
+
+	// Test actual handler
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"ids": []any{fmt.Sprintf("%d", q.ID)},
+			},
+		},
+	}
+	res, err := tavernmcp.HandleQuestOutputForTest(tavernmcp.ContextWithClientForTest(ctx, client), req)
+	require.NoError(t, err)
+	assert.Contains(t, res.Content[0].(mcp.TextContent).Text, "task output result")
 }
 
 // TestWaitForQuestHandler tests the wait_for_quest tool with already-finished tasks.
@@ -348,6 +403,18 @@ func TestWaitForQuestHandler(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, quest.Edges.Tasks, 1)
 	assert.False(t, quest.Edges.Tasks[0].ExecFinishedAt.IsZero())
+
+	// Test actual handler
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"quest_id": fmt.Sprintf("%d", q.ID),
+			},
+		},
+	}
+	res, err := tavernmcp.HandleWaitForQuestForTest(tavernmcp.ContextWithClientForTest(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
 }
 
 // TestParseIntIDs tests the ParseIntIDs helper.
@@ -424,6 +491,21 @@ func TestGraphQLQueryHandler(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, tomes, 1)
 	assert.Equal(t, "graphql-test-tome", tomes[0].Name)
+
+	// Setup mock http handler
+	gqlHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"data":{"__schema":{"types":[]}}}`))
+	})
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{"query": "{ __schema { types { name } } }"},
+		},
+	}
+	res, err := tavernmcp.HandleGraphQLQueryForTest(tavernmcp.ContextWithGraphQLHandlerForTest(tavernmcp.ContextWithClientForTest(ctx, client), gqlHandler), req)
+	require.NoError(t, err)
+	assert.False(t, res.IsError)
 }
 
 // TestGraphQLQueryValidation tests that the graphql_query tool rejects mutations and subscriptions.

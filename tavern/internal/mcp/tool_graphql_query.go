@@ -99,7 +99,3 @@ func handleGraphQLQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	return mcp.NewToolResultText(string(respBody)), nil
 }
 
-// HandleGraphQLQueryForTest is an exported wrapper for testing the query validation logic.
-func HandleGraphQLQueryForTest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	return handleGraphQLQuery(ctx, request)
-}
