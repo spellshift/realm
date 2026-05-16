@@ -126,14 +126,16 @@ jobs:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
       # nextest is configured via .config/nextest.toml: [profile.ci] has retries=2 and writes
-      # JUnit to target/nextest/ci/junit.xml.
+      # JUnit to target/nextest/ci/junit.xml. The stdlib/tests crate is a separate Cargo
+      # project that does not inherit implants/.config/, so we pass --config-file explicitly.
       shell: bash
       run: |
+        NEXTEST_CONFIG="$GITHUB_WORKSPACE/implants/.config/nextest.toml"
         cd ./implants/
         cargo fmt --check
         cargo llvm-cov nextest --profile ci --lcov --output-path lcov.info
         cd ./lib/eldritch/stdlib/tests
-        cargo llvm-cov nextest --profile ci --lcov --output-path lcov.info
+        cargo llvm-cov nextest --config-file "$NEXTEST_CONFIG" --profile ci --lcov --output-path lcov.info
     - name: 🔄 Convert to CTRF
       if: always()
       shell: bash # Explicitly use bash to support standard shell syntax on Windows
