@@ -123,15 +123,6 @@ pub trait Transport: Send + Sync {
         -> Result<ReportOutputResponse>;
 
     ///
-    /// Open a shell via the transport.
-    #[allow(dead_code)]
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()>;
-
-    ///
     /// Create a portal via the transport.
     #[allow(dead_code)]
     async fn create_portal(
