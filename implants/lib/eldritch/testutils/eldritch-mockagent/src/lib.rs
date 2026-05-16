@@ -9,15 +9,11 @@ use std::sync::{Arc, Mutex, RwLock};
 
 extern crate alloc;
 
-pub type StartCalls = Arc<Mutex<Vec<(i64, Option<String>)>>>;
-
 pub struct MockAgent {
     pub config: Arc<RwLock<BTreeMap<String, String>>>,
     pub assets: Arc<Mutex<BTreeMap<String, Vec<u8>>>>,
     pub should_fail_fetch: AtomicBool,
     pub reported_processes: Arc<Mutex<Vec<Process>>>,
-    pub start_calls: StartCalls,
-    pub repl_calls: Arc<Mutex<Vec<i64>>>,
 }
 
 impl MockAgent {
@@ -30,8 +26,6 @@ impl MockAgent {
             assets: Arc::new(Mutex::new(BTreeMap::new())),
             should_fail_fetch: AtomicBool::new(false),
             reported_processes: Arc::new(Mutex::new(Vec::new())),
-            start_calls: Arc::new(Mutex::new(Vec::new())),
-            repl_calls: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -123,25 +117,6 @@ impl Agent for MockAgent {
     }
 
     fn create_portal(&self, _context: Context) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String> {
-        self.start_calls.lock().unwrap().push((
-            match context {
-                Context::Task(t) => t.task_id,
-                Context::ShellTask(s) => s.shell_task_id,
-            },
-            cmd,
-        ));
-        Ok(())
-    }
-
-    fn start_repl_reverse_shell(&self, context: Context) -> Result<(), String> {
-        self.repl_calls.lock().unwrap().push(match context {
-            Context::Task(t) => t.task_id,
-            Context::ShellTask(s) => s.shell_task_id,
-        });
         Ok(())
     }
 

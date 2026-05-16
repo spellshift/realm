@@ -125,12 +125,6 @@ impl Agent for AgentFake {
     fn create_portal(&self, _context: Context) -> Result<(), String> {
         Ok(())
     }
-    fn start_reverse_shell(&self, _context: Context, _cmd: Option<String>) -> Result<(), String> {
-        Ok(())
-    }
-    fn start_repl_reverse_shell(&self, _context: Context) -> Result<(), String> {
-        Ok(())
-    }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         Ok(c2::ClaimTasksResponse::default())
     }

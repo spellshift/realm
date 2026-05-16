@@ -44,12 +44,6 @@ mock! {
             request: ReportOutputRequest,
         ) -> Result<ReportOutputResponse>;
 
-        async fn reverse_shell(
-            &mut self,
-            rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-            tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-        ) -> Result<()>;
-
         fn get_type(&mut self) -> pb::c2::transport::Type {
             return pb::c2::transport::Type::TransportUnspecified;
         }

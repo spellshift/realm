@@ -17,7 +17,6 @@ use transport::Transport;
 
 use crate::portal::run_create_portal;
 use crate::shell::manager::{ShellManager, ShellManagerMessage};
-use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
 const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
@@ -499,16 +498,6 @@ impl Agent for ImixAgent {
         Ok(c2::ReportOutputResponse {})
     }
 
-    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String> {
-        let id = match &context {
-            Context::Task(tc) => tc.task_id,
-            Context::ShellTask(stc) => stc.shell_task_id,
-        };
-        self.spawn_subtask(id, move |transport| async move {
-            run_reverse_shell_pty(context, cmd, transport).await
-        })
-    }
-
     fn create_portal(&self, context: Context) -> Result<(), String> {
         let shell_manager_tx = self.shell_manager_tx.clone();
         let id = match &context {
@@ -517,17 +506,6 @@ impl Agent for ImixAgent {
         };
         self.spawn_subtask(id, move |transport| async move {
             run_create_portal(context, transport, shell_manager_tx).await
-        })
-    }
-
-    fn start_repl_reverse_shell(&self, context: Context) -> Result<(), String> {
-        let agent = self.clone();
-        let id = match &context {
-            Context::Task(tc) => tc.task_id,
-            Context::ShellTask(stc) => stc.shell_task_id,
-        };
-        self.spawn_subtask(id, move |transport| async move {
-            run_repl_reverse_shell(context, transport, agent).await
         })
     }
 

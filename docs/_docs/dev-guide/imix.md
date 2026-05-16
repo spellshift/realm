@@ -227,18 +227,8 @@ impl Transport for Custom {
         // TODO: How you wish to handle the `report_task_output` method.
         Err(anyhow!("Unimplemented!"))
     }
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        // TODO: How you wish to handle the `reverse_shell` method.
-        Err(anyhow!("Unimplemented!"))
-    }
 }
 ```
-
-NOTE: Be Aware that currently `reverse_shell` uses tokio's sender/receiver while the rest of the methods rely on mpsc's. This is an artifact of some implementation details under the hood of Imix. Some day we may wish to move completely over to tokio's but currently it would just result in performance loss/less maintainable code.
 
 After you implement all the functions and write descriptive error messages for operators to understand why function calls failed, you need to:
 

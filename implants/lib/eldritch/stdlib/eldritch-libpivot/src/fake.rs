@@ -11,14 +11,6 @@ use eldritch_macros::eldritch_library_impl;
 pub struct PivotLibraryFake;
 
 impl PivotLibrary for PivotLibraryFake {
-    fn reverse_shell_pty(&self, _cmd: Option<String>) -> Result<(), String> {
-        Ok(())
-    }
-
-    fn reverse_shell_repl(&self) -> Result<(), String> {
-        Ok(())
-    }
-
     fn create_portal(&self) -> Result<(), String> {
         Ok(())
     }
