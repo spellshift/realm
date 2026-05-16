@@ -11,47 +11,16 @@ pub mod fake;
 #[cfg(feature = "stdlib")]
 pub mod std;
 
-#[cfg(test)]
-mod tests;
-
 #[eldritch_library("pivot")]
 /// The `pivot` library provides tools for lateral movement, scanning, and tunneling.
 ///
 /// It supports:
-/// - Reverse shells (PTY and REPL).
 /// - SSH execution and file copy.
 /// - Network scanning (ARP, Port).
 /// - Traffic tunneling (Port forwarding, Bind proxy).
 /// - Simple network interaction (Ncat).
 /// - SMB execution (Stubbed/Proposed).
 pub trait PivotLibrary {
-    #[eldritch_method]
-    /// Spawns a reverse shell with a PTY (Pseudo-Terminal) attached.
-    ///
-    /// This provides a full interactive shell experience over the agent's C2 channel.
-    ///
-    /// **Parameters**
-    /// - `cmd` (`Option<str>`): The shell command to run (e.g., `/bin/bash`, `cmd.exe`). If `None`, defaults to system shell.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the shell cannot be spawned.
-    fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Spawns a basic REPL-style reverse shell with an Eldritch interpreter.
-    ///
-    /// Useful if PTY is not available.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if failure occurs.
-    fn reverse_shell_repl(&self) -> Result<(), String>;
-
     #[eldritch_method]
     /// Opens a portal bi-directional stream.
     ///
