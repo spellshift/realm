@@ -432,9 +432,10 @@ mod tests {
             t.expect_report_output()
                 .withf(|req| {
                     if let Some(report_output_request::Message::ShellTaskOutput(m)) = &req.message
-                        && let Some(out) = &m.output {
-                            return out.output.contains("2");
-                        }
+                        && let Some(out) = &m.output
+                    {
+                        return out.output.contains("2");
+                    }
                     false
                 })
                 .times(1)

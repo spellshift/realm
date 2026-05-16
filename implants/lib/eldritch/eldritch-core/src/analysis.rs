@@ -36,9 +36,10 @@ fn find_in_stmt(stmt: &Stmt, offset: usize) -> Option<Node<'_>> {
                 return Some(n);
             }
             if let Some(annot) = type_annot
-                && let Some(n) = find_in_expr(annot, offset) {
-                    return Some(n);
-                }
+                && let Some(n) = find_in_expr(annot, offset)
+            {
+                return Some(n);
+            }
             if let Some(n) = find_in_expr(rhs, offset) {
                 return Some(n);
             }
@@ -61,9 +62,10 @@ fn find_in_stmt(stmt: &Stmt, offset: usize) -> Option<Node<'_>> {
                 return Some(n);
             }
             if let Some(block) = else_block
-                && let Some(n) = find_node_at_offset(block, offset) {
-                    return Some(n);
-                }
+                && let Some(n) = find_node_at_offset(block, offset)
+            {
+                return Some(n);
+            }
             None
         }
         StmtKind::Return(Some(expr)) => find_in_expr(expr, offset),
@@ -72,15 +74,17 @@ fn find_in_stmt(stmt: &Stmt, offset: usize) -> Option<Node<'_>> {
                 match param {
                     Param::Normal(_, annot) | Param::Star(_, annot) | Param::StarStar(_, annot) => {
                         if let Some(a) = annot
-                            && let Some(n) = find_in_expr(a, offset) {
-                                return Some(n);
-                            }
+                            && let Some(n) = find_in_expr(a, offset)
+                        {
+                            return Some(n);
+                        }
                     }
                     Param::WithDefault(_, annot, default) => {
                         if let Some(a) = annot
-                            && let Some(n) = find_in_expr(a, offset) {
-                                return Some(n);
-                            }
+                            && let Some(n) = find_in_expr(a, offset)
+                        {
+                            return Some(n);
+                        }
                         if let Some(n) = find_in_expr(default, offset) {
                             return Some(n);
                         }
@@ -88,9 +92,10 @@ fn find_in_stmt(stmt: &Stmt, offset: usize) -> Option<Node<'_>> {
                 }
             }
             if let Some(annot) = return_annot
-                && let Some(n) = find_in_expr(annot, offset) {
-                    return Some(n);
-                }
+                && let Some(n) = find_in_expr(annot, offset)
+            {
+                return Some(n);
+            }
             find_node_at_offset(body, offset)
         }
         StmtKind::For(_, iterable, body) => {
@@ -157,9 +162,10 @@ fn find_in_expr(expr: &Expr, offset: usize) -> Option<Node<'_>> {
         ExprKind::FString(segments) => {
             for seg in segments {
                 if let FStringSegment::Expression(e) = seg
-                    && let Some(n) = find_in_expr(e, offset) {
-                        return Some(n);
-                    }
+                    && let Some(n) = find_in_expr(e, offset)
+                {
+                    return Some(n);
+                }
             }
             None
         }
@@ -192,15 +198,17 @@ fn find_in_expr(expr: &Expr, offset: usize) -> Option<Node<'_>> {
                 match param {
                     Param::Normal(_, annot) | Param::Star(_, annot) | Param::StarStar(_, annot) => {
                         if let Some(a) = annot
-                            && let Some(n) = find_in_expr(a, offset) {
-                                return Some(n);
-                            }
+                            && let Some(n) = find_in_expr(a, offset)
+                        {
+                            return Some(n);
+                        }
                     }
                     Param::WithDefault(_, annot, default) => {
                         if let Some(a) = annot
-                            && let Some(n) = find_in_expr(a, offset) {
-                                return Some(n);
-                            }
+                            && let Some(n) = find_in_expr(a, offset)
+                        {
+                            return Some(n);
+                        }
                         if let Some(n) = find_in_expr(default, offset) {
                             return Some(n);
                         }

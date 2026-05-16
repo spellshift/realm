@@ -131,9 +131,7 @@ impl Transport for TcpBindTransport {
                             Err(e) => {
                                 #[cfg(feature = "print_debug")]
                                 log::error!("[tcp-bind] connector: accept error: {}", e);
-                                Err(std::io::Error::other(
-                                    e.to_string(),
-                                ))
+                                Err(std::io::Error::other(e.to_string()))
                             }
                         }
                     } else {

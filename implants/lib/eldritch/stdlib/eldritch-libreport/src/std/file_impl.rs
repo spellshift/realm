@@ -47,9 +47,10 @@ pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(),
         let paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
         for entry in paths {
             if let Ok(match_path) = entry
-                && match_path.is_file() {
-                    files_to_report.push(match_path.to_string_lossy().into_owned());
-                }
+                && match_path.is_file()
+            {
+                files_to_report.push(match_path.to_string_lossy().into_owned());
+            }
         }
     } else {
         let md = std::fs::metadata(&path).map_err(|e| e.to_string())?;

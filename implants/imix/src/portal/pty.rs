@@ -53,9 +53,10 @@ impl PtyManager {
         if let Some(session) = self.sessions.get(&stream_id) {
             // Write input data to the PTY (skip empty data which is just the init mote)
             if !data.is_empty()
-                && let Ok(mut writer) = session.writer.lock() {
-                    let _ = writer.write_all(&data);
-                }
+                && let Ok(mut writer) = session.writer.lock()
+            {
+                let _ = writer.write_all(&data);
+            }
         }
 
         Ok(())

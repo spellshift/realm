@@ -149,9 +149,10 @@ async fn test_task_registry_spawn() {
     // Check for Hello World
     let has_output = reports.iter().any(|r| {
         if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
-            && let Some(o) = &m.output {
-                return o.output.contains("Hello World");
-            }
+            && let Some(o) = &m.output
+        {
+            return o.output.contains("Hello World");
+        }
         false
     });
     assert!(
@@ -162,9 +163,10 @@ async fn test_task_registry_spawn() {
     // Check completion
     let has_finished = reports.iter().any(|r| {
         if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
-            && let Some(o) = &m.output {
-                return o.exec_finished_at.is_some();
-            }
+            && let Some(o) = &m.output
+        {
+            return o.exec_finished_at.is_some();
+        }
         false
     });
     assert!(has_finished, "Should have marked task as finished");
@@ -270,9 +272,10 @@ async fn test_task_streaming_error() {
     // Check for error report
     let error_report = reports.iter().find(|r| {
         if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
-            && let Some(o) = &m.output {
-                return o.error.is_some();
-            }
+            && let Some(o) = &m.output
+        {
+            return o.error.is_some();
+        }
         false
     });
     assert!(error_report.is_some(), "Should report error");
@@ -332,18 +335,20 @@ async fn test_task_eprint_behavior() {
     // Check if "This is an error" appears in output or error field
     let error_in_output = reports.iter().any(|r| {
         if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
-            && let Some(o) = &m.output {
-                return o.output.contains("This is an error");
-            }
+            && let Some(o) = &m.output
+        {
+            return o.output.contains("This is an error");
+        }
         false
     });
 
     let error_in_error = reports.iter().any(|r| {
         if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
             && let Some(o) = &m.output
-                && let Some(err) = &o.error {
-                    return err.msg.contains("This is an error");
-                }
+            && let Some(err) = &o.error
+        {
+            return err.msg.contains("This is an error");
+        }
         false
     });
 

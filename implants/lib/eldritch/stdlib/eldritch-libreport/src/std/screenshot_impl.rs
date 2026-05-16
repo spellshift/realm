@@ -14,14 +14,22 @@ use {
     xcap::Monitor,
 };
 
-#[cfg(all(unix, feature = "stdlib", not(any(target_os = "linux", target_os = "freebsd"))))]
+#[cfg(all(
+    unix,
+    feature = "stdlib",
+    not(any(target_os = "linux", target_os = "freebsd"))
+))]
 fn get_hostname() -> String {
     nix::unistd::gethostname()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown".to_string())
 }
 
-#[cfg(all(unix, not(feature = "stdlib"), not(any(target_os = "linux", target_os = "freebsd"))))]
+#[cfg(all(
+    unix,
+    not(feature = "stdlib"),
+    not(any(target_os = "linux", target_os = "freebsd"))
+))]
 fn get_hostname() -> String {
     std::env::var("HOSTNAME").unwrap_or_else(|_| "unknown".to_string())
 }
