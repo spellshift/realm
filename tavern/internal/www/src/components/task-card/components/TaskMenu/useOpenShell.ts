@@ -17,7 +17,7 @@ export function useOpenShell(beaconId: string) {
     const [createShell, { loading }] = useMutation(CREATE_SHELL_MUTATION, {
         onCompleted: (data) => {
             const shellId = data.createShell.id;
-            window.open(`/shellv2/${shellId}`, "_blank");
+            window.open(`/shell/${shellId}`, "_blank");
         },
         onError: (error) => {
             toast({
