@@ -23,7 +23,7 @@ interface PortalTab {
     pivotId?: string;
 }
 
-const ShellV2 = () => {
+const Shell = () => {
     const { shellId } = useParams<{ shellId: string }>();
 
     const {
@@ -264,4 +264,4 @@ const ShellV2 = () => {
     );
 };
 
-export default ShellV2;
+export default Shell;

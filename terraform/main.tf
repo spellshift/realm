@@ -143,24 +143,6 @@ variable "gcp_region" {
   default = "us-east4"
 }
 
-variable "disable_gcp_pubsub" {
-  type = bool
-  description = "Disables GCP pubsub setup and instead defaults to inmem pubsub, suitable for use-cases where only one tavern instance will exist and distributed orchestration is unnecessary"
-  default = false
-}
-
-variable "gcp_pubsub_topic_shell_input" {
-  type = string
-  description = "Name of the GCP pubsub topic to create for shell input"
-  default = "shell_input"
-}
-
-variable "gcp_pubsub_topic_shell_output" {
-  type = string
-  description = "Name of the GCP pubsub topic to create for shell output"
-  default = "shell_output"
-}
-
 variable "mysql_user" {
   type = string
   description = "Username to set for the configured MySQL instance"
@@ -358,25 +340,6 @@ resource "google_project_iam_member" "tavern-cloud-scheduler-binding" {
   member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
-resource "google_pubsub_topic" "shell_input" {
-  count = var.disable_gcp_pubsub ? 0 : 1
-  name = var.gcp_pubsub_topic_shell_input
-}
-resource "google_pubsub_subscription" "shell_input-sub" {
-  count = var.disable_gcp_pubsub ? 0 : 1
-  name  = format("%s-sub", var.gcp_pubsub_topic_shell_input)
-  topic = google_pubsub_topic.shell_input[0].id
-}
-resource "google_pubsub_topic" "shell_output" {
-  count = var.disable_gcp_pubsub ? 0 : 1
-  name = var.gcp_pubsub_topic_shell_output
-}
-resource "google_pubsub_subscription" "shell_output-sub" {
-  count = var.disable_gcp_pubsub ? 0 : 1
-  name  = format("%s-sub", var.gcp_pubsub_topic_shell_output)
-  topic = google_pubsub_topic.shell_output[0].id
-}
-
 resource "google_cloud_run_service" "tavern" {
   name     = "tavern"
   location = var.gcp_region
@@ -434,32 +397,6 @@ resource "google_cloud_run_service" "tavern" {
         env {
           name = "GCP_PROJECT_ID"
           value = var.gcp_project
-        }
-
-        // Only configure GCP pubsub if it is not disabled
-        dynamic "env" {
-          for_each = var.disable_gcp_pubsub ? [] : [
-            {
-              name = "PUBSUB_TOPIC_SHELL_INPUT"
-              value = format("gcppubsub://%s", google_pubsub_topic.shell_input[0].id)
-            },
-            {
-              name = "PUBSUB_SUBSCRIPTION_SHELL_INPUT"
-              value = format("gcppubsub://%s", google_pubsub_subscription.shell_input-sub[0].id)
-            },
-            {
-              name = "PUBSUB_TOPIC_SHELL_OUTPUT"
-              value = format("gcppubsub://%s", google_pubsub_topic.shell_output[0].id)
-            },
-            {
-              name = "PUBSUB_SUBSCRIPTION_SHELL_OUTPUT"
-              value = format("gcppubsub://%s", google_pubsub_subscription.shell_output-sub[0].id)
-            }
-          ]
-          content {
-            name = env.value.name
-            value = env.value.value
-          }
         }
 
         env {

@@ -11,8 +11,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -21,7 +19,6 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
-	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
@@ -63,23 +60,11 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	// 2. Setup Portal Mux (In-Memory)
 	portalMux := mux.New()
 
-	// 3. Setup C2 Stream Mux (Dummy In-Memory)
-	topic, err := pubsub.OpenTopic(ctx, "mem://c2topic")
-	require.NoError(t, err)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://c2topic")
-	require.NoError(t, err)
-
-	c2StreamMux := stream.NewMux(topic, sub)
-
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	// Start c2StreamMux in background
-	ctxMux, cancelMux := context.WithCancel(ctx)
-	go c2StreamMux.Start(ctxMux)
-
-	c2Server := c2.New(entClient, c2StreamMux, portalMux, testPubKey, testPrivKey)
+	c2Server := c2.New(entClient, portalMux, testPubKey, testPrivKey)
 	portalServer := portals.New(entClient, portalMux)
 
 	// 4. Setup gRPC Listener with bufconn
@@ -119,10 +104,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 				t.Logf("Failed to close connection: %v", err)
 			}
 			s.Stop()
-			cancelMux()
 			entClient.Close()
-			topic.Shutdown(ctx)
-			sub.Shutdown(ctx)
 		},
 	}
 }

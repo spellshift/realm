@@ -58,7 +58,7 @@ const TaskShells = ({ shells }: { shells: Array<ShellEdge> }) => {
                                                 buttonVariant='ghost'
                                                 className='hover:underline hover:bg-'
                                                 onClick={() => {
-                                                    nav(`/shells/${shell.id}`)
+                                                    nav(`/shell/${shell.id}`)
                                                 }}>
                                                 Join shell instance
                                             </Button>

@@ -1,4 +1,4 @@
-import { WebsocketMessage, WebsocketMessageKind } from "../pages/shellv2/websocket";
+import { WebsocketMessage, WebsocketMessageKind } from "../pages/shell/websocket";
 
 export interface ExecutionResult {
     status: "complete" | "incomplete" | "error" | "meta";

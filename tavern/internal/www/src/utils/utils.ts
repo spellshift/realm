@@ -21,7 +21,7 @@ export function getNavItemFromPath(pathname: string): PageNavItem {
     // Check for prefix matches (e.g., /hosts/:hostId -> hosts)
     if (pathname.startsWith('/hosts/')) return PageNavItem.hosts;
     if (pathname.startsWith('/tasks/')) return PageNavItem.tasks;
-    if (pathname.startsWith('/shells/')) return PageNavItem.hosts;
+    if (pathname.startsWith('/shell/')) return PageNavItem.hosts;
 
     return PageNavItem.dashboard;
 }

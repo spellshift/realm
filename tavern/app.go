@@ -41,7 +41,6 @@ import (
 	"realm.pub/tavern/internal/hostcheck"
 	tavernhttp "realm.pub/tavern/internal/http"
 	tavernshell "realm.pub/tavern/internal/http/shell"
-	"realm.pub/tavern/internal/http/stream"
 	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
@@ -313,19 +312,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Request Logging
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 
-	// Configure Shell Muxes
-	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
-	go func() {
-		if err := wsShellMux.Start(ctx); err != nil {
-			slog.ErrorContext(ctx, "websocket shell mux stopped", "err", err)
-		}
-	}()
-	go func() {
-		if err := grpcShellMux.Start(ctx); err != nil {
-			slog.ErrorContext(ctx, "grpc shell mux stopped", "err", err)
-		}
-	}()
-
 	// Configure Portal Mux
 	portalMux := cfg.NewPortalMux(ctx)
 
@@ -463,7 +449,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
+			Handler:              newGRPCHandler(client, portalMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -493,13 +479,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: cdn.NewUploadHandler(client),
 		},
 		"/shell/ws": tavernhttp.Endpoint{
-			Handler: stream.NewShellHandler(client, wsShellMux),
-		},
-		"/shellv2/ws": tavernhttp.Endpoint{
 			Handler: tavernshell.NewHandler(client, portalMux),
-		},
-		"/shell/ping": tavernhttp.Endpoint{
-			Handler: stream.NewPingHandler(client, wsShellMux),
 		},
 		"/portals/ssh/ws": tavernhttp.Endpoint{
 			Handler: ssh.NewHandler(client, portalMux),
@@ -772,7 +752,7 @@ func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate, serverP
 	})
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux, c2Opts ...c2.Option) http.Handler {
+func newGRPCHandler(client *ent.Client, portalMux *mux.Mux, c2Opts ...c2.Option) http.Handler {
 	pub, priv, err := getKeyPairX25519()
 	if err != nil {
 		panic(err)
@@ -785,7 +765,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 		panic(err)
 	}
 
-	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey, c2Opts...)
+	c2srv := c2.New(client, portalMux, ed25519PubKey, ed25519PrivKey, c2Opts...)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
