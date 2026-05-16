@@ -23,6 +23,12 @@ pub struct PtyManager {
     sessions: HashMap<String, PtySession>,
 }
 
+impl Default for PtyManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PtyManager {
     pub fn new() -> Self {
         Self {
@@ -46,19 +52,13 @@ impl PtyManager {
 
         if let Some(session) = self.sessions.get(&stream_id) {
             // Write input data to the PTY (skip empty data which is just the init mote)
-            if !data.is_empty() {
-                if let Ok(mut writer) = session.writer.lock() {
+            if !data.is_empty()
+                && let Ok(mut writer) = session.writer.lock() {
                     let _ = writer.write_all(&data);
                 }
-            }
         }
 
         Ok(())
-    }
-
-    /// Remove a session by stream_id (e.g. on close).
-    pub fn remove_session(&mut self, stream_id: &str) {
-        self.sessions.remove(stream_id);
     }
 }
 
@@ -91,7 +91,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
     // Set TERM so that terminal-dependent commands (clear, reset, etc.) work
     cmd_builder.env("TERM", "xterm-256color");
 
-    let mut child = pair.slave.spawn_command(cmd_builder)?;
+    let child = pair.slave.spawn_command(cmd_builder)?;
 
     let reader = pair.master.try_clone_reader()?;
     let writer = pair.master.take_writer()?;

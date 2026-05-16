@@ -176,8 +176,8 @@ async fn handle_incoming_mote(
     }
 
     // Handle PTY Mote (BytesPayload with PTY kind)
-    if let Some(Payload::Bytes(ref bytes_payload)) = mote.payload {
-        if bytes_payload.kind == BytesPayloadKind::Pty as i32 {
+    if let Some(Payload::Bytes(ref bytes_payload)) = mote.payload
+        && bytes_payload.kind == BytesPayloadKind::Pty as i32 {
             let stream_id = mote.stream_id.clone();
             let data = bytes_payload.data.clone();
             pty_manager
@@ -185,7 +185,6 @@ async fn handle_incoming_mote(
                 .await?;
             return Ok(());
         }
-    }
 
     // Handle Shell Mote
     let is_shell = matches!(mote.payload, Some(Payload::Shell(_)));

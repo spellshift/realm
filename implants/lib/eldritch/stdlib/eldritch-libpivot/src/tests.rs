@@ -1,9 +1,6 @@
 use crate::{PivotLibrary, std::StdPivotLibrary};
-use alloc::collections::{BTreeMap, BTreeSet};
-use eldritch_agent::Agent;
 use eldritch_mockagent::MockAgent;
-use pb::c2;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 #[test]
 fn test_reverse_shell_pty_delegation() {

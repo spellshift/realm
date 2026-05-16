@@ -9,12 +9,14 @@ use std::sync::{Arc, Mutex, RwLock};
 
 extern crate alloc;
 
+pub type StartCalls = Arc<Mutex<Vec<(i64, Option<String>)>>>;
+
 pub struct MockAgent {
     pub config: Arc<RwLock<BTreeMap<String, String>>>,
     pub assets: Arc<Mutex<BTreeMap<String, Vec<u8>>>>,
     pub should_fail_fetch: AtomicBool,
     pub reported_processes: Arc<Mutex<Vec<Process>>>,
-    pub start_calls: Arc<Mutex<Vec<(i64, Option<String>)>>>,
+    pub start_calls: StartCalls,
     pub repl_calls: Arc<Mutex<Vec<i64>>>,
 }
 

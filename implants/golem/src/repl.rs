@@ -31,7 +31,7 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
     inter.register_module(
         "exit",
         Value::NativeFunction("exit".to_string(), |_env, _| {
-            println!("");
+            println!();
             std::process::exit(0)
         }),
     );
@@ -43,8 +43,8 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
     render(&mut stdout, &repl)?;
 
     loop {
-        if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
+        if event::poll(Duration::from_millis(100))?
+            && let Event::Key(key) = event::read()? {
                 let input = map_key(key);
                 if let Some(input) = input {
                     match repl.handle_input(input) {
@@ -92,7 +92,6 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
                     }
                 }
             }
-        }
     }
 
     terminal::disable_raw_mode()?;

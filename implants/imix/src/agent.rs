@@ -22,6 +22,12 @@ use crate::task::TaskRegistry;
 
 const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 
+pub type PendingForward = (
+    String,
+    tokio::sync::mpsc::Receiver<Vec<u8>>,
+    tokio::sync::mpsc::Sender<Vec<u8>>,
+);
+
 #[derive(Clone)]
 pub struct ImixAgent {
     config: Arc<RwLock<Config>>,
@@ -34,15 +40,7 @@ pub struct ImixAgent {
     pub process_list_tx: std::sync::mpsc::SyncSender<c2::ReportProcessListRequest>,
     pub process_list_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportProcessListRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
-    pub pending_forwards: Arc<
-        tokio::sync::Mutex<
-            Vec<(
-                String,
-                tokio::sync::mpsc::Receiver<Vec<u8>>,
-                tokio::sync::mpsc::Sender<Vec<u8>>,
-            )>,
-        >,
-    >,
+    pub pending_forwards: Arc<tokio::sync::Mutex<Vec<PendingForward>>>,
 }
 
 impl ImixAgent {

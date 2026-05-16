@@ -81,12 +81,11 @@ where
             },
             None => true,
         };
-        if include {
-            if let Err(e) = insert_fn(interp) {
+        if include
+            && let Err(e) = insert_fn(interp) {
                 interp.env = original_env;
                 return Err(e);
             }
-        }
     }
     interp.env = original_env;
     Ok(())

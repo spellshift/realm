@@ -10,15 +10,14 @@ pub fn read_binary(path: String) -> Result<Vec<u8>, String> {
         let paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
         let mut found = false;
         for entry in paths {
-            if let Ok(match_path) = entry {
-                if match_path.is_file() {
+            if let Ok(match_path) = entry
+                && match_path.is_file() {
                     found = true;
                     let mut data = fs::read(&match_path).map_err(|e| {
                         format!("Failed to read file {}: {e}", match_path.to_string_lossy())
                     })?;
                     result.append(&mut data);
                 }
-            }
         }
         if !found {
             return Err(format!("No files found matching pattern {path}"));
