@@ -431,6 +431,67 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the search encounters issues.
+    #[eldritch_method]
+    /// Returns an absolute representation of path.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The path to convert.
+    ///
+    /// **Returns**
+    /// - `str`: The absolute path.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the current working directory cannot be determined.
+    fn path_abs(&self, path: String) -> Result<String, String>;
+
+    #[eldritch_method]
+    /// Returns the shortest path name equivalent to path by purely lexical processing.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The path to clean.
+    ///
+    /// **Returns**
+    /// - `str`: The cleaned path.
+    fn path_clean(&self, path: String) -> Result<String, String>;
+
+    #[eldritch_method]
+    /// Returns the last element of path.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The path.
+    ///
+    /// **Returns**
+    /// - `str`: The base name of the path.
+    fn path_base(&self, path: String) -> Result<String, String>;
+
+    #[eldritch_method]
+    /// Joins two path elements into a single path, separating them with an OS specific separator.
+    ///
+    /// **Parameters**
+    /// - `base` (`str`): The base path.
+    /// - `target` (`str`): The target path.
+    ///
+    /// **Returns**
+    /// - `str`: The joined path.
+    fn path_join(&self, base: String, target: String) -> Result<String, String>;
+
+    #[eldritch_method]
+    /// Returns all but the last element of path, typically the path's directory.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The path.
+    ///
+    /// **Returns**
+    /// - `str`: The directory of the path.
+    fn path_dir(&self, path: String) -> Result<String, String>;
+
+    #[eldritch_method]
+    /// Returns the operating system-specific path separator.
+    ///
+    /// **Returns**
+    /// - `str`: The path separator ("/" or "\").
+    fn path_separator(&self) -> Result<String, String>;
+
     fn find(
         &self,
         path: String,

@@ -436,6 +436,37 @@ impl FileLibrary for FileLibraryFake {
         Err("Parent path not found".to_string())
     }
 
+    fn path_abs(&self, path: String) -> Result<String, String> {
+        if path.is_empty() {
+            return Ok("/home/user".into());
+        }
+        if path.starts_with("/") {
+            return self.path_clean(path);
+        }
+        let joined = alloc::format!("/home/user/{}", path);
+        self.path_clean(joined)
+    }
+
+    fn path_clean(&self, path: String) -> Result<String, String> {
+        crate::std::path_clean_impl::path_clean(path)
+    }
+
+    fn path_base(&self, path: String) -> Result<String, String> {
+        crate::std::path_base_impl::path_base(path)
+    }
+
+    fn path_join(&self, base: String, target: String) -> Result<String, String> {
+        crate::std::path_join_impl::path_join(base, target)
+    }
+
+    fn path_dir(&self, path: String) -> Result<String, String> {
+        crate::std::path_dir_impl::path_dir(path)
+    }
+
+    fn path_separator(&self) -> Result<String, String> {
+        Ok("/".to_string())
+    }
+
     fn find(
         &self,
         _path: String,

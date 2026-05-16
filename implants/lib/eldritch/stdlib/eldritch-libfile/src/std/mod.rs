@@ -19,6 +19,12 @@ pub mod list_recent_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
 pub mod parent_dir_impl;
+pub mod path_abs_impl;
+pub mod path_base_impl;
+pub mod path_clean_impl;
+pub mod path_dir_impl;
+pub mod path_join_impl;
+pub mod path_separator_impl;
 pub mod pwd_impl;
 pub mod read_binary_impl;
 pub mod read_impl;
@@ -164,6 +170,30 @@ impl FileLibrary for StdFileLibrary {
 
     fn write_binary(&self, path: String, content: Value) -> Result<(), String> {
         write_binary_impl::write_binary(path, content)
+    }
+
+    fn path_abs(&self, path: String) -> Result<String, String> {
+        path_abs_impl::path_abs(path)
+    }
+
+    fn path_clean(&self, path: String) -> Result<String, String> {
+        path_clean_impl::path_clean(path)
+    }
+
+    fn path_base(&self, path: String) -> Result<String, String> {
+        path_base_impl::path_base(path)
+    }
+
+    fn path_join(&self, base: String, target: String) -> Result<String, String> {
+        path_join_impl::path_join(base, target)
+    }
+
+    fn path_dir(&self, path: String) -> Result<String, String> {
+        path_dir_impl::path_dir(path)
+    }
+
+    fn path_separator(&self) -> Result<String, String> {
+        path_separator_impl::path_separator()
     }
 
     fn find(
