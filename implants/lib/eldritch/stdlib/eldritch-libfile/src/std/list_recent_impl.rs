@@ -150,17 +150,13 @@ mod tests {
         let file1 = base_path.join("file1.txt");
         fs::write(&file1, "content1").unwrap();
 
-        // Change working directory to test default path "/" which depends on current dir/fs context
-        // Actually, since we can't easily mock "/", let's just test that passing None for limit
-        // uses the default of 10.
-        // For testing `None` for path, it tries to access `/`. We just ensure it doesn't crash
-        // and returns a Result (might be Err depending on permissions, but usually Ok with / files)
+        // Test that passing None for limit uses the default (>= 1) and returns
+        // the file we created. We intentionally do NOT test None for path here,
+        // because that defaults to walking the entire root filesystem ("/" or
+        // "C:\\"), which can be extremely slow and is environment-dependent.
 
         let res_limit = list_recent(Some(base_path.to_string_lossy().to_string()), None).unwrap();
         assert_eq!(res_limit.len(), 1);
-
-        // Test None path (defaults to "/")
-        let res_path = list_recent(None, Some(1));
-        assert!(res_path.is_ok() || res_path.is_err());
+        assert!(res_limit[0].contains("file1.txt"));
     }
 }
