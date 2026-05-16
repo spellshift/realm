@@ -7,6 +7,7 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -15,8 +16,16 @@ import (
 )
 
 // Diffs is the resolver for the diffs field.
-func (r *questResolver) Diffs(ctx context.Context, obj *ent.Quest) ([]*models.TaskDiff, error) {
-	tasks, err := obj.QueryTasks().WithReportedFiles().WithReportedProcesses().All(ctx)
+func (r *questResolver) Diffs(ctx context.Context, obj *ent.Quest, where *ent.TaskWhereInput) ([]*models.TaskDiff, error) {
+	query := obj.QueryTasks().WithReportedFiles().WithReportedProcesses()
+	if where != nil {
+		filtered, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		query = filtered
+	}
+	tasks, err := query.All(ctx)
 	if err != nil {
 		return nil, err
 	}

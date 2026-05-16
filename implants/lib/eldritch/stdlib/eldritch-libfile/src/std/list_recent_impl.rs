@@ -52,24 +52,20 @@ fn visit_dirs(dir: &Path, cb: &mut Vec<FileEntry>) -> std::io::Result<()> {
         // We use read_dir which returns an iterator over entries.
         // We ignore errors on subdirectories to be robust, similar to `find`.
         if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let path = entry.path();
-                    // Avoid following symlinks to prevent infinite loops
-                    let is_dir = entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
-                    if is_dir {
-                        // Recurse, ignoring errors
-                        let _ = visit_dirs(&path, cb);
-                    } else {
-                        if let Ok(metadata) = entry.metadata() {
-                            if let Ok(modified) = metadata.modified() {
-                                cb.push(FileEntry {
-                                    path: path.to_string_lossy().into_owned(),
-                                    modified,
-                                });
-                            }
-                        }
-                    }
+            for entry in entries.flatten() {
+                let path = entry.path();
+                // Avoid following symlinks to prevent infinite loops
+                let is_dir = entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
+                if is_dir {
+                    // Recurse, ignoring errors
+                    let _ = visit_dirs(&path, cb);
+                } else if let Ok(metadata) = entry.metadata()
+                    && let Ok(modified) = metadata.modified()
+                {
+                    cb.push(FileEntry {
+                        path: path.to_string_lossy().into_owned(),
+                        modified,
+                    });
                 }
             }
         }
@@ -154,17 +150,13 @@ mod tests {
         let file1 = base_path.join("file1.txt");
         fs::write(&file1, "content1").unwrap();
 
-        // Change working directory to test default path "/" which depends on current dir/fs context
-        // Actually, since we can't easily mock "/", let's just test that passing None for limit
-        // uses the default of 10.
-        // For testing `None` for path, it tries to access `/`. We just ensure it doesn't crash
-        // and returns a Result (might be Err depending on permissions, but usually Ok with / files)
+        // Test that passing None for limit uses the default (>= 1) and returns
+        // the file we created. We intentionally do NOT test None for path here,
+        // because that defaults to walking the entire root filesystem ("/" or
+        // "C:\\"), which can be extremely slow and is environment-dependent.
 
         let res_limit = list_recent(Some(base_path.to_string_lossy().to_string()), None).unwrap();
         assert_eq!(res_limit.len(), 1);
-
-        // Test None path (defaults to "/")
-        let res_path = list_recent(None, Some(1));
-        assert!(res_path.is_ok() || res_path.is_err());
+        assert!(res_limit[0].contains("file1.txt"));
     }
 }

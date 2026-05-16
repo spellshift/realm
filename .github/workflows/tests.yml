@@ -33,11 +33,15 @@ jobs:
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
-      # Use gotestsum for human-readable output to stdout, and capture JSON to file for reporting
+      # Use gotestsum with retries for flaky test handling, and emit JUnit XML for the flaky monitor.
       shell: bash
       run: |
-        $(go env GOPATH)/bin/gotestsum --jsonfile test-output.json -- \
-          -v -race -coverprofile='coverage.out' -covermode=atomic ./tavern/...
+        $(go env GOPATH)/bin/gotestsum \
+          --junitfile results.xml \
+          --jsonfile test-output.json \
+          --rerun-fails=2 \
+          --packages="./tavern/..." \
+          -- -v -race -coverprofile='coverage.out' -covermode=atomic
     - name: 🔄 Convert to CTRF
       if: always() # Run even if tests fail so we report the failures
       shell: bash
@@ -62,6 +66,13 @@ jobs:
       with:
         name: ctrf-tavern-${{ matrix.os }}
         path: ctrf-tavern-${{ matrix.os }}.json
+    - name: 📤 Upload JUnit Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-tavern-${{ matrix.os }}
+        path: results.xml
+        if-no-files-found: ignore
 
   implants:
     runs-on: ${{ matrix.os }}
@@ -114,23 +125,36 @@ jobs:
       with:
         tool: nextest,cargo-llvm-cov
     - name: 🔎 Run tests
-      # nextest configured via nextest.toml to output junit.xml
+      # nextest is configured via .config/nextest.toml: [profile.ci] has retries=2 and writes
+      # JUnit to target/nextest/ci/junit.xml. The stdlib/tests crate is a separate Cargo
+      # project that does not inherit implants/.config/, so we pass --config-file explicitly.
+      shell: bash
       run: |
-        cd ./implants/ &&
-        cargo fmt --check &&
-        cargo llvm-cov nextest --lcov --output-path lcov.info &&
-        cd ./lib/eldritch/stdlib/tests &&
-        cargo llvm-cov nextest --lcov --output-path lcov.info
+        NEXTEST_CONFIG="$GITHUB_WORKSPACE/implants/.config/nextest.toml"
+        cd ./implants/
+        cargo fmt --check
+        cargo llvm-cov nextest --profile ci --lcov --output-path lcov.info
+        cd ./lib/eldritch/stdlib/tests
+        cargo llvm-cov nextest --config-file "$NEXTEST_CONFIG" --profile ci --lcov --output-path lcov.info
     - name: 🔄 Convert to CTRF
       if: always()
       shell: bash # Explicitly use bash to support standard shell syntax on Windows
       run: |
         cd ./implants/
-        # Move junit report if it exists
-        JUNIT_PATH=$(find . -name junit.xml | head -n 1)
-        if [ -n "$JUNIT_PATH" ]; then
-          mv "$JUNIT_PATH" junit-implants-${{ matrix.os }}.xml
-        else
+        # Rename every junit.xml produced by nextest so we can upload them all as artifacts
+        # and so the CTRF converter has a stable, unique input file name.
+        idx=0
+        while IFS= read -r JUNIT_PATH; do
+          [ -z "$JUNIT_PATH" ] && continue
+          if [ $idx -eq 0 ]; then
+            DEST="junit-implants-${{ matrix.os }}.xml"
+          else
+            DEST="junit-implants-${{ matrix.os }}-${idx}.xml"
+          fi
+          mv "$JUNIT_PATH" "$DEST"
+          idx=$((idx + 1))
+        done < <(find . -name junit.xml)
+        if [ $idx -eq 0 ]; then
           echo "No JUnit report generated"
         fi
 
@@ -150,6 +174,13 @@ jobs:
       with:
         name: ctrf-implants-${{ matrix.os }}
         path: implants/ctrf-implants-${{ matrix.os }}.json
+    - name: 📤 Upload JUnit Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-implants-${{ matrix.os }}
+        path: implants/junit-implants-${{ matrix.os }}*.xml
+        if-no-files-found: ignore
 
   ui-tests:
     runs-on: ${{ matrix.os }}
@@ -190,3 +221,10 @@ jobs:
       with:
         name: ctrf-ui-${{ matrix.os }}
         path: tavern/internal/www/ctrf-ui-${{ matrix.os }}.json
+    - name: 📤 Upload JUnit Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-ui-${{ matrix.os }}
+        path: tavern/internal/www/junit-ui-${{ matrix.os }}.xml
+        if-no-files-found: ignore

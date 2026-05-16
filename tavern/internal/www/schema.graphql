@@ -8424,7 +8424,12 @@ type TaskDiff {
 }
 
 extend type Quest {
-    diffs: [TaskDiff!]! @goField(forceResolver: true)
+    diffs(
+        """
+        Filtering options for Tasks used to compute diffs.
+        """
+        where: TaskWhereInput
+    ): [TaskDiff!]! @goField(forceResolver: true)
 }
 scalar Time
 scalar Uint64

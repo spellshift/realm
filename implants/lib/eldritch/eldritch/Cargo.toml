@@ -61,6 +61,11 @@ fake_sys = ["eldritch-libsys/fake_bindings"]
 fake_time = ["eldritch-libtime/fake_bindings"]
 fake_chain = ["eldritch-libchain/fake_bindings"]
 fake_dns = ["eldritch-libdns/fake_bindings"]
+print_debug = [
+    "eldritch-repl/print_debug",
+    "eldritch-libpivot/print_debug",
+    "eldritch-libchain/print_debug",
+]
 stdlib = [
     "dep:pb",
     "dep:eldritch-agent",

@@ -13,6 +13,7 @@ const ICMP_CHUNK_SIZE: usize = 1400;
 
 /// ICMP C2 transport — platform-abstracted ICMP Echo request/reply carrier.
 #[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct ICMP {
     server_addr: Ipv4Addr,
     icmp_id: u16,
@@ -436,7 +437,7 @@ impl ICMP {
         }
 
         // Retry NACKed chunks
-        let mut retry_nacks: HashSet<u32> = nack_set.drain().collect();
+        let mut retry_nacks: HashSet<u32> = std::mem::take(&mut nack_set);
         while !retry_nacks.is_empty() {
             let mut next_nacks = HashSet::new();
             for &chunk_seq in &retry_nacks {
@@ -805,14 +806,6 @@ impl Transport for ICMP {
         request: ReportOutputRequest,
     ) -> Result<ReportOutputResponse> {
         self.icmp_exchange(request, "/c2.C2/ReportOutput").await
-    }
-
-    async fn reverse_shell(
-        &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        Err(anyhow!("reverse_shell not supported over ICMP transport"))
     }
 
     async fn create_portal(

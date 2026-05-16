@@ -98,6 +98,14 @@ export enum AssetOrderField {
 }
 
 
+export enum BeaconOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    LastSeenAt = "LAST_SEEN_AT",
+    NextSeenAt = "NEXT_SEEN_AT",
+    Interval = "INTERVAL",
+}
+
 export enum ProcessOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",

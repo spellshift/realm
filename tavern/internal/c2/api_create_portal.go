@@ -18,6 +18,12 @@ import (
 	"realm.pub/tavern/portals/tracepb"
 )
 
+// keepAlivePingInterval defines the frequency to send no-op ping messages to the stream,
+// to keep it alive while waiting for input.
+const (
+	keepAlivePingInterval = 5 * time.Second
+)
+
 func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	// Setup Context
 	ctx := gstream.Context()

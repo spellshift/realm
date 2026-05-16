@@ -122,6 +122,9 @@ mod tests {
                         // But most use cases seen so far are .lower().
                         "bool" | "boolean" => Value::String("true".to_string()),
                         "float" => Value::Float(1.0),
+                        // Provide an empty JSON array for list params so tomes that call
+                        // crypto.from_json() on the value receive valid JSON.
+                        "list" => Value::String("[]".to_string()),
                         _ => Value::String("default".to_string()),
                     }
                 };

@@ -2,14 +2,14 @@
 use anyhow::Result;
 #[cfg(feature = "install")]
 use eldritch::Interpreter;
-#[cfg(all(feature = "install", feature = "quiet"))]
+#[cfg(all(feature = "install", not(feature = "print_debug_tome")))]
 use eldritch::NoopPrinter;
 use eldritch::assets::std::{EmbeddedAssets, StdAssetsLibrary};
 use std::sync::Arc;
 
 #[cfg(feature = "install")]
 pub async fn install() -> Result<()> {
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("starting installation");
     let asset_backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
 
@@ -17,38 +17,38 @@ pub async fn install() -> Result<()> {
     for embedded_file_path in crate::assets::Asset::iter() {
         // Find "main.eldritch" files
         if embedded_file_path.ends_with("main.eldritch") {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("loading tome {}", embedded_file_path);
 
             let content = match crate::assets::Asset::get(&embedded_file_path) {
                 Some(f) => String::from_utf8_lossy(&f.data).to_string(),
                 None => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to load install asset: {}", embedded_file_path);
                     continue;
                 }
             };
 
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("running tome {}", embedded_file_path);
 
             // Execute using Eldritch Interpreter
             let mut locker = StdAssetsLibrary::new();
             let _ = locker.add(asset_backend.clone());
-            #[cfg(feature = "quiet")]
+            #[cfg(not(feature = "print_debug_tome"))]
             let mut interpreter =
                 Interpreter::new_with_printer(Arc::new(NoopPrinter)).with_default_libs();
-            #[cfg(not(feature = "quiet"))]
+            #[cfg(feature = "print_debug_tome")]
             let mut interpreter = Interpreter::new().with_default_libs();
             interpreter.register_lib(locker);
 
             match interpreter.interpret(&content) {
                 Ok(_) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::info!("Successfully executed {embedded_file_path}");
                 }
                 Err(_e) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("Failed to execute {embedded_file_path}: {_e}");
                 }
             }

@@ -16,7 +16,7 @@ pub async fn run_agent() -> Result<()> {
 
     // Load config / defaults
     let config = Config::default_with_imix_version(VERSION);
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("Loaded config: {config:#?}");
 
     let run_once = config.run_once;
@@ -41,7 +41,7 @@ pub async fn run_agent() -> Result<()> {
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
     // Do we need to move this into the loop and check the agent_ref?
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("Agent initialized");
 
     while !SHUTDOWN.load(Ordering::Relaxed) {
@@ -60,7 +60,7 @@ pub async fn run_agent() -> Result<()> {
         }
 
         if let Err(e) = sleep_until_next_cycle(&agent, start).await {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!(
                 "Failed to sleep, falling back to last interval {last_interval} sec: {e:#}"
             );
@@ -70,14 +70,14 @@ pub async fn run_agent() -> Result<()> {
         }
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!("Agent shutting down");
 
     Ok(())
 }
 
 pub fn init_logger() {
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     {
         use pretty_env_logger;
         let _ = pretty_env_logger::formatted_timed_builder()
@@ -99,7 +99,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
         match transport::create_transport(config) {
             Ok(t) => t,
             Err(_e) => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("Failed to create transport: {_e:#}");
                 agent.rotate_callback_uri().await;
                 return;
@@ -122,11 +122,11 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
 async fn process_tasks(agent: &ImixAgent, _registry: &TaskRegistry) {
     match agent.process_job_request().await {
         Ok(_) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("Callback success");
         }
         Err(_e) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("Callback failed: {_e:#}");
             agent.rotate_callback_uri().await;
         }
@@ -149,7 +149,7 @@ async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()>
 
     let delay = Duration::from_secs_f32(sleep_secs);
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     log::info!(
         "Callback complete (duration={:.2}s, sleep={:.2}s, interval={}s, jitter={:.2})",
         elapsed_secs,

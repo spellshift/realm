@@ -205,8 +205,15 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     // Construct the status endpoint URL
     let status_url = format!("{}/status", base_uri);
 
-    // Make a GET request to /status
-    let response = match reqwest::blocking::get(&status_url) {
+    // Make a GET request to /status using HTTP/1.1 to ensure unencrypted requests work
+    let client = match reqwest::blocking::Client::builder().http1_only().build() {
+        Ok(c) => c,
+        Err(e) => {
+            println!("cargo:warning=Failed to build HTTP client: {}", e);
+            return;
+        }
+    };
+    let response = match client.get(&status_url).send() {
         Ok(resp) => resp,
         Err(e) => {
             println!("cargo:warning=Failed to connect to {}: {}", status_url, e);
@@ -298,6 +305,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
     println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
     println!("cargo:rerun-if-env-changed=PROTOC");
+    println!("cargo:rerun-if-env-changed=IMIX_DEBUG");
+    let profile = std::env::var("PROFILE").unwrap_or_default();
+    let imix_debug = std::env::var("IMIX_DEBUG").unwrap_or_default();
+
+    if profile == "debug" || imix_debug == "tomes" || imix_debug == "all" {
+        println!("cargo:rustc-cfg=feature=\"print_debug_tome\"");
+    }
+
+    if profile == "debug" || imix_debug == "all" {
+        println!("cargo:rustc-cfg=feature=\"print_debug\"");
+    }
 
     // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
     let yaml_config = parse_yaml_config()?;

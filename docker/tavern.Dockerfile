@@ -23,6 +23,5 @@ RUN go build -ldflags='-w -extldflags "-static"' -o /app/build/tavern ./tavern
 FROM debian:trixie as production
 WORKDIR /app
 CMD ["/app/tavern"]
-EXPOSE 80 443 8080
 RUN apt-get update -y && apt-get install -y ca-certificates
 COPY --from=prod-build /app/build/tavern /app/tavern

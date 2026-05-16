@@ -224,7 +224,7 @@ pub fn handle_arp_scan(
                 move || match start_listener(inner_interface.clone(), inner_out) {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("Listener on {} failed: {}", inner_interface.name, _err);
                     }
                 },

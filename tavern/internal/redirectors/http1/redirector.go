@@ -27,9 +27,6 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	mux.HandleFunc("/c2.C2/ReportFile", func(w http.ResponseWriter, r *http.Request) {
 		handleReportFileStreaming(w, r, upstream)
 	})
-	mux.HandleFunc("/c2.C2/ReverseShell", func(w http.ResponseWriter, r *http.Request) {
-		handleShortPollStreaming(w, r, upstream, reverseShellStream)
-	})
 	mux.HandleFunc("/c2.C2/CreatePortal", func(w http.ResponseWriter, r *http.Request) {
 		handleShortPollStreaming(w, r, upstream, createPortalStream)
 	})

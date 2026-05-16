@@ -23,7 +23,7 @@ const TOME_FILTER_OPTIONS = [
 export const TomeFilterBar = ({ setFiltersSelected, filtersSelected, initialFilters, isDisabled }: Props) => {
 
     return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 z-20">
             <label className=" font-medium text-gray-700">Tome fields</label>
             <Select
                 isDisabled={isDisabled}

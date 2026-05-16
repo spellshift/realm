@@ -10,6 +10,9 @@ harness = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+print_debug = []
+
 [dependencies]
 eldritch-core = { workspace = true }
 spin = { workspace = true, features = ["rwlock"] }

@@ -1,11 +1,9 @@
 use crate::AgentLibrary;
 use crate::agent::Agent;
 use crate::std::StdAgentLibrary;
-use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::sync::Arc;
 use eldritch_core::Value;
 use eldritch_mockagent::MockAgent;
-use std::sync::RwLock;
 use std::thread;
 
 #[test]

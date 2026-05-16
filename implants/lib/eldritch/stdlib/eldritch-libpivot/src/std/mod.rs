@@ -2,7 +2,6 @@ use crate::PivotLibrary;
 pub mod arp_scan_impl;
 pub mod ncat_impl;
 pub mod port_scan_impl;
-pub mod reverse_shell_pty_impl;
 pub mod ssh_copy_impl;
 pub mod ssh_deploy_impl;
 pub mod ssh_exec_impl;
@@ -50,33 +49,6 @@ impl StdPivotLibrary {
 }
 
 impl PivotLibrary for StdPivotLibrary {
-    fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String> {
-        let agent = self
-            .agent
-            .as_ref()
-            .ok_or_else(|| "No agent available".to_string())?;
-        let context = self
-            .context
-            .clone()
-            .ok_or_else(|| "No context available".to_string())?;
-        reverse_shell_pty_impl::reverse_shell_pty(agent.clone(), context, cmd)
-            .map_err(|e| e.to_string())
-    }
-
-    fn reverse_shell_repl(&self) -> Result<(), String> {
-        let agent = self
-            .agent
-            .as_ref()
-            .ok_or_else(|| "No agent available".to_string())?;
-        let context = self
-            .context
-            .clone()
-            .ok_or_else(|| "No context available".to_string())?;
-        agent
-            .start_repl_reverse_shell(context)
-            .map_err(|e| e.to_string())
-    }
-
     fn create_portal(&self) -> Result<(), String> {
         let agent = self
             .agent

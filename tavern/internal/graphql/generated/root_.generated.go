@@ -539,7 +539,7 @@ type ComplexityRoot struct {
 		Bundle              func(childComplexity int) int
 		CreatedAt           func(childComplexity int) int
 		Creator             func(childComplexity int) int
-		Diffs               func(childComplexity int) int
+		Diffs               func(childComplexity int, where *ent.TaskWhereInput) int
 		EldritchAtCreation  func(childComplexity int) int
 		Events              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		ID                  func(childComplexity int) int
@@ -3533,7 +3533,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.ComplexityRoot.Quest.Diffs(childComplexity), true
+		args, err := ec.field_Quest_diffs_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Quest.Diffs(childComplexity, args["where"].(*ent.TaskWhereInput)), true
 
 	case "Quest.eldritchAtCreation":
 		if e.ComplexityRoot.Quest.EldritchAtCreation == nil {
@@ -13676,7 +13681,12 @@ type TaskDiff {
 }
 
 extend type Quest {
-    diffs: [TaskDiff!]! @goField(forceResolver: true)
+    diffs(
+        """
+        Filtering options for Tasks used to compute diffs.
+        """
+        where: TaskWhereInput
+    ): [TaskDiff!]! @goField(forceResolver: true)
 }
 `, BuiltIn: false},
 }

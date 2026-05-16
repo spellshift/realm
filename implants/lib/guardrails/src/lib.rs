@@ -77,11 +77,11 @@ pub fn check_guardrails(guardrails: Vec<Box<dyn Guardrail>>) -> bool {
 
     for guardrail in guardrails {
         if guardrail.check() {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::debug!("Guardrail {} passed", guardrail.get_name());
             return true;
         }
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!("Guardrail {} failed", guardrail.get_name());
     }
     false

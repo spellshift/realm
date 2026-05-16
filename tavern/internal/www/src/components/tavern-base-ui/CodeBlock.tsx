@@ -52,7 +52,10 @@ type CodeBlockLanguageSupport =
     | "n4jsd"
     | "jsdoc"
     | "javadoclike"
-    | "webmanifest";
+    | "webmanifest"
+    | "bash"
+    | "shell"
+    | "sh";
 
 type CodeBlockProps = {
     code: string;
@@ -61,7 +64,7 @@ type CodeBlockProps = {
     inlineButton?: boolean;
 };
 
-const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inlineButton= false }: CodeBlockProps) => {
+const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inlineButton = false }: CodeBlockProps) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
@@ -98,7 +101,7 @@ const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inline
                             margin: 0,
                             padding: "0.75rem",
                             paddingRight: !inlineButton && showCopyButton ? "3rem" : "0.75rem",
-                            marginRight:  showCopyButton ? "2rem" : "0rem",
+                            marginRight: showCopyButton ? "2rem" : "0rem",
                             borderRadius: "0.375rem",
                             fontSize: "0.8rem",
                             overflowX: "auto",

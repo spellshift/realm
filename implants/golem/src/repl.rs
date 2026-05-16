@@ -31,7 +31,7 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
     inter.register_module(
         "exit",
         Value::NativeFunction("exit".to_string(), |_env, _| {
-            println!("");
+            println!();
             std::process::exit(0)
         }),
     );
@@ -43,53 +43,53 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
     render(&mut stdout, &repl)?;
 
     loop {
-        if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                let input = map_key(key);
-                if let Some(input) = input {
-                    match repl.handle_input(input) {
-                        ReplAction::Quit => break,
-                        ReplAction::Submit {
-                            code,
-                            last_line: _,
-                            prompt: _,
-                        } => {
-                            // Clear current line visual and move down
-                            stdout.execute(cursor::MoveToNextLine(1))?;
+        if event::poll(Duration::from_millis(100))?
+            && let Event::Key(key) = event::read()?
+        {
+            let input = map_key(key);
+            if let Some(input) = input {
+                match repl.handle_input(input) {
+                    ReplAction::Quit => break,
+                    ReplAction::Submit {
+                        code,
+                        last_line: _,
+                        prompt: _,
+                    } => {
+                        // Clear current line visual and move down
+                        stdout.execute(cursor::MoveToNextLine(1))?;
 
-                            terminal::disable_raw_mode()?;
-                            match inter.interpret(&code) {
-                                Ok(v) => {
-                                    if !matches!(v, Value::None) {
-                                        println!("{v:?}");
-                                    }
+                        terminal::disable_raw_mode()?;
+                        match inter.interpret(&code) {
+                            Ok(v) => {
+                                if !matches!(v, Value::None) {
+                                    println!("{v:?}");
                                 }
-                                Err(e) => println!("Error: {e}"),
                             }
-                            terminal::enable_raw_mode()?;
+                            Err(e) => println!("Error: {e}"),
+                        }
+                        terminal::enable_raw_mode()?;
 
-                            render(&mut stdout, &repl)?;
-                        }
-                        ReplAction::AcceptLine { line: _, prompt: _ } => {
-                            stdout.execute(cursor::MoveToNextLine(1))?;
-                            render(&mut stdout, &repl)?;
-                        }
-                        ReplAction::Render => {
-                            render(&mut stdout, &repl)?;
-                        }
-                        ReplAction::ClearScreen => {
-                            stdout.execute(terminal::Clear(ClearType::All))?;
-                            stdout.execute(cursor::MoveTo(0, 0))?;
-                            render(&mut stdout, &repl)?;
-                        }
-                        ReplAction::Complete => {
-                            let state = repl.get_render_state();
-                            let (start, completions) = inter.complete(&state.buffer, state.cursor);
-                            repl.set_suggestions(completions, start);
-                            render(&mut stdout, &repl)?;
-                        }
-                        ReplAction::None => {}
+                        render(&mut stdout, &repl)?;
                     }
+                    ReplAction::AcceptLine { line: _, prompt: _ } => {
+                        stdout.execute(cursor::MoveToNextLine(1))?;
+                        render(&mut stdout, &repl)?;
+                    }
+                    ReplAction::Render => {
+                        render(&mut stdout, &repl)?;
+                    }
+                    ReplAction::ClearScreen => {
+                        stdout.execute(terminal::Clear(ClearType::All))?;
+                        stdout.execute(cursor::MoveTo(0, 0))?;
+                        render(&mut stdout, &repl)?;
+                    }
+                    ReplAction::Complete => {
+                        let state = repl.get_render_state();
+                        let (start, completions) = inter.complete(&state.buffer, state.cursor);
+                        repl.set_suggestions(completions, start);
+                        render(&mut stdout, &repl)?;
+                    }
+                    ReplAction::None => {}
                 }
             }
         }

@@ -163,11 +163,11 @@ pub fn hoist_functions(interp: &mut Interpreter, stmts: &[Stmt]) -> Result<(), E
     let mut seen = BTreeSet::new();
 
     for stmt in stmts {
-        if let StmtKind::Def(name, params, _return_annotation, body) = &stmt.kind {
-            if !seen.contains(name) {
-                seen.insert(name.clone());
-                to_hoist.push((name, params, body));
-            }
+        if let StmtKind::Def(name, params, _return_annotation, body) = &stmt.kind
+            && !seen.contains(name)
+        {
+            seen.insert(name.clone());
+            to_hoist.push((name, params, body));
         }
     }
 

@@ -71,7 +71,7 @@ fn dispatch_output(
             };
 
             if let Err(e) = agent.report_output(req) {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!(
                     "Failed to report shell task output {}: {}",
                     stc.shell_task_id,
@@ -102,7 +102,7 @@ fn dispatch_output(
             let tx = tx.clone();
             tokio::spawn(async move {
                 if let Err(e) = tx.send(mote).await {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("Failed to send shell output to portal: {}", e);
                 }
             });
@@ -431,10 +431,10 @@ mod tests {
             t.expect_is_active().returning(|| true);
             t.expect_report_output()
                 .withf(|req| {
-                    if let Some(report_output_request::Message::ShellTaskOutput(m)) = &req.message {
-                        if let Some(out) = &m.output {
-                            return out.output.contains("2");
-                        }
+                    if let Some(report_output_request::Message::ShellTaskOutput(m)) = &req.message
+                        && let Some(out) = &m.output
+                    {
+                        return out.output.contains("2");
                     }
                     false
                 })

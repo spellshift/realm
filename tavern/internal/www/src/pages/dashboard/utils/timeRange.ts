@@ -6,6 +6,7 @@ export interface TimeRangeConfig {
     granularity_seconds: number;
     daysBack: number;
     formatString: string;
+    tooltipFormatString?: string;
     tickInterval: number;
 }
 
@@ -69,7 +70,8 @@ export const BEACON_TIME_RANGE_CONFIG: Record<TimeRange, TimeRangeConfig> = {
         label: "1 Day",
         granularity_seconds: 30,
         daysBack: 1,
-        formatString: "h:mm A",
+        formatString: "h A",
+        tooltipFormatString: "h:mm A",
         tickInterval: 120,
     },
     last3days: {
@@ -77,7 +79,7 @@ export const BEACON_TIME_RANGE_CONFIG: Record<TimeRange, TimeRangeConfig> = {
         granularity_seconds: 3600,
         daysBack: 3,
         formatString: "ddd h A",
-        tickInterval: 1,
+        tickInterval: 4,
     },
     week: {
         label: "7 Days",

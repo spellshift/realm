@@ -1,6 +1,6 @@
 import { useQuery, NetworkStatus } from "@apollo/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TableRowLimit } from "../../../utils/enums";
+import { BeaconOrderField, OrderDirection, TableRowLimit } from "../../../utils/enums";
 import { Cursor } from "../../../utils/interfacesQuery";
 import { GET_BEACON_IDS_QUERY } from "./queries";
 import { BeaconIdsQueryTopLevel, GetBeaconIdsQueryVariables } from "./types";
@@ -97,6 +97,7 @@ const getBeaconIdsQuery = (
     },
     first: defaultRowLimit,
     after: afterCursor || undefined,
+    orderBy: [{ field: BeaconOrderField.LastSeenAt, direction: OrderDirection.Desc }],
   };
 
   return query;
