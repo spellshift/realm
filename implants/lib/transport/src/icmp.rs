@@ -13,6 +13,7 @@ const ICMP_CHUNK_SIZE: usize = 1400;
 
 /// ICMP C2 transport — platform-abstracted ICMP Echo request/reply carrier.
 #[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct ICMP {
     server_addr: Ipv4Addr,
     icmp_id: u16,
@@ -436,7 +437,7 @@ impl ICMP {
         }
 
         // Retry NACKed chunks
-        let mut retry_nacks: HashSet<u32> = nack_set.drain().collect();
+        let mut retry_nacks: HashSet<u32> = std::mem::take(&mut nack_set);
         while !retry_nacks.is_empty() {
             let mut next_nacks = HashSet::new();
             for &chunk_seq in &retry_nacks {

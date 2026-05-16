@@ -130,10 +130,7 @@ impl Transport for TcpBindTransport {
                             Err(e) => {
                                 #[cfg(feature = "print_debug")]
                                 log::error!("[tcp-bind] connector: accept error: {}", e);
-                                Err(std::io::Error::new(
-                                    std::io::ErrorKind::Other,
-                                    e.to_string(),
-                                ))
+                                Err(std::io::Error::other(e.to_string()))
                             }
                         }
                     } else {
@@ -232,10 +229,7 @@ impl Transport for TcpBindTransport {
         let mut resp_stream = resp.into_inner();
 
         tokio::spawn(async move {
-            while let Some(msg) = match resp_stream.message().await {
-                Ok(m) => m,
-                Err(_) => None,
-            } {
+            while let Some(msg) = resp_stream.message().await.unwrap_or_default() {
                 if tx.send(msg).await.is_err() {
                     return;
                 }

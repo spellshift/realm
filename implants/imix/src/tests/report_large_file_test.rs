@@ -64,7 +64,7 @@ impl Transport for FakeTransport {
         request: Receiver<ReportFileRequest>,
     ) -> anyhow::Result<ReportFileResponse> {
         let mut count = 0;
-        while let Ok(_) = request.recv() {
+        while request.recv().is_ok() {
             count += 1;
         }
         *self.received_chunks.lock().unwrap() += count;
