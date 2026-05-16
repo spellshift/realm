@@ -31,7 +31,7 @@ impl Guardrail for Process {
         sys.refresh_processes();
 
         let check_name = self.name.to_lowercase();
-        for (_, process) in sys.processes() {
+        for process in sys.processes().values() {
             if process.name().to_lowercase() == check_name {
                 return true;
             }

@@ -52,24 +52,20 @@ fn visit_dirs(dir: &Path, cb: &mut Vec<FileEntry>) -> std::io::Result<()> {
         // We use read_dir which returns an iterator over entries.
         // We ignore errors on subdirectories to be robust, similar to `find`.
         if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let path = entry.path();
-                    // Avoid following symlinks to prevent infinite loops
-                    let is_dir = entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
-                    if is_dir {
-                        // Recurse, ignoring errors
-                        let _ = visit_dirs(&path, cb);
-                    } else {
-                        if let Ok(metadata) = entry.metadata() {
-                            if let Ok(modified) = metadata.modified() {
-                                cb.push(FileEntry {
-                                    path: path.to_string_lossy().into_owned(),
-                                    modified,
-                                });
-                            }
-                        }
-                    }
+            for entry in entries.flatten() {
+                let path = entry.path();
+                // Avoid following symlinks to prevent infinite loops
+                let is_dir = entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
+                if is_dir {
+                    // Recurse, ignoring errors
+                    let _ = visit_dirs(&path, cb);
+                } else if let Ok(metadata) = entry.metadata()
+                    && let Ok(modified) = metadata.modified()
+                {
+                    cb.push(FileEntry {
+                        path: path.to_string_lossy().into_owned(),
+                        modified,
+                    });
                 }
             }
         }

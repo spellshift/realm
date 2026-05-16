@@ -7,15 +7,13 @@ use glob::glob;
 pub fn remove(path: String) -> Result<(), String> {
     if path.contains('*') || path.contains('?') || path.contains('[') {
         let paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
-        for entry in paths {
-            if let Ok(match_path) = entry {
-                if match_path.is_dir() {
-                    fs::remove_dir_all(&match_path)
-                } else {
-                    fs::remove_file(&match_path)
-                }
-                .map_err(|e| format!("Failed to remove {}: {e}", match_path.to_string_lossy()))?;
+        for match_path in paths.flatten() {
+            if match_path.is_dir() {
+                fs::remove_dir_all(&match_path)
+            } else {
+                fs::remove_file(&match_path)
             }
+            .map_err(|e| format!("Failed to remove {}: {e}", match_path.to_string_lossy()))?;
         }
         Ok(())
     } else {
