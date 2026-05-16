@@ -543,7 +543,7 @@ export const useShellTerminal = (
         };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
+        const url = `${scheme}://${window.location.host}/shell/ws?shell_id=${shellId}`;
 
         adapter.current = new BrowserWasmAdapter(
             url,

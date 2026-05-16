@@ -135,7 +135,7 @@ export const ShellsTable = ({ shellIds, hasMore = false, onLoadMore }: ShellsTab
                             buttonVariant="ghost"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/shellv2/${shell.id}`);
+                                navigate(`/shell/${shell.id}`);
                             }}
                         >
                             <TerminalIcon className="w-4 h-4" />

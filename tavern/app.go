@@ -45,8 +45,8 @@ import (
 	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
-	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/portals/pty"
+	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/scheduler"
 	"realm.pub/tavern/internal/secrets"
@@ -313,13 +313,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Request Logging
 	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
 
-	// Configure Shell Muxes
-	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
-	go func() {
-		if err := wsShellMux.Start(ctx); err != nil {
-			slog.ErrorContext(ctx, "websocket shell mux stopped", "err", err)
-		}
-	}()
+	// Configure Shell Mux
+	grpcShellMux := cfg.NewGRPCShellMux(ctx)
 	go func() {
 		if err := grpcShellMux.Start(ctx); err != nil {
 			slog.ErrorContext(ctx, "grpc shell mux stopped", "err", err)
@@ -493,13 +488,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: cdn.NewUploadHandler(client),
 		},
 		"/shell/ws": tavernhttp.Endpoint{
-			Handler: stream.NewShellHandler(client, wsShellMux),
-		},
-		"/shellv2/ws": tavernhttp.Endpoint{
 			Handler: tavernshell.NewHandler(client, portalMux),
-		},
-		"/shell/ping": tavernhttp.Endpoint{
-			Handler: stream.NewPingHandler(client, wsShellMux),
 		},
 		"/portals/ssh/ws": tavernhttp.Endpoint{
 			Handler: ssh.NewHandler(client, portalMux),
