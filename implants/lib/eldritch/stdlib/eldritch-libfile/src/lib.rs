@@ -69,6 +69,20 @@ pub trait FileLibrary {
     fn copy(&self, src: String, dst: String) -> Result<(), String>;
 
     #[eldritch_method]
+    /// Changes the permissions of a file.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file path.
+    /// - `mode` (`u32`): The permission mode (e.g., 0o755). On Windows, only the 0o200 (owner writable) bit is considered.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if chmod fails.
+    fn chmod(&self, path: String, mode: i64) -> Result<(), String>;
+
+    #[eldritch_method]
     /// Decompresses a GZIP file.
     ///
     /// If the file is a tar archive, it will be extracted to the destination directory.
