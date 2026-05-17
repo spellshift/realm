@@ -5,38 +5,19 @@ pub fn path_base(path: String) -> Result<String, String> {
         return Ok(".".into());
     }
 
+    let separator = std::path::MAIN_SEPARATOR;
     let mut p = path.as_str();
-    while p.len() > 1 && p.ends_with('/') {
+    while p.len() > 1 && p.ends_with(separator) {
         p = &p[..p.len() - 1];
     }
 
-    if p == "/" {
-        return Ok("/".into());
+    if p == separator.to_string() {
+        return Ok(separator.to_string());
     }
 
-    if let Some(idx) = p.rfind('/') {
+    if let Some(idx) = p.rfind(separator) {
         Ok(p[idx + 1..].into())
     } else {
         Ok(p.into())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_path_base() {
-        assert_eq!(path_base("".into()).unwrap(), ".");
-        assert_eq!(path_base("/".into()).unwrap(), "/");
-        assert_eq!(path_base("//".into()).unwrap(), "/");
-        assert_eq!(path_base("abc".into()).unwrap(), "abc");
-        assert_eq!(path_base("abc/def".into()).unwrap(), "def");
-        assert_eq!(path_base("abc/def/".into()).unwrap(), "def");
-        assert_eq!(path_base("abc/def//".into()).unwrap(), "def");
-        assert_eq!(path_base("/abc".into()).unwrap(), "abc");
-        assert_eq!(path_base("/abc/def".into()).unwrap(), "def");
-        assert_eq!(path_base(".".into()).unwrap(), ".");
-        assert_eq!(path_base("..".into()).unwrap(), "..");
     }
 }

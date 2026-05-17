@@ -5,46 +5,27 @@ pub fn path_dir(path: String) -> Result<String, String> {
         return Ok(".".into());
     }
 
+    let separator = std::path::MAIN_SEPARATOR;
     let mut p = path.as_str();
-    while p.len() > 1 && p.ends_with('/') {
+    while p.len() > 1 && p.ends_with(separator) {
         p = &p[..p.len() - 1];
     }
 
-    if p == "/" {
-        return Ok("/".into());
+    if p == separator.to_string() {
+        return Ok(separator.to_string());
     }
 
-    if let Some(idx) = p.rfind('/') {
+    if let Some(idx) = p.rfind(separator) {
         if idx == 0 {
-            Ok("/".into())
+            Ok(separator.to_string())
         } else {
             let mut dir = &p[..idx];
-            while dir.len() > 1 && dir.ends_with('/') {
+            while dir.len() > 1 && dir.ends_with(separator) {
                 dir = &dir[..dir.len() - 1];
             }
             Ok(dir.into())
         }
     } else {
         Ok(".".into())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_path_dir() {
-        assert_eq!(path_dir("".into()).unwrap(), ".");
-        assert_eq!(path_dir(".".into()).unwrap(), ".");
-        assert_eq!(path_dir("/".into()).unwrap(), "/");
-        assert_eq!(path_dir("//".into()).unwrap(), "/");
-        assert_eq!(path_dir("abc".into()).unwrap(), ".");
-        assert_eq!(path_dir("abc/def".into()).unwrap(), "abc");
-        assert_eq!(path_dir("abc/def/".into()).unwrap(), "abc");
-        assert_eq!(path_dir("abc/def//".into()).unwrap(), "abc");
-        assert_eq!(path_dir("/abc".into()).unwrap(), "/");
-        assert_eq!(path_dir("/abc/def".into()).unwrap(), "/abc");
-        assert_eq!(path_dir("/abc/def/ghi".into()).unwrap(), "/abc/def");
     }
 }

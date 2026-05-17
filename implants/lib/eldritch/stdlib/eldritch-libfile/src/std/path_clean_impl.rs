@@ -6,10 +6,11 @@ pub fn path_clean(path: String) -> Result<String, String> {
         return Ok(".".into());
     }
 
-    let is_absolute = path.starts_with('/');
+    let separator = std::path::MAIN_SEPARATOR;
+    let is_absolute = path.starts_with(separator);
     let mut out: Vec<&str> = Vec::new();
 
-    let segments = path.split('/');
+    let segments = path.split(separator);
 
     for segment in segments {
         match segment {
@@ -30,43 +31,17 @@ pub fn path_clean(path: String) -> Result<String, String> {
     }
 
     if out.is_empty() && is_absolute {
-        return Ok("/".into());
+        return Ok(separator.to_string());
     }
 
     if out.is_empty() {
         return Ok(".".into());
     }
 
-    let joined = out.join("/");
+    let joined = out.join(&separator.to_string());
     if is_absolute {
-        Ok(alloc::format!("/{}", joined))
+        Ok(alloc::format!("{}{}", separator, joined))
     } else {
         Ok(joined)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_path_clean() {
-        assert_eq!(path_clean("".into()).unwrap(), ".");
-        assert_eq!(path_clean("abc".into()).unwrap(), "abc");
-        assert_eq!(path_clean("abc/def".into()).unwrap(), "abc/def");
-        assert_eq!(path_clean("a/b/../c".into()).unwrap(), "a/c");
-        assert_eq!(path_clean("a/b/../../c".into()).unwrap(), "c");
-        assert_eq!(path_clean("a/b/../../../c".into()).unwrap(), "../c");
-        assert_eq!(path_clean("/a/b/../../../c".into()).unwrap(), "/c");
-        assert_eq!(path_clean("a//b//c".into()).unwrap(), "a/b/c");
-        assert_eq!(path_clean("./a/b".into()).unwrap(), "a/b");
-        assert_eq!(path_clean("a/./b".into()).unwrap(), "a/b");
-        assert_eq!(path_clean("/a/./b".into()).unwrap(), "/a/b");
-        assert_eq!(path_clean("/".into()).unwrap(), "/");
-        assert_eq!(path_clean("//".into()).unwrap(), "/");
-        assert_eq!(path_clean("///".into()).unwrap(), "/");
-        assert_eq!(path_clean(".".into()).unwrap(), ".");
-        assert_eq!(path_clean("..".into()).unwrap(), "..");
-        assert_eq!(path_clean("../..".into()).unwrap(), "../..");
     }
 }

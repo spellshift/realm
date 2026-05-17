@@ -339,6 +339,30 @@
     "signature": "file.move(src: str, dst: str) -> None",
     "description": "The **file.move** method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems."
   },
+  "file.path_abs": {
+    "signature": "file.path_abs(path: str) -> str",
+    "description": "Returns an absolute representation of path."
+  },
+  "file.path_base": {
+    "signature": "file.path_base(path: str) -> str",
+    "description": "Returns the last element of path."
+  },
+  "file.path_clean": {
+    "signature": "file.path_clean(path: str) -> str",
+    "description": "Returns the shortest path name equivalent to path by purely lexical processing."
+  },
+  "file.path_dir": {
+    "signature": "file.path_dir(path: str) -> str",
+    "description": "Returns all but the last element of path, typically the path's directory."
+  },
+  "file.path_join": {
+    "signature": "file.path_join(base: str, target: str) -> str",
+    "description": "Joins two path elements into a single path, separating them with an OS specific separator."
+  },
+  "file.path_separator": {
+    "signature": "file.path_separator() -> str",
+    "description": "Returns the operating system-specific path separator."
+  },
   "file.parent_dir": {
     "signature": "file.parent_dir(path: str) -> str",
     "description": "The **file.parent_dir** method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`"
