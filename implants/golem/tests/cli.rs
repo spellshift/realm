@@ -39,7 +39,7 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"HELLO"#))
-        .stdout(predicate::str::contains(r#""append", "compress""#));
+        .stdout(predicate::str::contains(r#""append", "chmod", "compress""#));
 
     Ok(())
 }
@@ -64,7 +64,7 @@ fn test_golem_main_loaded_files() -> anyhow::Result<()> {
     cmd.arg(GOLEM_CLI_TEST_DIR);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#"["append", "compress""#));
+        .stdout(predicate::str::contains(r#"["append", "chmod", "compress""#));
     Ok(())
 }
 
