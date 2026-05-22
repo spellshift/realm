@@ -33,10 +33,10 @@ pub fn read_named_pipe(name: String, max_bytes: Option<i64>) -> Result<String, S
 
 #[cfg(target_os = "windows")]
 fn read_named_pipe_windows(name: &str, max_bytes: Option<i64>) -> Result<String, String> {
-    use ::std::io::Read;
     use ::std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Storage::FileSystem::ReadFile;
+    use windows_sys::Win32::System::Pipes::PeekNamedPipe;
 
-    // Build pipe path: \\.\pipe\<name>
     let pipe_path = if name.starts_with(r"\\") {
         name.to_string()
     } else {
@@ -49,102 +49,54 @@ fn read_named_pipe_windows(name: &str, max_bytes: Option<i64>) -> Result<String,
         .map_err(|e| format!("Failed to open pipe '{}': {}", pipe_path, e))?;
 
     let handle = file.as_raw_handle();
-
-    // Poll with PeekNamedPipe - non-blocking check for available data. Retry briefly after connect: some pipe servers write in response
-    // to a client connecting, so data may arrive shortly after open (don't want to miss the pipe drain if queued data exists in RAM)
-    use windows_sys::Win32::System::Pipes::PeekNamedPipe;
-
-    const MAX_RETRIES: u32 = 20; // dunno about the 20 peek loop TODO: figure out how to peek until 0 bytes?
-    const RETRY_DELAY_MS: u64 = 100;
-    const DRAIN_DELAY_MS: u64 = 10;
-
-    let mut avail: u32 = 0;
-    for _attempt in 0..MAX_RETRIES {
-        let peek_ok = unsafe {
-            PeekNamedPipe(
-                handle,
-                core::ptr::null_mut(),
-                0,
-                core::ptr::null_mut(),
-                &mut avail,
-                core::ptr::null_mut(),
-            )
-        };
-
-        if peek_ok == 0 {
-            // Pipe broken or closed
-            let err = ::std::io::Error::last_os_error();
-        }
-
-        if avail > 0 {
-            break;
-        }
-        ::std::thread::sleep(::std::time::Duration::from_millis(RETRY_DELAY_MS));
-    }
-
-    if avail == 0 {
-        return Ok(String::new());
-    }
-
-    // Drain all available data. Peek+read in loop to catch multi-message writes
-    // After each read, retry peek multiple times before giving up - server may
-    // need time between writes (tried to make it as compatible as possible for variety of pipewriting tools)
-    const DRAIN_RETRIES: u32 = 5;
-    let max_read = max_bytes.map(|n| n as usize).unwrap_or(usize::MAX);
-    let mut result = Vec::new();
-    let mut buf = vec![0u8; DEFAULT_BUF_SIZE];
-    let mut empty_peeks = 0u32;
+    let limit = max_bytes.filter(|&n| n > 0).map(|n| n as usize);
+    let mut result: Vec<u8> = Vec::new();
 
     loop {
-        let mut chunk_avail: u32 = 0;
+        // Check how many bytes are currently available without blocking.
+        let mut bytes_avail: u32 = 0;
         let peek_ok = unsafe {
             PeekNamedPipe(
                 handle,
                 core::ptr::null_mut(),
                 0,
                 core::ptr::null_mut(),
-                &mut chunk_avail,
+                &mut bytes_avail,
                 core::ptr::null_mut(),
             )
         };
-        if peek_ok == 0 {
-            break; // pipe broken
-        }
-
-        if chunk_avail == 0 {
-            empty_peeks += 1;
-            if empty_peeks > DRAIN_RETRIES {
-                break; // no more data after retries
-            }
-            ::std::thread::sleep(::std::time::Duration::from_millis(DRAIN_DELAY_MS));
-            continue;
-        }
-
-        // Data available - reset empty counter, read
-        empty_peeks = 0;
-
-        let to_read = (chunk_avail as usize)
-            .min(buf.len())
-            .min(max_read - result.len());
-        if to_read == 0 {
+        if peek_ok == 0 || bytes_avail == 0 {
+            // Either the pipe errored (writer closed) or no data is queued.
             break;
         }
 
-        match (&file).read(&mut buf[..to_read]) {
-            Ok(0) => break,
-            Ok(n) => {
-                result.extend_from_slice(&buf[..n]);
+        let to_read = match limit {
+            Some(max) => {
+                let remaining = max.saturating_sub(result.len());
+                if remaining == 0 {
+                    break;
+                }
+                (bytes_avail as usize).min(remaining)
             }
-            Err(_) => break,
-        }
+            None => bytes_avail as usize,
+        };
 
-        if result.len() >= max_read {
+        let prev_len = result.len();
+        result.resize(prev_len + to_read, 0u8);
+        let mut bytes_read: u32 = 0;
+        let read_ok = unsafe {
+            ReadFile(
+                handle,
+                result[prev_len..].as_mut_ptr(),
+                to_read as u32,
+                &mut bytes_read,
+                core::ptr::null_mut(),
+            )
+        };
+        result.truncate(prev_len + bytes_read as usize);
+        if read_ok == 0 {
             break;
         }
-    }
-
-    if result.is_empty() {
-        return Ok(String::new());
     }
 
     String::from_utf8(result).map_err(|e| format!("Pipe data is not valid UTF-8: {}", e))
@@ -324,5 +276,90 @@ mod tests {
             err.contains(r"\\.\pipe\short_name_test_xyz"),
             "Short name should expand: {err}"
         );
+    }
+
+    /// Regression test: 3 × 1024-byte chunks written before a reader connects.
+    ///
+    /// On Windows, when a client connects to a named pipe the server's buffered
+    /// writes (3 × 1024 = 3072 bytes) are flushed to the reader all at once.
+    /// A subsequent PeekNamedPipe call returns 0 bytes available, so the read
+    /// loop must stop without blocking. Any implementation that relies on
+    /// read_to_end / read_exact would hang here because no EOF is ever sent.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_read_windows_three_chunks_no_eof_hang() {
+        use windows_sys::Win32::Storage::FileSystem::{WriteFile, PIPE_ACCESS_OUTBOUND};
+        use windows_sys::Win32::System::Pipes::{
+            ConnectNamedPipe, CreateNamedPipeW, PIPE_READMODE_BYTE, PIPE_TYPE_BYTE, PIPE_WAIT,
+        };
+
+        // Unique pipe name for this test run.
+        let pid = ::std::process::id();
+        let pipe_name = format!(r"\\.\pipe\realm_test_3chunks_{}", pid);
+        let wide: Vec<u16> = pipe_name.encode_utf16().chain(core::iter::once(0)).collect();
+
+        // Create the server-side pipe handle (outbound / write side).
+        // Cast to isize so the value is Send-able across threads (raw pointers are !Send
+        // by default but Windows HANDLEs are safe to use from any thread).
+        let server_raw: isize = unsafe {
+            CreateNamedPipeW(
+                wide.as_ptr(),
+                PIPE_ACCESS_OUTBOUND,
+                PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+                1,     // max instances
+                16384, // out-buffer
+                0,     // in-buffer
+                0,     // default timeout
+                core::ptr::null(),
+            )
+        } as isize;
+        assert!(server_raw != -1, "CreateNamedPipeW failed");
+
+        // Spawn a thread that waits for a client to connect then writes 3 × 1024 bytes.
+        let server_thread = ::std::thread::spawn(move || {
+            let server = server_raw as windows_sys::Win32::Foundation::HANDLE;
+            unsafe { ConnectNamedPipe(server, core::ptr::null_mut()) };
+
+            let chunk = vec![b'A'; 1024];
+            for _ in 0..3 {
+                let mut written: u32 = 0;
+                unsafe {
+                    WriteFile(
+                        server,
+                        chunk.as_ptr(),
+                        chunk.len() as u32,
+                        &mut written,
+                        core::ptr::null_mut(),
+                    )
+                };
+            }
+            // Close the handle so the server side is gone — the reader must
+            // not block waiting for more data after PeekNamedPipe returns 0.
+            unsafe { windows_sys::Win32::Foundation::CloseHandle(server) };
+        });
+
+        // Give the server thread a moment to call ConnectNamedPipe before we open.
+        ::std::thread::sleep(::std::time::Duration::from_millis(50));
+
+        // Open the client side in a thread so we don't block the test harness.
+        // Sleep briefly after opening so the server thread's WriteFile calls
+        // complete before our PeekNamedPipe loop runs.
+        let pipe_name_clone = pipe_name.clone();
+        let reader_thread = ::std::thread::spawn(move || {
+            ::std::thread::sleep(::std::time::Duration::from_millis(100));
+            read_named_pipe(pipe_name_clone, None)
+        });
+
+        let result = reader_thread.join().unwrap();
+        server_thread.join().unwrap();
+
+        let data = result.expect("read_named_pipe must not hang or error");
+        assert_eq!(
+            data.len(),
+            3072,
+            "Expected 3 x 1024 = 3072 bytes, got {}",
+            data.len()
+        );
+        assert!(data.chars().all(|c| c == 'A'), "All bytes should be 'A'");
     }
 }
