@@ -130,6 +130,9 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
             params.push(format!("jitter={}", jitter));
         }
 
+        // Add type query parameter
+        params.push(format!("type={}", transport_type_lower));
+
         // Add extra as query parameter if not empty
         if !transport.extra.is_empty() {
             let encoded_extra = urlencoding::encode(&transport.extra);
