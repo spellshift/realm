@@ -59,6 +59,7 @@ import (
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
 	_ "realm.pub/tavern/internal/redirectors/icmp"
+	_ "realm.pub/tavern/internal/redirectors/quic"
 	_ "realm.pub/tavern/internal/scheduler/gcp"
 	_ "realm.pub/tavern/internal/scheduler/mem"
 )

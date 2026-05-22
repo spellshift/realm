@@ -73,6 +73,8 @@ function filterOnePerHost(beacons: BeaconIdNode[]): string[] {
         if (!transport) return 0;
         switch (transport) {
             case SupportedTransports.GRPC:
+                return 5;
+            case SupportedTransports.QUIC:
                 return 4;
             case SupportedTransports.HTTP1:
                 return 3;
