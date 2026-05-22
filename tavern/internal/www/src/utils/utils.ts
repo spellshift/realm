@@ -362,7 +362,8 @@ export const formatBytes = (bytes: number, decimals = 2) => {
 }
 
 export const TRANSPORT_PRIORITY: Record<string, number> = {
-    [SupportedTransports.GRPC]: 3,
+    [SupportedTransports.GRPC]: 4,
+    [SupportedTransports.QUIC]: 3,
     [SupportedTransports.HTTP1]: 2,
     [SupportedTransports.DNS]: 1,
 };
