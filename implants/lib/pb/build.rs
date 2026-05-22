@@ -88,9 +88,11 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
     for transport in &config.transports {
         // Validate transport type
         let transport_type_lower = transport.transport_type.to_lowercase();
-        if !["grpc", "http1", "dns", "icmp", "tcp_bind"].contains(&transport_type_lower.as_str()) {
+        if !["grpc", "http1", "dns", "icmp", "tcp_bind", "quic"]
+            .contains(&transport_type_lower.as_str())
+        {
             return Err(format!(
-                "Invalid transport type '{}'. Must be one of: GRPC, http1, DNS, tcp_bind",
+                "Invalid transport type '{}'. Must be one of: GRPC, http1, DNS, tcp_bind, quic",
                 transport.transport_type
             )
             .into());

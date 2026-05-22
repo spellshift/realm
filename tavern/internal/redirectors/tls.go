@@ -34,7 +34,7 @@ func NewTLSConfig(ctx context.Context, hostname string) (*tls.Config, error) {
 
 	// Fallback to self-signed
 	slog.Debug("redirectors: generating self-signed certificate", "hostname", hostname)
-	tlsCfg, err = selfSignedTLSConfig(hostname)
+	tlsCfg, err = SelfSignedTLSConfig(hostname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate self-signed certificate: %w", err)
 	}
@@ -72,8 +72,8 @@ func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
 	return tlsCfg, nil
 }
 
-// selfSignedTLSConfig generates a self-signed TLS certificate and returns a tls.Config.
-func selfSignedTLSConfig(host string) (*tls.Config, error) {
+// SelfSignedTLSConfig generates a self-signed TLS certificate and returns a tls.Config.
+func SelfSignedTLSConfig(host string) (*tls.Config, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
