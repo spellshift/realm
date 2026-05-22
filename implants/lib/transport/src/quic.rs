@@ -126,7 +126,7 @@ impl QuicTransport {
         } else {
             let mut ep = quinn::Endpoint::client("0.0.0.0:0".parse().unwrap())?;
 
-            let tls_config = rustls::ClientConfig::builder_with_provider(std::sync::Arc::new(
+            let mut tls_config = rustls::ClientConfig::builder_with_provider(std::sync::Arc::new(
                 rustls::crypto::ring::default_provider(),
             ))
             .with_safe_default_protocol_versions()
@@ -136,6 +136,8 @@ impl QuicTransport {
                 crate::tls_utils::AcceptAllCertVerifier,
             ))
             .with_no_client_auth();
+
+            tls_config.alpn_protocols = vec![b"realm-quic".to_vec()];
 
             let quic_config = quinn::crypto::rustls::QuicClientConfig::try_from(tls_config)
                 .map_err(|e| anyhow!("Failed to build QUIC config: {}", e))?;
