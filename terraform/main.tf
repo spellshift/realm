@@ -25,7 +25,7 @@ variable "redirector_upstream" {
 
 variable "redirector_dns_ns_prefix" {
   type = string
-  description = "Upstream that redirectors should point to."
+  description = "DNS NS record prefix for DNS redirectors."
   default = "ns1"
 }
 
@@ -34,7 +34,7 @@ variable "redirectors" {
     domain    = string
     transport = string
   }))
-  description = "List of redirectors domains and transpoarts to configure."
+  description = "List of redirector domains and transports to configure."
 }
 # redirectors = [{
 #   transport = "grpc",
@@ -48,6 +48,9 @@ variable "redirectors" {
 # },{
 #   transport = "icmp",
 #   domain = "icmp.example.com"
+# },{
+#   transport = "quic",
+#   domain = "quic.example.com"
 # }]
 # Note: For DNS an A record for example.com and dns.example.com will be created in addition to the NS record for dns.example.com
 # Note: For ICMP, each redirector gets its own VM with a unique IP. An A record is created per redirector enabling FQDN-based agent configuration (e.g. icmp://icmp.example.com).
@@ -608,11 +611,12 @@ locals {
     if redir.transport == "icmp"
   ]
   redirector_zones_icmp = [
-    for redir in var.redirectors : {
+    for idx, redir in local.icmp_redirectors : {
+      "index" : idx,
       "domain" : redir.domain,
       "zone" : lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
     }
-    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && redir.transport == "icmp"
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != ""
   ]
 
   quic_redirectors = [
@@ -620,11 +624,12 @@ locals {
     if redir.transport == "quic"
   ]
   redirector_zones_quic = [
-    for redir in var.redirectors : {
+    for idx, redir in local.quic_redirectors : {
+      "index" : idx,
       "domain" : redir.domain,
       "zone" : lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
     }
-    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && redir.transport == "quic"
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != ""
   ]
   quic_gce_defs = [for redir in local.quic_redirectors : yamlencode({
     spec = {
@@ -722,7 +727,7 @@ resource "google_cloud_run_service" "redirector" {
   autogenerate_revision_name = true
 
   depends_on = [
-    google_project_iam_member.redirector-logwriter-binding,
+    google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
     google_project_service.cloud_run_api
   ]
@@ -1003,7 +1008,7 @@ resource "google_dns_record_set" "redir_icmp_record_a" {
   ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_icmp[count.index].name
-  rrdatas      = [google_compute_instance.icmp_redirector[count.index].network_interface[0].access_config[0].nat_ip]
+  rrdatas      = [google_compute_instance.icmp_redirector[local.redirector_zones_icmp[count.index].index].network_interface[0].access_config[0].nat_ip]
 }
 
 # Setup QUIC redirectors (one VM per redirector for unique IPs)
@@ -1081,7 +1086,7 @@ resource "google_dns_record_set" "redir_quic_record_a" {
   ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_quic[count.index].name
-  rrdatas      = [google_compute_instance.quic_redirector[count.index].network_interface[0].access_config[0].nat_ip]
+  rrdatas      = [google_compute_instance.quic_redirector[local.redirector_zones_quic[count.index].index].network_interface[0].access_config[0].nat_ip]
 }
 
 # Setup auth and domain mappings
