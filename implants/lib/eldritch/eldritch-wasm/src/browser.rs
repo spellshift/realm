@@ -33,10 +33,13 @@ pub struct BrowserRepl {
 }
 
 #[wasm_bindgen]
+#[allow(clippy::collapsible_if)]
 impl BrowserRepl {
     #[wasm_bindgen(constructor)]
+    #[allow(clippy::new_without_default)]
     pub fn new() -> BrowserRepl {
         let printer = Arc::new(BufferPrinter::new());
+        #[allow(unused_mut)]
         let mut interp = Interpreter::new_with_printer(printer);
 
         #[cfg(feature = "fake_bindings")]
@@ -134,8 +137,8 @@ impl BrowserRepl {
         let ends_with_colon = trimmed.ends_with(':');
         let lines: Vec<&str> = self.buffer.lines().collect();
         let line_count = lines.len();
-        let last_line_empty =
-            self.buffer.ends_with('\n') && lines.last().map_or(true, |l| l.trim().is_empty());
+        let _last_line_empty =
+            self.buffer.ends_with('\n') && lines.last().is_none_or(|l| l.trim().is_empty());
 
         let mut is_complete = false;
 
@@ -192,13 +195,12 @@ impl BrowserRepl {
                                                     }
                                                 }
 
-                                                let mut target_str = String::new();
-                                                if is_valid {
+                                                let target_str = if is_valid {
                                                     parts.reverse();
-                                                    target_str = parts.join(".");
+                                                    parts.join(".")
                                                 } else {
-                                                    target_str = "unknown".to_string();
-                                                }
+                                                    "unknown".to_string()
+                                                };
                                                 meta_command = Some(MetaCommand::Help {
                                                     target: Some(target_str),
                                                 });

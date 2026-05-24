@@ -17,10 +17,15 @@ use transport::Transport;
 
 use crate::portal::run_create_portal;
 use crate::shell::manager::{ShellManager, ShellManagerMessage};
-use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
 const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
+
+pub type PendingForward = (
+    String,
+    tokio::sync::mpsc::Receiver<Vec<u8>>,
+    tokio::sync::mpsc::Sender<Vec<u8>>,
+);
 
 #[derive(Clone)]
 pub struct ImixAgent {
@@ -34,15 +39,7 @@ pub struct ImixAgent {
     pub process_list_tx: std::sync::mpsc::SyncSender<c2::ReportProcessListRequest>,
     pub process_list_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportProcessListRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
-    pub pending_forwards: Arc<
-        tokio::sync::Mutex<
-            Vec<(
-                String,
-                tokio::sync::mpsc::Receiver<Vec<u8>>,
-                tokio::sync::mpsc::Sender<Vec<u8>>,
-            )>,
-        >,
-    >,
+    pub pending_forwards: Arc<tokio::sync::Mutex<Vec<PendingForward>>>,
 }
 
 impl ImixAgent {
@@ -501,16 +498,6 @@ impl Agent for ImixAgent {
         Ok(c2::ReportOutputResponse {})
     }
 
-    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String> {
-        let id = match &context {
-            Context::Task(tc) => tc.task_id,
-            Context::ShellTask(stc) => stc.shell_task_id,
-        };
-        self.spawn_subtask(id, move |transport| async move {
-            run_reverse_shell_pty(context, cmd, transport).await
-        })
-    }
-
     fn create_portal(&self, context: Context) -> Result<(), String> {
         let shell_manager_tx = self.shell_manager_tx.clone();
         let id = match &context {
@@ -519,17 +506,6 @@ impl Agent for ImixAgent {
         };
         self.spawn_subtask(id, move |transport| async move {
             run_create_portal(context, transport, shell_manager_tx).await
-        })
-    }
-
-    fn start_repl_reverse_shell(&self, context: Context) -> Result<(), String> {
-        let agent = self.clone();
-        let id = match &context {
-            Context::Task(tc) => tc.task_id,
-            Context::ShellTask(stc) => stc.shell_task_id,
-        };
-        self.spawn_subtask(id, move |transport| async move {
-            run_repl_reverse_shell(context, transport, agent).await
         })
     }
 

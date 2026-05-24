@@ -92,3 +92,10 @@ jobs:
         path: |
           tavern.log
           implants/imix/agent.log
+    - name: 📤 Upload JUnit Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-e2e-repl
+        path: tests/e2e/results.xml
+        if-no-files-found: ignore

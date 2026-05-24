@@ -122,6 +122,7 @@ russh = "0.37.1"
 russh-sftp = "=2.0.8" # `thiserror` dependcy in older versions causes downstream issues in other libraries.
 russh-keys = "0.37.1"
 rustls = "0.23"
+quinn = { version = "0.11", default-features = false, features = ["ring", "runtime-tokio"] }
 rust-embed = "8.5.0"
 serde = "1.0"
 serde_json = "1.0.87"

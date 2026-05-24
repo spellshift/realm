@@ -40,6 +40,7 @@ pub mod transport {
         TransportUds = 4,
         TransportTcpBind = 5,
         TransportIcmp = 6,
+        TransportQuic = 7,
     }
     impl Type {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -55,6 +56,7 @@ pub mod transport {
                 Self::TransportUds => "TRANSPORT_UDS",
                 Self::TransportTcpBind => "TRANSPORT_TCP_BIND",
                 Self::TransportIcmp => "TRANSPORT_ICMP",
+                Self::TransportQuic => "TRANSPORT_QUIC",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -67,6 +69,7 @@ pub mod transport {
                 "TRANSPORT_UDS" => Some(Self::TransportUds),
                 "TRANSPORT_TCP_BIND" => Some(Self::TransportTcpBind),
                 "TRANSPORT_ICMP" => Some(Self::TransportIcmp),
+                "TRANSPORT_QUIC" => Some(Self::TransportQuic),
                 _ => None,
             }
         }
@@ -363,32 +366,6 @@ pub mod report_output_request {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReportOutputResponse {}
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ReverseShellRequest {
-    #[prost(enumeration = "ReverseShellMessageKind", tag = "3")]
-    pub kind: i32,
-    #[prost(bytes = "vec", tag = "4")]
-    pub data: ::prost::alloc::vec::Vec<u8>,
-    #[prost(oneof = "reverse_shell_request::Context", tags = "1, 2")]
-    pub context: ::core::option::Option<reverse_shell_request::Context>,
-}
-/// Nested message and enum types in `ReverseShellRequest`.
-pub mod reverse_shell_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Context {
-        #[prost(message, tag = "1")]
-        TaskContext(super::TaskContext),
-        #[prost(message, tag = "2")]
-        ShellTaskContext(super::ShellTaskContext),
-    }
-}
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ReverseShellResponse {
-    #[prost(enumeration = "ReverseShellMessageKind", tag = "1")]
-    pub kind: i32,
-    #[prost(bytes = "vec", tag = "2")]
-    pub data: ::prost::alloc::vec::Vec<u8>,
-}
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CreatePortalRequest {
     #[prost(message, optional, tag = "3")]
     pub mote: ::core::option::Option<super::portal::Mote>,
@@ -435,35 +412,6 @@ impl ReportFileKind {
             "REPORT_FILE_KIND_UNSPECIFIED" => Some(Self::Unspecified),
             "REPORT_FILE_KIND_ONDISK" => Some(Self::Ondisk),
             "REPORT_FILE_KIND_SCREENSHOT" => Some(Self::Screenshot),
-            _ => None,
-        }
-    }
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum ReverseShellMessageKind {
-    Unspecified = 0,
-    Data = 1,
-    Ping = 2,
-}
-impl ReverseShellMessageKind {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            Self::Unspecified => "REVERSE_SHELL_MESSAGE_KIND_UNSPECIFIED",
-            Self::Data => "REVERSE_SHELL_MESSAGE_KIND_DATA",
-            Self::Ping => "REVERSE_SHELL_MESSAGE_KIND_PING",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "REVERSE_SHELL_MESSAGE_KIND_UNSPECIFIED" => Some(Self::Unspecified),
-            "REVERSE_SHELL_MESSAGE_KIND_DATA" => Some(Self::Data),
-            "REVERSE_SHELL_MESSAGE_KIND_PING" => Some(Self::Ping),
             _ => None,
         }
     }
@@ -705,30 +653,6 @@ pub mod c2_client {
             let mut req = request.into_request();
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportOutput"));
             self.inner.unary(req, path, codec).await
-        }
-        /// Open a reverse shell bi-directional stream.
-        pub async fn reverse_shell(
-            &mut self,
-            request: impl tonic::IntoStreamingRequest<
-                Message = super::ReverseShellRequest,
-            >,
-        ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::ReverseShellResponse>>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::unknown(
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = crate::xchacha::ChachaCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReverseShell");
-            let mut req = request.into_streaming_request();
-            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReverseShell"));
-            self.inner.streaming(req, path, codec).await
         }
         /// Open a portal bi-directional stream.
         pub async fn create_portal(

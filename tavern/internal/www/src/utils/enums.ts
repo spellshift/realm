@@ -29,6 +29,9 @@ export enum SupportedTransports {
     GRPC="TRANSPORT_GRPC",
     HTTP1="TRANSPORT_HTTP1",
     ICMP="TRANSPORT_ICMP",
+    QUIC="TRANSPORT_QUIC",
+    TCP_BIND="TRANSPORT_TCP_BIND",
+    UDS="TRANSPORT_UDS",
     Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
 

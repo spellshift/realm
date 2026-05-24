@@ -96,6 +96,8 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
         "https" => crate::c2::transport::Type::TransportGrpc,
         "http" => crate::c2::transport::Type::TransportGrpc,
         "tcp" => crate::c2::transport::Type::TransportTcpBind,
+        "quic" => crate::c2::transport::Type::TransportQuic,
+        "quics" => crate::c2::transport::Type::TransportQuic,
         _ => crate::c2::transport::Type::TransportUnspecified,
     }
 }
@@ -131,6 +133,7 @@ pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     let mut interval = parse_callback_interval()?;
     let mut extra = DEFAULT_EXTRA_CONFIG.to_lowercase();
     let mut jitter = 0.0;
+    let mut transport_type = get_transport_type(uri);
 
     // Parse query parameters
     for (key, value) in parsed_url.query_pairs() {
@@ -148,6 +151,17 @@ pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
                     .parse::<f32>()
                     .with_context(|| format!("Failed to parse jitter parameter '{}'", value))?;
             }
+            "type" => {
+                transport_type = match value.to_lowercase().as_str() {
+                    "grpc" => crate::c2::transport::Type::TransportGrpc,
+                    "http1" => crate::c2::transport::Type::TransportHttp1,
+                    "dns" => crate::c2::transport::Type::TransportDns,
+                    "icmp" => crate::c2::transport::Type::TransportIcmp,
+                    "tcp_bind" => crate::c2::transport::Type::TransportTcpBind,
+                    "quic" => crate::c2::transport::Type::TransportQuic,
+                    _ => crate::c2::transport::Type::TransportUnspecified,
+                };
+            }
             _ => {
                 #[cfg(feature = "print_debug")]
                 log::debug!("Ignoring unknown query parameter: {}", key);
@@ -162,7 +176,7 @@ pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     Ok(Transport {
         uri: base_uri.to_string(),
         interval,
-        r#type: get_transport_type(uri) as i32,
+        r#type: transport_type as i32,
         extra,
         jitter,
     })
@@ -358,9 +372,13 @@ mod tests {
         assert_eq!(available.transports.len(), 1);
         assert_eq!(available.active_index, 0);
         // The URL crate normalizes URIs, potentially adding trailing slashes
+        let expected_uri = CALLBACK_URI.split(';').next().unwrap();
+        let parsed_expected = Url::parse(expected_uri).unwrap();
+        let mut expected_base = parsed_expected.clone();
+        expected_base.set_query(None);
         assert!(available.transports[0]
             .uri
-            .starts_with("http://127.0.0.1:8000"));
+            .starts_with(&expected_base.to_string()));
     }
 
     #[test]
@@ -539,5 +557,27 @@ mod tests {
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].jitter, 0.5);
+    }
+
+    #[test]
+    fn test_transport_type_detection_quic() {
+        let quic_type = get_transport_type("quic://example.com");
+        assert_eq!(quic_type, crate::c2::transport::Type::TransportQuic);
+
+        let quics_type = get_transport_type("quics://example.com");
+        assert_eq!(quics_type, crate::c2::transport::Type::TransportQuic);
+    }
+
+    #[test]
+    fn test_dsn_with_type_query_param() {
+        let uris = "http://example.com?type=quic";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "http://example.com/");
+        assert_eq!(
+            transports[0].r#type,
+            crate::c2::transport::Type::TransportQuic as i32
+        );
     }
 }
