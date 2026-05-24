@@ -25,7 +25,7 @@ variable "redirector_upstream" {
 
 variable "redirector_dns_ns_prefix" {
   type = string
-  description = "Upstream that redirectors should point to."
+  description = "DNS NS record prefix for DNS redirectors."
   default = "ns1"
 }
 
@@ -34,7 +34,7 @@ variable "redirectors" {
     domain    = string
     transport = string
   }))
-  description = "List of redirectors domains and transpoarts to configure."
+  description = "List of redirector domains and transports to configure."
 }
 # redirectors = [{
 #   transport = "grpc",
@@ -48,6 +48,9 @@ variable "redirectors" {
 # },{
 #   transport = "icmp",
 #   domain = "icmp.example.com"
+# },{
+#   transport = "quic",
+#   domain = "quic.example.com"
 # }]
 # Note: For DNS an A record for example.com and dns.example.com will be created in addition to the NS record for dns.example.com
 # Note: For ICMP, each redirector gets its own VM with a unique IP. An A record is created per redirector enabling FQDN-based agent configuration (e.g. icmp://icmp.example.com).
@@ -608,12 +611,55 @@ locals {
     if redir.transport == "icmp"
   ]
   redirector_zones_icmp = [
-    for redir in var.redirectors : {
+    for idx, redir in local.icmp_redirectors : {
+      "index" : idx,
       "domain" : redir.domain,
       "zone" : lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
     }
-    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && redir.transport == "icmp"
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != ""
   ]
+
+  quic_redirectors = [
+    for redir in var.redirectors : redir
+    if redir.transport == "quic"
+  ]
+  redirector_zones_quic = [
+    for idx, redir in local.quic_redirectors : {
+      "index" : idx,
+      "domain" : redir.domain,
+      "zone" : lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
+    }
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != ""
+  ]
+  quic_gce_defs = [for redir in local.quic_redirectors : yamlencode({
+    spec = {
+      containers = [{
+        image   = var.tavern_container_image
+        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", var.redirector_upstream]
+        env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
+        ports   = [
+          {
+            containerPort = 443
+            hostPort      = 443
+            protocol      = "UDP"
+          }
+        ]
+      }]
+      restartPolicy = "Always"
+    }
+  })]
+  quic_user_data_def = <<EOT
+#cloud-config
+
+write_files:
+  - path: /etc/sysctl.d/99-quic-buffers.conf
+    content: |
+      net.core.rmem_max = 7500000
+      net.core.wmem_max = 7500000
+    permissions: '0644'
+runcmd:
+  - sysctl -p /etc/sysctl.d/99-quic-buffers.conf
+EOT
 }
 
 output "redir_domain_configuration" {
@@ -681,7 +727,7 @@ resource "google_cloud_run_service" "redirector" {
   autogenerate_revision_name = true
 
   depends_on = [
-    google_project_iam_member.redirector-logwriter-binding,
+    google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
     google_project_service.cloud_run_api
   ]
@@ -962,7 +1008,85 @@ resource "google_dns_record_set" "redir_icmp_record_a" {
   ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_icmp[count.index].name
-  rrdatas      = [google_compute_instance.icmp_redirector[count.index].network_interface[0].access_config[0].nat_ip]
+  rrdatas      = [google_compute_instance.icmp_redirector[local.redirector_zones_icmp[count.index].index].network_interface[0].access_config[0].nat_ip]
+}
+
+# Setup QUIC redirectors (one VM per redirector for unique IPs)
+resource "google_compute_firewall" "quic_redirector_allow_quic" {
+  count   = length(local.quic_redirectors) > 0 ? 1 : 0
+  name    = "allow-quic-to-redirector"
+  network = "default"
+
+  allow {
+    protocol = "udp"
+    ports    = ["443"]
+  }
+
+  source_ranges           = ["0.0.0.0/0"]
+  target_service_accounts = [google_service_account.svctavern_redirector.email]
+}
+
+resource "terraform_data" "quic_redirector_metadata_hash" {
+  count = length(local.quic_redirectors)
+  input = sha256("${local.quic_gce_defs[count.index]}-${local.quic_user_data_def}")
+}
+
+resource "google_compute_instance" "quic_redirector" {
+  count        = length(local.quic_redirectors)
+  name         = "tavern-redirector-quic${count.index}"
+  machine_type = var.redirector_machine_type
+  zone         = "${var.gcp_region}-b"
+
+  boot_disk {
+    initialize_params {
+      image = var.redirector_boot_disk_image
+      size  = var.redirector_boot_disk_size
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {}
+  }
+
+  metadata = {
+    gce-container-declaration = local.quic_gce_defs[count.index]
+    user-data                 = local.quic_user_data_def
+  }
+
+  allow_stopping_for_update = true
+
+  service_account {
+    email  = google_service_account.svctavern_redirector.email
+    scopes = ["cloud-platform"]
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      terraform_data.quic_redirector_metadata_hash[count.index]
+    ]
+  }
+
+  depends_on = [
+    google_project_iam_member.redirector-metricwriter-binding,
+    google_project_iam_member.redirector-logwriter-binding,
+    google_project_service.compute_api
+  ]
+}
+
+data "google_dns_managed_zone" "redir_dns_zone_quic" {
+  count = length(local.redirector_zones_quic)
+  name  = local.redirector_zones_quic[count.index].zone
+}
+
+resource "google_dns_record_set" "redir_quic_record_a" {
+  count = length(local.redirector_zones_quic)
+  name  = format("%s.", local.redirector_zones_quic[count.index].domain)
+  type  = "A"
+  ttl   = 300
+
+  managed_zone = data.google_dns_managed_zone.redir_dns_zone_quic[count.index].name
+  rrdatas      = [google_compute_instance.quic_redirector[local.redirector_zones_quic[count.index].index].network_interface[0].access_config[0].nat_ip]
 }
 
 # Setup auth and domain mappings
