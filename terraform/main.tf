@@ -635,12 +635,12 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:4444", var.redirector_upstream]
+        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", var.redirector_upstream]
         env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
         ports   = [
           {
-            containerPort = 4444
-            hostPort      = 4444
+            containerPort = 443
+            hostPort      = 443
             protocol      = "UDP"
           }
         ]
@@ -1019,7 +1019,7 @@ resource "google_compute_firewall" "quic_redirector_allow_quic" {
 
   allow {
     protocol = "udp"
-    ports    = ["4444"]
+    ports    = ["443"]
   }
 
   source_ranges           = ["0.0.0.0/0"]
