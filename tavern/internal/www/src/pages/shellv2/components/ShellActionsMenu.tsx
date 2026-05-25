@@ -1,9 +1,10 @@
 import React, { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X, StopCircle, Search } from "lucide-react";
+import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X, StopCircle, Search, Monitor } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
+import WinrmConnectionModal from "./WinrmConnectionModal";
 
 interface ShellActionsMenuProps {
     portalId: number | null;
@@ -11,6 +12,7 @@ interface ShellActionsMenuProps {
     onNewPortal: () => void;
     onClosePortal: () => void;
     onSshConnect: (target: string) => void;
+    onWinrmConnect: (target: string) => void;
     onPtyOpen: () => void;
     onSendCtrlC: () => void;
     onSendCtrlR: () => void;
@@ -24,11 +26,13 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     onNewPortal,
     onClosePortal,
     onSshConnect,
+    onWinrmConnect,
     onPtyOpen,
     onSendCtrlC,
     onSendCtrlR,
 }) => {
     const [sshModalOpen, setSshModalOpen] = useState(false);
+    const [winrmModalOpen, setWinrmModalOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const hasPortal = portalId !== null;
 
@@ -182,6 +186,30 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                     </Tooltip>
                                 )}
                             </Menu.Item>
+
+                            <Menu.Item>
+                                {() => (
+                                    <Tooltip
+                                        label={!hasPortal ? PORTAL_REQUIRED_TOOLTIP : ""}
+                                        isDisabled={hasPortal}
+                                        placement="right"
+                                        hasArrow
+                                    >
+                                        <div>
+                                            <Button
+                                                buttonVariant="ghost"
+                                                buttonStyle={{ color: "gray", size: "sm" }}
+                                                className={`w-full justify-start ${hasPortal ? "text-gray-200 hover:bg-[#3d3d3d]" : "text-gray-600 cursor-not-allowed"}`}
+                                                leftIcon={<Monitor className={`w-4 h-4 ${hasPortal ? "" : "opacity-40"}`} />}
+                                                onClick={() => setWinrmModalOpen(true)}
+                                                disabled={!hasPortal}
+                                            >
+                                                WinRM
+                                            </Button>
+                                        </div>
+                                    </Tooltip>
+                                )}
+                            </Menu.Item>
                         </div>
                     </Menu.Items>
                 </Transition>
@@ -191,6 +219,11 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                 isOpen={sshModalOpen}
                 onClose={() => setSshModalOpen(false)}
                 onConnect={onSshConnect}
+            />
+            <WinrmConnectionModal
+                isOpen={winrmModalOpen}
+                onClose={() => setWinrmModalOpen(false)}
+                onConnect={onWinrmConnect}
             />
         </>
     );

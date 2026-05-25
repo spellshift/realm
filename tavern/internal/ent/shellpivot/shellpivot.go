@@ -118,8 +118,9 @@ type Kind string
 
 // Kind values.
 const (
-	KindSSH Kind = "ssh"
-	KindPty Kind = "pty"
+	KindSSH   Kind = "ssh"
+	KindPty   Kind = "pty"
+	KindWinrm Kind = "winrm"
 )
 
 func (k Kind) String() string {
@@ -129,7 +130,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindSSH, KindPty:
+	case KindSSH, KindPty, KindWinrm:
 		return nil
 	default:
 		return fmt.Errorf("shellpivot: invalid enum value for kind field: %q", k)
