@@ -117,9 +117,19 @@ impl QuicTransport {
             .or_else(|| self.uri.strip_prefix("quics://"))
             .unwrap_or(&self.uri);
 
-        let addr: std::net::SocketAddr = addr_str
-            .parse()
-            .map_err(|e| anyhow!("Failed to parse server address '{}': {}", addr_str, e))?;
+        let addr: std::net::SocketAddr =
+            if let Ok(parsed) = addr_str.parse::<std::net::SocketAddr>() {
+                parsed
+            } else {
+                use std::net::ToSocketAddrs;
+                addr_str
+                    .to_socket_addrs()
+                    .or_else(|_| format!("{}:443", addr_str).to_socket_addrs())
+                    .map_err(|e| anyhow!("failed to resolve server address '{}': {}", addr_str, e))?
+                    .next()
+                    .ok_or_else(|| anyhow!("no IP address found for server '{}'", addr_str))?
+            };
+        let hostname = addr_str.split(':').next().unwrap_or("localhost");
 
         let endpoint = if let Some(ep) = &inner.endpoint {
             ep.clone()
@@ -149,7 +159,7 @@ impl QuicTransport {
             ep
         };
 
-        let connecting = endpoint.connect(addr, "localhost")?;
+        let connecting = endpoint.connect(addr, hostname)?;
         let connection = connecting.await?;
         inner.connection = Some(connection.clone());
         Ok(connection)
