@@ -18,6 +18,11 @@ type Endpoint struct {
 	AllowUnauthenticated bool
 	AllowUnactivated     bool
 
+	// WWWAuthenticate, if set, will be sent as the WWW-Authenticate header value
+	// in 401 responses. Useful for OAuth-protected endpoints (e.g. MCP) to
+	// indicate to clients how to authenticate.
+	WWWAuthenticate string
+
 	http.Handler
 }
 
@@ -34,6 +39,9 @@ func (endpoint Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Require Authentication
 	if !endpoint.AllowUnauthenticated && !auth.IsAuthenticatedContext(ctx) {
 		slog.WarnContext(r.Context(), "http unauthenticated request forbidden", "http_method", r.Method, "http_url", r.URL.String())
+		if endpoint.WWWAuthenticate != "" {
+			w.Header().Set("WWW-Authenticate", endpoint.WWWAuthenticate)
+		}
 		http.Error(w, "must authenticate", http.StatusUnauthorized)
 		return
 	}

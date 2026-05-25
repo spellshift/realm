@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"realm.pub/tavern/internal/auth"
@@ -77,7 +78,7 @@ type requestAuthenticator struct {
 // If no authenticated identity is associated with the request, no error is returned.
 // Instead, the context will not be associated with an authenticated identity.
 func (authenticator *requestAuthenticator) Authenticate(w http.ResponseWriter, r *http.Request) (context.Context, error) {
-	// Check for Access Token
+	// Check for Access Token header (X-Tavern-Access-Token)
 	accessToken := r.Header.Get(auth.HeaderAPIAccessToken)
 	if accessToken != "" {
 		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, accessToken)
@@ -86,6 +87,21 @@ func (authenticator *requestAuthenticator) Authenticate(w http.ResponseWriter, r
 			return nil, ErrInvalidAccessToken
 		}
 		return authCtx, nil
+	}
+
+	// Check for Authorization: Bearer <token> header (used by MCP OAuth clients)
+	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			bearerToken := strings.TrimPrefix(authHeader, "Bearer ")
+			if bearerToken != "" {
+				authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, bearerToken)
+				if err != nil {
+					slog.ErrorContext(r.Context(), "failed to authenticate bearer token from Authorization header", "err", err)
+					return nil, ErrInvalidAccessToken
+				}
+				return authCtx, nil
+			}
+		}
 	}
 
 	// Read SessionToken from auth cookie

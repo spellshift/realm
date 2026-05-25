@@ -30,6 +30,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/oauthclient"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -5893,6 +5894,374 @@ func (n *Notification) ToEdge(order *NotificationOrder) *NotificationEdge {
 	return &NotificationEdge{
 		Node:   n,
 		Cursor: order.Field.toCursor(n),
+	}
+}
+
+// OAuthClientEdge is the edge representation of OAuthClient.
+type OAuthClientEdge struct {
+	Node   *OAuthClient `json:"node"`
+	Cursor Cursor       `json:"cursor"`
+}
+
+// OAuthClientConnection is the connection containing edges to OAuthClient.
+type OAuthClientConnection struct {
+	Edges      []*OAuthClientEdge `json:"edges"`
+	PageInfo   PageInfo           `json:"pageInfo"`
+	TotalCount int                `json:"totalCount"`
+}
+
+func (c *OAuthClientConnection) build(nodes []*OAuthClient, pager *oauthclientPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *OAuthClient
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *OAuthClient {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *OAuthClient {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*OAuthClientEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &OAuthClientEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// OAuthClientPaginateOption enables pagination customization.
+type OAuthClientPaginateOption func(*oauthclientPager) error
+
+// WithOAuthClientOrder configures pagination ordering.
+func WithOAuthClientOrder(order []*OAuthClientOrder) OAuthClientPaginateOption {
+	return func(pager *oauthclientPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithOAuthClientFilter configures pagination filter.
+func WithOAuthClientFilter(filter func(*OAuthClientQuery) (*OAuthClientQuery, error)) OAuthClientPaginateOption {
+	return func(pager *oauthclientPager) error {
+		if filter == nil {
+			return errors.New("OAuthClientQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type oauthclientPager struct {
+	reverse bool
+	order   []*OAuthClientOrder
+	filter  func(*OAuthClientQuery) (*OAuthClientQuery, error)
+}
+
+func newOAuthClientPager(opts []OAuthClientPaginateOption, reverse bool) (*oauthclientPager, error) {
+	pager := &oauthclientPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *oauthclientPager) applyFilter(query *OAuthClientQuery) (*OAuthClientQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *oauthclientPager) toCursor(oc *OAuthClient) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(oc).Value)
+	}
+	return Cursor{ID: oc.ID, Value: cs_}
+}
+
+func (p *oauthclientPager) applyCursors(query *OAuthClientQuery, after, before *Cursor) (*OAuthClientQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultOAuthClientOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *oauthclientPager) applyOrder(query *OAuthClientQuery) *OAuthClientQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultOAuthClientOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultOAuthClientOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *oauthclientPager) orderExpr(query *OAuthClientQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultOAuthClientOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to OAuthClient.
+func (oc *OAuthClientQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...OAuthClientPaginateOption,
+) (*OAuthClientConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newOAuthClientPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if oc, err = pager.applyFilter(oc); err != nil {
+		return nil, err
+	}
+	conn := &OAuthClientConnection{Edges: []*OAuthClientEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := oc.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if oc, err = pager.applyCursors(oc, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		oc.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := oc.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	oc = pager.applyOrder(oc)
+	nodes, err := oc.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// OAuthClientOrderFieldCreatedAt orders OAuthClient by created_at.
+	OAuthClientOrderFieldCreatedAt = &OAuthClientOrderField{
+		Value: func(oc *OAuthClient) (ent.Value, error) {
+			return oc.CreatedAt, nil
+		},
+		column: oauthclient.FieldCreatedAt,
+		toTerm: oauthclient.ByCreatedAt,
+		toCursor: func(oc *OAuthClient) Cursor {
+			return Cursor{
+				ID:    oc.ID,
+				Value: oc.CreatedAt,
+			}
+		},
+	}
+	// OAuthClientOrderFieldLastModifiedAt orders OAuthClient by last_modified_at.
+	OAuthClientOrderFieldLastModifiedAt = &OAuthClientOrderField{
+		Value: func(oc *OAuthClient) (ent.Value, error) {
+			return oc.LastModifiedAt, nil
+		},
+		column: oauthclient.FieldLastModifiedAt,
+		toTerm: oauthclient.ByLastModifiedAt,
+		toCursor: func(oc *OAuthClient) Cursor {
+			return Cursor{
+				ID:    oc.ID,
+				Value: oc.LastModifiedAt,
+			}
+		},
+	}
+	// OAuthClientOrderFieldClientID orders OAuthClient by client_id.
+	OAuthClientOrderFieldClientID = &OAuthClientOrderField{
+		Value: func(oc *OAuthClient) (ent.Value, error) {
+			return oc.ClientID, nil
+		},
+		column: oauthclient.FieldClientID,
+		toTerm: oauthclient.ByClientID,
+		toCursor: func(oc *OAuthClient) Cursor {
+			return Cursor{
+				ID:    oc.ID,
+				Value: oc.ClientID,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f OAuthClientOrderField) String() string {
+	var str string
+	switch f.column {
+	case OAuthClientOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case OAuthClientOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case OAuthClientOrderFieldClientID.column:
+		str = "CLIENT_ID"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f OAuthClientOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *OAuthClientOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("OAuthClientOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *OAuthClientOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *OAuthClientOrderFieldLastModifiedAt
+	case "CLIENT_ID":
+		*f = *OAuthClientOrderFieldClientID
+	default:
+		return fmt.Errorf("%s is not a valid OAuthClientOrderField", str)
+	}
+	return nil
+}
+
+// OAuthClientOrderField defines the ordering field of OAuthClient.
+type OAuthClientOrderField struct {
+	// Value extracts the ordering value from the given OAuthClient.
+	Value    func(*OAuthClient) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) oauthclient.OrderOption
+	toCursor func(*OAuthClient) Cursor
+}
+
+// OAuthClientOrder defines the ordering of OAuthClient.
+type OAuthClientOrder struct {
+	Direction OrderDirection         `json:"direction"`
+	Field     *OAuthClientOrderField `json:"field"`
+}
+
+// DefaultOAuthClientOrder is the default ordering of OAuthClient.
+var DefaultOAuthClientOrder = &OAuthClientOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &OAuthClientOrderField{
+		Value: func(oc *OAuthClient) (ent.Value, error) {
+			return oc.ID, nil
+		},
+		column: oauthclient.FieldID,
+		toTerm: oauthclient.ByID,
+		toCursor: func(oc *OAuthClient) Cursor {
+			return Cursor{ID: oc.ID}
+		},
+	},
+}
+
+// ToEdge converts OAuthClient into OAuthClientEdge.
+func (oc *OAuthClient) ToEdge(order *OAuthClientOrder) *OAuthClientEdge {
+	if order == nil {
+		order = DefaultOAuthClientOrder
+	}
+	return &OAuthClientEdge{
+		Node:   oc,
+		Cursor: order.Field.toCursor(oc),
 	}
 }
 

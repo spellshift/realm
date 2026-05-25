@@ -25,6 +25,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/oauthclient"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
@@ -7301,6 +7302,314 @@ func (i *NotificationWhereInput) P() (predicate.Notification, error) {
 		return predicates[0], nil
 	default:
 		return notification.And(predicates...), nil
+	}
+}
+
+// OAuthClientWhereInput represents a where input for filtering OAuthClient queries.
+type OAuthClientWhereInput struct {
+	Predicates []predicate.OAuthClient  `json:"-"`
+	Not        *OAuthClientWhereInput   `json:"not,omitempty"`
+	Or         []*OAuthClientWhereInput `json:"or,omitempty"`
+	And        []*OAuthClientWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "client_id" field predicates.
+	ClientID             *string  `json:"clientID,omitempty"`
+	ClientIDNEQ          *string  `json:"clientIDNEQ,omitempty"`
+	ClientIDIn           []string `json:"clientIDIn,omitempty"`
+	ClientIDNotIn        []string `json:"clientIDNotIn,omitempty"`
+	ClientIDGT           *string  `json:"clientIDGT,omitempty"`
+	ClientIDGTE          *string  `json:"clientIDGTE,omitempty"`
+	ClientIDLT           *string  `json:"clientIDLT,omitempty"`
+	ClientIDLTE          *string  `json:"clientIDLTE,omitempty"`
+	ClientIDContains     *string  `json:"clientIDContains,omitempty"`
+	ClientIDHasPrefix    *string  `json:"clientIDHasPrefix,omitempty"`
+	ClientIDHasSuffix    *string  `json:"clientIDHasSuffix,omitempty"`
+	ClientIDEqualFold    *string  `json:"clientIDEqualFold,omitempty"`
+	ClientIDContainsFold *string  `json:"clientIDContainsFold,omitempty"`
+
+	// "client_name" field predicates.
+	ClientName             *string  `json:"clientName,omitempty"`
+	ClientNameNEQ          *string  `json:"clientNameNEQ,omitempty"`
+	ClientNameIn           []string `json:"clientNameIn,omitempty"`
+	ClientNameNotIn        []string `json:"clientNameNotIn,omitempty"`
+	ClientNameGT           *string  `json:"clientNameGT,omitempty"`
+	ClientNameGTE          *string  `json:"clientNameGTE,omitempty"`
+	ClientNameLT           *string  `json:"clientNameLT,omitempty"`
+	ClientNameLTE          *string  `json:"clientNameLTE,omitempty"`
+	ClientNameContains     *string  `json:"clientNameContains,omitempty"`
+	ClientNameHasPrefix    *string  `json:"clientNameHasPrefix,omitempty"`
+	ClientNameHasSuffix    *string  `json:"clientNameHasSuffix,omitempty"`
+	ClientNameIsNil        bool     `json:"clientNameIsNil,omitempty"`
+	ClientNameNotNil       bool     `json:"clientNameNotNil,omitempty"`
+	ClientNameEqualFold    *string  `json:"clientNameEqualFold,omitempty"`
+	ClientNameContainsFold *string  `json:"clientNameContainsFold,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *OAuthClientWhereInput) AddPredicates(predicates ...predicate.OAuthClient) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the OAuthClientWhereInput filter on the OAuthClientQuery builder.
+func (i *OAuthClientWhereInput) Filter(q *OAuthClientQuery) (*OAuthClientQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyOAuthClientWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyOAuthClientWhereInput is returned in case the OAuthClientWhereInput is empty.
+var ErrEmptyOAuthClientWhereInput = errors.New("ent: empty predicate OAuthClientWhereInput")
+
+// P returns a predicate for filtering oauthclients.
+// An error is returned if the input is empty or invalid.
+func (i *OAuthClientWhereInput) P() (predicate.OAuthClient, error) {
+	var predicates []predicate.OAuthClient
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, oauthclient.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.OAuthClient, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, oauthclient.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.OAuthClient, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, oauthclient.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, oauthclient.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, oauthclient.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, oauthclient.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, oauthclient.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, oauthclient.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, oauthclient.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, oauthclient.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, oauthclient.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, oauthclient.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, oauthclient.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, oauthclient.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, oauthclient.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, oauthclient.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, oauthclient.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, oauthclient.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, oauthclient.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, oauthclient.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, oauthclient.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, oauthclient.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, oauthclient.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, oauthclient.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, oauthclient.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, oauthclient.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, oauthclient.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.ClientID != nil {
+		predicates = append(predicates, oauthclient.ClientIDEQ(*i.ClientID))
+	}
+	if i.ClientIDNEQ != nil {
+		predicates = append(predicates, oauthclient.ClientIDNEQ(*i.ClientIDNEQ))
+	}
+	if len(i.ClientIDIn) > 0 {
+		predicates = append(predicates, oauthclient.ClientIDIn(i.ClientIDIn...))
+	}
+	if len(i.ClientIDNotIn) > 0 {
+		predicates = append(predicates, oauthclient.ClientIDNotIn(i.ClientIDNotIn...))
+	}
+	if i.ClientIDGT != nil {
+		predicates = append(predicates, oauthclient.ClientIDGT(*i.ClientIDGT))
+	}
+	if i.ClientIDGTE != nil {
+		predicates = append(predicates, oauthclient.ClientIDGTE(*i.ClientIDGTE))
+	}
+	if i.ClientIDLT != nil {
+		predicates = append(predicates, oauthclient.ClientIDLT(*i.ClientIDLT))
+	}
+	if i.ClientIDLTE != nil {
+		predicates = append(predicates, oauthclient.ClientIDLTE(*i.ClientIDLTE))
+	}
+	if i.ClientIDContains != nil {
+		predicates = append(predicates, oauthclient.ClientIDContains(*i.ClientIDContains))
+	}
+	if i.ClientIDHasPrefix != nil {
+		predicates = append(predicates, oauthclient.ClientIDHasPrefix(*i.ClientIDHasPrefix))
+	}
+	if i.ClientIDHasSuffix != nil {
+		predicates = append(predicates, oauthclient.ClientIDHasSuffix(*i.ClientIDHasSuffix))
+	}
+	if i.ClientIDEqualFold != nil {
+		predicates = append(predicates, oauthclient.ClientIDEqualFold(*i.ClientIDEqualFold))
+	}
+	if i.ClientIDContainsFold != nil {
+		predicates = append(predicates, oauthclient.ClientIDContainsFold(*i.ClientIDContainsFold))
+	}
+	if i.ClientName != nil {
+		predicates = append(predicates, oauthclient.ClientNameEQ(*i.ClientName))
+	}
+	if i.ClientNameNEQ != nil {
+		predicates = append(predicates, oauthclient.ClientNameNEQ(*i.ClientNameNEQ))
+	}
+	if len(i.ClientNameIn) > 0 {
+		predicates = append(predicates, oauthclient.ClientNameIn(i.ClientNameIn...))
+	}
+	if len(i.ClientNameNotIn) > 0 {
+		predicates = append(predicates, oauthclient.ClientNameNotIn(i.ClientNameNotIn...))
+	}
+	if i.ClientNameGT != nil {
+		predicates = append(predicates, oauthclient.ClientNameGT(*i.ClientNameGT))
+	}
+	if i.ClientNameGTE != nil {
+		predicates = append(predicates, oauthclient.ClientNameGTE(*i.ClientNameGTE))
+	}
+	if i.ClientNameLT != nil {
+		predicates = append(predicates, oauthclient.ClientNameLT(*i.ClientNameLT))
+	}
+	if i.ClientNameLTE != nil {
+		predicates = append(predicates, oauthclient.ClientNameLTE(*i.ClientNameLTE))
+	}
+	if i.ClientNameContains != nil {
+		predicates = append(predicates, oauthclient.ClientNameContains(*i.ClientNameContains))
+	}
+	if i.ClientNameHasPrefix != nil {
+		predicates = append(predicates, oauthclient.ClientNameHasPrefix(*i.ClientNameHasPrefix))
+	}
+	if i.ClientNameHasSuffix != nil {
+		predicates = append(predicates, oauthclient.ClientNameHasSuffix(*i.ClientNameHasSuffix))
+	}
+	if i.ClientNameIsNil {
+		predicates = append(predicates, oauthclient.ClientNameIsNil())
+	}
+	if i.ClientNameNotNil {
+		predicates = append(predicates, oauthclient.ClientNameNotNil())
+	}
+	if i.ClientNameEqualFold != nil {
+		predicates = append(predicates, oauthclient.ClientNameEqualFold(*i.ClientNameEqualFold))
+	}
+	if i.ClientNameContainsFold != nil {
+		predicates = append(predicates, oauthclient.ClientNameContainsFold(*i.ClientNameContainsFold))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyOAuthClientWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return oauthclient.And(predicates...), nil
 	}
 }
 
