@@ -423,3 +423,11 @@ On Windows, you can optionally configure Imix to fetch the uniqueness ID from a 
 ```bash
 export IMIX_UNIQUE='[{"type":"env"},{"type":"registry","args":{"subkey":"SOFTWARE\\MyCompany","value_name":"InstallID"}}]'
 ```
+
+## QUIC Port Rebinding Configuration
+
+When utilizing the `quic` or `quics` transport types, client-side port rebinding can be configured to dynamically migrate the local UDP socket port.
+
+Configure the parameters in the transport's `extra` JSON map:
+- `rebind_interval`: Integer string representing the base interval in seconds. Defaults to `220`.
+- `rebind_jitter`: Float string representing the jitter factor (e.g. `"0.15"`). Defaults to `0.15`.
