@@ -12,13 +12,20 @@ pub fn post(
     form: Option<BTreeMap<String, String>>,
     headers: Option<BTreeMap<String, String>>,
     allow_insecure: Option<bool>,
+    proxy: Option<String>,
 ) -> Result<BTreeMap<String, Value>, String> {
     if !uri.starts_with("http://") && !uri.starts_with("https://") {
         uri = format!("https://{}", uri);
     }
 
-    let client = reqwest::blocking::Client::builder()
-        .danger_accept_invalid_certs(allow_insecure.unwrap_or(false))
+    let mut builder = reqwest::blocking::Client::builder()
+        .danger_accept_invalid_certs(allow_insecure.unwrap_or(false));
+    if let Some(proxy_url) = proxy {
+        let p = reqwest::Proxy::all(&proxy_url)
+            .map_err(|e| format!("Invalid proxy URL {proxy_url}: {e}"))?;
+        builder = builder.proxy(p);
+    }
+    let client = builder
         .build()
         .map_err(|e| format!("Failed to build client: {e}"))?;
 
@@ -92,7 +99,7 @@ mod tests {
 
         let url = server.url("/foo").to_string();
 
-        let res = post(url, Some("request body".into()), None, None, None).unwrap();
+        let res = post(url, Some("request body".into()), None, None, None, None).unwrap();
 
         assert_eq!(res.get("status_code").unwrap(), &Value::Int(201));
     }
@@ -102,6 +109,7 @@ mod tests {
         // If we provide an unroutable domain, it will fail to connect but should try https.
         let res = post(
             "this-domain-will-not-exist-ever-123.com".to_string(),
+            None,
             None,
             None,
             None,
@@ -131,7 +139,7 @@ mod tests {
         let mut form = BTreeMap::new();
         form.insert("user".into(), "test".into());
 
-        let res = post(url, None, Some(form), None, None).unwrap();
+        let res = post(url, None, Some(form), None, None, None).unwrap();
         assert_eq!(res.get("status_code").unwrap(), &Value::Int(200));
     }
 }

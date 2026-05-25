@@ -25,6 +25,7 @@ type ParamDefinition struct {
 	Label       string `yaml:"label" json:"label"`
 	Type        string `yaml:"type" json:"type"`
 	Placeholder string `yaml:"placeholder" json:"placeholder"`
+	Optional    bool   `yaml:"optional" json:"optional,omitempty"`
 }
 
 // Validate the parameter definition, returning an error if an invalid definition has been defined.

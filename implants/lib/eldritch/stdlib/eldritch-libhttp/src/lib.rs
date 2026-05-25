@@ -27,6 +27,7 @@ pub trait HttpLibrary {
     /// - `uri` (`str`): The URL to download from.
     /// - `dst` (`str`): The local destination path.
     /// - `allow_insecure` (`Option<bool>`): If true, ignore SSL certificate verification.
+    /// - `proxy` (`Option<str>`): Optional proxy URL (e.g. `http://127.0.0.1:8080`) to route the request through.
     /// **Returns**
     /// - `None`
     ///
@@ -37,6 +38,7 @@ pub trait HttpLibrary {
         uri: String,
         dst: String,
         allow_insecure: Option<bool>,
+        proxy: Option<String>,
     ) -> Result<(), String>;
 
     #[eldritch_method]
@@ -47,6 +49,7 @@ pub trait HttpLibrary {
     /// - `query_params` (`Option<Dict<str, str>>`): Optional query parameters.
     /// - `headers` (`Option<Dict<str, str>>`): Optional custom HTTP headers.
     /// - `allow_insecure` (`Option<bool>`): If true, ignore SSL certificate verification.
+    /// - `proxy` (`Option<str>`): Optional proxy URL (e.g. `http://127.0.0.1:8080`) to route the request through.
     ///
     /// **Returns**
     /// - `Dict`: A dictionary containing the response:
@@ -62,6 +65,7 @@ pub trait HttpLibrary {
         query_params: Option<BTreeMap<String, String>>,
         headers: Option<BTreeMap<String, String>>,
         allow_insecure: Option<bool>,
+        proxy: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
@@ -73,6 +77,7 @@ pub trait HttpLibrary {
     /// - `form` (`Option<Dict<str, str>>`): Form data (application/x-www-form-urlencoded).
     /// - `headers` (`Option<Dict<str, str>>`): Optional custom HTTP headers.
     /// - `allow_insecure` (`Option<bool>`): If true, ignore SSL certificate verification.
+    /// - `proxy` (`Option<str>`): Optional proxy URL (e.g. `http://127.0.0.1:8080`) to route the request through.
     ///
     /// **Returns**
     /// - `Dict`: A dictionary containing the response:
@@ -89,5 +94,6 @@ pub trait HttpLibrary {
         form: Option<BTreeMap<String, String>>,
         headers: Option<BTreeMap<String, String>>,
         allow_insecure: Option<bool>,
+        proxy: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String>;
 }
