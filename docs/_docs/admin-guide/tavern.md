@@ -110,10 +110,11 @@ By default Tavern only supports gRPC connections directly to the server. To enab
 
 ### Available Redirectors
 
-Realm includes four built-in redirector implementations:
+Realm includes five built-in redirector implementations:
 
 - **`grpc`** - Direct gRPC passthrough redirector
 - **`http1`** - HTTP/1.1 to gRPC redirector
+- **`quic`** - UDP-based QUIC redirector
 - **`dns`** - DNS to gRPC redirector
 - **`icmp`** - ICMP Echo to gRPC redirector
 
@@ -130,6 +131,17 @@ Start a redirector:
 ```bash
 tavern redirector --transport <TRANSPORT> --listen <LISTEN_ADDR> <UPSTREAM_GRPC_ADDR>
 ```
+
+### QUIC Redirector
+
+The QUIC redirector accepts UDP-based QUIC traffic from agents and forwards it to an upstream gRPC server.
+
+```bash
+# Start QUIC redirector on UDP port 8443
+tavern redirector --transport quic --listen ":8443" localhost:8000
+```
+
+Unlike some of the other redirectors (such as HTTP/1.1 or DNS), the QUIC redirector supports bidirectional streaming, enabling features such as SOCKS5 proxies or interactive reverse shells. It will generate a self-signed TLS certificate if none is provided.
 
 ### HTTP/1.1 Redirector
 
