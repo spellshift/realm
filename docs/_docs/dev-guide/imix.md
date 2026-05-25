@@ -149,10 +149,11 @@ We've tried to make Imix super extensible for transport development. In fact, al
 
 ### Current Available Transports
 
-Realm currently includes three transport implementations:
+Realm currently includes four transport implementations:
 
 - **`grpc`** - Default gRPC transport
 - **`http1`** - HTTP/1.1 transport
+- **`quic`** - QUIC-based transport
 - **`dns`** - DNS-based covert channel transport
 - **`icmp`** - ICMP-based covert channel transport
 
@@ -311,6 +312,7 @@ For your agent to communicate, you'll need to implement a corresponding redirect
 
 - `tavern/internal/redirectors/grpc/` - gRPC redirector
 - `tavern/internal/redirectors/http1/` - HTTP/1.1 redirector
+- `tavern/internal/redirectors/quic/` - QUIC redirector
 - `tavern/internal/redirectors/dns/` - DNS redirector
 - `tavern/internal/redirectors/icmp/` - ICMP redirector
 

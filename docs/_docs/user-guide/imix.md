@@ -191,7 +191,7 @@ cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 
 ## Transport configuration
 
-Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
+Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `quic`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
 
 ### global configuration options
 - `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
@@ -220,6 +220,15 @@ The HTTP1 transport uses HTTP post requests to communicate to the redirector.
 
 
 This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+
+### quic
+
+The QUIC transport uses QUIC/UDP (via `realm-quic` ALPN) to communicate to the redirector/server.
+
+This transport supports all eldritch functions, including those that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+**Extra Keys Supported:** None
 
 
 ### dns
