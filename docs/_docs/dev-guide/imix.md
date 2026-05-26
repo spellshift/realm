@@ -319,3 +319,12 @@ For your agent to communicate, you'll need to implement a corresponding redirect
 Your redirector must implement the `Redirector` interface and register itself in the redirector registry. See `tavern/internal/redirectors/redirector.go` for the interface definition.
 
 And that's all that is needed for Imix to use a new Transport!
+
+## Client-Side Port Rebinding Design
+
+For the QUIC transport, the client spawns a background tokio task upon endpoint initialization that implements dynamic port rebinding.
+
+### Mechanism
+- The task sleeps for an effective interval calculated as: `rebind_interval * (1.0 - random_jitter)`.
+- Upon wakeup, a new local UDP socket is bound to `0.0.0.0:0`, marked non-blocking, and associated with the endpoint via `endpoint.rebind(socket)`.
+- QUIC connection IDs (CIDs) ensure that active stream contexts, redirector connections, and upstream metadata stay completely uninterrupted during migration.

