@@ -797,6 +797,54 @@ The **file.mkdir** method will make a new directory at `path`. If the parent dir
 
 The **file.move** method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
+### file.path_abs
+
+Returns an absolute representation of path.
+
+```python
+file.path_abs(path: str) -> str
+```
+
+### file.path_base
+
+Returns the last element of path.
+
+```python
+file.path_base(path: str) -> str
+```
+
+### file.path_clean
+
+Returns the shortest path name equivalent to path by purely lexical processing.
+
+```python
+file.path_clean(path: str) -> str
+```
+
+### file.path_dir
+
+Returns all but the last element of path, typically the path's directory.
+
+```python
+file.path_dir(path: str) -> str
+```
+
+### file.path_join
+
+Joins two path elements into a single path, separating them with an OS specific separator.
+
+```python
+file.path_join(base: str, target: str) -> str
+```
+
+### file.path_separator
+
+Returns the operating system-specific path separator.
+
+```python
+file.path_separator() -> str
+```
+
 ### file.parent_dir
 
 `file.parent_dir(path: str) -> str`
