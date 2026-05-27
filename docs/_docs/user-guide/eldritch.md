@@ -769,6 +769,40 @@ Here is an example of the Dict layout:
 ]
 ```
 
+### file.list_named_pipes
+
+`file.list_named_pipes(detailed: Optional<bool> = False) -> List<str> | List<Dict>`
+
+The **file.list_named_pipes** method enumerates all named pipes on the system.
+
+On **Windows**, enumerates the `\\.\pipe\` namespace. With `detailed=True`, opens each pipe to query instance count and max instances via `GetNamedPipeHandleState`/`GetNamedPipeInfo`.
+
+On **Unix** (Linux, macOS, BSD), scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs. On Linux additionally scans `/proc/*/fd` for `pipe:[inode]` entries. `detailed` param is ignored on Unix.
+
+```python
+# Simple list of pipe names
+pipes = file.list_named_pipes()
+for pipe in pipes:
+    print(pipe)
+
+# Detailed list with instance info (Windows only)
+pipes = file.list_named_pipes(detailed=True)
+for pipe in pipes:
+    print(f"{pipe['name']}: {pipe['instances']}/{pipe['max_instances']}")
+```
+
+Detailed mode dict fields:
+- `name` (str): Pipe name
+- `instances` (int or str): Current instance count, or `"ACCESS_DENIED"` if pipe couldn't be opened
+- `max_instances` (int or str): Maximum instances, `"UNLIMITED"`, `"UNKNOWN"`, or `"ACCESS_DENIED"`
+
+| OS | Supported |
+| --- | --- |
+| Windows | Yes (detailed + simple) |
+| Linux | Yes (simple only) |
+| macOS | Yes (FIFOs only, simple) |
+| BSD | Yes (FIFOs only, simple) |
+
 ### file.list_recent
 
 `file.list_recent(path: str, limit: int) -> List<str>`
@@ -835,6 +869,35 @@ file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` 
 file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
+### file.read_named_pipe
+
+`file.read_named_pipe(name: str, max_bytes: Optional<int> = None) -> str`
+
+The **file.read_named_pipe** method reads data from a named pipe.
+
+On **Windows**, `name` is the pipe name (e.g. `"mypipe"`) which expands to `\\.\pipe\mypipe`. A full path like `\\.\pipe\mypipe` is also accepted.
+
+On **Unix** (Linux, macOS, BSD), `name` is the full path to a FIFO (e.g. `"/tmp/mypipe"`).
+
+The optional `max_bytes` parameter limits the number of bytes read. If not specified, reads all available data to EOF. For time-based reads, use chunked reads in a loop:
+
+```python
+# Read all data from pipe
+data = file.read_named_pipe("mypipe")
+
+# Read up to 1024 bytes
+chunk = file.read_named_pipe("/tmp/mypipe", max_bytes=1024)
+
+# Time-based chunked read pattern
+result = ""
+stop = time.now() + 10
+while time.now() < stop:
+    chunk = file.read_named_pipe("/tmp/mypipe", max_bytes=4096)
+    if len(chunk) == 0:
+        break
+    result = result + chunk
+```
+
 ### file.remove
 
 `file.remove(path: str) -> None`
@@ -866,7 +929,7 @@ The **file.temp_file** method returns the path of a new temporary file with a ra
 The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
 
 ### file.template
-  
+
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.

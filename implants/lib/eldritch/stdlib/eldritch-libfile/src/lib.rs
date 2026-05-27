@@ -159,6 +159,26 @@ pub trait FileLibrary {
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    /// Lists all named pipes on the system.
+    ///
+    /// On Windows, enumerates `\\.\pipe\` using `FindFirstFileW`/`FindNextFileW`.
+    /// On Unix (Linux, macOS, BSD), scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs.
+    /// On Linux additionally scans `/proc/*/fd` for pipe file descriptors.
+    ///
+    /// **Parameters**
+    /// - `detailed` (`Option<bool>`): If True, returns list of dicts with `name`, `instances`,
+    ///   and `max_instances` (Windows only). Defaults to False (returns list of strings).
+    ///
+    /// **Returns**
+    /// - `List<str>` (default): Pipe names (Windows) or FIFO paths (Unix).
+    /// - `List<Dict>` (detailed=True, Windows): Dicts with `name` (str), `instances` (int),
+    ///   `max_instances` (int, -1 for unlimited).
+    ///
+    /// **Errors**
+    /// - Returns an error string if enumeration fails or the platform is unsupported.
+    fn list_named_pipes(&self, detailed: Option<bool>) -> Result<Value, String>;
+
+    #[eldritch_method]
     /// Lists files in a directory recursively, sorted by most recent modification time.
     ///
     /// **Parameters**
@@ -241,6 +261,29 @@ pub trait FileLibrary {
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
     fn read_binary(&self, path: String) -> Result<Value, String>;
+
+    #[eldritch_method]
+    /// Reads data from a named pipe.
+    ///
+    /// On Windows, connects to `\\.\pipe\<name>`. On Unix (Linux/macOS/BSD), opens the FIFO at `<name>`.
+    /// Reads up to `max_bytes` bytes (default: reads all available data to EOF).
+    /// For time-based reads, use a loop with `max_bytes` chunks in eldritch.
+    ///
+    /// **Parameters**
+    /// - `name` (`str`): The pipe name. On Windows this is just the pipe name (e.g. `"mypipe"`),
+    ///   which gets expanded to `\\.\pipe\mypipe`. On Unix, this is the full path to the FIFO
+    ///   (e.g. `"/tmp/mypipe"`).
+    /// - `max_bytes` (`Option<int>`): Maximum bytes to read. Defaults to reading all available data.
+    ///
+    /// **Returns**
+    /// - `str`: The data read from the pipe as a UTF-8 string.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the pipe cannot be opened or data is not valid UTF-8.
+    ///
+    /// **Supported OS**
+    /// - Windows, Linux, macOS, BSD
+    fn read_named_pipe(&self, name: String, max_bytes: Option<i64>) -> Result<String, String>;
 
     #[eldritch_method]
     /// Returns the current working directory of the process.
