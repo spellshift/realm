@@ -4,7 +4,7 @@ version = "0.4.0"
 edition = "2024"
 
 [dependencies]
-spin = "0.10"
+spin = "0.12"
 
 eldritch-core = { workspace = true, default-features = false }
 eldritch-macros = { workspace = true }

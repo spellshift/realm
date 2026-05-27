@@ -9,7 +9,7 @@ eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 nix = { workspace = true, optional = true }
-spin = { version = "0.10.0", features = ["rwlock"] }
+spin = { version = "0.12.0", features = ["rwlock"] }
 glob = { workspace = true }
 log = { workspace = true }
 
