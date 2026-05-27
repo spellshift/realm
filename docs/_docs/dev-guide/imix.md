@@ -149,10 +149,11 @@ We've tried to make Imix super extensible for transport development. In fact, al
 
 ### Current Available Transports
 
-Realm currently includes three transport implementations:
+Realm currently includes four transport implementations:
 
 - **`grpc`** - Default gRPC transport
 - **`http1`** - HTTP/1.1 transport
+- **`quic`** - QUIC-based transport
 - **`dns`** - DNS-based covert channel transport
 - **`icmp`** - ICMP-based covert channel transport
 
@@ -311,9 +312,19 @@ For your agent to communicate, you'll need to implement a corresponding redirect
 
 - `tavern/internal/redirectors/grpc/` - gRPC redirector
 - `tavern/internal/redirectors/http1/` - HTTP/1.1 redirector
+- `tavern/internal/redirectors/quic/` - QUIC redirector
 - `tavern/internal/redirectors/dns/` - DNS redirector
 - `tavern/internal/redirectors/icmp/` - ICMP redirector
 
 Your redirector must implement the `Redirector` interface and register itself in the redirector registry. See `tavern/internal/redirectors/redirector.go` for the interface definition.
 
 And that's all that is needed for Imix to use a new Transport!
+
+## Client-Side Port Rebinding Design
+
+For the QUIC transport, the client spawns a background tokio task upon endpoint initialization that implements dynamic port rebinding.
+
+### Mechanism
+- The task sleeps for an effective interval calculated as: `rebind_interval * (1.0 - random_jitter)`.
+- Upon wakeup, a new local UDP socket is bound to `0.0.0.0:0`, marked non-blocking, and associated with the endpoint via `endpoint.rebind(socket)`.
+- QUIC connection IDs (CIDs) ensure that active stream contexts, redirector connections, and upstream metadata stay completely uninterrupted during migration.
