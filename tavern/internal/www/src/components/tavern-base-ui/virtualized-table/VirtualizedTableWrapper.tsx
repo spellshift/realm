@@ -38,7 +38,7 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
             );
         }
 
-        if (totalItems === 0 && filterCount > 0) {
+        if (totalItems === 0 && showFiltering && filterCount > 0) {
             return (
                 <EmptyState
                     type={EmptyStateType.noMatches}
