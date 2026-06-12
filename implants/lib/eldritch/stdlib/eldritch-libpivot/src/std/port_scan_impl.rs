@@ -402,7 +402,7 @@ async fn handle_port_scan(
 
     let mut result: Vec<(String, i32, String, String)> = vec![];
     // Await results of each job.
-    // We are not acting on scan results indepently so it's okay to loop through each and only return when all have finished.
+    // We are not acting on scan results independently so it's okay to loop through each and only return when all have finished.
     for task in all_scan_futures {
         match task.await? {
             Ok(res) => {

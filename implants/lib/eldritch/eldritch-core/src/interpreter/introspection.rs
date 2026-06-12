@@ -126,7 +126,7 @@ pub fn find_best_match(target: &str, candidates: &[String]) -> Option<String> {
     // Threshold logic:
     // Allow a distance of up to 4, or half the string length + 1.
     // This allows "config" (6) -> "get_config" (10) (dist 4, threshold 4)
-    // "apend" (5) -> "append" (6) (dist 1, threshold 3)
+    // "append" (5) -> "append" (6) (dist 1, threshold 3)
     let threshold = (target.len() / 2 + 1).clamp(1, 4);
 
     for candidate in candidates {

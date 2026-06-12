@@ -494,4 +494,3 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	// Return claimed tasks
 	return &resp, nil
 }
-
