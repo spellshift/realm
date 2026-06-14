@@ -775,7 +775,7 @@ Here is an example of the Dict layout:
 
 The **file.get_times** method gets all important times of a file.
 
-On both **Windows** and **Unix**, both accessed and modified times are returned. On **Unix**, the changed time is also returned.
+On both **Windows** and **Unix**, accessed, created, and modified times are returned. On **Unix**, the changed time is also returned.
 
 Example:
 
