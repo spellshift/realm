@@ -34,6 +34,7 @@ pub mod timestomp_impl;
 pub mod tmp_dir_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
+pub mod get_times_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]
@@ -80,6 +81,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
         list_impl::list(path)
+    }
+
+    fn get_times(&self, path: String) -> Result<BTreeMap<String, i64>, String> {
+        get_times_impl::get_times(path)
     }
 
     fn list_named_pipes(&self, detailed: Option<bool>) -> Result<Value, String> {

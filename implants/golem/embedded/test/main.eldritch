@@ -1,0 +1,3 @@
+file.mkdir("./testdir")
+t = str(file.get_times("./testdir"))
+file.write("./testdir/meow", t)

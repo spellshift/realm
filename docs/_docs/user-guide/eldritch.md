@@ -769,6 +769,30 @@ Here is an example of the Dict layout:
 ]
 ```
 
+### file.get_times
+
+`file.get_times(path: str) -> Dict`
+
+The **file.get_times** method gets all important times of a file.
+
+On both **Windows** and **Unix**, both accessed and modified times are returned. On **Unix**, the changed time is also returned.
+
+Example:
+
+```python
+file.mkdir("./testdir")
+print(file.get_times("./file"))
+```
+
+```json
+{
+    "atime": 1781444321,
+    "crtime": 1781444321,
+    "ctime": 1781444321,
+    "mtime": 1781444321
+}
+```
+
 ### file.list_named_pipes
 
 `file.list_named_pipes(detailed: Optional<bool> = False) -> List<str> | List<Dict>`

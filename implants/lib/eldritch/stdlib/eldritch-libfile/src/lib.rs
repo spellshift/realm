@@ -159,6 +159,24 @@ pub trait FileLibrary {
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    /// Gets the times of a file
+    /// Modified, Created, and Accessed work on most systems, and for UNIX systems changed time is also outputted.
+    /// 
+    /// **Parameters**
+    /// - `path` (`str`): The file to get times from
+    /// 
+    /// **Returns**
+    /// - `Dict`: The dictionary of files
+    ///     - `mtime` (`int`)
+    ///     - `atime` (`int`)
+    ///     - `crtime` (`int`)
+    ///     - `ctime` (unix only, `int`)
+    /// 
+    /// **Errors**
+    /// - Returns an error upon failure of getting time of file
+    fn get_times(&self, path: String) -> Result<BTreeMap<String, i64>, String>;
+
+    #[eldritch_method]
     /// Lists all named pipes on the system.
     ///
     /// On Windows, enumerates `\\.\pipe\` using `FindFirstFileW`/`FindNextFileW`.
