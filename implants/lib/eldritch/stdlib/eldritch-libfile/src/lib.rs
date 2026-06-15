@@ -483,4 +483,61 @@ pub trait FileLibrary {
         modified_time: Option<i64>,
         create_time: Option<i64>,
     ) -> Result<Vec<String>, String>;
+
+    #[eldritch_method("get_perms")]
+    /// Gets the file permissions (Unix octal mode).
+    ///
+    /// On Unix/Linux/macOS/BSD, returns the octal permission mode as a string (e.g., "755").
+    /// On Windows, returns "r" for read-only files and "rw" for writable files.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file or directory path.
+    ///
+    /// **Returns**
+    /// - `str`: The octal permissions string.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the path doesn't exist or permissions cannot be read.
+    fn get_perms_(&self, path: String) -> Result<String, String>;
+
+    #[eldritch_method("set_perms")]
+    /// Sets the file permissions (Unix octal mode).
+    ///
+    /// On Unix/Linux/macOS/BSD, sets the octal permission mode (e.g., 0o755).
+    /// On Windows, only supports setting read-only (`1`) or writable (`0`).
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file or directory path.
+    /// - `mode` (`int`): The octal permission mode to set (e.g., 755, 644).
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if the path doesn't exist or permissions cannot be set.
+    fn set_perms_(&self, path: String, mode: i64) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Gets extended file permissions and attributes.
+    ///
+    /// Returns a dictionary with platform-specific extended permissions:
+    /// - On Windows:
+    ///   - `icacls`: Windows ACL string from `icacls` command
+    /// - On Linux:
+    ///   - `attrs`: Extended attributes from `lsattr` (includes immutable flag 'i')
+    ///   - `secontext`: SELinux security context (if SELinux is enabled)
+    ///   - `facl`: POSIX ACL from `getfacl` command
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file or directory path.
+    ///
+    /// **Returns**
+    /// - `Dict<str, str>`: A dictionary of extended permission types and their values.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the path doesn't exist.
+    fn get_extended_perms(
+        &self,
+        path: String,
+    ) -> Result<BTreeMap<String, String>, String>;
 }

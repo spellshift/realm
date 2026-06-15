@@ -461,6 +461,27 @@ impl FileLibrary for FileLibraryFake {
         // Simple BFS/DFS to find all files
         Ok(Vec::new())
     }
+
+    fn get_perms_(&self, path: String) -> Result<String, String> {
+        let _ = self.exists(path)?;
+        // Fake filesystem returns default permissions
+        Ok("0644".to_string())
+    }
+
+    fn set_perms_(&self, _path: String, _mode: i64) -> Result<(), String> {
+        // Fake filesystem doesn't actually change permissions
+        Ok(())
+    }
+
+    fn get_extended_perms(
+        &self,
+        path: String,
+    ) -> Result<BTreeMap<String, String>, String> {
+        let _ = self.exists(path)?;
+        let mut result = BTreeMap::new();
+        result.insert("attrs".to_string(), "--------------e--".to_string());
+        Ok(result)
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

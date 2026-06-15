@@ -12,6 +12,8 @@ pub mod decompress_impl;
 pub mod exists_impl;
 pub mod find_impl;
 pub mod follow_impl;
+pub mod get_extended_perms_impl;
+pub mod get_perms_impl;
 pub mod is_dir_impl;
 pub mod is_file_impl;
 pub mod list_impl;
@@ -27,6 +29,7 @@ pub mod read_named_pipe_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
+pub mod set_perms_impl;
 pub mod temp_file_impl;
 pub mod template_impl;
 pub mod template_str_impl;
@@ -193,5 +196,20 @@ impl FileLibrary for StdFileLibrary {
             modified_time,
             create_time,
         )
+    }
+
+    fn get_perms_(&self, path: String) -> Result<String, String> {
+        get_perms_impl::get_perms(path)
+    }
+
+    fn set_perms_(&self, path: String, mode: i64) -> Result<(), String> {
+        set_perms_impl::set_perms(path, mode)
+    }
+
+    fn get_extended_perms(
+        &self,
+        path: String,
+    ) -> Result<BTreeMap<String, String>, String> {
+        get_extended_perms_impl::get_extended_perms(path)
     }
 }
