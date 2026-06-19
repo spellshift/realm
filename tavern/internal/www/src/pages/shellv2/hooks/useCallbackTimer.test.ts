@@ -24,8 +24,8 @@ describe("useCallbackTimer", () => {
     });
 
     it("should return true for isMissedCallback but false for isLateCheckin when checkin is 1 minute late", () => {
-        const pastTime = moment().subtract(1, "minute").subtract(10, "seconds").toISOString();
-        const beaconData = { node: { nextSeenAt: pastTime } };
+        const pastime = moment().subtract(1, "minute").subtract(10, "seconds").toISOString();
+        const beaconData = { node: { nextSeenAt: pastime } };
 
         const { result } = renderHook(() => useCallbackTimer(beaconData));
 
@@ -35,8 +35,8 @@ describe("useCallbackTimer", () => {
     });
 
     it("should return true for isLateCheckin when checkin is over 5 minutes late", () => {
-        const pastTime = moment().subtract(5, "minutes").subtract(10, "seconds").toISOString();
-        const beaconData = { node: { nextSeenAt: pastTime } };
+        const pastime = moment().subtract(5, "minutes").subtract(10, "seconds").toISOString();
+        const beaconData = { node: { nextSeenAt: pastime } };
 
         const { result } = renderHook(() => useCallbackTimer(beaconData));
 

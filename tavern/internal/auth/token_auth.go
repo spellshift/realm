@@ -19,7 +19,7 @@ const ParamTokenRedirToken = "access_token"
 // HeaderAPIAccessToken is the name of the header clients should set to authenticate with personal access tokens.
 const HeaderAPIAccessToken = "X-Tavern-Access-Token"
 
-// NewTokenRedirectHandler returns a new http endpoint that redirects the requestor to http://127.0.0.1 at the port specified
+// NewTokenRedirectHandler returns a new http endpoint that redirects the requester to http://127.0.0.1 at the port specified
 // in the query parameters. This method requires an authenticated session, and will set the user's personal access token in the redirected
 // URL query parameters intended for use by CLI applications authenticating to Tavern.
 func NewTokenRedirectHandler() http.HandlerFunc {

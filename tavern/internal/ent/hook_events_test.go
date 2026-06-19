@@ -187,8 +187,8 @@ func TestHookDeriveNotifications_HostAccessRecovered(t *testing.T) {
 		require.NoError(t, err)
 
 		// Step 2: Simulate the host being lost by setting NextSeenAt into the past
-		pastTime := time.Now().Add(-5 * time.Minute)
-		_, err = client.Host.UpdateOneID(hostID).SetNextSeenAt(pastTime).Save(ctx)
+		pastime := time.Now().Add(-5 * time.Minute)
+		_, err = client.Host.UpdateOneID(hostID).SetNextSeenAt(pastime).Save(ctx)
 		require.NoError(t, err)
 
 		// Step 3: Second upsert — beacon checks in again after being lost

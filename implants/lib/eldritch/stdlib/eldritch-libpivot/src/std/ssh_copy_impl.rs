@@ -244,7 +244,7 @@ mod tests {
             offset: u64,
             data: Vec<u8>,
         ) -> Result<Status, Self::Error> {
-            //Warning this will only write one chunk - subsequesnt chunks will overwirte the old ones.
+            //Warning this will only write one chunk - subsequent chunks will overwrite the old ones.
             // Tests over the size of the chunk will fail
             let tmp_data = String::from_utf8(data).unwrap();
             fs::write(handle, tmp_data.trim_end_matches(char::from(0))).unwrap();

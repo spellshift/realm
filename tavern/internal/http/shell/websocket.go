@@ -39,7 +39,7 @@ const (
 type WebsocketControlFlowSignal string
 
 // WebsocketControlFlowSignalPortalUpgrade indicates that the connection has been upgraded to use a portal for interactivity.
-// WebsocketControlFlowSignalPortalDowngrade indicates that the connection has been downgraded to a non-interactive polling model, indicating that the portal has closed or is unuseable.
+// WebsocketControlFlowSignalPortalDowngrade indicates that the connection has been downgraded to a non-interactive polling model, indicating that the portal has closed or is unusable.
 const (
 	WebsocketControlFlowSignalPortalUpgrade   = "PORTAL_UPGRADE"
 	WebsocketControlFlowSignalPortalDowngrade = "PORTAL_DOWNGRADE"

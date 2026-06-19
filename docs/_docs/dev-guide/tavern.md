@@ -31,7 +31,7 @@ func (<NAME>) Annotations() []schema.Annotation {
 			entgql.MutationUpdate(), // Auto generate update mutation
 		),
 		entsql.Annotation{
-			Collation: "utf8mb4_general_ci", // Recommended - requried for case insensitive searching
+			Collation: "utf8mb4_general_ci", // Recommended - required for case insensitive searching
 		},
 	}
 }
