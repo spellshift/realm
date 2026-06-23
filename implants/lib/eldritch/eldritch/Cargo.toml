@@ -91,4 +91,4 @@ httptest = "0.16"
 
 [build-dependencies]
 regex = "1.10"
-walkdir = "2.3"
+walkdir = "2.5"
