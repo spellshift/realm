@@ -160,7 +160,7 @@ struct PeFileHeaders64 {
     section_headers: [IMAGE_SECTION_HEADER; MAX_PE_SECTIONS],
 }
 
-// Pares the PE file from a series of bytes
+// Parses the PE file from a series of bytes
 #[cfg(target_arch = "x86_64")]
 impl PeFileHeaders64 {
     fn new(dll_bytes_ptr: *mut c_void) -> Self {
@@ -390,7 +390,7 @@ fn process_import_address_tables(
                         function_ordinal_ptr,
                     ) as _;
                 } else {
-                    // Calculate a refernce to the function name by adding the dll_base and name's RVA.
+                    // Calculate a reference to the function name by adding the dll_base and name's RVA.
                     let image_import_ptr: *mut IMAGE_IMPORT_BY_NAME = (new_dll_base as usize
                         + unsafe { library_thunk.u1.AddressOfData } as usize)
                         as *mut IMAGE_IMPORT_BY_NAME;
@@ -819,7 +819,7 @@ mod tests {
         assert_eq!(base_reloc_entry.reloc_type, 0xa);
     }
 
-    // PE Headers change everytime create file dll is built
+    // PE Headers change every time create file dll is built
     // #[test]
     // fn test_reflective_loader_parse_pe_headers() -> () {
 

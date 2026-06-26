@@ -9,7 +9,7 @@ state: |
   INSERT INTO host_processes (id, pid, ppid, name, principal, status, task_reported_processes, created_at, last_modified_at, host_process_host) VALUES (1, 1234, 1, 'process', 'root', 'RUNNING', 1, datetime('now'), datetime('now'), 1);
   INSERT INTO host_credentials (id, principal, secret, kind, task_reported_credentials, created_at, last_modified_at, host_credential_host) VALUES (1, 'user', 'password', 'PLAINTEXT', 1, datetime('now'), datetime('now'), 1);
 
-requestor:
+requester:
   session_token: "abcdef123456"
 
 query: |

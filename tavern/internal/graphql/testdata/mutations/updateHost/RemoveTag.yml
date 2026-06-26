@@ -9,7 +9,7 @@ state: |
     VALUES (4000,"very-neat-tag","group");
   INSERT INTO `host_tags` (host_id, tag_id)
     VALUES (1010,4000);
-requestor:
+requester:
   session_token: secretToken
 query: |
   mutation RemoveTag($hostID: ID!, $input: UpdateHostInput!) {

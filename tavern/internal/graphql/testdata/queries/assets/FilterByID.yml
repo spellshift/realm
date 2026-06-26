@@ -6,7 +6,7 @@ state: |
   INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
     VALUES (3001, "TestFile2", "hello world", "zyxwvut", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
 
-requestor:
+requester:
   session_token: secretToken
 query: |
   query Files {

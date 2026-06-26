@@ -3,7 +3,7 @@ state: |
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
   INSERT INTO `repositories` (id, repository_owner, url, public_key, private_key, created_at, last_modified_at)
     VALUES (11000, 5, "ssh://code.google.com/my/repo", "--PUBLIC KEY--", "--PRIVATE KEY--", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
-requestor:
+requester:
   session_token: secretToken
 query: |
   mutation ImportRepository {

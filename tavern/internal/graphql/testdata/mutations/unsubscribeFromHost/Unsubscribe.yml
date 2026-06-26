@@ -5,7 +5,7 @@ state: |
     VALUES (1010,"db1","EXISTING-HOST", "PLATFORM_WINDOWS", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
   INSERT INTO `user_subscribedHosts` (user_id, host_id)
     VALUES (5, 1010);
-requestor:
+requester:
   session_token: secretToken
 query: |
   mutation UnsubscribeFromHost($hostID: ID!) {

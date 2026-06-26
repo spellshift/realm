@@ -5,7 +5,7 @@ state: |
     VALUES (4000,"boring-tag","service");
   INSERT INTO `tags` (id, name, kind)
     VALUES (4001,"filtered-tag","group");
-requestor:
+requester:
   session_token: secretToken
 query: |
   query Tags($where: TagWhereInput!) {

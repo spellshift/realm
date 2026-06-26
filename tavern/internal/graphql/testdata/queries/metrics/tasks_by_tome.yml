@@ -42,7 +42,7 @@ state: |
   INSERT INTO `tasks` (id, quest_tasks, task_beacon, created_at, last_modified_at, claimed_at, exec_finished_at, error, output_size)
     VALUES (6, 11, 1337, "2024-01-22 14:51:13", "2024-01-22 14:51:13", NULL, NULL, "", 0);
 
-requestor:
+requester:
   session_token: secretToken
 query: |
   query Metrics {

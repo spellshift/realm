@@ -1,4 +1,4 @@
-requestor:
+requester:
   session_token: "s"
 query: |
   mutation {

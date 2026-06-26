@@ -7,7 +7,7 @@ state: |
     VALUES (3000, "TestFile1", "hello world", "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
   INSERT INTO `tome_assets` (tome_id, asset_id)
     VALUES (2000, 3000);
-requestor:
+requester:
   session_token: secretToken
 query: |
   mutation DeleteAsset($assetID: ID!) {

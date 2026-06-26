@@ -17,7 +17,7 @@ state: |
     VALUES (3, 1338, 5, "2024-01-22 14:51:20", "2024-01-22 14:51:20");
   INSERT INTO `beacon_histories` (id, beacon_history_beacon, latency, created_at, last_modified_at)
     VALUES (4, 1338, 8, "2024-01-22 14:55:13", "2024-01-22 14:55:13");
-requestor:
+requester:
   session_token: secretToken
 query: |
   query Metrics {

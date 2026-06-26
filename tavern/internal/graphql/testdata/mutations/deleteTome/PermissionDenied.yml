@@ -15,7 +15,7 @@ state: |
     VALUES (2000, 3000);
   INSERT INTO `tome_assets` (tome_id, asset_id)
     VALUES (2000, 3001);
-requestor:
+requester:
   session_token: secretToken
 query: |
   mutation DeleteTome($tomeID: ID!) {

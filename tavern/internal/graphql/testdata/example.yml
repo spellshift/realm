@@ -6,7 +6,7 @@ state: |
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
 
 # Authenticate as that user (via session_token)
-requestor:
+requester:
   session_token: secretToken
 
 # Query all existing users

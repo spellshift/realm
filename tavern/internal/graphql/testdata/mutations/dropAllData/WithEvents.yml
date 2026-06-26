@@ -9,7 +9,7 @@ state: |
   INSERT INTO notifications (id, priority, read, archived, notification_user, notification_event, created_at, last_modified_at) VALUES (1, 'Low', 0, 0, 1, 1, datetime('now'), datetime('now'));
   INSERT INTO beacon_histories (id, latency, beacon_history_beacon, created_at, last_modified_at) VALUES (1, 100, 1, datetime('now'), datetime('now'));
 
-requestor:
+requester:
   session_token: "abcdef123456"
 
 query: |

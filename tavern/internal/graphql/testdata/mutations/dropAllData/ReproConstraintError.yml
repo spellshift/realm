@@ -6,7 +6,7 @@ state: |
   INSERT INTO quests (id, name, created_at, last_modified_at, quest_tome) VALUES (1, 'Quest 1', datetime('now'), datetime('now'), 1);
   INSERT INTO tasks (id, created_at, last_modified_at, quest_tasks, task_beacon) VALUES (1, datetime('now'), datetime('now'), 1, 1);
   INSERT INTO shells (id, created_at, last_modified_at, shell_task, shell_beacon, shell_owner, data) VALUES (1, datetime('now'), datetime('now'), 1, 1, 1, '');
-requestor:
+requester:
   session_token: "test-token"
 query: |
   mutation reset {

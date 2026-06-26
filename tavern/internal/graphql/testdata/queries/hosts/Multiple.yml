@@ -5,7 +5,7 @@ state: |
     VALUES (1010,"db1","EXISTING-HOST", "PLATFORM_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
   INSERT INTO `hosts` (id, name, identifier, platform, created_at, last_modified_at)
     VALUES (1011,"db2","EXISTING-HOST2", "PLATFORM_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
-requestor:
+requester:
   session_token: secretToken
 query: |
   query Hosts {
