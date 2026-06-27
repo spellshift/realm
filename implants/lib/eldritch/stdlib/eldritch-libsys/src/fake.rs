@@ -113,6 +113,17 @@ impl SysLibrary for SysLibraryFake {
         Ok(map)
     }
 
+    fn tokens(&self, _pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let mut entry = BTreeMap::new();
+        entry.insert("id".into(), Value::Int(1));
+        entry.insert(
+            "source".into(),
+            Value::String("impersonate:explorer.exe".into()),
+        );
+        entry.insert("active".into(), Value::Bool(true));
+        Ok(vec![entry])
+    }
+
     fn write_reg(
         &self,
         _path: String,

@@ -180,6 +180,20 @@ pub trait SysLibrary {
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
+    /// Lists tokens in the global store, or enumerates a process token.
+    ///
+    /// With no arguments, returns all stored tokens from global token store calls.
+    /// With a PID, returns the process token info including user and privileges.
+    ///
+    /// **Parameters**
+    /// - `pid` (`Option<int>`): Process ID to query, or None for stored tokens.
+    ///
+    /// **Returns**
+    /// - `List<Dict>`: Token info. Stored: `{active, id, source}`.
+    ///   Process: `{user, pid, privileges}`.
+    fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
     /// Writes a value to the Windows Registry.
     ///
     /// **Parameters**

@@ -22,6 +22,7 @@ mod is_windows_impl;
 mod list_users_impl;
 mod reg_utils;
 mod shell_impl;
+pub mod tokens_impl;
 mod write_reg_impl;
 
 #[derive(Debug)]
@@ -106,6 +107,10 @@ impl SysLibrary for StdSysLibrary {
 
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String> {
         shell_impl::shell(cmd).map_err(|e| e.to_string())
+    }
+
+    fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        tokens_impl::tokens(pid)
     }
 
     fn write_reg(
