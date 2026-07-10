@@ -113,7 +113,7 @@ func TestRedirector_QUIC_UnaryAndStreaming(t *testing.T) {
 
 	// 2. Setup the QUIC redirector
 	redirecter := &quicRedirector.Redirector{}
-	
+
 	// Create UDP listener to find a free port
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
 	require.NoError(t, err)

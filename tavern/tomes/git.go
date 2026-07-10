@@ -286,7 +286,7 @@ func findTomePaths(tree *object.Tree) ([]string, error) {
 	return tomePaths, nil
 }
 
-// parseNamespaceFromGit attempts to return a shortend namespace for the tome based on the git URL.
+// parseNamespaceFromGit attempts to return a shortened namespace for the tome based on the git URL.
 // If it cannot or something goes wrong, this will return the provided git URL as the namespace.
 func parseNamespaceFromGit(gitURLStr string) string {
 	gitURL, err := url.Parse(gitURLStr)

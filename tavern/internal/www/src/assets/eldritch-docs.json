@@ -327,6 +327,10 @@
     "signature": "file.list(path: str) -> List<Dict>",
     "description": "The **file.list** method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.\nThis function also supports globbing with `*` for example:\n```python\nfile.list(\"/home/*/.bash_history\") # List all files called .bash_history in sub dirs of `/home/`\nfile.list(\"/etc/*ssh*\") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name\nfile.list(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\*.yml\") # List files over UNC paths\n```\nEach file is represented by a Dict type.\nHere is an example of the Dict layout:\n```json\n[\n{\n\"file_name\": \"implants\",\n\"absolute_path\": \"/workspace/realm/implants\",\n\"size\": 4096,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"40755\",\n\"modified\": \"2023-07-09 01:35:40 UTC\",\n\"type\": \"Directory\"\n},\n{\n\"file_name\": \"README.md\",\n\"absolute_path\": \"/workspace/realm/README.md\",\n\"size\": 750,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"100644\",\n\"modified\": \"2023-07-08 02:49:47 UTC\",\n\"type\": \"File\"\n},\n{\n\"file_name\": \".git\",\n\"absolute_path\": \"/workspace/realm/.git\",\n\"size\": 4096,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"40755\",\n\"modified\": \"2023-07-10 21:14:06 UTC\",\n\"type\": \"Directory\"\n}\n]\n```"
   },
+  "file.list_named_pipes": {
+    "signature": "file.list_named_pipes(detailed: Optional<bool> = False) -> List<str> | List<Dict>",
+    "description": "The **file.list_named_pipes** method enumerates all named pipes on the system.\nOn **Windows**, enumerates the `\\\\.\\pipe\\` namespace. With `detailed=True`, opens each pipe to query instance count and max instances via `GetNamedPipeHandleState`/`GetNamedPipeInfo`.\nOn **Unix** (Linux, macOS, BSD), scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs. On Linux additionally scans `/proc/*/fd` for `pipe:[inode]` entries. `detailed` param is ignored on Unix.\n```python\n# Simple list of pipe names\npipes = file.list_named_pipes()\nfor pipe in pipes:\nprint(pipe)\n# Detailed list with instance info (Windows only)\npipes = file.list_named_pipes(detailed=True)\nfor pipe in pipes:\nprint(f\"{pipe['name']}: {pipe['instances']}/{pipe['max_instances']}\")\n```\nDetailed mode dict fields:\n- `name` (str): Pipe name\n- `instances` (int or str): Current instance count, or `\"ACCESS_DENIED\"` if pipe couldn't be opened\n- `max_instances` (int or str): Maximum instances, `\"UNLIMITED\"`, `\"UNKNOWN\"`, or `\"ACCESS_DENIED\"`\n| OS | Supported |\n| --- | --- |\n| Windows | Yes (detailed + simple) |\n| Linux | Yes (simple only) |\n| macOS | Yes (FIFOs only, simple) |\n| BSD | Yes (FIFOs only, simple) |"
+  },
   "file.list_recent": {
     "signature": "file.list_recent(path: str, limit: int) -> List<str>",
     "description": "The **file.list_recent** method returns a list of file paths in the specified directory, sorted by most recent modification time. The scan is recursive.\n- `path`: The directory to scan. Defaults to `/`.\n- `limit`: The maximum number of files to return. Defaults to `10`.\n```python\n# Get the 5 most recently modified files in /var/log\nrecent_logs = file.list_recent(\"/var/log\", 5)\nfor log in recent_logs:\nprint(log)\n```"
@@ -354,6 +358,10 @@
   "file.read_binary": {
     "signature": "file.read_binary(path: str) -> Bytes",
     "description": "The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read_binary(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read_binary(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read_binary(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
+  },
+  "file.read_named_pipe": {
+    "signature": "file.read_named_pipe(name: str, max_bytes: Optional<int> = None) -> str",
+    "description": "The **file.read_named_pipe** method reads data from a named pipe.\nOn **Windows**, `name` is the pipe name (e.g. `\"mypipe\"`) which expands to `\\\\.\\pipe\\mypipe`. A full path like `\\\\.\\pipe\\mypipe` is also accepted.\nOn **Unix** (Linux, macOS, BSD), `name` is the full path to a FIFO (e.g. `\"/tmp/mypipe\"`).\nThe optional `max_bytes` parameter limits the number of bytes read. If not specified, reads all available data to EOF. For time-based reads, use chunked reads in a loop:\n```python\n# Read all data from pipe\ndata = file.read_named_pipe(\"mypipe\")\n# Read up to 1024 bytes\nchunk = file.read_named_pipe(\"/tmp/mypipe\", max_bytes=1024)\n# Time-based chunked read pattern\nresult = \"\"\nstop = time.now() + 10\nwhile time.now() < stop:\nchunk = file.read_named_pipe(\"/tmp/mypipe\", max_bytes=4096)\nif len(chunk) == 0:\nbreak\nresult = result + chunk\n```"
   },
   "file.remove": {
     "signature": "file.remove(path: str) -> None",
@@ -389,7 +397,7 @@
   },
   "file.write": {
     "signature": "file.write(path: str, content: str) -> None",
-    "description": "The **file.write** method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwite it. If a directory\nalready exists at the path the method will error."
+    "description": "The **file.write** method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error."
   },
   "file.write_binary": {
     "signature": "file.write_binary(path: str, content: Bytes) -> None",
