@@ -2,6 +2,7 @@ package mcp_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -115,6 +116,18 @@ func TestListQuestsHandler(t *testing.T) {
 	assert.Equal(t, "test-quest", quests[0].Name)
 	assert.NotNil(t, quests[0].Edges.Tome)
 	assert.Equal(t, "test-tome", quests[0].Edges.Tome.Name)
+
+	// Test the tool directly
+	req := mcp.CallToolRequest{}
+	result, err := tavernmcp.HandleListQuests(tavernmcp.CtxWithClient(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	require.Len(t, result.Content, 1)
+
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, txt.Text, "test-quest")
+	assert.Contains(t, txt.Text, "test-tome")
 }
 
 // TestListHostsHandler tests the list_hosts tool by creating test data.
@@ -152,6 +165,18 @@ func TestListHostsHandler(t *testing.T) {
 	assert.Equal(t, "test-host", hosts[0].Name)
 	assert.Len(t, hosts[0].Edges.Beacons, 1)
 	assert.Len(t, hosts[0].Edges.Tags, 1)
+
+	// Test the tool directly
+	req := mcp.CallToolRequest{}
+	result, err := tavernmcp.HandleListHosts(tavernmcp.CtxWithClient(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	require.Len(t, result.Content, 1)
+
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, txt.Text, "test-host")
+	assert.Contains(t, txt.Text, "test-tag")
 }
 
 // TestListTomesHandler tests the list_tomes tool by creating test data.
@@ -183,6 +208,18 @@ func TestListTomesHandler(t *testing.T) {
 	tomes, err := client.Tome.Query().All(ctx)
 	require.NoError(t, err)
 	assert.Len(t, tomes, 2)
+
+	// Test the tool directly
+	req := mcp.CallToolRequest{}
+	result, err := tavernmcp.HandleListTomes(tavernmcp.CtxWithClient(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	require.Len(t, result.Content, 1)
+
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, txt.Text, "tome-1")
+	assert.Contains(t, txt.Text, "tome-2")
 }
 
 // TestCreateQuestHandler tests the create_quest tool by creating a quest.
@@ -234,6 +271,27 @@ func TestCreateQuestHandler(t *testing.T) {
 	assert.Len(t, createdQuest, 1)
 	assert.Equal(t, "mcp-quest", createdQuest[0].Name)
 	assert.Len(t, createdQuest[0].Edges.Tasks, 1)
+
+	// Test the tool directly
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"name":       "mcp-tool-quest",
+				"tome_id":    fmt.Sprintf("%d", testTome.ID),
+				"beacon_ids": []any{fmt.Sprintf("%d", testBeacon.ID)},
+				"parameters": "{\"key\":\"value\"}",
+			},
+		},
+	}
+	// We need to provide a nil MCPServer for the test
+	result, err := tavernmcp.HandleCreateQuest(nil)(tavernmcp.CtxWithClient(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	require.Len(t, result.Content, 1)
+
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, txt.Text, "mcp-tool-quest")
 }
 
 // TestQuestOutputHandler tests the quest_output tool by creating quests with task output.
@@ -293,6 +351,23 @@ func TestQuestOutputHandler(t *testing.T) {
 	assert.Len(t, quests, 1)
 	assert.Len(t, quests[0].Edges.Tasks, 1)
 	assert.Equal(t, "task output result", quests[0].Edges.Tasks[0].Output)
+
+	// Test the tool directly
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"ids": []any{fmt.Sprintf("%d", q.ID)},
+			},
+		},
+	}
+	result, err := tavernmcp.HandleQuestOutput(tavernmcp.CtxWithClient(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	require.Len(t, result.Content, 1)
+
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, txt.Text, "task output result")
 }
 
 // TestWaitForQuestHandler tests the wait_for_quest tool with already-finished tasks.
@@ -348,6 +423,23 @@ func TestWaitForQuestHandler(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, quest.Edges.Tasks, 1)
 	assert.False(t, quest.Edges.Tasks[0].ExecFinishedAt.IsZero())
+
+	// Test the tool directly
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Arguments: map[string]any{
+				"quest_id": fmt.Sprintf("%d", q.ID),
+			},
+		},
+	}
+	result, err := tavernmcp.HandleWaitForQuest(tavernmcp.CtxWithClient(ctx, client), req)
+	require.NoError(t, err)
+	assert.False(t, result.IsError)
+	require.Len(t, result.Content, 1)
+
+	txt, ok := result.Content[0].(mcp.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, txt.Text, "finished")
 }
 
 // TestParseIntIDs tests the ParseIntIDs helper.
