@@ -23,6 +23,7 @@ tokio = { workspace = true, features = [
 ], optional = true }
 pnet = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
+spin = { workspace = true, features = ["mutex"], optional = true }
 
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
 listeners = { workspace = true, optional = true }
@@ -48,5 +49,5 @@ stdlib = [
     "tokio",
     "pnet",
 ]
-fake_bindings = []
+fake_bindings = ["dep:spin"]
 print_debug = []
