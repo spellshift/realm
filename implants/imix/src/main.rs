@@ -21,6 +21,7 @@ pub use transport::Transport;
 
 mod agent;
 mod assets;
+mod imix_config;
 mod install;
 mod portal;
 mod printer;

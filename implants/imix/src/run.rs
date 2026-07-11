@@ -13,7 +13,6 @@ pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 const MAX_BUF_SHELL_MESSAGES: usize = 65535;
 
 fn init_crypto() {
-    // Prefer runtime env var, fall back to compile-time baked value from imix/build.rs.
     let b64 = std::env::var("IMIX_SERVER_PUBKEY")
         .ok()
         .or_else(|| option_env!("IMIX_SERVER_PUBKEY").map(|s| s.to_string()));
@@ -48,11 +47,17 @@ fn init_crypto() {
     }
 }
 
+fn init_runtime_config() {
+    let rt_cfg = crate::imix_config::build_runtime_config();
+    pb::config::init_runtime_config(rt_cfg);
+}
+
 pub async fn run_agent() -> Result<()> {
     init_logger();
     init_crypto();
+    init_runtime_config();
 
-    // Load config / defaults
+    // Load config / defaults — now reads from runtime config set above.
     let config = Config::default_with_imix_version(VERSION);
     #[cfg(feature = "print_debug")]
     log::info!("Loaded config: {config:#?}");
@@ -77,7 +82,6 @@ pub async fn run_agent() -> Result<()> {
 
     // Track the last interval we slept for, as a fallback in case we fail to read the config
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
-    // Do we need to move this into the loop and check the agent_ref?
 
     #[cfg(feature = "print_debug")]
     log::info!("Agent initialized");
