@@ -1,4 +1,5 @@
 use anyhow::Result;
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -11,8 +12,45 @@ use pb::config::Config;
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 const MAX_BUF_SHELL_MESSAGES: usize = 65535;
 
+fn init_crypto() {
+    // Prefer runtime env var, fall back to compile-time baked value from imix/build.rs.
+    let b64 = std::env::var("IMIX_SERVER_PUBKEY")
+        .ok()
+        .or_else(|| option_env!("IMIX_SERVER_PUBKEY").map(|s| s.to_string()));
+
+    if let Some(b64_str) = b64 {
+        match BASE64.decode(b64_str.trim()) {
+            Ok(bytes) if bytes.len() == 32 => {
+                let mut key = [0u8; 32];
+                key.copy_from_slice(&bytes);
+                pb::xchacha::set_server_pubkey(key);
+                #[cfg(feature = "print_debug")]
+                log::info!("Server public key configured");
+            }
+            Ok(bytes) => {
+                #[cfg(feature = "print_debug")]
+                log::error!(
+                    "IMIX_SERVER_PUBKEY decoded to {} bytes, expected 32 — using fallback",
+                    bytes.len()
+                );
+            }
+            Err(e) => {
+                #[cfg(feature = "print_debug")]
+                log::error!(
+                    "Failed to base64-decode IMIX_SERVER_PUBKEY: {} — using fallback",
+                    e
+                );
+            }
+        }
+    } else {
+        #[cfg(feature = "print_debug")]
+        log::warn!("IMIX_SERVER_PUBKEY not set — using fallback key (no encrypted C2 will work)");
+    }
+}
+
 pub async fn run_agent() -> Result<()> {
     init_logger();
+    init_crypto();
 
     // Load config / defaults
     let config = Config::default_with_imix_version(VERSION);
