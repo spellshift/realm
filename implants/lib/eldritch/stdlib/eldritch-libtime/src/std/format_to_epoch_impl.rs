@@ -1,20 +1,50 @@
 use alloc::string::{String, ToString};
 use anyhow::Result as AnyhowResult;
-use chrono::NaiveDateTime;
 
 pub fn format_to_epoch(input: String, fmt: String) -> Result<i64, String> {
     format_to_epoch_impl(input, fmt).map_err(|e| e.to_string())
 }
 
 fn format_to_epoch_impl(input: String, fmt: String) -> AnyhowResult<i64> {
-    // Try to parse as DateTime with timezone first
-    if let Ok(dt) = chrono::DateTime::parse_from_str(&input, &fmt) {
-        return Ok(dt.timestamp());
+    // Try to parse as Timestamp with timezone first
+    if let Ok(ts) = jiff::Timestamp::strptime(&fmt, &input) {
+        return Ok(ts.as_second());
+    }
+    // Handle %z vs %:z mismatch (original tolerated both, jiff is strict)
+    if fmt.contains("%z") {
+        let alt_fmt = fmt.replace("%z", "%:z");
+        if alt_fmt != fmt {
+            if let Ok(ts) = jiff::Timestamp::strptime(&alt_fmt, &input) {
+                return Ok(ts.as_second());
+            }
+        }
+    }
+    if fmt.contains("%:z") {
+        let alt_fmt = fmt.replace("%:z", "%z");
+        if alt_fmt != fmt {
+            if let Ok(ts) = jiff::Timestamp::strptime(&alt_fmt, &input) {
+                return Ok(ts.as_second());
+            }
+        }
     }
 
-    // Fallback to NaiveDateTime (assume UTC)
-    let dt = NaiveDateTime::parse_from_str(&input, &fmt)?;
-    Ok(dt.and_utc().timestamp())
+    // Fallback to civil DateTime (assume UTC)
+    // Original NaiveDateTime requires a time component; mimic that by rejecting
+    // date-only formats for this API (test_date_only_fails expects error).
+    // This keeps timestomp's date-only handling separate.
+    let has_time = fmt.contains("%H")
+        || fmt.contains("%I")
+        || fmt.contains("%M")
+        || fmt.contains("%S")
+        || fmt.contains("%T")
+        || fmt.contains("%R")
+        || fmt.contains("%X");
+    if !has_time {
+        anyhow::bail!("format does not contain time component");
+    }
+    let dt = jiff::civil::DateTime::strptime(&fmt, &input)?;
+    let ts = jiff::tz::TimeZone::UTC.to_timestamp(dt)?;
+    Ok(ts.as_second())
 }
 
 #[cfg(test)]

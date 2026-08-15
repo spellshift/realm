@@ -70,32 +70,37 @@ fn timestomp_impl(
 fn parse_time(val: Value) -> AnyhowResult<::std::time::SystemTime> {
     match val {
         Value::Int(i) => {
-            // Epoch seconds
-            Ok(::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(i as u64))
+            // Epoch seconds - handle negative via jiff for consistency, but keep Duration logic for positive
+            if i >= 0 {
+                Ok(::std::time::UNIX_EPOCH + ::std::time::Duration::from_secs(i as u64))
+            } else {
+                // For negative, use jiff to handle correctly
+                let ts = jiff::Timestamp::from_second(i)?;
+                Ok(::std::time::SystemTime::from(ts))
+            }
         }
         Value::String(s) => {
-            // Try ISO 8601 first
-            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&s) {
-                return Ok(dt.into());
+            // Try RFC3339 / ISO 8601 first (e.g., "2020-01-01T12:00:00Z" or "2020-01-01T12:00:00+00:00")
+            if let Ok(ts) = s.parse::<jiff::Timestamp>() {
+                return Ok(ts.into());
             }
-            // Try naive? chrono supports various.
-            // Let's also support a simpler format "YYYY-MM-DD HH:MM:SS"
-            if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S") {
-                // Assume local? No, let's assume UTC for consistency unless offset provided
-                return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
-                    dt,
-                    chrono::Utc,
-                )
-                .into());
+            // Try jiff Timestamp strptime with RFC3339-like formats
+            if let Ok(ts) = jiff::Timestamp::strptime("%Y-%m-%dT%H:%M:%S%z", &s) {
+                return Ok(ts.into());
             }
-            // Try just YYYY-MM-DD
-            if let Ok(d) = chrono::NaiveDate::parse_from_str(&s, "%Y-%m-%d") {
-                let dt = d.and_hms_opt(0, 0, 0).unwrap();
-                return Ok(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
-                    dt,
-                    chrono::Utc,
-                )
-                .into());
+            if let Ok(ts) = jiff::Timestamp::strptime("%Y-%m-%dT%H:%M:%S%:z", &s) {
+                return Ok(ts.into());
+            }
+            // Try "YYYY-MM-DD HH:MM:SS" (assume UTC)
+            if let Ok(dt) = jiff::civil::DateTime::strptime("%Y-%m-%d %H:%M:%S", &s) {
+                let ts = jiff::tz::TimeZone::UTC.to_timestamp(dt)?;
+                return Ok(ts.into());
+            }
+            // Try just YYYY-MM-DD (assume midnight UTC)
+            if let Ok(d) = jiff::civil::Date::strptime("%Y-%m-%d", &s) {
+                let dt = d.at(0, 0, 0, 0);
+                let ts = jiff::tz::TimeZone::UTC.to_timestamp(dt)?;
+                return Ok(ts.into());
             }
 
             anyhow::bail!("Failed to parse date string: {}", s)
