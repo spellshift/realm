@@ -1628,6 +1628,56 @@ sys.shell("ls /nofile")
 }
 ```
 
+### sys.tokens
+
+`sys.tokens(pid: Option<int>) -> List<Dict>`
+
+The **sys.tokens** method lists tokens. With no arguments, returns all tokens in the global store. With a PID, returns the process token info including user and privileges.
+
+**Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `source` (str).
+
+**Process tokens** (with pid): Each dict has `user` (str, e.g. `"CORP\\admin"`), `pid` (int), `privileges` (list of `"PrivilegeName=enabled|disabled"`).
+
+```python
+$> sys.tokens()
+
+| active | id | source              |
+| ------ | -- | ------------------- |
+| True   | 1  | impersonate:pid:700 |
+
+$> pprint(sys.tokens(pid=700))
+
+[
+  {
+    "pid": 700,
+    "privileges": [
+      "SeAssignPrimaryTokenPrivilege=disabled",
+      "SeIncreaseQuotaPrivilege=disabled",
+      "SeTcbPrivilege=enabled",
+      "SeSecurityPrivilege=disabled",
+      "SeTakeOwnershipPrivilege=disabled",
+      "SeLoadDriverPrivilege=disabled",
+      "SeProfileSingleProcessPrivilege=enabled",
+      "SeIncreaseBasePriorityPrivilege=enabled",
+      "SeCreatePermanentPrivilege=enabled",
+      "SeBackupPrivilege=disabled",
+      "SeRestorePrivilege=disabled",
+      "SeShutdownPrivilege=disabled",
+      "SeDebugPrivilege=enabled",
+      "SeAuditPrivilege=enabled",
+      "SeSystemEnvironmentPrivilege=disabled",
+      "SeChangeNotifyPrivilege=enabled",
+      "SeUndockPrivilege=disabled",
+      "SeManageVolumePrivilege=disabled",
+      "SeImpersonatePrivilege=enabled",
+      "SeCreateGlobalPrivilege=enabled",
+      "SeTrustedCredManAccessPrivilege=disabled"
+    ],
+    "user": "NT AUTHORITY\\SYSTEM"
+  }
+]
+```
+
 ### sys.write_reg
 
 `sys.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
