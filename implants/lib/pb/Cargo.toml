@@ -22,18 +22,17 @@ guardrails = { workspace = true }
 log = { workspace = true }
 netdev = { workspace = true }
 prost = { workspace = true }
-serde_json = { workspace = true }
 prost-types = { workspace = true }
 rand_chacha = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-native-roots"] }
-const-decoder = { workspace = true }
 chacha20poly1305 = { workspace = true }
 bytes = { workspace = true }
 rand = { workspace = true }
 x25519-dalek = { workspace = true }
 lru = { workspace = true }
+serde_json = { workspace = true }
 
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
@@ -42,9 +41,3 @@ url = { workspace = true }
 [build-dependencies]
 tonic-prost-build = { workspace = true }
 which = { workspace = true }
-home = "=0.5.11"
-reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
-serde_json = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_yaml = { workspace = true }
-urlencoding = { workspace = true }

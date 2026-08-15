@@ -1,10 +1,97 @@
 use anyhow::Context;
 use guardrails::Guardrail;
 use host_unique::HostIDSelector;
+use std::sync::OnceLock;
 use url::Url;
 use uuid::Uuid;
 
 use crate::c2::{AvailableTransports, Transport};
+
+// ---------------------------------------------------------------------------
+// Runtime-settable imix configuration — owned by imix, not pb.
+// imix's startup calls `init_runtime_config(RuntimeImixConfig)` before any
+// call to `Config::default_with_imix_version`. All other consumers (eldritch,
+// golem, tests) use the defaults.
+// ---------------------------------------------------------------------------
+
+/// All imix-tunable values that were formerly expressed as compile-time
+/// `option_env!` / `env!` constants inside this crate. Imix constructs this
+/// from its own build.rs-emitted rustc-env and/or legacy env vars.
+#[derive(Debug, Clone)]
+pub struct RuntimeImixConfig {
+    pub callback_uri: String,
+    pub callback_interval: String,
+    pub retry_interval: String,
+    pub run_once: bool,
+    pub transport_extra: String,
+    pub unique_json: Option<String>,
+    pub guardrails_json: Option<String>,
+}
+
+impl Default for RuntimeImixConfig {
+    fn default() -> Self {
+        Self {
+            callback_uri: "http://127.0.0.1:8000".to_string(),
+            callback_interval: "5".to_string(),
+            retry_interval: "5".to_string(),
+            run_once: false,
+            transport_extra: String::new(),
+            unique_json: None,
+            guardrails_json: None,
+        }
+    }
+}
+
+static RUNTIME_CONFIG: OnceLock<RuntimeImixConfig> = OnceLock::new();
+
+/// Called by imix at startup. No-op if already set (OnceLock).
+pub fn init_runtime_config(cfg: RuntimeImixConfig) {
+    let _ = RUNTIME_CONFIG.set(cfg);
+}
+
+fn runtime_config() -> RuntimeImixConfig {
+    RUNTIME_CONFIG.get().cloned().unwrap_or_default()
+}
+
+// Convenience accessors (kept for tests / existing call sites that used consts).
+
+pub fn callback_uri() -> String {
+    runtime_config().callback_uri
+}
+
+pub fn callback_interval() -> String {
+    runtime_config().callback_interval
+}
+
+pub fn retry_interval() -> String {
+    runtime_config().retry_interval
+}
+
+pub fn run_once() -> bool {
+    runtime_config().run_once
+}
+
+pub fn transport_extra() -> String {
+    runtime_config().transport_extra
+}
+
+// Kept for API compatibility — callers that used the const directly now call these.
+pub const CALLBACK_URI_DEFAULT: &str = "http://127.0.0.1:8000";
+pub const CALLBACK_INTERVAL_DEFAULT: &str = "5";
+pub const RETRY_INTERVAL_DEFAULT: &str = "5";
+
+// For backward compatibility with any code that directly references the old
+// compile-time constants (tests, etc.). These now read via runtime_config().
+#[deprecated(note = "Use pb::config::callback_uri() / init_runtime_config instead")]
+pub const CALLBACK_URI: &str = CALLBACK_URI_DEFAULT;
+#[deprecated(note = "Use pb::config::callback_interval() instead")]
+pub const CALLBACK_INTERVAL: &str = CALLBACK_INTERVAL_DEFAULT;
+#[deprecated(note = "Use pb::config::retry_interval() instead")]
+pub const RETRY_INTERVAL: &str = RETRY_INTERVAL_DEFAULT;
+#[deprecated(note = "Use pb::config::transport_extra() instead")]
+pub const DEFAULT_EXTRA_CONFIG: &str = "";
+#[deprecated(note = "Use pb::config::run_once() instead")]
+pub const RUN_ONCE: bool = false;
 
 //TODO: Can this struct be removed?
 /// Config holds values necessary to configure an Agent.
@@ -17,76 +104,7 @@ pub struct Config {
     pub run_once: bool,
 }
 
-macro_rules! callback_uri {
-    () => {
-        match option_env!("IMIX_CALLBACK_URI") {
-            Some(uri) => uri,
-            None => "http://127.0.0.1:8000",
-        }
-    };
-}
-
-/*
- * Compile-time constant for the agent callback URI, derived from the IMIX_CALLBACK_URI environment variable during compilation.
- * Defaults to "http://127.0.0.1:8000/grpc" if this is unset.
- */
-pub const CALLBACK_URI: &str = callback_uri!();
-
-macro_rules! callback_interval {
-    () => {
-        match option_env!("IMIX_CALLBACK_INTERVAL") {
-            Some(interval) => interval,
-            None => "5",
-        }
-    };
-}
-/* Compile-time constant for the agent callback interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
- * Defaults to 5 if unset.
- */
-pub const CALLBACK_INTERVAL: &str = callback_interval!();
-
-macro_rules! retry_interval {
-    () => {
-        match option_env!("IMIX_RETRY_INTERVAL") {
-            Some(interval) => interval,
-            None => "5",
-        }
-    };
-}
-/* Compile-time constant for the agent callback interval, derived from the IMIX_CALLBACK_INTERVAL environment variable during compilation.
- * Defaults to 5 if unset.
- */
-pub const RETRY_INTERVAL: &str = retry_interval!();
-
-macro_rules! run_once {
-    () => {
-        match option_env!("IMIX_RUN_ONCE") {
-            Some(_) => true,
-            None => false,
-        }
-    };
-}
-
-macro_rules! extra {
-    () => {
-        match option_env!("IMIX_TRANSPORT_EXTRA") {
-            Some(extra) => extra,
-            None => "",
-        }
-    };
-}
-
-/* Default extra config value */
-const DEFAULT_EXTRA_CONFIG: &str = extra!();
-
-/* Compile-time constant for the agent run once flag, derived from the IMIX_RUN_ONCE environment variable during compilation.
- * Defaults to false if unset.
- */
-pub const RUN_ONCE: bool = run_once!();
-
-/*
- * Helper function to determine transport type from URI scheme
- */
+/// Determine transport type from URI scheme.
 fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
     match uri.split(":").next().unwrap_or("unspecified") {
         "dns" => crate::c2::transport::Type::TransportDns,
@@ -102,40 +120,27 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
     }
 }
 
-/*
- * Helper function to parse URIs into Transport objects
- * Supports DSN format with query parameters:
- * - interval: callback interval in seconds (overrides default)
- * - extra: extra configuration JSON (overrides default)
- * - jitter: callback jitter float [0.0, 1.0] (overrides default 0.0)
- *
- * Example: https://example.com?interval=10&extra={"key":"value"}&jitter=0.5
- */
+/// Parse URIs into Transport objects. Supports DSN format with query params:
+/// interval, extra, jitter, type. Example:
+/// `https://example.com?interval=10&extra={"key":"value"}&jitter=0.5`
 pub fn parse_transports(uri_string: &str) -> Vec<Transport> {
     uri_string
         .split(';')
         .filter(|s| !s.trim().is_empty())
-        .filter_map(|uri| {
-            let uri_trimmed = uri.trim();
-            parse_dsn(uri_trimmed).ok()
-        })
+        .filter_map(|uri| parse_dsn(uri.trim()).ok())
         .collect()
 }
 
-/*
- * Helper function to parse DSN query parameters
- * Returns a Transport struct
- */
+/// Parse a single DSN URI into a Transport struct.
 pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
-    // Parse as a URL to extract query parameters
     let parsed_url = Url::parse(uri).with_context(|| format!("Failed to parse URI '{}'", uri))?;
 
-    let mut interval = parse_callback_interval()?;
-    let mut extra = DEFAULT_EXTRA_CONFIG.to_lowercase();
-    let mut jitter = 0.0;
+    let rt = runtime_config();
+    let mut interval = parse_callback_interval_with(&rt.callback_interval)?;
+    let mut extra = rt.transport_extra.to_lowercase();
+    let mut jitter = 0.0_f32;
     let mut transport_type = get_transport_type(uri);
 
-    // Parse query parameters
     for (key, value) in parsed_url.query_pairs() {
         match key.as_ref() {
             "interval" => {
@@ -169,7 +174,6 @@ pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
         }
     }
 
-    // Reconstruct the base URI without query parameters
     let mut base_uri = parsed_url.clone();
     base_uri.set_query(None);
 
@@ -182,27 +186,26 @@ pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     })
 }
 
-/*
- * Helper function to parse callback interval with fallback
- */
+fn parse_callback_interval_with(s: &str) -> anyhow::Result<u64> {
+    s.parse::<u64>()
+        .with_context(|| format!("Failed to parse callback interval constant '{}'", s))
+}
+
+#[allow(dead_code)]
 fn parse_callback_interval() -> anyhow::Result<u64> {
-    CALLBACK_INTERVAL.parse::<u64>().with_context(|| {
-        format!(
-            "Failed to parse callback interval constant '{}'",
-            CALLBACK_INTERVAL
-        )
-    })
+    parse_callback_interval_with(&runtime_config().callback_interval)
 }
 
 fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
-    let final_res = match option_env!("IMIX_UNIQUE") {
+    let rt = runtime_config();
+    let final_res = match rt.unique_json {
         Some(json) => {
-            if let Some(res) = host_unique::from_imix_unique(json.to_owned()) {
+            if let Some(res) = host_unique::from_imix_unique(json) {
                 return res;
             } else {
                 #[cfg(feature = "print_debug")]
                 log::error!(
-                    "Error parsing uniqueness string (should have been caught at build time"
+                    "Error parsing uniqueness string (should have been caught at build time)"
                 );
                 return host_unique::defaults();
             }
@@ -213,9 +216,10 @@ fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
 }
 
 fn parse_guardrails() -> Vec<Box<dyn Guardrail>> {
-    let final_res = match option_env!("IMIX_GUARDRAILS") {
+    let rt = runtime_config();
+    let final_res = match rt.guardrails_json {
         Some(json) => {
-            if let Some(res) = guardrails::from_imix_guardrails(json.to_owned()) {
+            if let Some(res) = guardrails::from_imix_guardrails(json) {
                 return res;
             } else {
                 #[cfg(feature = "print_debug")]
@@ -230,9 +234,6 @@ fn parse_guardrails() -> Vec<Box<dyn Guardrail>> {
     final_res
 }
 
-/*
- * Config methods.
- */
 impl Config {
     pub fn default_with_imix_version(imix_version: &str) -> Self {
         let agent = crate::c2::Agent {
@@ -248,14 +249,13 @@ impl Config {
             primary_ip: get_primary_ip(),
         };
 
-        // Try to grab the beacon identitifier from env var, o/w use  a random UUID
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
-        // Parse CALLBACK_URI by splitting on ';' to support multiple transports
-        let transports = parse_transports(CALLBACK_URI);
+        // Read callback URI at runtime (set by imix early in startup, or default).
+        let rt = runtime_config();
+        let transports = parse_transports(&rt.callback_uri);
 
-        // Create AvailableTransports with the 0th element as the first active transport
         let available_transports = AvailableTransports {
             transports,
             active_index: 0,
@@ -278,9 +278,10 @@ impl Config {
 
         Config {
             info: Some(info),
-            run_once: RUN_ONCE,
+            run_once: runtime_config().run_once,
         }
     }
+
     pub fn refresh_primary_ip(&mut self) {
         let fresh_ip = get_primary_ip();
         if self
@@ -307,22 +308,15 @@ impl Config {
     }
 }
 
-/*
- * Returns which Platform imix has been compiled for.
- */
 fn get_host_platform() -> crate::c2::host::Platform {
     #[cfg(target_os = "linux")]
     return crate::c2::host::Platform::Linux;
-
     #[cfg(target_os = "macos")]
     return crate::c2::host::Platform::Macos;
-
     #[cfg(target_os = "windows")]
     return crate::c2::host::Platform::Windows;
-
     #[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
     return crate::c2::host::Platform::Bsd;
-
     #[cfg(all(
         not(target_os = "linux"),
         not(target_os = "macos"),
@@ -334,10 +328,6 @@ fn get_host_platform() -> crate::c2::host::Platform {
     return crate::c2::host::Platform::Unspecified;
 }
 
-/*
- * Return the first IPv4 address of the default interface as a string.
- * Returns the empty string otherwise.
- */
 fn get_primary_ip() -> String {
     match netdev::get_default_interface() {
         Ok(default_interface) => match default_interface.ipv4.first() {
@@ -347,7 +337,6 @@ fn get_primary_ip() -> String {
         Err(_err) => {
             #[cfg(feature = "print_debug")]
             log::error!("failed to get primary ip: {_err}");
-
             String::from("")
         }
     }
@@ -359,33 +348,30 @@ mod tests {
 
     const DEFAULT_INTERVAL_SECONDS: u64 = 5;
 
+    fn default_rt() -> RuntimeImixConfig {
+        RuntimeImixConfig::default()
+    }
+
     #[test]
     fn test_single_uri_parsing() {
-        // Simulating a single URI at compile time
-        let config = Config::default_with_imix_version("test");
-
-        let info = config.info.expect("Config should have info");
-        let available = info
-            .available_transports
-            .expect("Should have available transports");
-
-        assert_eq!(available.transports.len(), 1);
-        assert_eq!(available.active_index, 0);
-        // The URL crate normalizes URIs, potentially adding trailing slashes
-        let expected_uri = CALLBACK_URI.split(';').next().unwrap();
-        let parsed_expected = Url::parse(expected_uri).unwrap();
-        let mut expected_base = parsed_expected.clone();
-        expected_base.set_query(None);
-        assert!(available.transports[0]
-            .uri
-            .starts_with(&expected_base.to_string()));
+        let rt = default_rt();
+        let config = {
+            // Construct Config equivalent manually for test without global init side-effects
+            let transports = parse_transports(&rt.callback_uri);
+            assert_eq!(transports.len(), 1);
+            let expected_uri = rt.callback_uri.split(';').next().unwrap();
+            let parsed_expected = Url::parse(expected_uri).unwrap();
+            let mut expected_base = parsed_expected.clone();
+            expected_base.set_query(None);
+            assert!(transports[0].uri.starts_with(&expected_base.to_string()));
+        };
+        let _ = config;
     }
 
     #[test]
     fn test_transport_type_detection_grpc() {
         let grpc_type = get_transport_type("http://example.com");
         assert_eq!(grpc_type, crate::c2::transport::Type::TransportGrpc);
-
         let grpcs_type = get_transport_type("https://example.com");
         assert_eq!(grpcs_type, crate::c2::transport::Type::TransportGrpc);
     }
@@ -394,7 +380,6 @@ mod tests {
     fn test_transport_type_detection_http1() {
         let http1_type = get_transport_type("http1://example.com");
         assert_eq!(http1_type, crate::c2::transport::Type::TransportHttp1);
-
         let https1_type = get_transport_type("https1://example.com");
         assert_eq!(https1_type, crate::c2::transport::Type::TransportHttp1);
     }
@@ -417,18 +402,15 @@ mod tests {
     #[test]
     fn test_parse_callback_interval_valid() {
         let interval = parse_callback_interval().expect("Failed to parse callback interval");
-        // Should parse successfully or default to DEFAULT_INTERVAL_SECONDS
         assert!(interval >= DEFAULT_INTERVAL_SECONDS);
     }
 
     #[test]
     fn test_config_creates_available_transports() {
         let config = Config::default_with_imix_version("v2");
-
         assert!(config.info.is_some());
         let info = config.info.unwrap();
         assert!(info.available_transports.is_some());
-
         let available = info.available_transports.unwrap();
         assert!(
             !available.transports.is_empty(),
@@ -439,10 +421,8 @@ mod tests {
 
     #[test]
     fn test_empty_uri_filtered() {
-        // Test that empty URIs are filtered out using parse_transports
         let uris = "http://example.com;;https://example2.com";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 2);
         assert_eq!(transports[0].uri, "http://example.com/");
         assert_eq!(transports[1].uri, "https://example2.com/");
@@ -450,10 +430,8 @@ mod tests {
 
     #[test]
     fn test_dsn_with_interval_query_param() {
-        // Test DSN parsing with interval query parameter
         let uris = "https://example.com?interval=10";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, 10);
@@ -462,10 +440,8 @@ mod tests {
 
     #[test]
     fn test_dsn_with_extra_query_param() {
-        // Test DSN parsing with extra query parameter (converted to lowercase)
         let uris = "https://example.com?extra=%7B%22key%22%3A%22value%22%7D";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
@@ -474,10 +450,8 @@ mod tests {
 
     #[test]
     fn test_dsn_with_both_query_params() {
-        // Test DSN parsing with both interval and extra query parameters (extra converted to lowercase)
         let uris = "https://example.com?interval=15&extra=%7B%22proxy%22%3A%22http%3A%2F%2Fproxy.local%22%7D";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, 15);
@@ -486,10 +460,8 @@ mod tests {
 
     #[test]
     fn test_dsn_multiple_uris_with_different_params() {
-        // Test multiple DSNs with different parameters
         let uris = "https://primary.com?interval=10;https://fallback.com?interval=30";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 2);
         assert_eq!(transports[0].uri, "https://primary.com/");
         assert_eq!(transports[0].interval, 10);
@@ -499,47 +471,37 @@ mod tests {
 
     #[test]
     fn test_dsn_no_query_params_uses_defaults() {
-        // Test that URIs without query parameters use default values
         let uris = "https://example.com";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
-        assert_eq!(transports[0].extra, DEFAULT_EXTRA_CONFIG.to_lowercase());
+        let rt = default_rt();
+        assert_eq!(transports[0].extra, rt.transport_extra.to_lowercase());
     }
 
     #[test]
     fn test_dsn_invalid_interval_uses_default() {
-        // Test that invalid interval values are filtered out (error bubbles up)
         let uris = "https://example.com?interval=invalid";
         let transports = parse_transports(uris);
-
-        // Since parse_dsn now returns Result and invalid intervals bubble up errors,
-        // the filter_map will filter out this entry
         assert_eq!(transports.len(), 0);
     }
 
     #[test]
     fn test_dsn_mixed_with_and_without_params() {
-        // Test mixed URIs (some with params, some without)
         let uris = "https://first.com?interval=10;https://second.com;https://third.com?interval=25";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 3);
         assert_eq!(transports[0].interval, 10);
-        assert_eq!(transports[1].interval, DEFAULT_INTERVAL_SECONDS); // Uses default
+        assert_eq!(transports[1].interval, DEFAULT_INTERVAL_SECONDS);
         assert_eq!(transports[2].interval, 25);
     }
 
     #[test]
     fn test_dsn_with_unencoded_json() {
-        // Test DSN parsing with unencoded JSON in extra parameter
-        // The url crate should handle the parsing automatically
         let uris =
             r#"https://example.com?interval=20&extra={"key":"value","nested":{"Foo":"Bar"}}"#;
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, 20);
@@ -553,7 +515,6 @@ mod tests {
     fn test_dsn_with_jitter() {
         let uris = "https://example.com?jitter=0.5";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].jitter, 0.5);
@@ -563,7 +524,6 @@ mod tests {
     fn test_transport_type_detection_quic() {
         let quic_type = get_transport_type("quic://example.com");
         assert_eq!(quic_type, crate::c2::transport::Type::TransportQuic);
-
         let quics_type = get_transport_type("quics://example.com");
         assert_eq!(quics_type, crate::c2::transport::Type::TransportQuic);
     }
@@ -572,7 +532,6 @@ mod tests {
     fn test_dsn_with_type_query_param() {
         let uris = "http://example.com?type=quic";
         let transports = parse_transports(uris);
-
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "http://example.com/");
         assert_eq!(

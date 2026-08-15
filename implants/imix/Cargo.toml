@@ -54,9 +54,20 @@ rand = { workspace = true }
 async-trait = { workspace = true }
 rustls = { workspace = true }
 eldritch-libchain = { workspace = true, features = ["stdlib"] }
+base64 = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
+
+[build-dependencies]
+static_vcruntime = { workspace = true }
+which = { workspace = true }
+home = "=0.5.11"
+reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = { workspace = true }
+urlencoding = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }
