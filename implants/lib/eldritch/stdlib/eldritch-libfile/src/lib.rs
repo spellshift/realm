@@ -152,6 +152,7 @@ pub trait FileLibrary {
     ///   - `group` (`str`)
     ///   - `permissions` (`str`)
     ///   - `modified` (`str`)
+    ///   - `times` (`dict`)
     ///   - `type` (`str`: "File" or "Directory")
     ///
     /// **Errors**

@@ -731,41 +731,65 @@ file.list("/etc/*ssh*") # List the contents of all dirs that have `ssh` in the n
 file.list("\\\\127.0.0.1\\c$\\Windows\\*.yml") # List files over UNC paths
 ```
 
-Each file is represented by a Dict type.
-Here is an example of the Dict layout:
+Here is a code snippet example, along with its output.
+Each file is returned as a Dict with their respective information. Note that the directory itself (in this example, `/tmp/some_dir`) will also be listed with the respective information.
+
+```python
+print(file.list("/tmp/some_dir"))
+```
+
+**NOTE:** On systems without a specific time field being tracked, the field is omitted. This means, for example, unix systems with `noatime` set will not have an `accessed` field visible in the `times` sub-Dict.
 
 ```json
 [
-    {
-        "file_name": "implants",
-        "absolute_path": "/workspace/realm/implants",
-        "size": 4096,
-        "owner": "root",
-        "group": "0",
-        "permissions": "40755",
-        "modified": "2023-07-09 01:35:40 UTC",
-        "type": "Directory"
+  {
+    "absolute_path": "/tmp/some_dir",
+    "file_name": "some_dir",
+    "group": "root",
+    "modified": "2026-07-12 18:17:39 UTC",
+    "owner": "root",
+    "permissions": "40775",
+    "size": 80,
+    "times": {
+      "accessed": 1783880431,
+      "changed": 1783880259, // changed is Unix-only (ctime)
+      "created": 1783880259,
+      "modified": 1783880259
     },
-    {
-        "file_name": "README.md",
-        "absolute_path": "/workspace/realm/README.md",
-        "size": 750,
-        "owner": "root",
-        "group": "0",
-        "permissions": "100644",
-        "modified": "2023-07-08 02:49:47 UTC",
-        "type": "File"
+    "type": "dir"
+  },
+  {
+    "absolute_path": "/tmp/some_dir/some_file",
+    "file_name": "some_file",
+    "group": "root",
+    "modified": "2026-07-12 18:17:39 UTC",
+    "owner": "root",
+    "permissions": "100664",
+    "size": 5,
+    "times": {
+      "accessed": -2208988800, // negative epoch, represents 2208988800 seconds before Jan 1 1970
+      "changed": 1783880431,
+      "created": 1783880259,
+      "modified": -2208988800
     },
-    {
-        "file_name": ".git",
-        "absolute_path": "/workspace/realm/.git",
-        "size": 4096,
-        "owner": "root",
-        "group": "0",
-        "permissions": "40755",
-        "modified": "2023-07-10 21:14:06 UTC",
-        "type": "Directory"
-    }
+    "type": "file"
+  },
+  {
+    "absolute_path": "/tmp/some_dir/some_other_dir",
+    "file_name": "some_other_dir",
+    "group": "root",
+    "modified": "1900-01-01 00:00:00 UTC",
+    "owner": "root",
+    "permissions": "40775",
+    "size": 40,
+    "times": {
+      "accessed": 1783880259,
+      "changed": 1783880259,
+      "created": 1783880259,
+      "modified": 1783880259
+    },
+    "type": "dir"
+  }
 ]
 ```
 

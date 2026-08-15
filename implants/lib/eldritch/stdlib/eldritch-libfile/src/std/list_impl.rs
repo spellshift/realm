@@ -13,9 +13,15 @@ use eldritch_core::Value;
 #[cfg(unix)]
 use nix::unistd::{Gid, Group, Uid, User};
 #[cfg(feature = "stdlib")]
+use spin::RwLock;
+#[cfg(feature = "stdlib")]
 use std::fs;
 #[cfg(feature = "stdlib")]
 use std::path::Path;
+#[cfg(feature = "stdlib")]
+use std::sync::Arc;
+#[cfg(feature = "stdlib")]
+use std::time::UNIX_EPOCH;
 
 #[cfg(feature = "stdlib")]
 pub fn list(path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
@@ -53,20 +59,62 @@ fn list_impl(path: String) -> AnyhowResult<Vec<BTreeMap<String, Value>>> {
     for entry in glob(&path)? {
         match entry {
             Ok(path_buf) => {
-                // If I implement `handle_list` roughly:
+                // show information about the directory/file
+                // if it is a directory, show subcontents
+                final_res.push(create_dict_from_file(&path_buf)?);
                 if path_buf.is_dir() {
                     for entry in fs::read_dir(&path_buf)? {
                         let entry = entry?;
                         final_res.push(create_dict_from_file(&entry.path())?);
                     }
-                } else {
-                    final_res.push(create_dict_from_file(&path_buf)?);
                 }
             }
             Err(e) => eprintln!("Glob error: {e:?}"),
         }
     }
+
+    // sort by absolute_path
+    final_res.sort_by_key(|k| k.get("absolute_path").cloned());
     Ok(final_res)
+}
+
+// get the timestamps of a metadata object and return it as a dictionary
+#[cfg(feature = "stdlib")]
+fn get_times_dict(metadata: std::fs::Metadata) -> Value {
+    // create dictionary for times data
+    let mut times: BTreeMap<Value, Value> = BTreeMap::new();
+
+    // add changed time (it's already in epoch format) if we're in unix
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        times.insert(
+            Value::String("changed".to_string()),
+            Value::Int(metadata.ctime()),
+        );
+    }
+
+    // add time information
+    let timestamps = [
+        ("modified", metadata.modified()),
+        ("created", metadata.created()),
+        ("accessed", metadata.accessed()),
+    ];
+    for timestamp_req in timestamps {
+        // if getting the timestamp was successful, add it
+        if let Ok(timestamp) = timestamp_req.1 {
+            // convert timestamp to epoch
+            if let Ok(ts) = jiff::Timestamp::try_from(timestamp) {
+                times.insert(
+                    Value::String(timestamp_req.0.to_string()),
+                    Value::Int(ts.as_second()),
+                );
+            }
+        }
+    }
+
+    // insert times section to the dictionary
+    return Value::Dictionary(Arc::new(RwLock::new(times)));
 }
 
 #[cfg(feature = "stdlib")]
@@ -145,6 +193,9 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
         }
     }
 
+    // Add Time information
+    dict.insert("times".to_string(), get_times_dict(metadata));
+
     Ok(dict)
 }
 
@@ -153,20 +204,40 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
 mod tests {
     use super::*;
     use regex::bytes::Regex;
-    use tempfile::NamedTempFile;
+    use tempfile::{NamedTempFile, TempDir};
 
     #[test]
     fn test_list_owner_group() {
+        // check if listing a directory shows itself
+        let tmp_dir = TempDir::new().unwrap();
+        let tmp_dir_path = tmp_dir.path().to_string_lossy().to_string();
+        let tmp_dir_files = list(Some(tmp_dir_path)).unwrap();
+        assert_eq!(tmp_dir_files.len(), 1);
+
+        // create regular file
         let tmp = NamedTempFile::new().unwrap();
         let path = tmp.path().to_string_lossy().to_string();
-
         let files = list(Some(path)).unwrap();
         assert_eq!(files.len(), 1);
+
+        // perform remaining tests
         let f = &files[0];
 
         assert!(f.contains_key("owner"));
         assert!(f.contains_key("group"));
         assert!(f.contains_key("absolute_path"));
+        assert!(f.contains_key("times"));
+        // check times sub-dict
+        if let Value::Dictionary(d) = &f["times"] {
+            let inner = d.read();
+            assert!(inner.contains_key(&Value::String("modified".into())));
+            assert!(inner.contains_key(&Value::String("accessed".into())));
+            assert!(inner.contains_key(&Value::String("created".into())));
+            #[cfg(unix)]
+            assert!(inner.contains_key(&Value::String("changed".into())));
+        }
+
+        // check modified string
         assert!(f.contains_key("modified"));
 
         // Check absolute_path
@@ -177,7 +248,7 @@ mod tests {
             panic!("absolute_path is not a string");
         }
 
-        // Check modified time format
+        //Check modified time format
         if let Value::String(mod_time) = &f["modified"] {
             // Check format YYYY-MM-DD HH:MM:SS UTC
             let re = Regex::new(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$").unwrap();
