@@ -35,17 +35,21 @@ var (
 )
 
 // NewOAuthLoginHandler returns an http endpoint that redirects the user to the configured OAuth consent flow
-// It will set a JWT in a cookie that will later be used to verify the OAuth state
+// It will set a JWT in a cookie that will later be used to verify the OAuth state.
+// If a "next" query parameter is provided, the user will be redirected there after successful login.
 func NewOAuthLoginHandler(cfg oauth2.Config, privKey ed25519.PrivateKey) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// Create a new random string to prevent against CSRF attacks
 		state := newOAuthState()
 
+		// Read optional "next" URL from query params (used e.g. by MCP OAuth flow)
+		next := req.URL.Query().Get("next")
+
 		// Generate OAuth URL based on this state
 		url := cfg.AuthCodeURL(state)
 
 		// Set a JWT to verify the state after consent flow redirect
-		http.SetCookie(w, newOAuthStateCookie(privKey, state))
+		http.SetCookie(w, newOAuthStateCookie(privKey, state, next))
 
 		// Redirect to identity provider
 		http.Redirect(w, req, url, http.StatusFound)
@@ -151,7 +155,12 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 				Expires:  time.Now().AddDate(0, 1, 0),
 			})
 			slog.InfoContext(req.Context(), "oauth new login", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
-			http.Redirect(w, req, "/", http.StatusFound)
+			// Redirect to "next" URL if stored in state JWT, otherwise go to root
+			nextURL := "/"
+			if len(claims.Audience) > 0 && claims.Audience[0] != "" {
+				nextURL = claims.Audience[0]
+			}
+			http.Redirect(w, req, nextURL, http.StatusFound)
 			return
 		}
 
@@ -181,16 +190,25 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			Expires:  time.Now().AddDate(0, 1, 0),
 		})
 		slog.InfoContext(req.Context(), "oauth registered new user %q", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
-		http.Redirect(w, req, "/", http.StatusFound)
+		// Redirect to "next" URL if stored in state JWT, otherwise go to root
+		nextURL := "/"
+		if len(claims.Audience) > 0 && claims.Audience[0] != "" {
+			nextURL = claims.Audience[0]
+		}
+		http.Redirect(w, req, nextURL, http.StatusFound)
 	})
 }
 
-func newOAuthStateCookie(privKey ed25519.PrivateKey, state string) *http.Cookie {
+func newOAuthStateCookie(privKey ed25519.PrivateKey, state string, next string) *http.Cookie {
 	expiresAt := time.Now().Add(10 * time.Minute)
 	claims := jwt.RegisteredClaims{
 		ID:        state,
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(expiresAt),
+	}
+	// Store the "next" URL in the Audience field so we can redirect after login
+	if next != "" {
+		claims.Audience = jwt.ClaimStrings{next}
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	tokenStr, err := token.SignedString(privKey)

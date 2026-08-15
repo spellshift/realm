@@ -42,6 +42,10 @@ type Tx struct {
 	Link *LinkClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// OAuthClient is the client for interacting with the OAuthClient builders.
+	OAuthClient *OAuthClientClient
+	// OAuthCode is the client for interacting with the OAuthCode builders.
+	OAuthCode *OAuthCodeClient
 	// Portal is the client for interacting with the Portal builders.
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
@@ -212,6 +216,8 @@ func (tx *Tx) init() {
 	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Link = NewLinkClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
+	tx.OAuthClient = NewOAuthClientClient(tx.config)
+	tx.OAuthCode = NewOAuthCodeClient(tx.config)
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)

@@ -51,6 +51,12 @@ type Link func(*sql.Selector)
 // Notification is the predicate function for notification builders.
 type Notification func(*sql.Selector)
 
+// OAuthClient is the predicate function for oauthclient builders.
+type OAuthClient func(*sql.Selector)
+
+// OAuthCode is the predicate function for oauthcode builders.
+type OAuthCode func(*sql.Selector)
+
 // Portal is the predicate function for portal builders.
 type Portal func(*sql.Selector)
 
