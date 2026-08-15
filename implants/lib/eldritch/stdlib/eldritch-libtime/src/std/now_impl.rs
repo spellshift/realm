@@ -1,7 +1,5 @@
-use chrono::Utc;
-
 pub fn now() -> Result<i64, String> {
-    Ok(Utc::now().timestamp())
+    Ok(jiff::Timestamp::now().as_second())
 }
 
 #[cfg(test)]

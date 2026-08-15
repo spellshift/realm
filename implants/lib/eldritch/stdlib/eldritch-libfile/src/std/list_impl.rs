@@ -139,9 +139,10 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
 
     // Times
     if let Ok(modified) = metadata.modified() {
-        let dt: chrono::DateTime<chrono::Utc> = modified.into();
-        let formatted = dt.format("%Y-%m-%d %H:%M:%S UTC").to_string();
-        dict.insert("modified".to_string(), Value::String(formatted));
+        if let Ok(ts) = jiff::Timestamp::try_from(modified) {
+            let formatted = ts.strftime("%Y-%m-%d %H:%M:%S UTC").to_string();
+            dict.insert("modified".to_string(), Value::String(formatted));
+        }
     }
 
     Ok(dict)
