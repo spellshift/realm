@@ -10941,6 +10941,7 @@ ShellPivotKind is enum for the field kind
 enum ShellPivotKind @goModel(model: "realm.pub/tavern/internal/ent/shellpivot.Kind") {
   ssh
   pty
+  winrm
 }
 """
 Ordering options for ShellPivot connections
