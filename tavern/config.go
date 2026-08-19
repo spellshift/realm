@@ -257,24 +257,22 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 	return mux.New(mux.WithPubSubClient(client), mux.WithSubscriberBufferSize(subBufferSize))
 }
 
-// NewShellMuxes configures two stream.Mux instances for shell i/o.
-// The wsMux will be used by websockets to subscribe to shell output and publish new input.
+// NewGRPCShellMux configures a stream.Mux instance for shell i/o.
 // The grpcMux will be used by gRPC to subscribe to shell input and publish new output.
-func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
+func (cfg *Config) NewGRPCShellMux(ctx context.Context) (grpcMux *stream.Mux) {
 	var (
 		projectID        = EnvGCPProjectID.String()
 		gcpTopicPrefix   = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
 		topicShellInput  = EnvPubSubTopicShellInput.String()
 		topicShellOutput = EnvPubSubTopicShellOutput.String()
 		subShellInput    = EnvPubSubSubscriptionShellInput.String()
-		subShellOutput   = EnvPubSubSubscriptionShellOutput.String()
 	)
 
 	// For GCP, messages for a "Subscription" are load-balanced across all of the "Subscribers" to that same "Subscription"
 	// This means we must make a new "Subscription" in GCP for each instance of tavern to ensure they all receive the
 	// appropriate input/output from shells. For more information, see the information here:
 	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
-	if strings.HasPrefix(subShellInput, "gcppubsub://") && strings.HasPrefix(subShellOutput, "gcppubsub://") {
+	if strings.HasPrefix(subShellInput, "gcppubsub://") {
 		if projectID == "" {
 			log.Fatalf("[FATAL] must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
 		}
@@ -316,13 +314,10 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		}
 
 		shellInputTopicID := strings.TrimPrefix(topicShellInput, gcpTopicPrefix)
-		shellOutputTopicID := strings.TrimPrefix(topicShellOutput, gcpTopicPrefix)
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
 		subShellInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopicID))
 		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
-		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopicID))
-		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 
 		// Start a goroutine to publish noop messages on an interval.
 		// This reduces cold-start latency for GCP PubSub which can improve shell user experience.
@@ -341,16 +336,8 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
 	}
 
-	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
-	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
-	if err != nil {
-		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellOutput, err)
-	}
-
-	pubInput, err := pubsub.OpenTopic(ctx, topicShellInput)
-	if err != nil {
-		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellInput, err)
-	}
+	// Make sure the topic is created before we try to subscribe to it in memory
+	_, _ = pubsub.OpenTopic(ctx, topicShellInput)
 
 	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell input", "subscription_name", subShellInput)
 	subInput, err := pubsub.OpenSubscription(ctx, subShellInput)
@@ -358,7 +345,6 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
 	}
 
-	wsMux = stream.NewMux(pubInput, subOutput)
 	grpcMux = stream.NewMux(pubOutput, subInput)
 	return
 }

@@ -78,7 +78,7 @@ test('CreateShellButton opens new tab on click', async () => {
 
   // Wait for window.open to have been called
   await waitFor(() => {
-    expect(openMock).toHaveBeenCalledWith(`/shellv2/${mockShellId}`, '_blank');
+    expect(openMock).toHaveBeenCalledWith(`/shell/${mockShellId}`, '_blank');
   });
 
   vi.unstubAllGlobals();
