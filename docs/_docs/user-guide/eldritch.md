@@ -671,6 +671,12 @@ The **file.append** method appends the `content` to file at `path`. If no file e
 
 The **file.compress** method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
 
+### file.chmod
+
+`file.chmod(path: str, mode: int) -> None`
+
+The **file.chmod** method changes the permissions of a file. The `mode` should typically be specified in octal (e.g. `0o755`). On Windows, this method only considers the `0o200` (owner writable) bit to determine whether to toggle the read-only attribute of the file, similar to Golang's `os.Chmod`.
+
 ### file.copy
 
 `file.copy(src: str, dst: str) -> None`

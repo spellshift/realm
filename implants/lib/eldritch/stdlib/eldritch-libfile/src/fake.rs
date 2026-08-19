@@ -105,6 +105,10 @@ impl FileLibrary for FileLibraryFake {
         Ok(())
     }
 
+    fn chmod(&self, _path: String, _mode: i64) -> Result<(), String> {
+        Ok(())
+    }
+
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
         let mut root = self.root.lock();
         let src_parts = Self::normalize_path(&src);
