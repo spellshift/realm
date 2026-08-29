@@ -18,8 +18,9 @@ impl HttpLibrary for StdHttpLibrary {
         uri: String,
         dst: String,
         allow_insecure: Option<bool>,
+        proxy: Option<String>,
     ) -> Result<(), String> {
-        download_impl::download(uri, dst, allow_insecure)
+        download_impl::download(uri, dst, allow_insecure, proxy)
     }
 
     fn get(
@@ -28,8 +29,9 @@ impl HttpLibrary for StdHttpLibrary {
         query_params: Option<BTreeMap<String, String>>,
         headers: Option<BTreeMap<String, String>>,
         allow_insecure: Option<bool>,
+        proxy: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String> {
-        get_impl::get(uri, query_params, headers, allow_insecure)
+        get_impl::get(uri, query_params, headers, allow_insecure, proxy)
     }
 
     fn post(
@@ -39,7 +41,8 @@ impl HttpLibrary for StdHttpLibrary {
         form: Option<BTreeMap<String, String>>,
         headers: Option<BTreeMap<String, String>>,
         allow_insecure: Option<bool>,
+        proxy: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String> {
-        post_impl::post(uri, body, form, headers, allow_insecure)
+        post_impl::post(uri, body, form, headers, allow_insecure, proxy)
     }
 }

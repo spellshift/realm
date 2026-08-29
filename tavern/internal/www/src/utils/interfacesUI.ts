@@ -44,6 +44,7 @@ export type FieldInputParams = {
     label: string;
     type: string;
     placeholder: string;
+    optional?: boolean;
     value?: any;
 }
 export interface RepositoryRow {

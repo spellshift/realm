@@ -16,6 +16,7 @@ impl HttpLibrary for HttpLibraryFake {
         mut uri: String,
         _dst: String,
         _allow_insecure: Option<bool>,
+        _proxy: Option<String>,
     ) -> Result<(), String> {
         if !uri.starts_with("http://") && !uri.starts_with("https://") {
             uri = format!("https://{}", uri);
@@ -30,6 +31,7 @@ impl HttpLibrary for HttpLibraryFake {
         _query_params: Option<BTreeMap<String, String>>,
         _headers: Option<BTreeMap<String, String>>,
         _allow_insecure: Option<bool>,
+        _proxy: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String> {
         if !uri.starts_with("http://") && !uri.starts_with("https://") {
             uri = format!("https://{}", uri);
@@ -63,6 +65,7 @@ impl HttpLibrary for HttpLibraryFake {
         _form: Option<BTreeMap<String, String>>,
         _headers: Option<BTreeMap<String, String>>,
         _allow_insecure: Option<bool>,
+        _proxy: Option<String>,
     ) -> Result<BTreeMap<String, Value>, String> {
         if !uri.starts_with("http://") && !uri.starts_with("https://") {
             uri = format!("https://{}", uri);
@@ -105,7 +108,7 @@ mod tests {
     fn test_http_fake_get() {
         let http = HttpLibraryFake;
         let resp = http
-            .get("http://example.com".into(), None, None, None)
+            .get("http://example.com".into(), None, None, None, None)
             .unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(200));
         if let Value::Bytes(b) = resp.get("body").unwrap() {
@@ -117,7 +120,9 @@ mod tests {
             panic!("Body should be bytes");
         }
 
-        let resp2 = http.get("example.com".into(), None, None, None).unwrap();
+        let resp2 = http
+            .get("example.com".into(), None, None, None, None)
+            .unwrap();
         if let Value::Bytes(b) = resp2.get("body").unwrap() {
             assert_eq!(
                 String::from_utf8(b.clone()).unwrap(),
@@ -138,6 +143,7 @@ mod tests {
                 None,
                 None,
                 None,
+                None,
             )
             .unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(201));
@@ -150,7 +156,14 @@ mod tests {
         }
 
         let resp2 = http
-            .post("example.com".into(), Some("abc".into()), None, None, None)
+            .post(
+                "example.com".into(),
+                Some("abc".into()),
+                None,
+                None,
+                None,
+                None,
+            )
             .unwrap();
         if let Value::Bytes(b) = resp2.get("body").unwrap() {
             let s = String::from_utf8(b.clone()).unwrap();
