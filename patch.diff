@@ -1,0 +1,38 @@
+--- tavern/internal/http/device_auth_test.go
++++ tavern/internal/http/device_auth_test.go
+@@ -10,6 +10,7 @@
+	"time"
+
+	"realm.pub/tavern/internal/auth"
++	"realm.pub/tavern/internal/ent/deviceauth"
+
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
+@@ -198,7 +199,8 @@
+		SetOauthID("auth_oauth").
+		SetPhotoURL("http://example.com").
+		SetIsActivated(true).
+		SetAccessToken("auth_access_token").
++		SetSessionToken("auth_session_token").
+		SaveX(ctx)
+
+	// Create device auth entries
+@@ -223,7 +225,8 @@
+		SetExpiresAt(time.Now().Add(10 * time.Minute)).
+		SaveX(ctx)
+
+-	authCtx := auth.ContextWithUser(ctx, user)
++	authCtx, err := auth.ContextFromSessionToken(ctx, graph, "auth_session_token")
++	require.NoError(t, err)
+
+	t.Run("MethodNotAllowed", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+@@ -309,7 +312,7 @@
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+-		da, err := graph.DeviceAuth.Query().Where(deviceauth.UserCode("valid_code")).First(ctx)
++		da, err := graph.DeviceAuth.Query().Where(deviceauth.UserCode("valid_code")).First(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, "APPROVED", string(da.Status))
+	})

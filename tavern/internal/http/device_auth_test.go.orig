@@ -1,0 +1,315 @@
+package http_test
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"realm.pub/tavern/internal/auth"
+
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"realm.pub/tavern/internal/ent/enttest"
+	tavernhttp "realm.pub/tavern/internal/http"
+)
+
+func TestNewRDACodeHandler(t *testing.T) {
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	handler := tavernhttp.NewRDACodeHandler(graph)
+
+	t.Run("MethodNotAllowed", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp tavernhttp.RDACodeResponse
+		err := json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, resp.UserCode)
+		assert.NotEmpty(t, resp.DeviceCode)
+		assert.NotEmpty(t, resp.VerificationURI)
+		assert.NotEmpty(t, resp.VerificationURIComplete)
+		assert.Equal(t, 600, resp.ExpiresIn)
+
+		// Verify it was created in the DB
+		da, err := graph.DeviceAuth.Query().First(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, resp.UserCode, da.UserCode)
+		assert.Equal(t, resp.DeviceCode, da.DeviceCode)
+		assert.Equal(t, "PENDING", string(da.Status))
+		assert.WithinDuration(t, time.Now().Add(10*time.Minute), da.ExpiresAt, 5*time.Second)
+	})
+}
+
+func TestNewRDATokenHandler(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	handler := tavernhttp.NewRDATokenHandler(graph)
+
+	// Create user
+	user := graph.User.Create().
+		SetName("test_user").
+		SetOauthID("test_oauth").
+		SetPhotoURL("http://example.com").
+		SetIsActivated(true).
+		SetAccessToken("test_access_token").
+		SaveX(ctx)
+
+	// Create device auth entries
+	graph.DeviceAuth.Create().
+		SetUserCode("expired_user").
+		SetDeviceCode("expired_device").
+		SetStatus("PENDING").
+		SetExpiresAt(time.Now().Add(-10 * time.Minute)).
+		SaveX(ctx)
+
+	graph.DeviceAuth.Create().
+		SetUserCode("pending_user").
+		SetDeviceCode("pending_device").
+		SetStatus("PENDING").
+		SetExpiresAt(time.Now().Add(10 * time.Minute)).
+		SaveX(ctx)
+
+	graph.DeviceAuth.Create().
+		SetUserCode("approved_nouser_user").
+		SetDeviceCode("approved_nouser_device").
+		SetStatus("APPROVED").
+		SetExpiresAt(time.Now().Add(10 * time.Minute)).
+		SaveX(ctx)
+
+	graph.DeviceAuth.Create().
+		SetUserCode("approved_user").
+		SetDeviceCode("approved_device").
+		SetStatus("APPROVED").
+		SetExpiresAt(time.Now().Add(10 * time.Minute)).
+		SetUser(user).
+		SaveX(ctx)
+
+	t.Run("MethodNotAllowed", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+	})
+
+	t.Run("MissingDeviceCode", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("InvalidDeviceCode", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/?device_code=invalid", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("ExpiredDeviceCode", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/?device_code=expired_device", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("PendingDeviceCode", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/?device_code=pending_device", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp tavernhttp.RDATokenResponse
+		err := json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
+
+		assert.Equal(t, "PENDING", resp.Status)
+		assert.Empty(t, resp.AccessToken)
+	})
+
+	t.Run("ApprovedNoUser", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/?device_code=approved_nouser_device", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	})
+
+	t.Run("ApprovedWithUser", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/?device_code=approved_device", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp tavernhttp.RDATokenResponse
+		err := json.NewDecoder(w.Body).Decode(&resp)
+		require.NoError(t, err)
+
+		assert.Equal(t, "APPROVED", resp.Status)
+		assert.Equal(t, "test_access_token", resp.AccessToken)
+	})
+}
+
+func TestNewRDAApproveHandler(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	handler := tavernhttp.NewRDAApproveHandler(graph)
+
+	// Create a user for auth context
+	user := graph.User.Create().
+		SetName("auth_user").
+		SetOauthID("auth_oauth").
+		SetPhotoURL("http://example.com").
+		SetIsActivated(true).
+		SetAccessToken("auth_access_token").
+		SaveX(ctx)
+
+	// Create device auth entries
+	graph.DeviceAuth.Create().
+		SetUserCode("expired_code").
+		SetDeviceCode("expired_device").
+		SetStatus("PENDING").
+		SetExpiresAt(time.Now().Add(-10 * time.Minute)).
+		SaveX(ctx)
+
+	graph.DeviceAuth.Create().
+		SetUserCode("already_approved").
+		SetDeviceCode("already_device").
+		SetStatus("APPROVED").
+		SetExpiresAt(time.Now().Add(10 * time.Minute)).
+		SaveX(ctx)
+
+	graph.DeviceAuth.Create().
+		SetUserCode("valid_code").
+		SetDeviceCode("valid_device").
+		SetStatus("PENDING").
+		SetExpiresAt(time.Now().Add(10 * time.Minute)).
+		SaveX(ctx)
+
+	authCtx := auth.ContextWithUser(ctx, user)
+
+	t.Run("MethodNotAllowed", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+	})
+
+	t.Run("InvalidBody", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString("invalid json"))
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("MissingUserCode", func(t *testing.T) {
+		reqBody := tavernhttp.RDAApproveRequest{}
+		bodyBytes, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(bodyBytes))
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		reqBody := tavernhttp.RDAApproveRequest{UserCode: "valid_code"}
+		bodyBytes, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(bodyBytes))
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("InvalidUserCode", func(t *testing.T) {
+		reqBody := tavernhttp.RDAApproveRequest{UserCode: "invalid"}
+		bodyBytes, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(bodyBytes)).WithContext(authCtx)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("ExpiredUserCode", func(t *testing.T) {
+		reqBody := tavernhttp.RDAApproveRequest{UserCode: "expired_code"}
+		bodyBytes, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(bodyBytes)).WithContext(authCtx)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("NotPending", func(t *testing.T) {
+		reqBody := tavernhttp.RDAApproveRequest{UserCode: "already_approved"}
+		bodyBytes, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(bodyBytes)).WithContext(authCtx)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		reqBody := tavernhttp.RDAApproveRequest{UserCode: "valid_code"}
+		bodyBytes, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(bodyBytes)).WithContext(authCtx)
+		w := httptest.NewRecorder()
+
+		handler(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		da, err := graph.DeviceAuth.Query().Where(deviceauth.UserCode("valid_code")).First(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, "APPROVED", string(da.Status))
+	})
+}
