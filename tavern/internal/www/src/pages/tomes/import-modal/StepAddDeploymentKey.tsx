@@ -1,5 +1,6 @@
 import { Heading } from "@chakra-ui/react";
-import { FC } from "react";
+import { FC, useState } from "react";
+import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
 import { RepositoryNode } from "../../../utils/interfacesQuery";
@@ -13,10 +14,22 @@ type StepAddDeploymentKeyProps = {
 }
 
 const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newRepository, setOpen }) => {
+    const [copied, setCopied] = useState(false);
+
     const handleOnSuccess = () => {
         setOpen(false);
     }
     const { importRepositoryTomes, loading, error } = useFetchRepositoryTome(handleOnSuccess);
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(newRepository?.publicKey || "");
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy text:", err);
+        }
+    };
 
     return (
         <form className="flex flex-col gap-6">
@@ -36,7 +49,24 @@ const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newR
             )}
             <div className="flex flex-col gap-2">
                 <Heading size="sm">Copy public key</Heading>
-                <CodeBlock code={newRepository?.publicKey || ""} showCopyButton />
+                <div className="flex flex-row items-start gap-2">
+                    <Button
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleCopy();
+                        }}
+                        buttonVariant="ghost"
+                        buttonStyle={{ color: "gray", size: "sm" }}
+                        aria-label={copied ? "Copied" : "Copy code"}
+                        leftIcon={copied
+                            ? <ClipboardDocumentCheckIcon className="w-5 h-5 text-green-600" />
+                            : <ClipboardDocumentIcon className="w-5 h-5" />
+                        }
+                    />
+                    <div className="flex-grow w-full">
+                        <CodeBlock code={newRepository?.publicKey || ""} />
+                    </div>
+                </div>
             </div>
             <div className="flex flex-row gap-2">
                 <Button
