@@ -51,15 +51,16 @@ func handleListHosts(ctx context.Context, request mcp.CallToolRequest) (*mcp.Cal
 		Principal string `json:"principal"`
 	}
 	type hostResult struct {
-		ID         int          `json:"id"`
-		Identifier string       `json:"identifier"`
-		Name       string       `json:"name"`
-		Platform   string       `json:"platform"`
-		PrimaryIP  string       `json:"primaryIP"`
-		ExternalIP string       `json:"externalIP"`
-		LastSeenAt string       `json:"lastSeenAt"`
-		Tags       []tagInfo    `json:"tags"`
-		Beacons    []beaconInfo `json:"beacons"`
+		ID          int          `json:"id"`
+		Identifier  string       `json:"identifier"`
+		Name        string       `json:"name"`
+		Platform    string       `json:"platform"`
+		PrimaryIP   string       `json:"primaryIP"`
+		ExternalIP  string       `json:"externalIP"`
+		LastSeenAt  string       `json:"lastSeenAt"`
+		NextSeenAt  string       `json:"nextSeenAt"`
+		Tags        []tagInfo    `json:"tags"`
+		Beacons     []beaconInfo `json:"beacons"`
 	}
 
 	results := make([]hostResult, 0, len(hosts))
@@ -72,6 +73,7 @@ func handleListHosts(ctx context.Context, request mcp.CallToolRequest) (*mcp.Cal
 			PrimaryIP:  h.PrimaryIP,
 			ExternalIP: h.ExternalIP,
 			LastSeenAt: h.LastSeenAt.Format(time.RFC3339),
+			NextSeenAt: h.NextSeenAt.Format(time.RFC3339),
 		}
 		for _, t := range h.Edges.Tags {
 			hr.Tags = append(hr.Tags, tagInfo{
