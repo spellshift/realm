@@ -754,6 +754,14 @@ impl DNS {
         Ok(())
     }
 
+    /// Decide whether a FETCH that returned an empty response should be retried.
+    ///
+    /// The redirector serves an empty TXT payload while its upstream gRPC call
+    /// is still in flight; retry until the attempt budget is exhausted.
+    fn fetch_should_retry(attempt: usize) -> bool {
+        attempt + 1 < conv::FETCH_MAX_ATTEMPTS
+    }
+
     /// Fetch response from server, handling potentially chunked responses
     async fn fetch_response(&mut self, conv_id: &str, total_chunks: usize) -> Result<Vec<u8>> {
         #[cfg(feature = "print_debug")]
@@ -762,47 +770,64 @@ impl DNS {
             total_chunks
         );
 
-        let fetch_packet = ConvPacket {
-            r#type: PacketType::Fetch as i32,
-            sequence: (total_chunks + 1) as u32,
-            conversation_id: conv_id.to_string(),
-            data: vec![],
-            crc32: 0,
-            acks: vec![],
-            nacks: vec![],
-        };
+        // The redirector can answer a FETCH with an empty TXT payload while its
+        // upstream gRPC call is still in flight. Retry (like the ICMP transport)
+        // instead of failing the whole exchange; the server stores the response
+        // shortly after and subsequent FETCHes return it.
+        for attempt in 0..conv::FETCH_MAX_ATTEMPTS {
+            let fetch_packet = ConvPacket {
+                r#type: PacketType::Fetch as i32,
+                sequence: (total_chunks + 1) as u32,
+                conversation_id: conv_id.to_string(),
+                data: vec![],
+                crc32: 0,
+                acks: vec![],
+                nacks: vec![],
+            };
 
-        let end_response = self.send_packet(fetch_packet).await.with_context(|| {
-            format!(
-                "failed to fetch response from server for conv_id={}",
-                conv_id
-            )
-        })?;
+            let end_response = self.send_packet(fetch_packet).await.with_context(|| {
+                format!(
+                    "failed to fetch response from server for conv_id={}",
+                    conv_id
+                )
+            })?;
 
-        #[cfg(feature = "print_debug")]
-        log::debug!(
-            "DNS: FETCH response received ({} bytes)",
-            end_response.len()
-        );
+            #[cfg(feature = "print_debug")]
+            log::debug!(
+                "DNS: FETCH response received ({} bytes, attempt {}/{})",
+                end_response.len(),
+                attempt + 1,
+                conv::FETCH_MAX_ATTEMPTS
+            );
 
-        // Validate response is not empty
-        if end_response.is_empty() {
-            return Err(anyhow::anyhow!("Server returned empty response."));
-        }
-
-        // Check if response is chunked
-        if let Ok(metadata) = ResponseMetadata::decode(&end_response[..]) {
-            if metadata.total_chunks > 0 {
-                return self
-                    .fetch_chunked_response(conv_id, total_chunks, &metadata)
-                    .await;
+            // Upstream response not ready yet - retry after a short delay.
+            if end_response.is_empty() {
+                if Self::fetch_should_retry(attempt) {
+                    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                    continue;
+                }
+                return Err(anyhow::anyhow!(
+                    "Server returned empty response after {} FETCH attempts.",
+                    conv::FETCH_MAX_ATTEMPTS
+                ));
             }
+
+            // Check if response is chunked
+            if let Ok(metadata) = ResponseMetadata::decode(&end_response[..]) {
+                if metadata.total_chunks > 0 {
+                    return self
+                        .fetch_chunked_response(conv_id, total_chunks, &metadata)
+                        .await;
+                }
+            }
+
+            // Response successfully received, send COMPLETE packet
+            self.send_complete_packet(conv_id).await?;
+
+            return Ok(end_response);
         }
 
-        // Response successfully received, send COMPLETE packet
-        self.send_complete_packet(conv_id).await?;
-
-        Ok(end_response)
+        unreachable!("FETCH loop always returns or errors")
     }
 
     /// Fetch and reassemble a chunked response from server
@@ -1579,6 +1604,31 @@ mod tests {
 
         let result = dns.parse_dns_response(&response, 0x1234);
         assert_eq!(result.unwrap(), status_bytes);
+    }
+
+    #[test]
+    fn test_fetch_should_retry_empty_response() {
+        // Regression: the redirector returns an EMPTY TXT answer while its
+        // upstream gRPC call is still in flight ("response not ready yet - upstream
+        // call in progress"). The agent must retry the FETCH instead of failing the
+        // whole exchange; only give up once the attempt budget is exhausted.
+        assert!(DNS::fetch_should_retry(0)); // First empty response: retry.
+        assert!(DNS::fetch_should_retry(conv::FETCH_MAX_ATTEMPTS - 2));
+        assert!(!DNS::fetch_should_retry(conv::FETCH_MAX_ATTEMPTS - 1)); // Last attempt: give up.
+        assert!(!DNS::fetch_should_retry(conv::FETCH_MAX_ATTEMPTS));
+    }
+
+    #[test]
+    fn test_fetch_empty_response_error_message() {
+        // The exhaustion error should be explicit about the retry budget so the
+        // operator can distinguish an in-flight upstream from a hard failure.
+        let err = anyhow::anyhow!(
+            "Server returned empty response after {} FETCH attempts.",
+            conv::FETCH_MAX_ATTEMPTS
+        );
+        let msg = err.to_string();
+        assert!(msg.starts_with("Server returned empty response after"));
+        assert!(msg.contains(&conv::FETCH_MAX_ATTEMPTS.to_string()));
     }
 
     // ============================================================
