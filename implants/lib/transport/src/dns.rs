@@ -290,12 +290,42 @@ impl DNS {
         let mut all_data = Vec::new();
 
         for _ in 0..answer_count {
-            if offset + 10 > response.len() {
+            if offset + 2 > response.len() {
                 return Err(anyhow::anyhow!("Invalid DNS response format"));
             }
 
-            // Skip name (2 bytes pointer), type (2), class (2), TTL (4)
-            offset += 10;
+            // Skip the answer owner name.
+            // Recursive resolvers may return the name either as a 2-byte
+            // compression pointer (as tavern emits, 0xC00C) or re-encoded as
+            // a full expanded sequence of length-prefixed labels. Both forms
+            // must be handled before reading TYPE (2), CLASS (2), TTL (4).
+            if response[offset] & 0xC0 == 0xC0 {
+                // Compression pointer: 2 bytes (offset into the message).
+                offset += 2;
+            } else {
+                // Expanded name: length-prefixed labels terminated by a 0 byte.
+                loop {
+                    if offset >= response.len() {
+                        return Err(anyhow::anyhow!("Invalid DNS response format"));
+                    }
+                    let label_len = response[offset] as usize;
+                    offset += 1;
+                    if label_len == 0 {
+                        break; // Root label (end of name)
+                    }
+                    if offset + label_len > response.len() {
+                        return Err(anyhow::anyhow!("Invalid DNS record length"));
+                    }
+                    offset += label_len;
+                }
+            }
+
+            if offset + 8 > response.len() {
+                return Err(anyhow::anyhow!("Invalid DNS response format"));
+            }
+
+            // Skip type (2), class (2), TTL (4)
+            offset += 8;
 
             // Read data length
             let data_len = u16::from_be_bytes([response[offset], response[offset + 1]]) as usize;
@@ -1442,6 +1472,113 @@ mod tests {
         let result = dns.parse_dns_response(&response, 0x5678); // Expect 0x5678
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("mismatch"));
+    }
+
+    /// Build a DNS response message for a TXT query with a single answer.
+    ///
+    /// Mirrors the wire format emitted by tavern's DNS redirector
+    /// (tavern/internal/redirectors/dns/dns.go sendDNSResponse).
+    ///
+    /// The answer owner name may be emitted as a 2-byte compression pointer
+    /// (what tavern sends) or as a full expanded name (how some recursive
+    /// resolvers re-encode the response before returning it to the client).
+    fn build_dns_response(packet_data: &[u8], expand_answer_name: bool) -> Vec<u8> {
+        let question_name = "baarcubspbzxez3yozucehqkcexwgmroimzc6q3mmfuw2vdbonvxgeaddcanz6g.mbuqjaaq.ad.cms-azure.com";
+        let txid: u16 = 0x1234;
+
+        let mut response = Vec::new();
+
+        // Header: ID, flags (0x8180 = response, RD+RA), QDCOUNT=1, ANCOUNT=1
+        response.extend_from_slice(&txid.to_be_bytes());
+        response.extend_from_slice(&[0x81, 0x80]);
+        response.extend_from_slice(&[0x00, 0x01]); // QDCOUNT
+        response.extend_from_slice(&[0x00, 0x01]); // ANCOUNT
+        response.extend_from_slice(&[0x00, 0x00]); // NSCOUNT
+        response.extend_from_slice(&[0x00, 0x00]); // ARCOUNT
+
+        // Question: QNAME, QTYPE=TXT(16), QCLASS=IN(1)
+        for label in question_name.split('.') {
+            response.push(label.len() as u8);
+            response.extend_from_slice(label.as_bytes());
+        }
+        response.push(0x00); // Root label
+        response.extend_from_slice(&[0x00, 0x10]); // QTYPE: TXT
+        response.extend_from_slice(&[0x00, 0x01]); // QCLASS: IN
+
+        // Answer owner name
+        if expand_answer_name {
+            // Full expanded name (how some resolvers re-encode the answer)
+            for label in question_name.split('.') {
+                response.push(label.len() as u8);
+                response.extend_from_slice(label.as_bytes());
+            }
+            response.push(0x00); // Root label
+        } else {
+            // Compression pointer to the question qname (0xC00C)
+            response.extend_from_slice(&[0xC0, 0x0C]);
+        }
+
+        // TYPE=TXT(16), CLASS=IN(1), TTL=60, RDLENGTH, RDATA
+        response.extend_from_slice(&[0x00, 0x10]); // TYPE: TXT
+        response.extend_from_slice(&[0x00, 0x01]); // CLASS: IN
+        response.extend_from_slice(&[0x00, 0x00, 0x00, 0x3c]); // TTL: 60
+
+        // TXT RDATA: `<len><bytes>` chunk(s)
+        let mut rdata = Vec::new();
+        let mut remaining = packet_data;
+        while !remaining.is_empty() {
+            let chunk_len = remaining.len().min(255);
+            rdata.push(chunk_len as u8);
+            rdata.extend_from_slice(&remaining[..chunk_len]);
+            remaining = &remaining[chunk_len..];
+        }
+        if rdata.is_empty() {
+            rdata.push(0x00);
+        }
+        response.extend_from_slice(&(rdata.len() as u16).to_be_bytes());
+        response.extend_from_slice(&rdata);
+
+        response
+    }
+
+    #[test]
+    fn test_parse_dns_response_pointer_name() {
+        // Regression: a response with the answer owner name as a compression
+        // pointer (what tavern's redirector emits) must parse.
+        let dns = DNS {
+            base_domain: String::new(),
+            dns_server: String::new(),
+            record_type: DnsRecordType::TXT,
+        };
+
+        let status_bytes = vec![
+            0x08, 0x04, 0x1a, 0x08, 0x32, 0x78, 0x73, 0x72, 0x67, 0x78, 0x76, 0x68,
+        ];
+        let response = build_dns_response(&status_bytes, false);
+
+        let result = dns.parse_dns_response(&response, 0x1234);
+        assert_eq!(result.unwrap(), status_bytes);
+    }
+
+    #[test]
+    fn test_parse_dns_response_expanded_name() {
+        // Regression: some recursive resolvers re-encode the answer owner
+        // name as a full expanded name instead of a compression pointer.
+        // The parser must not misread the record and fail with
+        // "Invalid DNS record length".
+        let dns = DNS {
+            base_domain: String::new(),
+            dns_server: String::new(),
+            record_type: DnsRecordType::TXT,
+        };
+
+        let status_bytes = vec![
+            0x08, 0x04, 0x1a, 0x08, 0x32, 0x78, 0x73, 0x72, 0x67, 0x78, 0x76, 0x68,
+        ];
+        let response = build_dns_response(&status_bytes, true);
+
+        let result = dns.parse_dns_response(&response, 0x1234);
+        assert_eq!(result.unwrap(), status_bytes);
     }
 
     // ============================================================
