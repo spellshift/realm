@@ -393,7 +393,17 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 		response = append(response, byte(dnsPointer>>8), byte(dnsPointer&0xFF))
 		response = append(response, byte(queryType>>8), byte(queryType&0xFF))
 		response = append(response, 0x00, byte(dnsClassIN))
-		response = append(response, 0x00, 0x00, 0x00, byte(dnsTTLSeconds))
+
+		// Responses to an in-progress FETCH carry no data yet ("response not ready
+		// yet - upstream call in progress"). Advertise TTL 0 for empty payloads so
+		// recursive resolvers never cache the empty answer; otherwise every client
+		// retry (even with a distinct QNAME) can be served the cached empty reply
+		// and never reach the redirector once the real response is stored.
+		if len(data) == 0 {
+			response = append(response, 0x00, 0x00, 0x00, 0x00)
+		} else {
+			response = append(response, 0x00, 0x00, 0x00, byte(dnsTTLSeconds))
+		}
 
 		var rdata []byte
 		if len(data) == 0 {
