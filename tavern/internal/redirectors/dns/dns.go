@@ -36,7 +36,14 @@ const (
 	dnsErrorFlags    = 0x8183
 	dnsPointer       = 0xC00C
 
-	txtMaxChunkSize = 255
+	// EDNS0 OPT pseudo-record constants (RFC 6891). Advertise the classic
+	// 512-byte ceiling for the UDP payload size so responses stay compatible
+	// with no-EDNS0 clients (hickory/imix) while still signaling EDNS0
+	// support to recursive resolvers. The OPT RR also carries an empty
+	// extended-rcode/version/flags TTL for standard resolvers.
+	optRRType          = 41  // OPT (RFC 6891)
+	maxEDNS0UDPPayload = 512 // minimum payload per RFC 6891
+	txtMaxChunkSize    = 255
 
 	// Benign DNS response configuration
 	// IP address returned for non-C2 A record queries to avoid NXDOMAIN responses
@@ -155,7 +162,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	transactionID := binary.BigEndian.Uint16(query[0:2])
 
-	domain, queryType, err := r.parseDomainNameAndType(query[dnsHeaderSize:])
+	domain, queryType, hasOPT, err := r.parseDomainNameAndTypeWithOPT(query[dnsHeaderSize:])
 	if err != nil {
 		slog.Debug("failed to parse domain", "error", err)
 		return
@@ -168,7 +175,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	subdomain, err := r.extractSubdomain(domain)
 	if err != nil {
 		slog.Debug("domain doesn't match base domains", "domain", domain)
-		r.sendErrorResponse(conn, addr, transactionID)
+		r.sendErrorResponse(conn, addr, transactionID, hasOPT)
 		return
 	}
 
@@ -180,21 +187,21 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		slog.Debug("ignoring non-C2 query", "domain", domain, "error", err)
 		if queryType == aRecordType {
 			slog.Debug("returning benign A record for non-C2 subdomain", "domain", domain)
-			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4())
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4(), hasOPT)
 			return
 		}
 		// For other types, return NXDOMAIN
-		r.sendErrorResponse(conn, addr, transactionID)
+		r.sendErrorResponse(conn, addr, transactionID, hasOPT)
 		return
 	}
 
 	if packet.Type == convpb.PacketType_PACKET_TYPE_UNSPECIFIED {
 		slog.Debug("ignoring packet with unspecified type", "domain", domain)
 		if queryType == aRecordType {
-			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4())
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4(), hasOPT)
 			return
 		}
-		r.sendErrorResponse(conn, addr, transactionID)
+		r.sendErrorResponse(conn, addr, transactionID, hasOPT)
 		return
 	}
 
@@ -202,10 +209,10 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	if packet.Type < convpb.PacketType_PACKET_TYPE_INIT || packet.Type > convpb.PacketType_PACKET_TYPE_COMPLETE {
 		slog.Debug("ignoring packet with invalid type", "type", packet.Type, "domain", domain)
 		if queryType == aRecordType {
-			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4())
+			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4(), hasOPT)
 			return
 		}
-		r.sendErrorResponse(conn, addr, transactionID)
+		r.sendErrorResponse(conn, addr, transactionID, hasOPT)
 		return
 	}
 
@@ -234,11 +241,11 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		} else {
 			slog.Error("dns redirector: upstream request failed", "type", packet.Type, "conv_id", packet.ConversationId, "source", addr.String(), "error", err)
 		}
-		r.sendErrorResponse(conn, addr, transactionID)
+		r.sendErrorResponse(conn, addr, transactionID, hasOPT)
 		return
 	}
 
-	r.sendDNSResponse(conn, addr, transactionID, domain, queryType, responseData)
+	r.sendDNSResponse(conn, addr, transactionID, domain, queryType, responseData, hasOPT)
 }
 
 // queryTypeToMaxChunkSize maps DNS query type to the max response chunk size.
@@ -307,6 +314,16 @@ func (r *Redirector) decodePacket(subdomain string) (*convpb.ConvPacket, error) 
 }
 
 func (r *Redirector) parseDomainNameAndType(data []byte) (string, uint16, error) {
+	domain, queryType, _, err := r.parseDomainNameAndTypeWithOPT(data)
+	return domain, queryType, err
+}
+
+// parseDomainNameAndTypeWithOPT extracts the query name, type, and whether
+// the query contained an EDNS0 OPT pseudo-record (RFC 6891). Recursive
+// resolvers (e.g. Google Public DNS / 8.8.8.8) add the OPT RR into the
+// additional section; we echo one in the response so the recursor does not
+// flag the answer as malformed.
+func (r *Redirector) parseDomainNameAndTypeWithOPT(data []byte) (string, uint16, bool, error) {
 	var labels []string
 	offset := 0
 
@@ -318,7 +335,7 @@ func (r *Redirector) parseDomainNameAndType(data []byte) (string, uint16, error)
 		offset++
 
 		if offset+length > len(data) {
-			return "", 0, fmt.Errorf("invalid domain name")
+			return "", 0, false, fmt.Errorf("invalid domain name")
 		}
 
 		label := string(data[offset : offset+length])
@@ -329,16 +346,31 @@ func (r *Redirector) parseDomainNameAndType(data []byte) (string, uint16, error)
 	offset++
 
 	if offset+2 > len(data) {
-		return "", 0, fmt.Errorf("query too short for type field")
+		return "", 0, false, fmt.Errorf("query too short for type field")
 	}
 
 	queryType := binary.BigEndian.Uint16(data[offset : offset+2])
+	offset += 2
+
+	if offset+2 > len(data) {
+		return "", 0, false, fmt.Errorf("query too short for class field")
+	}
+	offset += 2
+
 	domain := strings.Join(labels, ".")
 
-	return domain, queryType, nil
+	// An OPT pseudo-record is a root name (single 0 byte) followed by
+	// TYPE=OPT(41), CLASS=UDP payload size, TTL, and RDLEN=0. It lives in
+	// the additional section of the query, immediately after the question.
+	hasOPT := false
+	if offset+2 <= len(data) && data[offset] == 0 && data[offset+1] == byte(optRRType) {
+		hasOPT = true
+	}
+
+	return domain, queryType, hasOPT, nil
 }
 
-func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16, domain string, queryType uint16, data []byte) {
+func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16, domain string, queryType uint16, data []byte, hasOPT bool) {
 	if queryType == aRecordType || queryType == aaaaRecordType {
 		encoded := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(data)
 		data = []byte(encoded)
@@ -474,16 +506,36 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 		response = append(response, 0x00, 0x00)
 	}
 
+	if hasOPT {
+		response = append(response,
+			0x00,                                // root name
+			byte(optRRType>>8), byte(optRRType), // type OPT (41)
+			byte(maxEDNS0UDPPayload>>8), byte(maxEDNS0UDPPayload&0xFF), // class = UDP payload size
+			0x00, 0x00, 0x00, 0x00, // TTL: extended rcode/version/flags
+			0x00, 0x00, // RDLEN 0
+		)
+	}
+
 	if _, err := conn.WriteToUDP(response, addr); err != nil {
 		slog.Error("dns redirector: incoming request failed, could not write DNS response", "destination", addr.String(), "error", err)
 	}
 }
 
-func (r *Redirector) sendErrorResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16) {
+func (r *Redirector) sendErrorResponse(conn *net.UDPConn, addr *net.UDPAddr, transactionID uint16, hasOPT bool) {
 	response := make([]byte, dnsHeaderSize)
 	binary.BigEndian.PutUint16(response[0:2], transactionID)
 	response[2] = byte(dnsErrorFlags >> 8)
 	response[3] = byte(dnsErrorFlags & 0xFF)
+
+	if hasOPT {
+		response = append(response,
+			0x00,                                // root name
+			byte(optRRType>>8), byte(optRRType), // type OPT (41)
+			byte(maxEDNS0UDPPayload>>8), byte(maxEDNS0UDPPayload&0xFF), // class = UDP payload size
+			0x00, 0x00, 0x00, 0x00, // TTL
+			0x00, 0x00, // RDLEN 0
+		)
+	}
 
 	if _, err := conn.WriteToUDP(response, addr); err != nil {
 		slog.Error("dns redirector: incoming request failed, could not write DNS error response", "destination", addr.String(), "error", err)

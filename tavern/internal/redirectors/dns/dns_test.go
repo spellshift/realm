@@ -335,7 +335,7 @@ func TestBuildDNSResponse(t *testing.T) {
 	defer clientConn.Close()
 
 	t.Run("TXT record response", func(t *testing.T) {
-		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, []byte("hello"))
+		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, []byte("hello"), false)
 
 		buf := make([]byte, 512)
 		clientConn.SetReadDeadline(time.Now().Add(time.Second))
@@ -404,7 +404,7 @@ func TestBuildDNSResponseEmptyPayloadTTLZero(t *testing.T) {
 	defer clientConn.Close()
 
 	t.Run("empty payload has TTL 0", func(t *testing.T) {
-		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, nil)
+		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, nil, false)
 
 		buf := make([]byte, 512)
 		clientConn.SetReadDeadline(time.Now().Add(time.Second))
@@ -414,12 +414,75 @@ func TestBuildDNSResponseEmptyPayloadTTLZero(t *testing.T) {
 	})
 
 	t.Run("non-empty payload keeps default TTL", func(t *testing.T) {
-		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, []byte("hello"))
+		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, []byte("hello"), false)
 
 		buf := make([]byte, 512)
 		clientConn.SetReadDeadline(time.Now().Add(time.Second))
 		n, _, err := clientConn.ReadFromUDP(buf)
 		require.NoError(t, err)
 		assert.Equal(t, uint32(dnsTTLSeconds), txtAnswerTTL(t, buf[:n]))
+	})
+}
+
+// TestBuildDNSResponseOptEcho verifies that when the query advertised
+// EDNS0 (hasOPT=true), the redirector appends an OPT pseudo-record with
+// the 512-byte payload ceiling (RFC 6891) to the response. Without this,
+// recursors like Google Public DNS can truncate larger answers or treat
+// the response as malformed.
+func TestBuildDNSResponseOptEcho(t *testing.T) {
+	r := newTestRedirector()
+
+	serverAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	require.NoError(t, err)
+	serverConn, err := net.ListenUDP("udp", serverAddr)
+	require.NoError(t, err)
+	defer serverConn.Close()
+
+	clientAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	require.NoError(t, err)
+	clientConn, err := net.ListenUDP("udp", clientAddr)
+	require.NoError(t, err)
+	defer clientConn.Close()
+
+	t.Run("hasOPT appends OPT record", func(t *testing.T) {
+		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, []byte("hello"), true)
+
+		buf := make([]byte, 512)
+		clientConn.SetReadDeadline(time.Now().Add(time.Second))
+		n, _, err := clientConn.ReadFromUDP(buf)
+		require.NoError(t, err)
+		msg := buf[:n]
+
+		// Headers + question name + TYPE/CLASS for QNAME "test.dnsc2.realm.pub"
+		// We only assert that an OPT (type 41) appears somewhere after the answer.
+		// Compute the answer-section length like txtAnswerTTL and walk forward.
+		// Answer owner (pointer 0xC00C), TYPE(16), CLASS(1), TTL(60), RDLEN, RDATA.
+		foundOpt := false
+		for i := 0; i+1 < len(msg); i++ {
+			if msg[i] == 0x00 && msg[i+1] == 0x29 { // root name + OPT type (41)
+				foundOpt = true
+				break
+			}
+		}
+		assert.True(t, foundOpt, "expected an EDNS0 OPT record in the response")
+	})
+
+	t.Run("no OPT leaves response unchanged", func(t *testing.T) {
+		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, []byte("hello"), false)
+
+		buf := make([]byte, 512)
+		clientConn.SetReadDeadline(time.Now().Add(time.Second))
+		n, _, err := clientConn.ReadFromUDP(buf)
+		require.NoError(t, err)
+		msg := buf[:n]
+
+		foundOpt := false
+		for i := 0; i+1 < len(msg); i++ {
+			if msg[i] == 0x00 && msg[i+1] == 0x29 {
+				foundOpt = true
+				break
+			}
+		}
+		assert.False(t, foundOpt, "did not expect an OPT record without EDNS0 in the query")
 	})
 }
