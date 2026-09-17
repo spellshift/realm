@@ -757,9 +757,18 @@ impl DNS {
     /// Decide whether a FETCH that returned an empty response should be retried.
     ///
     /// The redirector serves an empty TXT payload while its upstream gRPC call
-    /// is still in flight; retry until the attempt budget is exhausted.
+    /// is still in flight; retry until the attempt budget is exhausted. Each
+    /// retry also increments the FETCH `sequence` so the QNAME differs per
+    /// attempt, avoiding recursive-resolver caching of the empty answer.
     fn fetch_should_retry(attempt: usize) -> bool {
         attempt + 1 < conv::FETCH_MAX_ATTEMPTS
+    }
+
+    /// The `sequence` used for a FETCH attempt. Incrementing per attempt keeps
+    /// each retry's encoded QNAME distinct so recursive resolvers don't serve a
+    /// cached empty "in progress" answer instead of forwarding the retry.
+    fn fetch_sequence(total_chunks: usize, attempt: usize) -> u32 {
+        (total_chunks + 1 + attempt) as u32
     }
 
     /// Fetch response from server, handling potentially chunked responses
@@ -774,10 +783,17 @@ impl DNS {
         // upstream gRPC call is still in flight. Retry (like the ICMP transport)
         // instead of failing the whole exchange; the server stores the response
         // shortly after and subsequent FETCHes return it.
+        //
+        // Each retry uses a distinct `sequence` so the encoded QNAME differs per
+        // attempt: recursive resolvers cache the empty "in progress" answer with
+        // a non-zero TTL, so re-sending the identical QNAME would just get re-served
+        // the cached empty reply and never reach the redirector again. The server's
+        // HandleFetch ignores `sequence` entirely (only ConversationId/Data matter), so
+        // this is wire-safe.
         for attempt in 0..conv::FETCH_MAX_ATTEMPTS {
             let fetch_packet = ConvPacket {
                 r#type: PacketType::Fetch as i32,
-                sequence: (total_chunks + 1) as u32,
+                sequence: Self::fetch_sequence(total_chunks, attempt),
                 conversation_id: conv_id.to_string(),
                 data: vec![],
                 crc32: 0,
@@ -1629,6 +1645,23 @@ mod tests {
         let msg = err.to_string();
         assert!(msg.starts_with("Server returned empty response after"));
         assert!(msg.contains(&conv::FETCH_MAX_ATTEMPTS.to_string()));
+    }
+
+    #[test]
+    fn test_fetch_sequence_distinct_per_attempt() {
+        // Regression: each FETCH retry must encode a DIFFERENT QNAME so recursive
+        // resolvers don't re-serve the cached empty "in progress" answer (TTL 60)
+        // instead of forwarding the retry to the redirector. The `sequence` field
+        // varies per attempt (the server ignores `sequence`, so this is wire-safe).
+        let base = 3usize; // total_chunks
+        let seq0 = DNS::fetch_sequence(base, 0);
+        let seq1 = DNS::fetch_sequence(base, 1);
+        let seq9 = DNS::fetch_sequence(base, conv::FETCH_MAX_ATTEMPTS - 1);
+        assert_ne!(seq0, seq1);
+        assert_ne!(seq0, seq9);
+        // Base sequence is still total_chunks+1 on the first attempt.
+        assert_eq!(seq0, (base + 1) as u32);
+        assert_eq!(seq9, (base + conv::FETCH_MAX_ATTEMPTS) as u32);
     }
 
     // ============================================================
