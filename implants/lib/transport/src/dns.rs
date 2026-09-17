@@ -204,8 +204,73 @@ impl DNS {
             .context("failed to receive DNS response")?;
         buf.truncate(len);
 
+        // If the response is truncated (TC bit set), the full answer is
+        // available over TCP. Retry over TCP so we don't lose part of a
+        // multi-record TXT payload.
+        if buf.len() >= 3 && buf[2] & 0x02 == 0x02 {
+            return self.try_dns_query_tcp(server, query, expected_txid).await;
+        }
+
         // Parse and validate response
         self.parse_dns_response(&buf, expected_txid)
+    }
+
+    /// Try a single DNS query over TCP (used when the UDP response is truncated).
+    async fn try_dns_query_tcp(
+        &self,
+        server: &str,
+        query: &[u8],
+        expected_txid: u16,
+    ) -> Result<Vec<u8>> {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpStream;
+
+        // The server may be "host:port" or "host". Normalize to a TcpStream.
+        let (host, port) = match server.rsplit_once(':') {
+            Some((h, p)) => (h.to_string(), p.to_string()),
+            None => (server.to_string(), "53".to_string()),
+        };
+        let addr = format!("{}:{}", host, port);
+        let mut stream = tokio::time::timeout(
+            std::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS),
+            TcpStream::connect(&addr),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("DNS TCP connect timeout after {}s", DNS_QUERY_TIMEOUT_SECS))?
+        .with_context(|| format!("failed to connect to DNS server {} over TCP", addr))?;
+
+        // DNS over TCP: 2-byte length prefix followed by the message.
+        let mut framed = Vec::with_capacity(query.len() + 2);
+        framed.extend_from_slice(&(query.len() as u16).to_be_bytes());
+        framed.extend_from_slice(query);
+
+        stream
+            .write_all(&framed)
+            .await
+            .context("failed to send DNS query over TCP")?;
+
+        // Read the 2-byte length prefix, then the full response.
+        let mut len_buf = [0u8; 2];
+        tokio::time::timeout(
+            std::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS),
+            stream.read_exact(&mut len_buf),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("DNS TCP read timeout after {}s", DNS_QUERY_TIMEOUT_SECS))?
+        .context("failed to read DNS response length over TCP")?;
+        let resp_len = u16::from_be_bytes(len_buf) as usize;
+
+        let mut resp = vec![0u8; resp_len];
+        tokio::time::timeout(
+            std::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS),
+            stream.read_exact(&mut resp),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("DNS TCP read timeout after {}s", DNS_QUERY_TIMEOUT_SECS))?
+        .context("failed to read DNS response over TCP")?;
+
+        // Parse and validate response
+        self.parse_dns_response(&resp, expected_txid)
     }
 
     /// Build DNS query packet with random transaction ID
@@ -253,6 +318,20 @@ impl DNS {
         }
         // Class: IN (1)
         query.extend_from_slice(&[0x00, 0x01]);
+
+        // EDNS0 OPT pseudo-record (RFC 6891). We advertise the classic
+        // 512-byte payload size so middleboxes / recursive resolvers do not
+        // mark our responses as malformed; tavern's redirector echoes this
+        // OPT with the same 512-byte ceiling (see sendDNSResponse). Without
+        // it, some recursors (e.g. Google Public DNS) can truncate larger
+        // answers or serve empty/SERVFAIL to clients that don't signal EDNS0.
+        query.extend_from_slice(&[
+            0x00, // root name
+            0x00, 0x29, // type OPT (41)
+            0x02, 0x00, // class = UDP payload size (512)
+            0x00, 0x00, 0x00, 0x00, // TTL: ext rcode/version/flags (0)
+            0x00, 0x00, // RDLEN 0
+        ]);
 
         Ok((query, txid))
     }
