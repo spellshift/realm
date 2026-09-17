@@ -1652,6 +1652,8 @@ sys.shell("ls /nofile")
 }
 ```
 
+On Windows, if an impersonation token is active (from `sys.impersonate()` or `sys.make_token()`), sys.shell automatically spawns `cmd.exe` via `CreateProcessWithTokenW` so the child process runs as the impersonated user. This ensures `whoami` and network operations reflect the active token. Without an active token, it falls back to normal operation.
+
 ### sys.tokens
 
 `sys.tokens(pid: Option<int>) -> List<Dict>`
