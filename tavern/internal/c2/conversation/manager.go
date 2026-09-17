@@ -24,6 +24,13 @@ const (
 	MaxAckRangesInResponse = 20
 	MaxNacksInResponse     = 50
 	MaxDataSize            = 50 * 1024 * 1024 // 50MB max data size
+
+	// fetchWaitSlices * fetchWaitSliceDuration bounds how long HandleFetch waits
+	// for the upstream response to be populated before falling back to an empty
+	// "not ready" answer. The window is small (tens of ms), so a ~500ms budget
+	// collapses the race without meaningfully delaying the client.
+	fetchWaitSlices        = 10
+	fetchWaitSliceDuration = 50 * time.Millisecond
 )
 
 // Manager wraps an LRU cache and implements the conversation state machine.
@@ -196,6 +203,23 @@ func (m *Manager) HandleFetch(packet *convpb.ConvPacket) ([]byte, error) {
 	m.mu.Unlock()
 
 	conv.mu.Lock()
+
+	// The upstream gRPC call (processCompleted) populates ResponseData a few tens
+	// of ms after the last DATA chunk arrives. Instead of immediately returning an
+	// EMPTY answer (which recursive resolvers may serve to later retries even with
+	// TTL 0), briefly wait for the response to become ready. We must NOT hold
+	// conv.mu while waiting - processCompleted needs it to store the response -
+	// so poll in small slices: release, sleep, re-check, up to a bounded budget.
+	if conv.ResponseData == nil {
+		for i := 0; i < fetchWaitSlices; i++ {
+			conv.mu.Unlock()
+			time.Sleep(fetchWaitSliceDuration)
+			conv.mu.Lock()
+			if conv.ResponseData != nil {
+				break
+			}
+		}
+	}
 	defer conv.mu.Unlock()
 
 	if conv.ResponseData == nil {
