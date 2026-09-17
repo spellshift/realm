@@ -353,3 +353,73 @@ func TestBuildDNSResponse(t *testing.T) {
 		assert.Greater(t, n, 12)
 	})
 }
+
+// txtAnswerTTL parses a single-answer TXT DNS response and returns the answer
+// record's TTL, mirroring enough of the DNS wire format for the tests below.
+func txtAnswerTTL(t *testing.T, buf []byte) uint32 {
+	t.Helper()
+	// Header is 12 bytes; skip the question section.
+	offset := 12
+	for offset < len(buf) && buf[offset] != 0 {
+		offset += int(buf[offset]) + 1
+	}
+	offset += 1 + 4 // root label + QTYPE + QCLASS
+
+	// Answer owner name: pointer (2 bytes) or label sequence.
+	if buf[offset]&0xC0 == 0xC0 {
+		offset += 2
+	} else {
+		for offset < len(buf) && buf[offset] != 0 {
+			offset += int(buf[offset]) + 1
+		}
+		offset += 1
+	}
+
+	// TYPE (2), CLASS (2), TTL (4)
+	if offset+8 > len(buf) {
+		t.Fatalf("answer header truncated")
+	}
+	ttl := uint32(buf[offset+4])<<24 | uint32(buf[offset+5])<<16 | uint32(buf[offset+6])<<8 | uint32(buf[offset+7])
+	return ttl
+}
+
+func TestBuildDNSResponseEmptyPayloadTTLZero(t *testing.T) {
+	// Regression: an in-progress FETCH is answered with an EMPTY TXT payload and
+	// MUST advertise TTL 0 so recursive resolvers never cache the empty reply.
+	// Otherwise every agent retry (even with a distinct QNAME) is served the
+	// cached empty answer and never reaches the redirector once the real
+	// response is stored.
+	r := newTestRedirector()
+
+	serverAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	require.NoError(t, err)
+	serverConn, err := net.ListenUDP("udp", serverAddr)
+	require.NoError(t, err)
+	defer serverConn.Close()
+
+	clientAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	require.NoError(t, err)
+	clientConn, err := net.ListenUDP("udp", clientAddr)
+	require.NoError(t, err)
+	defer clientConn.Close()
+
+	t.Run("empty payload has TTL 0", func(t *testing.T) {
+		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, nil)
+
+		buf := make([]byte, 512)
+		clientConn.SetReadDeadline(time.Now().Add(time.Second))
+		n, _, err := clientConn.ReadFromUDP(buf)
+		require.NoError(t, err)
+		assert.Equal(t, uint32(0), txtAnswerTTL(t, buf[:n]))
+	})
+
+	t.Run("non-empty payload keeps default TTL", func(t *testing.T) {
+		r.sendDNSResponse(serverConn, clientConn.LocalAddr().(*net.UDPAddr), 0x1234, "test.dnsc2.realm.pub", txtRecordType, []byte("hello"))
+
+		buf := make([]byte, 512)
+		clientConn.SetReadDeadline(time.Now().Add(time.Second))
+		n, _, err := clientConn.ReadFromUDP(buf)
+		require.NoError(t, err)
+		assert.Equal(t, uint32(dnsTTLSeconds), txtAnswerTTL(t, buf[:n]))
+	})
+}
