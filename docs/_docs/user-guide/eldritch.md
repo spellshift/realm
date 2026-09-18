@@ -1660,7 +1660,7 @@ On Windows, if an impersonation token is active (from `sys.impersonate()` or `sy
 
 The **sys.tokens** method lists tokens. With no arguments, returns all tokens in the global store. With a PID, returns the process token info including user and privileges.
 
-**Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `source` (str).
+**Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `source` (str). ID 0 is always the original process token, active when no impersonation token is in use.
 
 **Process tokens** (with pid): Each dict has `user` (str, e.g. `"CORP\\admin"`), `pid` (int), `privileges` (list of `"PrivilegeName=enabled|disabled"`).
 
@@ -1669,6 +1669,7 @@ $> sys.tokens()
 
 | active | id | source              |
 | ------ | -- | ------------------- |
+| False  | 0  | process_token       |
 | True   | 1  | impersonate:pid:700 |
 
 $> pprint(sys.tokens(pid=700))
@@ -1702,6 +1703,41 @@ $> pprint(sys.tokens(pid=700))
     "user": "NT AUTHORITY\\SYSTEM"
   }
 ]
+```
+
+### sys.use_token
+
+`sys.use_token(id: int) -> bool`
+
+The **sys.use_token** method activates a stored token by ID. Deactivates any currently active token and applies the specified one to the beacon.
+
+ID `0` is the process token (original identity). `sys.use_token(0)` reverts to base permissions.
+
+For this example, assume PID 6767 is running as SYSTEM and the base process token is running as Administrator.
+
+```python
+$> sys.tokens()
+
+| active | id | source               |
+| ------ | -- | -------------------- |
+| False  | 0  | process_token        |
+| True   | 1  | impersonate:pid:6767 |
+
+$> sys.shell('whoami')['stdout']
+nt authority\system
+
+$> sys.use_token(0)                   # revert to process token
+True
+
+$> sys.tokens()
+
+| active | id | source               |
+| ------ | -- | -------------------- |
+| True   | 0  | process_token        |
+| False  | 1  | impersonate:pid:6767 |
+
+$> sys.shell('whoami')['stdout']
+administrator
 ```
 
 ### sys.write_reg

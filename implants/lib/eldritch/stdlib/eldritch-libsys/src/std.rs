@@ -23,6 +23,7 @@ mod list_users_impl;
 mod reg_utils;
 mod shell_impl;
 pub mod tokens_impl;
+mod use_token_impl;
 mod write_reg_impl;
 
 #[derive(Debug)]
@@ -111,6 +112,10 @@ impl SysLibrary for StdSysLibrary {
 
     fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
         tokens_impl::tokens(pid)
+    }
+
+    fn use_token(&self, id: i64) -> Result<bool, String> {
+        use_token_impl::use_token(id)
     }
 
     fn write_reg(
