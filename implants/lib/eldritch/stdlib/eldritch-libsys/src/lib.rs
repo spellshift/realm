@@ -194,6 +194,20 @@ pub trait SysLibrary {
     fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    /// Activates a stored token by ID.
+    ///
+    /// Deactivates any currently active token and applies the specified one
+    /// globally. Token must have been previously created by
+    /// other token functions.
+    ///
+    /// **Parameters**
+    /// - `id` (`int`): Token store ID (returned by `impersonate()` or other token functions).
+    ///
+    /// **Returns**
+    /// - `bool`: True if token was activated.
+    fn use_token(&self, id: i64) -> Result<bool, String>;
+
+    #[eldritch_method]
     /// Writes a value to the Windows Registry.
     ///
     /// **Parameters**

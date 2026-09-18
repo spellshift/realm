@@ -124,6 +124,10 @@ impl SysLibrary for SysLibraryFake {
         Ok(vec![entry])
     }
 
+    fn use_token(&self, _id: i64) -> Result<bool, String> {
+        Ok(true)
+    }
+
     fn write_reg(
         &self,
         _path: String,
