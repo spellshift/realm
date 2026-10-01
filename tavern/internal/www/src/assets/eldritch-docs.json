@@ -607,6 +607,10 @@
     "signature": "sys.hostname() -> String",
     "description": "The **sys.hostname** method returns a String containing the host's hostname."
   },
+  "sys.impersonate": {
+    "signature": "sys.impersonate(pid: int) -> int",
+    "description": "The **sys.impersonate** method steals a token from a target process by PID and impersonates it. Returns a token store ID and automatically activates the token.\nRequires `SeDebugPrivilege` to open other users' process tokens.\n```python\n# find SYSTEM process PID (ex. winlogon)\nfor p in process.list():\nif 'winlogon' in p['name'].lower():\nprint(p['pid'], p['name'])\n...\n676 winlogon.exe\n...\n# check if the current process has SeDebugPrivilege\n$> \"SeDebugPrivilege=enabled\" in sys.tokens(process.info()['pid'])[0]['privileges']\nTrue\n$> t1 = sys.impersonate(676)\n$> sys.shell('whoami')\nnt authority\\system\n$> sys.use_token(0) # revert to self\n```"
+  },
   "sys.is_bsd": {
     "signature": "sys.is_bsd() -> bool",
     "description": "The **sys.is_bsd** method returns `True` if on a `freebsd`, `netbsd`, or `openbsd` system and `False` on everything else."

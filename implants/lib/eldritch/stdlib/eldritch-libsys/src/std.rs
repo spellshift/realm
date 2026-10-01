@@ -15,6 +15,7 @@ mod get_pid_impl;
 mod get_reg_impl;
 mod get_user_impl;
 mod hostname_impl;
+mod impersonate_impl;
 mod is_bsd_impl;
 mod is_linux_impl;
 mod is_macos_impl;
@@ -83,6 +84,10 @@ impl SysLibrary for StdSysLibrary {
 
     fn hostname(&self) -> Result<String, String> {
         hostname_impl::hostname().map_err(|e| e.to_string())
+    }
+
+    fn impersonate(&self, pid: i64) -> Result<i64, String> {
+        impersonate_impl::impersonate(pid)
     }
 
     fn is_bsd(&self) -> Result<bool, String> {

