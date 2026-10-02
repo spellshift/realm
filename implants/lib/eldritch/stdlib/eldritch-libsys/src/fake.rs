@@ -79,6 +79,10 @@ impl SysLibrary for SysLibraryFake {
         Ok(String::from("eldritch-test-box"))
     }
 
+    fn impersonate(&self, _pid: i64) -> Result<i64, String> {
+        Ok(1)
+    }
+
     fn is_bsd(&self) -> Result<bool, String> {
         Ok(false)
     }

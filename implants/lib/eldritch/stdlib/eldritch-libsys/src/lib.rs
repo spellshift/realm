@@ -135,6 +135,16 @@ pub trait SysLibrary {
     fn hostname(&self) -> Result<String, String>;
 
     #[eldritch_method]
+    /// Impersonates another user by stealing a process token.
+    ///
+    /// **Parameters**
+    /// - `pid` (`int`): Target process ID.
+    ///
+    /// **Returns**
+    /// - `int`: Token store ID for later use with `use_token()`.
+    fn impersonate(&self, pid: i64) -> Result<i64, String>;
+
+    #[eldritch_method]
     /// Checks if the OS is BSD.
     ///
     /// **Returns**

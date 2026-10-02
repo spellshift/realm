@@ -327,7 +327,12 @@ mod tests {
         );
         unsafe { windows_sys::Win32::Foundation::CloseHandle(token_handle) };
 
-        let id = store_token(dup_token as isize, "test:self".to_string());
+        let id = store_token(
+            dup_token as isize,
+            "test:self".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+        );
 
         unsafe {
             windows_sys::Win32::Security::ImpersonateLoggedOnUser(dup_token);
