@@ -251,6 +251,7 @@ fn list_stored() -> Result<Vec<BTreeMap<String, Value>>, String> {
                 Value::String("process_token".to_string()),
             );
             base.insert("active".to_string(), Value::Bool(!any_active));
+<<<<<<< HEAD
             let proc_token = unsafe {
                 let mut tok = std::ptr::null_mut();
                 windows_sys::Win32::System::Threading::OpenProcessToken(
@@ -273,6 +274,8 @@ fn list_stored() -> Result<Vec<BTreeMap<String, Value>>, String> {
                 .unwrap_or_default();
             base.insert("user".to_string(), Value::String(base_user));
             base.insert("process".to_string(), Value::String(base_process));
+=======
+>>>>>>> 03479b93532f3d5e7ab74aaceb87ccb6d350eb14
             result.push(base);
 
             for entry in store.iter() {

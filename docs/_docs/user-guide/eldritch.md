@@ -1746,6 +1746,41 @@ $> pprint(sys.tokens(pid=700)) # ex. winlogon.exe
 ]
 ```
 
+### sys.use_token
+
+`sys.use_token(id: int) -> bool`
+
+The **sys.use_token** method activates a stored token by ID. Deactivates any currently active token and applies the specified one to the beacon.
+
+ID `0` is the process token (original identity). `sys.use_token(0)` reverts to base permissions.
+
+For this example, assume PID 6767 is running as SYSTEM and the base process token is running as Administrator.
+
+```python
+$> sys.tokens()
+
+| active | id | process        | source               | user                 |
+| ------ | -- | -------------- | -------------------- | -------------------- |
+| False  | 0  | imix.exe       | process_token        | DOMAIN\Administrator |
+| True   | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\SYSTEM  |
+
+$> sys.shell('whoami')['stdout']
+nt authority\system
+
+$> sys.use_token(0)
+True
+
+$> sys.tokens()
+
+| active | id | process        | source               | user                 |
+| ------ | -- | -------------- | -------------------- | -------------------- |
+| True   | 0  | imix.exe       | process_token        | DOMAIN\Administrator |
+| False  | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\SYSTEM  |
+
+$> sys.shell('whoami')['stdout']
+domain\administrator
+```
+
 ### sys.write_reg
 
 `sys.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
