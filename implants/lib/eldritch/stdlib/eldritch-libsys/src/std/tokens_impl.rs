@@ -11,6 +11,8 @@ pub struct TokenEntry {
     pub handle: isize,
     pub source: String,
     pub active: bool,
+    pub user: String,
+    pub process: String,
 }
 
 #[cfg(target_os = "windows")]
@@ -25,7 +27,7 @@ fn next_id() -> i64 {
 }
 
 #[cfg(target_os = "windows")]
-pub fn store_token(handle: isize, source: String) -> i64 {
+pub fn store_token(handle: isize, source: String, user: String, process: String) -> i64 {
     let id = next_id();
     if let Ok(mut store) = TOKEN_STORE.lock() {
         for entry in store.iter_mut() {
@@ -36,9 +38,119 @@ pub fn store_token(handle: isize, source: String) -> i64 {
             handle,
             source,
             active: true,
+            user,
+            process,
         });
     }
     id
+}
+
+#[cfg(target_os = "windows")]
+pub fn resolve_token_user(token: *mut std::ffi::c_void) -> String {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::Security::{
+        GetTokenInformation, LookupAccountSidW, TOKEN_QUERY, TOKEN_USER, TokenUser,
+    };
+
+    let mut dup = std::ptr::null_mut();
+    let tok = if unsafe {
+        windows_sys::Win32::Security::DuplicateTokenEx(
+            token,
+            TOKEN_QUERY,
+            std::ptr::null(),
+            windows_sys::Win32::Security::SecurityImpersonation,
+            windows_sys::Win32::Security::TokenImpersonation,
+            &mut dup,
+        )
+    } != 0
+    {
+        dup
+    } else {
+        token
+    };
+
+    let mut buf = vec![0u8; 256];
+    let mut ret_len: u32 = 0;
+    if unsafe {
+        GetTokenInformation(
+            tok,
+            TokenUser,
+            buf.as_mut_ptr() as *mut _,
+            buf.len() as u32,
+            &mut ret_len,
+        )
+    } == 0
+    {
+        if !dup.is_null() {
+            unsafe { CloseHandle(dup) };
+        }
+        return "unknown".to_string();
+    }
+
+    let token_user = unsafe { &*(buf.as_ptr() as *const TOKEN_USER) };
+    let mut name_buf = [0u16; 256];
+    let mut domain_buf = [0u16; 256];
+    let mut name_len: u32 = 256;
+    let mut domain_len: u32 = 256;
+    let mut sid_use: i32 = 0;
+
+    let result = if unsafe {
+        LookupAccountSidW(
+            std::ptr::null(),
+            token_user.User.Sid,
+            name_buf.as_mut_ptr(),
+            &mut name_len,
+            domain_buf.as_mut_ptr(),
+            &mut domain_len,
+            &mut sid_use,
+        )
+    } != 0
+    {
+        let name = String::from_utf16_lossy(&name_buf[..name_len as usize]);
+        let domain = String::from_utf16_lossy(&domain_buf[..domain_len as usize]);
+        format!("{}\\{}", domain, name)
+    } else {
+        "unknown".to_string()
+    };
+
+    if !dup.is_null() {
+        unsafe { CloseHandle(dup) };
+    }
+    result
+}
+
+#[cfg(target_os = "windows")]
+pub fn resolve_process_name(pid: u32) -> String {
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::Diagnostics::ToolHelp::{
+        CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW,
+        TH32CS_SNAPPROCESS,
+    };
+
+    let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+    if snap.is_null() || snap == windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE {
+        return String::new();
+    }
+
+    let mut entry: PROCESSENTRY32W = unsafe { core::mem::zeroed() };
+    entry.dwSize = core::mem::size_of::<PROCESSENTRY32W>() as u32;
+
+    let mut ok = unsafe { Process32FirstW(snap, &mut entry) };
+    while ok != 0 {
+        if entry.th32ProcessID == pid {
+            unsafe { CloseHandle(snap) };
+            let len = entry
+                .szExeFile
+                .iter()
+                .position(|&c| c == 0)
+                .unwrap_or(entry.szExeFile.len());
+            return String::from_utf16_lossy(&entry.szExeFile[..len]);
+        }
+        ok = unsafe { Process32NextW(snap, &mut entry) };
+    }
+
+    unsafe { CloseHandle(snap) };
+    String::new()
 }
 
 #[cfg(target_os = "windows")]
@@ -139,6 +251,28 @@ fn list_stored() -> Result<Vec<BTreeMap<String, Value>>, String> {
                 Value::String("process_token".to_string()),
             );
             base.insert("active".to_string(), Value::Bool(!any_active));
+            let proc_token = unsafe {
+                let mut tok = std::ptr::null_mut();
+                windows_sys::Win32::System::Threading::OpenProcessToken(
+                    windows_sys::Win32::System::Threading::GetCurrentProcess(),
+                    windows_sys::Win32::Security::TOKEN_QUERY,
+                    &mut tok,
+                );
+                tok
+            };
+            let base_user = if !proc_token.is_null() {
+                let u = resolve_token_user(proc_token);
+                unsafe { windows_sys::Win32::Foundation::CloseHandle(proc_token) };
+                u
+            } else {
+                String::new()
+            };
+            let base_process = std::env::current_exe()
+                .ok()
+                .and_then(|p| p.file_name().map(|f| f.to_string_lossy().to_string()))
+                .unwrap_or_default();
+            base.insert("user".to_string(), Value::String(base_user));
+            base.insert("process".to_string(), Value::String(base_process));
             result.push(base);
 
             for entry in store.iter() {
@@ -146,6 +280,8 @@ fn list_stored() -> Result<Vec<BTreeMap<String, Value>>, String> {
                 dict.insert("id".to_string(), Value::Int(entry.id));
                 dict.insert("source".to_string(), Value::String(entry.source.clone()));
                 dict.insert("active".to_string(), Value::Bool(entry.active));
+                dict.insert("user".to_string(), Value::String(entry.user.clone()));
+                dict.insert("process".to_string(), Value::String(entry.process.clone()));
                 result.push(dict);
             }
         }

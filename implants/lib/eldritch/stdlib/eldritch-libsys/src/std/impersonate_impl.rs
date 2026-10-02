@@ -16,7 +16,9 @@ pub fn impersonate(pid: i64) -> Result<i64, String> {
 
 #[cfg(target_os = "windows")]
 fn impersonate_windows(pid: u32) -> Result<i64, String> {
-    use super::tokens_impl::{check_privilege, store_token};
+    use super::tokens_impl::{
+        check_privilege, resolve_process_name, resolve_token_user, store_token,
+    };
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::Security::{
         DuplicateTokenEx, ImpersonateLoggedOnUser, SecurityImpersonation, TOKEN_DUPLICATE,
@@ -97,8 +99,10 @@ fn impersonate_windows(pid: u32) -> Result<i64, String> {
         ));
     }
 
+    let user = resolve_token_user(dup_token);
+    let proc_name = resolve_process_name(pid);
     let source = format!("impersonate:pid:{}", pid);
-    let id = store_token(dup_token as isize, source);
+    let id = store_token(dup_token as isize, source, user, proc_name);
 
     Ok(id)
 }

@@ -1605,29 +1605,40 @@ The **sys.hostname** method returns a String containing the host's hostname.
 
 `sys.impersonate(pid: int) -> int`
 
-The **sys.impersonate** method steals a token from a target process by PID and impersonates it. Returns a token store ID and automatically activates the token.
+The **sys.impersonate** method steals a token from a target process by PID and impersonates it. Returns the token store ID and automatically activates the token.
 
 Requires `SeDebugPrivilege` to open other users' process tokens.
 
 ```python
+$> sys.tokens()
+
+| active | id | process  | source        | user                 |
+| ------ | -- | -------- | ------------- | -------------------- |
+| True   | 0  | imix.exe | process_token | DOMAIN\Administrator |
+
 # find SYSTEM process PID (ex. winlogon)
 for p in process.list():
     if 'winlogon' in p['name'].lower():
         print(p['pid'], p['name'])
-...
+
 676 winlogon.exe
-...
 
 # check if the current process has SeDebugPrivilege
 $> "SeDebugPrivilege=enabled" in sys.tokens(process.info()['pid'])[0]['privileges']
 True
 
-$> t1 = sys.impersonate(676)
+$> sys.impersonate(676)
+1
+
+$> sys.tokens()
+
+| active | id | process        | source              | user                 |
+| ------ | -- | -------------- | ------------------- | -------------------- |
+| False  | 0  | imix.exe       | process_token       | DOMAIN\Administrator |
+| True   | 1  | winlogon.exe   | impersonate:pid:676 | NT AUTHORITY\SYSTEM  |
 
 $> sys.shell('whoami')
 nt authority\system
-
-$> sys.use_token(0) # revert to self
 ```
 
 ### sys.is_bsd
@@ -1689,18 +1700,20 @@ On Windows, if an impersonation token is active (from `sys.impersonate()` or `sy
 
 The **sys.tokens** method lists tokens. With no arguments, returns all tokens in the global store. With a PID, returns the process token info including user and privileges.
 
-**Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `source` (str).
+The first time **sys.tokens** is run, it enumerates all tokens and pulls the users and process names. Subsequent calls with no new tokens pulls the information from the store.
+
+**Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `process` (str), `source` (str), and `user` (str). The default process token has an ID of 0, source of `"process_token"`, displays the current user, and begins active.
 
 **Process tokens** (with pid): Each dict has `user` (str, e.g. `"CORP\\admin"`), `pid` (int), `privileges` (list of `"PrivilegeName=enabled|disabled"`).
 
 ```python
 $> sys.tokens()
 
-| active | id | source              |
-| ------ | -- | ------------------- |
-| True   | 1  | impersonate:pid:700 |
+| active | id | process  | source        | user                 |
+| ------ | -- | -------- | ------------- | -------------------- |
+| True   | 0  | imix.exe | process_token | DOMAIN\Administrator |
 
-$> pprint(sys.tokens(pid=700))
+$> pprint(sys.tokens(pid=700)) # ex. winlogon.exe
 
 [
   {
