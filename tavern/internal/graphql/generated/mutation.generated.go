@@ -2557,6 +2557,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_createdAt(ctx, field)
 			case "lastModifiedAt":
 				return ec.fieldContext_BuildTask_lastModifiedAt(ctx, field)
+			case "profileAtCreation":
+				return ec.fieldContext_BuildTask_profileAtCreation(ctx, field)
 			case "targetOs":
 				return ec.fieldContext_BuildTask_targetOs(ctx, field)
 			case "targetFormat":
@@ -2585,6 +2587,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_setupscript(ctx, field)
 			case "unique":
 				return ec.fieldContext_BuildTask_unique(ctx, field)
+			case "bundle":
+				return ec.fieldContext_BuildTask_bundle(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
 			case "profile":

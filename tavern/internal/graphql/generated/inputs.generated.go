@@ -29,6 +29,314 @@ import (
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _BuildProfileSnapshot_name(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_buildImage(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_buildImage,
+		func(ctx context.Context) (any, error) {
+			return obj.BuildImage, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_buildImage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_setupscript(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_setupscript,
+		func(ctx context.Context) (any, error) {
+			return obj.Setupscript, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_setupscript(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_prebuildscript(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_prebuildscript,
+		func(ctx context.Context) (any, error) {
+			return obj.Prebuildscript, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_prebuildscript(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_buildScript(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_buildScript,
+		func(ctx context.Context) (any, error) {
+			return obj.BuildScript, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_buildScript(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_postbuildscript(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_postbuildscript,
+		func(ctx context.Context) (any, error) {
+			return obj.Postbuildscript, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_postbuildscript(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_artifactPath(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_artifactPath,
+		func(ctx context.Context) (any, error) {
+			return obj.ArtifactPath, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_artifactPath(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_unique(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_unique,
+		func(ctx context.Context) (any, error) {
+			return obj.Unique, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_unique(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_transports(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_transports,
+		func(ctx context.Context) (any, error) {
+			return obj.Transports, nil
+		},
+		nil,
+		ec.marshalNBuildProfileTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTransportᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_transports(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "uri":
+				return ec.fieldContext_BuildProfileTransport_uri(ctx, field)
+			case "interval":
+				return ec.fieldContext_BuildProfileTransport_interval(ctx, field)
+			case "type":
+				return ec.fieldContext_BuildProfileTransport_type(ctx, field)
+			case "extra":
+				return ec.fieldContext_BuildProfileTransport_extra(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuildProfileTransport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildProfileSnapshot_tomes(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileSnapshot_tomes,
+		func(ctx context.Context) (any, error) {
+			return obj.Tomes, nil
+		},
+		nil,
+		ec.marshalNBuildTomeSnapshot2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTomeSnapshotᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileSnapshot_tomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "tomeID":
+				return ec.fieldContext_BuildTomeSnapshot_tomeID(ctx, field)
+			case "name":
+				return ec.fieldContext_BuildTomeSnapshot_name(ctx, field)
+			case "params":
+				return ec.fieldContext_BuildTomeSnapshot_params(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuildTomeSnapshot", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BuildProfileTome_tomeID(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileTome) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -203,6 +511,93 @@ func (ec *executionContext) fieldContext_BuildProfileTransport_extra(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _BuildTomeSnapshot_tomeID(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTomeSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildTomeSnapshot_tomeID,
+		func(ctx context.Context) (any, error) {
+			return obj.TomeID, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildTomeSnapshot_tomeID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildTomeSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildTomeSnapshot_name(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTomeSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildTomeSnapshot_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildTomeSnapshot_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildTomeSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildTomeSnapshot_params(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTomeSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildTomeSnapshot_params,
+		func(ctx context.Context) (any, error) {
+			return obj.Params, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildTomeSnapshot_params(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildTomeSnapshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RegisterBuilderOutput_builder(ctx context.Context, field graphql.CollectedField, obj *models.RegisterBuilderOutput) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -239,6 +634,8 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context
 				return ec.fieldContext_Builder_supportedTargets(ctx, field)
 			case "upstream":
 				return ec.fieldContext_Builder_upstream(ctx, field)
+			case "pollInterval":
+				return ec.fieldContext_Builder_pollInterval(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
 			case "buildtasks":
@@ -751,6 +1148,90 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 
 // region    **************************** object.gotpl ****************************
 
+var buildProfileSnapshotImplementors = []string{"BuildProfileSnapshot"}
+
+func (ec *executionContext) _BuildProfileSnapshot(ctx context.Context, sel ast.SelectionSet, obj *builderpb.BuildProfileSnapshot) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, buildProfileSnapshotImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BuildProfileSnapshot")
+		case "name":
+			out.Values[i] = ec._BuildProfileSnapshot_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "buildImage":
+			out.Values[i] = ec._BuildProfileSnapshot_buildImage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setupscript":
+			out.Values[i] = ec._BuildProfileSnapshot_setupscript(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "prebuildscript":
+			out.Values[i] = ec._BuildProfileSnapshot_prebuildscript(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "buildScript":
+			out.Values[i] = ec._BuildProfileSnapshot_buildScript(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "postbuildscript":
+			out.Values[i] = ec._BuildProfileSnapshot_postbuildscript(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "artifactPath":
+			out.Values[i] = ec._BuildProfileSnapshot_artifactPath(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unique":
+			out.Values[i] = ec._BuildProfileSnapshot_unique(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transports":
+			out.Values[i] = ec._BuildProfileSnapshot_transports(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tomes":
+			out.Values[i] = ec._BuildProfileSnapshot_tomes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var buildProfileTomeImplementors = []string{"BuildProfileTome"}
 
 func (ec *executionContext) _BuildProfileTome(ctx context.Context, sel ast.SelectionSet, obj *builderpb.BuildProfileTome) graphql.Marshaler {
@@ -823,6 +1304,55 @@ func (ec *executionContext) _BuildProfileTransport(ctx context.Context, sel ast.
 			}
 		case "extra":
 			out.Values[i] = ec._BuildProfileTransport_extra(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var buildTomeSnapshotImplementors = []string{"BuildTomeSnapshot"}
+
+func (ec *executionContext) _BuildTomeSnapshot(ctx context.Context, sel ast.SelectionSet, obj *builderpb.BuildTomeSnapshot) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, buildTomeSnapshotImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BuildTomeSnapshot")
+		case "tomeID":
+			out.Values[i] = ec._BuildTomeSnapshot_tomeID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._BuildTomeSnapshot_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "params":
+			out.Values[i] = ec._BuildTomeSnapshot_params(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -933,6 +1463,26 @@ func (ec *executionContext) unmarshalNBuildProfileTransportInput2ᚖrealmᚗpub�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNBuildTomeSnapshot2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTomeSnapshot(ctx context.Context, sel ast.SelectionSet, v builderpb.BuildTomeSnapshot) graphql.Marshaler {
+	return ec._BuildTomeSnapshot(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBuildTomeSnapshot2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTomeSnapshotᚄ(ctx context.Context, sel ast.SelectionSet, v []builderpb.BuildTomeSnapshot) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBuildTomeSnapshot2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTomeSnapshot(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNCreateBuildTaskInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildTaskInput(ctx context.Context, v any) (models.CreateBuildTaskInput, error) {
 	res, err := ec.unmarshalInputCreateBuildTaskInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -950,6 +1500,13 @@ func (ec *executionContext) marshalNRegisterBuilderOutput2ᚖrealmᚗpubᚋtaver
 		return graphql.Null
 	}
 	return ec._RegisterBuilderOutput(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOBuildProfileSnapshot2ᚖrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileSnapshot(ctx context.Context, sel ast.SelectionSet, v *builderpb.BuildProfileSnapshot) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BuildProfileSnapshot(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOBuildProfileTome2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTomeᚄ(ctx context.Context, sel ast.SelectionSet, v []builderpb.BuildProfileTome) graphql.Marshaler {

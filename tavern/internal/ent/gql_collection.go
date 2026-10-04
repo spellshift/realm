@@ -1218,6 +1218,16 @@ func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opC
 				selectedFields = append(selectedFields, buildprofile.FieldBuildImage)
 				fieldSeen[buildprofile.FieldBuildImage] = struct{}{}
 			}
+		case "buildScript":
+			if _, ok := fieldSeen[buildprofile.FieldBuildScript]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldBuildScript)
+				fieldSeen[buildprofile.FieldBuildScript] = struct{}{}
+			}
+		case "artifactPath":
+			if _, ok := fieldSeen[buildprofile.FieldArtifactPath]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldArtifactPath)
+				fieldSeen[buildprofile.FieldArtifactPath] = struct{}{}
+			}
 		case "prebuildscript":
 			if _, ok := fieldSeen[buildprofile.FieldPrebuildscript]; !ok {
 				selectedFields = append(selectedFields, buildprofile.FieldPrebuildscript)
@@ -1334,6 +1344,17 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 
+		case "bundle":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AssetClient{config: bt.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, assetImplementors)...); err != nil {
+				return err
+			}
+			bt.withBundle = query
+
 		case "builder":
 			var (
 				alias = field.Alias
@@ -1375,6 +1396,11 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldLastModifiedAt]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldLastModifiedAt)
 				fieldSeen[buildtask.FieldLastModifiedAt] = struct{}{}
+			}
+		case "profileAtCreation":
+			if _, ok := fieldSeen[buildtask.FieldProfileAtCreation]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldProfileAtCreation)
+				fieldSeen[buildtask.FieldProfileAtCreation] = struct{}{}
 			}
 		case "targetOs":
 			if _, ok := fieldSeen[buildtask.FieldTargetOs]; !ok {
@@ -1649,6 +1675,11 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 			if _, ok := fieldSeen[builder.FieldUpstream]; !ok {
 				selectedFields = append(selectedFields, builder.FieldUpstream)
 				fieldSeen[builder.FieldUpstream] = struct{}{}
+			}
+		case "pollInterval":
+			if _, ok := fieldSeen[builder.FieldPollInterval]; !ok {
+				selectedFields = append(selectedFields, builder.FieldPollInterval)
+				fieldSeen[builder.FieldPollInterval] = struct{}{}
 			}
 		case "lastSeenAt":
 			if _, ok := fieldSeen[builder.FieldLastSeenAt]; !ok {

@@ -144,7 +144,9 @@ type ComplexityRoot struct {
 	}
 
 	BuildProfile struct {
+		ArtifactPath    func(childComplexity int) int
 		BuildImage      func(childComplexity int) int
+		BuildScript     func(childComplexity int) int
 		Buildtasks      func(childComplexity int) int
 		Description     func(childComplexity int) int
 		ID              func(childComplexity int) int
@@ -168,6 +170,19 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BuildProfileSnapshot struct {
+		ArtifactPath    func(childComplexity int) int
+		BuildImage      func(childComplexity int) int
+		BuildScript     func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Postbuildscript func(childComplexity int) int
+		Prebuildscript  func(childComplexity int) int
+		Setupscript     func(childComplexity int) int
+		Tomes           func(childComplexity int) int
+		Transports      func(childComplexity int) int
+		Unique          func(childComplexity int) int
+	}
+
 	BuildProfileTome struct {
 		Params func(childComplexity int) int
 		TomeID func(childComplexity int) int
@@ -181,26 +196,28 @@ type ComplexityRoot struct {
 	}
 
 	BuildTask struct {
-		Artifact       func(childComplexity int) int
-		ArtifactPath   func(childComplexity int) int
-		BuildScript    func(childComplexity int) int
-		Builder        func(childComplexity int) int
-		ClaimedAt      func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Error          func(childComplexity int) int
-		ErrorSize      func(childComplexity int) int
-		ExitCode       func(childComplexity int) int
-		FinishedAt     func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Output         func(childComplexity int) int
-		OutputSize     func(childComplexity int) int
-		Profile        func(childComplexity int) int
-		Setupscript    func(childComplexity int) int
-		StartedAt      func(childComplexity int) int
-		TargetFormat   func(childComplexity int) int
-		TargetOs       func(childComplexity int) int
-		Unique         func(childComplexity int) int
+		Artifact          func(childComplexity int) int
+		ArtifactPath      func(childComplexity int) int
+		BuildScript       func(childComplexity int) int
+		Builder           func(childComplexity int) int
+		Bundle            func(childComplexity int) int
+		ClaimedAt         func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		Error             func(childComplexity int) int
+		ErrorSize         func(childComplexity int) int
+		ExitCode          func(childComplexity int) int
+		FinishedAt        func(childComplexity int) int
+		ID                func(childComplexity int) int
+		LastModifiedAt    func(childComplexity int) int
+		Output            func(childComplexity int) int
+		OutputSize        func(childComplexity int) int
+		Profile           func(childComplexity int) int
+		ProfileAtCreation func(childComplexity int) int
+		Setupscript       func(childComplexity int) int
+		StartedAt         func(childComplexity int) int
+		TargetFormat      func(childComplexity int) int
+		TargetOs          func(childComplexity int) int
+		Unique            func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -214,6 +231,12 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BuildTomeSnapshot struct {
+		Name   func(childComplexity int) int
+		Params func(childComplexity int) int
+		TomeID func(childComplexity int) int
+	}
+
 	Builder struct {
 		Buildtasks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
 		CreatedAt        func(childComplexity int) int
@@ -221,6 +244,7 @@ type ComplexityRoot struct {
 		Identifier       func(childComplexity int) int
 		LastModifiedAt   func(childComplexity int) int
 		LastSeenAt       func(childComplexity int) int
+		PollInterval     func(childComplexity int) int
 		SupportedTargets func(childComplexity int) int
 		Upstream         func(childComplexity int) int
 	}
@@ -1340,12 +1364,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BeaconTimelineHostBucket.Host(childComplexity), true
 
+	case "BuildProfile.artifactPath":
+		if e.ComplexityRoot.BuildProfile.ArtifactPath == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfile.ArtifactPath(childComplexity), true
+
 	case "BuildProfile.buildImage":
 		if e.ComplexityRoot.BuildProfile.BuildImage == nil {
 			break
 		}
 
 		return e.ComplexityRoot.BuildProfile.BuildImage(childComplexity), true
+
+	case "BuildProfile.buildScript":
+		if e.ComplexityRoot.BuildProfile.BuildScript == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfile.BuildScript(childComplexity), true
 
 	case "BuildProfile.buildtasks":
 		if e.ComplexityRoot.BuildProfile.Buildtasks == nil {
@@ -1452,6 +1490,76 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BuildProfileEdge.Node(childComplexity), true
 
+	case "BuildProfileSnapshot.artifactPath":
+		if e.ComplexityRoot.BuildProfileSnapshot.ArtifactPath == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.ArtifactPath(childComplexity), true
+
+	case "BuildProfileSnapshot.buildImage":
+		if e.ComplexityRoot.BuildProfileSnapshot.BuildImage == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.BuildImage(childComplexity), true
+
+	case "BuildProfileSnapshot.buildScript":
+		if e.ComplexityRoot.BuildProfileSnapshot.BuildScript == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.BuildScript(childComplexity), true
+
+	case "BuildProfileSnapshot.name":
+		if e.ComplexityRoot.BuildProfileSnapshot.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.Name(childComplexity), true
+
+	case "BuildProfileSnapshot.postbuildscript":
+		if e.ComplexityRoot.BuildProfileSnapshot.Postbuildscript == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.Postbuildscript(childComplexity), true
+
+	case "BuildProfileSnapshot.prebuildscript":
+		if e.ComplexityRoot.BuildProfileSnapshot.Prebuildscript == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.Prebuildscript(childComplexity), true
+
+	case "BuildProfileSnapshot.setupscript":
+		if e.ComplexityRoot.BuildProfileSnapshot.Setupscript == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.Setupscript(childComplexity), true
+
+	case "BuildProfileSnapshot.tomes":
+		if e.ComplexityRoot.BuildProfileSnapshot.Tomes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.Tomes(childComplexity), true
+
+	case "BuildProfileSnapshot.transports":
+		if e.ComplexityRoot.BuildProfileSnapshot.Transports == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.Transports(childComplexity), true
+
+	case "BuildProfileSnapshot.unique":
+		if e.ComplexityRoot.BuildProfileSnapshot.Unique == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileSnapshot.Unique(childComplexity), true
+
 	case "BuildProfileTome.params":
 		if e.ComplexityRoot.BuildProfileTome.Params == nil {
 			break
@@ -1521,6 +1629,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BuildTask.Builder(childComplexity), true
+
+	case "BuildTask.bundle":
+		if e.ComplexityRoot.BuildTask.Bundle == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildTask.Bundle(childComplexity), true
 
 	case "BuildTask.claimedAt":
 		if e.ComplexityRoot.BuildTask.ClaimedAt == nil {
@@ -1599,6 +1714,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BuildTask.Profile(childComplexity), true
 
+	case "BuildTask.profileAtCreation":
+		if e.ComplexityRoot.BuildTask.ProfileAtCreation == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildTask.ProfileAtCreation(childComplexity), true
+
 	case "BuildTask.setupscript":
 		if e.ComplexityRoot.BuildTask.Setupscript == nil {
 			break
@@ -1669,6 +1791,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BuildTaskEdge.Node(childComplexity), true
 
+	case "BuildTomeSnapshot.name":
+		if e.ComplexityRoot.BuildTomeSnapshot.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildTomeSnapshot.Name(childComplexity), true
+
+	case "BuildTomeSnapshot.params":
+		if e.ComplexityRoot.BuildTomeSnapshot.Params == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildTomeSnapshot.Params(childComplexity), true
+
+	case "BuildTomeSnapshot.tomeID":
+		if e.ComplexityRoot.BuildTomeSnapshot.TomeID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildTomeSnapshot.TomeID(childComplexity), true
+
 	case "Builder.buildtasks":
 		if e.ComplexityRoot.Builder.Buildtasks == nil {
 			break
@@ -1715,6 +1858,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Builder.LastSeenAt(childComplexity), true
+
+	case "Builder.pollInterval":
+		if e.ComplexityRoot.Builder.PollInterval == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Builder.PollInterval(childComplexity), true
 
 	case "Builder.supportedTargets":
 		if e.ComplexityRoot.Builder.SupportedTargets == nil {
@@ -6215,6 +6365,14 @@ type BuildProfile implements Node {
   """
   buildImage: String!
   """
+  Go template for the build command. BuildCommand supplies the platform default.
+  """
+  buildScript: String!
+  """
+  Go template for the artifact path. ArtifactPath supplies the platform default.
+  """
+  artifactPath: String!
+  """
   Bash script to run before build command
   """
   prebuildscript: String!
@@ -6356,6 +6514,38 @@ input BuildProfileWhereInput {
   buildImageEqualFold: String
   buildImageContainsFold: String
   """
+  build_script field predicates
+  """
+  buildScript: String
+  buildScriptNEQ: String
+  buildScriptIn: [String!]
+  buildScriptNotIn: [String!]
+  buildScriptGT: String
+  buildScriptGTE: String
+  buildScriptLT: String
+  buildScriptLTE: String
+  buildScriptContains: String
+  buildScriptHasPrefix: String
+  buildScriptHasSuffix: String
+  buildScriptEqualFold: String
+  buildScriptContainsFold: String
+  """
+  artifact_path field predicates
+  """
+  artifactPath: String
+  artifactPathNEQ: String
+  artifactPathIn: [String!]
+  artifactPathNotIn: [String!]
+  artifactPathGT: String
+  artifactPathGTE: String
+  artifactPathLT: String
+  artifactPathLTE: String
+  artifactPathContains: String
+  artifactPathHasPrefix: String
+  artifactPathHasSuffix: String
+  artifactPathEqualFold: String
+  artifactPathContainsFold: String
+  """
   prebuildscript field predicates
   """
   prebuildscript: String
@@ -6438,6 +6628,10 @@ type BuildTask implements Node {
   """
   lastModifiedAt: Time!
   """
+  Immutable build profile captured at task creation. Null for legacy tasks whose original inputs are unknown.
+  """
+  profileAtCreation: BuildProfileSnapshot
+  """
   The target operating system platform for this build.
   """
   targetOs: HostPlatform!
@@ -6493,6 +6687,10 @@ type BuildTask implements Node {
   JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
   """
   unique: String
+  """
+  Frozen tome archives captured at task creation.
+  """
+  bundle: Asset
   """
   The builder assigned to execute this build task.
   """
@@ -6808,6 +7006,11 @@ input BuildTaskWhereInput {
   uniqueEqualFold: String
   uniqueContainsFold: String
   """
+  bundle edge predicates
+  """
+  hasBundle: Boolean
+  hasBundleWith: [AssetWhereInput!]
+  """
   builder edge predicates
   """
   hasBuilder: Boolean
@@ -6845,6 +7048,10 @@ type Builder implements Node {
   The server address that the builder should connect to.
   """
   upstream: String!
+  """
+  Builder task polling interval in seconds.
+  """
+  pollInterval: Int!
   """
   Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
   """
@@ -7006,6 +7213,17 @@ input BuilderWhereInput {
   upstreamEqualFold: String
   upstreamContainsFold: String
   """
+  poll_interval field predicates
+  """
+  pollInterval: Int
+  pollIntervalNEQ: Int
+  pollIntervalIn: [Int!]
+  pollIntervalNotIn: [Int!]
+  pollIntervalGT: Int
+  pollIntervalGTE: Int
+  pollIntervalLT: Int
+  pollIntervalLTE: Int
+  """
   last_seen_at field predicates
   """
   lastSeenAt: Time
@@ -7058,6 +7276,10 @@ input CreateBuilderInput {
   The server address that the builder should connect to.
   """
   upstream: String
+  """
+  Builder task polling interval in seconds.
+  """
+  pollInterval: Int
 }
 """
 CreateDeviceAuthInput is used for create DeviceAuth object.
@@ -13606,6 +13828,27 @@ type RegisterBuilderOutput {
 
   """YAML-formatted configuration for the builder."""
   config: String!
+}
+
+"""The immutable build recipe captured at task creation."""
+type BuildProfileSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileSnapshot") {
+  name: String!
+  buildImage: String!
+  setupscript: String!
+  prebuildscript: String!
+  buildScript: String!
+  postbuildscript: String!
+  artifactPath: String!
+  unique: String!
+  transports: [BuildProfileTransport!]!
+  tomes: [BuildTomeSnapshot!]!
+}
+
+"""Tome identity and parameters captured alongside frozen contents."""
+type BuildTomeSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTomeSnapshot") {
+  tomeID: Int!
+  name: String!
+  params: String!
 }
 `, BuiltIn: false},
 	{Name: "../schema/user.graphql", Input: `extend type User {

@@ -55,6 +55,34 @@ func (bpc *BuildProfileCreate) SetNillableBuildImage(s *string) *BuildProfileCre
 	return bpc
 }
 
+// SetBuildScript sets the "build_script" field.
+func (bpc *BuildProfileCreate) SetBuildScript(s string) *BuildProfileCreate {
+	bpc.mutation.SetBuildScript(s)
+	return bpc
+}
+
+// SetNillableBuildScript sets the "build_script" field if the given value is not nil.
+func (bpc *BuildProfileCreate) SetNillableBuildScript(s *string) *BuildProfileCreate {
+	if s != nil {
+		bpc.SetBuildScript(*s)
+	}
+	return bpc
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (bpc *BuildProfileCreate) SetArtifactPath(s string) *BuildProfileCreate {
+	bpc.mutation.SetArtifactPath(s)
+	return bpc
+}
+
+// SetNillableArtifactPath sets the "artifact_path" field if the given value is not nil.
+func (bpc *BuildProfileCreate) SetNillableArtifactPath(s *string) *BuildProfileCreate {
+	if s != nil {
+		bpc.SetArtifactPath(*s)
+	}
+	return bpc
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (bpc *BuildProfileCreate) SetPrebuildscript(s string) *BuildProfileCreate {
 	bpc.mutation.SetPrebuildscript(s)
@@ -175,6 +203,14 @@ func (bpc *BuildProfileCreate) defaults() {
 		v := buildprofile.DefaultBuildImage
 		bpc.mutation.SetBuildImage(v)
 	}
+	if _, ok := bpc.mutation.BuildScript(); !ok {
+		v := buildprofile.DefaultBuildScript
+		bpc.mutation.SetBuildScript(v)
+	}
+	if _, ok := bpc.mutation.ArtifactPath(); !ok {
+		v := buildprofile.DefaultArtifactPath
+		bpc.mutation.SetArtifactPath(v)
+	}
 	if _, ok := bpc.mutation.Prebuildscript(); !ok {
 		v := buildprofile.DefaultPrebuildscript
 		bpc.mutation.SetPrebuildscript(v)
@@ -206,6 +242,22 @@ func (bpc *BuildProfileCreate) check() error {
 	if v, ok := bpc.mutation.BuildImage(); ok {
 		if err := buildprofile.BuildImageValidator(v); err != nil {
 			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_image": %w`, err)}
+		}
+	}
+	if _, ok := bpc.mutation.BuildScript(); !ok {
+		return &ValidationError{Name: "build_script", err: errors.New(`ent: missing required field "BuildProfile.build_script"`)}
+	}
+	if v, ok := bpc.mutation.BuildScript(); ok {
+		if err := buildprofile.BuildScriptValidator(v); err != nil {
+			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_script": %w`, err)}
+		}
+	}
+	if _, ok := bpc.mutation.ArtifactPath(); !ok {
+		return &ValidationError{Name: "artifact_path", err: errors.New(`ent: missing required field "BuildProfile.artifact_path"`)}
+	}
+	if v, ok := bpc.mutation.ArtifactPath(); ok {
+		if err := buildprofile.ArtifactPathValidator(v); err != nil {
+			return &ValidationError{Name: "artifact_path", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.artifact_path": %w`, err)}
 		}
 	}
 	if _, ok := bpc.mutation.Prebuildscript(); !ok {
@@ -259,6 +311,14 @@ func (bpc *BuildProfileCreate) createSpec() (*BuildProfile, *sqlgraph.CreateSpec
 	if value, ok := bpc.mutation.BuildImage(); ok {
 		_spec.SetField(buildprofile.FieldBuildImage, field.TypeString, value)
 		_node.BuildImage = value
+	}
+	if value, ok := bpc.mutation.BuildScript(); ok {
+		_spec.SetField(buildprofile.FieldBuildScript, field.TypeString, value)
+		_node.BuildScript = value
+	}
+	if value, ok := bpc.mutation.ArtifactPath(); ok {
+		_spec.SetField(buildprofile.FieldArtifactPath, field.TypeString, value)
+		_node.ArtifactPath = value
 	}
 	if value, ok := bpc.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
@@ -393,6 +453,30 @@ func (u *BuildProfileUpsert) SetBuildImage(v string) *BuildProfileUpsert {
 // UpdateBuildImage sets the "build_image" field to the value that was provided on create.
 func (u *BuildProfileUpsert) UpdateBuildImage() *BuildProfileUpsert {
 	u.SetExcluded(buildprofile.FieldBuildImage)
+	return u
+}
+
+// SetBuildScript sets the "build_script" field.
+func (u *BuildProfileUpsert) SetBuildScript(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldBuildScript, v)
+	return u
+}
+
+// UpdateBuildScript sets the "build_script" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdateBuildScript() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldBuildScript)
+	return u
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (u *BuildProfileUpsert) SetArtifactPath(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldArtifactPath, v)
+	return u
+}
+
+// UpdateArtifactPath sets the "artifact_path" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdateArtifactPath() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldArtifactPath)
 	return u
 }
 
@@ -561,6 +645,34 @@ func (u *BuildProfileUpsertOne) SetBuildImage(v string) *BuildProfileUpsertOne {
 func (u *BuildProfileUpsertOne) UpdateBuildImage() *BuildProfileUpsertOne {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateBuildImage()
+	})
+}
+
+// SetBuildScript sets the "build_script" field.
+func (u *BuildProfileUpsertOne) SetBuildScript(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetBuildScript(v)
+	})
+}
+
+// UpdateBuildScript sets the "build_script" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdateBuildScript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateBuildScript()
+	})
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (u *BuildProfileUpsertOne) SetArtifactPath(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetArtifactPath(v)
+	})
+}
+
+// UpdateArtifactPath sets the "artifact_path" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdateArtifactPath() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateArtifactPath()
 	})
 }
 
@@ -905,6 +1017,34 @@ func (u *BuildProfileUpsertBulk) SetBuildImage(v string) *BuildProfileUpsertBulk
 func (u *BuildProfileUpsertBulk) UpdateBuildImage() *BuildProfileUpsertBulk {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateBuildImage()
+	})
+}
+
+// SetBuildScript sets the "build_script" field.
+func (u *BuildProfileUpsertBulk) SetBuildScript(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetBuildScript(v)
+	})
+}
+
+// UpdateBuildScript sets the "build_script" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdateBuildScript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateBuildScript()
+	})
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (u *BuildProfileUpsertBulk) SetArtifactPath(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetArtifactPath(v)
+	})
+}
+
+// UpdateArtifactPath sets the "artifact_path" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdateArtifactPath() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateArtifactPath()
 	})
 }
 

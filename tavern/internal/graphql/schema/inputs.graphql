@@ -170,3 +170,24 @@ type RegisterBuilderOutput {
   """YAML-formatted configuration for the builder."""
   config: String!
 }
+
+"""The immutable build recipe captured at task creation."""
+type BuildProfileSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileSnapshot") {
+  name: String!
+  buildImage: String!
+  setupscript: String!
+  prebuildscript: String!
+  buildScript: String!
+  postbuildscript: String!
+  artifactPath: String!
+  unique: String!
+  transports: [BuildProfileTransport!]!
+  tomes: [BuildTomeSnapshot!]!
+}
+
+"""Tome identity and parameters captured alongside frozen contents."""
+type BuildTomeSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTomeSnapshot") {
+  tomeID: Int!
+  name: String!
+  params: String!
+}

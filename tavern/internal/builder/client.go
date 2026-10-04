@@ -23,9 +23,6 @@ import (
 )
 
 const (
-	// taskPollInterval is how often the builder polls for new build tasks.
-	taskPollInterval = 5 * time.Second
-
 	// maxConcurrentBuilds is the maximum number of builds that can run simultaneously.
 	maxConcurrentBuilds = 4
 
@@ -113,6 +110,14 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 // then enters a polling loop to claim and execute build tasks using the
 // provided executor.
 func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
+	if cfg.PollInterval == 0 {
+		copy := *cfg
+		copy.PollInterval = DefaultPollInterval
+		cfg = &copy
+	}
+	if err := cfg.validate(); err != nil {
+		return err
+	}
 	slog.InfoContext(ctx, "builder started",
 		"id", cfg.ID,
 		"supported_targets", cfg.SupportedTargets,
@@ -166,7 +171,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
-	ticker := time.NewTicker(taskPollInterval)
+	ticker := time.NewTicker(time.Duration(cfg.PollInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {

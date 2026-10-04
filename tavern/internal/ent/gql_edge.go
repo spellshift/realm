@@ -191,6 +191,14 @@ func (bp *BuildProfile) Buildtasks(ctx context.Context) (result []*BuildTask, er
 	return result, err
 }
 
+func (bt *BuildTask) Bundle(ctx context.Context) (*Asset, error) {
+	result, err := bt.Edges.BundleOrErr()
+	if IsNotLoaded(err) {
+		result, err = bt.QueryBundle().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (bt *BuildTask) Builder(ctx context.Context) (*Builder, error) {
 	result, err := bt.Edges.BuilderOrErr()
 	if IsNotLoaded(err) {
