@@ -1504,6 +1504,11 @@ func (ec *executionContext) marshalNBuildTomeSnapshot2ᚕrealmᚗpubᚋtavernᚋ
 	return ret
 }
 
+func (ec *executionContext) unmarshalNCreateBuildProfileInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildProfileInput(ctx context.Context, v any) (models.CreateBuildProfileInput, error) {
+	res, err := ec.unmarshalInputCreateBuildProfileInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateBuildTaskInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildTaskInput(ctx context.Context, v any) (models.CreateBuildTaskInput, error) {
 	res, err := ec.unmarshalInputCreateBuildTaskInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
