@@ -26,7 +26,7 @@ import (
 // as the application does, rather than relying on the live-profile fallback.
 func snapshotForTest(t *testing.T, graph *ent.Client, profile *ent.BuildProfile) *builderpb.BuildProfileSnapshot {
 	t.Helper()
-	snapshot, bundle, err := builder.SnapshotProfile(context.Background(), graph, profile)
+	snapshot, bundle, err := builder.SnapshotProfile(context.Background(), graph, profile, builder.ProfileSnapshotOverrides{})
 	require.NoError(t, err)
 	require.Empty(t, bundle)
 	return snapshot
