@@ -2,7 +2,6 @@ package executor
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
@@ -141,16 +140,10 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		scanner := bufio.NewScanner(stderrPR)
-		for scanner.Scan() {
-			errorCh <- scanner.Text()
-		}
+		streamBuildLines(ctx, stderrPR, errorCh)
 	}()
 
-	scanner := bufio.NewScanner(stdoutPR)
-	for scanner.Scan() {
-		outputCh <- scanner.Text()
-	}
+	streamBuildLines(ctx, stdoutPR, outputCh)
 
 	// Wait for stderr goroutine to finish.
 	<-done
