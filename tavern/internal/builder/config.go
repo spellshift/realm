@@ -11,9 +11,19 @@ import (
 // DefaultPollInterval is the builder polling interval in seconds for legacy configurations.
 const DefaultPollInterval = 5
 
+// MaxPollInterval is the largest poll_interval (in seconds) ParseConfig accepts.
+const MaxPollInterval = 86400
+
+// MaxStaleAge is the longest a builder can go without checking in and still be
+// considered healthy, even at MaxPollInterval. Callers that need to bound a
+// freshness query at the database layer (before BuilderHealthy's per-builder
+// check, which needs each builder's own interval) can use this as a
+// conservative upper bound.
+const MaxStaleAge = 3 * MaxPollInterval * time.Second
+
 // BuilderHealthy reports whether a builder has polled within three polling intervals.
 func BuilderHealthy(lastSeen time.Time, interval int, now time.Time) bool {
-	return interval > 0 && interval <= 86400 && !lastSeen.Before(now.Add(-3*time.Duration(interval)*time.Second))
+	return interval > 0 && interval <= MaxPollInterval && !lastSeen.Before(now.Add(-3*time.Duration(interval)*time.Second))
 }
 
 // Config represents the YAML configuration for a builder.
