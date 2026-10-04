@@ -48521,6 +48521,10 @@ func (ec *executionContext) unmarshalNBeaconWhereInput2ᚖrealmᚗpubᚋtavern�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNBuildProfile2realmᚗpubᚋtavernᚋinternalᚋentᚐBuildProfile(ctx context.Context, sel ast.SelectionSet, v ent.BuildProfile) graphql.Marshaler {
+	return ec._BuildProfile(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNBuildProfile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildProfile(ctx context.Context, sel ast.SelectionSet, v *ent.BuildProfile) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {

@@ -450,6 +450,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		ClosePortal                 func(childComplexity int, portalID int) int
+		CreateBuildProfile          func(childComplexity int, input models.CreateBuildProfileInput) int
 		CreateBuildTask             func(childComplexity int, input models.CreateBuildTaskInput) int
 		CreateCredential            func(childComplexity int, input ent.CreateHostCredentialInput) int
 		CreateLink                  func(childComplexity int, input ent.CreateLinkInput) int
@@ -2840,6 +2841,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.ClosePortal(childComplexity, args["portalID"].(int)), true
+
+	case "Mutation.createBuildProfile":
+		if e.ComplexityRoot.Mutation.CreateBuildProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBuildProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateBuildProfile(childComplexity, args["input"].(models.CreateBuildProfileInput)), true
 
 	case "Mutation.createBuildTask":
 		if e.ComplexityRoot.Mutation.CreateBuildTask == nil {
@@ -13637,6 +13650,11 @@ scalar Uint64
     ###
     registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
+
+    ###
+    # BuildProfile
+    ###
+    createBuildProfile(input: CreateBuildProfileInput!): BuildProfile! @requireRole(role: ADMIN)
 
     ###
     # BuildTask

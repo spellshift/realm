@@ -565,6 +565,54 @@ func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (in
 	return builderID, nil
 }
 
+// CreateBuildProfile is the resolver for the createBuildProfile field.
+func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error) {
+	creator := r.client.BuildProfile.Create().
+		SetName(input.Name).
+		SetDescription(input.Description).
+		SetPrebuildscript(input.Prebuildscript).
+		SetSetupscript(input.Setupscript).
+		SetPostbuildscript(input.Postbuildscript)
+
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		creator.SetBuildImage(*input.BuildImage)
+	}
+	if input.BuildScript != nil && *input.BuildScript != "" {
+		creator.SetBuildScript(*input.BuildScript)
+	}
+	if input.ArtifactPath != nil && *input.ArtifactPath != "" {
+		creator.SetArtifactPath(*input.ArtifactPath)
+	}
+	if len(input.Transports) > 0 {
+		transports := make([]builderpb.BuildProfileTransport, len(input.Transports))
+		for i, t := range input.Transports {
+			var extra string
+			if t.Extra != nil {
+				extra = *t.Extra
+			}
+			transports[i] = builderpb.BuildProfileTransport{
+				URI:      t.URI,
+				Interval: t.Interval,
+				Type:     c2pb.Transport_Type(t.Type),
+				Extra:    extra,
+			}
+		}
+		creator.SetTransports(transports)
+	}
+	if len(input.Tomes) > 0 {
+		tomes := make([]builderpb.BuildProfileTome, len(input.Tomes))
+		for i, t := range input.Tomes {
+			tomes[i] = builderpb.BuildProfileTome{
+				TomeID: t.TomeID,
+				Params: t.Params,
+			}
+		}
+		creator.SetTomes(tomes)
+	}
+
+	return creator.Save(ctx)
+}
+
 // CreateBuildTask is the resolver for the createBuildTask field.
 func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
 	tx, err := r.client.Tx(ctx)
