@@ -237,3 +237,154 @@ func testProfileSnapshotLifecycle(t *testing.T, graph *ent.Client, gql *client.C
 	assert.Equal(t, []byte("compiled agent"), artifact.Content)
 	assert.Equal(t, originalBundle.Content, original.QueryBundle().OnlyX(ctx).Content)
 }
+
+func testProfileTemplateValidation(t *testing.T, graph *ent.Client) {
+	ctx := context.Background()
+	_, err := graph.BuildProfile.Create().
+		SetName("Invalid Template Profile").
+		SetDescription("test").
+		SetBuildScript("{{.UnclosedAction").
+		Save(ctx)
+	require.Error(t, err)
+
+	_, err = graph.BuildProfile.Create().
+		SetName("Empty Template Profile").
+		SetDescription("test").
+		SetBuildScript("   ").
+		Save(ctx)
+	require.Error(t, err)
+
+	_, err = graph.BuildProfile.Create().
+		SetName("Invalid Artifact Template").
+		SetDescription("test").
+		SetArtifactPath("{{.UnclosedAction").
+		Save(ctx)
+	require.Error(t, err)
+}
+
+func testTaskOverridesApplyToSnapshot(t *testing.T, graph *ent.Client, gql *client.Client, rpc builderpb.BuilderClient, workerID int) {
+	ctx := context.Background()
+	graph.Builder.UpdateOneID(workerID).SetLastSeenAt(time.Now()).SaveX(ctx)
+
+	profileTome := graph.Tome.Create().SetName("profile-tome").SetDescription("test").
+		SetAuthor("test").SetEldritch("print('profile')").SaveX(ctx)
+	overrideTome := graph.Tome.Create().SetName("override-tome").SetDescription("test").
+		SetAuthor("test").SetEldritch("print('override')").SaveX(ctx)
+
+	baseProfile := graph.BuildProfile.Create().
+		SetName("Base Profile").
+		SetDescription("test base profile").
+		SetBuildImage("base:image").
+		SetSetupscript("echo base setup").
+		SetPrebuildscript("echo base pre").
+		SetPostbuildscript("echo base post").
+		SetArtifactPath("/base/agent").
+		SetUnique("{\"base\":true}").
+		SetTransports([]builderpb.BuildProfileTransport{{URI: "https://base.example", Interval: 10, Type: c2pb.Transport_TRANSPORT_GRPC}}).
+		SetTomes([]builderpb.BuildProfileTome{{TomeID: profileTome.ID, Params: "{\"mode\":\"base\"}"}}).
+		SaveX(ctx)
+
+	var response struct {
+		CreateBuildTask struct {
+			ID                string
+			ProfileAtCreation struct {
+				Name            string
+				BuildImage      string
+				Setupscript     string
+				Prebuildscript  string
+				BuildScript     string
+				Postbuildscript string
+				ArtifactPath    string
+				Unique          string
+				Transports      []struct {
+					URI   string
+					Extra string
+					Type  string
+				}
+				Tomes []struct {
+					TomeID int
+					Name   string
+					Params string
+				}
+			}
+		}
+	}
+
+	err := gql.Post(`mutation($input: CreateBuildTaskInput!) {
+    createBuildTask(input:$input) {
+      id
+      profileAtCreation {
+        name buildImage setupscript prebuildscript buildScript postbuildscript artifactPath unique
+        transports { uri extra type }
+        tomes { tomeID name params }
+      }
+    }
+  }`, &response, client.Var("input", map[string]any{
+		"profileID":       strconv.Itoa(baseProfile.ID),
+		"targetOS":        "PLATFORM_LINUX",
+		"buildImage":      "override:image",
+		"setupScript":     "echo override setup",
+		"preBuildScript":  "echo override pre",
+		"postBuildScript": "echo override post",
+		"artifactPath":    "/override/agent",
+		"unique":          "{\"override\":true}",
+		"transports": []map[string]any{{
+			"uri":      "https://override.example",
+			"interval": 42,
+			"type":     "TRANSPORT_HTTP1",
+			"extra":    "override-extra",
+		}},
+		"tomes": []map[string]any{{
+			"tomeID": overrideTome.ID,
+			"params": "{\"mode\":\"override\"}",
+		}},
+	}))
+	require.NoError(t, err)
+
+	snapshot := response.CreateBuildTask.ProfileAtCreation
+	assert.Equal(t, "override:image", snapshot.BuildImage)
+	assert.Equal(t, "echo override setup", snapshot.Setupscript)
+	assert.Equal(t, "echo override pre", snapshot.Prebuildscript)
+	assert.Equal(t, "echo override post", snapshot.Postbuildscript)
+	assert.Equal(t, "/override/agent", snapshot.ArtifactPath)
+	assert.Equal(t, "{\"override\":true}", snapshot.Unique)
+	require.Len(t, snapshot.Transports, 1)
+	assert.Equal(t, "https://override.example", snapshot.Transports[0].URI)
+	assert.Equal(t, "override-extra", snapshot.Transports[0].Extra)
+	require.Len(t, snapshot.Tomes, 1)
+	assert.Equal(t, overrideTome.ID, snapshot.Tomes[0].TomeID)
+	assert.Equal(t, "override-tome", snapshot.Tomes[0].Name)
+	assert.Equal(t, "{\"mode\":\"override\"}", snapshot.Tomes[0].Params)
+
+	taskID, err := strconv.Atoi(response.CreateBuildTask.ID)
+	require.NoError(t, err)
+
+	claimed, err := rpc.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+	require.NoError(t, err)
+	var spec *builderpb.BuildTaskSpec
+	for _, s := range claimed.Tasks {
+		if s.Id == int64(taskID) {
+			spec = s
+			break
+		}
+	}
+	require.NotNil(t, spec)
+	assert.Equal(t, "override:image", spec.BuildImage)
+	assert.Equal(t, "echo override setup", spec.SetupScript)
+	assert.Equal(t, "echo override pre", spec.PreBuildScript)
+	assert.Equal(t, "echo override post", spec.PostBuildScript)
+	assert.Equal(t, "/override/agent", spec.ArtifactPath)
+	assert.Contains(t, spec.Env, "IMIX_UNIQUE={\"override\":true}")
+	assert.Contains(t, strings.Join(spec.Env, "\n"), "https://override.example")
+	assert.Contains(t, strings.Join(spec.Env, "\n"), "override-extra")
+	require.Len(t, spec.Tomes, 1)
+	assert.Equal(t, "override-tome", spec.Tomes[0].Name)
+	assert.Equal(t, "{\"mode\":\"override\"}", spec.Tomes[0].Params)
+
+	// Download overridden tome from the task's frozen bundle.
+	stream, err := rpc.DownloadTome(ctx, &builderpb.DownloadTomeRequest{TaskId: int64(taskID), TomeId: int64(overrideTome.ID)})
+	require.NoError(t, err)
+	chunk, err := stream.Recv()
+	require.NoError(t, err)
+	assert.Equal(t, "override-tome", chunk.Name)
+}

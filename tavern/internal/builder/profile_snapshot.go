@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strings"
 	"text/template"
 
 	"realm.pub/tavern/internal/builder/builderpb"
@@ -14,9 +15,23 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
+// ProfileSnapshotOverrides specifies field overrides to apply when capturing a snapshot.
+type ProfileSnapshotOverrides struct {
+	BuildImage      *string
+	Setupscript     *string
+	Prebuildscript  *string
+	BuildScript     *string
+	Postbuildscript *string
+	ArtifactPath    *string
+	Unique          *string
+	Transports      []builderpb.BuildProfileTransport
+	Tomes           []builderpb.BuildProfileTome
+}
+
 // SnapshotProfile captures profile configuration and packages each tome into a
-// tar entry named by its ID. Call inside the task creation transaction.
-func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildProfile) (*builderpb.BuildProfileSnapshot, []byte, error) {
+// tar entry named by its ID. Optional overrides apply to the captured snapshot.
+// Call inside the task creation transaction.
+func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildProfile, overrides ...ProfileSnapshotOverrides) (*builderpb.BuildProfileSnapshot, []byte, error) {
 	snapshot := &builderpb.BuildProfileSnapshot{
 		Name:            profile.Name,
 		BuildImage:      profile.BuildImage,
@@ -29,13 +44,44 @@ func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildP
 		Transports:      slices.Clone(profile.Transports),
 		Tomes:           make([]builderpb.BuildTomeSnapshot, 0, len(profile.Tomes)),
 	}
-	if len(profile.Tomes) == 0 {
+	tomesToPackage := profile.Tomes
+	if len(overrides) > 0 {
+		ov := overrides[0]
+		if ov.BuildImage != nil {
+			snapshot.BuildImage = *ov.BuildImage
+		}
+		if ov.Setupscript != nil {
+			snapshot.Setupscript = *ov.Setupscript
+		}
+		if ov.Prebuildscript != nil {
+			snapshot.Prebuildscript = *ov.Prebuildscript
+		}
+		if ov.BuildScript != nil {
+			snapshot.BuildScript = *ov.BuildScript
+		}
+		if ov.Postbuildscript != nil {
+			snapshot.Postbuildscript = *ov.Postbuildscript
+		}
+		if ov.ArtifactPath != nil {
+			snapshot.ArtifactPath = *ov.ArtifactPath
+		}
+		if ov.Unique != nil {
+			snapshot.Unique = *ov.Unique
+		}
+		if ov.Transports != nil {
+			snapshot.Transports = slices.Clone(ov.Transports)
+		}
+		if ov.Tomes != nil {
+			tomesToPackage = ov.Tomes
+		}
+	}
+	if len(tomesToPackage) == 0 {
 		return snapshot, nil, nil
 	}
 	var buf bytes.Buffer
 	archive := tar.NewWriter(&buf)
 	seen := make(map[int]bool)
-	for _, config := range profile.Tomes {
+	for _, config := range tomesToPackage {
 		if seen[config.TomeID] {
 			return nil, nil, fmt.Errorf("duplicate tome %d in build profile", config.TomeID)
 		}
@@ -44,7 +90,7 @@ func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildP
 		if err != nil {
 			return nil, nil, fmt.Errorf("snapshot tome %d: %w", config.TomeID, err)
 		}
-		data, err := PackageTome(ctx, graph, tome.ID)
+		data, err := PackageTomeEntity(ctx, tome)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -116,7 +162,7 @@ func renderRecipe(name, source string, values map[string]string) (string, error)
 	if err := tmpl.Execute(&buf, values); err != nil {
 		return "", fmt.Errorf("render %s: %w", name, err)
 	}
-	if buf.Len() == 0 {
+	if strings.TrimSpace(buf.String()) == "" {
 		return "", fmt.Errorf("%s must not be empty", name)
 	}
 	return buf.String(), nil

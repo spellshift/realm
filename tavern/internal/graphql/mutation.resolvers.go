@@ -609,19 +609,49 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	}
 
 	// Resolve pre/post build scripts: input > profile > default
-	preBuildScript := input.PreBuildScript
-	if preBuildScript == nil && profile.Prebuildscript != "" {
-		preBuildScript = &profile.Prebuildscript
+	preBuildScript := profile.Prebuildscript
+	if input.PreBuildScript != nil {
+		preBuildScript = *input.PreBuildScript
 	}
-	postBuildScript := input.PostBuildScript
-	if postBuildScript == nil && profile.Postbuildscript != "" {
-		postBuildScript = &profile.Postbuildscript
+	postBuildScript := profile.Postbuildscript
+	if input.PostBuildScript != nil {
+		postBuildScript = *input.PostBuildScript
 	}
 
 	// Resolve setup script: input > profile > default
-	setupScript := input.SetupScript
-	if setupScript == nil && profile.Setupscript != "" {
-		setupScript = &profile.Setupscript
+	setupScript := profile.Setupscript
+	if input.SetupScript != nil {
+		setupScript = *input.SetupScript
+	}
+
+	// Resolve build image: input > profile
+	buildImage := profile.BuildImage
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		buildImage = *input.BuildImage
+	}
+
+	// Resolve unique: input > profile
+	var unique *string
+	if profile.Unique != "" {
+		unique = &profile.Unique
+	}
+	if input.Unique != nil {
+		unique = input.Unique
+	}
+
+	// Resolve tomes: input > profile
+	tomes := profile.Tomes
+	if input.Tomes != nil {
+		tomes = make([]builderpb.BuildProfileTome, 0, len(input.Tomes))
+		for _, t := range input.Tomes {
+			if t == nil {
+				continue
+			}
+			tomes = append(tomes, builderpb.BuildProfileTome{
+				TomeID: t.TomeID,
+				Params: t.Params,
+			})
+		}
 	}
 
 	buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, input.TargetOs, targetFormat)
@@ -632,7 +662,22 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		artifactPath = *input.ArtifactPath
 	}
 
-	snapshot, bundleContent, err := builder.SnapshotProfile(ctx, graph, profile)
+	overrides := builder.ProfileSnapshotOverrides{
+		BuildImage:      &buildImage,
+		Setupscript:     &setupScript,
+		Prebuildscript:  &preBuildScript,
+		Postbuildscript: &postBuildScript,
+		Transports:      transports,
+		Tomes:           tomes,
+	}
+	if input.ArtifactPath != nil {
+		overrides.ArtifactPath = input.ArtifactPath
+	}
+	if unique != nil {
+		overrides.Unique = unique
+	}
+
+	snapshot, bundleContent, err := builder.SnapshotProfile(ctx, graph, profile, overrides)
 	if err != nil {
 		return nil, fmt.Errorf("capture build profile: %w", err)
 	}
@@ -690,13 +735,11 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetBuildScript(buildScript).
 		SetProfile(profile).
 		SetProfileAtCreation(snapshot).
-		SetNillableBundleID(bundleID)
+		SetNillableBundleID(bundleID).
+		SetSetupscript(setupScript)
 
-	if setupScript != nil {
-		create.SetSetupscript(*setupScript)
-	}
-	if input.Unique != nil {
-		create.SetUnique(*input.Unique)
+	if unique != nil {
+		create.SetUnique(*unique)
 	}
 
 	bt, err := create.Save(ctx)
