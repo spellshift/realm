@@ -117,7 +117,7 @@ test.describe('Builder E2E Test', () => {
     }
   });
 
-  test('Builds agent task locally and displays artifact in assets UI', async ({ page, request }) => {
+  test('Builds agent task locally and displays artifact in assets UI', async ({ page, request }, testInfo) => {
     test.setTimeout(120000);
 
     // 1. Create a build profile with mock recipe
@@ -240,15 +240,8 @@ test.describe('Builder E2E Test', () => {
 
     // 6. Screenshot final screen showing uploaded asset in Assets UI
     await page.waitForTimeout(1000);
-    const screenshotPath = path.resolve(repoRoot, 'builder-e2e-asset.png');
+    const screenshotPath = testInfo.outputPath('builder-e2e-asset.png');
     await page.screenshot({ path: screenshotPath, fullPage: true });
     console.log(`Saved screenshot to ${screenshotPath}`);
-
-    const artifactDir = '/persistent/workspaces/.gemini/antigravity-cli/brain/6f140f86-2e97-4f8b-817d-008ea943f1b2';
-    if (fs.existsSync(artifactDir)) {
-      try {
-        fs.copyFileSync(screenshotPath, path.join(artifactDir, 'builder-e2e-asset.png'));
-      } catch (_) {}
-    }
   });
 });
