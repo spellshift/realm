@@ -23,6 +23,7 @@ type Config struct {
 	SupportedTargets []string `yaml:"supported_targets"`
 	MTLS             string   `yaml:"mtls"`
 	Upstream         string   `yaml:"upstream"`
+	Executor         string   `yaml:"executor"`
 }
 
 // ParseConfig reads and parses a builder YAML configuration file.
@@ -36,7 +37,10 @@ func ParseConfig(path string) (*Config, error) {
 
 // ParseConfigBytes parses builder YAML configuration from bytes.
 func ParseConfigBytes(data []byte) (*Config, error) {
-	cfg := Config{PollInterval: DefaultPollInterval}
+	cfg := Config{
+		PollInterval: DefaultPollInterval,
+		Executor:     "docker",
+	}
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
@@ -68,6 +72,15 @@ func (cfg *Config) validate() error {
 	}
 	if cfg.Upstream == "" {
 		return fmt.Errorf("config must specify an upstream server address")
+	}
+	if cfg.Executor == "" {
+		cfg.Executor = "docker"
+	}
+	switch cfg.Executor {
+	case "docker", "local":
+		// valid
+	default:
+		return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cfg.Executor)
 	}
 	return nil
 }
