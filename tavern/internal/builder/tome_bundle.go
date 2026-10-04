@@ -11,20 +11,10 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 )
 
-// PackageTome loads a tome by ID and packages its eldritch script and assets
+// PackageTomeEntity packages an already loaded tome's eldritch script and assets
 // into a tar.gz archive. Asset names are preserved as-is (including directory
 // structure like "example/linux/test-file"). The eldritch script is stored as
 // "main.eldritch" in the archive root.
-func PackageTome(ctx context.Context, graph *ent.Client, tomeID int) ([]byte, error) {
-	t, err := graph.Tome.Get(ctx, tomeID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load tome %d: %w", tomeID, err)
-	}
-	return PackageTomeEntity(ctx, t)
-}
-
-// PackageTomeEntity packages an already loaded tome's eldritch script and assets
-// into a tar.gz archive.
 func PackageTomeEntity(ctx context.Context, t *ent.Tome) ([]byte, error) {
 	assets, err := t.QueryAssets().Order(ent.Asc(asset.FieldID)).All(ctx)
 	if err != nil {
