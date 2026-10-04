@@ -105,6 +105,8 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "transports", Type: field.TypeJSON},
 		{Name: "build_image", Type: field.TypeString, Default: "spellshift/devcontainer:main"},
+		{Name: "build_script", Type: field.TypeString, Size: 2147483647, Default: "{{.BuildCommand}}"},
+		{Name: "artifact_path", Type: field.TypeString, Size: 2147483647, Default: "{{.ArtifactPath}}"},
 		{Name: "prebuildscript", Type: field.TypeString, Default: "echo 'no prebuild set'"},
 		{Name: "setupscript", Type: field.TypeString, Default: "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"},
 		{Name: "postbuildscript", Type: field.TypeString, Default: "echo 'no postbuild set'"},
@@ -122,6 +124,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "profile_at_creation", Type: field.TypeJSON, Nullable: true},
 		{Name: "target_os", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "target_format", Type: field.TypeEnum, Enums: []string{"TARGET_FORMAT_BIN", "TARGET_FORMAT_CDYLIB", "TARGET_FORMAT_UNSPECIFIED", "TARGET_FORMAT_WINDOWS_SERVICE"}},
 		{Name: "build_script", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
@@ -136,6 +139,7 @@ var (
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
 		{Name: "setupscript", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "unique", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "build_task_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "build_task_builder", Type: field.TypeInt},
 		{Name: "build_task_profile", Type: field.TypeInt},
 		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
@@ -147,20 +151,26 @@ var (
 		PrimaryKey: []*schema.Column{BuildTasksColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
+				Symbol:     "build_tasks_assets_bundle",
+				Columns:    []*schema.Column{BuildTasksColumns[18]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[17]},
+				Columns:    []*schema.Column{BuildTasksColumns[19]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_build_profiles_profile",
-				Columns:    []*schema.Column{BuildTasksColumns[18]},
+				Columns:    []*schema.Column{BuildTasksColumns[20]},
 				RefColumns: []*schema.Column{BuildProfilesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
-				Columns:    []*schema.Column{BuildTasksColumns[19]},
+				Columns:    []*schema.Column{BuildTasksColumns[21]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -174,6 +184,7 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "supported_targets", Type: field.TypeJSON},
 		{Name: "upstream", Type: field.TypeString, Default: "http://127.0.0.1:8000"},
+		{Name: "poll_interval", Type: field.TypeInt, Default: 5},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// BuildersTable holds the schema information for the "builders" table.
@@ -1085,9 +1096,10 @@ func init() {
 	BuildProfilesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
-	BuildTasksTable.ForeignKeys[0].RefTable = BuildersTable
-	BuildTasksTable.ForeignKeys[1].RefTable = BuildProfilesTable
-	BuildTasksTable.ForeignKeys[2].RefTable = AssetsTable
+	BuildTasksTable.ForeignKeys[0].RefTable = AssetsTable
+	BuildTasksTable.ForeignKeys[1].RefTable = BuildersTable
+	BuildTasksTable.ForeignKeys[2].RefTable = BuildProfilesTable
+	BuildTasksTable.ForeignKeys[3].RefTable = AssetsTable
 	BuildTasksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

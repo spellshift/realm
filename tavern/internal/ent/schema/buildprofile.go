@@ -35,6 +35,14 @@ func (BuildProfile) Fields() []ent.Field {
 			NotEmpty().
 			Default(builder.DefaultBuildImage).
 			Comment("Docker container image name to use for the build."),
+		field.Text("build_script").
+			Default("{{.BuildCommand}}").
+			NotEmpty().
+			Comment("Go template for the build command. BuildCommand supplies the platform default."),
+		field.Text("artifact_path").
+			Default("{{.ArtifactPath}}").
+			NotEmpty().
+			Comment("Go template for the artifact path. ArtifactPath supplies the platform default."),
 		field.String("prebuildscript").
 			Default("echo 'no prebuild set'").
 			Comment("Bash script to run before build command"),

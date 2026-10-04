@@ -965,6 +965,14 @@ type BuildProfile implements Node {
   """
   buildImage: String!
   """
+  Go template for the build command. BuildCommand supplies the platform default.
+  """
+  buildScript: String!
+  """
+  Go template for the artifact path. ArtifactPath supplies the platform default.
+  """
+  artifactPath: String!
+  """
   Bash script to run before build command
   """
   prebuildscript: String!
@@ -1106,6 +1114,38 @@ input BuildProfileWhereInput {
   buildImageEqualFold: String
   buildImageContainsFold: String
   """
+  build_script field predicates
+  """
+  buildScript: String
+  buildScriptNEQ: String
+  buildScriptIn: [String!]
+  buildScriptNotIn: [String!]
+  buildScriptGT: String
+  buildScriptGTE: String
+  buildScriptLT: String
+  buildScriptLTE: String
+  buildScriptContains: String
+  buildScriptHasPrefix: String
+  buildScriptHasSuffix: String
+  buildScriptEqualFold: String
+  buildScriptContainsFold: String
+  """
+  artifact_path field predicates
+  """
+  artifactPath: String
+  artifactPathNEQ: String
+  artifactPathIn: [String!]
+  artifactPathNotIn: [String!]
+  artifactPathGT: String
+  artifactPathGTE: String
+  artifactPathLT: String
+  artifactPathLTE: String
+  artifactPathContains: String
+  artifactPathHasPrefix: String
+  artifactPathHasSuffix: String
+  artifactPathEqualFold: String
+  artifactPathContainsFold: String
+  """
   prebuildscript field predicates
   """
   prebuildscript: String
@@ -1188,6 +1228,10 @@ type BuildTask implements Node {
   """
   lastModifiedAt: Time!
   """
+  Immutable build profile captured at task creation. Null for legacy tasks whose original inputs are unknown.
+  """
+  profileAtCreation: BuildProfileSnapshot
+  """
   The target operating system platform for this build.
   """
   targetOs: HostPlatform!
@@ -1243,6 +1287,10 @@ type BuildTask implements Node {
   JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
   """
   unique: String
+  """
+  Frozen tome archives captured at task creation.
+  """
+  bundle: Asset
   """
   The builder assigned to execute this build task.
   """
@@ -1558,6 +1606,11 @@ input BuildTaskWhereInput {
   uniqueEqualFold: String
   uniqueContainsFold: String
   """
+  bundle edge predicates
+  """
+  hasBundle: Boolean
+  hasBundleWith: [AssetWhereInput!]
+  """
   builder edge predicates
   """
   hasBuilder: Boolean
@@ -1595,6 +1648,10 @@ type Builder implements Node {
   The server address that the builder should connect to.
   """
   upstream: String!
+  """
+  Builder task polling interval in seconds.
+  """
+  pollInterval: Int!
   """
   Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
   """
@@ -1756,6 +1813,17 @@ input BuilderWhereInput {
   upstreamEqualFold: String
   upstreamContainsFold: String
   """
+  poll_interval field predicates
+  """
+  pollInterval: Int
+  pollIntervalNEQ: Int
+  pollIntervalIn: [Int!]
+  pollIntervalNotIn: [Int!]
+  pollIntervalGT: Int
+  pollIntervalGTE: Int
+  pollIntervalLT: Int
+  pollIntervalLTE: Int
+  """
   last_seen_at field predicates
   """
   lastSeenAt: Time
@@ -1808,6 +1876,10 @@ input CreateBuilderInput {
   The server address that the builder should connect to.
   """
   upstream: String
+  """
+  Builder task polling interval in seconds.
+  """
+  pollInterval: Int
 }
 """
 CreateDeviceAuthInput is used for create DeviceAuth object.

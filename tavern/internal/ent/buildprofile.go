@@ -26,6 +26,10 @@ type BuildProfile struct {
 	Transports []builderpb.BuildProfileTransport `json:"transports,omitempty"`
 	// Docker container image name to use for the build.
 	BuildImage string `json:"build_image,omitempty"`
+	// Go template for the build command. BuildCommand supplies the platform default.
+	BuildScript string `json:"build_script,omitempty"`
+	// Go template for the artifact path. ArtifactPath supplies the platform default.
+	ArtifactPath string `json:"artifact_path,omitempty"`
 	// Bash script to run before build command
 	Prebuildscript string `json:"prebuildscript,omitempty"`
 	// Bash script to run before prebuild script
@@ -73,7 +77,7 @@ func (*BuildProfile) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case buildprofile.FieldID:
 			values[i] = new(sql.NullInt64)
-		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldBuildImage, buildprofile.FieldPrebuildscript, buildprofile.FieldSetupscript, buildprofile.FieldPostbuildscript, buildprofile.FieldUnique:
+		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldBuildImage, buildprofile.FieldBuildScript, buildprofile.FieldArtifactPath, buildprofile.FieldPrebuildscript, buildprofile.FieldSetupscript, buildprofile.FieldPostbuildscript, buildprofile.FieldUnique:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -121,6 +125,18 @@ func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field build_image", values[i])
 			} else if value.Valid {
 				bp.BuildImage = value.String
+			}
+		case buildprofile.FieldBuildScript:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field build_script", values[i])
+			} else if value.Valid {
+				bp.BuildScript = value.String
+			}
+		case buildprofile.FieldArtifactPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field artifact_path", values[i])
+			} else if value.Valid {
+				bp.ArtifactPath = value.String
 			}
 		case buildprofile.FieldPrebuildscript:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -206,6 +222,12 @@ func (bp *BuildProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("build_image=")
 	builder.WriteString(bp.BuildImage)
+	builder.WriteString(", ")
+	builder.WriteString("build_script=")
+	builder.WriteString(bp.BuildScript)
+	builder.WriteString(", ")
+	builder.WriteString("artifact_path=")
+	builder.WriteString(bp.ArtifactPath)
 	builder.WriteString(", ")
 	builder.WriteString("prebuildscript=")
 	builder.WriteString(bp.Prebuildscript)

@@ -63,6 +63,7 @@ upstream: <tavern server address>
 | Field | Description |
 |-------|-------------|
 | `id` | Unique identifier for this builder, assigned during registration. Embedded in the mTLS certificate CN as `builder-{id}`. |
+| `poll_interval` | Task polling interval in seconds (1–86400); defaults to 5. Set during registration using `pollInterval` so the server and generated config agree. Builder freshness allows three polling intervals, independently of agent transports. |
 | `supported_targets` | List of platforms this builder can compile agents for. Valid values: `linux`, `macos`, `windows`. |
 | `mtls` | PEM bundle containing the CA-signed mTLS certificate and private key for authenticating with Tavern. |
 | `upstream` | The Tavern server address to connect to. |
@@ -109,9 +110,38 @@ Build tasks reference a `BuildProfile` which centralizes the configuration for t
 - **Scripts**: Optional `prebuildscript` and `postbuildscript` that execute as Bash scripts before and after the `cargo build` command.
 - **Tomes**: Bundled Eldritch scripts. During execution, tomes are mounted to `/mnt/tomes/` and copied into the agent's `install_scripts/` directory before building.
 
+### Saved build inputs
+
+A task retains its required profile relationship for provenance and captures an
+immutable, typed `profile_at_creation` JSON object. GraphQL exposes it as
+`profileAtCreation`, including nested transport settings and tome names/parameters.
+Updating a profile affects new tasks only. Claiming tasks, authorizing tome
+downloads, and naming output artifacts use the saved profile.
+
+Profiles own `build_script` and `artifact_path` templates. Their defaults are
+`{{.BuildCommand}}` and `{{.ArtifactPath}}`; the renderer also exposes
+`TargetOS`, `TargetFormat` (enum names), and `TargetTriple`. The resolved command
+and output path are stored on the task at creation. Unknown template variables
+and empty rendered recipes are rejected.
+
+Task creation packages each selected tome's script and assets into a tar.gz
+archive. A task's `bundle` Asset contains these archives in a tar file named by
+tome ID (`<id>.tar.gz`). The snapshot, bundle, and task are saved in one
+transaction. Source tome or asset edits/deletions do not alter saved build inputs.
+The bundle and final `artifact` are separate relationships.
+
+Existing tasks without a snapshot remain queryable with a null
+`profileAtCreation`. Builders skip them; recreate them explicitly to build with
+the current profile. Historical configuration is not inferred or backfilled.
+This preserves the recipe and embedded contents, but mutable external references
+such as image tags and Git branches should be pinned when reproducible binaries
+are required.
+
+Artifact uploads create the output Asset and attach it to the task atomically.
+
 ## Build Task Defaults
 
-The `createBuildTask` mutation requires only `targetOS`. All other fields have sensible
+The `createBuildTask` mutation requires `targetOS` and `profileID`. All other fields have sensible
 defaults resolved server-side:
 
 | Field | Default | Notes |

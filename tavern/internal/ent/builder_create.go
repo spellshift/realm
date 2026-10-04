@@ -86,6 +86,20 @@ func (bc *BuilderCreate) SetNillableUpstream(s *string) *BuilderCreate {
 	return bc
 }
 
+// SetPollInterval sets the "poll_interval" field.
+func (bc *BuilderCreate) SetPollInterval(i int) *BuilderCreate {
+	bc.mutation.SetPollInterval(i)
+	return bc
+}
+
+// SetNillablePollInterval sets the "poll_interval" field if the given value is not nil.
+func (bc *BuilderCreate) SetNillablePollInterval(i *int) *BuilderCreate {
+	if i != nil {
+		bc.SetPollInterval(*i)
+	}
+	return bc
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (bc *BuilderCreate) SetLastSeenAt(t time.Time) *BuilderCreate {
 	bc.mutation.SetLastSeenAt(t)
@@ -166,6 +180,10 @@ func (bc *BuilderCreate) defaults() {
 		v := builder.DefaultUpstream
 		bc.mutation.SetUpstream(v)
 	}
+	if _, ok := bc.mutation.PollInterval(); !ok {
+		v := builder.DefaultPollInterval
+		bc.mutation.SetPollInterval(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -189,6 +207,14 @@ func (bc *BuilderCreate) check() error {
 	}
 	if _, ok := bc.mutation.Upstream(); !ok {
 		return &ValidationError{Name: "upstream", err: errors.New(`ent: missing required field "Builder.upstream"`)}
+	}
+	if _, ok := bc.mutation.PollInterval(); !ok {
+		return &ValidationError{Name: "poll_interval", err: errors.New(`ent: missing required field "Builder.poll_interval"`)}
+	}
+	if v, ok := bc.mutation.PollInterval(); ok {
+		if err := builder.PollIntervalValidator(v); err != nil {
+			return &ValidationError{Name: "poll_interval", err: fmt.Errorf(`ent: validator failed for field "Builder.poll_interval": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -236,6 +262,10 @@ func (bc *BuilderCreate) createSpec() (*Builder, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.Upstream(); ok {
 		_spec.SetField(builder.FieldUpstream, field.TypeString, value)
 		_node.Upstream = value
+	}
+	if value, ok := bc.mutation.PollInterval(); ok {
+		_spec.SetField(builder.FieldPollInterval, field.TypeInt, value)
+		_node.PollInterval = value
 	}
 	if value, ok := bc.mutation.LastSeenAt(); ok {
 		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
@@ -345,6 +375,24 @@ func (u *BuilderUpsert) UpdateUpstream() *BuilderUpsert {
 	return u
 }
 
+// SetPollInterval sets the "poll_interval" field.
+func (u *BuilderUpsert) SetPollInterval(v int) *BuilderUpsert {
+	u.Set(builder.FieldPollInterval, v)
+	return u
+}
+
+// UpdatePollInterval sets the "poll_interval" field to the value that was provided on create.
+func (u *BuilderUpsert) UpdatePollInterval() *BuilderUpsert {
+	u.SetExcluded(builder.FieldPollInterval)
+	return u
+}
+
+// AddPollInterval adds v to the "poll_interval" field.
+func (u *BuilderUpsert) AddPollInterval(v int) *BuilderUpsert {
+	u.Add(builder.FieldPollInterval, v)
+	return u
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (u *BuilderUpsert) SetLastSeenAt(v time.Time) *BuilderUpsert {
 	u.Set(builder.FieldLastSeenAt, v)
@@ -450,6 +498,27 @@ func (u *BuilderUpsertOne) SetUpstream(v string) *BuilderUpsertOne {
 func (u *BuilderUpsertOne) UpdateUpstream() *BuilderUpsertOne {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdateUpstream()
+	})
+}
+
+// SetPollInterval sets the "poll_interval" field.
+func (u *BuilderUpsertOne) SetPollInterval(v int) *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetPollInterval(v)
+	})
+}
+
+// AddPollInterval adds v to the "poll_interval" field.
+func (u *BuilderUpsertOne) AddPollInterval(v int) *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.AddPollInterval(v)
+	})
+}
+
+// UpdatePollInterval sets the "poll_interval" field to the value that was provided on create.
+func (u *BuilderUpsertOne) UpdatePollInterval() *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdatePollInterval()
 	})
 }
 
@@ -727,6 +796,27 @@ func (u *BuilderUpsertBulk) SetUpstream(v string) *BuilderUpsertBulk {
 func (u *BuilderUpsertBulk) UpdateUpstream() *BuilderUpsertBulk {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdateUpstream()
+	})
+}
+
+// SetPollInterval sets the "poll_interval" field.
+func (u *BuilderUpsertBulk) SetPollInterval(v int) *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetPollInterval(v)
+	})
+}
+
+// AddPollInterval adds v to the "poll_interval" field.
+func (u *BuilderUpsertBulk) AddPollInterval(v int) *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.AddPollInterval(v)
+	})
+}
+
+// UpdatePollInterval sets the "poll_interval" field to the value that was provided on create.
+func (u *BuilderUpsertBulk) UpdatePollInterval() *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdatePollInterval()
 	})
 }
 

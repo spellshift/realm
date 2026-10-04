@@ -24,6 +24,8 @@ const (
 	FieldSupportedTargets = "supported_targets"
 	// FieldUpstream holds the string denoting the upstream field in the database.
 	FieldUpstream = "upstream"
+	// FieldPollInterval holds the string denoting the poll_interval field in the database.
+	FieldPollInterval = "poll_interval"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
 	// EdgeBuildtasks holds the string denoting the buildtasks edge name in mutations.
@@ -47,6 +49,7 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldSupportedTargets,
 	FieldUpstream,
+	FieldPollInterval,
 	FieldLastSeenAt,
 }
 
@@ -73,6 +76,10 @@ var (
 	IdentifierValidator func(string) error
 	// DefaultUpstream holds the default value on creation for the "upstream" field.
 	DefaultUpstream string
+	// DefaultPollInterval holds the default value on creation for the "poll_interval" field.
+	DefaultPollInterval int
+	// PollIntervalValidator is a validator for the "poll_interval" field. It is called by the builders before save.
+	PollIntervalValidator func(int) error
 )
 
 // OrderOption defines the ordering options for the Builder queries.
@@ -101,6 +108,11 @@ func ByIdentifier(opts ...sql.OrderTermOption) OrderOption {
 // ByUpstream orders the results by the upstream field.
 func ByUpstream(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpstream, opts...).ToFunc()
+}
+
+// ByPollInterval orders the results by the poll_interval field.
+func ByPollInterval(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPollInterval, opts...).ToFunc()
 }
 
 // ByLastSeenAt orders the results by the last_seen_at field.

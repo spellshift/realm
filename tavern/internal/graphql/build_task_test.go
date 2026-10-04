@@ -94,6 +94,27 @@ func TestCreateBuildTask(t *testing.T) {
 		assert.Contains(t, err.Error(), "no builder available")
 	})
 
+	t.Run("BuilderPollingIntervalControlsFreshness", func(t *testing.T) {
+		graph.BuildTask.Delete().ExecX(ctx)
+		graph.Builder.Delete().ExecX(ctx)
+		worker := graph.Builder.Create().
+			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
+			SetPollInterval(30).
+			SetLastSeenAt(time.Now().Add(-60 * time.Second)).
+			SaveX(ctx)
+		var resp struct{ CreateBuildTask struct{ ID string } }
+		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
+			"targetOS": "PLATFORM_LINUX", "profileID": defaultProfileID,
+		}))
+		require.NoError(t, err)
+		require.NotEmpty(t, resp.CreateBuildTask.ID)
+		graph.Builder.UpdateOne(worker).SetPollInterval(5).SaveX(ctx)
+		err = gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
+			"targetOS": "PLATFORM_LINUX", "profileID": defaultProfileID,
+		}))
+		require.ErrorContains(t, err, "no builder available")
+	})
+
 	t.Run("SingleMatchingBuilder", func(t *testing.T) {
 		// Clean up previous builders
 		graph.BuildTask.Delete().ExecX(ctx)

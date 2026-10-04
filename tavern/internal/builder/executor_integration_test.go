@@ -83,6 +83,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -231,6 +232,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -385,6 +387,7 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -519,6 +522,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -650,6 +654,7 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build -o /app/output/binary ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetArtifactPath("/app/output/binary").
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)

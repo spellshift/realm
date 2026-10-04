@@ -37,6 +37,11 @@ func (Builder) Fields() []ent.Field {
 		field.String("upstream").
 			Default("http://127.0.0.1:8000").
 			Comment("The server address that the builder should connect to."),
+		field.Int("poll_interval").
+			Default(5).
+			Min(1).
+			Max(86400).
+			Comment("Builder task polling interval in seconds."),
 		field.Time("last_seen_at").
 			Optional().
 			Nillable().

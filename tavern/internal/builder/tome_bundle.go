@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 )
 
 // PackageTome loads a tome by ID and packages its eldritch script and assets
@@ -20,7 +21,7 @@ func PackageTome(ctx context.Context, graph *ent.Client, tomeID int) ([]byte, er
 		return nil, fmt.Errorf("failed to load tome %d: %w", tomeID, err)
 	}
 
-	assets, err := t.QueryAssets().All(ctx)
+	assets, err := t.QueryAssets().Order(ent.Asc(asset.FieldID)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query assets for tome %d: %w", tomeID, err)
 	}
