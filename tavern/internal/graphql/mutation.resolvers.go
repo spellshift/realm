@@ -744,11 +744,15 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		bundleID = &bundle.ID
 	}
 
-	// 5. Query builders that have checked in; freshness uses each builder's own interval.
+	// 5. Query builders that have checked in; freshness uses each builder's own interval,
+	// so the precise check happens below in application code. Still bound the query at
+	// the DB layer using the longest possible staleness window (3x the max poll interval)
+	// to avoid pulling every builder that has ever checked in, including long-dead ones.
 	now := time.Now()
 	healthyBuilders, err := graph.Builder.Query().
 		Where(
 			entbuilder.LastSeenAtNotNil(),
+			entbuilder.LastSeenAtGTE(now.Add(-builder.MaxStaleAge)),
 		).
 		All(ctx)
 	if err != nil {
