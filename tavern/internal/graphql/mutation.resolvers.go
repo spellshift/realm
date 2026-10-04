@@ -662,16 +662,19 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		artifactPath = *input.ArtifactPath
 	}
 
+	// BuildScript and ArtifactPath are set to the already-resolved (templated
+	// and input-overridden) values so profileAtCreation.buildScript/artifactPath
+	// match what's actually stored on the task and executed by the builder,
+	// rather than the raw profile template.
 	overrides := builder.ProfileSnapshotOverrides{
 		BuildImage:      &buildImage,
 		Setupscript:     &setupScript,
 		Prebuildscript:  &preBuildScript,
+		BuildScript:     &buildScript,
 		Postbuildscript: &postBuildScript,
+		ArtifactPath:    &artifactPath,
 		Transports:      transports,
 		Tomes:           tomes,
-	}
-	if input.ArtifactPath != nil {
-		overrides.ArtifactPath = input.ArtifactPath
 	}
 	if unique != nil {
 		overrides.Unique = unique

@@ -29,9 +29,9 @@ type ProfileSnapshotOverrides struct {
 }
 
 // SnapshotProfile captures profile configuration and packages each tome into a
-// tar entry named by its ID. Optional overrides apply to the captured snapshot.
-// Call inside the task creation transaction.
-func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildProfile, overrides ...ProfileSnapshotOverrides) (*builderpb.BuildProfileSnapshot, []byte, error) {
+// tar entry named by its ID. The zero value of ProfileSnapshotOverrides applies
+// no overrides. Call inside the task creation transaction.
+func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildProfile, overrides ProfileSnapshotOverrides) (*builderpb.BuildProfileSnapshot, []byte, error) {
 	snapshot := &builderpb.BuildProfileSnapshot{
 		Name:            profile.Name,
 		BuildImage:      profile.BuildImage,
@@ -45,35 +45,32 @@ func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildP
 		Tomes:           make([]builderpb.BuildTomeSnapshot, 0, len(profile.Tomes)),
 	}
 	tomesToPackage := profile.Tomes
-	if len(overrides) > 0 {
-		ov := overrides[0]
-		if ov.BuildImage != nil {
-			snapshot.BuildImage = *ov.BuildImage
-		}
-		if ov.Setupscript != nil {
-			snapshot.Setupscript = *ov.Setupscript
-		}
-		if ov.Prebuildscript != nil {
-			snapshot.Prebuildscript = *ov.Prebuildscript
-		}
-		if ov.BuildScript != nil {
-			snapshot.BuildScript = *ov.BuildScript
-		}
-		if ov.Postbuildscript != nil {
-			snapshot.Postbuildscript = *ov.Postbuildscript
-		}
-		if ov.ArtifactPath != nil {
-			snapshot.ArtifactPath = *ov.ArtifactPath
-		}
-		if ov.Unique != nil {
-			snapshot.Unique = *ov.Unique
-		}
-		if ov.Transports != nil {
-			snapshot.Transports = slices.Clone(ov.Transports)
-		}
-		if ov.Tomes != nil {
-			tomesToPackage = ov.Tomes
-		}
+	if overrides.BuildImage != nil {
+		snapshot.BuildImage = *overrides.BuildImage
+	}
+	if overrides.Setupscript != nil {
+		snapshot.Setupscript = *overrides.Setupscript
+	}
+	if overrides.Prebuildscript != nil {
+		snapshot.Prebuildscript = *overrides.Prebuildscript
+	}
+	if overrides.BuildScript != nil {
+		snapshot.BuildScript = *overrides.BuildScript
+	}
+	if overrides.Postbuildscript != nil {
+		snapshot.Postbuildscript = *overrides.Postbuildscript
+	}
+	if overrides.ArtifactPath != nil {
+		snapshot.ArtifactPath = *overrides.ArtifactPath
+	}
+	if overrides.Unique != nil {
+		snapshot.Unique = *overrides.Unique
+	}
+	if overrides.Transports != nil {
+		snapshot.Transports = slices.Clone(overrides.Transports)
+	}
+	if overrides.Tomes != nil {
+		tomesToPackage = overrides.Tomes
 	}
 	if len(tomesToPackage) == 0 {
 		return snapshot, nil, nil
