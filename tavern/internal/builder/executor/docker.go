@@ -175,9 +175,14 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 
 	data, name, extractErr := d.extractArtifact(ctx, containerID, spec.ArtifactPath)
 	if extractErr != nil {
+		// Build already reported ExpectedExitCode, so without a distinct
+		// error the task would otherwise show as a successful build with no
+		// artifact. Surface it through the existing build-error stream
+		// (client.go sets StreamBuildTaskOutputRequest.Error from this
+		// return value) so it's indistinguishable from any other failure.
 		slog.WarnContext(ctx, "artifact extraction failed",
 			"task_id", spec.TaskID, "path", spec.ArtifactPath, "error", extractErr)
-		return &buildResult, nil
+		return &buildResult, fmt.Errorf("artifact extraction failed: %w", extractErr)
 	}
 
 	buildResult.Artifact = data
