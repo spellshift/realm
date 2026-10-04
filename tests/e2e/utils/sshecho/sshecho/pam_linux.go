@@ -1,4 +1,9 @@
-//go:build linux
+//go:build linux && pam
+
+// This file uses the cgo-based github.com/msteinert/pam/v2 package, which
+// requires libpam0g-dev (security/pam_appl.h) to be installed. It is only
+// compiled when the "pam" build tag is set (e.g. `go build -tags pam`), so
+// that default builds and tests do not depend on PAM headers being present.
 
 package sshecho
 
