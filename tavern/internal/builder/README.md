@@ -43,8 +43,8 @@ The builder package orchestrates agent compilation for target platforms. It conn
 - **gRPC API**: Builders communicate with Tavern over gRPC at the `/builder.Builder/` route. Supports `ClaimBuildTasks` (poll for unclaimed tasks), `StreamBuildTaskOutput` (stream build output and exit code incrementally), and `UploadBuildArtifact` (upload compiled binaries).
 - **Builder Management**: Builders are queryable via the `builders` GraphQL query (paginated, filterable, orderable by `LAST_SEEN_AT`) and removable via `deleteBuilder`. Deleting a builder cascade-deletes its build tasks. The `last_seen_at` field is updated on each `ClaimBuildTasks` call.
 - **Build Profiles**: Tasks use a `BuildProfile` to define agent configuration, including prioritized transports, pre/post build scripts, and bundled tomes.
-- **Executor**: Build tasks are executed via the `executor.Executor` interface. The `DockerExecutor` runs builds inside Docker containers; the `MockExecutor` is used in tests.
-- **CLI**: Run a builder using the `builder` subcommand with a `--config` flag pointing to a YAML configuration file.
+- **Executor**: Build tasks are executed via the `executor.Executor` interface. The `DockerExecutor` runs builds inside Docker containers; `LocalExecutor` runs them directly on the host for fast, containerless testing (Linux only — see "Local Executor" below); the `MockExecutor` is used in unit tests.
+- **CLI**: Run a builder using the `builder` subcommand with a `--config` flag and an optional `--executor [docker|local]` flag (defaults to the config file's `executor` setting).
 
 ## Configuration
 
@@ -164,6 +164,39 @@ at `GET /assets/download/{name}`.
 
 
 
+## Local Executor
+
+`LocalExecutor` (`--executor local`) runs build scripts directly on the builder host
+instead of inside a Docker container. It exists to make the builder fast to test
+(e.g. the e2e suite) without requiring a Docker daemon; it is **not** a sandboxed
+or production-equivalent alternative to `DockerExecutor` and is only supported on
+Linux (`Build` returns an error on any other `GOOS`).
+
+Key differences from `DockerExecutor`:
+
+- **Unsandboxed**: the build script runs as the builder process itself, with the
+  full host filesystem and the builder's inherited environment (`os.Environ()`)
+  available to it — not a container's isolated root. Scripts should not be trusted
+  any more than the builder process itself is.
+- **Workspace paths**: both executors write scripts to `<workspace>/scripts/` and
+  tomes to `<workspace>/tomes/` before running them in order, and both expose
+  `REALM_WORKSPACE_DIR` / `REALM_TOMES_DIR` env vars pointing at those paths.
+  `LocalExecutor`'s workspace is a host temp dir (`/tmp/realm-build-*`);
+  `DockerExecutor`'s workspace is mounted into the container at `/mnt`. A recipe
+  that hardcodes `/mnt/tomes/...` instead of using `$REALM_TOMES_DIR` will work
+  under Docker but not under the local executor.
+- **Artifact extraction**: `DockerExecutor` resolves `artifactPath` inside the
+  container's filesystem. `LocalExecutor` resolves it against the host: a
+  relative path is confined to the workspace dir, but an absolute path is read
+  directly from the host if it exists. Since `createBuildTask`/`createBuildProfile`
+  are ADMIN-only, this is a trust boundary rather than an open vulnerability, but
+  it means an absolute `artifactPath` can read any file visible to the builder
+  process. Default artifact paths derived by `DeriveArtifactPath` assume a
+  container filesystem layout (e.g.
+  `/home/vscode/realm/implants/target/<triple>/release/imix`) and typically won't
+  exist on a host, so local-mode recipes should override `artifactPath` with a
+  workspace-relative path.
+
 ## Package Structure
 
 | File | Purpose |
@@ -177,6 +210,7 @@ at `GET /assets/download/{name}`.
 | `rollback.go` | Transaction rollback helper (matches c2 pattern) |
 | `executor/executor.go` | `Executor` interface, `BuildSpec`, and `BuildResult` definitions |
 | `executor/docker.go` | `DockerExecutor`: runs builds in Docker containers |
+| `executor/local.go` | `LocalExecutor`: runs builds directly on the host (Linux-only, testing) |
 | `executor/mock.go` | `MockExecutor`: test double for unit tests |
 | `proto/builder.proto` | Protobuf service definition |
 | `builderpb/` | Generated protobuf Go code |

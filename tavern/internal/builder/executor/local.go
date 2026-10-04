@@ -9,12 +9,21 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 )
 
 // LocalExecutor executes build tasks on the local host shell inside a
 // temporary scratch workspace.
+//
+// LocalExecutor is intended for fast, containerless testing only (e.g. the
+// builder e2e test suite). Unlike DockerExecutor, builds run unsandboxed as
+// the builder process: the build script sees the full host filesystem and
+// inherits the builder's environment. It is only supported on Linux, where
+// the e2e tests exercise it with `/bin/sh`; it is not a portable substitute
+// for DockerExecutor on other build hosts. See the "Local Executor" section
+// of the package README for details.
 type LocalExecutor struct{}
 
 // NewLocalExecutor creates a new LocalExecutor.
@@ -29,6 +38,14 @@ func NewLocalExecutor() *LocalExecutor {
 func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) (*BuildResult, error) {
 	defer close(outputCh)
 	defer close(errorCh)
+
+	// LocalExecutor shells out via `/bin/sh`, which is only guaranteed to
+	// exist on Linux build hosts. It is for testing only (see type doc), so
+	// rather than attempt to emulate a POSIX shell on Windows/macOS, fail
+	// fast with a clear error instead of silently misbehaving.
+	if runtime.GOOS != "linux" {
+		return nil, fmt.Errorf("local executor is only supported on linux (for testing), got GOOS=%q", runtime.GOOS)
+	}
 
 	// Prepare local scratch directory with /scripts and /tomes.
 	tmpDir, err := prepareMountDir(spec)
