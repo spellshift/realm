@@ -20,10 +20,15 @@ func PackageTome(ctx context.Context, graph *ent.Client, tomeID int) ([]byte, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to load tome %d: %w", tomeID, err)
 	}
+	return PackageTomeEntity(ctx, t)
+}
 
+// PackageTomeEntity packages an already loaded tome's eldritch script and assets
+// into a tar.gz archive.
+func PackageTomeEntity(ctx context.Context, t *ent.Tome) ([]byte, error) {
 	assets, err := t.QueryAssets().Order(ent.Asc(asset.FieldID)).All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query assets for tome %d: %w", tomeID, err)
+		return nil, fmt.Errorf("failed to query assets for tome %d: %w", t.ID, err)
 	}
 
 	buf := &bytes.Buffer{}
@@ -38,10 +43,10 @@ func PackageTome(ctx context.Context, graph *ent.Client, tomeID int) ([]byte, er
 			Size: int64(len(t.Eldritch)),
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
-			return nil, fmt.Errorf("failed to write eldritch header for tome %d: %w", tomeID, err)
+			return nil, fmt.Errorf("failed to write eldritch header for tome %d: %w", t.ID, err)
 		}
 		if _, err := tw.Write([]byte(t.Eldritch)); err != nil {
-			return nil, fmt.Errorf("failed to write eldritch content for tome %d: %w", tomeID, err)
+			return nil, fmt.Errorf("failed to write eldritch content for tome %d: %w", t.ID, err)
 		}
 	}
 
@@ -53,18 +58,18 @@ func PackageTome(ctx context.Context, graph *ent.Client, tomeID int) ([]byte, er
 			Size: int64(len(a.Content)),
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
-			return nil, fmt.Errorf("failed to write asset header %q for tome %d: %w", a.Name, tomeID, err)
+			return nil, fmt.Errorf("failed to write asset header %q for tome %d: %w", a.Name, t.ID, err)
 		}
 		if _, err := tw.Write(a.Content); err != nil {
-			return nil, fmt.Errorf("failed to write asset content %q for tome %d: %w", a.Name, tomeID, err)
+			return nil, fmt.Errorf("failed to write asset content %q for tome %d: %w", a.Name, t.ID, err)
 		}
 	}
 
 	if err := tw.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close tar writer for tome %d: %w", tomeID, err)
+		return nil, fmt.Errorf("failed to close tar writer for tome %d: %w", t.ID, err)
 	}
 	if err := gw.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close gzip writer for tome %d: %w", tomeID, err)
+		return nil, fmt.Errorf("failed to close gzip writer for tome %d: %w", t.ID, err)
 	}
 
 	return buf.Bytes(), nil

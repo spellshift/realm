@@ -73,6 +73,12 @@ type CreateBuildProfileInput struct {
 	Description string `json:"description"`
 	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
 	Transports []*BuildProfileTransportInput `json:"transports,omitempty"`
+	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
+	BuildImage *string `json:"buildImage,omitempty"`
+	// Go template for the build command. Defaults to {{.BuildCommand}}.
+	BuildScript *string `json:"buildScript,omitempty"`
+	// Go template for the artifact path. Defaults to {{.ArtifactPath}}.
+	ArtifactPath *string `json:"artifactPath,omitempty"`
 	// Bash script to run before the build command.
 	Prebuildscript string `json:"prebuildscript"`
 	// Bash script to run before the prebuild script.

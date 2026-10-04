@@ -237,7 +237,9 @@ func TestBuilderE2E(t *testing.T) {
 		)
 		require.NoError(t, err)
 		defer conn.Close()
+		testProfileTemplateValidation(t, graph)
 		testProfileSnapshotLifecycle(t, graph, gqlClient, builderpb.NewBuilderClient(conn), builders[0].ID)
+		testTaskOverridesApplyToSnapshot(t, graph, gqlClient, builderpb.NewBuilderClient(conn), builders[0].ID)
 	})
 
 	// 11. Test: StreamBuildTaskOutput sets output and finished_at

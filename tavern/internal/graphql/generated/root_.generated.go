@@ -13802,6 +13802,15 @@ input CreateBuildProfileInput {
   """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
   transports: [BuildProfileTransportInput!]
 
+  """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
+  buildImage: String
+
+  """Go template for the build command. Defaults to {{.BuildCommand}}."""
+  buildScript: String
+
+  """Go template for the artifact path. Defaults to {{.ArtifactPath}}."""
+  artifactPath: String
+
   """Bash script to run before the build command."""
   prebuildscript: String!
 
