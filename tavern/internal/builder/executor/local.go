@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -96,18 +95,12 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 
 	go func() {
 		defer wg.Done()
-		scanner := bufio.NewScanner(stdoutPipe)
-		for scanner.Scan() {
-			outputCh <- scanner.Text()
-		}
+		streamBuildLines(ctx, stdoutPipe, outputCh)
 	}()
 
 	go func() {
 		defer wg.Done()
-		scanner := bufio.NewScanner(stderrPipe)
-		for scanner.Scan() {
-			errorCh <- scanner.Text()
-		}
+		streamBuildLines(ctx, stderrPipe, errorCh)
 	}()
 
 	wg.Wait()
