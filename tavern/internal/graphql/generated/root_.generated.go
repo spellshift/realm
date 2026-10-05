@@ -449,6 +449,7 @@ type ComplexityRoot struct {
 		RegisterBuilder             func(childComplexity int, input ent.CreateBuilderInput) int
 		ResetUserAPIKey             func(childComplexity int) int
 		SubscribeToHost             func(childComplexity int, hostID int) int
+		UnclaimTask                 func(childComplexity int, taskID int) int
 		UnfavoriteHost              func(childComplexity int, hostID int) int
 		UnsubscribeFromHost         func(childComplexity int, hostID int) int
 		UpdateBeacon                func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
@@ -2951,6 +2952,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SubscribeToHost(childComplexity, args["hostID"].(int)), true
+
+	case "Mutation.unclaimTask":
+		if e.ComplexityRoot.Mutation.UnclaimTask == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unclaimTask_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UnclaimTask(childComplexity, args["taskID"].(int)), true
 
 	case "Mutation.unfavoriteHost":
 		if e.ComplexityRoot.Mutation.UnfavoriteHost == nil {
@@ -13343,6 +13356,11 @@ scalar Uint64
     # Quest
     ###
     createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!, prevNodeID: ID): Quest @requireRole(role: USER)
+
+    ###
+    # Task
+    ###
+    unclaimTask(taskID: ID!): Task! @requireRole(role: USER)
 
     ###
     # Beacon

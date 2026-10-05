@@ -252,6 +252,11 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 	return quest, nil
 }
 
+// UnclaimTask is the resolver for the unclaimTask field.
+func (r *mutationResolver) UnclaimTask(ctx context.Context, taskID int) (*ent.Task, error) {
+	panic(fmt.Errorf("not implemented: UnclaimTask - unclaimTask"))
+}
+
 // UpdateBeacon is the resolver for the updateBeacon field.
 func (r *mutationResolver) UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error) {
 	return r.client.Beacon.UpdateOneID(beaconID).SetInput(input).Save(ctx)
