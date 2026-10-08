@@ -45,8 +45,8 @@ import (
 	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
-	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/portals/pty"
+	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/scheduler"
 	"realm.pub/tavern/internal/secrets"
@@ -160,6 +160,10 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Name:  "config",
 					Usage: "Path to the builder YAML configuration file",
 				},
+				cli.StringFlag{
+					Name:  "executor",
+					Usage: "Executor to run builds with (docker, local)",
+				},
 			},
 			Action: func(c *cli.Context) error {
 				configPath := c.String("config")
@@ -172,14 +176,33 @@ func newApp(ctx context.Context) (app *cli.App) {
 					return fmt.Errorf("failed to parse builder config: %w", err)
 				}
 
+				if cliExec := c.String("executor"); cliExec != "" {
+					switch cliExec {
+					case "docker", "local":
+						cfg.Executor = cliExec
+					default:
+						return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cliExec)
+					}
+				}
+
 				slog.InfoContext(ctx, "starting builder",
 					"config", configPath,
 					"supported_targets", cfg.SupportedTargets,
+					"executor", cfg.Executor,
 				)
 
-				exec, err := executor.NewDockerExecutorFromEnv(ctx)
-				if err != nil {
-					return fmt.Errorf("failed to create docker executor: %w", err)
+				var exec executor.Executor
+				switch cfg.Executor {
+				case "local":
+					exec = executor.NewLocalExecutor()
+				case "docker":
+					dockerExec, err := executor.NewDockerExecutorFromEnv(ctx)
+					if err != nil {
+						return fmt.Errorf("failed to create docker executor: %w", err)
+					}
+					exec = dockerExec
+				default:
+					return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cfg.Executor)
 				}
 
 				return builder.Run(ctx, cfg, exec)
