@@ -884,7 +884,7 @@ func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "transports", "prebuildscript", "setupscript", "postbuildscript", "tomes", "unique"}
+	fieldsInOrder := [...]string{"name", "description", "transports", "buildImage", "buildScript", "artifactPath", "prebuildscript", "setupscript", "postbuildscript", "tomes", "unique"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -912,6 +912,27 @@ func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Co
 				return it, err
 			}
 			it.Transports = data
+		case "buildImage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildImage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BuildImage = data
+		case "buildScript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildScript"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BuildScript = data
+		case "artifactPath":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artifactPath"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ArtifactPath = data
 		case "prebuildscript":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prebuildscript"))
 			data, err := ec.unmarshalNString2string(ctx, v)

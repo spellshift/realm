@@ -159,13 +159,41 @@ func init() {
 	// buildprofile.DefaultBuildScript holds the default value on creation for the build_script field.
 	buildprofile.DefaultBuildScript = buildprofileDescBuildScript.Default.(string)
 	// buildprofile.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
-	buildprofile.BuildScriptValidator = buildprofileDescBuildScript.Validators[0].(func(string) error)
+	buildprofile.BuildScriptValidator = func() func(string) error {
+		validators := buildprofileDescBuildScript.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(build_script string) error {
+			for _, fn := range fns {
+				if err := fn(build_script); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// buildprofileDescArtifactPath is the schema descriptor for artifact_path field.
 	buildprofileDescArtifactPath := buildprofileFields[5].Descriptor()
 	// buildprofile.DefaultArtifactPath holds the default value on creation for the artifact_path field.
 	buildprofile.DefaultArtifactPath = buildprofileDescArtifactPath.Default.(string)
 	// buildprofile.ArtifactPathValidator is a validator for the "artifact_path" field. It is called by the builders before save.
-	buildprofile.ArtifactPathValidator = buildprofileDescArtifactPath.Validators[0].(func(string) error)
+	buildprofile.ArtifactPathValidator = func() func(string) error {
+		validators := buildprofileDescArtifactPath.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(artifact_path string) error {
+			for _, fn := range fns {
+				if err := fn(artifact_path); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// buildprofileDescPrebuildscript is the schema descriptor for prebuildscript field.
 	buildprofileDescPrebuildscript := buildprofileFields[6].Descriptor()
 	// buildprofile.DefaultPrebuildscript holds the default value on creation for the prebuildscript field.

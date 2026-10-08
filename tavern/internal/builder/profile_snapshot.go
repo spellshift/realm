@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strings"
 	"text/template"
 
 	"realm.pub/tavern/internal/builder/builderpb"
@@ -14,10 +15,12 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
-// SnapshotProfile captures profile configuration and packages each tome into a
-// tar entry named by its ID. Call inside the task creation transaction.
-func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildProfile) (*builderpb.BuildProfileSnapshot, []byte, error) {
-	snapshot := &builderpb.BuildProfileSnapshot{
+// NewProfileSnapshot builds a BuildProfileSnapshot from profile's current field
+// values, with an empty Tomes list. Callers that need to apply task-level
+// overrides should set the relevant fields on the returned snapshot directly
+// (it's a plain struct, not an ent entity) before calling SnapshotProfile.
+func NewProfileSnapshot(profile *ent.BuildProfile) *builderpb.BuildProfileSnapshot {
+	return &builderpb.BuildProfileSnapshot{
 		Name:            profile.Name,
 		BuildImage:      profile.BuildImage,
 		Setupscript:     profile.Setupscript,
@@ -27,39 +30,47 @@ func SnapshotProfile(ctx context.Context, graph *ent.Client, profile *ent.BuildP
 		ArtifactPath:    profile.ArtifactPath,
 		Unique:          profile.Unique,
 		Transports:      slices.Clone(profile.Transports),
-		Tomes:           make([]builderpb.BuildTomeSnapshot, 0, len(profile.Tomes)),
 	}
-	if len(profile.Tomes) == 0 {
-		return snapshot, nil, nil
+}
+
+// SnapshotProfile packages tomes into a tar entry named by its ID, sets
+// snapshot.Tomes to their packaged name/params metadata, and returns the
+// resulting tar.gz bundle. snapshot is populated by the caller beforehand
+// (see NewProfileSnapshot) with whatever field values it should record,
+// task-level overrides included. Call inside the task creation transaction.
+func SnapshotProfile(ctx context.Context, graph *ent.Client, snapshot *builderpb.BuildProfileSnapshot, tomes []builderpb.BuildProfileTome) ([]byte, error) {
+	snapshot.Tomes = make([]builderpb.BuildTomeSnapshot, 0, len(tomes))
+	if len(tomes) == 0 {
+		return nil, nil
 	}
 	var buf bytes.Buffer
 	archive := tar.NewWriter(&buf)
 	seen := make(map[int]bool)
-	for _, config := range profile.Tomes {
+	for _, config := range tomes {
 		if seen[config.TomeID] {
-			return nil, nil, fmt.Errorf("duplicate tome %d in build profile", config.TomeID)
+			return nil, fmt.Errorf("duplicate tome %d in build profile", config.TomeID)
 		}
 		seen[config.TomeID] = true
 		tome, err := graph.Tome.Get(ctx, config.TomeID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("snapshot tome %d: %w", config.TomeID, err)
+			return nil, fmt.Errorf("snapshot tome %d: %w", config.TomeID, err)
 		}
-		data, err := PackageTome(ctx, graph, tome.ID)
+		data, err := PackageTomeEntity(ctx, tome)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if err := archive.WriteHeader(&tar.Header{Name: fmt.Sprintf("%d.tar.gz", tome.ID), Mode: 0600, Size: int64(len(data))}); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if _, err := archive.Write(data); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		snapshot.Tomes = append(snapshot.Tomes, builderpb.BuildTomeSnapshot{TomeID: tome.ID, Name: tome.Name, Params: config.Params})
 	}
 	if err := archive.Close(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return snapshot, buf.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 // FrozenTome returns a packaged tome from a task's saved input bundle.
@@ -116,7 +127,7 @@ func renderRecipe(name, source string, values map[string]string) (string, error)
 	if err := tmpl.Execute(&buf, values); err != nil {
 		return "", fmt.Errorf("render %s: %w", name, err)
 	}
-	if buf.Len() == 0 {
+	if strings.TrimSpace(buf.String()) == "" {
 		return "", fmt.Errorf("%s must not be empty", name)
 	}
 	return buf.String(), nil

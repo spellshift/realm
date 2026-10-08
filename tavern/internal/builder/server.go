@@ -294,6 +294,10 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		taskID       int64
 		artifactName string
 		buf          bytes.Buffer
+		// bt is loaded once below, from the first stream message, to validate
+		// task ownership. It's reused after the loop for target_os/target_format
+		// and the saved profile instead of querying the build task a second time.
+		bt *ent.BuildTask
 	)
 
 	for {
@@ -316,7 +320,8 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 				artifactName = fmt.Sprintf("artifact-%d", taskID)
 			}
 
-			bt, err := s.graph.BuildTask.Get(ctx, int(taskID))
+			var err error
+			bt, err = s.graph.BuildTask.Get(ctx, int(taskID))
 			if err != nil {
 				return status.Errorf(codes.NotFound, "build task %d not found: %v", taskID, err)
 			}
@@ -338,12 +343,6 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 
 	if buf.Len() == 0 {
 		return status.Error(codes.InvalidArgument, "empty artifact")
-	}
-
-	// Load build task to get target_os and target_format for the asset name.
-	bt, err := s.graph.BuildTask.Get(ctx, int(taskID))
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load build task for asset naming: %v", err)
 	}
 
 	profile := bt.ProfileAtCreation

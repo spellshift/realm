@@ -1,7 +1,10 @@
 package schema
 
 import (
+	"errors"
 	"fmt"
+	"strings"
+	"text/template"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
@@ -38,10 +41,24 @@ func (BuildProfile) Fields() []ent.Field {
 		field.Text("build_script").
 			Default("{{.BuildCommand}}").
 			NotEmpty().
+			Validate(func(s string) error {
+				if strings.TrimSpace(s) == "" {
+					return errors.New("build_script must not be empty")
+				}
+				_, err := template.New("build_script").Parse(s)
+				return err
+			}).
 			Comment("Go template for the build command. BuildCommand supplies the platform default."),
 		field.Text("artifact_path").
 			Default("{{.ArtifactPath}}").
 			NotEmpty().
+			Validate(func(s string) error {
+				if strings.TrimSpace(s) == "" {
+					return errors.New("artifact_path must not be empty")
+				}
+				_, err := template.New("artifact_path").Parse(s)
+				return err
+			}).
 			Comment("Go template for the artifact path. ArtifactPath supplies the platform default."),
 		field.String("prebuildscript").
 			Default("echo 'no prebuild set'").
