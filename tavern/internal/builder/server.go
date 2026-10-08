@@ -294,7 +294,10 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		taskID       int64
 		artifactName string
 		buf          bytes.Buffer
-		bt           *ent.BuildTask
+		// bt is loaded once below, from the first stream message, to validate
+		// task ownership. It's reused after the loop for target_os/target_format
+		// and the saved profile instead of querying the build task a second time.
+		bt *ent.BuildTask
 	)
 
 	for {
