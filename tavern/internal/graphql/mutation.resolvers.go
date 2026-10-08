@@ -662,25 +662,23 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		artifactPath = *input.ArtifactPath
 	}
 
-	// BuildScript and ArtifactPath are set to the already-resolved (templated
-	// and input-overridden) values so profileAtCreation.buildScript/artifactPath
-	// match what's actually stored on the task and executed by the builder,
+	// snapshot.BuildScript/ArtifactPath are set to the already-resolved
+	// (templated and input-overridden) values so profileAtCreation matches
+	// what's actually stored on the task and executed by the builder,
 	// rather than the raw profile template.
-	overrides := builder.ProfileSnapshotOverrides{
-		BuildImage:      &buildImage,
-		Setupscript:     &setupScript,
-		Prebuildscript:  &preBuildScript,
-		BuildScript:     &buildScript,
-		Postbuildscript: &postBuildScript,
-		ArtifactPath:    &artifactPath,
-		Transports:      transports,
-		Tomes:           tomes,
-	}
+	snapshot := builder.NewProfileSnapshot(profile)
+	snapshot.BuildImage = buildImage
+	snapshot.Setupscript = setupScript
+	snapshot.Prebuildscript = preBuildScript
+	snapshot.BuildScript = buildScript
+	snapshot.Postbuildscript = postBuildScript
+	snapshot.ArtifactPath = artifactPath
+	snapshot.Transports = transports
 	if unique != nil {
-		overrides.Unique = unique
+		snapshot.Unique = *unique
 	}
 
-	snapshot, bundleContent, err := builder.SnapshotProfile(ctx, graph, profile, overrides)
+	bundleContent, err := builder.SnapshotProfile(ctx, graph, snapshot, tomes)
 	if err != nil {
 		return nil, fmt.Errorf("capture build profile: %w", err)
 	}
