@@ -174,6 +174,14 @@ func extractLocalArtifact(workspaceDir, artifactPath string) ([]byte, string, er
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read artifact %q: %w", resolvedPath, err)
 	}
+	if len(data) == 0 {
+		// Asset content must be non-empty server-side, and the upload RPC
+		// can't even open its stream for a zero-byte payload (it has no
+		// chunk to carry the initial task/name metadata). Fail here with a
+		// clear reason instead of letting the upload fail later with a
+		// confusing "no messages received" error.
+		return nil, "", fmt.Errorf("artifact file %q is empty", resolvedPath)
+	}
 
 	return data, filepath.Base(resolvedPath), nil
 }

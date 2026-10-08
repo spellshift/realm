@@ -273,6 +273,14 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 		if err != nil {
 			return nil, "", fmt.Errorf("reading artifact data: %w", err)
 		}
+		if len(data) == 0 {
+			// Asset content must be non-empty server-side, and the upload
+			// RPC can't even open its stream for a zero-byte payload (it has
+			// no chunk to carry the initial task/name metadata). Fail here
+			// with a clear reason instead of letting the upload fail later
+			// with a confusing "no messages received" error.
+			return nil, "", fmt.Errorf("artifact file %q is empty", path)
+		}
 		return data, filepath.Base(hdr.Name), nil
 	}
 
