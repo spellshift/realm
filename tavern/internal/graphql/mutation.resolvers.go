@@ -254,7 +254,46 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 
 // UnclaimTask is the resolver for the unclaimTask field.
 func (r *mutationResolver) UnclaimTask(ctx context.Context, taskID int) (*ent.Task, error) {
-	return r.client.Task.UpdateOneID(taskID).ClearClaimedAt().Save(ctx)
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			tx.Rollback()
+			panic(v)
+		}
+	}()
+
+	t, err := tx.Task.Get(ctx, taskID)
+	if err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to fetch task: %w", err))
+	}
+
+	if t.ClaimedAt.IsZero() {
+		return nil, rollback(tx, fmt.Errorf("task %d is not currently claimed", taskID))
+	}
+	if !t.ExecFinishedAt.IsZero() {
+		return nil, rollback(tx, fmt.Errorf("cannot unclaim task %d: task has already finished", taskID))
+	}
+	if !t.ExecStartedAt.IsZero() {
+		return nil, rollback(tx, fmt.Errorf("cannot unclaim task %d: task execution has already started", taskID))
+	}
+
+	if _, err := t.Update().ClearClaimedAt().Save(ctx); err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to unclaim task: %w", err))
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+	}
+
+	task, err := r.client.Task.Get(ctx, taskID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load task: %w", err)
+	}
+
+	return task, nil
 }
 
 // UpdateBeacon is the resolver for the updateBeacon field.
