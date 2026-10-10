@@ -22,4 +22,3 @@ npm_start.log
 
 # Allow build files
 !/build
-build/
