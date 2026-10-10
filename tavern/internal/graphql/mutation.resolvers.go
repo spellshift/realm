@@ -574,6 +574,9 @@ func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.
 		SetSetupscript(input.Setupscript).
 		SetPostbuildscript(input.Postbuildscript)
 
+	if input.Unique != nil && *input.Unique != "" {
+		creator.SetUnique(*input.Unique)
+	}
 	if input.BuildImage != nil && *input.BuildImage != "" {
 		creator.SetBuildImage(*input.BuildImage)
 	}

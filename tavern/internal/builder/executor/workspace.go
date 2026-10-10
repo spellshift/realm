@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // prepareMountDir creates a temporary directory with /scripts and /tomes
@@ -131,7 +132,11 @@ func extractTomeArchive(data []byte, destDir string) error {
 			continue
 		}
 
-		destPath := filepath.Join(destDir, hdr.Name)
+		cleanName := filepath.Clean(hdr.Name)
+		destPath := filepath.Join(destDir, cleanName)
+		if rel, err := filepath.Rel(destDir, destPath); err != nil || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) {
+			return fmt.Errorf("illegal path traversal in tome archive: %q", hdr.Name)
+		}
 
 		// Create parent directories for nested asset paths.
 		if dir := filepath.Dir(destPath); dir != destDir {

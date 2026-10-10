@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
@@ -82,7 +83,10 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		&container.Config{
 			Image:      spec.BuildImage,
 			Entrypoint: []string{"/bin/sh", "-c", entrypoint},
-			Env:        spec.Env,
+			Env: append(slices.Clone(spec.Env),
+				"REALM_WORKSPACE_DIR=/mnt",
+				"REALM_TOMES_DIR=/mnt/tomes",
+			),
 		},
 		nil, // host config
 		nil, // networking config

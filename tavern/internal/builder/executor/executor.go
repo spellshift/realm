@@ -26,7 +26,11 @@ func streamBuildLines(ctx context.Context, r io.Reader, ch chan<- string) {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 64*1024), maxScanTokenSize)
 	for scanner.Scan() {
-		ch <- scanner.Text()
+		select {
+		case <-ctx.Done():
+			return
+		case ch <- scanner.Text():
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		slog.ErrorContext(ctx, "build output stream scan stopped early", "error", err)
