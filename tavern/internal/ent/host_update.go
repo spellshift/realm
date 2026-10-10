@@ -291,6 +291,21 @@ func (hu *HostUpdate) AddEvents(e ...*Event) *HostUpdate {
 	return hu.AddEventIDs(ids...)
 }
 
+// AddSubscriberIDs adds the "subscribers" edge to the User entity by IDs.
+func (hu *HostUpdate) AddSubscriberIDs(ids ...int) *HostUpdate {
+	hu.mutation.AddSubscriberIDs(ids...)
+	return hu
+}
+
+// AddSubscribers adds the "subscribers" edges to the User entity.
+func (hu *HostUpdate) AddSubscribers(u ...*User) *HostUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return hu.AddSubscriberIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (hu *HostUpdate) Mutation() *HostMutation {
 	return hu.mutation
@@ -462,6 +477,27 @@ func (hu *HostUpdate) RemoveEvents(e ...*Event) *HostUpdate {
 		ids[i] = e[i].ID
 	}
 	return hu.RemoveEventIDs(ids...)
+}
+
+// ClearSubscribers clears all "subscribers" edges to the User entity.
+func (hu *HostUpdate) ClearSubscribers() *HostUpdate {
+	hu.mutation.ClearSubscribers()
+	return hu
+}
+
+// RemoveSubscriberIDs removes the "subscribers" edge to User entities by IDs.
+func (hu *HostUpdate) RemoveSubscriberIDs(ids ...int) *HostUpdate {
+	hu.mutation.RemoveSubscriberIDs(ids...)
+	return hu
+}
+
+// RemoveSubscribers removes "subscribers" edges to User entities.
+func (hu *HostUpdate) RemoveSubscribers(u ...*User) *HostUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return hu.RemoveSubscriberIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -931,6 +967,51 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if hu.mutation.SubscribersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.SubscribersTable,
+			Columns: host.SubscribersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.RemovedSubscribersIDs(); len(nodes) > 0 && !hu.mutation.SubscribersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.SubscribersTable,
+			Columns: host.SubscribersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.SubscribersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.SubscribersTable,
+			Columns: host.SubscribersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, hu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{host.Label}
@@ -1205,6 +1286,21 @@ func (huo *HostUpdateOne) AddEvents(e ...*Event) *HostUpdateOne {
 	return huo.AddEventIDs(ids...)
 }
 
+// AddSubscriberIDs adds the "subscribers" edge to the User entity by IDs.
+func (huo *HostUpdateOne) AddSubscriberIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.AddSubscriberIDs(ids...)
+	return huo
+}
+
+// AddSubscribers adds the "subscribers" edges to the User entity.
+func (huo *HostUpdateOne) AddSubscribers(u ...*User) *HostUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return huo.AddSubscriberIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (huo *HostUpdateOne) Mutation() *HostMutation {
 	return huo.mutation
@@ -1376,6 +1472,27 @@ func (huo *HostUpdateOne) RemoveEvents(e ...*Event) *HostUpdateOne {
 		ids[i] = e[i].ID
 	}
 	return huo.RemoveEventIDs(ids...)
+}
+
+// ClearSubscribers clears all "subscribers" edges to the User entity.
+func (huo *HostUpdateOne) ClearSubscribers() *HostUpdateOne {
+	huo.mutation.ClearSubscribers()
+	return huo
+}
+
+// RemoveSubscriberIDs removes the "subscribers" edge to User entities by IDs.
+func (huo *HostUpdateOne) RemoveSubscriberIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.RemoveSubscriberIDs(ids...)
+	return huo
+}
+
+// RemoveSubscribers removes "subscribers" edges to User entities.
+func (huo *HostUpdateOne) RemoveSubscribers(u ...*User) *HostUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return huo.RemoveSubscriberIDs(ids...)
 }
 
 // Where appends a list predicates to the HostUpdate builder.
@@ -1868,6 +1985,51 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if huo.mutation.SubscribersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.SubscribersTable,
+			Columns: host.SubscribersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.RemovedSubscribersIDs(); len(nodes) > 0 && !huo.mutation.SubscribersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.SubscribersTable,
+			Columns: host.SubscribersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.SubscribersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.SubscribersTable,
+			Columns: host.SubscribersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

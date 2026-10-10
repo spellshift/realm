@@ -479,6 +479,7 @@ export interface EventNode {
     beacon?: BeaconNode;
     host?: HostNode;
     quest?: QuestNode;
+    user?: UserNode;
 }
 
 export interface NotificationNode {

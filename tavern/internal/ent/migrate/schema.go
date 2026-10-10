@@ -59,7 +59,7 @@ var (
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "interval", Type: field.TypeUint64, Nullable: true},
-		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_ICMP", "TRANSPORT_TCP_BIND", "TRANSPORT_UDS", "TRANSPORT_UNSPECIFIED"}},
+		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_ICMP", "TRANSPORT_QUIC", "TRANSPORT_TCP_BIND", "TRANSPORT_UDS", "TRANSPORT_UNSPECIFIED"}},
 		{Name: "beacon_host", Type: field.TypeInt},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.
@@ -213,10 +213,11 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "timestamp", Type: field.TypeInt64},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED", "NEW_USER_REQUEST"}},
 		{Name: "beacon_events", Type: field.TypeInt, Nullable: true},
 		{Name: "host_events", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_events", Type: field.TypeInt, Nullable: true},
+		{Name: "user_events", Type: field.TypeInt, Nullable: true},
 	}
 	// EventsTable holds the schema information for the "events" table.
 	EventsTable = &schema.Table{
@@ -240,6 +241,12 @@ var (
 				Symbol:     "events_quests_events",
 				Columns:    []*schema.Column{EventsColumns[7]},
 				RefColumns: []*schema.Column{QuestsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_users_events",
+				Columns:    []*schema.Column{EventsColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -844,7 +851,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
-		{Name: "description", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "author", Type: field.TypeString},
 		{Name: "support_model", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "FIRST_PARTY", "COMMUNITY"}, Default: "UNSPECIFIED"},
 		{Name: "tactic", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "RECON", "RESOURCE_DEVELOPMENT", "INITIAL_ACCESS", "EXECUTION", "PERSISTENCE", "PRIVILEGE_ESCALATION", "DEFENSE_EVASION", "CREDENTIAL_ACCESS", "DISCOVERY", "LATERAL_MOVEMENT", "COLLECTION", "COMMAND_AND_CONTROL", "EXFILTRATION", "IMPACT"}, Default: "UNSPECIFIED"},
@@ -1000,6 +1007,31 @@ var (
 			},
 		},
 	}
+	// UserSubscribedHostsColumns holds the columns for the "user_subscribedHosts" table.
+	UserSubscribedHostsColumns = []*schema.Column{
+		{Name: "user_id", Type: field.TypeInt},
+		{Name: "host_id", Type: field.TypeInt},
+	}
+	// UserSubscribedHostsTable holds the schema information for the "user_subscribedHosts" table.
+	UserSubscribedHostsTable = &schema.Table{
+		Name:       "user_subscribedHosts",
+		Columns:    UserSubscribedHostsColumns,
+		PrimaryKey: []*schema.Column{UserSubscribedHostsColumns[0], UserSubscribedHostsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_subscribedHosts_user_id",
+				Columns:    []*schema.Column{UserSubscribedHostsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_subscribedHosts_host_id",
+				Columns:    []*schema.Column{UserSubscribedHostsColumns[1]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdventuresTable,
@@ -1033,6 +1065,7 @@ var (
 		ShellActiveUsersTable,
 		TomeAssetsTable,
 		UserFavoriteHostsTable,
+		UserSubscribedHostsTable,
 	}
 )
 
@@ -1068,6 +1101,7 @@ func init() {
 	EventsTable.ForeignKeys[0].RefTable = BeaconsTable
 	EventsTable.ForeignKeys[1].RefTable = HostsTable
 	EventsTable.ForeignKeys[2].RefTable = QuestsTable
+	EventsTable.ForeignKeys[3].RefTable = UsersTable
 	EventsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -1176,4 +1210,6 @@ func init() {
 	TomeAssetsTable.ForeignKeys[1].RefTable = AssetsTable
 	UserFavoriteHostsTable.ForeignKeys[0].RefTable = UsersTable
 	UserFavoriteHostsTable.ForeignKeys[1].RefTable = HostsTable
+	UserSubscribedHostsTable.ForeignKeys[0].RefTable = UsersTable
+	UserSubscribedHostsTable.ForeignKeys[1].RefTable = HostsTable
 }

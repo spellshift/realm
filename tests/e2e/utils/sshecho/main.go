@@ -40,8 +40,9 @@ func NewApp() *cli.App {
 		user := c.String("user")
 		password := c.String("password")
 		pubkeyFile := c.String("pubkey")
+		systemAuth := os.Getenv("SYSTEM_AUTH") == "1"
 
-		listener, err := sshecho.Run(fmt.Sprintf("0.0.0.0:%d", port), user, password, pubkeyFile)
+		listener, err := sshecho.Run(fmt.Sprintf("0.0.0.0:%d", port), user, password, pubkeyFile, systemAuth)
 		if err != nil {
 			return err
 		}

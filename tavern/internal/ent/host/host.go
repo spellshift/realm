@@ -51,6 +51,8 @@ const (
 	EdgeFavoritedBy = "favoritedBy"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
 	EdgeEvents = "events"
+	// EdgeSubscribers holds the string denoting the subscribers edge name in mutations.
+	EdgeSubscribers = "subscribers"
 	// Table holds the table name of the host in the database.
 	Table = "hosts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -105,6 +107,11 @@ const (
 	EventsInverseTable = "events"
 	// EventsColumn is the table column denoting the events relation/edge.
 	EventsColumn = "host_events"
+	// SubscribersTable is the table that holds the subscribers relation/edge. The primary key declared below.
+	SubscribersTable = "user_subscribedHosts"
+	// SubscribersInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	SubscribersInverseTable = "users"
 )
 
 // Columns holds all SQL columns for host fields.
@@ -134,6 +141,9 @@ var (
 	// FavoritedByPrimaryKey and FavoritedByColumn2 are the table columns denoting the
 	// primary key for the favoritedBy relation (M2M).
 	FavoritedByPrimaryKey = []string{"user_id", "host_id"}
+	// SubscribersPrimaryKey and SubscribersColumn2 are the table columns denoting the
+	// primary key for the subscribers relation (M2M).
+	SubscribersPrimaryKey = []string{"user_id", "host_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -338,6 +348,20 @@ func ByEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEventsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySubscribersCount orders the results by subscribers count.
+func BySubscribersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubscribersStep(), opts...)
+	}
+}
+
+// BySubscribers orders the results by subscribers terms.
+func BySubscribers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubscribersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -392,6 +416,13 @@ func newEventsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EventsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EventsTable, EventsColumn),
+	)
+}
+func newSubscribersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubscribersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, SubscribersTable, SubscribersPrimaryKey...),
 	)
 }
 

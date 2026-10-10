@@ -7292,6 +7292,8 @@ type EventMutation struct {
 	clearedhost          bool
 	quest                *int
 	clearedquest         bool
+	user                 *int
+	cleareduser          bool
 	notifications        map[int]struct{}
 	removednotifications map[int]struct{}
 	clearednotifications bool
@@ -7679,6 +7681,45 @@ func (m *EventMutation) ResetQuest() {
 	m.clearedquest = false
 }
 
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *EventMutation) SetUserID(id int) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *EventMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *EventMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *EventMutation) UserID() (id int, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *EventMutation) UserIDs() (ids []int) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *EventMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
 // AddNotificationIDs adds the "notifications" edge to the Notification entity by ids.
 func (m *EventMutation) AddNotificationIDs(ids ...int) {
 	if m.notifications == nil {
@@ -7932,7 +7973,7 @@ func (m *EventMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EventMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.beacon != nil {
 		edges = append(edges, event.EdgeBeacon)
 	}
@@ -7941,6 +7982,9 @@ func (m *EventMutation) AddedEdges() []string {
 	}
 	if m.quest != nil {
 		edges = append(edges, event.EdgeQuest)
+	}
+	if m.user != nil {
+		edges = append(edges, event.EdgeUser)
 	}
 	if m.notifications != nil {
 		edges = append(edges, event.EdgeNotifications)
@@ -7964,6 +8008,10 @@ func (m *EventMutation) AddedIDs(name string) []ent.Value {
 		if id := m.quest; id != nil {
 			return []ent.Value{*id}
 		}
+	case event.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
 	case event.EdgeNotifications:
 		ids := make([]ent.Value, 0, len(m.notifications))
 		for id := range m.notifications {
@@ -7976,7 +8024,7 @@ func (m *EventMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EventMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removednotifications != nil {
 		edges = append(edges, event.EdgeNotifications)
 	}
@@ -7999,7 +8047,7 @@ func (m *EventMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EventMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedbeacon {
 		edges = append(edges, event.EdgeBeacon)
 	}
@@ -8008,6 +8056,9 @@ func (m *EventMutation) ClearedEdges() []string {
 	}
 	if m.clearedquest {
 		edges = append(edges, event.EdgeQuest)
+	}
+	if m.cleareduser {
+		edges = append(edges, event.EdgeUser)
 	}
 	if m.clearednotifications {
 		edges = append(edges, event.EdgeNotifications)
@@ -8025,6 +8076,8 @@ func (m *EventMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case event.EdgeQuest:
 		return m.clearedquest
+	case event.EdgeUser:
+		return m.cleareduser
 	case event.EdgeNotifications:
 		return m.clearednotifications
 	}
@@ -8044,6 +8097,9 @@ func (m *EventMutation) ClearEdge(name string) error {
 	case event.EdgeQuest:
 		m.ClearQuest()
 		return nil
+	case event.EdgeUser:
+		m.ClearUser()
+		return nil
 	}
 	return fmt.Errorf("unknown Event unique edge %s", name)
 }
@@ -8060,6 +8116,9 @@ func (m *EventMutation) ResetEdge(name string) error {
 		return nil
 	case event.EdgeQuest:
 		m.ResetQuest()
+		return nil
+	case event.EdgeUser:
+		m.ResetUser()
 		return nil
 	case event.EdgeNotifications:
 		m.ResetNotifications()
@@ -8108,6 +8167,9 @@ type HostMutation struct {
 	events             map[int]struct{}
 	removedevents      map[int]struct{}
 	clearedevents      bool
+	subscribers        map[int]struct{}
+	removedsubscribers map[int]struct{}
+	clearedsubscribers bool
 	done               bool
 	oldValue           func(context.Context) (*Host, error)
 	predicates         []predicate.Host
@@ -9032,6 +9094,60 @@ func (m *HostMutation) ResetEvents() {
 	m.removedevents = nil
 }
 
+// AddSubscriberIDs adds the "subscribers" edge to the User entity by ids.
+func (m *HostMutation) AddSubscriberIDs(ids ...int) {
+	if m.subscribers == nil {
+		m.subscribers = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.subscribers[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubscribers clears the "subscribers" edge to the User entity.
+func (m *HostMutation) ClearSubscribers() {
+	m.clearedsubscribers = true
+}
+
+// SubscribersCleared reports if the "subscribers" edge to the User entity was cleared.
+func (m *HostMutation) SubscribersCleared() bool {
+	return m.clearedsubscribers
+}
+
+// RemoveSubscriberIDs removes the "subscribers" edge to the User entity by IDs.
+func (m *HostMutation) RemoveSubscriberIDs(ids ...int) {
+	if m.removedsubscribers == nil {
+		m.removedsubscribers = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.subscribers, ids[i])
+		m.removedsubscribers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubscribers returns the removed IDs of the "subscribers" edge to the User entity.
+func (m *HostMutation) RemovedSubscribersIDs() (ids []int) {
+	for id := range m.removedsubscribers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubscribersIDs returns the "subscribers" edge IDs in the mutation.
+func (m *HostMutation) SubscribersIDs() (ids []int) {
+	for id := range m.subscribers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubscribers resets all changes to the "subscribers" edge.
+func (m *HostMutation) ResetSubscribers() {
+	m.subscribers = nil
+	m.clearedsubscribers = false
+	m.removedsubscribers = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -9334,7 +9450,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -9358,6 +9474,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.events != nil {
 		edges = append(edges, host.EdgeEvents)
+	}
+	if m.subscribers != nil {
+		edges = append(edges, host.EdgeSubscribers)
 	}
 	return edges
 }
@@ -9414,13 +9533,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeSubscribers:
+		ids := make([]ent.Value, 0, len(m.subscribers))
+		for id := range m.subscribers {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -9444,6 +9569,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedevents != nil {
 		edges = append(edges, host.EdgeEvents)
+	}
+	if m.removedsubscribers != nil {
+		edges = append(edges, host.EdgeSubscribers)
 	}
 	return edges
 }
@@ -9500,13 +9628,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeSubscribers:
+		ids := make([]ent.Value, 0, len(m.removedsubscribers))
+		for id := range m.removedsubscribers {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -9531,6 +9665,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	if m.clearedevents {
 		edges = append(edges, host.EdgeEvents)
 	}
+	if m.clearedsubscribers {
+		edges = append(edges, host.EdgeSubscribers)
+	}
 	return edges
 }
 
@@ -9554,6 +9691,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedfavoritedBy
 	case host.EdgeEvents:
 		return m.clearedevents
+	case host.EdgeSubscribers:
+		return m.clearedsubscribers
 	}
 	return false
 }
@@ -9593,6 +9732,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 		return nil
 	case host.EdgeEvents:
 		m.ResetEvents()
+		return nil
+	case host.EdgeSubscribers:
+		m.ResetSubscribers()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
@@ -25336,35 +25478,41 @@ func (m *TomeMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int
-	name                 *string
-	oauth_id             *string
-	photo_url            *string
-	session_token        *string
-	access_token         *string
-	is_activated         *bool
-	is_admin             *bool
-	clearedFields        map[string]struct{}
-	notifications        map[int]struct{}
-	removednotifications map[int]struct{}
-	clearednotifications bool
-	tomes                map[int]struct{}
-	removedtomes         map[int]struct{}
-	clearedtomes         bool
-	active_shells        map[int]struct{}
-	removedactive_shells map[int]struct{}
-	clearedactive_shells bool
-	device_auths         map[int]struct{}
-	removeddevice_auths  map[int]struct{}
-	cleareddevice_auths  bool
-	favoriteHosts        map[int]struct{}
-	removedfavoriteHosts map[int]struct{}
-	clearedfavoriteHosts bool
-	done                 bool
-	oldValue             func(context.Context) (*User, error)
-	predicates           []predicate.User
+	op                     Op
+	typ                    string
+	id                     *int
+	name                   *string
+	oauth_id               *string
+	photo_url              *string
+	session_token          *string
+	access_token           *string
+	is_activated           *bool
+	is_admin               *bool
+	clearedFields          map[string]struct{}
+	notifications          map[int]struct{}
+	removednotifications   map[int]struct{}
+	clearednotifications   bool
+	tomes                  map[int]struct{}
+	removedtomes           map[int]struct{}
+	clearedtomes           bool
+	active_shells          map[int]struct{}
+	removedactive_shells   map[int]struct{}
+	clearedactive_shells   bool
+	device_auths           map[int]struct{}
+	removeddevice_auths    map[int]struct{}
+	cleareddevice_auths    bool
+	favoriteHosts          map[int]struct{}
+	removedfavoriteHosts   map[int]struct{}
+	clearedfavoriteHosts   bool
+	subscribedHosts        map[int]struct{}
+	removedsubscribedHosts map[int]struct{}
+	clearedsubscribedHosts bool
+	events                 map[int]struct{}
+	removedevents          map[int]struct{}
+	clearedevents          bool
+	done                   bool
+	oldValue               func(context.Context) (*User, error)
+	predicates             []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -25987,6 +26135,114 @@ func (m *UserMutation) ResetFavoriteHosts() {
 	m.removedfavoriteHosts = nil
 }
 
+// AddSubscribedHostIDs adds the "subscribedHosts" edge to the Host entity by ids.
+func (m *UserMutation) AddSubscribedHostIDs(ids ...int) {
+	if m.subscribedHosts == nil {
+		m.subscribedHosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.subscribedHosts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubscribedHosts clears the "subscribedHosts" edge to the Host entity.
+func (m *UserMutation) ClearSubscribedHosts() {
+	m.clearedsubscribedHosts = true
+}
+
+// SubscribedHostsCleared reports if the "subscribedHosts" edge to the Host entity was cleared.
+func (m *UserMutation) SubscribedHostsCleared() bool {
+	return m.clearedsubscribedHosts
+}
+
+// RemoveSubscribedHostIDs removes the "subscribedHosts" edge to the Host entity by IDs.
+func (m *UserMutation) RemoveSubscribedHostIDs(ids ...int) {
+	if m.removedsubscribedHosts == nil {
+		m.removedsubscribedHosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.subscribedHosts, ids[i])
+		m.removedsubscribedHosts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubscribedHosts returns the removed IDs of the "subscribedHosts" edge to the Host entity.
+func (m *UserMutation) RemovedSubscribedHostsIDs() (ids []int) {
+	for id := range m.removedsubscribedHosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubscribedHostsIDs returns the "subscribedHosts" edge IDs in the mutation.
+func (m *UserMutation) SubscribedHostsIDs() (ids []int) {
+	for id := range m.subscribedHosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubscribedHosts resets all changes to the "subscribedHosts" edge.
+func (m *UserMutation) ResetSubscribedHosts() {
+	m.subscribedHosts = nil
+	m.clearedsubscribedHosts = false
+	m.removedsubscribedHosts = nil
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by ids.
+func (m *UserMutation) AddEventIDs(ids ...int) {
+	if m.events == nil {
+		m.events = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.events[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvents clears the "events" edge to the Event entity.
+func (m *UserMutation) ClearEvents() {
+	m.clearedevents = true
+}
+
+// EventsCleared reports if the "events" edge to the Event entity was cleared.
+func (m *UserMutation) EventsCleared() bool {
+	return m.clearedevents
+}
+
+// RemoveEventIDs removes the "events" edge to the Event entity by IDs.
+func (m *UserMutation) RemoveEventIDs(ids ...int) {
+	if m.removedevents == nil {
+		m.removedevents = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.events, ids[i])
+		m.removedevents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvents returns the removed IDs of the "events" edge to the Event entity.
+func (m *UserMutation) RemovedEventsIDs() (ids []int) {
+	for id := range m.removedevents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EventsIDs returns the "events" edge IDs in the mutation.
+func (m *UserMutation) EventsIDs() (ids []int) {
+	for id := range m.events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvents resets all changes to the "events" edge.
+func (m *UserMutation) ResetEvents() {
+	m.events = nil
+	m.clearedevents = false
+	m.removedevents = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -26222,7 +26478,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 7)
 	if m.notifications != nil {
 		edges = append(edges, user.EdgeNotifications)
 	}
@@ -26237,6 +26493,12 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.favoriteHosts != nil {
 		edges = append(edges, user.EdgeFavoriteHosts)
+	}
+	if m.subscribedHosts != nil {
+		edges = append(edges, user.EdgeSubscribedHosts)
+	}
+	if m.events != nil {
+		edges = append(edges, user.EdgeEvents)
 	}
 	return edges
 }
@@ -26275,13 +26537,25 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeSubscribedHosts:
+		ids := make([]ent.Value, 0, len(m.subscribedHosts))
+		for id := range m.subscribedHosts {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.events))
+		for id := range m.events {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 7)
 	if m.removednotifications != nil {
 		edges = append(edges, user.EdgeNotifications)
 	}
@@ -26296,6 +26570,12 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedfavoriteHosts != nil {
 		edges = append(edges, user.EdgeFavoriteHosts)
+	}
+	if m.removedsubscribedHosts != nil {
+		edges = append(edges, user.EdgeSubscribedHosts)
+	}
+	if m.removedevents != nil {
+		edges = append(edges, user.EdgeEvents)
 	}
 	return edges
 }
@@ -26334,13 +26614,25 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeSubscribedHosts:
+		ids := make([]ent.Value, 0, len(m.removedsubscribedHosts))
+		for id := range m.removedsubscribedHosts {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.removedevents))
+		for id := range m.removedevents {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 7)
 	if m.clearednotifications {
 		edges = append(edges, user.EdgeNotifications)
 	}
@@ -26355,6 +26647,12 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedfavoriteHosts {
 		edges = append(edges, user.EdgeFavoriteHosts)
+	}
+	if m.clearedsubscribedHosts {
+		edges = append(edges, user.EdgeSubscribedHosts)
+	}
+	if m.clearedevents {
+		edges = append(edges, user.EdgeEvents)
 	}
 	return edges
 }
@@ -26373,6 +26671,10 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.cleareddevice_auths
 	case user.EdgeFavoriteHosts:
 		return m.clearedfavoriteHosts
+	case user.EdgeSubscribedHosts:
+		return m.clearedsubscribedHosts
+	case user.EdgeEvents:
+		return m.clearedevents
 	}
 	return false
 }
@@ -26403,6 +26705,12 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeFavoriteHosts:
 		m.ResetFavoriteHosts()
+		return nil
+	case user.EdgeSubscribedHosts:
+		m.ResetSubscribedHosts()
+		return nil
+	case user.EdgeEvents:
+		m.ResetEvents()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

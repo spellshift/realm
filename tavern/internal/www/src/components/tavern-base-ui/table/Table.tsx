@@ -7,7 +7,8 @@ import {
   flexRender,
   getSortedRowModel,
   Row,
-  getExpandedRowModel
+  getExpandedRowModel,
+  SortingState,
 } from '@tanstack/react-table'
 import { TriangleDownIcon, TriangleUpIcon } from '@chakra-ui/icons'
 
@@ -21,7 +22,8 @@ type TableProps<TData> = {
   columns: ColumnDef<TData>[],
   onRowClick?: (e: any, event?: any) => void,
   renderSubComponent?: (props: { row: Row<TData> }) => React.ReactElement,
-  getRowCanExpand?: (row: Row<TData>) => boolean
+  getRowCanExpand?: (row: Row<TData>) => boolean,
+  initialSorting?: SortingState,
 }
 
 export const Table = ({
@@ -30,6 +32,7 @@ export const Table = ({
   renderSubComponent,
   getRowCanExpand,
   onRowClick,
+  initialSorting,
 }: TableProps<any>): JSX.Element => {
   const table = useReactTable<any>({
     data,
@@ -38,6 +41,7 @@ export const Table = ({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    initialState: initialSorting ? { sorting: initialSorting } : undefined,
   })
 
   const tbodyRef = React.useRef<HTMLTableSectionElement>(null);
@@ -52,7 +56,7 @@ export const Table = ({
   return (
     <div className="inline-block min-w-full align-middle">
       <table className="w-full divide-y divide-gray-200 table-fixed">
-        <thead className="bg-gray-50 sticky top-0 z-5">
+        <thead className="bg-gray-50 sticky top-0 z-10">
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {

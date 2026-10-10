@@ -75,6 +75,15 @@ export const GET_PORTAL_STATUS = gql`
   }
 `;
 
+export const CLOSE_PORTAL_MUTATION = gql`
+  mutation ClosePortal($id: ID!) {
+    closePortal(portalID: $id) {
+      id
+      closedAt
+    }
+  }
+`;
+
 export const GET_SHELL_ACTIVE_USERS = gql`
   query GetShellActiveUsers($id: ID!) {
     node(id: $id) {

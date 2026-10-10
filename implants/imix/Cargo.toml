@@ -1,23 +1,29 @@
 [package]
 name = "imix"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]
 
 [features]
-default = ["install", "grpc", "http1", "dns", "doh", "icmp", "tcp-bind"]
+default = ["install", "grpc", "http1", "dns", "doh", "icmp", "tcp-bind", "quic"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
 doh = ["transport/doh"]
 icmp = ["transport/icmp"]
 tcp-bind = ["transport/tcp-bind"]
+quic = ["transport/quic"]
 win_service = []
 install = []
-quiet = []
+print_debug_tome = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
+print_debug = [
+    "transport/print_debug",
+    "pb/print_debug",
+    "eldritch/print_debug",
+]
 
 [dependencies]
 tokio = { workspace = true, features = [
@@ -46,10 +52,22 @@ rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
 rand = { workspace = true }
 async-trait = { workspace = true }
+rustls = { workspace = true }
 eldritch-libchain = { workspace = true, features = ["stdlib"] }
+base64 = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
+
+[build-dependencies]
+static_vcruntime = { workspace = true }
+which = { workspace = true }
+home = "=0.5.11"
+reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = { workspace = true }
+urlencoding = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }

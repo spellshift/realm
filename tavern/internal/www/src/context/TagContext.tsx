@@ -23,6 +23,7 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         hosts: [],
         principals: [],
         primaryIPs: [],
+        externalIPs: [],
         platforms: [],
         transports: [],
         onlineOfflineStatus: [],
@@ -72,6 +73,8 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         const hosts: Array<FilterBarOption & HostNode> = [];
         const primaryIPsSet = new Set<string>();
         const primaryIPs: FilterBarOption[] = [];
+        const externalIPsSet = new Set<string>();
+        const externalIPs: FilterBarOption[] = [];
         data?.hosts?.edges?.forEach((edge: HostEdge) => {
             const node = edge.node;
             hosts.push({
@@ -88,6 +91,16 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
                     value: node.primaryIP,
                     label: node.primaryIP,
                     kind: "primaryIP"
+                });
+            }
+            if (node.externalIP && !externalIPsSet.has(node.externalIP)) {
+                externalIPsSet.add(node.externalIP);
+                externalIPs.push({
+                    id: node.externalIP,
+                    name: node.externalIP,
+                    value: node.externalIP,
+                    label: node.externalIP,
+                    kind: "externalIP"
                 });
             }
         });
@@ -140,6 +153,7 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             hosts,
             principals,
             primaryIPs,
+            externalIPs,
             platforms,
             transports,
             onlineOfflineStatus: OnlineOfflineOptions

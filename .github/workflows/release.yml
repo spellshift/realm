@@ -27,6 +27,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: 📦 Install System Dependencies
+        run: sudo apt-get update && sudo apt-get install -y libpam0g-dev
       - name: 🔨 Build
         run: go build -ldflags='-w -extldflags "-static"' -o ${{ runner.temp }}/realm_build/tavern ./tavern
       - name: 🌥️⬆️ Upload Assets

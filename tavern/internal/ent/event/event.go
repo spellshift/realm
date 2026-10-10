@@ -31,6 +31,8 @@ const (
 	EdgeHost = "host"
 	// EdgeQuest holds the string denoting the quest edge name in mutations.
 	EdgeQuest = "quest"
+	// EdgeUser holds the string denoting the user edge name in mutations.
+	EdgeUser = "user"
 	// EdgeNotifications holds the string denoting the notifications edge name in mutations.
 	EdgeNotifications = "notifications"
 	// Table holds the table name of the event in the database.
@@ -56,6 +58,13 @@ const (
 	QuestInverseTable = "quests"
 	// QuestColumn is the table column denoting the quest relation/edge.
 	QuestColumn = "quest_events"
+	// UserTable is the table that holds the user relation/edge.
+	UserTable = "events"
+	// UserInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UserInverseTable = "users"
+	// UserColumn is the table column denoting the user relation/edge.
+	UserColumn = "user_events"
 	// NotificationsTable is the table that holds the notifications relation/edge.
 	NotificationsTable = "notifications"
 	// NotificationsInverseTable is the table name for the Notification entity.
@@ -80,6 +89,7 @@ var ForeignKeys = []string{
 	"beacon_events",
 	"host_events",
 	"quest_events",
+	"user_events",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -116,6 +126,7 @@ const (
 	KindHOST_ACCESS_RECOVERED Kind = "HOST_ACCESS_RECOVERED"
 	KindHOST_ACCESS_LOST      Kind = "HOST_ACCESS_LOST"
 	KindQUEST_COMPLETED       Kind = "QUEST_COMPLETED"
+	KindNEW_USER_REQUEST      Kind = "NEW_USER_REQUEST"
 )
 
 func (k Kind) String() string {
@@ -125,7 +136,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindBEACON_LOST, KindHOST_ACCESS_NEW, KindHOST_ACCESS_RECOVERED, KindHOST_ACCESS_LOST, KindQUEST_COMPLETED:
+	case KindBEACON_LOST, KindHOST_ACCESS_NEW, KindHOST_ACCESS_RECOVERED, KindHOST_ACCESS_LOST, KindQUEST_COMPLETED, KindNEW_USER_REQUEST:
 		return nil
 	default:
 		return fmt.Errorf("event: invalid enum value for kind field: %q", k)
@@ -181,6 +192,13 @@ func ByQuestField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByUserField orders the results by user field.
+func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByNotificationsCount orders the results by notifications count.
 func ByNotificationsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -213,6 +231,13 @@ func newQuestStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(QuestInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, QuestTable, QuestColumn),
+	)
+}
+func newUserStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 	)
 }
 func newNotificationsStep() *sqlgraph.Step {

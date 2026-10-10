@@ -130,4 +130,34 @@ func TestDownloadHostFile(t *testing.T) {
 			assert.Equal(t, tc.wantBody, body)
 		})
 	}
+
+	t.Run("ChunkedDownload", func(t *testing.T) {
+		// Set a small chunk size for testing
+		origMaxChunkSize := cdn.MaxChunkSize
+		cdn.MaxChunkSize = 4
+		defer func() { cdn.MaxChunkSize = origMaxChunkSize }()
+
+		largeContent := []byte("abcdefghijklmnop") // 16 bytes, 4 chunks of 4 bytes
+		largeHostFile := graph.HostFile.Create().
+			SetPath("/large/file").
+			SetContent(largeContent).
+			SetHost(existingHost).
+			SetTask(existingTask).
+			SaveX(ctx)
+
+		req, reqErr := http.NewRequest(http.MethodGet, fmt.Sprintf("/download/%d", largeHostFile.ID), nil)
+		require.NoError(t, reqErr)
+
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		result := w.Result()
+		assert.Equal(t, http.StatusOK, result.StatusCode)
+
+		body, err := io.ReadAll(result.Body)
+		require.NoError(t, err)
+		defer result.Body.Close()
+
+		assert.Equal(t, largeContent, body)
+	})
 }

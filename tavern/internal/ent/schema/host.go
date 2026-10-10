@@ -123,6 +123,13 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Events associated with this host."),
+		edge.From("subscribers", User.Type).
+			Ref("subscribedHosts").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Users who are subscribed to this host."),
 	}
 }
 

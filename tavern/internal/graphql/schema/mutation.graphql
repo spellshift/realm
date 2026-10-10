@@ -25,12 +25,19 @@ type Mutation {
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
     favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
     unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    subscribeToHost(hostID: ID!): Host! @requireRole(role: USER)
+    unsubscribeFromHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag
     ###
     createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
+
+    ###
+    # Asset
+    ###
+    deleteAsset(assetID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # Tome
@@ -90,4 +97,5 @@ type Mutation {
     ###
     markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
     markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
+    deleteAllNotifications: Boolean! @requireRole(role: ADMIN)
 }

@@ -1,4 +1,4 @@
-mod builtins;
+pub mod builtins;
 mod core;
 pub mod error;
 mod eval;

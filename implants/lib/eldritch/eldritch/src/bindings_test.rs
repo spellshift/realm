@@ -132,10 +132,9 @@ fn test_pivot_bindings() {
             "ncat",
             // "port_forward", // Not implemented in Fake
             "port_scan",
-            "reverse_shell_pty",
-            "reverse_shell_repl",
             // "smb_exec", // Not implemented in Fake
             "ssh_copy",
+            "ssh_deploy",
             "ssh_exec",
         ],
     );

@@ -7,6 +7,13 @@ pub const CONV_ID_LENGTH: usize = 8;
 pub const SEND_WINDOW_SIZE: usize = 10;
 pub const MAX_DATA_SIZE: usize = 50 * 1024 * 1024; // 50MB
 pub const MAX_RETRIES_PER_CHUNK: usize = 3;
+/// Max attempts for a FETCH that returns an empty response.
+///
+/// The redirector returns an empty TXT payload when the upstream gRPC call
+/// is still in flight ("response not ready yet - upstream call in progress");
+/// the agent must poll until the response is ready instead of treating an
+/// empty FETCH as fatal.
+pub const FETCH_MAX_ATTEMPTS: usize = 10;
 
 /// Generate a random 8-character alphanumeric conversation ID.
 pub fn generate_conv_id() -> String {

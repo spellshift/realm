@@ -51,7 +51,6 @@ export default function FilterControls() {
                         key={field}
                         onChange={(newValue) => updateFilters({ beaconFields: newValue })}
                         value={filters.beaconFields}
-                        isDisabled={isLocked}
                     />
                 </div>
             )
@@ -61,7 +60,6 @@ export default function FilterControls() {
                 <div key={field}>
                     <FreeTextSearch
                         key={field}
-                        isDisabled={isLocked}
                         defaultValue={filters.questName}
                         setSearch={(newValue) => updateFilters({ 'questName': newValue })}
                         placeholder="Quest name"
@@ -74,7 +72,6 @@ export default function FilterControls() {
                 <div key={field}>
                     <FreeTextSearch
                         key={field}
-                        isDisabled={isLocked}
                         defaultValue={filters.taskOutput}
                         setSearch={(newValue) => updateFilters({ 'taskOutput': newValue })}
                         placeholder="Task output"
@@ -89,7 +86,6 @@ export default function FilterControls() {
                         key={field}
                         setFiltersSelected={(newValue) => updateFilters({ 'tomeFields': newValue })}
                         filtersSelected={filters.tomeFields}
-                        isDisabled={isLocked}
                     />
                 </div>
             );
@@ -99,7 +95,6 @@ export default function FilterControls() {
                 <div key={field}>
                     <FreeTextSearch
                         key={field}
-                        isDisabled={isLocked}
                         defaultValue={filters.tomeMultiSearch}
                         setSearch={(newValue) => updateFilters({ 'tomeMultiSearch': newValue })}
                         placeholder="Tome definition & values"
@@ -112,7 +107,6 @@ export default function FilterControls() {
                 <div key={field}>
                     <FreeTextSearch
                         key={field}
-                        isDisabled={isLocked}
                         defaultValue={filters.assetName}
                         setSearch={(newValue) => updateFilters({ 'assetName': newValue })}
                         placeholder="Asset name"

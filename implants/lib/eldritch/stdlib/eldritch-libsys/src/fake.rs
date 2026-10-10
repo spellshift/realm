@@ -79,6 +79,10 @@ impl SysLibrary for SysLibraryFake {
         Ok(String::from("eldritch-test-box"))
     }
 
+    fn impersonate(&self, _pid: i64) -> Result<i64, String> {
+        Ok(1)
+    }
+
     fn is_bsd(&self) -> Result<bool, String> {
         Ok(false)
     }
@@ -111,6 +115,21 @@ impl SysLibrary for SysLibraryFake {
         map.insert("stderr".into(), Value::String("".into()));
         map.insert("status".into(), Value::Int(0));
         Ok(map)
+    }
+
+    fn tokens(&self, _pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let mut entry = BTreeMap::new();
+        entry.insert("id".into(), Value::Int(1));
+        entry.insert(
+            "source".into(),
+            Value::String("impersonate:explorer.exe".into()),
+        );
+        entry.insert("active".into(), Value::Bool(true));
+        Ok(vec![entry])
+    }
+
+    fn use_token(&self, _id: i64) -> Result<bool, String> {
+        Ok(true)
     }
 
     fn write_reg(

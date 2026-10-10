@@ -82,9 +82,9 @@ fn follow_impl(
             bytes_read += n as u64;
 
             // Trim trailing newline and carriage return
-            if buf.ends_with(&[b'\n']) {
+            if buf.ends_with(b"\n") {
                 buf.pop();
-                if buf.ends_with(&[b'\r']) {
+                if buf.ends_with(b"\r") {
                     buf.pop();
                 }
             }
@@ -151,7 +151,7 @@ def cb(line):
         fail("STOP")
 cb
 "#;
-        let fn_val = interp.interpret(code).map_err(|e| e).unwrap();
+        let fn_val = interp.interpret(code).unwrap();
 
         // Call follow. It should block until "line2" is written, then cb is called, throws error, and follow returns Err.
         let printer = interp.env.read().printer.clone();
@@ -264,7 +264,7 @@ def cb(line):
         fail("STOP_LOSSY")
 cb
 "#;
-        let fn_val = interp.interpret(code).map_err(|e| e).unwrap();
+        let fn_val = interp.interpret(code).unwrap();
 
         let printer = interp.env.read().printer.clone();
         let res = follow(path, fn_val, printer);

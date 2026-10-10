@@ -6,8 +6,8 @@ use pb::c2::{
     AvailableTransports, Beacon, ClaimTasksRequest, ClaimTasksResponse, CreatePortalRequest,
     CreatePortalResponse, FetchAssetRequest, FetchAssetResponse, ReportCredentialRequest,
     ReportCredentialResponse, ReportFileRequest, ReportFileResponse, ReportOutputRequest,
-    ReportOutputResponse, ReportProcessListRequest, ReportProcessListResponse, ReverseShellRequest,
-    ReverseShellResponse, TaskContext, Transport as C2Transport,
+    ReportOutputResponse, ReportProcessListRequest, ReportProcessListResponse, TaskContext,
+    Transport as C2Transport,
 };
 use pb::config::Config;
 use std::sync::mpsc::{Receiver, Sender};
@@ -64,7 +64,7 @@ impl Transport for FakeTransport {
         request: Receiver<ReportFileRequest>,
     ) -> anyhow::Result<ReportFileResponse> {
         let mut count = 0;
-        while let Ok(_) = request.recv() {
+        while request.recv().is_ok() {
             count += 1;
         }
         *self.received_chunks.lock().unwrap() += count;
@@ -83,14 +83,6 @@ impl Transport for FakeTransport {
         _request: ReportOutputRequest,
     ) -> anyhow::Result<ReportOutputResponse> {
         Ok(ReportOutputResponse::default())
-    }
-
-    async fn reverse_shell(
-        &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> anyhow::Result<()> {
-        Ok(())
     }
 
     async fn create_portal(

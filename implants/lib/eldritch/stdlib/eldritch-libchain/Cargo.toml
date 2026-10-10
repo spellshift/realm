@@ -33,3 +33,4 @@ stdlib = [
     "dep:eldritch-agent",
 ]
 fake_bindings = []
+print_debug = []

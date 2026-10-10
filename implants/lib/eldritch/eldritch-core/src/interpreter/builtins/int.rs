@@ -57,10 +57,10 @@ fn parse_int_string(s: &str, base: i64) -> Result<Value, String> {
     }
 
     let trimmed = s.trim();
-    let (is_neg, clean_s) = if trimmed.starts_with('-') {
-        (true, &trimmed[1..])
-    } else if trimmed.starts_with('+') {
-        (false, &trimmed[1..])
+    let (is_neg, clean_s) = if let Some(stripped) = trimmed.strip_prefix('-') {
+        (true, stripped)
+    } else if let Some(stripped) = trimmed.strip_prefix('+') {
+        (false, stripped)
     } else {
         (false, trimmed)
     };
@@ -79,16 +79,15 @@ fn parse_int_string(s: &str, base: i64) -> Result<Value, String> {
         base as u32
     };
 
-    let clean_s_no_prefix =
-        if radix == 16 && (clean_s.starts_with("0x") || clean_s.starts_with("0X")) {
-            &clean_s[2..]
-        } else if radix == 8 && (clean_s.starts_with("0o") || clean_s.starts_with("0O")) {
-            &clean_s[2..]
-        } else if radix == 2 && (clean_s.starts_with("0b") || clean_s.starts_with("0B")) {
-            &clean_s[2..]
-        } else {
-            clean_s
-        };
+    let clean_s_no_prefix = if (radix == 16
+        && (clean_s.starts_with("0x") || clean_s.starts_with("0X")))
+        || (radix == 8 && (clean_s.starts_with("0o") || clean_s.starts_with("0O")))
+        || (radix == 2 && (clean_s.starts_with("0b") || clean_s.starts_with("0B")))
+    {
+        &clean_s[2..]
+    } else {
+        clean_s
+    };
 
     let uval = u64::from_str_radix(clean_s_no_prefix, radix).map_err(|_| {
         if base == 0 || base == 10 {

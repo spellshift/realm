@@ -1,9 +1,7 @@
 package cdn
 
 import (
-	"bytes"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -46,9 +44,9 @@ func NewScreenshotDownloadHandler(graph *ent.Client, prefix string) http.Handler
 		// Set Etag to hash of file
 		w.Header().Set(HeaderEtag, f.Hash)
 
-		// Set Content-Type and serve content
+		// Set Content-Type and serve content in chunks
 		w.Header().Set("Content-Type", "image/png")
-		http.ServeContent(w, req, filepath.Base(f.Name), f.CreatedAt, bytes.NewReader(f.Content))
+		serveChunkedContent(w, f.Content, f.CreatedAt)
 
 		return nil
 	})

@@ -135,6 +135,16 @@ pub trait SysLibrary {
     fn hostname(&self) -> Result<String, String>;
 
     #[eldritch_method]
+    /// Impersonates another user by stealing a process token.
+    ///
+    /// **Parameters**
+    /// - `pid` (`int`): Target process ID.
+    ///
+    /// **Returns**
+    /// - `int`: Token store ID for later use with `use_token()`.
+    fn impersonate(&self, pid: i64) -> Result<i64, String>;
+
+    #[eldritch_method]
     /// Checks if the OS is BSD.
     ///
     /// **Returns**
@@ -178,6 +188,34 @@ pub trait SysLibrary {
     /// **Returns**
     /// - `Dict`: Output containing `stdout`, `stderr`, and `status`.
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String>;
+
+    #[eldritch_method]
+    /// Lists tokens in the global store, or enumerates a process token.
+    ///
+    /// With no arguments, returns all stored tokens from global token store calls.
+    /// With a PID, returns the process token info including user and privileges.
+    ///
+    /// **Parameters**
+    /// - `pid` (`Option<int>`): Process ID to query, or None for stored tokens.
+    ///
+    /// **Returns**
+    /// - `List<Dict>`: Token info. Stored: `{active, id, source}`.
+    ///   Process: `{user, pid, privileges}`.
+    fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
+    /// Activates a stored token by ID.
+    ///
+    /// Deactivates any currently active token and applies the specified one
+    /// globally. Token must have been previously created by
+    /// other token functions.
+    ///
+    /// **Parameters**
+    /// - `id` (`int`): Token store ID (returned by `impersonate()` or other token functions).
+    ///
+    /// **Returns**
+    /// - `bool`: True if token was activated.
+    fn use_token(&self, id: i64) -> Result<bool, String>;
 
     #[eldritch_method]
     /// Writes a value to the Windows Registry.

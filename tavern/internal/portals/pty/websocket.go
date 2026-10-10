@@ -271,7 +271,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		// Background goroutine: read portal output -> broadcast to websockets
+		// Background goroutine: read portal output -> broadcast to websockets.
+		// Each mote is delivered exactly once: in single-server mode the
+		// fast-path in Publish dispatches it and the receiveLoop is a no-op
+		// (loopback detection). In multi-server mode the receiveLoop on the
+		// websocket server receives it from GCP PubSub. No deduplication is
+		// needed because loopback detection prevents any path from dispatching
+		// the same mote twice.
 		go func() {
 			for {
 				select {
@@ -411,8 +417,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Reader goroutine - for reconnects we need the portal info
 	// The pivot session tracks the stream context, but we need topicIn
-	// For reconnects, we look up the portal from the pivot
+	// For reconnects, we look up the portal from the pivot once up front.
 	go func() {
+		// Resolve portalID once to avoid per-keystroke DB queries
+		pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		portalEnt, err := pivot.QueryPortal().Only(ctx)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		topicIn := h.mux.TopicIn(portalEnt.ID)
+
+		var seqID uint64
 		for {
 			_, msg, err := wsConn.ReadMessage()
 			if err != nil {
@@ -424,22 +444,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// For reconnects, look up the portal from the pivot
-			pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
-			if err != nil {
-				errCh <- err
-				return
-			}
-			portalEnt, err := pivot.QueryPortal().Only(ctx)
-			if err != nil {
-				errCh <- err
-				return
-			}
-
-			topicIn := h.mux.TopicIn(portalEnt.ID)
+			seqID++
 			mote := &portalpb.Mote{
 				StreamId: pivotSession.StreamID,
-				SeqId:    0,
+				SeqId:    seqID,
 				Payload: &portalpb.Mote_Bytes{
 					Bytes: &portalpb.BytesPayload{
 						Data: []byte(inputMsg.Input),

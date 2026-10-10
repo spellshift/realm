@@ -4,13 +4,17 @@ import { AccessGate } from "../../components/access-gate";
 import { useShellData } from "./hooks/useShellData";
 import { useCallbackTimer } from "./hooks/useCallbackTimer";
 import { useShellTerminal } from "./hooks/useShellTerminal";
+import { useTabHotkeys } from "./hooks/useTabHotkeys";
 import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
-import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast, Tooltip } from '@chakra-ui/react';
+import { useState, useEffect, useCallback } from 'react';
+import { useMutation } from '@apollo/client';
 import SshTerminal from './components/SshTerminal';
 import PtyTerminal from './components/PtyTerminal';
+import { CLOSE_PORTAL_MUTATION } from './graphql';
+import { WifiOff } from 'lucide-react';
 
 interface PortalTab {
     id: string;
@@ -36,6 +40,19 @@ const ShellV2 = () => {
 
     const [portalTabs, setPortalTabs] = useState<PortalTab[]>([]);
     const [tabIndex, setTabIndex] = useState(0);
+    const [disconnectedTabs, setDisconnectedTabs] = useState<Set<string>>(new Set());
+
+    const handleTabConnectionStatusChange = useCallback((tabId: string, status: "connecting" | "connected" | "disconnected") => {
+        setDisconnectedTabs(prev => {
+            const next = new Set(prev);
+            if (status === "disconnected") {
+                next.add(tabId);
+            } else {
+                next.delete(tabId);
+            }
+            return next;
+        });
+    }, []);
 
     useEffect(() => {
         if (shellData?.node?.pivots?.edges) {
@@ -72,10 +89,28 @@ const ShellV2 = () => {
         connectionMessage,
         handleTooltipMouseEnter,
         handleTooltipMouseLeave,
-        getSessionInputs
+        getSessionInputs,
+        setShellInput,
+        focusTerminal,
+        sendCtrlC,
+        sendCtrlR
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
 
+    const totalTabs = 1 + portalTabs.length;
+
+    useTabHotkeys(totalTabs, setTabIndex);
+
+    useEffect(() => {
+        if (tabIndex === 0) {
+            // Delay focus so it runs after the browser finishes focusing the
+            // clicked tab header element.
+            setTimeout(() => focusTerminal(), 0);
+        }
+    }, [tabIndex, focusTerminal]);
+
     const toast = useToast();
+
+    const [closePortalMutation] = useMutation(CLOSE_PORTAL_MUTATION);
 
     const handleExport = () => {
         const inputs = getSessionInputs();
@@ -99,6 +134,44 @@ const ShellV2 = () => {
         }
     };
 
+    const handleNewPortal = () => {
+        setShellInput("pivot.create_portal()");
+        // HeadlessUI Menu restores focus to Menu.Button after onClick;
+        // delay refocus so the terminal regains focus after the menu closes.
+        setTimeout(() => focusTerminal(), 0);
+    };
+
+    const handleClosePortal = async () => {
+        if (!portalId) return;
+        try {
+            await closePortalMutation({ variables: { id: portalId } });
+            setPortalId(null);
+            toast({
+                title: "Portal closed",
+                description: "The active portal has been closed.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+        } catch (err: any) {
+            toast({
+                title: "Failed to close portal",
+                description: err?.message || "An error occurred while closing the portal.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const handleSshConnect = (target: string) => {
+        handleOpenPortalTab("ssh", target);
+    };
+
+    const handlePtyOpen = () => {
+        handleOpenPortalTab("pty", "PTY");
+    };
+
     if (connectionError) {
         return (
             <div style={{ padding: "20px" }}>
@@ -116,10 +189,17 @@ const ShellV2 = () => {
     let shellTerm = (
         <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} variant="enclosed" flex="1" display="flex" flexDirection="column" mt={useTabs ? 4 : 0} overflow="hidden">
             <TabList borderBottomColor="#333" display={useTabs ? 'flex' : 'none'}>
-                <Tab _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
+                <Tab onMouseDown={e => e.preventDefault()} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
                 {portalTabs.map(tab => (
-                    <Tab key={tab.id} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
-                        {tab.target}
+                    <Tab key={tab.id} onMouseDown={e => e.preventDefault()} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
+                        <span className="flex items-center gap-1.5">
+                            {disconnectedTabs.has(tab.id) && (
+                                <Tooltip label="Disconnected" hasArrow>
+                                    <span className="text-yellow-500"><WifiOff size={14} /></span>
+                                </Tooltip>
+                            )}
+                            {tab.target}
+                        </span>
                     </Tab>
                 ))}
             </TabList>
@@ -139,13 +219,13 @@ const ShellV2 = () => {
                         onTooltipMouseLeave={handleTooltipMouseLeave}
                     />
                 </TabPanel>
-                {portalTabs.map(tab => (
+                {portalTabs.map((tab, idx) => (
                     <TabPanel key={tab.id} flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
                         {tab.type === "ssh" && (portalId || tab.pivotId) && (
-                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
+                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                         {tab.type === "pty" && (portalId || tab.pivotId) && (
-                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
+                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                     </TabPanel>
                 ))}
@@ -156,7 +236,18 @@ const ShellV2 = () => {
     return (
         <AccessGate>
             <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
-                <ShellHeader shellData={shellData} activeUsers={activeUsers} onExport={handleExport} />
+                <ShellHeader
+                    shellData={shellData}
+                    activeUsers={activeUsers}
+                    portalId={portalId}
+                    onExport={handleExport}
+                    onNewPortal={handleNewPortal}
+                    onClosePortal={handleClosePortal}
+                    onSshConnect={handleSshConnect}
+                    onPtyOpen={handlePtyOpen}
+                    onSendCtrlC={sendCtrlC}
+                    onSendCtrlR={sendCtrlR}
+                />
 
                 {shellTerm}
 

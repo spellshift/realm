@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	mathrand "math/rand"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -287,6 +289,24 @@ func (r *mutationResolver) UnfavoriteHost(ctx context.Context, hostID int) (*ent
 	return r.client.Host.UpdateOneID(hostID).RemoveFavoritedByIDs(owner.ID).Save(ctx)
 }
 
+// SubscribeToHost is the resolver for the subscribeToHost field.
+func (r *mutationResolver) SubscribeToHost(ctx context.Context, hostID int) (*ent.Host, error) {
+	owner := auth.UserFromContext(ctx)
+	if owner == nil {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return r.client.Host.UpdateOneID(hostID).AddSubscriberIDs(owner.ID).Save(ctx)
+}
+
+// UnsubscribeFromHost is the resolver for the unsubscribeFromHost field.
+func (r *mutationResolver) UnsubscribeFromHost(ctx context.Context, hostID int) (*ent.Host, error) {
+	owner := auth.UserFromContext(ctx)
+	if owner == nil {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return r.client.Host.UpdateOneID(hostID).RemoveSubscriberIDs(owner.ID).Save(ctx)
+}
+
 // CreateTag is the resolver for the createTag field.
 func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error) {
 	return r.client.Tag.Create().SetInput(input).Save(ctx)
@@ -295,6 +315,28 @@ func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInp
 // UpdateTag is the resolver for the updateTag field.
 func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error) {
 	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
+}
+
+// DeleteAsset is the resolver for the deleteAsset field.
+func (r *mutationResolver) DeleteAsset(ctx context.Context, assetID int) (int, error) {
+	a, err := r.client.Asset.Get(ctx, assetID)
+	if err != nil {
+		return 0, err
+	}
+	tomeCount, err := a.QueryTomes().Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query associated tomes: %w", err)
+	}
+	if tomeCount > 0 {
+		return 0, fmt.Errorf("cannot delete asset: it is associated with %d tome(s)", tomeCount)
+	}
+	if _, err := r.client.Link.Delete().Where(link.HasAssetWith(asset.ID(assetID))).Exec(ctx); err != nil {
+		return 0, fmt.Errorf("failed to delete associated links: %w", err)
+	}
+	if err := r.client.Asset.DeleteOneID(assetID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return assetID, nil
 }
 
 // CreateTome is the resolver for the createTome field.
@@ -410,6 +452,18 @@ func (r *mutationResolver) ClosePortal(ctx context.Context, portalID int) (*ent.
 	if !p.ClosedAt.IsZero() {
 		return nil, fmt.Errorf("portal %d is already closed", portalID)
 	}
+
+	// Log portal close with beacon and host info
+	logAttrs := []any{"portal_id", portalID}
+	if b, err := p.QueryBeacon().WithHost().Only(ctx); err == nil {
+		logAttrs = append(logAttrs, "beacon_id", b.ID)
+		if b.Edges.Host != nil {
+			logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
+		}
+	} else {
+		slog.WarnContext(ctx, "failed to query beacon for portal close log", "portal_id", portalID, "error", err)
+	}
+	slog.InfoContext(ctx, "portal close requested", logAttrs...)
 
 	// Publish CLOSE message with an empty stream ID to the portal's input topic
 	// so the agent receives it and tears down the portal connections.
@@ -695,6 +749,14 @@ func (r *mutationResolver) MarkNotificationsAsArchived(ctx context.Context, noti
 			notification.HasUserWith(user.ID(u.ID)),
 		).
 		All(ctx)
+}
+
+// DeleteAllNotifications is the resolver for the deleteAllNotifications field.
+func (r *mutationResolver) DeleteAllNotifications(ctx context.Context) (bool, error) {
+	if _, err := r.client.Notification.Delete().Exec(ctx); err != nil {
+		return false, fmt.Errorf("failed to delete notifications: %w", err)
+	}
+	return true, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

@@ -1,6 +1,6 @@
 [package]
 name = "eldritch-libsys"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2024"
 
 [dependencies]
@@ -29,6 +29,8 @@ windows-sys = { workspace = true, features = [
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",
     "Win32_UI_Shell",
+    "Win32_System_Pipes",
+    "Win32_System_Environment",
 ] }
 
 [features]

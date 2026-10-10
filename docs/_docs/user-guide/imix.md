@@ -24,6 +24,9 @@ Building in the dev container limits variables that might cause issues and is th
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 | IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
+| IMIX_GUARDRAILS | JSON list of guardrail objects; if set, Imix exits at startup unless at least one guardrail passes. See [Guardrails](#guardrails) for details. | - | No |
+| IMIX_CONFIG | YAML-formatted advanced configuration string for multiple transports. When set, overrides `IMIX_CALLBACK_URI`, `IMIX_CALLBACK_INTERVAL`, and `IMIX_TRANSPORT_EXTRA_*`. See [Advanced Configuration](#advanced-configuration-imix_config) for details. | - | No |
+| IMIX_DEBUG | Debug output mode: `tomes` (print tome execution), `all` (print all debug output including imix internals) | `all` in debug builds, none in release | No |
 
 
 Imix has run-time configuration, that may be specified using environment variables during execution.
@@ -46,11 +49,23 @@ Building in the dev container limits variables that might cause issues and is th
 
 ## Setting encryption key
 
-By default imix will automatically collect the IMIX_CALLBACK_URI server's public key during the build process. This can be overridden by manually setting the `IMIX_SERVER_PUBKEY` environment variable but should only be necessary when using redirectors. Redirectors have no visibility into the realm encryption by design, this means that agents must be compiled with the upstream tavern instance's public key.
+By default, imix will automatically fetch the server's public key from the `IMIX_CALLBACK_URI` during the build process by querying the `/status` endpoint.
 
-A server's public key can be found using:
+**Important:** This automatic fetch only works when connecting **directly to Tavern**. If you're using a **redirector**, you must manually set the `IMIX_SERVER_PUBKEY` environment variable because:
+- Redirectors forward traffic but don't expose Tavern's `/status` endpoint
+- Redirectors have no visibility into Realm's encryption by design
+- Agents must be compiled with the **upstream Tavern instance's** public key, not the redirector's address
+
+To manually set the server public key, query your **Tavern instance directly** (not the redirector):
+
 ```bash
-export IMIX_SERVER_PUBKEY="$(curl $IMIX_CALLBACK_URI/status | jq -r '.Pubkey')"
+# Query Tavern directly (not the redirector)
+export IMIX_SERVER_PUBKEY="$(curl http://your-tavern-server:8000/status | jq -r '.Pubkey')"
+```
+
+Then build your agent:
+```bash
+cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
 
 ### Linux
@@ -65,6 +80,8 @@ export IMIX_CALLBACK_URI="http://localhost"
 
 cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 ```
+
+Compiled binary will be located at: `implants/target/x86_64-unknown-linux-musl/release/imix`
 
 ### MacOS
 
@@ -102,6 +119,8 @@ export IMIX_SERVER_PUBKEY="<SERVER_PUBKEY>"
 cargo zigbuild  --release --target aarch64-apple-darwin
 ```
 
+Compiled binary will be located at: `implants/target/aarch64-apple-darwin/release/imix`
+
 
 ### Windows
 
@@ -119,6 +138,10 @@ cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 cargo build --release --lib --target=x86_64-pc-windows-gnu
 ```
 
+- Compiled `imix.exe` will be located at: `implants/target/x86_64-pc-windows-gnu/release/imix.exe`
+- Compiled service binary (built with `--features win_service`) will also be located at: `implants/target/x86_64-pc-windows-gnu/release/imix.exe` — build these separately and rename/copy as needed
+- Compiled DLL will be located at: `implants/target/x86_64-pc-windows-gnu/release/imix.dll`
+
 
 ## Advanced Configuration (IMIX_CONFIG)
 
@@ -133,6 +156,7 @@ transports:
   - URI: <string>
     type: <grpc|http1|dns|icmp>
     interval: <integer> # optional, seconds
+    jitter: <float>     # optional, percentage eg 0.20 for 20%, defaults to 0.0
     extra: <json_string> # required (use "" if none)
 server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
 ```
@@ -167,11 +191,12 @@ cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 
 ## Transport configuration
 
-Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
+Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `quic`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
 
 ### global configuration options
 - `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
 - `interval`: the number of seconds between callbacks.
+- `jitter`: a float in the range `[0.0, 1.0]` that introduces randomness into the callback interval. Each cycle, the effective interval is reduced by up to `jitter * interval` seconds, so a value of `0.5` means callbacks may occur anywhere between 50% and 100% of the configured interval. Defaults to `0.0` (no jitter).
 - `extra`: JSON dictionary for transport specific configuration. These are outlined below:
 
 ### grpc
@@ -195,6 +220,15 @@ The HTTP1 transport uses HTTP post requests to communicate to the redirector.
 
 
 This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+
+### quic
+
+The QUIC transport uses QUIC/UDP (via `realm-quic` ALPN) to communicate to the redirector/server.
+
+This transport supports all eldritch functions, including those that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+**Extra Keys Supported:** None
 
 
 ### dns
@@ -389,3 +423,11 @@ On Windows, you can optionally configure Imix to fetch the uniqueness ID from a 
 ```bash
 export IMIX_UNIQUE='[{"type":"env"},{"type":"registry","args":{"subkey":"SOFTWARE\\MyCompany","value_name":"InstallID"}}]'
 ```
+
+## QUIC Port Rebinding Configuration
+
+When utilizing the `quic` or `quics` transport types, client-side port rebinding can be configured to dynamically migrate the local UDP socket port.
+
+Configure the parameters in the transport's `extra` JSON map:
+- `rebind_interval`: Integer string representing the base interval in seconds. Defaults to `220`.
+- `rebind_jitter`: Float string representing the jitter factor (e.g. `"0.15"`). Defaults to `0.15`.

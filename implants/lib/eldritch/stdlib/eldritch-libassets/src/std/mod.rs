@@ -40,6 +40,12 @@ pub struct EmbeddedAssets<T: rust_embed::Embed> {
     _phantom: PhantomData<T>,
 }
 
+impl<T: rust_embed::Embed> Default for EmbeddedAssets<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: rust_embed::Embed> EmbeddedAssets<T> {
     pub fn new() -> Self {
         // No arguments needed
@@ -117,6 +123,12 @@ pub struct StdAssetsLibrary {
 impl core::fmt::Debug for StdAssetsLibrary {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("StdAssetsLibrary").finish()
+    }
+}
+
+impl Default for StdAssetsLibrary {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

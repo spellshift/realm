@@ -29,6 +29,9 @@ export enum SupportedTransports {
     GRPC="TRANSPORT_GRPC",
     HTTP1="TRANSPORT_HTTP1",
     ICMP="TRANSPORT_ICMP",
+    QUIC="TRANSPORT_QUIC",
+    TCP_BIND="TRANSPORT_TCP_BIND",
+    UDS="TRANSPORT_UDS",
     Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
 
@@ -98,6 +101,14 @@ export enum AssetOrderField {
 }
 
 
+export enum BeaconOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    LastSeenAt = "LAST_SEEN_AT",
+    NextSeenAt = "NEXT_SEEN_AT",
+    Interval = "INTERVAL",
+}
+
 export enum ProcessOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",
@@ -162,4 +173,5 @@ export enum EventKind {
     HOST_ACCESS_RECOVERED = "HOST_ACCESS_RECOVERED",
     HOST_ACCESS_LOST = "HOST_ACCESS_LOST",
     QUEST_COMPLETED = "QUEST_COMPLETED",
+    NEW_USER_REQUEST = "NEW_USER_REQUEST",
 }

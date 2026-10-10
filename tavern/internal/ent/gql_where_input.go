@@ -3863,6 +3863,10 @@ type EventWhereInput struct {
 	HasQuest     *bool              `json:"hasQuest,omitempty"`
 	HasQuestWith []*QuestWhereInput `json:"hasQuestWith,omitempty"`
 
+	// "user" edge predicates.
+	HasUser     *bool             `json:"hasUser,omitempty"`
+	HasUserWith []*UserWhereInput `json:"hasUserWith,omitempty"`
+
 	// "notifications" edge predicates.
 	HasNotifications     *bool                     `json:"hasNotifications,omitempty"`
 	HasNotificationsWith []*NotificationWhereInput `json:"hasNotificationsWith,omitempty"`
@@ -4102,6 +4106,24 @@ func (i *EventWhereInput) P() (predicate.Event, error) {
 		}
 		predicates = append(predicates, event.HasQuestWith(with...))
 	}
+	if i.HasUser != nil {
+		p := event.HasUser()
+		if !*i.HasUser {
+			p = event.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUserWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUserWith))
+		for _, w := range i.HasUserWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUserWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, event.HasUserWith(with...))
+	}
 	if i.HasNotifications != nil {
 		p := event.HasNotifications()
 		if !*i.HasNotifications {
@@ -4294,6 +4316,10 @@ type HostWhereInput struct {
 	// "events" edge predicates.
 	HasEvents     *bool              `json:"hasEvents,omitempty"`
 	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
+
+	// "subscribers" edge predicates.
+	HasSubscribers     *bool             `json:"hasSubscribers,omitempty"`
+	HasSubscribersWith []*UserWhereInput `json:"hasSubscribersWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4829,6 +4855,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, host.HasEventsWith(with...))
+	}
+	if i.HasSubscribers != nil {
+		p := host.HasSubscribers()
+		if !*i.HasSubscribers {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSubscribersWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasSubscribersWith))
+		for _, w := range i.HasSubscribersWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSubscribersWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasSubscribersWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -12675,6 +12719,14 @@ type UserWhereInput struct {
 	// "favoriteHosts" edge predicates.
 	HasFavoriteHosts     *bool             `json:"hasFavoriteHosts,omitempty"`
 	HasFavoriteHostsWith []*HostWhereInput `json:"hasFavoriteHostsWith,omitempty"`
+
+	// "subscribedHosts" edge predicates.
+	HasSubscribedHosts     *bool             `json:"hasSubscribedHosts,omitempty"`
+	HasSubscribedHostsWith []*HostWhereInput `json:"hasSubscribedHostsWith,omitempty"`
+
+	// "events" edge predicates.
+	HasEvents     *bool              `json:"hasEvents,omitempty"`
+	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -12991,6 +13043,42 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasFavoriteHostsWith(with...))
+	}
+	if i.HasSubscribedHosts != nil {
+		p := user.HasSubscribedHosts()
+		if !*i.HasSubscribedHosts {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasSubscribedHostsWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasSubscribedHostsWith))
+		for _, w := range i.HasSubscribedHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasSubscribedHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasSubscribedHostsWith(with...))
+	}
+	if i.HasEvents != nil {
+		p := user.HasEvents()
+		if !*i.HasEvents {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasEventsWith) > 0 {
+		with := make([]predicate.Event, 0, len(i.HasEventsWith))
+		for _, w := range i.HasEventsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasEventsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasEventsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

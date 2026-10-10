@@ -7,12 +7,18 @@ use std::collections::HashMap;
 use std::io::Write; // Required for writing to stdin
 use std::process::{Command, Stdio};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "freebsd"))]
 use {
     nix::sys::wait::wait,
     nix::unistd::{ForkResult, fork, setsid},
     std::process::exit,
 };
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 struct CommandOutput {
     stdout: String,
@@ -60,13 +66,15 @@ fn handle_exec(
         Stdio::null()
     };
     if !disown {
-        let mut child = Command::new(path)
-            .args(args)
+        let mut cmd = Command::new(path);
+        cmd.args(args)
             .envs(env_vars)
             .stdin(stdinpipe)
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()?;
+            .stderr(Stdio::piped());
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let mut child = cmd.spawn()?;
 
         // If we have input, write it to the pipe
         if let Some(text) = input
@@ -95,6 +103,7 @@ fn handle_exec(
                 .stdin(stdinpipe)
                 .args(args)
                 .envs(env_vars)
+                .creation_flags(CREATE_NO_WINDOW)
                 .spawn()?;
 
             if let Some(text) = input {

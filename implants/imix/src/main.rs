@@ -21,6 +21,7 @@ pub use transport::Transport;
 
 mod agent;
 mod assets;
+mod imix_config;
 mod install;
 mod portal;
 mod printer;
@@ -41,9 +42,16 @@ async fn main() -> Result<()> {
 
     run::init_logger();
 
+    // Install the default Rustls crypto provider (ring) at process startup.
+    // This is required when using proxy connectors (hyper_http_proxy) with Rustls 0.23,
+    // which checks for a process-level CryptoProvider rather than an inline one.
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .ok();
+
     #[cfg(feature = "install")]
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::info!("beginning installation");
 
         if std::env::args().any(|arg| arg == "install") {
@@ -57,7 +65,7 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         Err(_err) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::error!("Failed to start service (running as exe?): {_err}");
         }
     }

@@ -38,7 +38,7 @@ jobs:
     - name: 📦 Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgbm-dev libx11-dev libssl-dev protobuf-compiler pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev
+        sudo apt-get install -y libgbm-dev libx11-dev libssl-dev protobuf-compiler pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev libpam0g-dev
     - name: 🔨 Build Tavern
       run: |
         go mod download
@@ -83,6 +83,13 @@ jobs:
       working-directory: tests/e2e
       run: |
         npx playwright test tests/asset_execution.spec.ts
+    - name: 📤 Upload JUnit Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-e2e-asset-execution
+        path: tests/e2e/results.xml
+        if-no-files-found: ignore
     - name: 📂 Upload Service Logs
       if: always() # Runs even if tests fail
       uses: actions/upload-artifact@v4

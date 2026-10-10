@@ -39,7 +39,14 @@ func TestMetrics_QuestTimelineChart(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	now := time.Now()
+	// Anchor the timeline to a fixed, second-aligned instant rather than
+	// time.Now(). Wall-clock anchoring made this test sensitive to when CI
+	// happens to run: sub-second precision loss on the created_at
+	// round-trip through the database could push a quest across a bucket
+	// boundary (see the flaky failures fixed in #2211). A fixed base time
+	// with all quest offsets comfortably inside their buckets makes the
+	// test fully deterministic.
+	now := time.Date(2026, 5, 15, 12, 0, 0, 0, time.UTC)
 	startTime := now.Add(-10 * time.Second)
 
 	// Create quests at different times
@@ -80,7 +87,7 @@ func TestMetrics_QuestTimelineChart(t *testing.T) {
 
 	// Verify Bucket 1 (startTime + 1s)
 	bucket1 := buckets[1]
-	require.Equal(t, startTime.Add(1*time.Second).Truncate(time.Second), bucket1.StartTimestamp.Truncate(time.Second))
+	require.Equal(t, startTime.Add(1*time.Second), bucket1.StartTimestamp)
 	require.Equal(t, 2, bucket1.Count)
 	require.Len(t, bucket1.GroupByTactic, 2)
 
@@ -102,4 +109,23 @@ func TestMetrics_QuestTimelineChart(t *testing.T) {
 	require.Len(t, bucket3.GroupByTactic, 1)
 	require.Equal(t, tome.TacticRECON, bucket3.GroupByTactic[0].Tactic)
 	require.Equal(t, 1, bucket3.GroupByTactic[0].Count)
+
+	// Verify the final bucket boundary: a quest created exactly at `end`
+	// (startTime + 10s) lands in the last bucket, which must be included.
+	_, err = client.Quest.Create().
+		SetName("quest4").
+		SetTome(tome1).
+		SetCreatedAt(now).
+		Save(ctx)
+	require.NoError(t, err)
+
+	buckets, err = resolver.QuestTimelineChart(ctx, &models.Metrics{}, startTime, &now, granularitySeconds, nil)
+	require.NoError(t, err)
+	require.Len(t, buckets, expectedBuckets)
+
+	lastBucket := buckets[expectedBuckets-1]
+	require.Equal(t, now, lastBucket.StartTimestamp)
+	require.Equal(t, 1, lastBucket.Count)
+	require.Len(t, lastBucket.GroupByTactic, 1)
+	require.Equal(t, tome.TacticRECON, lastBucket.GroupByTactic[0].Tactic)
 }

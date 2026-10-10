@@ -35,7 +35,8 @@ describe("ShellStatusBar", () => {
 
     it("displays portal active message when portalId is present", () => {
         render(<ShellStatusBar {...defaultProps} portalId={123} />);
-        expect(screen.getByText("Portal Active (ID: 123)")).toBeInTheDocument();
+        expect(screen.getByText("Portal Active")).toBeInTheDocument();
+        expect(screen.getByText("(ID: 123)")).toBeInTheDocument();
     });
 
     it("displays non-interactive message when portalId is null", () => {

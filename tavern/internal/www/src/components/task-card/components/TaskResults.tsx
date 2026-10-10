@@ -7,7 +7,7 @@ const TaskResults = ({
         <div className="text-sm max-h-80 overflow-y-scroll overflow-x-scroll py-1" aria-label="task output">
             <div className="max-w-fit">
                 {result && result.length > 0 ? (
-                    <CodeBlock code={result} />
+                    <CodeBlock code={result} language="bash" />
                 ) : (
                     <div className="py-3 px-2 text-sm">Not available</div>
                 )}

@@ -101,3 +101,9 @@ export const CREATE_LINK = gql`
     }
   }
 `;
+
+export const DELETE_ASSET = gql`
+  mutation DeleteAsset($assetID: ID!) {
+    deleteAsset(assetID: $assetID)
+  }
+`;

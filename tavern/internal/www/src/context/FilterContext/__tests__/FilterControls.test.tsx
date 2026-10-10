@@ -7,9 +7,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 // Mock the child components
 vi.mock('../../../components/beacon-filter-bar', () => ({
-  BeaconFilterBar: ({ onChange, value, isDisabled }: any) => (
+  BeaconFilterBar: ({ onChange, value }: any) => (
     <div data-testid="beacon-filter-bar">
-      <span data-testid="beacon-disabled">{isDisabled ? 'disabled' : 'enabled'}</span>
       <span data-testid="beacon-count">{value.length}</span>
       <button onClick={() => onChange([{ kind: 'beacon', id: '1', name: 'Test Beacon' }])}>
         Add Beacon
@@ -19,9 +18,8 @@ vi.mock('../../../components/beacon-filter-bar', () => ({
 }));
 
 vi.mock('../../../components/TomeFilterBar', () => ({
-  TomeFilterBar: ({ setFiltersSelected, filtersSelected, isDisabled }: any) => (
+  TomeFilterBar: ({ setFiltersSelected, filtersSelected }: any) => (
     <div data-testid="tome-filter-bar">
-      <span data-testid="tome-disabled">{isDisabled ? 'disabled' : 'enabled'}</span>
       <span data-testid="tome-count">{filtersSelected.length}</span>
       <button onClick={() => setFiltersSelected([{ kind: 'tome', id: 't1', name: 'Test Tome' }])}>
         Add Tome
@@ -31,13 +29,12 @@ vi.mock('../../../components/TomeFilterBar', () => ({
 }));
 
 vi.mock('../../../components/tavern-base-ui/FreeTextSearch', () => ({
-  default: ({ setSearch, defaultValue, placeholder, isDisabled }: any) => (
+  default: ({ setSearch, defaultValue, placeholder }: any) => (
     <div data-testid={`free-text-search-${placeholder}`}>
       <input
         type="text"
         placeholder={placeholder}
         defaultValue={defaultValue}
-        disabled={isDisabled}
         onChange={(e) => setSearch(e.target.value)}
         data-testid={`search-input-${placeholder}`}
       />
@@ -180,19 +177,6 @@ describe('FilterControls', () => {
       expect(getIsLocked()).toBe(true);
     });
 
-    it('should disable filter components when isLocked is true', async () => {
-      const user = userEvent.setup();
-      render(<TestWrapper path="/quests" />);
-
-      expect(screen.getByTestId('beacon-disabled')).toHaveTextContent('enabled');
-      expect(screen.getByTestId('tome-disabled')).toHaveTextContent('enabled');
-
-      const lockButton = screen.getByRole('button', { name: /lock filters/i });
-      await user.click(lockButton);
-
-      expect(screen.getByTestId('beacon-disabled')).toHaveTextContent('disabled');
-      expect(screen.getByTestId('tome-disabled')).toHaveTextContent('disabled');
-    });
   });
 
   describe('Filter component interactions', () => {

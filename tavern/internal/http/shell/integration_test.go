@@ -722,6 +722,175 @@ func TestShellHistory_Interactive(t *testing.T) {
 	require.Contains(t, outMsg.Output, "history_output")
 }
 
+func TestPortalDowngrade(t *testing.T) {
+	env := SetupTestEnv(t)
+	defer env.Close()
+	ctx := context.Background()
+
+	// 1. Create Portal (Agent side)
+	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID, 0)
+	require.NoError(t, err)
+
+	p, err := env.EntClient.Portal.Get(ctx, portalID)
+	require.NoError(t, err)
+
+	err = env.Shell.Update().AddPortals(p).Exec(ctx)
+	require.NoError(t, err)
+
+	// Subscribe to IN topic
+	agentInCh, agentSubCleanup := env.Mux.Subscribe(env.Mux.TopicIn(p.ID))
+	defer agentSubCleanup()
+
+	// 2. Connect via WebSocket
+	url := fmt.Sprintf("%s?shell_id=%d", env.WSURL, env.Shell.ID)
+	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	// 3. Wait for Portal Upgrade Message
+	ws.SetReadDeadline(time.Now().Add(10 * time.Second))
+	for {
+		_, data, err := ws.ReadMessage()
+		require.NoError(t, err)
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindControlFlow {
+			var ctrlMsg shell.WebsocketControlFlowMessage
+			json.Unmarshal(data, &ctrlMsg)
+			if ctrlMsg.Signal == shell.WebsocketControlFlowSignalPortalUpgrade {
+				require.Equal(t, p.ID, ctrlMsg.PortalID)
+				break
+			}
+		}
+	}
+
+	// 4. Verify interactive mode works - send input via portal
+	inputCmd := "ls -la"
+	err = ws.WriteJSON(shell.WebsocketTaskInputMessage{
+		Kind:  shell.WebsocketMessageKindInput,
+		Input: inputCmd,
+	})
+	require.NoError(t, err)
+
+	// Verify input arrives on portal IN topic
+	select {
+	case mote := <-agentInCh:
+		require.NotNil(t, mote.GetShell())
+		require.Equal(t, inputCmd, mote.GetShell().Input)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for input on portal")
+	}
+
+	// 5. Close the portal by sending a CLOSE mote on TopicOut (simulates sendPortalClose)
+	agentCleanup() // Clean up agent-side subscriptions
+	err = env.Mux.Publish(ctx, env.Mux.TopicOut(p.ID), &portalpb.Mote{
+		Payload: &portalpb.Mote_Bytes{
+			Bytes: &portalpb.BytesPayload{
+				Data: []byte("portal closed"),
+				Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// 6. Expect PORTAL_DOWNGRADE message
+	ws.SetReadDeadline(time.Now().Add(10 * time.Second))
+	for {
+		_, data, err := ws.ReadMessage()
+		require.NoError(t, err)
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindControlFlow {
+			var ctrlMsg shell.WebsocketControlFlowMessage
+			json.Unmarshal(data, &ctrlMsg)
+			if ctrlMsg.Signal == shell.WebsocketControlFlowSignalPortalDowngrade {
+				require.Equal(t, p.ID, ctrlMsg.PortalID)
+				break
+			}
+		}
+	}
+
+	// 7. Verify non-interactive mode works after downgrade
+	// Send another command - should get TASK_QUEUED instead of portal publish
+	inputCmd2 := "whoami"
+	err = ws.WriteJSON(shell.WebsocketTaskInputMessage{
+		Kind:  shell.WebsocketMessageKindInput,
+		Input: inputCmd2,
+	})
+	require.NoError(t, err)
+
+	// Expect "Task Queued" Control Message
+	ws.SetReadDeadline(time.Now().Add(10 * time.Second))
+	for {
+		_, data, err := ws.ReadMessage()
+		require.NoError(t, err)
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindControlFlow {
+			var ctrlMsg shell.WebsocketControlFlowMessage
+			json.Unmarshal(data, &ctrlMsg)
+			if ctrlMsg.Signal == shell.WebsocketControlFlowSignalTaskQueued {
+				require.Contains(t, ctrlMsg.Message, "Task Queued")
+				break
+			}
+		}
+	}
+
+	// 8. Verify non-interactive polling works (agent writes output to DB, polled to client)
+	time.Sleep(100 * time.Millisecond)
+	tasks, err := env.EntClient.ShellTask.Query().All(ctx)
+	require.NoError(t, err)
+	require.Len(t, tasks, 2) // Two tasks: one from interactive, one from non-interactive
+
+	// Find the second task and set its output
+	var secondTask *ent.ShellTask
+	for _, task := range tasks {
+		if task.Input == inputCmd2 {
+			secondTask = task
+			break
+		}
+	}
+	require.NotNil(t, secondTask, "second task not found")
+
+	_, err = secondTask.Update().SetOutput("testuser").Save(ctx)
+	require.NoError(t, err)
+
+	// Expect output via polling
+	var outMsg shell.WebsocketTaskOutputMessage
+	found := false
+	deadline := time.Now().Add(5 * time.Second)
+	ws.SetReadDeadline(deadline)
+	for !found {
+		if time.Now().After(deadline) {
+			t.Fatal("timeout waiting for polled output after downgrade")
+		}
+		_, data, err := ws.ReadMessage()
+		if err != nil {
+			if strings.Contains(err.Error(), "i/o timeout") {
+				t.Fatal("timeout waiting for polled output after downgrade")
+			}
+			continue
+		}
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindOutput {
+			json.Unmarshal(data, &outMsg)
+			if strings.Contains(outMsg.Output, "testuser") {
+				found = true
+			}
+		}
+	}
+	require.Contains(t, outMsg.Output, "testuser")
+}
+
 func TestShellActiveUsers(t *testing.T) {
 	env := SetupTestEnv(t)
 	defer env.Close()

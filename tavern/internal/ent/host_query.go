@@ -39,6 +39,7 @@ type HostQuery struct {
 	withScreenshots      *ScreenshotQuery
 	withFavoritedBy      *UserQuery
 	withEvents           *EventQuery
+	withSubscribers      *UserQuery
 	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Host) error
@@ -50,6 +51,7 @@ type HostQuery struct {
 	withNamedScreenshots map[string]*ScreenshotQuery
 	withNamedFavoritedBy map[string]*UserQuery
 	withNamedEvents      map[string]*EventQuery
+	withNamedSubscribers map[string]*UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -262,6 +264,28 @@ func (hq *HostQuery) QueryEvents() *EventQuery {
 	return query
 }
 
+// QuerySubscribers chains the current query on the "subscribers" edge.
+func (hq *HostQuery) QuerySubscribers() *UserQuery {
+	query := (&UserClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, host.SubscribersTable, host.SubscribersPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Host entity from the query.
 // Returns a *NotFoundError when no Host was found.
 func (hq *HostQuery) First(ctx context.Context) (*Host, error) {
@@ -462,6 +486,7 @@ func (hq *HostQuery) Clone() *HostQuery {
 		withScreenshots: hq.withScreenshots.Clone(),
 		withFavoritedBy: hq.withFavoritedBy.Clone(),
 		withEvents:      hq.withEvents.Clone(),
+		withSubscribers: hq.withSubscribers.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
 		path: hq.path,
@@ -556,6 +581,17 @@ func (hq *HostQuery) WithEvents(opts ...func(*EventQuery)) *HostQuery {
 	return hq
 }
 
+// WithSubscribers tells the query-builder to eager-load the nodes that are connected to
+// the "subscribers" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithSubscribers(opts ...func(*UserQuery)) *HostQuery {
+	query := (&UserClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withSubscribers = query
+	return hq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -635,7 +671,7 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		nodes       = []*Host{}
 		withFKs     = hq.withFKs
 		_spec       = hq.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [9]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
 			hq.withFiles != nil,
@@ -644,6 +680,7 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			hq.withScreenshots != nil,
 			hq.withFavoritedBy != nil,
 			hq.withEvents != nil,
+			hq.withSubscribers != nil,
 		}
 	)
 	if withFKs {
@@ -726,6 +763,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withSubscribers; query != nil {
+		if err := hq.loadSubscribers(ctx, query, nodes,
+			func(n *Host) { n.Edges.Subscribers = []*User{} },
+			func(n *Host, e *User) { n.Edges.Subscribers = append(n.Edges.Subscribers, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range hq.withNamedTags {
 		if err := hq.loadTags(ctx, query, nodes,
 			func(n *Host) { n.appendNamedTags(name) },
@@ -779,6 +823,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadEvents(ctx, query, nodes,
 			func(n *Host) { n.appendNamedEvents(name) },
 			func(n *Host, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedSubscribers {
+		if err := hq.loadSubscribers(ctx, query, nodes,
+			func(n *Host) { n.appendNamedSubscribers(name) },
+			func(n *Host, e *User) { n.appendNamedSubscribers(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1098,6 +1149,67 @@ func (hq *HostQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []
 	}
 	return nil
 }
+func (hq *HostQuery) loadSubscribers(ctx context.Context, query *UserQuery, nodes []*Host, init func(*Host), assign func(*Host, *User)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Host)
+	nids := make(map[int]map[*Host]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(host.SubscribersTable)
+		s.Join(joinT).On(s.C(user.FieldID), joinT.C(host.SubscribersPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(host.SubscribersPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(host.SubscribersPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Host]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*User](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "subscribers" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
 
 func (hq *HostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hq.querySpec()
@@ -1292,6 +1404,20 @@ func (hq *HostQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *Ho
 		hq.withNamedEvents = make(map[string]*EventQuery)
 	}
 	hq.withNamedEvents[name] = query
+	return hq
+}
+
+// WithNamedSubscribers tells the query-builder to eager-load the nodes that are connected to the "subscribers"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedSubscribers(name string, opts ...func(*UserQuery)) *HostQuery {
+	query := (&UserClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedSubscribers == nil {
+		hq.withNamedSubscribers = make(map[string]*UserQuery)
+	}
+	hq.withNamedSubscribers[name] = query
 	return hq
 }
 

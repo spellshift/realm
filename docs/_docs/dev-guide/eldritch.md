@@ -304,3 +304,13 @@ mod tests {
     }
 }
 ```
+
+#### Generating eldritch tooltips for REPL Shell
+
+After writing about a new function in `user-guide/eldritch.md`, generate the tooltips for tavern (hosted at `tavern/internal/www/src/eldritch-docs.json`) and regenerate.
+
+```bash
+cd realm/
+node tavern/internal/www/scripts/generate-docs.js
+go generate ./tavern/...
+```

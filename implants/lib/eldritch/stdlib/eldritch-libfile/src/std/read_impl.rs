@@ -76,7 +76,7 @@ mod tests {
             0x64, 0x00, // d
         ];
 
-        fs::write(&path, &bytes).unwrap();
+        fs::write(&path, bytes).unwrap();
 
         assert_eq!(read(path).unwrap(), "hello\r\nworld");
     }

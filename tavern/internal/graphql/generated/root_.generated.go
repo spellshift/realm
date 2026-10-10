@@ -131,14 +131,16 @@ type ComplexityRoot struct {
 	}
 
 	BeaconTimelineBucket struct {
+		CallbackCount  func(childComplexity int) int
 		Count          func(childComplexity int) int
 		GroupByHosts   func(childComplexity int) int
 		StartTimestamp func(childComplexity int) int
 	}
 
 	BeaconTimelineHostBucket struct {
-		Count func(childComplexity int) int
-		Host  func(childComplexity int) int
+		CallbackCount func(childComplexity int) int
+		Count         func(childComplexity int) int
+		Host          func(childComplexity int) int
 	}
 
 	BuildProfile struct {
@@ -265,6 +267,7 @@ type ComplexityRoot struct {
 		Notifications  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
 		Quest          func(childComplexity int) int
 		Timestamp      func(childComplexity int) int
+		User           func(childComplexity int) int
 	}
 
 	EventConnection struct {
@@ -296,6 +299,7 @@ type ComplexityRoot struct {
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
 		Screenshots    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScreenshotOrder, where *ent.ScreenshotWhereInput) int
+		Subscribers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 	}
 
@@ -431,6 +435,8 @@ type ComplexityRoot struct {
 		CreateShell                 func(childComplexity int, input ent.CreateShellInput) int
 		CreateTag                   func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome                  func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteAllNotifications      func(childComplexity int) int
+		DeleteAsset                 func(childComplexity int, assetID int) int
 		DeleteBuilder               func(childComplexity int, builderID int) int
 		DeleteTome                  func(childComplexity int, tomeID int) int
 		DisableLink                 func(childComplexity int, linkID int) int
@@ -442,7 +448,9 @@ type ComplexityRoot struct {
 		MarkNotificationsAsRead     func(childComplexity int, notificationIDs []int) int
 		RegisterBuilder             func(childComplexity int, input ent.CreateBuilderInput) int
 		ResetUserAPIKey             func(childComplexity int) int
+		SubscribeToHost             func(childComplexity int, hostID int) int
 		UnfavoriteHost              func(childComplexity int, hostID int) int
+		UnsubscribeFromHost         func(childComplexity int, hostID int) int
 		UpdateBeacon                func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost                  func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink                  func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
@@ -531,7 +539,7 @@ type ComplexityRoot struct {
 		Bundle              func(childComplexity int) int
 		CreatedAt           func(childComplexity int) int
 		Creator             func(childComplexity int) int
-		Diffs               func(childComplexity int) int
+		Diffs               func(childComplexity int, where *ent.TaskWhereInput) int
 		EldritchAtCreation  func(childComplexity int) int
 		Events              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		ID                  func(childComplexity int) int
@@ -822,17 +830,19 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		APIKey        func(childComplexity int) int
-		ActiveShells  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		DeviceAuths   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
-		FavoriteHosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
-		ID            func(childComplexity int) int
-		IsActivated   func(childComplexity int) int
-		IsAdmin       func(childComplexity int) int
-		Name          func(childComplexity int) int
-		Notifications func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
-		PhotoURL      func(childComplexity int) int
-		Tomes         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		APIKey          func(childComplexity int) int
+		ActiveShells    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		DeviceAuths     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
+		Events          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
+		FavoriteHosts   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		ID              func(childComplexity int) int
+		IsActivated     func(childComplexity int) int
+		IsAdmin         func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Notifications   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
+		PhotoURL        func(childComplexity int) int
+		SubscribedHosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		Tomes           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 	}
 
 	UserConnection struct {
@@ -1281,6 +1291,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BeaconHistoryEdge.Node(childComplexity), true
 
+	case "BeaconTimelineBucket.callbackCount":
+		if e.ComplexityRoot.BeaconTimelineBucket.CallbackCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.CallbackCount(childComplexity), true
+
 	case "BeaconTimelineBucket.count":
 		if e.ComplexityRoot.BeaconTimelineBucket.Count == nil {
 			break
@@ -1301,6 +1318,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp(childComplexity), true
+
+	case "BeaconTimelineHostBucket.callbackCount":
+		if e.ComplexityRoot.BeaconTimelineHostBucket.CallbackCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineHostBucket.CallbackCount(childComplexity), true
 
 	case "BeaconTimelineHostBucket.count":
 		if e.ComplexityRoot.BeaconTimelineHostBucket.Count == nil {
@@ -1893,6 +1917,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Event.Timestamp(childComplexity), true
 
+	case "Event.user":
+		if e.ComplexityRoot.Event.User == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.User(childComplexity), true
+
 	case "EventConnection.edges":
 		if e.ComplexityRoot.EventConnection.Edges == nil {
 			break
@@ -2081,6 +2112,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Host.Screenshots(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScreenshotOrder), args["where"].(*ent.ScreenshotWhereInput)), true
+
+	case "Host.subscribers":
+		if e.ComplexityRoot.Host.Subscribers == nil {
+			break
+		}
+
+		args, err := ec.field_Host_subscribers_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Host.Subscribers(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "Host.tags":
 		if e.ComplexityRoot.Host.Tags == nil {
@@ -2756,6 +2799,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.CreateTome(childComplexity, args["input"].(ent.CreateTomeInput)), true
 
+	case "Mutation.deleteAllNotifications":
+		if e.ComplexityRoot.Mutation.DeleteAllNotifications == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteAllNotifications(childComplexity), true
+
+	case "Mutation.deleteAsset":
+		if e.ComplexityRoot.Mutation.DeleteAsset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteAsset_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteAsset(childComplexity, args["assetID"].(int)), true
+
 	case "Mutation.deleteBuilder":
 		if e.ComplexityRoot.Mutation.DeleteBuilder == nil {
 			break
@@ -2878,6 +2940,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.ResetUserAPIKey(childComplexity), true
 
+	case "Mutation.subscribeToHost":
+		if e.ComplexityRoot.Mutation.SubscribeToHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_subscribeToHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SubscribeToHost(childComplexity, args["hostID"].(int)), true
+
 	case "Mutation.unfavoriteHost":
 		if e.ComplexityRoot.Mutation.UnfavoriteHost == nil {
 			break
@@ -2889,6 +2963,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UnfavoriteHost(childComplexity, args["hostID"].(int)), true
+
+	case "Mutation.unsubscribeFromHost":
+		if e.ComplexityRoot.Mutation.UnsubscribeFromHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unsubscribeFromHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UnsubscribeFromHost(childComplexity, args["hostID"].(int)), true
 
 	case "Mutation.updateBeacon":
 		if e.ComplexityRoot.Mutation.UpdateBeacon == nil {
@@ -3447,7 +3533,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.ComplexityRoot.Quest.Diffs(childComplexity), true
+		args, err := ec.field_Quest_diffs_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Quest.Diffs(childComplexity, args["where"].(*ent.TaskWhereInput)), true
 
 	case "Quest.eldritchAtCreation":
 		if e.ComplexityRoot.Quest.EldritchAtCreation == nil {
@@ -4855,6 +4946,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.User.DeviceAuths(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.DeviceAuthOrder), args["where"].(*ent.DeviceAuthWhereInput)), true
 
+	case "User.events":
+		if e.ComplexityRoot.User.Events == nil {
+			break
+		}
+
+		args, err := ec.field_User_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.User.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
+
 	case "User.favoritehosts":
 		if e.ComplexityRoot.User.FavoriteHosts == nil {
 			break
@@ -4913,6 +5016,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.User.PhotoURL(childComplexity), true
+
+	case "User.subscribedhosts":
+		if e.ComplexityRoot.User.SubscribedHosts == nil {
+			break
+		}
+
+		args, err := ec.field_User_subscribedhosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.User.SubscribedHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
 
 	case "User.tomes":
 		if e.ComplexityRoot.User.Tomes == nil {
@@ -5895,6 +6010,7 @@ enum BeaconTransport_Type @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Tra
   TRANSPORT_GRPC
   TRANSPORT_HTTP1
   TRANSPORT_ICMP
+  TRANSPORT_QUIC
   TRANSPORT_TCP_BIND
   TRANSPORT_UDS
   TRANSPORT_UNSPECIFIED
@@ -7354,6 +7470,10 @@ type Event implements Node {
   Quest associated with this event
   """
   quest: Quest
+  """
+  User associated with this event
+  """
+  user: User
   notifications(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -7425,6 +7545,7 @@ enum EventKind @goModel(model: "realm.pub/tavern/internal/ent/event.Kind") {
   HOST_ACCESS_RECOVERED
   HOST_ACCESS_LOST
   QUEST_COMPLETED
+  NEW_USER_REQUEST
 }
 """
 Ordering options for Event connections
@@ -7521,6 +7642,11 @@ input EventWhereInput {
   """
   hasQuest: Boolean
   hasQuestWith: [QuestWhereInput!]
+  """
+  user edge predicates
+  """
+  hasUser: Boolean
+  hasUserWith: [UserWhereInput!]
   """
   notifications edge predicates
   """
@@ -7813,6 +7939,37 @@ type Host implements Node {
     """
     where: EventWhereInput
   ): EventConnection!
+  subscribers(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection!
 }
 """
 A connection to a list of items.
@@ -8870,6 +9027,11 @@ input HostWhereInput {
   """
   hasEvents: Boolean
   hasEventsWith: [EventWhereInput!]
+  """
+  subscribers edge predicates
+  """
+  hasSubscribers: Boolean
+  hasSubscribersWith: [UserWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -12276,6 +12438,9 @@ input UpdateHostInput {
   addFavoritedByIDs: [ID!]
   removeFavoritedByIDs: [ID!]
   clearFavoritedBy: Boolean
+  addSubscriberIDs: [ID!]
+  removeSubscriberIDs: [ID!]
+  clearSubscribers: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.
@@ -12467,6 +12632,12 @@ input UpdateUserInput {
   addFavoriteHostIDs: [ID!]
   removeFavoriteHostIDs: [ID!]
   clearFavoriteHosts: Boolean
+  addSubscribedHostIDs: [ID!]
+  removeSubscribedHostIDs: [ID!]
+  clearSubscribedHosts: Boolean
+  addEventIDs: [ID!]
+  removeEventIDs: [ID!]
+  clearEvents: Boolean
 }
 type User implements Node {
   id: ID!
@@ -12641,6 +12812,68 @@ type User implements Node {
     """
     where: HostWhereInput
   ): HostConnection! @goField(name: "FavoriteHosts", forceResolver: false)
+  subscribedhosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection! @goField(name: "SubscribedHosts", forceResolver: false)
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -12777,6 +13010,16 @@ input UserWhereInput {
   """
   hasFavoriteHosts: Boolean
   hasFavoriteHostsWith: [HostWhereInput!]
+  """
+  subscribedHosts edge predicates
+  """
+  hasSubscribedHosts: Boolean
+  hasSubscribedHostsWith: [HostWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -13117,12 +13360,19 @@ scalar Uint64
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
     favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
     unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    subscribeToHost(hostID: ID!): Host! @requireRole(role: USER)
+    unsubscribeFromHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag
     ###
     createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
+
+    ###
+    # Asset
+    ###
+    deleteAsset(assetID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # Tome
@@ -13182,6 +13432,7 @@ scalar Uint64
     ###
     markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
     markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
+    deleteAllNotifications: Boolean! @requireRole(role: ADMIN)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
@@ -13396,6 +13647,7 @@ type TomeTaskMetrics {
 
 type BeaconTimelineBucket {
   count: Int!
+  callbackCount: Int!
   startTimestamp: Time!
   groupByHosts: [BeaconTimelineHostBucket!]!
 }
@@ -13403,6 +13655,7 @@ type BeaconTimelineBucket {
 type BeaconTimelineHostBucket {
   host: Host!
   count: Int!
+  callbackCount: Int!
 }
 
 type QuestTimelineBucket {
@@ -13429,7 +13682,12 @@ type TaskDiff {
 }
 
 extend type Quest {
-    diffs: [TaskDiff!]! @goField(forceResolver: true)
+    diffs(
+        """
+        Filtering options for Tasks used to compute diffs.
+        """
+        where: TaskWhereInput
+    ): [TaskDiff!]! @goField(forceResolver: true)
 }
 `, BuiltIn: false},
 }

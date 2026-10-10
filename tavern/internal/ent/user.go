@@ -49,17 +49,23 @@ type UserEdges struct {
 	DeviceAuths []*DeviceAuth `json:"device_auths,omitempty"`
 	// Hosts favorited by the user.
 	FavoriteHosts []*Host `json:"favoriteHosts,omitempty"`
+	// Hosts the user is subscribed to.
+	SubscribedHosts []*Host `json:"subscribedHosts,omitempty"`
+	// Events associated with the user.
+	Events []*Event `json:"events,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [7]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [7]map[string]int
 
-	namedNotifications map[string][]*Notification
-	namedTomes         map[string][]*Tome
-	namedActiveShells  map[string][]*Shell
-	namedDeviceAuths   map[string][]*DeviceAuth
-	namedFavoriteHosts map[string][]*Host
+	namedNotifications   map[string][]*Notification
+	namedTomes           map[string][]*Tome
+	namedActiveShells    map[string][]*Shell
+	namedDeviceAuths     map[string][]*DeviceAuth
+	namedFavoriteHosts   map[string][]*Host
+	namedSubscribedHosts map[string][]*Host
+	namedEvents          map[string][]*Event
 }
 
 // NotificationsOrErr returns the Notifications value or an error if the edge
@@ -105,6 +111,24 @@ func (e UserEdges) FavoriteHostsOrErr() ([]*Host, error) {
 		return e.FavoriteHosts, nil
 	}
 	return nil, &NotLoadedError{edge: "favoriteHosts"}
+}
+
+// SubscribedHostsOrErr returns the SubscribedHosts value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) SubscribedHostsOrErr() ([]*Host, error) {
+	if e.loadedTypes[5] {
+		return e.SubscribedHosts, nil
+	}
+	return nil, &NotLoadedError{edge: "subscribedHosts"}
+}
+
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[6] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -226,6 +250,16 @@ func (u *User) QueryDeviceAuths() *DeviceAuthQuery {
 // QueryFavoriteHosts queries the "favoriteHosts" edge of the User entity.
 func (u *User) QueryFavoriteHosts() *HostQuery {
 	return NewUserClient(u.config).QueryFavoriteHosts(u)
+}
+
+// QuerySubscribedHosts queries the "subscribedHosts" edge of the User entity.
+func (u *User) QuerySubscribedHosts() *HostQuery {
+	return NewUserClient(u.config).QuerySubscribedHosts(u)
+}
+
+// QueryEvents queries the "events" edge of the User entity.
+func (u *User) QueryEvents() *EventQuery {
+	return NewUserClient(u.config).QueryEvents(u)
 }
 
 // Update returns a builder for updating this User.
@@ -389,6 +423,54 @@ func (u *User) appendNamedFavoriteHosts(name string, edges ...*Host) {
 		u.Edges.namedFavoriteHosts[name] = []*Host{}
 	} else {
 		u.Edges.namedFavoriteHosts[name] = append(u.Edges.namedFavoriteHosts[name], edges...)
+	}
+}
+
+// NamedSubscribedHosts returns the SubscribedHosts named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedSubscribedHosts(name string) ([]*Host, error) {
+	if u.Edges.namedSubscribedHosts == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedSubscribedHosts[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedSubscribedHosts(name string, edges ...*Host) {
+	if u.Edges.namedSubscribedHosts == nil {
+		u.Edges.namedSubscribedHosts = make(map[string][]*Host)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedSubscribedHosts[name] = []*Host{}
+	} else {
+		u.Edges.namedSubscribedHosts[name] = append(u.Edges.namedSubscribedHosts[name], edges...)
+	}
+}
+
+// NamedEvents returns the Events named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedEvents(name string) ([]*Event, error) {
+	if u.Edges.namedEvents == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedEvents[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedEvents(name string, edges ...*Event) {
+	if u.Edges.namedEvents == nil {
+		u.Edges.namedEvents = make(map[string][]*Event)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedEvents[name] = []*Event{}
+	} else {
+		u.Edges.namedEvents[name] = append(u.Edges.namedEvents[name], edges...)
 	}
 }
 
