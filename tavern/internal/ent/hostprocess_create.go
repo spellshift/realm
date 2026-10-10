@@ -78,6 +78,14 @@ func (hpc *HostProcessCreate) SetPrincipal(s string) *HostProcessCreate {
 	return hpc
 }
 
+// SetNillablePrincipal sets the "principal" field if the given value is not nil.
+func (hpc *HostProcessCreate) SetNillablePrincipal(s *string) *HostProcessCreate {
+	if s != nil {
+		hpc.SetPrincipal(*s)
+	}
+	return hpc
+}
+
 // SetPath sets the "path" field.
 func (hpc *HostProcessCreate) SetPath(s string) *HostProcessCreate {
 	hpc.mutation.SetPath(s)
@@ -264,14 +272,6 @@ func (hpc *HostProcessCreate) check() error {
 	}
 	if _, ok := hpc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "HostProcess.name"`)}
-	}
-	if _, ok := hpc.mutation.Principal(); !ok {
-		return &ValidationError{Name: "principal", err: errors.New(`ent: missing required field "HostProcess.principal"`)}
-	}
-	if v, ok := hpc.mutation.Principal(); ok {
-		if err := hostprocess.PrincipalValidator(v); err != nil {
-			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostProcess.principal": %w`, err)}
-		}
 	}
 	if _, ok := hpc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "HostProcess.status"`)}
@@ -534,6 +534,12 @@ func (u *HostProcessUpsert) UpdatePrincipal() *HostProcessUpsert {
 	return u
 }
 
+// ClearPrincipal clears the value of the "principal" field.
+func (u *HostProcessUpsert) ClearPrincipal() *HostProcessUpsert {
+	u.SetNull(hostprocess.FieldPrincipal)
+	return u
+}
+
 // SetPath sets the "path" field.
 func (u *HostProcessUpsert) SetPath(v string) *HostProcessUpsert {
 	u.Set(hostprocess.FieldPath, v)
@@ -768,6 +774,13 @@ func (u *HostProcessUpsertOne) SetPrincipal(v string) *HostProcessUpsertOne {
 func (u *HostProcessUpsertOne) UpdatePrincipal() *HostProcessUpsertOne {
 	return u.Update(func(s *HostProcessUpsert) {
 		s.UpdatePrincipal()
+	})
+}
+
+// ClearPrincipal clears the value of the "principal" field.
+func (u *HostProcessUpsertOne) ClearPrincipal() *HostProcessUpsertOne {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.ClearPrincipal()
 	})
 }
 
@@ -1189,6 +1202,13 @@ func (u *HostProcessUpsertBulk) SetPrincipal(v string) *HostProcessUpsertBulk {
 func (u *HostProcessUpsertBulk) UpdatePrincipal() *HostProcessUpsertBulk {
 	return u.Update(func(s *HostProcessUpsert) {
 		s.UpdatePrincipal()
+	})
+}
+
+// ClearPrincipal clears the value of the "principal" field.
+func (u *HostProcessUpsertBulk) ClearPrincipal() *HostProcessUpsertBulk {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.ClearPrincipal()
 	})
 }
 

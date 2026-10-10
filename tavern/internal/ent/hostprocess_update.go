@@ -108,6 +108,12 @@ func (hpu *HostProcessUpdate) SetNillablePrincipal(s *string) *HostProcessUpdate
 	return hpu
 }
 
+// ClearPrincipal clears the value of the "principal" field.
+func (hpu *HostProcessUpdate) ClearPrincipal() *HostProcessUpdate {
+	hpu.mutation.ClearPrincipal()
+	return hpu
+}
+
 // SetPath sets the "path" field.
 func (hpu *HostProcessUpdate) SetPath(s string) *HostProcessUpdate {
 	hpu.mutation.SetPath(s)
@@ -339,11 +345,6 @@ func (hpu *HostProcessUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (hpu *HostProcessUpdate) check() error {
-	if v, ok := hpu.mutation.Principal(); ok {
-		if err := hostprocess.PrincipalValidator(v); err != nil {
-			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostProcess.principal": %w`, err)}
-		}
-	}
 	if v, ok := hpu.mutation.Status(); ok {
 		if err := hostprocess.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
@@ -387,6 +388,9 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := hpu.mutation.Principal(); ok {
 		_spec.SetField(hostprocess.FieldPrincipal, field.TypeString, value)
+	}
+	if hpu.mutation.PrincipalCleared() {
+		_spec.ClearField(hostprocess.FieldPrincipal, field.TypeString)
 	}
 	if value, ok := hpu.mutation.Path(); ok {
 		_spec.SetField(hostprocess.FieldPath, field.TypeString, value)
@@ -604,6 +608,12 @@ func (hpuo *HostProcessUpdateOne) SetNillablePrincipal(s *string) *HostProcessUp
 	if s != nil {
 		hpuo.SetPrincipal(*s)
 	}
+	return hpuo
+}
+
+// ClearPrincipal clears the value of the "principal" field.
+func (hpuo *HostProcessUpdateOne) ClearPrincipal() *HostProcessUpdateOne {
+	hpuo.mutation.ClearPrincipal()
 	return hpuo
 }
 
@@ -851,11 +861,6 @@ func (hpuo *HostProcessUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (hpuo *HostProcessUpdateOne) check() error {
-	if v, ok := hpuo.mutation.Principal(); ok {
-		if err := hostprocess.PrincipalValidator(v); err != nil {
-			return &ValidationError{Name: "principal", err: fmt.Errorf(`ent: validator failed for field "HostProcess.principal": %w`, err)}
-		}
-	}
 	if v, ok := hpuo.mutation.Status(); ok {
 		if err := hostprocess.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "HostProcess.status": %w`, err)}
@@ -916,6 +921,9 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 	}
 	if value, ok := hpuo.mutation.Principal(); ok {
 		_spec.SetField(hostprocess.FieldPrincipal, field.TypeString, value)
+	}
+	if hpuo.mutation.PrincipalCleared() {
+		_spec.ClearField(hostprocess.FieldPrincipal, field.TypeString)
 	}
 	if value, ok := hpuo.mutation.Path(); ok {
 		_spec.SetField(hostprocess.FieldPath, field.TypeString, value)

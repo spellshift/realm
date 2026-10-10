@@ -4,12 +4,12 @@ import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { SortingControls } from "../../../context/SortContext";
 import { ProcessesTable } from "./ProcessesTable";
 import { useProcessIds } from "./useProcessIds";
-import { useNavigate, useParams } from "react-router-dom";
+import { CreateProcessQuestButton, RefetchProcessQuestButton } from "./process-quest-button";
+import { useParams } from "react-router-dom";
 import { PageNavItem } from "../../../utils/enums";
 
 const ProcessTab = () => {
     const { hostId } = useParams();
-    const nav = useNavigate();
 
     const {
         processIds,
@@ -58,19 +58,12 @@ const ProcessTab = () => {
             }
     
             if (totalCount === 0 ) {
-                // TODO: Later make this button pre-populate the quest
                 return (
                     <EmptyState
                         type={EmptyStateType.noData}
                         label="No process list reported"
                     >
-                       <Button
-                            onClick={()=> nav("/createQuest")}
-                            buttonVariant="solid"
-                            buttonStyle={{ color: "purple", size: "md" }}
-                        >
-                            Create a quest
-                        </Button>
+                        <CreateProcessQuestButton />
                     </EmptyState>
                 );
             }
@@ -93,6 +86,7 @@ const ProcessTab = () => {
                         <p className='text-md text-gray-600'>{totalCount !== undefined && `(${totalCount})`}</p>
                     </div>
                     <div className="flex flex-row justify-end gap-2 w-full">
+                        <RefetchProcessQuestButton />
                         <SortingControls sortType={PageNavItem.processes} />
                         <FreeTextSearch
                             labelVisible={false}

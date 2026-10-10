@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"realm.pub/tavern/cli/qrcode"
 )
 
 // AuthenticateRemoteDevice begins the remote device authentication flow by polling
@@ -45,6 +47,7 @@ func AuthenticateRemoteDevice(ctx context.Context, tavernURL string, tokenCh cha
 	}
 
 	fmt.Printf("\n\nOpen %s on any device and enter the following code:\n\n\t%s\n\nWaiting for approval...\n\n", codeRes.VerificationURI, codeRes.UserCode)
+	qrcode.PrintQRCode(codeRes.VerificationURIComplete)
 
 	// 2. Poll for Token
 	interval := time.Duration(codeRes.Interval) * time.Second

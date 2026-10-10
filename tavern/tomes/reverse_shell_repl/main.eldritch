@@ -1,4 +1,0 @@
-def main():
-    pivot.reverse_shell_repl()
-
-main()

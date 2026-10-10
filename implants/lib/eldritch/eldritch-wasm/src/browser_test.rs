@@ -27,6 +27,30 @@ mod tests {
     }
 
     #[test]
+    fn test_browser_repl_meta_help() {
+        let mut repl = BrowserRepl::new();
+
+        // Simple complete command
+        let res = repl.input("help");
+        assert!(res.contains("\"status\": \"meta\""));
+        assert!(res.contains("\"type\": \"help\""));
+
+        let res = repl.input("help()");
+        assert!(res.contains("\"status\": \"meta\""));
+        assert!(res.contains("\"type\": \"help\""));
+
+        let res = repl.input("help(sys)");
+        assert!(res.contains("\"status\": \"meta\""));
+        assert!(res.contains("\"type\": \"help\""));
+        assert!(res.contains("\"target\": \"sys\""));
+
+        let res = repl.input("help(sys.shell)");
+        assert!(res.contains("\"status\": \"meta\""));
+        assert!(res.contains("\"type\": \"help\""));
+        assert!(res.contains("\"target\": \"sys.shell\""));
+    }
+
+    #[test]
     fn test_browser_repl_complete() {
         let repl = BrowserRepl::new();
 

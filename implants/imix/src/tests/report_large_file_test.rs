@@ -6,8 +6,8 @@ use pb::c2::{
     AvailableTransports, Beacon, ClaimTasksRequest, ClaimTasksResponse, CreatePortalRequest,
     CreatePortalResponse, FetchAssetRequest, FetchAssetResponse, ReportCredentialRequest,
     ReportCredentialResponse, ReportFileRequest, ReportFileResponse, ReportOutputRequest,
-    ReportOutputResponse, ReportProcessListRequest, ReportProcessListResponse, ReverseShellRequest,
-    ReverseShellResponse, TaskContext, Transport as C2Transport,
+    ReportOutputResponse, ReportProcessListRequest, ReportProcessListResponse, TaskContext,
+    Transport as C2Transport,
 };
 use pb::config::Config;
 use std::sync::mpsc::{Receiver, Sender};
@@ -64,7 +64,7 @@ impl Transport for FakeTransport {
         request: Receiver<ReportFileRequest>,
     ) -> anyhow::Result<ReportFileResponse> {
         let mut count = 0;
-        while let Ok(_) = request.recv() {
+        while request.recv().is_ok() {
             count += 1;
         }
         *self.received_chunks.lock().unwrap() += count;
@@ -85,18 +85,19 @@ impl Transport for FakeTransport {
         Ok(ReportOutputResponse::default())
     }
 
-    async fn reverse_shell(
-        &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> anyhow::Result<()> {
-        Ok(())
-    }
-
     async fn create_portal(
         &mut self,
         _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
         _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    async fn forward_raw(
+        &mut self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
     ) -> anyhow::Result<()> {
         Ok(())
     }
@@ -156,11 +157,11 @@ async fn test_report_large_file_via_eldritch() {
 
     let agent = ImixAgent::new(
         config,
-        fake_transport.clone_box(),
         tokio::runtime::Handle::current(),
         task_registry,
         shell_tx,
     );
+    agent.update_transport(fake_transport.clone_box()).await;
     let agent = Arc::new(agent);
 
     // 4. Call file report

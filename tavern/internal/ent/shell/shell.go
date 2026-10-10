@@ -34,6 +34,8 @@ const (
 	EdgeActiveUsers = "active_users"
 	// EdgeShellTasks holds the string denoting the shell_tasks edge name in mutations.
 	EdgeShellTasks = "shell_tasks"
+	// EdgePivots holds the string denoting the pivots edge name in mutations.
+	EdgePivots = "pivots"
 	// Table holds the table name of the shell in the database.
 	Table = "shells"
 	// TaskTable is the table that holds the task relation/edge.
@@ -76,6 +78,13 @@ const (
 	ShellTasksInverseTable = "shell_tasks"
 	// ShellTasksColumn is the table column denoting the shell_tasks relation/edge.
 	ShellTasksColumn = "shell_shell_tasks"
+	// PivotsTable is the table that holds the pivots relation/edge.
+	PivotsTable = "shell_pivots"
+	// PivotsInverseTable is the table name for the ShellPivot entity.
+	// It exists in this package in order to avoid circular dependency with the "shellpivot" package.
+	PivotsInverseTable = "shell_pivots"
+	// PivotsColumn is the table column denoting the pivots relation/edge.
+	PivotsColumn = "shell_pivot_shell"
 )
 
 // Columns holds all SQL columns for shell fields.
@@ -210,6 +219,20 @@ func ByShellTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newShellTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByPivotsCount orders the results by pivots count.
+func ByPivotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPivotsStep(), opts...)
+	}
+}
+
+// ByPivots orders the results by pivots terms.
+func ByPivots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPivotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTaskStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -250,5 +273,12 @@ func newShellTasksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ShellTasksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ShellTasksTable, ShellTasksColumn),
+	)
+}
+func newPivotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PivotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, PivotsTable, PivotsColumn),
 	)
 }

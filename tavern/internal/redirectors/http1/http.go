@@ -40,6 +40,7 @@ func readRequestBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 // setGRPCResponseHeaders sets standard gRPC response headers
 func setGRPCResponseHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/grpc")
+	w.Header().Set("Connection", "close")
 	w.WriteHeader(http.StatusOK)
 }
 

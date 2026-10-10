@@ -7,9 +7,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 // Mock the child components
 vi.mock('../../../components/beacon-filter-bar', () => ({
-  BeaconFilterBar: ({ onChange, value, isDisabled }: any) => (
+  BeaconFilterBar: ({ onChange, value }: any) => (
     <div data-testid="beacon-filter-bar">
-      <span data-testid="beacon-disabled">{isDisabled ? 'disabled' : 'enabled'}</span>
       <span data-testid="beacon-count">{value.length}</span>
       <button onClick={() => onChange([{ kind: 'beacon', id: '1', name: 'Test Beacon' }])}>
         Add Beacon
@@ -19,9 +18,8 @@ vi.mock('../../../components/beacon-filter-bar', () => ({
 }));
 
 vi.mock('../../../components/TomeFilterBar', () => ({
-  TomeFilterBar: ({ setFiltersSelected, filtersSelected, isDisabled }: any) => (
+  TomeFilterBar: ({ setFiltersSelected, filtersSelected }: any) => (
     <div data-testid="tome-filter-bar">
-      <span data-testid="tome-disabled">{isDisabled ? 'disabled' : 'enabled'}</span>
       <span data-testid="tome-count">{filtersSelected.length}</span>
       <button onClick={() => setFiltersSelected([{ kind: 'tome', id: 't1', name: 'Test Tome' }])}>
         Add Tome
@@ -31,13 +29,12 @@ vi.mock('../../../components/TomeFilterBar', () => ({
 }));
 
 vi.mock('../../../components/tavern-base-ui/FreeTextSearch', () => ({
-  default: ({ setSearch, defaultValue, placeholder, isDisabled }: any) => (
+  default: ({ setSearch, defaultValue, placeholder }: any) => (
     <div data-testid={`free-text-search-${placeholder}`}>
       <input
         type="text"
         placeholder={placeholder}
         defaultValue={defaultValue}
-        disabled={isDisabled}
         onChange={(e) => setSearch(e.target.value)}
         data-testid={`search-input-${placeholder}`}
       />
@@ -51,6 +48,12 @@ vi.mock('../../../components/ButtonDialogPopover', () => ({
       <button data-testid="popover-button">{label}</button>
       <div data-testid="popover-content">{children}</div>
     </div>
+  ),
+}));
+
+vi.mock('../../../components/UserFilterBar', () => ({
+  default: () => (
+    <div data-testid="user-filter-bar" />
   ),
 }));
 
@@ -87,6 +90,7 @@ describe('FilterControls', () => {
 
       expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('tome-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Tome definition & values')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Quest name')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
@@ -97,14 +101,16 @@ describe('FilterControls', () => {
 
       expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
       expect(screen.queryByTestId('tome-filter-bar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('user-filter-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Quest name')).not.toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Task output')).not.toBeInTheDocument();
     });
 
-    it('should render beacon and task output filters for TASKS page', () => {
+    it('should render beacon, user, and task output filters for TASKS page', () => {
       render(<TestWrapper path="/tasks" />);
 
       expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Quest name')).not.toBeInTheDocument();
     });
@@ -113,6 +119,7 @@ describe('FilterControls', () => {
       render(<TestWrapper path="/hosts/123" />);
 
       expect(screen.getByTestId('tome-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Tome definition & values')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Quest name')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
@@ -170,19 +177,6 @@ describe('FilterControls', () => {
       expect(getIsLocked()).toBe(true);
     });
 
-    it('should disable filter components when isLocked is true', async () => {
-      const user = userEvent.setup();
-      render(<TestWrapper path="/quests" />);
-
-      expect(screen.getByTestId('beacon-disabled')).toHaveTextContent('enabled');
-      expect(screen.getByTestId('tome-disabled')).toHaveTextContent('enabled');
-
-      const lockButton = screen.getByRole('button', { name: /lock filters/i });
-      await user.click(lockButton);
-
-      expect(screen.getByTestId('beacon-disabled')).toHaveTextContent('disabled');
-      expect(screen.getByTestId('tome-disabled')).toHaveTextContent('disabled');
-    });
   });
 
   describe('Filter component interactions', () => {

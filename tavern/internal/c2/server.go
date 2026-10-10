@@ -32,8 +32,8 @@ type Server struct {
 	c2pb.UnimplementedC2Server
 }
 
-func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtPublicKey ed25519.PublicKey, jwtPrivateKey ed25519.PrivateKey) *Server {
-	return &Server{
+func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtPublicKey ed25519.PublicKey, jwtPrivateKey ed25519.PrivateKey, opts ...Option) *Server {
+	srv := &Server{
 		MaxFileChunkSize: 1024 * 1024, // 1 MB
 		graph:            graph,
 		mux:              mux,
@@ -41,7 +41,14 @@ func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtPublicKey ed
 		jwtPrivateKey:    jwtPrivateKey,
 		jwtPublicKey:     jwtPublicKey,
 	}
+	for _, opt := range opts {
+		opt(srv)
+	}
+	return srv
 }
+
+// Option configures a C2 Server.
+type Option func(*Server)
 
 func getRemoteIP(ctx context.Context) string {
 	p, ok := peer.FromContext(ctx)

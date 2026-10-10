@@ -110,11 +110,13 @@ By default Tavern only supports gRPC connections directly to the server. To enab
 
 ### Available Redirectors
 
-Realm includes three built-in redirector implementations:
+Realm includes five built-in redirector implementations:
 
 - **`grpc`** - Direct gRPC passthrough redirector
 - **`http1`** - HTTP/1.1 to gRPC redirector
+- **`quic`** - UDP-based QUIC redirector
 - **`dns`** - DNS to gRPC redirector
+- **`icmp`** - ICMP Echo to gRPC redirector
 
 ### Basic Usage
 
@@ -129,6 +131,17 @@ Start a redirector:
 ```bash
 tavern redirector --transport <TRANSPORT> --listen <LISTEN_ADDR> <UPSTREAM_GRPC_ADDR>
 ```
+
+### QUIC Redirector
+
+The QUIC redirector accepts UDP-based QUIC traffic from agents and forwards it to an upstream gRPC server.
+
+```bash
+# Start QUIC redirector on UDP port 8443
+tavern redirector --transport quic --listen ":8443" localhost:8000
+```
+
+Unlike some of the other redirectors (such as HTTP/1.1 or DNS), the QUIC redirector supports bidirectional streaming, enabling features such as SOCKS5 proxies or interactive reverse shells. It will generate a self-signed TLS certificate if none is provided.
 
 ### HTTP/1.1 Redirector
 
@@ -165,6 +178,35 @@ tavern redirector --transport dns --listen "0.0.0.0:53?domain=c2.example.com&dom
 - **Maximum data size**: 50MB per request
 
 See the [DNS Transport Configuration](/user-guide/imix#dns-transport-configuration) section in the Imix user guide for more details on agent-side configuration.
+
+### ICMP Redirector
+
+The ICMP redirector tunnels C2 traffic through ICMP Echo Request/Reply packets.
+
+```bash
+# Start ICMP redirector, listening on all interfaces
+tavern redirector --transport icmp --listen 0.0.0.0 http://localhost:8000
+```
+
+**Host Configuration Requirements:**
+
+Before starting the ICMP redirector, the Linux kernel's automatic ICMP echo reply must be disabled. Without this, the kernel responds to incoming ICMP echo requests by mirroring the payload back to the sender before the user-space redirector can act. Agents receive this kernel reply first and parse their own request payload as a response, breaking the protocol.
+
+```bash
+echo 1 | sudo tee /proc/sys/net/ipv4/icmp_echo_ignore_all
+```
+
+The redirector will refuse to start if this is not set. To make the setting persistent across reboots:
+
+```bash
+echo "net.ipv4.icmp_echo_ignore_all = 1" | sudo tee -a /etc/sysctl.conf
+sysctl -p
+```
+
+**Other requirements:**
+
+- Must run as root (raw ICMP sockets require `CAP_NET_RAW`)
+- Not supported on Windows hosts
 
 ### gRPC Redirector
 
@@ -361,6 +403,37 @@ DISABLE_DEFAULT_TOMES=1 go run ./tavern
 ### PPROF
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).
+
+### AI MCP Server
+
+Tavern includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that enables AI assistants and LLM-based tools to interact with your Tavern deployment. The MCP server uses Server-Sent Events (SSE) for transport and is gated behind the `ENABLE_AI_MCP` environment variable.
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| ENABLE_AI_MCP | Set to any value to enable the MCP server at `/mcp`. | Disabled | No |
+
+To enable the MCP server:
+
+```sh
+ENABLE_AI_MCP=1 go run ./tavern
+```
+
+Once enabled, the MCP server exposes a Streamable HTTP endpoint:
+
+- `/mcp` — Streamable HTTP endpoint for MCP connections (supports GET for streaming and POST for requests)
+
+The MCP server requires authentication (OAuth session cookie or API access token). All queries are executed in the context of the authenticated user.
+
+**Available MCP Tools:**
+
+| Tool | Description |
+| ---- | ----------- |
+| `list_quests` | List all quests in Tavern |
+| `quest_output` | Get task output for specific quests |
+| `list_tomes` | List all available tomes and their parameters |
+| `create_quest` | Create a new quest targeting specific beacons |
+| `list_hosts` | List all hosts with their beacons and tags |
+| `wait_for_quest` | Wait for all tasks in a quest to complete |
 
 ## Tavern docker image tags explained
 

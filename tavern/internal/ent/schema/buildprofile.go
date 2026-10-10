@@ -2,7 +2,7 @@ package schema
 
 import (
 	"fmt"
- 
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"

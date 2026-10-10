@@ -74,7 +74,7 @@ func TestMux_InMemory(t *testing.T) {
 
 func TestMux_CreatePortal(t *testing.T) {
 	// Setup DB
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	// Setup Mux
@@ -200,7 +200,7 @@ func TestWithSubscriberBufferSize(t *testing.T) {
 
 func TestMux_CreatePortal_ShellTask(t *testing.T) {
 	// Setup DB
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	// Setup Mux

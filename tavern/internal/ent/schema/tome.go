@@ -32,6 +32,9 @@ func (Tome) Fields() []ent.Field {
 			).
 			Comment("Name of the tome"),
 		field.String("description").
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
+			}).
 			Comment("Information about the tome"),
 		field.String("author").
 			Comment("Name of the author who created the tome."),

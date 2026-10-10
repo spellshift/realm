@@ -57,11 +57,17 @@ type HostEdges struct {
 	Credentials []*HostCredential `json:"credentials,omitempty"`
 	// Screenshots reported from this host system.
 	Screenshots []*Screenshot `json:"screenshots,omitempty"`
+	// Users who have favorited this host.
+	FavoritedBy []*User `json:"favoritedBy,omitempty"`
+	// Events associated with this host.
+	Events []*Event `json:"events,omitempty"`
+	// Users who are subscribed to this host.
+	Subscribers []*User `json:"subscribers,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [9]bool
 	// totalCount holds the count of the edges above.
-	totalCount [6]map[string]int
+	totalCount [9]map[string]int
 
 	namedTags        map[string][]*Tag
 	namedBeacons     map[string][]*Beacon
@@ -69,6 +75,9 @@ type HostEdges struct {
 	namedProcesses   map[string][]*HostProcess
 	namedCredentials map[string][]*HostCredential
 	namedScreenshots map[string][]*Screenshot
+	namedFavoritedBy map[string][]*User
+	namedEvents      map[string][]*Event
+	namedSubscribers map[string][]*User
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -123,6 +132,33 @@ func (e HostEdges) ScreenshotsOrErr() ([]*Screenshot, error) {
 		return e.Screenshots, nil
 	}
 	return nil, &NotLoadedError{edge: "screenshots"}
+}
+
+// FavoritedByOrErr returns the FavoritedBy value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) FavoritedByOrErr() ([]*User, error) {
+	if e.loadedTypes[6] {
+		return e.FavoritedBy, nil
+	}
+	return nil, &NotLoadedError{edge: "favoritedBy"}
+}
+
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[7] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
+}
+
+// SubscribersOrErr returns the Subscribers value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) SubscribersOrErr() ([]*User, error) {
+	if e.loadedTypes[8] {
+		return e.Subscribers, nil
+	}
+	return nil, &NotLoadedError{edge: "subscribers"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -263,6 +299,21 @@ func (h *Host) QueryCredentials() *HostCredentialQuery {
 // QueryScreenshots queries the "screenshots" edge of the Host entity.
 func (h *Host) QueryScreenshots() *ScreenshotQuery {
 	return NewHostClient(h.config).QueryScreenshots(h)
+}
+
+// QueryFavoritedBy queries the "favoritedBy" edge of the Host entity.
+func (h *Host) QueryFavoritedBy() *UserQuery {
+	return NewHostClient(h.config).QueryFavoritedBy(h)
+}
+
+// QueryEvents queries the "events" edge of the Host entity.
+func (h *Host) QueryEvents() *EventQuery {
+	return NewHostClient(h.config).QueryEvents(h)
+}
+
+// QuerySubscribers queries the "subscribers" edge of the Host entity.
+func (h *Host) QuerySubscribers() *UserQuery {
+	return NewHostClient(h.config).QuerySubscribers(h)
 }
 
 // Update returns a builder for updating this Host.
@@ -459,6 +510,78 @@ func (h *Host) appendNamedScreenshots(name string, edges ...*Screenshot) {
 		h.Edges.namedScreenshots[name] = []*Screenshot{}
 	} else {
 		h.Edges.namedScreenshots[name] = append(h.Edges.namedScreenshots[name], edges...)
+	}
+}
+
+// NamedFavoritedBy returns the FavoritedBy named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedFavoritedBy(name string) ([]*User, error) {
+	if h.Edges.namedFavoritedBy == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedFavoritedBy[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedFavoritedBy(name string, edges ...*User) {
+	if h.Edges.namedFavoritedBy == nil {
+		h.Edges.namedFavoritedBy = make(map[string][]*User)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedFavoritedBy[name] = []*User{}
+	} else {
+		h.Edges.namedFavoritedBy[name] = append(h.Edges.namedFavoritedBy[name], edges...)
+	}
+}
+
+// NamedEvents returns the Events named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedEvents(name string) ([]*Event, error) {
+	if h.Edges.namedEvents == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedEvents[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedEvents(name string, edges ...*Event) {
+	if h.Edges.namedEvents == nil {
+		h.Edges.namedEvents = make(map[string][]*Event)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedEvents[name] = []*Event{}
+	} else {
+		h.Edges.namedEvents[name] = append(h.Edges.namedEvents[name], edges...)
+	}
+}
+
+// NamedSubscribers returns the Subscribers named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedSubscribers(name string) ([]*User, error) {
+	if h.Edges.namedSubscribers == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedSubscribers[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedSubscribers(name string, edges ...*User) {
+	if h.Edges.namedSubscribers == nil {
+		h.Edges.namedSubscribers = make(map[string][]*User)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedSubscribers[name] = []*User{}
+	} else {
+		h.Edges.namedSubscribers[name] = append(h.Edges.namedSubscribers[name], edges...)
 	}
 }
 

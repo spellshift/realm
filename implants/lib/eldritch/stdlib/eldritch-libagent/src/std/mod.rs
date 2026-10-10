@@ -23,6 +23,7 @@ pub mod report_credential_impl;
 pub mod report_file_impl;
 pub mod report_process_list_impl;
 pub mod report_task_output_impl;
+pub mod reset_transport_impl;
 pub mod set_callback_interval_impl;
 pub mod set_callback_uri_impl;
 pub mod stop_task_impl;
@@ -103,6 +104,10 @@ impl AgentLibrary for StdAgentLibrary {
     // Agent Configuration
     fn get_transport(&self) -> Result<String, String> {
         get_transport_impl::get_transport(self.agent.clone())
+    }
+
+    fn reset_transport(&self) -> Result<(), String> {
+        reset_transport_impl::reset_transport(self.agent.clone())
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {

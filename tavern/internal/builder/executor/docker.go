@@ -276,7 +276,7 @@ func prepareMountDir(spec BuildSpec) (string, error) {
 			return tmpDir, fmt.Errorf("writing setup script: %w", err)
 		}
 	}
- 
+
 	// Write pre-build script.
 	if spec.PreBuildScript != "" {
 		if err := os.WriteFile(filepath.Join(scriptsDir, "1_pre_build.sh"), []byte(spec.PreBuildScript), 0o755); err != nil {

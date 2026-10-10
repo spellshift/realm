@@ -51,15 +51,18 @@ type ShellEdges struct {
 	ActiveUsers []*User `json:"active_users,omitempty"`
 	// Tasks executed in this shell
 	ShellTasks []*ShellTask `json:"shell_tasks,omitempty"`
+	// Pivots associated with this shell
+	Pivots []*ShellPivot `json:"pivots,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 	// totalCount holds the count of the edges above.
-	totalCount [6]map[string]int
+	totalCount [7]map[string]int
 
 	namedPortals     map[string][]*Portal
 	namedActiveUsers map[string][]*User
 	namedShellTasks  map[string][]*ShellTask
+	namedPivots      map[string][]*ShellPivot
 }
 
 // TaskOrErr returns the Task value or an error if the edge
@@ -120,6 +123,15 @@ func (e ShellEdges) ShellTasksOrErr() ([]*ShellTask, error) {
 		return e.ShellTasks, nil
 	}
 	return nil, &NotLoadedError{edge: "shell_tasks"}
+}
+
+// PivotsOrErr returns the Pivots value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) PivotsOrErr() ([]*ShellPivot, error) {
+	if e.loadedTypes[6] {
+		return e.Pivots, nil
+	}
+	return nil, &NotLoadedError{edge: "pivots"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -248,6 +260,11 @@ func (s *Shell) QueryShellTasks() *ShellTaskQuery {
 	return NewShellClient(s.config).QueryShellTasks(s)
 }
 
+// QueryPivots queries the "pivots" edge of the Shell entity.
+func (s *Shell) QueryPivots() *ShellPivotQuery {
+	return NewShellClient(s.config).QueryPivots(s)
+}
+
 // Update returns a builder for updating this Shell.
 // Note that you need to call Shell.Unwrap() before calling this method if this Shell
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -355,6 +372,30 @@ func (s *Shell) appendNamedShellTasks(name string, edges ...*ShellTask) {
 		s.Edges.namedShellTasks[name] = []*ShellTask{}
 	} else {
 		s.Edges.namedShellTasks[name] = append(s.Edges.namedShellTasks[name], edges...)
+	}
+}
+
+// NamedPivots returns the Pivots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedPivots(name string) ([]*ShellPivot, error) {
+	if s.Edges.namedPivots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedPivots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedPivots(name string, edges ...*ShellPivot) {
+	if s.Edges.namedPivots == nil {
+		s.Edges.namedPivots = make(map[string][]*ShellPivot)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedPivots[name] = []*ShellPivot{}
+	} else {
+		s.Edges.namedPivots[name] = append(s.Edges.namedPivots[name], edges...)
 	}
 }
 

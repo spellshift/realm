@@ -108,7 +108,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 
 		// Derive the IMIX config YAML from the build task's stored transports.
 		profile, err := claimedTask.Profile(ctx)
-		if err != nil || profile == nil{
+		if err != nil || profile == nil {
 			return nil, status.Errorf(codes.Internal, "failed to load build profile task %d: %v", taskID, err)
 		}
 		transports := profile.Transports

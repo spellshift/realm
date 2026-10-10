@@ -570,6 +570,98 @@ func HasScheduledTaskWith(preds ...predicate.ScheduledTask) predicate.Quest {
 	})
 }
 
+// HasAdventure applies the HasEdge predicate on the "adventure" edge.
+func HasAdventure() predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, AdventureTable, AdventureColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAdventureWith applies the HasEdge predicate on the "adventure" edge with a given conditions (other predicates).
+func HasAdventureWith(preds ...predicate.Adventure) predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := newAdventureStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRelatedQuests applies the HasEdge predicate on the "related_quests" edge.
+func HasRelatedQuests() predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RelatedQuestsTable, RelatedQuestsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRelatedQuestsWith applies the HasEdge predicate on the "related_quests" edge with a given conditions (other predicates).
+func HasRelatedQuestsWith(preds ...predicate.Quest) predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := newRelatedQuestsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasPreviousQuest applies the HasEdge predicate on the "previous_quest" edge.
+func HasPreviousQuest() predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, PreviousQuestTable, PreviousQuestColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPreviousQuestWith applies the HasEdge predicate on the "previous_quest" edge with a given conditions (other predicates).
+func HasPreviousQuestWith(preds ...predicate.Quest) predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := newPreviousQuestStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasEvents applies the HasEdge predicate on the "events" edge.
+func HasEvents() predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EventsTable, EventsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEventsWith applies the HasEdge predicate on the "events" edge with a given conditions (other predicates).
+func HasEventsWith(preds ...predicate.Event) predicate.Quest {
+	return predicate.Quest(func(s *sql.Selector) {
+		step := newEventsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Quest) predicate.Quest {
 	return predicate.Quest(sql.AndPredicates(predicates...))

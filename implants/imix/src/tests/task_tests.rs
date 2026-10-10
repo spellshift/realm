@@ -22,6 +22,7 @@ impl MockAgent {
     }
 }
 
+#[async_trait::async_trait]
 impl Agent for MockAgent {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(vec![])
@@ -54,12 +55,6 @@ impl Agent for MockAgent {
     fn create_portal(&self, _context: Context) -> Result<(), String> {
         Ok(())
     }
-    fn start_reverse_shell(&self, _context: Context, _cmd: Option<String>) -> Result<(), String> {
-        Ok(())
-    }
-    fn start_repl_reverse_shell(&self, _context: Context) -> Result<(), String> {
-        Ok(())
-    }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         Ok(c2::ClaimTasksResponse {
             tasks: vec![],
@@ -73,6 +68,9 @@ impl Agent for MockAgent {
         Ok("mock".to_string())
     }
     fn set_transport(&self, _transport: String) -> Result<(), String> {
+        Ok(())
+    }
+    fn reset_transport(&self) -> Result<(), String> {
         Ok(())
     }
     fn list_transports(&self) -> Result<Vec<String>, String> {
@@ -105,7 +103,16 @@ impl Agent for MockAgent {
     fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
         Ok(())
     }
-    fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+    fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
+    async fn forward_raw(
+        &self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
         Ok(())
     }
 }
@@ -135,10 +142,10 @@ async fn test_task_registry_spawn() {
 
     // Check for Hello World
     let has_output = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.output.contains("Hello World");
-            }
+        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
+            && let Some(o) = &m.output
+        {
+            return o.output.contains("Hello World");
         }
         false
     });
@@ -149,10 +156,10 @@ async fn test_task_registry_spawn() {
 
     // Check completion
     let has_finished = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.exec_finished_at.is_some();
-            }
+        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
+            && let Some(o) = &m.output
+        {
+            return o.exec_finished_at.is_some();
         }
         false
     });
@@ -258,10 +265,10 @@ async fn test_task_streaming_error() {
 
     // Check for error report
     let error_report = reports.iter().find(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.error.is_some();
-            }
+        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
+            && let Some(o) = &m.output
+        {
+            return o.error.is_some();
         }
         false
     });
@@ -321,21 +328,20 @@ async fn test_task_eprint_behavior() {
 
     // Check if "This is an error" appears in output or error field
     let error_in_output = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.output.contains("This is an error");
-            }
+        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
+            && let Some(o) = &m.output
+        {
+            return o.output.contains("This is an error");
         }
         false
     });
 
     let error_in_error = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                if let Some(err) = &o.error {
-                    return err.msg.contains("This is an error");
-                }
-            }
+        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message
+            && let Some(o) = &m.output
+            && let Some(err) = &o.error
+        {
+            return err.msg.contains("This is an error");
         }
         false
     });

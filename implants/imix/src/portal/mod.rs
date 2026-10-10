@@ -5,6 +5,7 @@ use tokio::sync::mpsc;
 use transport::Transport;
 
 pub mod bytes;
+pub mod pty;
 pub mod run;
 pub mod tcp;
 pub mod udp;

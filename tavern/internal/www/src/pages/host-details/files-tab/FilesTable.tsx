@@ -28,7 +28,9 @@ export const FilesTable = ({ hostId, fileIds }: FilesTableProps) => {
             width: 'minmax(200px,2fr)',
             render: (file: FileNode) => (
                 <Tooltip label={file.path} isDisabled={!file.path}>
-                        {file.path}
+                    <div className="truncate text-sm text-gray-600">
+                        {file.path || '-'}
+                    </div>
                 </Tooltip>
             ),
         },

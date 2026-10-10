@@ -21,9 +21,10 @@ export const useProcessIds = (hostId: string) => {
         {
             variables: queryVariables,
             fetchPolicy: 'cache-and-network',
+            pollInterval: 5000,
         }
   );
-  
+
   const processIds = useMemo(
       () => data?.hosts?.edges?.[0]?.node?.processes?.edges?.map(edge => edge.node.id) || [],
       [data]

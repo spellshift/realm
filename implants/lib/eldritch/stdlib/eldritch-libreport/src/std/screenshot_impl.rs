@@ -1,7 +1,7 @@
 use alloc::sync::Arc;
 use eldritch_agent::{Agent, Context};
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
 use {
     alloc::format,
     alloc::string::{String, ToString},
@@ -14,14 +14,22 @@ use {
     xcap::Monitor,
 };
 
-#[cfg(all(unix, feature = "stdlib"))]
+#[cfg(all(
+    unix,
+    feature = "stdlib",
+    not(any(target_os = "linux", target_os = "freebsd"))
+))]
 fn get_hostname() -> String {
     nix::unistd::gethostname()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown".to_string())
 }
 
-#[cfg(all(unix, not(feature = "stdlib")))]
+#[cfg(all(
+    unix,
+    not(feature = "stdlib"),
+    not(any(target_os = "linux", target_os = "freebsd"))
+))]
 fn get_hostname() -> String {
     std::env::var("HOSTNAME").unwrap_or_else(|_| "unknown".to_string())
 }
@@ -36,14 +44,14 @@ fn get_hostname() -> String {
     "unknown".to_string()
 }
 
-#[cfg(target_os = "linux")]
-pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
-    return Err(
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+pub fn screenshot(_agent: Arc<dyn Agent>, _context: Context) -> Result<(), String> {
+    Err(
         "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
-    );
+    )
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
     let monitors = Monitor::all().map_err(|e| e.to_string())?;
 

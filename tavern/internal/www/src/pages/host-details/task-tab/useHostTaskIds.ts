@@ -141,15 +141,18 @@ const getHostTaskIdsQuery = (
     const defaultRowLimit = TableRowLimit.TaskRowLimit;
     const filterQueryFields = constructHostTaskFilterQuery(filters, currentTimestamp);
 
+    const hostCondition = {
+        "hasBeaconWith": {
+            "hasHostWith": {
+                "id": hostId
+            }
+        }
+    };
+
     const query = {
-        "where": {
-            "hasBeaconWith": {
-                "hasHostWith": {
-                    "id": hostId
-                }
-            },
-            ...filterQueryFields && filterQueryFields.hasTasksWith,
-        },
+        "where": filterQueryFields?.hasTasksWith
+            ? { "and": [hostCondition, filterQueryFields.hasTasksWith] }
+            : hostCondition,
         "first": beforeCursor ? null : defaultRowLimit,
         "last": beforeCursor ? defaultRowLimit : null,
         "after": afterCursor ? afterCursor : null,

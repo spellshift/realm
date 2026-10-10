@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
@@ -151,6 +152,21 @@ func (su *ShellUpdate) AddShellTasks(s ...*ShellTask) *ShellUpdate {
 	return su.AddShellTaskIDs(ids...)
 }
 
+// AddPivotIDs adds the "pivots" edge to the ShellPivot entity by IDs.
+func (su *ShellUpdate) AddPivotIDs(ids ...int) *ShellUpdate {
+	su.mutation.AddPivotIDs(ids...)
+	return su
+}
+
+// AddPivots adds the "pivots" edges to the ShellPivot entity.
+func (su *ShellUpdate) AddPivots(s ...*ShellPivot) *ShellUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.AddPivotIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (su *ShellUpdate) Mutation() *ShellMutation {
 	return su.mutation
@@ -235,6 +251,27 @@ func (su *ShellUpdate) RemoveShellTasks(s ...*ShellTask) *ShellUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.RemoveShellTaskIDs(ids...)
+}
+
+// ClearPivots clears all "pivots" edges to the ShellPivot entity.
+func (su *ShellUpdate) ClearPivots() *ShellUpdate {
+	su.mutation.ClearPivots()
+	return su
+}
+
+// RemovePivotIDs removes the "pivots" edge to ShellPivot entities by IDs.
+func (su *ShellUpdate) RemovePivotIDs(ids ...int) *ShellUpdate {
+	su.mutation.RemovePivotIDs(ids...)
+	return su
+}
+
+// RemovePivots removes "pivots" edges to ShellPivot entities.
+func (su *ShellUpdate) RemovePivots(s ...*ShellPivot) *ShellUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.RemovePivotIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -530,6 +567,51 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.PivotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   shell.PivotsTable,
+			Columns: []string{shell.PivotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedPivotsIDs(); len(nodes) > 0 && !su.mutation.PivotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   shell.PivotsTable,
+			Columns: []string{shell.PivotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.PivotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   shell.PivotsTable,
+			Columns: []string{shell.PivotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{shell.Label}
@@ -668,6 +750,21 @@ func (suo *ShellUpdateOne) AddShellTasks(s ...*ShellTask) *ShellUpdateOne {
 	return suo.AddShellTaskIDs(ids...)
 }
 
+// AddPivotIDs adds the "pivots" edge to the ShellPivot entity by IDs.
+func (suo *ShellUpdateOne) AddPivotIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.AddPivotIDs(ids...)
+	return suo
+}
+
+// AddPivots adds the "pivots" edges to the ShellPivot entity.
+func (suo *ShellUpdateOne) AddPivots(s ...*ShellPivot) *ShellUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.AddPivotIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (suo *ShellUpdateOne) Mutation() *ShellMutation {
 	return suo.mutation
@@ -752,6 +849,27 @@ func (suo *ShellUpdateOne) RemoveShellTasks(s ...*ShellTask) *ShellUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return suo.RemoveShellTaskIDs(ids...)
+}
+
+// ClearPivots clears all "pivots" edges to the ShellPivot entity.
+func (suo *ShellUpdateOne) ClearPivots() *ShellUpdateOne {
+	suo.mutation.ClearPivots()
+	return suo
+}
+
+// RemovePivotIDs removes the "pivots" edge to ShellPivot entities by IDs.
+func (suo *ShellUpdateOne) RemovePivotIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.RemovePivotIDs(ids...)
+	return suo
+}
+
+// RemovePivots removes "pivots" edges to ShellPivot entities.
+func (suo *ShellUpdateOne) RemovePivots(s ...*ShellPivot) *ShellUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.RemovePivotIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellUpdate builder.
@@ -1070,6 +1188,51 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.PivotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   shell.PivotsTable,
+			Columns: []string{shell.PivotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedPivotsIDs(); len(nodes) > 0 && !suo.mutation.PivotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   shell.PivotsTable,
+			Columns: []string{shell.PivotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.PivotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   shell.PivotsTable,
+			Columns: []string{shell.PivotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

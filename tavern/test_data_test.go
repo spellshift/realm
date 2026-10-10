@@ -15,10 +15,8 @@ import (
 func TestCreateTestData(t *testing.T) {
 	var (
 		ctx            = context.Background()
-		driverName     = "sqlite3"
-		dataSourceName = "file:test-create-test-data?mode=memory&cache=shared&_fk=1"
 	)
-	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	createTestData(ctx, graph)

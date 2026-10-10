@@ -22,7 +22,7 @@ import (
 
 func TestNewShellHandler(t *testing.T) {
 	// Setup Ent Client
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

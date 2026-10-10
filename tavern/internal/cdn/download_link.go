@@ -1,7 +1,6 @@
 package cdn
 
 import (
-	"bytes"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -75,9 +74,9 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		// Set Etag to hash of asset
 		w.Header().Set(HeaderEtag, a.Hash)
 
-		// Set Content-Type and serve content
+		// Set Content-Type and serve content in chunks
 		w.Header().Set("Content-Type", "application/octet-stream")
-		http.ServeContent(w, req, a.Name, a.LastModifiedAt, bytes.NewReader(a.Content))
+		serveChunkedContent(w, a.Content, a.LastModifiedAt)
 
 		return nil
 	})

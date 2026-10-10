@@ -34,7 +34,7 @@ func (authenticator *bypassAuthenticator) Authenticate(w http.ResponseWriter, r 
 	// Read SessionToken from auth cookie
 	authCookie, err := r.Cookie(auth.SessionCookieName)
 	var authUser *ent.User
-	
+
 	if err == nil && authCookie != nil {
 		authUser, _ = authenticator.graph.User.Query().Where(entuser.SessionToken(authCookie.Value)).First(r.Context())
 	}

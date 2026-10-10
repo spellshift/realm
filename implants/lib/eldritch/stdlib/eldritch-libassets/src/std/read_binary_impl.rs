@@ -4,14 +4,26 @@ use anyhow::Result;
 
 impl StdAssetsLibrary {
     pub fn read_binary_impl(&self, name: &str) -> Result<Vec<u8>> {
+        let mut errors = alloc::vec::Vec::new();
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
-            if let Ok(file) = backend.get(name) {
-                // Return immediately upon the first match
-                return Ok(file);
+            match backend.get(name) {
+                Ok(file) => {
+                    return Ok(file);
+                }
+                Err(e) => errors.push(e.to_string()),
             }
         }
-        Err(anyhow::anyhow!("asset not found: {}", name))
+
+        if errors.is_empty() {
+            Err(anyhow::anyhow!("asset not found: {}", name))
+        } else {
+            Err(anyhow::anyhow!(
+                "Failed to read asset '{}': {}",
+                name,
+                errors.join("; ")
+            ))
+        }
     }
 }
 
@@ -19,155 +31,16 @@ impl StdAssetsLibrary {
 pub mod tests {
     use super::*;
     use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
-    use alloc::collections::BTreeMap;
     use alloc::string::String;
     use alloc::string::ToString;
-    use alloc::vec::Vec;
-    use eldritch_agent::Agent;
-    use pb::c2;
+    use eldritch_mockagent::MockAgent;
     use pb::c2::TaskContext;
-    use std::collections::BTreeSet;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Arc;
 
     #[cfg(debug_assertions)]
     #[derive(rust_embed::Embed)]
     #[folder = "../../../../../bin/embedded_files_test"]
     pub struct TestAsset;
-
-    pub struct MockAgent {
-        assets: Mutex<BTreeMap<String, Vec<u8>>>,
-        should_fail_fetch: bool,
-    }
-
-    impl MockAgent {
-        pub fn new() -> Self {
-            Self {
-                assets: Mutex::new(BTreeMap::new()),
-                should_fail_fetch: false,
-            }
-        }
-
-        pub fn with_asset(self, name: &str, content: &[u8]) -> Self {
-            self.assets
-                .lock()
-                .unwrap()
-                .insert(name.to_string(), content.to_vec());
-            self
-        }
-
-        pub fn should_fail(mut self) -> Self {
-            self.should_fail_fetch = true;
-            self
-        }
-    }
-
-    impl Agent for MockAgent {
-        fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
-            if self.should_fail_fetch {
-                return Err("Failed to fetch asset".to_string());
-            }
-            if let Some(data) = self.assets.lock().unwrap().get(&req.name) {
-                Ok(data.clone())
-            } else {
-                Err("Asset not found".to_string())
-            }
-        }
-
-        fn report_credential(
-            &self,
-            _req: c2::ReportCredentialRequest,
-        ) -> Result<c2::ReportCredentialResponse, String> {
-            Ok(c2::ReportCredentialResponse::default())
-        }
-        fn report_file(
-            &self,
-            _req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
-        ) -> Result<c2::ReportFileResponse, String> {
-            Ok(c2::ReportFileResponse::default())
-        }
-        fn report_process_list(
-            &self,
-            _req: c2::ReportProcessListRequest,
-        ) -> Result<c2::ReportProcessListResponse, String> {
-            Ok(c2::ReportProcessListResponse::default())
-        }
-        fn report_output(
-            &self,
-            _req: c2::ReportOutputRequest,
-        ) -> Result<c2::ReportOutputResponse, String> {
-            Ok(c2::ReportOutputResponse::default())
-        }
-        fn start_reverse_shell(
-            &self,
-            _context: eldritch_agent::Context,
-            _cmd: Option<String>,
-        ) -> Result<(), String> {
-            Ok(())
-        }
-        fn start_repl_reverse_shell(
-            &self,
-            _context: eldritch_agent::Context,
-        ) -> Result<(), String> {
-            Ok(())
-        }
-        fn claim_tasks(
-            &self,
-            _req: c2::ClaimTasksRequest,
-        ) -> Result<c2::ClaimTasksResponse, String> {
-            Ok(c2::ClaimTasksResponse::default())
-        }
-        fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
-            Ok(BTreeMap::new())
-        }
-        fn get_transport(&self) -> Result<String, String> {
-            Ok("mock".into())
-        }
-        fn set_transport(&self, _transport: String) -> Result<(), String> {
-            Ok(())
-        }
-        fn list_transports(&self) -> Result<Vec<String>, String> {
-            Ok(Vec::new())
-        }
-        fn get_callback_interval(&self) -> Result<u64, String> {
-            Ok(10)
-        }
-        fn set_callback_interval(&self, _interval: u64) -> Result<(), String> {
-            Ok(())
-        }
-        fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
-            Ok(Vec::new())
-        }
-        fn stop_task(&self, _task_id: i64) -> Result<(), String> {
-            Ok(())
-        }
-        fn set_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
-        fn list_callback_uris(
-            &self,
-        ) -> std::result::Result<std::collections::BTreeSet<String>, String> {
-            Ok(BTreeSet::new())
-        }
-        fn get_active_callback_uri(&self) -> std::result::Result<String, String> {
-            Ok(String::new())
-        }
-        fn get_next_callback_uri(&self) -> std::result::Result<String, String> {
-            Ok(String::new())
-        }
-        fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
-        fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
-            Ok(())
-        }
-
-        fn create_portal(
-            &self,
-            __context: eldritch_agent::Context,
-        ) -> std::result::Result<(), String> {
-            Ok(())
-        }
-    }
 
     #[test]
     fn test_read_binary_embedded_success() -> anyhow::Result<()> {

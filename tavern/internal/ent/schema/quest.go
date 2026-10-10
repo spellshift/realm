@@ -89,6 +89,34 @@ func (Quest) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("The scheduled task that created this quest, if any."),
+		edge.From("adventure", Adventure.Type).
+			Ref("quests").
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Adventure that this quest belongs to"),
+		edge.To("related_quests", Quest.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Quests that are related to this quest"),
+		edge.From("previous_quest", Quest.Type).
+			Ref("related_quests").
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("The previous quest in the adventure"),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Events associated with this quest."),
 	}
 }
 

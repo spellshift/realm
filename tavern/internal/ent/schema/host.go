@@ -28,6 +28,9 @@ func (Host) Fields() []ent.Field {
 		field.String("name").
 			Optional().
 			NotEmpty().
+			Annotations(
+				entgql.OrderField("NAME"),
+			).
 			Comment("A human readable identifier for the host."),
 		field.String("primary_ip").
 			Optional().
@@ -106,6 +109,27 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Screenshots reported from this host system."),
+		edge.From("favoritedBy", User.Type).
+			Ref("favoriteHosts").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Users who have favorited this host."),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Events associated with this host."),
+		edge.From("subscribers", User.Type).
+			Ref("subscribedHosts").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Users who are subscribed to this host."),
 	}
 }
 

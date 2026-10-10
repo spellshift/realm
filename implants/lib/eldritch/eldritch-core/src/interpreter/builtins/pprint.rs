@@ -32,7 +32,10 @@ pub fn builtin_pprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
     Ok(Value::None)
 }
 
-fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &mut String) {
+/// Formats a value using pretty-printing into a string buffer.
+/// This is the core formatting logic used by `pprint()` and can be
+/// called directly to format values without printing.
+pub fn pretty_format(val: &Value, current_indent: usize, indent_width: usize, buf: &mut String) {
     match val {
         Value::List(l) => {
             let list = l.read();

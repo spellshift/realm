@@ -149,11 +149,13 @@ We've tried to make Imix super extensible for transport development. In fact, al
 
 ### Current Available Transports
 
-Realm currently includes three transport implementations:
+Realm currently includes four transport implementations:
 
 - **`grpc`** - Default gRPC transport
 - **`http1`** - HTTP/1.1 transport
+- **`quic`** - QUIC-based transport
 - **`dns`** - DNS-based covert channel transport
+- **`icmp`** - ICMP-based covert channel transport
 
 _grpc & http1 both support doh and http proxy set through the extra argument_
 
@@ -226,18 +228,8 @@ impl Transport for Custom {
         // TODO: How you wish to handle the `report_task_output` method.
         Err(anyhow!("Unimplemented!"))
     }
-    async fn reverse_shell(
-        &mut self,
-        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-    ) -> Result<()> {
-        // TODO: How you wish to handle the `reverse_shell` method.
-        Err(anyhow!("Unimplemented!"))
-    }
 }
 ```
-
-NOTE: Be Aware that currently `reverse_shell` uses tokio's sender/receiver while the rest of the methods rely on mpsc's. This is an artifact of some implementation details under the hood of Imix. Some day we may wish to move completely over to tokio's but currently it would just result in performance loss/less maintainable code.
 
 After you implement all the functions and write descriptive error messages for operators to understand why function calls failed, you need to:
 
@@ -259,6 +251,8 @@ pub enum ActiveTransport {
     Http(http::HTTP),
     #[cfg(feature = "dns")]
     Dns(dns::DNS),
+    #[cfg(feature = "icmp")]
+    Icmp(icmp::ICMP),
     #[cfg(feature = "mock")]
     Mock(mock::MockTransport),
     Empty,
@@ -278,6 +272,7 @@ grpc = ["pb/grpc"]
 doh = ["dep:hickory-resolver"]
 http1 = ["pb/http1"]
 dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
+icmp = ["dep:rand", "dep:libc"]
 custom = ["dep:your-custom-dependency"] # <-- Add your feature here
 mock = ["dep:mockall"]
 
@@ -299,11 +294,12 @@ Add a proxy for your feature to `realm/implants/imix/Cargo.toml`
 
 ```toml
 [features]
-default = ["install", "grpc", "http1", "dns", "doh", "custom"]
+default = ["install", "grpc", "http1", "dns", "doh", "custom", "icmp"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
 doh = ["transport/doh"]
+icmp = ["transport/icmp"]
 custom = ["transport/custom"]
 ```
 
@@ -316,8 +312,19 @@ For your agent to communicate, you'll need to implement a corresponding redirect
 
 - `tavern/internal/redirectors/grpc/` - gRPC redirector
 - `tavern/internal/redirectors/http1/` - HTTP/1.1 redirector
+- `tavern/internal/redirectors/quic/` - QUIC redirector
 - `tavern/internal/redirectors/dns/` - DNS redirector
+- `tavern/internal/redirectors/icmp/` - ICMP redirector
 
 Your redirector must implement the `Redirector` interface and register itself in the redirector registry. See `tavern/internal/redirectors/redirector.go` for the interface definition.
 
 And that's all that is needed for Imix to use a new Transport!
+
+## Client-Side Port Rebinding Design
+
+For the QUIC transport, the client spawns a background tokio task upon endpoint initialization that implements dynamic port rebinding.
+
+### Mechanism
+- The task sleeps for an effective interval calculated as: `rebind_interval * (1.0 - random_jitter)`.
+- Upon wakeup, a new local UDP socket is bound to `0.0.0.0:0`, marked non-blocking, and associated with the endpoint via `endpoint.rebind(socket)`.
+- QUIC connection IDs (CIDs) ensure that active stream contexts, redirector connections, and upstream metadata stay completely uninterrupted during migration.

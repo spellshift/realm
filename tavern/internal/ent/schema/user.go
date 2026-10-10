@@ -68,6 +68,13 @@ func (User) Fields() []ent.Field {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.From("notifications", Notification.Type).
+			Ref("user").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Notifications belonging to the user."),
 		edge.From("tomes", Tome.Type).
 			Ref("uploader").
 			Annotations(
@@ -89,6 +96,24 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Device auths approved by the user."),
+		edge.To("favoriteHosts", Host.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Hosts favorited by the user."),
+		edge.To("subscribedHosts", Host.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Hosts the user is subscribed to."),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Events associated with the user."),
 	}
 }
 

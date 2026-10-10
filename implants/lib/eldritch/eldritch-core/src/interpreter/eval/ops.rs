@@ -114,6 +114,35 @@ fn evaluate_in(
             };
             Ok(Value::Bool(s.contains(sub)))
         }
+        Value::Bytes(b) => {
+            let sub = match item {
+                Value::Bytes(bb) => bb,
+                Value::Int(i) => {
+                    if *i >= 0 && *i <= 255 {
+                        return Ok(Value::Bool(b.contains(&(*i as u8))));
+                    } else {
+                        return interp.error(
+                            EldritchErrorKind::ValueError,
+                            "byte must be in range(0, 256)",
+                            span,
+                        );
+                    }
+                }
+                _ => {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "'in <bytes>' requires bytes or int as left operand",
+                        span,
+                    );
+                }
+            };
+            let contains = if sub.is_empty() {
+                true
+            } else {
+                b.windows(sub.len()).any(|w| w == sub)
+            };
+            Ok(Value::Bool(contains))
+        }
         _ => interp.error(
             EldritchErrorKind::TypeError,
             &format!(

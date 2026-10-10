@@ -13,6 +13,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
@@ -197,6 +199,36 @@ func (bc *BeaconCreate) AddShells(s ...*Shell) *BeaconCreate {
 		ids[i] = s[i].ID
 	}
 	return bc.AddShellIDs(ids...)
+}
+
+// AddHistoryIDs adds the "history" edge to the BeaconHistory entity by IDs.
+func (bc *BeaconCreate) AddHistoryIDs(ids ...int) *BeaconCreate {
+	bc.mutation.AddHistoryIDs(ids...)
+	return bc
+}
+
+// AddHistory adds the "history" edges to the BeaconHistory entity.
+func (bc *BeaconCreate) AddHistory(b ...*BeaconHistory) *BeaconCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return bc.AddHistoryIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (bc *BeaconCreate) AddEventIDs(ids ...int) *BeaconCreate {
+	bc.mutation.AddEventIDs(ids...)
+	return bc
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (bc *BeaconCreate) AddEvents(e ...*Event) *BeaconCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return bc.AddEventIDs(ids...)
 }
 
 // Mutation returns the BeaconMutation object of the builder.
@@ -406,6 +438,38 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.HistoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.HistoryTable,
+			Columns: []string{beacon.HistoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   beacon.EventsTable,
+			Columns: []string{beacon.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

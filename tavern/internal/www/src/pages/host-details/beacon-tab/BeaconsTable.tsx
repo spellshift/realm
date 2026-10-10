@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { formatDistance } from "date-fns";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -11,6 +11,7 @@ import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
 import { BeaconNode } from "../../../utils/interfacesQuery";
 import { checkIfBeaconOffline, getEnumKey } from "../../../utils/utils";
 import { CreateShellButton } from "../../../components/create-shell-button/CreateShellButton";
+import { useCreateQuestModal } from "../../../context/CreateQuestModalContext";
 
 interface BeaconsTableProps {
     beaconIds: string[];
@@ -19,7 +20,8 @@ interface BeaconsTableProps {
 }
 
 export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: BeaconsTableProps) => {
-    const navigate = useNavigate();
+    const { openModal } = useCreateQuestModal();
+    const [, setSearchParams] = useSearchParams();
     const currentDate = useMemo(() => new Date(), []);
     const principalColors = Object.values(PrincipalAdminTypes);
 
@@ -154,10 +156,12 @@ export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: Beacons
                                     buttonVariant="ghost"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        navigate("/createQuest", {
-                                            state: {
-                                                step: 1,
+                                        openModal({
+                                            initialFormData: {
                                                 beacons: [id]
+                                            },
+                                            onComplete: () => {
+                                                setSearchParams({ tab: "tasks" });
                                             }
                                         });
                                     }}>
@@ -174,7 +178,7 @@ export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: Beacons
                 </div>
             ),
         },
-    ], [currentDate, principalColors, navigate]);
+    ], [currentDate, principalColors, openModal, setSearchParams]);
 
     return (
         <VirtualizedTable<BeaconNode, BeaconDetailQueryResponse>

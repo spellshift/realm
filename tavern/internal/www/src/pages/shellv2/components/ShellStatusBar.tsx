@@ -9,9 +9,10 @@ interface ShellStatusBarProps {
   isMissedCallback: boolean;
   connectionStatus: ConnectionStatus;
   connectionMessage?: string;
+  closedAt?: string;
 }
 
-const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback, connectionStatus, connectionMessage }) => {
+const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback, connectionStatus, connectionMessage, closedAt }) => {
   const getConnectionIcon = () => {
     switch (connectionStatus) {
       case "connected":
@@ -49,6 +50,15 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
             {getConnectionIcon()}
         </div>
 
+        {closedAt && (
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-red-500 uppercase">Terminated</span>
+            <Tooltip label={`This shell session was closed at ${new Date(closedAt).toLocaleString()}. Input is disabled.`}>
+              <span><Info size={14} className="text-red-500" /></span>
+            </Tooltip>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           {portalId ? (
             <div className="flex items-center gap-1 group relative cursor-help">
@@ -57,7 +67,7 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
                 connectionStatus === "reconnecting" ? "text-yellow-500" :
                 "text-gray-500"
               }`}>
-                Portal Active (ID: {portalId})
+                Portal Active<span className="hidden md:inline"> (ID: {portalId})</span>
               </span>
               <Tooltip label="This shell is currently using an established portal connection for low-latency i/o. You may utilize this portal for SOCKS5 proxying or pivoting (e.g. with SSH)">
                 <span><Info size={14} className={

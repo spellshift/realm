@@ -11,6 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -114,6 +117,21 @@ func (uu *UserUpdate) SetNillableIsAdmin(b *bool) *UserUpdate {
 	return uu
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (uu *UserUpdate) AddNotificationIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddNotificationIDs(ids...)
+	return uu
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (uu *UserUpdate) AddNotifications(n ...*Notification) *UserUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uu.AddNotificationIDs(ids...)
+}
+
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
 func (uu *UserUpdate) AddTomeIDs(ids ...int) *UserUpdate {
 	uu.mutation.AddTomeIDs(ids...)
@@ -159,9 +177,75 @@ func (uu *UserUpdate) AddDeviceAuths(d ...*DeviceAuth) *UserUpdate {
 	return uu.AddDeviceAuthIDs(ids...)
 }
 
+// AddFavoriteHostIDs adds the "favoriteHosts" edge to the Host entity by IDs.
+func (uu *UserUpdate) AddFavoriteHostIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddFavoriteHostIDs(ids...)
+	return uu
+}
+
+// AddFavoriteHosts adds the "favoriteHosts" edges to the Host entity.
+func (uu *UserUpdate) AddFavoriteHosts(h ...*Host) *UserUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uu.AddFavoriteHostIDs(ids...)
+}
+
+// AddSubscribedHostIDs adds the "subscribedHosts" edge to the Host entity by IDs.
+func (uu *UserUpdate) AddSubscribedHostIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddSubscribedHostIDs(ids...)
+	return uu
+}
+
+// AddSubscribedHosts adds the "subscribedHosts" edges to the Host entity.
+func (uu *UserUpdate) AddSubscribedHosts(h ...*Host) *UserUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uu.AddSubscribedHostIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (uu *UserUpdate) AddEventIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddEventIDs(ids...)
+	return uu
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (uu *UserUpdate) AddEvents(e ...*Event) *UserUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return uu.AddEventIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (uu *UserUpdate) ClearNotifications() *UserUpdate {
+	uu.mutation.ClearNotifications()
+	return uu
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (uu *UserUpdate) RemoveNotificationIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveNotificationIDs(ids...)
+	return uu
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (uu *UserUpdate) RemoveNotifications(n ...*Notification) *UserUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uu.RemoveNotificationIDs(ids...)
 }
 
 // ClearTomes clears all "tomes" edges to the Tome entity.
@@ -225,6 +309,69 @@ func (uu *UserUpdate) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdate {
 		ids[i] = d[i].ID
 	}
 	return uu.RemoveDeviceAuthIDs(ids...)
+}
+
+// ClearFavoriteHosts clears all "favoriteHosts" edges to the Host entity.
+func (uu *UserUpdate) ClearFavoriteHosts() *UserUpdate {
+	uu.mutation.ClearFavoriteHosts()
+	return uu
+}
+
+// RemoveFavoriteHostIDs removes the "favoriteHosts" edge to Host entities by IDs.
+func (uu *UserUpdate) RemoveFavoriteHostIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveFavoriteHostIDs(ids...)
+	return uu
+}
+
+// RemoveFavoriteHosts removes "favoriteHosts" edges to Host entities.
+func (uu *UserUpdate) RemoveFavoriteHosts(h ...*Host) *UserUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uu.RemoveFavoriteHostIDs(ids...)
+}
+
+// ClearSubscribedHosts clears all "subscribedHosts" edges to the Host entity.
+func (uu *UserUpdate) ClearSubscribedHosts() *UserUpdate {
+	uu.mutation.ClearSubscribedHosts()
+	return uu
+}
+
+// RemoveSubscribedHostIDs removes the "subscribedHosts" edge to Host entities by IDs.
+func (uu *UserUpdate) RemoveSubscribedHostIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveSubscribedHostIDs(ids...)
+	return uu
+}
+
+// RemoveSubscribedHosts removes "subscribedHosts" edges to Host entities.
+func (uu *UserUpdate) RemoveSubscribedHosts(h ...*Host) *UserUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uu.RemoveSubscribedHostIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (uu *UserUpdate) ClearEvents() *UserUpdate {
+	uu.mutation.ClearEvents()
+	return uu
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (uu *UserUpdate) RemoveEventIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveEventIDs(ids...)
+	return uu
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (uu *UserUpdate) RemoveEvents(e ...*Event) *UserUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return uu.RemoveEventIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -303,6 +450,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
+	}
+	if uu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.NotificationsTable,
+			Columns: []string{user.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !uu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.NotificationsTable,
+			Columns: []string{user.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.NotificationsTable,
+			Columns: []string{user.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if uu.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -439,6 +631,141 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedFavoriteHostsIDs(); len(nodes) > 0 && !uu.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.FavoriteHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.SubscribedHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.SubscribedHostsTable,
+			Columns: user.SubscribedHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedSubscribedHostsIDs(); len(nodes) > 0 && !uu.mutation.SubscribedHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.SubscribedHostsTable,
+			Columns: user.SubscribedHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.SubscribedHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.SubscribedHostsTable,
+			Columns: user.SubscribedHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.EventsTable,
+			Columns: []string{user.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedEventsIDs(); len(nodes) > 0 && !uu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.EventsTable,
+			Columns: []string{user.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.EventsTable,
+			Columns: []string{user.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -543,6 +870,21 @@ func (uuo *UserUpdateOne) SetNillableIsAdmin(b *bool) *UserUpdateOne {
 	return uuo
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (uuo *UserUpdateOne) AddNotificationIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddNotificationIDs(ids...)
+	return uuo
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (uuo *UserUpdateOne) AddNotifications(n ...*Notification) *UserUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uuo.AddNotificationIDs(ids...)
+}
+
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
 func (uuo *UserUpdateOne) AddTomeIDs(ids ...int) *UserUpdateOne {
 	uuo.mutation.AddTomeIDs(ids...)
@@ -588,9 +930,75 @@ func (uuo *UserUpdateOne) AddDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
 	return uuo.AddDeviceAuthIDs(ids...)
 }
 
+// AddFavoriteHostIDs adds the "favoriteHosts" edge to the Host entity by IDs.
+func (uuo *UserUpdateOne) AddFavoriteHostIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddFavoriteHostIDs(ids...)
+	return uuo
+}
+
+// AddFavoriteHosts adds the "favoriteHosts" edges to the Host entity.
+func (uuo *UserUpdateOne) AddFavoriteHosts(h ...*Host) *UserUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uuo.AddFavoriteHostIDs(ids...)
+}
+
+// AddSubscribedHostIDs adds the "subscribedHosts" edge to the Host entity by IDs.
+func (uuo *UserUpdateOne) AddSubscribedHostIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddSubscribedHostIDs(ids...)
+	return uuo
+}
+
+// AddSubscribedHosts adds the "subscribedHosts" edges to the Host entity.
+func (uuo *UserUpdateOne) AddSubscribedHosts(h ...*Host) *UserUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uuo.AddSubscribedHostIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (uuo *UserUpdateOne) AddEventIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddEventIDs(ids...)
+	return uuo
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (uuo *UserUpdateOne) AddEvents(e ...*Event) *UserUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return uuo.AddEventIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (uuo *UserUpdateOne) ClearNotifications() *UserUpdateOne {
+	uuo.mutation.ClearNotifications()
+	return uuo
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (uuo *UserUpdateOne) RemoveNotificationIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveNotificationIDs(ids...)
+	return uuo
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (uuo *UserUpdateOne) RemoveNotifications(n ...*Notification) *UserUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uuo.RemoveNotificationIDs(ids...)
 }
 
 // ClearTomes clears all "tomes" edges to the Tome entity.
@@ -654,6 +1062,69 @@ func (uuo *UserUpdateOne) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
 		ids[i] = d[i].ID
 	}
 	return uuo.RemoveDeviceAuthIDs(ids...)
+}
+
+// ClearFavoriteHosts clears all "favoriteHosts" edges to the Host entity.
+func (uuo *UserUpdateOne) ClearFavoriteHosts() *UserUpdateOne {
+	uuo.mutation.ClearFavoriteHosts()
+	return uuo
+}
+
+// RemoveFavoriteHostIDs removes the "favoriteHosts" edge to Host entities by IDs.
+func (uuo *UserUpdateOne) RemoveFavoriteHostIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveFavoriteHostIDs(ids...)
+	return uuo
+}
+
+// RemoveFavoriteHosts removes "favoriteHosts" edges to Host entities.
+func (uuo *UserUpdateOne) RemoveFavoriteHosts(h ...*Host) *UserUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uuo.RemoveFavoriteHostIDs(ids...)
+}
+
+// ClearSubscribedHosts clears all "subscribedHosts" edges to the Host entity.
+func (uuo *UserUpdateOne) ClearSubscribedHosts() *UserUpdateOne {
+	uuo.mutation.ClearSubscribedHosts()
+	return uuo
+}
+
+// RemoveSubscribedHostIDs removes the "subscribedHosts" edge to Host entities by IDs.
+func (uuo *UserUpdateOne) RemoveSubscribedHostIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveSubscribedHostIDs(ids...)
+	return uuo
+}
+
+// RemoveSubscribedHosts removes "subscribedHosts" edges to Host entities.
+func (uuo *UserUpdateOne) RemoveSubscribedHosts(h ...*Host) *UserUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uuo.RemoveSubscribedHostIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (uuo *UserUpdateOne) ClearEvents() *UserUpdateOne {
+	uuo.mutation.ClearEvents()
+	return uuo
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (uuo *UserUpdateOne) RemoveEventIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveEventIDs(ids...)
+	return uuo
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (uuo *UserUpdateOne) RemoveEvents(e ...*Event) *UserUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return uuo.RemoveEventIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -762,6 +1233,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.IsAdmin(); ok {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
+	}
+	if uuo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.NotificationsTable,
+			Columns: []string{user.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !uuo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.NotificationsTable,
+			Columns: []string{user.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.NotificationsTable,
+			Columns: []string{user.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if uuo.mutation.TomesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -891,6 +1407,141 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedFavoriteHostsIDs(); len(nodes) > 0 && !uuo.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.FavoriteHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.SubscribedHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.SubscribedHostsTable,
+			Columns: user.SubscribedHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedSubscribedHostsIDs(); len(nodes) > 0 && !uuo.mutation.SubscribedHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.SubscribedHostsTable,
+			Columns: user.SubscribedHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.SubscribedHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.SubscribedHostsTable,
+			Columns: user.SubscribedHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.EventsTable,
+			Columns: []string{user.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedEventsIDs(); len(nodes) > 0 && !uuo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.EventsTable,
+			Columns: []string{user.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.EventsTable,
+			Columns: []string{user.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

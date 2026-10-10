@@ -1,0 +1,37 @@
+requestor:
+  session_token: "s"
+query: |
+  mutation {
+    readNotifs: markNotificationsAsRead(notificationIDs: [1, 2]) {
+      id
+      read
+      archived
+    }
+    archivedNotifs: markNotificationsAsArchived(notificationIDs: [1, 2]) {
+      id
+      read
+      archived
+    }
+  }
+state: |
+  INSERT INTO users (id, name, oauth_id, photo_url, session_token, access_token, is_activated) VALUES (1, 'u', 'o', 'p', 's', 'a', true);
+  INSERT INTO hosts (id, identifier, platform, created_at, last_modified_at) VALUES (1, 'h', 'LINUX', '2024-01-01 00:00:00', '2024-01-01 00:00:00');
+  INSERT INTO events (id, host_events, timestamp, kind, created_at, last_modified_at) VALUES (1, 1, 100, 'HOST_ACCESS_NEW', '2024-01-01 00:00:00', '2024-01-01 00:00:00');
+  INSERT INTO notifications (id, notification_user, notification_event, priority, `read`, archived, created_at, last_modified_at) VALUES (1, 1, 1, 'Low', false, false, '2024-01-01 00:00:00', '2024-01-01 00:00:00');
+  INSERT INTO notifications (id, notification_user, notification_event, priority, `read`, archived, created_at, last_modified_at) VALUES (2, 1, 1, 'Low', false, false, '2024-01-01 00:00:00', '2024-01-01 00:00:00');
+
+expected:
+  readNotifs:
+    - id: "1"
+      read: true
+      archived: false
+    - id: "2"
+      read: true
+      archived: false
+  archivedNotifs:
+    - id: "1"
+      read: true
+      archived: true
+    - id: "2"
+      read: true
+      archived: true

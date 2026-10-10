@@ -33,12 +33,12 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
-        cache-dependency-path: tavern/internal/www/package-lock.json
+        cache-dependency-path: tests/e2e/package-lock.json
 
     - name: 📦 Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgbm-dev libx11-dev libssl-dev protobuf-compiler pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev
+        sudo apt-get install -y libgbm-dev libx11-dev libssl-dev protobuf-compiler pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev libpam0g-dev
 
     - name: 🔨 Build Tavern
       run: |
@@ -48,7 +48,7 @@ jobs:
       env:
         HTTP_LISTEN_ADDR: ":8000"
       run: |
-        ./tavern_bin &
+        ./tavern_bin > tavern.log 2>&1 &
         echo "Waiting for Tavern to start..."
         # Wait for port 8000
         timeout 30 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 8000
@@ -92,3 +92,10 @@ jobs:
         path: |
           tavern.log
           implants/imix/agent.log
+    - name: 📤 Upload JUnit Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-e2e-repl
+        path: tests/e2e/results.xml
+        if-no-files-found: ignore

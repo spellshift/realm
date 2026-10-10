@@ -5,7 +5,7 @@ import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField } from '..
 import { OrderByField } from '../../../utils/interfacesQuery';
 import { defaultSorts, Sorts } from '../sortingUtils';
 
-const STORAGE_KEY = 'realm-sorting-v1.0';
+const STORAGE_KEY = 'realm-sorting-v1.1';
 
 describe('SortContext', () => {
   beforeEach(() => {

@@ -27,6 +27,7 @@ mod tests {
         interp.register_lib(eldritch::assets::fake::FakeAssetsLibrary);
         interp.register_lib(eldritch::file::fake::FileLibraryFake::default());
         interp.register_lib(eldritch::http::fake::HttpLibraryFake);
+        interp.register_lib(eldritch::dns::fake::DnsLibraryFake::default());
         interp.register_lib(eldritch::pivot::fake::PivotLibraryFake);
         interp.register_lib(eldritch::process::fake::ProcessLibraryFake);
         interp.register_lib(eldritch::report::fake::ReportLibraryFake);
@@ -121,6 +122,9 @@ mod tests {
                         // But most use cases seen so far are .lower().
                         "bool" | "boolean" => Value::String("true".to_string()),
                         "float" => Value::Float(1.0),
+                        // Provide an empty JSON array for list params so tomes that call
+                        // crypto.from_json() on the value receive valid JSON.
+                        "list" => Value::String("[]".to_string()),
                         _ => Value::String("default".to_string()),
                     }
                 };

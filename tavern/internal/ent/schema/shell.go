@@ -76,6 +76,14 @@ func (Shell) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Tasks executed in this shell"),
+		edge.From("pivots", ShellPivot.Type).
+			Ref("shell").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Pivots associated with this shell"),
 	}
 }
 

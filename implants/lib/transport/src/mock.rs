@@ -44,12 +44,6 @@ mock! {
             request: ReportOutputRequest,
         ) -> Result<ReportOutputResponse>;
 
-        async fn reverse_shell(
-            &mut self,
-            rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-            tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
-        ) -> Result<()>;
-
         fn get_type(&mut self) -> pb::c2::transport::Type {
             return pb::c2::transport::Type::TransportUnspecified;
         }
@@ -59,6 +53,13 @@ mock! {
             tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
         ) -> Result<()>;
 
+
+        async fn forward_raw(
+            &mut self,
+            path: String,
+            rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+            tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+        ) -> Result<()>;
 
         fn is_active(&self) -> bool;
 

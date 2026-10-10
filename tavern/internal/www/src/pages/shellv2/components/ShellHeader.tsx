@@ -7,13 +7,23 @@ import { Tooltip } from "@chakra-ui/react";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import { getEnumKey } from "../../../utils/utils";
 import { SupportedPlatforms, SupportedTransports } from "../../../utils/enums";
+import ShellActionsMenu from "./ShellActionsMenu";
+import NotificationBell from "../../../components/notifications/NotificationBell";
 
 interface ShellHeaderProps {
   shellData: any;
   activeUsers?: { id: string; name: string; photoURL?: string }[];
+  portalId: number | null;
+  onExport: () => void;
+  onNewPortal: () => void;
+  onClosePortal: () => void;
+  onSshConnect: (target: string) => void;
+  onPtyOpen: () => void;
+  onSendCtrlC: () => void;
+  onSendCtrlR: () => void;
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], portalId, onExport, onNewPortal, onClosePortal, onSshConnect, onPtyOpen, onSendCtrlC, onSendCtrlR }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const principal = shellData?.node?.beacon?.principal;
   const agentIdentifier = shellData?.node?.beacon?.agentIdentifier;
@@ -28,46 +38,40 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
   const tags = shellData?.node?.beacon?.host?.tags?.edges?.map((edge: any) => edge.node) || [];
 
   return (
-    <div className="flex items-center gap-4 mb-4">
+    <div className="flex items-center gap-2 md:gap-4 mb-4">
       <Breadcrumbs pages={[{ label: "Shell", link: window.location.pathname }]} />
       <Badge badgeStyle={{ color: "red" }}>BETA</Badge>
-      <h1 className="text-xl font-bold">
-        <Tooltip label={
-          <div className="flex flex-col">
-            <span>Principal: {principal}</span>
-            <span>Agent Identifier: {agentIdentifier}</span>
-            <span>Interval: {interval}</span>
-            <span>Transport: {getEnumKey(SupportedTransports, transport)}</span>
-          </div>
-        }>
-          <span className="cursor-help border-b border-dashed border-gray-500">{beaconName}</span>
-        </Tooltip>
-        {" @ "}
-        <Tooltip label={
-          <div className="flex flex-col">
-            <span>Primary IP: {primaryIP}</span>
-            <span>External IP: {externalIP}</span>
-            <span>Platform: {getEnumKey(SupportedPlatforms, platform)}</span>
-            {tags.length > 0 && (
-              <span>Tags: {tags.map((t: any) => t.name).join(', ')}</span>
-            )}
-          </div>
-        }>
-          <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">{hostName}</Link>
-        </Tooltip>
+      <h1 className="text-xl font-bold flex items-center gap-2 min-w-0">
+        <span className="truncate max-w-[200px] md:max-w-none">
+          <Tooltip label={
+            <div className="flex flex-col">
+              <span>Principal: {principal}</span>
+              <span>Agent Identifier: {agentIdentifier}</span>
+              <span>Interval: {interval}</span>
+              <span>Transport: {getEnumKey(SupportedTransports, transport)}</span>
+            </div>
+          }>
+            <span className="cursor-help border-b border-dashed border-gray-500 hidden md:inline">{beaconName}</span>
+          </Tooltip>
+          <span className="hidden md:inline">{" @ "}</span>
+          <Tooltip label={
+            <div className="flex flex-col">
+              <span>Primary IP: {primaryIP}</span>
+              <span>External IP: {externalIP}</span>
+              <span>Platform: {getEnumKey(SupportedPlatforms, platform)}</span>
+              {tags.length > 0 && (
+                <span>Tags: {tags.map((t: any) => t.name).join(', ')}</span>
+              )}
+            </div>
+          }>
+            <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">{hostName}</Link>
+          </Tooltip>
+        </span>
+        {principal && <span className="hidden md:inline"><Badge>{principal}</Badge></span>}
       </h1>
-      <a
-        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-gray-400 hover:text-white transition-colors"
-        title="Report a bug"
-      >
-        <Bug size={20} />
-      </a>
 
       {/* Active Users Display */}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 min-w-0 overflow-x-auto">
         {activeUsers.length > 0 && (
           <div className="flex -space-x-2">
             {activeUsers.map((user) => {
@@ -85,6 +89,33 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
             })}
           </div>
         )}
+      </div>
+
+      <a
+        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hidden md:flex text-gray-400 hover:text-white transition-colors flex-shrink-0"
+        title="Report a bug"
+      >
+        <Bug size={20} />
+      </a>
+
+      <div className="flex-shrink-0">
+        <NotificationBell />
+      </div>
+
+      <div className="flex-shrink-0">
+        <ShellActionsMenu
+          portalId={portalId}
+          onExport={onExport}
+          onNewPortal={onNewPortal}
+          onClosePortal={onClosePortal}
+          onSshConnect={onSshConnect}
+          onPtyOpen={onPtyOpen}
+          onSendCtrlC={onSendCtrlC}
+          onSendCtrlR={onSendCtrlR}
+        />
       </div>
     </div>
   );

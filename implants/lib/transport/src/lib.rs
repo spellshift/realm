@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use pb::c2::transport::Type as TransportType;
 use pb::config::Config;
 
-#[cfg(any(feature = "grpc", feature = "http1"))]
+#[cfg(any(feature = "grpc", feature = "http1", feature = "quic"))]
 mod tls_utils;
 
 #[cfg(feature = "grpc")]
@@ -14,16 +14,50 @@ mod dns_resolver;
 #[cfg(feature = "http1")]
 mod http;
 
+#[cfg(any(feature = "dns", feature = "icmp"))]
+mod conv;
+
 #[cfg(feature = "dns")]
 mod dns;
+
+#[cfg(feature = "icmp")]
+mod icmp;
 
 #[cfg(feature = "mock")]
 mod mock;
 #[cfg(feature = "mock")]
 pub use mock::MockTransport;
 
+#[cfg(feature = "tcp-bind")]
+mod tcp_bind;
+#[cfg(feature = "tcp-bind")]
+pub use tcp_bind::TcpBindTransport;
+
+#[cfg(feature = "quic")]
+mod quic;
+
 mod transport;
 pub use transport::Transport;
+
+/// Returns an empty (disconnected) transport using the default (gRPC) transport type.
+/// Use this to initialize or reset transport state without an active connection.
+pub fn init_transport() -> Box<dyn Transport + Send + Sync> {
+    #[cfg(feature = "grpc")]
+    return Box::new(grpc::GRPC::init());
+    #[cfg(all(not(feature = "grpc"), feature = "http1"))]
+    return Box::new(http::HTTP::init());
+    #[cfg(all(not(feature = "grpc"), not(feature = "http1"), feature = "dns"))]
+    return Box::new(dns::DNS::init());
+    #[cfg(all(
+        not(feature = "grpc"),
+        not(feature = "http1"),
+        not(feature = "dns"),
+        feature = "quic"
+    ))]
+    return Box::new(quic::QuicTransport::init());
+    #[cfg(not(any(feature = "grpc", feature = "http1", feature = "dns", feature = "quic")))]
+    compile_error!("At least one transport feature must be enabled");
+}
 
 pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Sync>> {
     // Extract transport type from config
@@ -60,26 +94,31 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
             #[cfg(not(feature = "dns"))]
             return Err(anyhow!("DNS transport not enabled"));
         }
+        Ok(TransportType::TransportUds) => {
+            Err(anyhow!("UDS transport is provided by pro-transports"))
+        }
+        Ok(TransportType::TransportTcpBind) => {
+            #[cfg(feature = "tcp-bind")]
+            return Ok(Box::new(tcp_bind::TcpBindTransport::new(config)?));
+            #[cfg(not(feature = "tcp-bind"))]
+            return Err(anyhow!("TCP Bind transport not enabled"));
+        }
+        Ok(TransportType::TransportIcmp) => {
+            #[cfg(feature = "icmp")]
+            return Ok(Box::new(icmp::ICMP::new(config)?));
+            #[cfg(not(feature = "icmp"))]
+            return Err(anyhow!("ICMP transport not enabled"));
+        }
+        Ok(TransportType::TransportQuic) => {
+            #[cfg(feature = "quic")]
+            return Ok(Box::new(quic::QuicTransport::new(config)?));
+            #[cfg(not(feature = "quic"))]
+            return Err(anyhow!("QUIC transport not enabled"));
+        }
         Ok(TransportType::TransportUnspecified) | Err(_) => {
             Err(anyhow!("Invalid or unspecified transport type"))
         }
     }
-}
-
-pub fn empty_transport() -> Box<dyn Transport + Send + Sync> {
-    let mut config = Config::default();
-    config.info = Some(pb::c2::Beacon {
-        available_transports: Some(pb::c2::AvailableTransports {
-            transports: vec![pb::c2::Transport {
-                uri: "http://127.0.0.1".to_string(),
-                r#type: TransportType::TransportHttp1 as i32,
-                ..Default::default()
-            }],
-            active_index: 0,
-        }),
-        ..Default::default()
-    });
-    create_transport(config).expect("Failed to create empty transport")
 }
 
 #[cfg(test)]
@@ -142,6 +181,20 @@ mod tests {
 
             assert!(result.is_ok(), "URI '{}' did not resolve to Http", uri);
             assert_eq!(result.unwrap().name(), "http");
+        }
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "quic")]
+    async fn test_routes_to_quic_transport() {
+        let inputs = vec!["quic://127.0.0.1:8443", "quics://127.0.0.1:8443"];
+
+        for uri in inputs {
+            let config = create_test_config(uri, TransportType::TransportQuic as i32, "{}");
+            let result = create_transport(config);
+
+            assert!(result.is_ok(), "URI '{}' did not resolve to Quic", uri);
+            assert_eq!(result.unwrap().name(), "quic");
         }
     }
 

@@ -38,6 +38,16 @@ export const GET_SHELL = gql`
           id
           closedAt
         }
+        pivots {
+          edges {
+            node {
+              id
+              kind
+              destination
+              closedAt
+            }
+          }
+        }
       }
     }
   }
@@ -61,6 +71,15 @@ export const GET_PORTAL_STATUS = gql`
       ... on Portal {
         closedAt
       }
+    }
+  }
+`;
+
+export const CLOSE_PORTAL_MUTATION = gql`
+  mutation ClosePortal($id: ID!) {
+    closePortal(portalID: $id) {
+      id
+      closedAt
     }
   }
 `;

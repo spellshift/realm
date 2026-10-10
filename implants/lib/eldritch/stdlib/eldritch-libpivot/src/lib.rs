@@ -11,47 +11,16 @@ pub mod fake;
 #[cfg(feature = "stdlib")]
 pub mod std;
 
-#[cfg(test)]
-mod tests;
-
 #[eldritch_library("pivot")]
 /// The `pivot` library provides tools for lateral movement, scanning, and tunneling.
 ///
 /// It supports:
-/// - Reverse shells (PTY and REPL).
 /// - SSH execution and file copy.
 /// - Network scanning (ARP, Port).
 /// - Traffic tunneling (Port forwarding, Bind proxy).
 /// - Simple network interaction (Ncat).
 /// - SMB execution (Stubbed/Proposed).
 pub trait PivotLibrary {
-    #[eldritch_method]
-    /// Spawns a reverse shell with a PTY (Pseudo-Terminal) attached.
-    ///
-    /// This provides a full interactive shell experience over the agent's C2 channel.
-    ///
-    /// **Parameters**
-    /// - `cmd` (`Option<str>`): The shell command to run (e.g., `/bin/bash`, `cmd.exe`). If `None`, defaults to system shell.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the shell cannot be spawned.
-    fn reverse_shell_pty(&self, cmd: Option<String>) -> Result<(), String>;
-
-    #[eldritch_method]
-    /// Spawns a basic REPL-style reverse shell with an Eldritch interpreter.
-    ///
-    /// Useful if PTY is not available.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if failure occurs.
-    fn reverse_shell_repl(&self) -> Result<(), String>;
-
     #[eldritch_method]
     /// Opens a portal bi-directional stream.
     ///
@@ -159,6 +128,60 @@ pub trait PivotLibrary {
     /// **Returns**
     /// - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[allow(clippy::too_many_arguments)]
+    #[eldritch_method]
+    /// Deploys a payload and/or command across a set of hosts via SSH.
+    ///
+    /// For each target (IP or CIDR range), this method attempts the provided
+    /// credentials in order until one succeeds. Once authenticated, an optional
+    /// payload is copied via SFTP to the destination path, and then `cmd` is
+    /// executed. If the effective user is not `root` and `privesc_cmd` is
+    /// provided, the privilege escalation command is executed before `cmd`.
+    ///
+    /// **Parameters**
+    /// - `ips` (`List<str>`): Non-empty list of IP addresses and/or CIDR ranges
+    ///   (e.g. `["10.0.0.1", "10.0.0.0/24"]`). All entries must be valid.
+    /// - `credentials` (`List<Dict>`): Non-empty list of credential dictionaries
+    ///   of the form `{"principal": "<user>", "password": "<password>"}`,
+    ///   attempted in order on each host.
+    /// - `cmd` (`str`): Command to run on the remote system (ideally as root).
+    /// - `privesc_cmd` (`Option<str>`): Optional privilege escalation command
+    ///   to run when the effective user is not root.
+    /// - `payload` (`Option<bytes>`): Optional raw payload bytes to copy to
+    ///   the remote system (for example the result of `file.read_binary(...)`
+    ///   or `assets.read_binary(...)`).
+    /// - `payload_dst` (`Option<str>`): Optional destination path on the remote
+    ///   system for the payload. Defaults to `/tmp/payload`.
+    /// - `timeout` (`Option<int>`): Optional per-connection timeout in seconds
+    ///   applied to each SSH authentication attempt. Defaults to `5`.
+    /// - `retries` (`Option<int>`): Optional number of additional retry passes
+    ///   over the full credential list on hosts that failed to connect.
+    ///   Defaults to `0` (i.e. each credential is tried once per host).
+    ///
+    /// **Returns**
+    /// - `List<Dict>`: One result dictionary per target IP with the keys:
+    ///   - `ip` (`str`)
+    ///   - `status` (`str`): `"success"` or `"failed"`
+    ///   - `principal` (`str`): Credential principal used on success (empty on failure).
+    ///   - `stdout` (`str`)
+    ///   - `stderr` (`str`)
+    ///   - `error` (`str`): Error detail on failure (empty on success).
+    ///
+    /// **Errors**
+    /// - Returns an error string if `ips` or `credentials` is empty, or if any
+    ///   entry in `ips` or `credentials` is malformed.
+    fn ssh_deploy(
+        &self,
+        ips: Vec<String>,
+        credentials: Vec<BTreeMap<String, Value>>,
+        cmd: String,
+        privesc_cmd: Option<String>,
+        payload: Option<Vec<u8>>,
+        payload_dst: Option<String>,
+        timeout: Option<i64>,
+        retries: Option<i64>,
+    ) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
     /// Sends arbitrary data to a host via TCP or UDP and waits for a response.

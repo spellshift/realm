@@ -116,4 +116,18 @@ assert((1+1) in [2, 3])
 "#;
         check_script(script);
     }
+
+    #[test]
+    fn test_bytes_in() {
+        let script = r#"
+b = bytes("hello_world.bin")
+assert(bytes("hello") in b)
+assert(bytes("world") in b)
+assert(bytes("z") not in b)
+assert(104 in b)  # 'h'
+assert(105 in b)  # 'i'
+assert(122 not in b)  # 'z'
+"#;
+        check_script(script);
+    }
 }

@@ -22,7 +22,7 @@ const (
 	// Keys ending in "-bin" use gRPC binary metadata encoding.
 	mdKeyBuilderCert      = "builder-cert-bin"
 	mdKeyBuilderSignature = "builder-signature-bin"
-	mdKeyBuilderTimestamp  = "builder-timestamp"
+	mdKeyBuilderTimestamp = "builder-timestamp"
 
 	// Maximum age for a timestamp to be considered valid.
 	maxTimestampAge = 5 * time.Minute

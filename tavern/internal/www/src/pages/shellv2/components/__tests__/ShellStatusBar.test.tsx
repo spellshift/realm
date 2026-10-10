@@ -35,7 +35,8 @@ describe("ShellStatusBar", () => {
 
     it("displays portal active message when portalId is present", () => {
         render(<ShellStatusBar {...defaultProps} portalId={123} />);
-        expect(screen.getByText("Portal Active (ID: 123)")).toBeInTheDocument();
+        expect(screen.getByText("Portal Active")).toBeInTheDocument();
+        expect(screen.getByText("(ID: 123)")).toBeInTheDocument();
     });
 
     it("displays non-interactive message when portalId is null", () => {
@@ -52,5 +53,10 @@ describe("ShellStatusBar", () => {
         render(<ShellStatusBar {...defaultProps} timeUntilCallback="expected 5 minutes ago" isMissedCallback={true} />);
         const timer = screen.getByText("expected 5 minutes ago");
         expect(timer).toHaveClass("text-red-500 font-bold");
+    });
+
+    it("displays terminated status when closedAt is present", () => {
+        render(<ShellStatusBar {...defaultProps} closedAt="2024-01-01T00:00:00Z" />);
+        expect(screen.getByText(/Terminated/i)).toBeInTheDocument();
     });
 });

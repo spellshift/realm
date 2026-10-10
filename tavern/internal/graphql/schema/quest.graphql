@@ -1,0 +1,20 @@
+enum StructuredData {
+    FILE
+    PROCESS
+}
+
+type TaskDiff {
+    ids: [ID!]!
+    output: String
+    error: String
+    structuredData: [StructuredData!]!
+}
+
+extend type Quest {
+    diffs(
+        """
+        Filtering options for Tasks used to compute diffs.
+        """
+        where: TaskWhereInput
+    ): [TaskDiff!]! @goField(forceResolver: true)
+}

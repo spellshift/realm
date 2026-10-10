@@ -184,14 +184,14 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				)
 			} else {
 				b := client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
+					SetLastSeenAt(time.Now().Add(-1 * time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1 * time.Minute).Add(600000 * time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(600000).
 					SetPrincipal("root").
-					SetTransport(getTransport(groupNum*100+i*10+0)).
+					SetTransport(getTransport(groupNum*100 + i*10 + 0)).
 					SaveX(ctx)
 
 				testBeacons = append(testBeacons, b)
@@ -370,6 +370,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 	for i := 0; i < 5; i++ {
 		createQuest(ctx, client, testBeacons...)
 	}
+
+	createNonLinearAdventures(ctx, client, testBeacons[0])
 }
 
 func newRandomIdentifier() string {
@@ -638,6 +640,56 @@ None
 --------
 
 `
+
+func createNonLinearAdventures(ctx context.Context, client *ent.Client, beacon *ent.Beacon) {
+	adv := client.Adventure.Create().SetName("The Fractured Path").SaveX(ctx)
+
+	tomeA := client.Tome.Create().
+		SetName("ExploreCave").
+		SetDescription("Explore a dark cave").
+		SetAuthor("kcarretto").
+		SetEldritch(`print("Exploring...")`).
+		SaveX(ctx)
+
+	questA := client.Quest.Create().
+		SetName("Explore The Cave").
+		SetTome(tomeA).
+		SetAdventure(adv).
+		SaveX(ctx)
+	client.Task.Create().SetBeacon(beacon).SetQuest(questA).SetCreatedAt(timeAgo(60 * time.Minute)).SetClaimedAt(timeAgo(59 * time.Minute)).SetExecStartedAt(timeAgo(58 * time.Minute)).SetExecFinishedAt(timeAgo(58 * time.Minute)).SaveX(ctx)
+
+	questB := client.Quest.Create().
+		SetName("Fight The Bats").
+		SetTome(tomeA).
+		SetAdventure(adv).
+		SetPreviousQuest(questA).
+		SaveX(ctx)
+	client.Task.Create().SetBeacon(beacon).SetQuest(questB).SetCreatedAt(timeAgo(50 * time.Minute)).SetClaimedAt(timeAgo(49 * time.Minute)).SetExecStartedAt(timeAgo(48 * time.Minute)).SetExecFinishedAt(timeAgo(48 * time.Minute)).SaveX(ctx)
+
+	questC := client.Quest.Create().
+		SetName("Find the Treasure").
+		SetTome(tomeA).
+		SetAdventure(adv).
+		SetPreviousQuest(questB).
+		SaveX(ctx)
+	client.Task.Create().SetBeacon(beacon).SetQuest(questC).SetCreatedAt(timeAgo(40 * time.Minute)).SetClaimedAt(timeAgo(39 * time.Minute)).SetExecStartedAt(timeAgo(38 * time.Minute)).SetExecFinishedAt(timeAgo(38 * time.Minute)).SaveX(ctx)
+
+	questD := client.Quest.Create().
+		SetName("Flee the Cave").
+		SetTome(tomeA).
+		SetAdventure(adv).
+		SetPreviousQuest(questA).
+		SaveX(ctx)
+	client.Task.Create().SetBeacon(beacon).SetQuest(questD).SetCreatedAt(timeAgo(40 * time.Minute)).SetClaimedAt(timeAgo(39 * time.Minute)).SetExecStartedAt(timeAgo(38 * time.Minute)).SetExecFinishedAt(timeAgo(38 * time.Minute)).SaveX(ctx)
+
+	questE := client.Quest.Create().
+		SetName("Leave With Treasure").
+		SetTome(tomeA).
+		SetAdventure(adv).
+		SetPreviousQuest(questC).
+		SaveX(ctx)
+	client.Task.Create().SetBeacon(beacon).SetQuest(questE).SetCreatedAt(timeAgo(30 * time.Minute)).SetClaimedAt(timeAgo(29 * time.Minute)).SetExecStartedAt(timeAgo(28 * time.Minute)).SetExecFinishedAt(timeAgo(28 * time.Minute)).SaveX(ctx)
+}
 
 func createQuest(ctx context.Context, client *ent.Client, beacons ...*ent.Beacon) {
 	// Mid-Execution

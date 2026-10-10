@@ -16,7 +16,7 @@ pub fn get_reg(_path: String) -> Result<BTreeMap<String, String>> {
 pub fn get_reg(path: String) -> Result<BTreeMap<String, String>> {
     let mut tmp_res = BTreeMap::new();
 
-    use winreg::{RegKey, RegValue, enums::*};
+    use winreg::{RegKey, RegValue};
 
     let (ihive, subkey_str) = parse_registry_path(&path)?;
 

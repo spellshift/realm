@@ -28,5 +28,5 @@ export interface BeaconFilterOptionsResponse {
     groupTags: { edges: { node: { id: string; name: string; kind: string } }[] };
     serviceTags: { edges: { node: { id: string; name: string; kind: string } }[] };
     beacons: { edges: { node: { id: string; name: string; principal: string } }[] };
-    hosts: { edges: { node: { id: string; name: string; primaryIP: string | null } }[] };
+    hosts: { edges: { node: { id: string; name: string; primaryIP: string | null; externalIP: string | null } }[] };
 }

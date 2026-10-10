@@ -36,7 +36,7 @@ func (HostProcess) Fields() []ent.Field {
 			).
 			Comment("The name of the process."),
 		field.String("principal").
-			NotEmpty().
+			Optional().
 			Comment("The user the process is running as."),
 		field.String("path").
 			Optional().

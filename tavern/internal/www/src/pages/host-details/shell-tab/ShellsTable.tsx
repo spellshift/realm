@@ -122,21 +122,14 @@ export const ShellsTable = ({ shellIds, hasMore = false, onLoadMore }: ShellsTab
         {
             key: 'actions',
             label: '',
-            width: 'minmax(80px, 0.5fr)',
+            width: 'minmax(120px, 0.5fr)',
             render: (shell) => {
                 const isBeaconOffline = checkIfBeaconOffline(shell.beacon);
                 const isTerminated = shell.closedAt || isBeaconOffline;
 
-                if (isTerminated) {
-                    return (
-                        <div className="flex justify-end">
-                            <Badge badgeStyle={{ color: "gray" }}>Terminated</Badge>
-                        </div>
-                    );
-                }
-
                 return (
-                    <div className="flex justify-end">
+                    <div className="flex justify-end items-center gap-2">
+                        {isTerminated && <Badge badgeStyle={{ color: "gray" }}>Terminated</Badge>}
                         <Button
                             buttonStyle={{ color: "purple", size: 'sm' }}
                             buttonVariant="ghost"

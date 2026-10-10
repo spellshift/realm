@@ -15,6 +15,7 @@ pub mod follow_impl;
 pub mod is_dir_impl;
 pub mod is_file_impl;
 pub mod list_impl;
+pub mod list_named_pipes_impl;
 pub mod list_recent_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
@@ -22,12 +23,15 @@ pub mod parent_dir_impl;
 pub mod pwd_impl;
 pub mod read_binary_impl;
 pub mod read_impl;
+pub mod read_named_pipe_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
 pub mod temp_file_impl;
 pub mod template_impl;
+pub mod template_str_impl;
 pub mod timestomp_impl;
+pub mod tmp_dir_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
 
@@ -78,7 +82,11 @@ impl FileLibrary for StdFileLibrary {
         list_impl::list(path)
     }
 
-    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String> {
+    fn list_named_pipes(&self, detailed: Option<bool>) -> Result<Value, String> {
+        list_named_pipes_impl::list_named_pipes(detailed)
+    }
+
+    fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
         list_recent_impl::list_recent(path, limit)
     }
 
@@ -102,6 +110,10 @@ impl FileLibrary for StdFileLibrary {
         read_binary_impl::read_binary(path).map(Value::Bytes)
     }
 
+    fn read_named_pipe(&self, name: String, max_bytes: Option<i64>) -> Result<String, String> {
+        read_named_pipe_impl::read_named_pipe(name, max_bytes)
+    }
+
     fn pwd(&self) -> Result<Option<String>, String> {
         pwd_impl::pwd()
     }
@@ -122,6 +134,10 @@ impl FileLibrary for StdFileLibrary {
         temp_file_impl::temp_file(name)
     }
 
+    fn tmp_dir(&self) -> Result<String, String> {
+        tmp_dir_impl::tmp_dir()
+    }
+
     fn template(
         &self,
         template_path: String,
@@ -130,6 +146,15 @@ impl FileLibrary for StdFileLibrary {
         autoescape: bool,
     ) -> Result<(), String> {
         template_impl::template(template_path, dst, args, autoescape)
+    }
+
+    fn template_str(
+        &self,
+        template: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
+    ) -> Result<String, String> {
+        template_str_impl::template_str(template, args, autoescape).map_err(|e| e.to_string())
     }
 
     fn timestomp(

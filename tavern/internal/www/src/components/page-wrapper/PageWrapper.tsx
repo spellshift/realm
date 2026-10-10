@@ -8,6 +8,7 @@ import { classNames, getNavItemFromPath } from '../../utils/utils';
 import { Outlet, useLocation } from 'react-router-dom'
 import { FilterProvider } from '../../context/FilterContext';
 import { SortsProvider } from '../../context/SortContext';
+import { CreateQuestModalProvider } from '../../context/CreateQuestModalContext';
 
 export const PageWrapper = () => {
   const { pathname } = useLocation();
@@ -29,7 +30,9 @@ export const PageWrapper = () => {
           <div className="px-4 sm:px-6 xl:px-8 flex flex-col gap-4">
             <FilterProvider>
               <SortsProvider>
-                <Outlet />
+                <CreateQuestModalProvider>
+                  <Outlet />
+                </CreateQuestModalProvider>
               </SortsProvider>
             </FilterProvider>
           </div>

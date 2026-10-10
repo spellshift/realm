@@ -1,7 +1,7 @@
 {
   "name": "eldritch-wasm",
   "type": "module",
-  "version": "0.3.2",
+  "version": "0.3.4",
   "files": [
     "eldritch_wasm_bg.wasm",
     "eldritch_wasm.js",

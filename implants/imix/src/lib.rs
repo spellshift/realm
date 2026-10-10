@@ -2,6 +2,7 @@ extern crate alloc;
 
 pub mod agent;
 pub mod assets;
+pub mod imix_config;
 pub mod portal;
 pub mod printer;
 pub mod run;
@@ -11,7 +12,7 @@ pub mod version;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn lib_entry() {
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "print_debug")]
     run::init_logger();
 
     // Create a runtime and block on the async function

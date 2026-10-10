@@ -61,7 +61,7 @@ export const defaultSorts: Sorts = {
     },
     [PageNavItem.processes]: {
         direction: OrderDirection.Asc,
-        field: ProcessOrderField.ProcessId
+        field: ProcessOrderField.ProcessStartTime
     },
     [PageNavItem.files]: {
         direction: OrderDirection.Asc,

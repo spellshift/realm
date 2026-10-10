@@ -6,13 +6,14 @@ import Button from "./button/Button";
 const ModalWidth = {
     sm: "lg:max-w-xl",
     md: "lg:max-w-2xl",
-    lg: "lg:max-w-4xl"
+    lg: "lg:max-w-4xl",
+    xl: "lg:max-w-6xl"
 }
 type ModalProps = {
     isOpen: boolean,
     setOpen: (arg: any) => any,
     children: React.ReactElement
-    size?: "sm" | "md" | "lg"
+    size?: "sm" | "md" | "lg" | "xl"
 }
 
 const Modal: FC<ModalProps> = ({ isOpen, setOpen, size = "md", children }) => {
@@ -20,11 +21,11 @@ const Modal: FC<ModalProps> = ({ isOpen, setOpen, size = "md", children }) => {
 
     return (
         <Transition.Root show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-10" onClose={setOpen}>
+            <Dialog as="div" className="relative z-50" onClose={setOpen}>
                 <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
                 <div className="fixed inset-0 overflow-hidden">
                     <div className="absolute inset-0 overflow-hidden">
-                        <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-4 ">
+                        <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-0 md:pl-4">
                             <Transition.Child
                                 as={Fragment}
                                 enter="transform transition ease-in-out duration-500 sm:duration-700"
@@ -34,7 +35,7 @@ const Modal: FC<ModalProps> = ({ isOpen, setOpen, size = "md", children }) => {
                                 leaveFrom="translate-x-0"
                                 leaveTo="translate-x-full"
                             >
-                                <Dialog.Panel className={`pointer-events-auto w-screen max-w-xs md:max-w-md ${modalSize}`}>
+                                <Dialog.Panel className={`pointer-events-auto w-screen ${modalSize}`}>
                                     <div className="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
                                         <div className="px-4 sm:px-6">
                                             <div className="flex w-full justify-end">

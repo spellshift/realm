@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
@@ -34,12 +35,14 @@ type ShellQuery struct {
 	withPortals          *PortalQuery
 	withActiveUsers      *UserQuery
 	withShellTasks       *ShellTaskQuery
+	withPivots           *ShellPivotQuery
 	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Shell) error
 	withNamedPortals     map[string]*PortalQuery
 	withNamedActiveUsers map[string]*UserQuery
 	withNamedShellTasks  map[string]*ShellTaskQuery
+	withNamedPivots      map[string]*ShellPivotQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -201,6 +204,28 @@ func (sq *ShellQuery) QueryShellTasks() *ShellTaskQuery {
 			sqlgraph.From(shell.Table, shell.FieldID, selector),
 			sqlgraph.To(shelltask.Table, shelltask.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, shell.ShellTasksTable, shell.ShellTasksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPivots chains the current query on the "pivots" edge.
+func (sq *ShellQuery) QueryPivots() *ShellPivotQuery {
+	query := (&ShellPivotClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(shellpivot.Table, shellpivot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, shell.PivotsTable, shell.PivotsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -406,6 +431,7 @@ func (sq *ShellQuery) Clone() *ShellQuery {
 		withPortals:     sq.withPortals.Clone(),
 		withActiveUsers: sq.withActiveUsers.Clone(),
 		withShellTasks:  sq.withShellTasks.Clone(),
+		withPivots:      sq.withPivots.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
 		path: sq.path,
@@ -475,6 +501,17 @@ func (sq *ShellQuery) WithShellTasks(opts ...func(*ShellTaskQuery)) *ShellQuery 
 		opt(query)
 	}
 	sq.withShellTasks = query
+	return sq
+}
+
+// WithPivots tells the query-builder to eager-load the nodes that are connected to
+// the "pivots" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithPivots(opts ...func(*ShellPivotQuery)) *ShellQuery {
+	query := (&ShellPivotClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withPivots = query
 	return sq
 }
 
@@ -557,13 +594,14 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		nodes       = []*Shell{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			sq.withTask != nil,
 			sq.withBeacon != nil,
 			sq.withOwner != nil,
 			sq.withPortals != nil,
 			sq.withActiveUsers != nil,
 			sq.withShellTasks != nil,
+			sq.withPivots != nil,
 		}
 	)
 	if sq.withTask != nil || sq.withBeacon != nil || sq.withOwner != nil {
@@ -632,6 +670,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			return nil, err
 		}
 	}
+	if query := sq.withPivots; query != nil {
+		if err := sq.loadPivots(ctx, query, nodes,
+			func(n *Shell) { n.Edges.Pivots = []*ShellPivot{} },
+			func(n *Shell, e *ShellPivot) { n.Edges.Pivots = append(n.Edges.Pivots, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range sq.withNamedPortals {
 		if err := sq.loadPortals(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedPortals(name) },
@@ -650,6 +695,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		if err := sq.loadShellTasks(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedShellTasks(name) },
 			func(n *Shell, e *ShellTask) { n.appendNamedShellTasks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedPivots {
+		if err := sq.loadPivots(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedPivots(name) },
+			func(n *Shell, e *ShellPivot) { n.appendNamedPivots(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -880,6 +932,37 @@ func (sq *ShellQuery) loadShellTasks(ctx context.Context, query *ShellTaskQuery,
 	}
 	return nil
 }
+func (sq *ShellQuery) loadPivots(ctx context.Context, query *ShellPivotQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *ShellPivot)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.ShellPivot(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.PivotsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_pivot_shell
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_pivot_shell" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_pivot_shell" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (sq *ShellQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
@@ -1004,6 +1087,20 @@ func (sq *ShellQuery) WithNamedShellTasks(name string, opts ...func(*ShellTaskQu
 		sq.withNamedShellTasks = make(map[string]*ShellTaskQuery)
 	}
 	sq.withNamedShellTasks[name] = query
+	return sq
+}
+
+// WithNamedPivots tells the query-builder to eager-load the nodes that are connected to the "pivots"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedPivots(name string, opts ...func(*ShellPivotQuery)) *ShellQuery {
+	query := (&ShellPivotClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedPivots == nil {
+		sq.withNamedPivots = make(map[string]*ShellPivotQuery)
+	}
+	sq.withNamedPivots[name] = query
 	return sq
 }
 

@@ -12,7 +12,7 @@ import (
 )
 
 func TestHostFileHooks(t *testing.T) {
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	var (

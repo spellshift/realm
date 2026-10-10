@@ -31,7 +31,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 	ctx := context.Background()
 
 	// Full infrastructure setup
-	graph := enttest.Open(t, "sqlite3", "file:ent_claim_exec?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	_, caPrivKey, err := ed25519.GenerateKey(rand.Reader)
@@ -183,7 +183,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 	ctx := context.Background()
 
-	graph := enttest.Open(t, "sqlite3", "file:ent_claim_exec_err?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	_, caPrivKey, err := ed25519.GenerateKey(rand.Reader)
@@ -336,7 +336,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 	ctx := context.Background()
 
-	graph := enttest.Open(t, "sqlite3", "file:ent_stream_output?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	_, caPrivKey, err := ed25519.GenerateKey(rand.Reader)
@@ -470,7 +470,7 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 	ctx := context.Background()
 
-	graph := enttest.Open(t, "sqlite3", "file:ent_stream_output_err?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	_, caPrivKey, err := ed25519.GenerateKey(rand.Reader)
@@ -601,7 +601,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	ctx := context.Background()
 
-	graph := enttest.Open(t, "sqlite3", "file:ent_upload_artifact?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	_, caPrivKey, err := ed25519.GenerateKey(rand.Reader)

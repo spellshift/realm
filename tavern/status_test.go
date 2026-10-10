@@ -42,5 +42,6 @@ func TestStatusHandler(t *testing.T) {
 
 		assert.Equal(t, tc.wantCode, tc.w.Code)
 		assert.Contains(t, string(body), tc.wantBody)
+		assert.Contains(t, string(body), "\"version\":\""+Version+"\"")
 	}
 }

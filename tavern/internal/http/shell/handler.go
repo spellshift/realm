@@ -547,7 +547,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 		// Interactive Mode (using portals)
 		////
 		case mote, ok := <-portalOutCh:
-			// Handle Portal Closing
+			// Handle Portal Closing (channel closed)
 			if !ok {
 				session.mu.Lock()
 				portal := session.activePortal
@@ -564,10 +564,31 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				}
 				cleanup = nil
 				portalOutCh = nil // Stop receiving from closed channel
+				continue
 			}
 
 			// Ignore empty motes
 			if mote == nil {
+				continue
+			}
+
+			// Handle CLOSE motes (portal closed via mutation or agent disconnect)
+			if bytesPayload := mote.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE && mote.StreamId == "" {
+				slog.InfoContext(ctx, "received portal close mote, downgrading to non-interactive mode")
+				session.mu.Lock()
+				portal := session.activePortal
+				session.activePortal = nil
+				session.mu.Unlock()
+
+				if portal != nil {
+					controlCh <- NewWebsocketPortalDowngradeMessage(portal)
+				}
+
+				if cleanup != nil {
+					cleanup()
+				}
+				cleanup = nil
+				portalOutCh = nil
 				continue
 			}
 
@@ -667,6 +688,25 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				return
 			}
 			if p == nil {
+				// No open portal found. If we still have an active portal, it means
+				// the portal was closed (e.g. closed_at was set) but we missed the
+				// CLOSE mote. Downgrade as a safety net.
+				session.mu.Lock()
+				portal := session.activePortal
+				if portal != nil {
+					session.activePortal = nil
+				}
+				session.mu.Unlock()
+
+				if portal != nil {
+					slog.InfoContext(ctx, "portal poll detected closed portal, downgrading to non-interactive mode", "portal_id", portal.ID)
+					controlCh <- NewWebsocketPortalDowngradeMessage(portal)
+					if cleanup != nil {
+						cleanup()
+					}
+					cleanup = nil
+					portalOutCh = nil
+				}
 				continue
 			}
 

@@ -26,7 +26,7 @@ fn create_interp() -> Interpreter {
     }
     #[cfg(not(feature = "stdlib"))]
     {
-        Interpreter::new().with_default_libs()
+        Interpreter::new()
     }
 }
 
@@ -79,15 +79,20 @@ fn test_file_bindings() {
             "replace_all",
             "temp_file",
             "template",
+            "template_str",
             "timestomp",
             "write",
+            "write_binary",
         ],
     );
 }
 
 #[test]
 fn test_process_bindings() {
-    check_bindings("process", &["info", "kill", "list", "name", "netstat"]);
+    check_bindings(
+        "process",
+        &["info", "kill", "list", "name", "netstat", "signal"],
+    );
 }
 
 #[test]
@@ -127,10 +132,9 @@ fn test_pivot_bindings() {
             "ncat",
             // "port_forward", // Not implemented in Fake
             "port_scan",
-            "reverse_shell_pty",
-            "reverse_shell_repl",
             // "smb_exec", // Not implemented in Fake
             "ssh_copy",
+            "ssh_deploy",
             "ssh_exec",
         ],
     );
@@ -151,7 +155,9 @@ fn test_crypto_bindings() {
             "aes_encrypt",
             "aes_encrypt_file",
             "decode_b64",
+            "decode_utf16le",
             "encode_b64",
+            "encode_utf16le",
             "from_json",
             "hash_file",
             "is_json",
@@ -212,6 +218,7 @@ fn test_agent_bindings() {
             "get_transport",
             "list_tasks",
             "list_transports",
+            "reset_transport",
             "set_callback_interval",
             "set_callback_uri",
             "stop_task",

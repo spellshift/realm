@@ -1,9 +1,10 @@
 import { WebsocketMessage, WebsocketMessageKind } from "../pages/shellv2/websocket";
 
 export interface ExecutionResult {
-    status: "complete" | "incomplete" | "error";
+    status: "complete" | "incomplete" | "error" | "meta";
     prompt?: string;
     message?: string;
+    meta_command?: any;
 }
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
@@ -18,6 +19,7 @@ export class BrowserWasmAdapter {
     private isWsOpen: boolean = false;
     private reconnectTimer: NodeJS.Timeout | null = null;
     private isClosedExplicitly: boolean = false;
+    public version: string = "";
 
     constructor(
         url: string,
@@ -92,6 +94,16 @@ export class BrowserWasmAdapter {
             const module = await import(/* webpackIgnore: true */ "/wasm/eldritch_wasm.js");
             await module.default("/wasm/eldritch_wasm_bg.wasm");
             this.repl = new module.BrowserRepl();
+
+            // Load version from wasm package metadata
+            try {
+                const resp = await fetch("/wasm/package.json");
+                const pkg = await resp.json();
+                this.version = pkg.version || "";
+            } catch {
+                // Version display is non-critical; silently ignore failures
+            }
+
             this.checkReady();
         } catch (e) {
             console.error("Failed to initialize WASM module", e);
@@ -132,6 +144,51 @@ export class BrowserWasmAdapter {
                 return { status: "complete" };
             } else if (result.status === "incomplete") {
                 return { status: "incomplete", prompt: result.prompt };
+            } else if (result.status === "meta") {
+                return { status: "meta", meta_command: result.meta_command };
+            } else {
+                return { status: "error", message: result.message };
+            }
+        } catch (e) {
+            console.error("Failed to parse REPL result", e);
+            return { status: "error", message: "Internal REPL error" };
+        }
+    }
+
+    paste_input(text: string): ExecutionResult {
+        if (!this.repl) {
+            return { status: "error", message: "REPL not initialized" };
+        }
+
+        // Just pass the entire pasted text into the repl at once.
+        // If the block is complete, it will return "complete" with the whole block.
+        // We append an extra newline to ensure it evaluates blocks that end without one.
+        let textToInput = text;
+        if (!textToInput.endsWith('\n')) {
+            textToInput += '\n';
+        }
+
+        // BrowserRepl handles parsing the entire string into its internal buffer,
+        // so we can just call it once with the full string block.
+        const resultJson = this.repl.input(textToInput);
+
+        try {
+            const result = JSON.parse(resultJson);
+
+            if (result.status === "complete") {
+                if (this.isWsOpen && this.ws) {
+                    this.ws.send(JSON.stringify({
+                        kind: WebsocketMessageKind.Input,
+                        input: result.payload
+                    }));
+                } else {
+                    return { status: "error", message: "WebSocket not connected" };
+                }
+                return { status: "complete" };
+            } else if (result.status === "incomplete") {
+                return { status: "incomplete", prompt: result.prompt };
+            } else if (result.status === "meta") {
+                return { status: "meta", meta_command: result.meta_command };
             } else {
                 return { status: "error", message: result.message };
             }

@@ -23,7 +23,7 @@ import (
 
 // TestUpload asserts that the upload handler exhibits expected behavior.
 func TestUpload(t *testing.T) {
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	expectedContent := []byte("file_content")

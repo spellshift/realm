@@ -1,4 +1,4 @@
-import { OrderDirection, QuestOrderField, TaskOrderField, HostOrderField, RepositoryOrderField } from "./enums";
+import { OrderDirection, QuestOrderField, TaskOrderField, HostOrderField, RepositoryOrderField, NotificationPriority, EventKind } from "./enums";
 
 export type Cursor = string | null;
 
@@ -119,6 +119,7 @@ export interface UserNode {
     photoURL: string;
     isActivated: boolean;
     isAdmin: boolean;
+    notifications?: NotificationConnection;
 }
 
 export interface UserEdge {
@@ -382,11 +383,121 @@ export interface ProcessNode {
     ppid: number;
     name: string;
     path: string | null;
+    cmd: string | null;
     status: string;
+    startTime: number | null;
     env: string | null;
     cwd: string | null;
 }
 
 export interface ProcessEdge {
     node: ProcessNode;
+}
+
+// Beacon ID query types (minimal data for filtering)
+export interface BeaconIdNode {
+    id: string;
+    principal?: string;
+    transport?: string;
+    host?: {
+        id: string;
+    };
+}
+
+export interface BeaconIdEdge {
+    node: BeaconIdNode;
+}
+
+export interface BeaconIdsQueryResponse {
+    totalCount: number;
+    pageInfo: QueryPageInfo;
+    edges: BeaconIdEdge[];
+}
+
+export interface BeaconIdsQueryTopLevel {
+    beacons: BeaconIdsQueryResponse;
+}
+
+export interface BeaconDetailQueryResponse {
+    beacons: {
+        edges: { node: BeaconNode }[];
+    };
+}
+
+export interface GetBeaconIdsQueryVariables {
+    where?: Record<string, unknown>;
+    first?: number;
+    last?: number;
+    after?: Cursor;
+    before?: Cursor;
+    orderBy?: OrderByField[];
+}
+
+export interface GetBeaconDetailQueryVariables {
+    id: string;
+}
+
+// Tome ID query types (minimal data for listing)
+export interface TomeIdNode {
+    id: string;
+    name: string;
+    paramDefs: string | null;
+}
+
+export interface TomeIdEdge {
+    node: TomeIdNode;
+}
+
+export interface TomeIdsQueryResponse {
+    edges: TomeIdEdge[];
+}
+
+export interface TomeIdsQueryTopLevel {
+    tomes: TomeIdsQueryResponse;
+}
+
+export interface TomeDetailQueryResponse {
+    tomes: {
+        edges: { node: TomeNode }[];
+    };
+}
+
+export interface GetTomeIdsQueryVariables {
+    where?: Record<string, unknown>;
+}
+
+export interface GetTomeDetailQueryVariables {
+    id: string;
+}
+
+export interface EventNode {
+    id: string;
+    createdAt: string;
+    lastModifiedAt: string;
+    timestamp: number;
+    kind: EventKind;
+    beacon?: BeaconNode;
+    host?: HostNode;
+    quest?: QuestNode;
+    user?: UserNode;
+}
+
+export interface NotificationNode {
+    id: string;
+    createdAt: string;
+    lastModifiedAt: string;
+    priority: NotificationPriority;
+    read: boolean;
+    archived: boolean;
+    event: EventNode;
+}
+
+export interface NotificationEdge {
+    node: NotificationNode;
+}
+
+export interface NotificationConnection {
+    edges: NotificationEdge[];
+    pageInfo: QueryPageInfo;
+    totalCount: number;
 }

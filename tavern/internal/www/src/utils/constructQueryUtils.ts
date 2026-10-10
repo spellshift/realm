@@ -38,6 +38,7 @@ export function constructHostFieldQuery(
   platforms: Array<string>,
   hosts: Array<string>,
   primaryIP: Array<string>,
+  externalIP: Array<string>,
   onlineOfflineStatus: Array<string>,
   currentTimestamp?: Date
 ) {
@@ -45,7 +46,7 @@ export function constructHostFieldQuery(
 
   const hostStatusFilter = constructHostStatusFilter(onlineOfflineStatus, currentTimestamp);
 
-  if (hosts.length < 1 && !tagQuery && platforms.length < 1 && primaryIP.length < 1 && !hostStatusFilter) {
+  if (hosts.length < 1 && !tagQuery && platforms.length < 1 && primaryIP.length < 1 && externalIP.length < 1 && !hostStatusFilter) {
     return null;
   }
 
@@ -53,9 +54,10 @@ export function constructHostFieldQuery(
   return {
     "hasHostWith": {
       ...(tagQuery && { "and": constructTagFieldsQuery(groups, services) }),
-      ...(hosts.length > 0) && { "nameIn": hosts },
+      ...(hosts.length > 0) && { "idIn": hosts },
       ...(platforms.length > 0) && { "platformIn": platforms },
       ...(primaryIP.length > 0) && { "primaryIPIn": primaryIP },
+      ...(externalIP.length > 0) && { "externalIPIn": externalIP },
       ...(hostStatusFilter && hostStatusFilter)
     }
   }
@@ -65,11 +67,11 @@ export function constructBeaconFilterQuery(
   beaconFields: Array<FilterBarOption>,
   currentTimestamp?: Date
 ) {
-  const { beacon: beacons, group: groups, service: services, platform: platforms, host: hosts, principal, primaryIP, transport, onlineOfflineStatus } = getBeaconFilterNameByTypes(beaconFields);
+  const { beacon: beacons, group: groups, service: services, platform: platforms, host: hosts, principal, primaryIP, externalIP, transport, onlineOfflineStatus } = getBeaconFilterNameByTypes(beaconFields);
 
   const beaconStatusFilter = constructBeaconStatusFilter(onlineOfflineStatus, currentTimestamp);
 
-  const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP, onlineOfflineStatus, currentTimestamp);
+  const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP, externalIP, onlineOfflineStatus, currentTimestamp);
 
   if (beacons.length < 1 && principal.length < 1 && transport.length < 1 && !beaconStatusFilter && !hostFiledQuery) {
     return null;
@@ -137,7 +139,7 @@ export function constructTaskFilterQuery(
   const tomeFieldsFilterQuery = constructTomeFieldsFilterQuery(filter);
   const questParamFilterQuery = constructTomeDefinitionAndValueFilterQuery(filter);
   const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields, currentTimestamp);
-  if (!questId && !filter.taskOutput && !beaconFilterQuery && !tomeFieldsFilterQuery && !questParamFilterQuery) {
+  if (!questId && !filter.taskOutput && !filter.userId && !beaconFilterQuery && !tomeFieldsFilterQuery && !questParamFilterQuery) {
     return null;
   }
 
@@ -145,9 +147,10 @@ export function constructTaskFilterQuery(
     "hasTasksWith": {
       ...(filter.taskOutput && { "outputContains": filter.taskOutput }),
       ...(beaconFilterQuery && beaconFilterQuery),
-      ...((questId || tomeFieldsFilterQuery || questParamFilterQuery) && {
+      ...((questId || filter?.userId || tomeFieldsFilterQuery || questParamFilterQuery ) && {
         "hasQuestWith": {
           ...questId && { "id": questId },
+          ...filter.userId && { "hasCreatorWith": {"id": filter.userId}},
           ...tomeFieldsFilterQuery && tomeFieldsFilterQuery,
           ...questParamFilterQuery && questParamFilterQuery
         }
@@ -162,12 +165,13 @@ export function constructQuestFilterQuery(filter: Filters) {
   const tomeFieldsFilterQuery = constructTomeFieldsFilterQuery(filter);
   const questParamFilterQuery = constructTomeDefinitionAndValueFilterQuery(filter);
 
-  if (!filter.questName && !tomeFieldsFilterQuery && !questParamFilterQuery) {
+  if (!filter.questName && !filter.userId && !tomeFieldsFilterQuery && !questParamFilterQuery) {
     return null;
   }
 
   return {
     ...(filter.questName && { "nameContains": filter.questName }),
+    ...filter.userId && { "hasCreatorWith": {"id": filter.userId}},
     ...(tomeFieldsFilterQuery && tomeFieldsFilterQuery),
     ...(questParamFilterQuery && questParamFilterQuery)
   }

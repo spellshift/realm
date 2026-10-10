@@ -7,11 +7,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
+	"net/url"
 	"os"
 	"strings"
 
@@ -36,12 +38,17 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
+	"realm.pub/tavern/internal/hostcheck"
 	tavernhttp "realm.pub/tavern/internal/http"
 	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
+	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/portals/ssh"
+	"realm.pub/tavern/internal/portals/pty"
 	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/scheduler"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/portals/portalpb"
@@ -51,6 +58,10 @@ import (
 	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
+	_ "realm.pub/tavern/internal/redirectors/icmp"
+	_ "realm.pub/tavern/internal/redirectors/quic"
+	_ "realm.pub/tavern/internal/scheduler/gcp"
+	_ "realm.pub/tavern/internal/scheduler/mem"
 )
 
 func init() {
@@ -319,6 +330,88 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Portal Mux
 	portalMux := cfg.NewPortalMux(ctx)
 
+	// Initialize Scheduler
+	schedulerURI := EnvSchedulerURI.String()
+	slog.InfoContext(ctx, "initializing scheduler", "uri", schedulerURI)
+	sched, err := scheduler.New(ctx, schedulerURI)
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to initialize scheduler (uri=%q): %w", schedulerURI, err)
+	}
+	slog.InfoContext(ctx, "scheduler initialized successfully", "uri", schedulerURI)
+
+	// Determine host check URL based on the scheduler backend.
+	// The in-memory scheduler fires HTTP requests from the same process,
+	// so localhost is always reachable. For external schedulers like GCP
+	// Cloud Scheduler, requests originate outside this process and must
+	// target a publicly accessible address (OAUTH_DOMAIN).
+	listenAddr := "0.0.0.0:80"
+	if cfg.srv != nil && cfg.srv.Addr != "" {
+		listenAddr = cfg.srv.Addr
+	}
+	var hostCheckURL string
+
+	// The in-memory scheduler uses robfig/cron which supports "@every 10s"
+	// for sub-minute intervals. External schedulers like GCP Cloud Scheduler
+	// only support standard unix-cron expressions with a minimum granularity
+	// of 1 minute, so we use "* * * * *" (every minute) instead.
+	var hostCheckSchedule string
+
+	schedulerURL, _ := url.Parse(schedulerURI)
+	if schedulerURL != nil && schedulerURL.Scheme == "mem" {
+		hostCheckURL = fmt.Sprintf("http://127.0.0.1%s/internal/host-check", portFromAddr(listenAddr))
+		hostCheckSchedule = "@every 10s"
+	} else {
+		domain := EnvOAuthDomain.String()
+		if domain == "" {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("OAUTH_DOMAIN must be set when using an external scheduler (SCHEDULER_URI=%q)", schedulerURI)
+		}
+		if !strings.HasPrefix(domain, "http") {
+			domain = fmt.Sprintf("https://%s", domain)
+		}
+		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
+		hostCheckSchedule = "* * * * *"
+	}
+	// Generate a JWT scoped to the host-check endpoint and append it as a query parameter.
+	hostCheckToken, err := hostcheck.NewToken(privKey)
+	if err != nil {
+		client.Close()
+		sched.Close()
+		return nil, fmt.Errorf("failed to generate host-check JWT: %w", err)
+	}
+	hostCheckURL = fmt.Sprintf("%s?token=%s", hostCheckURL, url.QueryEscape(hostCheckToken))
+	slog.InfoContext(ctx, "resolved host check configuration", "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
+
+	// Schedule a recurring host-lost check.
+	// In-memory: fires every 10 seconds via robfig/cron.
+	// GCP Cloud Scheduler: fires every minute (minimum supported granularity).
+	// If the job is already scheduled (e.g. from a previous startup), the
+	// scheduler will return an error which we log and ignore.
+	slog.InfoContext(ctx, "scheduling host-lost-poll job", "schedule", hostCheckSchedule)
+	if err := sched.Schedule(ctx, scheduler.Job{
+		Name:     "host-lost-poll",
+		Schedule: hostCheckSchedule,
+		HTTPTarget: scheduler.HTTPTarget{
+			URL:    hostCheckURL,
+			Method: "POST",
+		},
+	}); err != nil {
+		if errors.Is(err, scheduler.ErrJobExists) {
+			slog.InfoContext(ctx, "host-lost-poll job already scheduled, skipping")
+		} else {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("failed to schedule host-lost check (schedule=%q): %w", hostCheckSchedule, err)
+		}
+	} else {
+		slog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "schedule", hostCheckSchedule)
+	}
+
+	// GraphQL Handler (shared with MCP)
+	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -337,10 +430,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/auth/rda/approve": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDAApproveHandler(client),
+			Handler: tavernhttp.NewRDAApproveHandler(client),
 		},
 		"/auth/rda/revoke": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDARevokeHandler(client),
+			Handler: tavernhttp.NewRDARevokeHandler(client),
 		},
 		"/api/auth/signout": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewSignoutHandler(),
@@ -367,7 +460,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert)),
+			Handler:          gqlHandler,
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -409,6 +502,17 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/shell/ping": tavernhttp.Endpoint{
 			Handler: stream.NewPingHandler(client, wsShellMux),
 		},
+		"/portals/ssh/ws": tavernhttp.Endpoint{
+			Handler: ssh.NewHandler(client, portalMux),
+		},
+		"/portals/pty/ws": tavernhttp.Endpoint{
+			Handler: pty.NewHandler(client, portalMux),
+		},
+		"/internal/host-check": tavernhttp.Endpoint{
+			Handler:              hostcheck.NewHandler(client, pubKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
 			LoginRedirectURI: "/oauth/login",
@@ -424,6 +528,15 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	if cfg.IsPProfEnabled() {
 		slog.WarnContext(ctx, "performance profiling is enabled, do not use in production as this may leak sensitive information")
 		registerProfiler(routes)
+	}
+
+	// Setup MCP Server
+	if cfg.IsMCPEnabled() {
+		slog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
+		mcpHandler := tavernmcp.NewHandler(client, Version, gqlHandler)
+		routes["/mcp/"] = tavernhttp.Endpoint{
+			Handler: mcpHandler,
+		}
 	}
 
 	// Create Tavern HTTP Server
@@ -660,7 +773,7 @@ func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate, serverP
 	})
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux) http.Handler {
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux, c2Opts ...c2.Option) http.Handler {
 	pub, priv, err := getKeyPairX25519()
 	if err != nil {
 		panic(err)
@@ -673,7 +786,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 		panic(err)
 	}
 
-	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey)
+	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey, c2Opts...)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
@@ -718,4 +831,14 @@ func registerProfiler(router tavernhttp.RouteMap) {
 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+}
+
+// portFromAddr extracts the port (including the colon prefix) from a listen
+// address like "0.0.0.0:80" or ":8080". If the address contains no colon,
+// the default ":80" is returned.
+func portFromAddr(addr string) string {
+	if i := strings.LastIndex(addr, ":"); i >= 0 {
+		return addr[i:]
+	}
+	return ":80"
 }

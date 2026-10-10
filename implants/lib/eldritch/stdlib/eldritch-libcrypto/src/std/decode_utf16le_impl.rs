@@ -2,7 +2,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub fn decode_utf16le(content: Vec<u8>) -> Result<String, String> {
-    if content.len() % 2 != 0 {
+    if !content.len().is_multiple_of(2) {
         return Err("Input bytes length must be a multiple of 2".into());
     }
 

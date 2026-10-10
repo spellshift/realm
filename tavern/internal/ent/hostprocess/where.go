@@ -391,6 +391,16 @@ func PrincipalHasSuffix(v string) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldHasSuffix(FieldPrincipal, v))
 }
 
+// PrincipalIsNil applies the IsNil predicate on the "principal" field.
+func PrincipalIsNil() predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldIsNull(FieldPrincipal))
+}
+
+// PrincipalNotNil applies the NotNil predicate on the "principal" field.
+func PrincipalNotNil() predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldNotNull(FieldPrincipal))
+}
+
 // PrincipalEqualFold applies the EqualFold predicate on the "principal" field.
 func PrincipalEqualFold(v string) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldEqualFold(FieldPrincipal, v))

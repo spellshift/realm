@@ -120,8 +120,6 @@ var (
 	DefaultLastModifiedAt func() time.Time
 	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
 	UpdateDefaultLastModifiedAt func() time.Time
-	// PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
-	PrincipalValidator func(string) error
 )
 
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.

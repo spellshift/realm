@@ -89,7 +89,7 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 		profileResp          = []byte(`{"sub":"goofygoober","picture":"photos.com/goofygoober","email":"goofygoober@google.com","name":"Mr. Goober","email_verified":true}`)
 	)
 	// Setup Test DB
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	// Setup Mock IDP
@@ -228,7 +228,7 @@ func TestNewOAuthAuthorizationHandler_DBError(t *testing.T) {
 		profileResp          = []byte(`{"sub":"goofygoober","picture":"photos.com/goofygoober","email":"goofygoober@google.com","name":"Mr. Goober","email_verified":true}`)
 	)
 	// Setup Test DB
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	// We deliberately close the graph to trigger a DB error during query
 	graph.Close()
 

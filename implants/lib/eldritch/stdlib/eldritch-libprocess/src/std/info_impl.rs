@@ -29,6 +29,7 @@ pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
             Value::String(process.exe().display().to_string()),
         );
 
+        #[allow(clippy::mutable_key_type)]
         let mut env_map = BTreeMap::new();
         for env_str in process.environ() {
             if let Some((key, val)) = env_str.split_once('=') {

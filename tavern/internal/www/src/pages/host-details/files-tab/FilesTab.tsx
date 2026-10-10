@@ -4,12 +4,14 @@ import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { SortingControls } from "../../../context/SortContext";
 import { FilesTable } from "./FilesTable";
 import { useFileIds } from "./useFileIds";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { PageNavItem } from "../../../utils/enums";
+import { useCreateQuestModal } from "../../../context/CreateQuestModalContext";
+import { useFilesQuestFormData } from "./useFilesQuestFormData";
+import { FileTerminal } from "lucide-react";
 
 const FilesTab = () => {
     const { hostId } = useParams();
-    const nav = useNavigate();
 
     const {
         fileIds,
@@ -19,6 +21,17 @@ const FilesTab = () => {
         searchTerm,
         setSearchTerm,
     } = useFileIds(hostId || "");
+
+    const { openModal } = useCreateQuestModal();
+    const { fetchFormData, loading } = useFilesQuestFormData();
+
+    const handleClick = async () => {
+        const initialFormData = await fetchFormData();
+        openModal({
+            initialFormData,
+            refetchQueries: ["GetHostContext", "GetFileIds"],
+        });
+    };
 
         const renderTableContent = () => {
             if (error || !hostId) {
@@ -63,12 +76,14 @@ const FilesTab = () => {
                         type={EmptyStateType.noData}
                         label="No files reported"
                     >
-                       <Button
-                            onClick={()=> nav("/createQuest")}
+                        <Button
+                            leftIcon={<FileTerminal className="w-5 h-5" />}
+                            onClick={handleClick}
                             buttonVariant="solid"
                             buttonStyle={{ color: "purple", size: "md" }}
+                            disabled={loading}
                         >
-                            Create a quest
+                            {loading ? "Loading..." : "Report file"}
                         </Button>
                     </EmptyState>
                 );
@@ -92,6 +107,15 @@ const FilesTab = () => {
                         <p className='text-md text-gray-600'>{totalCount !== undefined && `(${totalCount})`}</p>
                     </div>
                     <div className="flex flex-row justify-end gap-2 w-full">
+                        <Button
+                            leftIcon={<FileTerminal className="w-4 h-4" />}
+                            onClick={handleClick}
+                            buttonVariant="ghost"
+                            buttonStyle={{ color: "gray", size: "sm" }}
+                            disabled={loading}
+                        >
+                            {loading ? "Loading..." : "Report file"}
+                        </Button>
                         <SortingControls sortType={PageNavItem.files} />
                         <FreeTextSearch
                             labelVisible={false}

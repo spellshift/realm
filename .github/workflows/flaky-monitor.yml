@@ -1,5 +1,9 @@
 name: Flaky Monitor
 
+# Triggered when the main `Tests` workflow completes. Pulls the JUnit XML
+# artifacts uploaded by that workflow, publishes a unified test report, and
+# surfaces tests that were flaky (failed initially but passed on retry).
+
 on:
   workflow_run:
     workflows: [Tests]
@@ -8,126 +12,68 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  contents: read
   pull-requests: write
   checks: write
+  issues: write
 
 jobs:
   flaky-monitor:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
     steps:
-      - name: 📥 Download CTRF Results
+      - name: 📥 Download JUnit Results
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: ctrf-*
-          path: ctrf-blob
+          pattern: junit-*
+          path: junit-results
           merge-multiple: true
 
-      - name: 📂 Checkout Flaky History
-        uses: actions/checkout@v4
-        continue-on-error: true
+      - name: 🔎 List Downloaded Files
+        run: |
+          echo "Downloaded JUnit artifacts:"
+          find junit-results -type f -name '*.xml' -print || true
+
+      - name: 📊 Publish Unit Test Results
+        id: publish
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          ref: flaky-monitor-results
-          path: flaky-history
-          fetch-depth: 0
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          junit_files: "junit-results/**/*.xml"
+          # Treat tests that failed first but passed on retry as flaky.
+          report_individual_runs: true
+          deduplicate_classes_by_file_name: false
+          # Don't fail this workflow when downstream tests had failures;
+          # we want the report regardless of the Tests workflow outcome.
+          fail_on: "nothing"
+          # Use the head commit of the workflow_run for the check.
+          commit: ${{ github.event.workflow_run.head_sha }}
+          check_name: "Flaky Test Report"
+          comment_mode: off
 
-      - name: 📦 Prepare Reports
-        run: |
-          mkdir -p all-reports
-
-          # initialize history branch if checkout failed (branch doesn't exist)
-          if [ ! -d "flaky-history" ]; then
-            echo "Creating orphan branch directory"
-            mkdir -p flaky-history
-            cd flaky-history
-            git init
-            git checkout --orphan flaky-monitor-results
-            cd ..
-          fi
-
-          # Process current run artifacts
-          # Rename to avoid collisions and track run ID
-          # We expect files like ctrf-tavern-ubuntu-latest.json
-          for file in ctrf-blob/*.json; do
-            if [ -e "$file" ]; then
-              filename=$(basename "$file" .json)
-              cp "$file" "all-reports/${filename}-${{ github.event.workflow_run.id }}.json"
-            fi
-          done
-
-      - name: Get PR Number
-        id: pr_info
-        run: |
-          # Retrieve PR number for commenting
-          # Note: workflow_run context has limited PR info depending on trigger
-          echo "pr_number=${{ github.event.workflow_run.pull_requests[0].number }}" >> $GITHUB_OUTPUT
-
-      - name: 📊 Publish Test Report
-        uses: ctrf-io/github-test-reporter@v1
+      - name: 📝 Summarize Flaky Tests
+        if: always()
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          report-path: 'all-reports/*.json'
-          upload-artifact: false
-          fetch-previous-results: true
-          pull-request: false
-          issue: ${{ steps.pr_info.outputs.pr_number }}
-          overwrite-comment: true
-
-          # Report Config
-          summary-delta-report: true
-          tests-changed-report: true
-          insights-report: true
-          slowest-report: true
-          failed-folded-report: true
-          flaky-rate-report: true
-          fail-rate-report: true
-          previous-results-report: true
-          previous-results-max: 100
-          artifact-name: 'flaky-report'
-
-      - name: 💾 Persist Results (Main Only)
-        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+          RUNS_FLAKY: ${{ steps.publish.outputs.runs_flaky }}
+          TESTS_FLAKY: ${{ steps.publish.outputs.tests_flaky }}
+          JSON: ${{ steps.publish.outputs.json }}
         run: |
-          cd flaky-history
-
-          # Configure git identity
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Ensure remote is set up correctly regardless of checkout success/fail
-          # First, remove origin if it exists to avoid errors on re-add
-          git remote remove origin 2>/dev/null || true
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-
-          # Fetch origin to make sure we have the latest state if checkout failed earlier but branch exists
-          # (This handles race conditions or edge cases where checkout failed for other reasons)
-          git fetch origin flaky-monitor-results 2>/dev/null || true
-
-          # If we are on a detached head or master (from init), ensure we are on the orphan branch
-          current_branch=$(git branch --show-current)
-          if [ "$current_branch" != "flaky-monitor-results" ]; then
-             git checkout -b flaky-monitor-results || git checkout flaky-monitor-results
-          fi
-
-          # Copy NEW reports from current run to history
-          # Note: We copy from the renamed versions in all-reports to ensure uniqueness
-          # Filter for files ending in this run-id
-          cp ../all-reports/*-${{ github.event.workflow_run.id }}.json .
-
-          git add .
-          git commit -m "Add test results from run ${{ github.event.workflow_run.id }}"
-
-          # Push to the orphan branch
-          git push origin flaky-monitor-results
-
-      - name: 📤 Upload History Artifact
-        if: ${{ github.event.workflow_run.head_branch == 'main' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: flaky-report
-          path: flaky-history/
-          overwrite: true
+          {
+            echo "## Flaky Test Summary"
+            echo ""
+            echo "- Flaky tests: ${TESTS_FLAKY:-0}"
+            echo "- Flaky runs: ${RUNS_FLAKY:-0}"
+            echo "- Source workflow run: [${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})"
+            echo ""
+            if [ -n "${JSON}" ]; then
+              echo "<details><summary>Raw JSON output</summary>"
+              echo ""
+              echo '```json'
+              echo "${JSON}"
+              echo '```'
+              echo ""
+              echo "</details>"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

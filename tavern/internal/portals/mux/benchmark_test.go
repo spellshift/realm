@@ -14,7 +14,7 @@ import (
 
 func BenchmarkMuxThroughput(b *testing.B) {
 	// Setup DB
-	client := enttest.Open(b, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(b)
 	defer client.Close()
 
 	// Setup Mux

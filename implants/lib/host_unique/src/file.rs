@@ -69,7 +69,7 @@ impl HostIDSelector for File {
                 match f.read_exact(&mut host_id) {
                     Ok(_) => {}
                     Err(_err) => {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::debug!("Failed to read host_id {:?}", _err);
                     }
                 }
@@ -77,7 +77,7 @@ impl HostIDSelector for File {
                     match Uuid::parse_str(uuid_str) {
                         Ok(res) => return Some(res),
                         Err(_err) => {
-                            #[cfg(debug_assertions)]
+                            #[cfg(feature = "print_debug")]
                             log::debug!("Failed to deploy {:?}", _err);
                         }
                     };
@@ -96,12 +96,12 @@ impl HostIDSelector for File {
                     return Some(host_id);
                 }
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::debug!("failed to write host id file: {_err}");
                 }
             },
             Err(_err) => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::debug!("failed to create host id file: {_err}");
             }
         };

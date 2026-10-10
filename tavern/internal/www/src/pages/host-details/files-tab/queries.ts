@@ -56,3 +56,17 @@ export const GET_FILE_DETAIL_QUERY = gql`
         }
     }
 `;
+
+export const GET_ONLINE_HOST_BEACONS_QUERY = gql`
+    query GetOnlineHostBeacons($where: BeaconWhereInput) {
+        beacons(where: $where) {
+            edges {
+                node {
+                    id
+                    principal
+                    transport
+                }
+            }
+        }
+    }
+`;

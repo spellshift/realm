@@ -9,7 +9,6 @@ export enum PageNavItem {
     documentation='Documentation',
     playground='API Playground',
     tasks='Tasks',
-    createQuest= 'Create new quest',
     hosts="Hosts",
     tomes="Tomes",
     assets="Assets",
@@ -29,6 +28,10 @@ export enum SupportedTransports {
     DNS="TRANSPORT_DNS",
     GRPC="TRANSPORT_GRPC",
     HTTP1="TRANSPORT_HTTP1",
+    ICMP="TRANSPORT_ICMP",
+    QUIC="TRANSPORT_QUIC",
+    TCP_BIND="TRANSPORT_TCP_BIND",
+    UDS="TRANSPORT_UDS",
     Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
 
@@ -87,6 +90,7 @@ export enum HostOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",
     LastSeenAt = "LAST_SEEN_AT",
+    Name = "NAME",
 }
 
 export enum AssetOrderField {
@@ -97,12 +101,21 @@ export enum AssetOrderField {
 }
 
 
+export enum BeaconOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    LastSeenAt = "LAST_SEEN_AT",
+    NextSeenAt = "NEXT_SEEN_AT",
+    Interval = "INTERVAL",
+}
+
 export enum ProcessOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",
     Name = "NAME",
     ProcessId = "PROCESS_ID",
-    ParentProcessId= "PARENT_PROCESS_ID",
+    ParentProcessId = "PARENT_PROCESS_ID",
+    ProcessStartTime = "PROCESS_START_TIME",
 }
 
 export enum HostFileOrderField {
@@ -145,4 +158,20 @@ export enum TomeTactic {
 export enum TomeFilterFieldKind {
     SupportModel = "SupportModel",
     Tactic = "Tactic",
+}
+
+export enum NotificationPriority {
+    Urgent = "Urgent",
+    High = "High",
+    Medium = "Medium",
+    Low = "Low",
+}
+
+export enum EventKind {
+    BEACON_LOST = "BEACON_LOST",
+    HOST_ACCESS_NEW = "HOST_ACCESS_NEW",
+    HOST_ACCESS_RECOVERED = "HOST_ACCESS_RECOVERED",
+    HOST_ACCESS_LOST = "HOST_ACCESS_LOST",
+    QUEST_COMPLETED = "QUEST_COMPLETED",
+    NEW_USER_REQUEST = "NEW_USER_REQUEST",
 }

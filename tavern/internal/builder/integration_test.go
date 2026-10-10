@@ -31,7 +31,7 @@ func TestBuilderE2E(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Setup in-memory SQLite database
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	// 2. Generate ED25519 key pair and create Builder CA
@@ -176,9 +176,9 @@ func TestBuilderE2E(t *testing.T) {
 			SetBuildImage("golang:1.21").
 			SetDescription("An explicit profile").
 			SetTransports([]builderpb.BuildProfileTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      10,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
+				URI:      "https://callback.example.com",
+				Interval: 10,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
 			}}).
 			SaveX(ctx)
 

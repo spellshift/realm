@@ -14,7 +14,7 @@ import (
 
 func TestHandleTomeAutomation(t *testing.T) {
 	ctx := context.Background()
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	srv := &Server{graph: client}
@@ -185,7 +185,7 @@ func TestHandleTomeAutomation(t *testing.T) {
 
 func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 	ctx := context.Background()
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	srv := &Server{graph: client}
@@ -227,7 +227,7 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 
 func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	ctx := context.Background()
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	srv := &Server{graph: client}
@@ -282,7 +282,7 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 
 func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	ctx := context.Background()
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	srv := &Server{graph: client}

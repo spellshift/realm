@@ -19,12 +19,17 @@ import (
 
 type MutationResolver interface {
 	DropAllData(ctx context.Context) (bool, error)
-	CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error)
+	CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) (*ent.Quest, error)
 	UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error)
 	CreateShell(ctx context.Context, input ent.CreateShellInput) (*ent.Shell, error)
 	UpdateHost(ctx context.Context, hostID int, input ent.UpdateHostInput) (*ent.Host, error)
+	FavoriteHost(ctx context.Context, hostID int) (*ent.Host, error)
+	UnfavoriteHost(ctx context.Context, hostID int) (*ent.Host, error)
+	SubscribeToHost(ctx context.Context, hostID int) (*ent.Host, error)
+	UnsubscribeFromHost(ctx context.Context, hostID int) (*ent.Host, error)
 	CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error)
 	UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error)
+	DeleteAsset(ctx context.Context, assetID int) (int, error)
 	CreateTome(ctx context.Context, input ent.CreateTomeInput) (*ent.Tome, error)
 	UpdateTome(ctx context.Context, tomeID int, input ent.UpdateTomeInput) (*ent.Tome, error)
 	DeleteTome(ctx context.Context, tomeID int) (int, error)
@@ -33,6 +38,7 @@ type MutationResolver interface {
 	ResetUserAPIKey(ctx context.Context) (*ent.User, error)
 	UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error)
 	CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error)
+	ClosePortal(ctx context.Context, portalID int) (*ent.Portal, error)
 	CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error)
 	UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error)
 	DisableLink(ctx context.Context, linkID int) (*ent.Link, error)
@@ -41,11 +47,25 @@ type MutationResolver interface {
 	CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error)
 	CreateScheduledTask(ctx context.Context, input ent.CreateScheduledTaskInput) (*ent.ScheduledTask, error)
 	DisableScheduledTask(ctx context.Context, scheduledTaskID int) (*ent.ScheduledTask, error)
+	MarkNotificationsAsRead(ctx context.Context, notificationIDs []int) ([]*ent.Notification, error)
+	MarkNotificationsAsArchived(ctx context.Context, notificationIDs []int) ([]*ent.Notification, error)
+	DeleteAllNotifications(ctx context.Context) (bool, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_closePortal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "portalID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["portalID"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createBuildTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -93,6 +113,11 @@ func (ec *executionContext) field_Mutation_createQuest_args(ctx context.Context,
 		return nil, err
 	}
 	args["input"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "prevNodeID", ec.unmarshalOID2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["prevNodeID"] = arg2
 	return args, nil
 }
 
@@ -151,6 +176,17 @@ func (ec *executionContext) field_Mutation_createTome_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteAsset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "assetID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["assetID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteBuilder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -195,6 +231,17 @@ func (ec *executionContext) field_Mutation_disableScheduledTask_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_favoriteHost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "hostID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["hostID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_importRepository_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -211,6 +258,28 @@ func (ec *executionContext) field_Mutation_importRepository_args(ctx context.Con
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_markNotificationsAsArchived_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "notificationIDs", ec.unmarshalNID2ᚕintᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["notificationIDs"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_markNotificationsAsRead_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "notificationIDs", ec.unmarshalNID2ᚕintᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["notificationIDs"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_registerBuilder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -219,6 +288,39 @@ func (ec *executionContext) field_Mutation_registerBuilder_args(ctx context.Cont
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_subscribeToHost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "hostID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["hostID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unfavoriteHost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "hostID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["hostID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unsubscribeFromHost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "hostID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["hostID"] = arg0
 	return args, nil
 }
 
@@ -333,7 +435,7 @@ func (ec *executionContext) _Mutation_dropAllData(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Mutation_dropAllData,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().DropAllData(ctx)
+			return ec.Resolvers.Mutation().DropAllData(ctx)
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -344,11 +446,11 @@ func (ec *executionContext) _Mutation_dropAllData(ctx context.Context, field gra
 					var zeroVal bool
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal bool
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -381,7 +483,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 		ec.fieldContext_Mutation_createQuest,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateQuest(ctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput))
+			return ec.Resolvers.Mutation().CreateQuest(ctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput), fc.Args["prevNodeID"].(*int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -392,11 +494,11 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 					var zeroVal *ent.Quest
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Quest
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -440,6 +542,16 @@ func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Contex
 				return ec.fieldContext_Quest_creator(ctx, field)
 			case "scheduledTask":
 				return ec.fieldContext_Quest_scheduledTask(ctx, field)
+			case "adventure":
+				return ec.fieldContext_Quest_adventure(ctx, field)
+			case "relatedQuests":
+				return ec.fieldContext_Quest_relatedQuests(ctx, field)
+			case "previousQuest":
+				return ec.fieldContext_Quest_previousQuest(ctx, field)
+			case "events":
+				return ec.fieldContext_Quest_events(ctx, field)
+			case "diffs":
+				return ec.fieldContext_Quest_diffs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
 		},
@@ -466,7 +578,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 		ec.fieldContext_Mutation_updateBeacon,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateBeacon(ctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
+			return ec.Resolvers.Mutation().UpdateBeacon(ctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -477,11 +589,11 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 					var zeroVal *ent.Beacon
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Beacon
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -529,6 +641,10 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			case "shells":
 				return ec.fieldContext_Beacon_shells(ctx, field)
+			case "history":
+				return ec.fieldContext_Beacon_history(ctx, field)
+			case "events":
+				return ec.fieldContext_Beacon_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -555,7 +671,7 @@ func (ec *executionContext) _Mutation_createShell(ctx context.Context, field gra
 		ec.fieldContext_Mutation_createShell,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateShell(ctx, fc.Args["input"].(ent.CreateShellInput))
+			return ec.Resolvers.Mutation().CreateShell(ctx, fc.Args["input"].(ent.CreateShellInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -566,11 +682,11 @@ func (ec *executionContext) _Mutation_createShell(ctx context.Context, field gra
 					var zeroVal *ent.Shell
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Shell
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -610,6 +726,8 @@ func (ec *executionContext) fieldContext_Mutation_createShell(ctx context.Contex
 				return ec.fieldContext_Shell_activeUsers(ctx, field)
 			case "shellTasks":
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
+			case "pivots":
+				return ec.fieldContext_Shell_pivots(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -636,7 +754,7 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateHost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateHost(ctx, fc.Args["hostID"].(int), fc.Args["input"].(ent.UpdateHostInput))
+			return ec.Resolvers.Mutation().UpdateHost(ctx, fc.Args["hostID"].(int), fc.Args["input"].(ent.UpdateHostInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -647,11 +765,11 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 					var zeroVal *ent.Host
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Host
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -703,6 +821,12 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_credentials(ctx, field)
 			case "screenshots":
 				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
+			case "subscribers":
+				return ec.fieldContext_Host_subscribers(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -721,6 +845,402 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_favoriteHost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_favoriteHost,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().FavoriteHost(ctx, fc.Args["hostID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.Host
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.Host
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_favoriteHost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Host_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Host_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Host_lastModifiedAt(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Host_identifier(ctx, field)
+			case "name":
+				return ec.fieldContext_Host_name(ctx, field)
+			case "primaryIP":
+				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "externalIP":
+				return ec.fieldContext_Host_externalIP(ctx, field)
+			case "platform":
+				return ec.fieldContext_Host_platform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Host_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Host_nextSeenAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Host_tags(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Host_beacons(ctx, field)
+			case "files":
+				return ec.fieldContext_Host_files(ctx, field)
+			case "processes":
+				return ec.fieldContext_Host_processes(ctx, field)
+			case "credentials":
+				return ec.fieldContext_Host_credentials(ctx, field)
+			case "screenshots":
+				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
+			case "subscribers":
+				return ec.fieldContext_Host_subscribers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_favoriteHost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_unfavoriteHost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_unfavoriteHost,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UnfavoriteHost(ctx, fc.Args["hostID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.Host
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.Host
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_unfavoriteHost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Host_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Host_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Host_lastModifiedAt(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Host_identifier(ctx, field)
+			case "name":
+				return ec.fieldContext_Host_name(ctx, field)
+			case "primaryIP":
+				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "externalIP":
+				return ec.fieldContext_Host_externalIP(ctx, field)
+			case "platform":
+				return ec.fieldContext_Host_platform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Host_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Host_nextSeenAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Host_tags(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Host_beacons(ctx, field)
+			case "files":
+				return ec.fieldContext_Host_files(ctx, field)
+			case "processes":
+				return ec.fieldContext_Host_processes(ctx, field)
+			case "credentials":
+				return ec.fieldContext_Host_credentials(ctx, field)
+			case "screenshots":
+				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
+			case "subscribers":
+				return ec.fieldContext_Host_subscribers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_unfavoriteHost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_subscribeToHost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_subscribeToHost,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SubscribeToHost(ctx, fc.Args["hostID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.Host
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.Host
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_subscribeToHost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Host_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Host_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Host_lastModifiedAt(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Host_identifier(ctx, field)
+			case "name":
+				return ec.fieldContext_Host_name(ctx, field)
+			case "primaryIP":
+				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "externalIP":
+				return ec.fieldContext_Host_externalIP(ctx, field)
+			case "platform":
+				return ec.fieldContext_Host_platform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Host_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Host_nextSeenAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Host_tags(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Host_beacons(ctx, field)
+			case "files":
+				return ec.fieldContext_Host_files(ctx, field)
+			case "processes":
+				return ec.fieldContext_Host_processes(ctx, field)
+			case "credentials":
+				return ec.fieldContext_Host_credentials(ctx, field)
+			case "screenshots":
+				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
+			case "subscribers":
+				return ec.fieldContext_Host_subscribers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_subscribeToHost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_unsubscribeFromHost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_unsubscribeFromHost,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UnsubscribeFromHost(ctx, fc.Args["hostID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.Host
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.Host
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_unsubscribeFromHost(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Host_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Host_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Host_lastModifiedAt(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Host_identifier(ctx, field)
+			case "name":
+				return ec.fieldContext_Host_name(ctx, field)
+			case "primaryIP":
+				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "externalIP":
+				return ec.fieldContext_Host_externalIP(ctx, field)
+			case "platform":
+				return ec.fieldContext_Host_platform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Host_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Host_nextSeenAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Host_tags(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Host_beacons(ctx, field)
+			case "files":
+				return ec.fieldContext_Host_files(ctx, field)
+			case "processes":
+				return ec.fieldContext_Host_processes(ctx, field)
+			case "credentials":
+				return ec.fieldContext_Host_credentials(ctx, field)
+			case "screenshots":
+				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
+			case "subscribers":
+				return ec.fieldContext_Host_subscribers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_unsubscribeFromHost_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -729,7 +1249,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 		ec.fieldContext_Mutation_createTag,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateTag(ctx, fc.Args["input"].(ent.CreateTagInput))
+			return ec.Resolvers.Mutation().CreateTag(ctx, fc.Args["input"].(ent.CreateTagInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -740,11 +1260,11 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 					var zeroVal *ent.Tag
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tag
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -798,7 +1318,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 		ec.fieldContext_Mutation_updateTag,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateTag(ctx, fc.Args["tagID"].(int), fc.Args["input"].(ent.UpdateTagInput))
+			return ec.Resolvers.Mutation().UpdateTag(ctx, fc.Args["tagID"].(int), fc.Args["input"].(ent.UpdateTagInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -809,11 +1329,11 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 					var zeroVal *ent.Tag
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tag
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -859,6 +1379,65 @@ func (ec *executionContext) fieldContext_Mutation_updateTag(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_deleteAsset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteAsset,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteAsset(ctx, fc.Args["assetID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal int
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal int
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNID2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteAsset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createTome(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -867,7 +1446,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 		ec.fieldContext_Mutation_createTome,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateTome(ctx, fc.Args["input"].(ent.CreateTomeInput))
+			return ec.Resolvers.Mutation().CreateTome(ctx, fc.Args["input"].(ent.CreateTomeInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -878,11 +1457,11 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 					var zeroVal *ent.Tome
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tome
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -954,7 +1533,7 @@ func (ec *executionContext) _Mutation_updateTome(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateTome,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateTome(ctx, fc.Args["tomeID"].(int), fc.Args["input"].(ent.UpdateTomeInput))
+			return ec.Resolvers.Mutation().UpdateTome(ctx, fc.Args["tomeID"].(int), fc.Args["input"].(ent.UpdateTomeInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -965,11 +1544,11 @@ func (ec *executionContext) _Mutation_updateTome(ctx context.Context, field grap
 					var zeroVal *ent.Tome
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tome
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1041,7 +1620,7 @@ func (ec *executionContext) _Mutation_deleteTome(ctx context.Context, field grap
 		ec.fieldContext_Mutation_deleteTome,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteTome(ctx, fc.Args["tomeID"].(int))
+			return ec.Resolvers.Mutation().DeleteTome(ctx, fc.Args["tomeID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1052,11 +1631,11 @@ func (ec *executionContext) _Mutation_deleteTome(ctx context.Context, field grap
 					var zeroVal int
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal int
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1100,7 +1679,7 @@ func (ec *executionContext) _Mutation_createRepository(ctx context.Context, fiel
 		ec.fieldContext_Mutation_createRepository,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateRepository(ctx, fc.Args["input"].(ent.CreateRepositoryInput))
+			return ec.Resolvers.Mutation().CreateRepository(ctx, fc.Args["input"].(ent.CreateRepositoryInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1111,11 +1690,11 @@ func (ec *executionContext) _Mutation_createRepository(ctx context.Context, fiel
 					var zeroVal *ent.Repository
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Repository
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1177,7 +1756,7 @@ func (ec *executionContext) _Mutation_importRepository(ctx context.Context, fiel
 		ec.fieldContext_Mutation_importRepository,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ImportRepository(ctx, fc.Args["repoID"].(int), fc.Args["input"].(*models.ImportRepositoryInput))
+			return ec.Resolvers.Mutation().ImportRepository(ctx, fc.Args["repoID"].(int), fc.Args["input"].(*models.ImportRepositoryInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1188,11 +1767,11 @@ func (ec *executionContext) _Mutation_importRepository(ctx context.Context, fiel
 					var zeroVal *ent.Repository
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Repository
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1253,7 +1832,7 @@ func (ec *executionContext) _Mutation_resetUserAPIKey(ctx context.Context, field
 		field,
 		ec.fieldContext_Mutation_resetUserAPIKey,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().ResetUserAPIKey(ctx)
+			return ec.Resolvers.Mutation().ResetUserAPIKey(ctx)
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1264,11 +1843,11 @@ func (ec *executionContext) _Mutation_resetUserAPIKey(ctx context.Context, field
 					var zeroVal *ent.User
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.User
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1298,12 +1877,20 @@ func (ec *executionContext) fieldContext_Mutation_resetUserAPIKey(_ context.Cont
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "subscribedhosts":
+				return ec.fieldContext_User_subscribedhosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -1321,7 +1908,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateUser,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateUser(ctx, fc.Args["userID"].(int), fc.Args["input"].(ent.UpdateUserInput))
+			return ec.Resolvers.Mutation().UpdateUser(ctx, fc.Args["userID"].(int), fc.Args["input"].(ent.UpdateUserInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1332,11 +1919,11 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 					var zeroVal *ent.User
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.User
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1366,12 +1953,20 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "subscribedhosts":
+				return ec.fieldContext_User_subscribedhosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -1400,7 +1995,7 @@ func (ec *executionContext) _Mutation_createCredential(ctx context.Context, fiel
 		ec.fieldContext_Mutation_createCredential,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateCredential(ctx, fc.Args["input"].(ent.CreateHostCredentialInput))
+			return ec.Resolvers.Mutation().CreateCredential(ctx, fc.Args["input"].(ent.CreateHostCredentialInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1411,11 +2006,11 @@ func (ec *executionContext) _Mutation_createCredential(ctx context.Context, fiel
 					var zeroVal *ent.HostCredential
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.HostCredential
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1471,6 +2066,85 @@ func (ec *executionContext) fieldContext_Mutation_createCredential(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_closePortal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_closePortal,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ClosePortal(ctx, fc.Args["portalID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.Portal
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.Portal
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_closePortal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Portal_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Portal_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Portal_lastModifiedAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_Portal_closedAt(ctx, field)
+			case "task":
+				return ec.fieldContext_Portal_task(ctx, field)
+			case "shellTask":
+				return ec.fieldContext_Portal_shellTask(ctx, field)
+			case "beacon":
+				return ec.fieldContext_Portal_beacon(ctx, field)
+			case "owner":
+				return ec.fieldContext_Portal_owner(ctx, field)
+			case "activeUsers":
+				return ec.fieldContext_Portal_activeUsers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Portal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_closePortal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createLink(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1479,7 +2153,7 @@ func (ec *executionContext) _Mutation_createLink(ctx context.Context, field grap
 		ec.fieldContext_Mutation_createLink,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateLink(ctx, fc.Args["input"].(ent.CreateLinkInput))
+			return ec.Resolvers.Mutation().CreateLink(ctx, fc.Args["input"].(ent.CreateLinkInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1490,11 +2164,11 @@ func (ec *executionContext) _Mutation_createLink(ctx context.Context, field grap
 					var zeroVal *ent.Link
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Link
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1558,7 +2232,7 @@ func (ec *executionContext) _Mutation_updateLink(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateLink,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateLink(ctx, fc.Args["linkID"].(int), fc.Args["input"].(ent.UpdateLinkInput))
+			return ec.Resolvers.Mutation().UpdateLink(ctx, fc.Args["linkID"].(int), fc.Args["input"].(ent.UpdateLinkInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1569,11 +2243,11 @@ func (ec *executionContext) _Mutation_updateLink(ctx context.Context, field grap
 					var zeroVal *ent.Link
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Link
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1637,7 +2311,7 @@ func (ec *executionContext) _Mutation_disableLink(ctx context.Context, field gra
 		ec.fieldContext_Mutation_disableLink,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DisableLink(ctx, fc.Args["linkID"].(int))
+			return ec.Resolvers.Mutation().DisableLink(ctx, fc.Args["linkID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1648,11 +2322,11 @@ func (ec *executionContext) _Mutation_disableLink(ctx context.Context, field gra
 					var zeroVal *ent.Link
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Link
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1716,7 +2390,7 @@ func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field
 		ec.fieldContext_Mutation_registerBuilder,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().RegisterBuilder(ctx, fc.Args["input"].(ent.CreateBuilderInput))
+			return ec.Resolvers.Mutation().RegisterBuilder(ctx, fc.Args["input"].(ent.CreateBuilderInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1727,11 +2401,11 @@ func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field
 					var zeroVal *models.RegisterBuilderOutput
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *models.RegisterBuilderOutput
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1783,7 +2457,7 @@ func (ec *executionContext) _Mutation_deleteBuilder(ctx context.Context, field g
 		ec.fieldContext_Mutation_deleteBuilder,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteBuilder(ctx, fc.Args["builderID"].(int))
+			return ec.Resolvers.Mutation().DeleteBuilder(ctx, fc.Args["builderID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1794,11 +2468,11 @@ func (ec *executionContext) _Mutation_deleteBuilder(ctx context.Context, field g
 					var zeroVal int
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal int
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1842,7 +2516,7 @@ func (ec *executionContext) _Mutation_createBuildTask(ctx context.Context, field
 		ec.fieldContext_Mutation_createBuildTask,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateBuildTask(ctx, fc.Args["input"].(models.CreateBuildTaskInput))
+			return ec.Resolvers.Mutation().CreateBuildTask(ctx, fc.Args["input"].(models.CreateBuildTaskInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1853,11 +2527,11 @@ func (ec *executionContext) _Mutation_createBuildTask(ctx context.Context, field
 					var zeroVal *ent.BuildTask
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.BuildTask
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1943,7 +2617,7 @@ func (ec *executionContext) _Mutation_createScheduledTask(ctx context.Context, f
 		ec.fieldContext_Mutation_createScheduledTask,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateScheduledTask(ctx, fc.Args["input"].(ent.CreateScheduledTaskInput))
+			return ec.Resolvers.Mutation().CreateScheduledTask(ctx, fc.Args["input"].(ent.CreateScheduledTaskInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1954,11 +2628,11 @@ func (ec *executionContext) _Mutation_createScheduledTask(ctx context.Context, f
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -2030,7 +2704,7 @@ func (ec *executionContext) _Mutation_disableScheduledTask(ctx context.Context, 
 		ec.fieldContext_Mutation_disableScheduledTask,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DisableScheduledTask(ctx, fc.Args["scheduledTaskID"].(int))
+			return ec.Resolvers.Mutation().DisableScheduledTask(ctx, fc.Args["scheduledTaskID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2041,11 +2715,11 @@ func (ec *executionContext) _Mutation_disableScheduledTask(ctx context.Context, 
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -2105,6 +2779,207 @@ func (ec *executionContext) fieldContext_Mutation_disableScheduledTask(ctx conte
 	if fc.Args, err = ec.field_Mutation_disableScheduledTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_markNotificationsAsRead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_markNotificationsAsRead,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().MarkNotificationsAsRead(ctx, fc.Args["notificationIDs"].([]int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNNotification2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_markNotificationsAsRead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Notification_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Notification_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Notification_lastModifiedAt(ctx, field)
+			case "priority":
+				return ec.fieldContext_Notification_priority(ctx, field)
+			case "read":
+				return ec.fieldContext_Notification_read(ctx, field)
+			case "archived":
+				return ec.fieldContext_Notification_archived(ctx, field)
+			case "user":
+				return ec.fieldContext_Notification_user(ctx, field)
+			case "event":
+				return ec.fieldContext_Notification_event(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Notification", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_markNotificationsAsRead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_markNotificationsAsArchived(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_markNotificationsAsArchived,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().MarkNotificationsAsArchived(ctx, fc.Args["notificationIDs"].([]int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNNotification2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_markNotificationsAsArchived(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Notification_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Notification_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Notification_lastModifiedAt(ctx, field)
+			case "priority":
+				return ec.fieldContext_Notification_priority(ctx, field)
+			case "read":
+				return ec.fieldContext_Notification_read(ctx, field)
+			case "archived":
+				return ec.fieldContext_Notification_archived(ctx, field)
+			case "user":
+				return ec.fieldContext_Notification_user(ctx, field)
+			case "event":
+				return ec.fieldContext_Notification_event(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Notification", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_markNotificationsAsArchived_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteAllNotifications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteAllNotifications,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().DeleteAllNotifications(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal bool
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteAllNotifications(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -2172,6 +3047,34 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "favoriteHost":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_favoriteHost(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unfavoriteHost":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_unfavoriteHost(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "subscribeToHost":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_subscribeToHost(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unsubscribeFromHost":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_unsubscribeFromHost(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createTag":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createTag(ctx, field)
@@ -2182,6 +3085,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateTag":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateTag(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteAsset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteAsset(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -2235,6 +3145,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createCredential":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createCredential(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "closePortal":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_closePortal(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -2295,6 +3212,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "markNotificationsAsRead":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_markNotificationsAsRead(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "markNotificationsAsArchived":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_markNotificationsAsArchived(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteAllNotifications":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteAllNotifications(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2304,10 +3242,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
