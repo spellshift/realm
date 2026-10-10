@@ -729,27 +729,52 @@ impl Agent for ImixAgent {
         })
     }
 
-    fn get_current_callback_uri(&self) -> Result<String, String> {
+    fn get_active_callback_uri(&self) -> Result<String, String> {
         self.block_on(async {
             let cfg = self.config.read().await;
-            if let Some(info) = cfg.info.as_ref()
-                && let Some(current_transport) = info.current_transport.as_ref()
-            {
-                Ok(current_transport.uri.clone())
-            } else {
-                Err("No current transport set in configuration".to_string())
-            }
+            let uris: BTreeSet<String> = cfg
+                .info
+                .as_ref()
+                .and_then(|info| info.available_transports.as_ref())
+                .map(|at| at.transports.iter().map(|t| t.uri.clone()).collect())
+                .unwrap_or_default();
+            Ok(uris)
+        })
+        .and_then(|uris| {
+            uris.into_iter()
+                .next()
+                .ok_or_else(|| "No active callback URI".to_string())
         })
     }
 
-    fn get_jitter(&self) -> Result<f64, String> {
+    fn get_next_callback_uri(&self) -> Result<String, String> {
         self.block_on(async {
             let cfg = self.config.read().await;
-            if let Some(info) = cfg.info.as_ref() {
-                Ok(info.jitter)
-            } else {
-                Err("Configuration has no agent information".to_string())
-            }
+            let uris: Vec<String> = cfg
+                .info
+                .as_ref()
+                .and_then(|info| info.available_transports.as_ref())
+                .map(|at| at.transports.iter().map(|t| t.uri.clone()).collect())
+                .unwrap_or_default();
+            uris.into_iter()
+                .nth(1)
+                .ok_or_else(|| "No next callback URI".to_string())
+        })
+    }
+
+    fn set_jitter(&self, jitter: f64) -> Result<(), String> {
+        if !(0.0..=1.0).contains(&jitter) {
+            return Err("Jitter must be between 0.0 and 1.0".to_string());
+        }
+
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            let info = cfg
+                .info
+                .as_mut()
+                .ok_or_else(|| "Configuration has no agent information".to_string())?;
+            info.jitter = jitter;
+            Ok(())
         })
     }
 
@@ -759,62 +784,38 @@ impl Agent for ImixAgent {
             if let Some(info) = cfg.info.as_mut()
                 && let Some(available_transports) = info.available_transports.as_mut()
             {
-                // Find and remove the transport with matching URI
+                // Check if URI exists
                 if let Some(pos) = available_transports
                     .transports
                     .iter()
                     .position(|t| t.uri == uri)
                 {
                     available_transports.transports.remove(pos);
-
                     // Sync the updated transports with active transport pool
                     let mut active_transport = self.transport.write().await;
                     active_transport.sync_transports(available_transports.clone())?;
-                    Ok(())
-                } else {
-                    Err(format!("Transport URI '{}' not found", uri))
                 }
-            } else {
-                Err("Configuration has no available transports".to_string())
             }
+            Ok(())
         })
     }
 
-    fn rotate_transport(&self) -> Result<String, String> {
-        // First check if we have multiple transports available
-        let available_transports = self.list_available_transports()?;
-        if available_transports.len() <= 1 {
-            return Err("Cannot rotate: only one or zero transports available".to_string());
+    fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
+        Ok(self.task_registry.list())
+    }
+
+    fn stop_task(&self, task_id: i64) -> Result<(), String> {
+        self.task_registry.stop(task_id);
+        // Also stop subtask
+        let mut map = self
+            .subtasks
+            .lock()
+            .map_err(|_| "Poisoned lock".to_string())?;
+        if let Some(handle) = map.remove(&task_id) {
+            handle.abort();
+            #[cfg(feature = "print_debug")]
+            log::info!("Aborted subtask {task_id}");
         }
-
-        self.block_on(async {
-            let mut active_transport = self.transport.write().await;
-
-            // Rotate the active transport
-            let new_transport_name = active_transport
-                .rotate_transport()
-                .await
-                .map_err(|e| format!("Failed to rotate transport: {}", e))?;
-
-            // Update configuration with new priority and current transport
-            let mut cfg = self.config.write().await;
-            if let Some(info) = cfg.info.as_mut()
-                && let Some(available_transports) = info.available_transports.as_mut()
-            {
-                // Find the transport matching the new active transport
-                if let Some(pos) = available_transports
-                    .transports
-                    .iter()
-                    .position(|t| t.uri == uri)
-                {
-                    // Move the new transport to the front of the list
-                    let transport = available_transports.transports.remove(pos);
-                    available_transports.transports.insert(0, transport.clone());
-                    info.current_transport = Some(transport);
-                }
-            }
-
-            Ok(new_transport_name)
-        })
+        Ok(())
     }
 }
