@@ -803,20 +803,18 @@ impl Agent for ImixAgent {
             let mut cfg = self.config.write().await;
             if let Some(info) = cfg.info.as_mut()
                 && let Some(available_transports) = info.available_transports.as_mut()
-            {
-                let pos = available_transports
+                && let Some(pos) = available_transports
                     .transports
                     .iter()
-                    .position(|t| t.uri == uri);
-                if let Some(pos) = pos {
-                    available_transports.transports.remove(pos);
-                    // Adjust active_index if needed
-                    let active_idx = available_transports.active_index as usize;
-                    if active_idx >= available_transports.transports.len()
-                        && !available_transports.transports.is_empty()
-                    {
-                        available_transports.active_index = 0;
-                    }
+                    .position(|t| t.uri == uri)
+            {
+                available_transports.transports.remove(pos);
+                // Adjust active_index if needed
+                let active_idx = available_transports.active_index as usize;
+                if active_idx >= available_transports.transports.len()
+                    && !available_transports.transports.is_empty()
+                {
+                    available_transports.active_index = 0;
                 }
             }
             Ok(())
