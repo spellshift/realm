@@ -19,7 +19,7 @@ import (
 
 func TestReportOutput(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
 
@@ -31,6 +31,7 @@ func TestReportOutput(t *testing.T) {
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier),
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier),
 	}
+	token := mintJWT(existingBeacon.ID)
 
 	// Test Cases
 	tests := []struct {
@@ -99,7 +100,7 @@ func TestReportOutput(t *testing.T) {
 		{
 			name: "Append_Output",
 			req: &c2pb.ReportOutputRequest{
-				Message: &c2pb.ReportOutputRequest_TaskOutput{
+			Message: &c2pb.ReportOutputRequest_TaskOutput{
 					TaskOutput: &c2pb.ReportTaskOutputMessage{
 						Context: &c2pb.TaskContext{TaskId: int64(existingTasks[0].ID), Jwt: token},
 						Output: &c2pb.TaskOutput{
@@ -122,8 +123,8 @@ func TestReportOutput(t *testing.T) {
 		{
 			name: "Exec_Finished",
 			req: &c2pb.ReportOutputRequest{
-				Message: &c2pb.ReportOutputRequest_TaskOutput{
-					TaskOutput: &c2pb.ReportTaskOutputMessage{
+			Message: &c2pb.ReportOutputRequest_TaskOutput{
+				TaskOutput: &c2pb.ReportTaskOutputMessage{
 						Context: &c2pb.TaskContext{TaskId: int64(existingTasks[0].ID), Jwt: token},
 						Output: &c2pb.TaskOutput{
 							Id:             int64(existingTasks[0].ID),
