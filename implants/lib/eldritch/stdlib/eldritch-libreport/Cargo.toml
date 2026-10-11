@@ -8,12 +8,13 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
-nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 glob = { workspace = true }
 log = { workspace = true }
+[target.'cfg(all(unix, not(target_os = "solaris")))'.dependencies]
+nix = { workspace = true, optional = true }
 
-[target.'cfg(not(any(target_os = "linux", target_os = "freebsd")))'.dependencies]
+[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
 xcap = { workspace = true, optional = true }
 image = { version = "0.25", optional = true }
 

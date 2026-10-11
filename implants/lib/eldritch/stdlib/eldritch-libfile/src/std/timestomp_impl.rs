@@ -109,7 +109,7 @@ fn parse_time(val: Value) -> AnyhowResult<::std::time::SystemTime> {
     }
 }
 
-#[cfg(all(unix, feature = "stdlib"))]
+#[cfg(all(unix, not(target_os = "solaris"), feature = "stdlib"))]
 fn apply_timestamps(
     path: &str,
     mtime: Option<::std::time::SystemTime>,
@@ -228,6 +228,57 @@ fn apply_timestamps(
 
     if res == 0 {
         anyhow::bail!("SetFileTime failed");
+    }
+
+    Ok(())
+}
+
+#[cfg(all(target_os = "solaris", feature = "stdlib"))]
+fn apply_timestamps(
+    path: &str,
+    mtime: Option<::std::time::SystemTime>,
+    atime: Option<::std::time::SystemTime>,
+    _ctime: Option<::std::time::SystemTime>,
+) -> AnyhowResult<()> {
+    use anyhow::Context;
+    use std::fs;
+    let meta = fs::metadata(path).context("Failed to stat target file")?;
+
+    fn system_time_to_timeval(t: ::std::time::SystemTime) -> libc::timeval {
+        let d = t
+            .duration_since(::std::time::UNIX_EPOCH)
+            .unwrap_or(::std::time::Duration::ZERO);
+        libc::timeval {
+            tv_sec: d.as_secs() as _,
+            tv_usec: d.subsec_micros() as _,
+        }
+    }
+
+    let a_tv = if let Some(a) = atime {
+        system_time_to_timeval(a)
+    } else {
+        meta.accessed()
+            .ok()
+            .map(system_time_to_timeval)
+            .unwrap_or_else(|| system_time_to_timeval(::std::time::SystemTime::now()))
+    };
+
+    let m_tv = if let Some(m) = mtime {
+        system_time_to_timeval(m)
+    } else {
+        meta.modified()
+            .ok()
+            .map(system_time_to_timeval)
+            .unwrap_or_else(|| system_time_to_timeval(::std::time::SystemTime::now()))
+    };
+
+    let c_path = std::ffi::CString::new(path).context("Failed to convert path to CString")?;
+    let times = [a_tv, m_tv];
+    if unsafe { libc::utimes(c_path.as_ptr(), times.as_ptr()) } != 0 {
+        return Err(anyhow::anyhow!(
+            "Failed to set file times (utimes): {}",
+            std::io::Error::last_os_error()
+        ));
     }
 
     Ok(())

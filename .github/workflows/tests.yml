@@ -126,6 +126,15 @@ jobs:
       uses: taiki-e/install-action@v2
       with:
         tool: nextest,cargo-llvm-cov
+    - name: ☀️ Check Solaris compilation and tests
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        rustup target add x86_64-pc-solaris
+        cd ./implants/
+        cargo check --tests --target x86_64-pc-solaris
+        cd ./lib/eldritch/stdlib/tests
+        cargo check --tests --target x86_64-pc-solaris
     - name: 🔎 Run tests
       # nextest is configured via .config/nextest.toml: [profile.ci] has retries=2 and writes
       # JUnit to target/nextest/ci/junit.xml. The stdlib/tests crate is a separate Cargo

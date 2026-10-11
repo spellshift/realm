@@ -47,7 +47,6 @@ eldritch = { workspace = true, features = ["std", "stdlib"] }
 eldritch-agent = { workspace = true }
 transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
-portable-pty = { workspace = true }
 rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
 rand = { workspace = true }
@@ -55,6 +54,12 @@ async-trait = { workspace = true }
 rustls = { workspace = true }
 eldritch-libchain = { workspace = true, features = ["stdlib"] }
 base64 = { workspace = true }
+
+[target.'cfg(not(target_os = "solaris"))'.dependencies]
+portable-pty = { workspace = true }
+
+[target.'cfg(target_os = "solaris")'.dependencies]
+libc = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
