@@ -17,7 +17,8 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	var (
 		taskID      int64
 		shellTaskID int64
-		jwtToken    string
+		beaconID    int
+		authed      bool
 		path        string
 		owner       string
 		group       string
@@ -49,10 +50,21 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		if taskID == 0 && shellTaskID == 0 {
 			if tc := req.GetTaskContext(); tc != nil {
 				taskID = tc.TaskId
-				jwtToken = tc.Jwt
+				// Validate the JWT before consuming/accumulating streamed bodies.
+				id, err := srv.ValidateJWT(tc.Jwt)
+				if err != nil {
+					return err
+				}
+				beaconID = id
+				authed = true
 			} else if stc := req.GetShellTaskContext(); stc != nil {
 				shellTaskID = stc.ShellTaskId
-				jwtToken = stc.Jwt
+				id, err := srv.ValidateJWT(stc.Jwt)
+				if err != nil {
+					return err
+				}
+				beaconID = id
+				authed = true
 			}
 		}
 
@@ -73,13 +85,11 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	if taskID == 0 && shellTaskID == 0 {
 		return status.Errorf(codes.InvalidArgument, "must provide valid task id or shell task id")
 	}
+	if !authed {
+		return status.Errorf(codes.PermissionDenied, "missing or invalid token")
+	}
 	if path == "" {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
-	}
-
-	err := srv.ValidateJWT(jwtToken)
-	if err != nil {
-		return err
 	}
 
 	var host *ent.Host
@@ -93,6 +103,9 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 		if err != nil {
 			return status.Errorf(codes.Internal, "failed to load task: %v", err)
+		}
+		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
+			return err
 		}
 		task = t
 		h, err := t.QueryBeacon().QueryHost().Only(ctx)
@@ -108,6 +121,9 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		if err != nil {
 			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
 		}
+		if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
+			return err
+		}
 		shellTask = st
 		h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)
 		if err != nil {
@@ -121,6 +137,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	// Load Existing Files (only for HostFile)
 	var existingFiles []*ent.HostFile
 	if !isScreenshot {
+		var err error
 		existingFiles, err = host.QueryFiles().
 			Where(
 				hostfile.Path(path),

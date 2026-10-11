@@ -19,7 +19,8 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if taskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing task context")
 		}
-		if err := srv.ValidateJWT(taskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(taskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
@@ -50,6 +51,9 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to submit task result (id=%d): %v", output.Id, err)
 		}
+		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
+			return nil, err
+		}
 
 		if output.Error != nil {
 			e := fmt.Sprintf("%s%s", t.Error, output.Error.Msg)
@@ -73,7 +77,8 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if shellTaskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing shell task context")
 		}
-		if err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
@@ -104,6 +109,9 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		}
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to submit shell task result (id=%d): %v", output.Id, err)
+		}
+		if err := srv.authorizeShellTaskForBeacon(ctx, t, beaconID); err != nil {
+			return nil, err
 		}
 
 		if output.Error != nil {
