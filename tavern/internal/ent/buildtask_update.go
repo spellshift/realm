@@ -467,6 +467,9 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := btu.mutation.LastModifiedAt(); ok {
 		_spec.SetField(buildtask.FieldLastModifiedAt, field.TypeTime, value)
 	}
+	if btu.mutation.ProfileAtCreationCleared() {
+		_spec.ClearField(buildtask.FieldProfileAtCreation, field.TypeJSON)
+	}
 	if value, ok := btu.mutation.TargetOs(); ok {
 		_spec.SetField(buildtask.FieldTargetOs, field.TypeEnum, value)
 	}
@@ -1115,6 +1118,9 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if value, ok := btuo.mutation.LastModifiedAt(); ok {
 		_spec.SetField(buildtask.FieldLastModifiedAt, field.TypeTime, value)
+	}
+	if btuo.mutation.ProfileAtCreationCleared() {
+		_spec.ClearField(buildtask.FieldProfileAtCreation, field.TypeJSON)
 	}
 	if value, ok := btuo.mutation.TargetOs(); ok {
 		_spec.SetField(buildtask.FieldTargetOs, field.TypeEnum, value)

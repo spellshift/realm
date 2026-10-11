@@ -82,6 +82,7 @@ func (c *BeaconHistoryCreate) SetInput(i CreateBeaconHistoryInput) *BeaconHistor
 type CreateBuilderInput struct {
 	SupportedTargets []c2pb.Host_Platform
 	Upstream         *string
+	PollInterval     *int
 }
 
 // Mutate applies the CreateBuilderInput on the BuilderMutation builder.
@@ -91,6 +92,9 @@ func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
 	}
 	if v := i.Upstream; v != nil {
 		m.SetUpstream(*v)
+	}
+	if v := i.PollInterval; v != nil {
+		m.SetPollInterval(*v)
 	}
 }
 

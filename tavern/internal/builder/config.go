@@ -3,16 +3,37 @@ package builder
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
+// DefaultPollInterval is the builder polling interval in seconds for legacy configurations.
+const DefaultPollInterval = 5
+
+// MaxPollInterval is the largest poll_interval (in seconds) ParseConfig accepts.
+const MaxPollInterval = 86400
+
+// MaxStaleAge is the longest a builder can go without checking in and still be
+// considered healthy, even at MaxPollInterval. Callers that need to bound a
+// freshness query at the database layer (before BuilderHealthy's per-builder
+// check, which needs each builder's own interval) can use this as a
+// conservative upper bound.
+const MaxStaleAge = 3 * MaxPollInterval * time.Second
+
+// BuilderHealthy reports whether a builder has polled within three polling intervals.
+func BuilderHealthy(lastSeen time.Time, interval int, now time.Time) bool {
+	return interval > 0 && interval <= MaxPollInterval && !lastSeen.Before(now.Add(-3*time.Duration(interval)*time.Second))
+}
+
 // Config represents the YAML configuration for a builder.
 type Config struct {
+	PollInterval     int      `yaml:"poll_interval"`
 	ID               string   `yaml:"id"`
 	SupportedTargets []string `yaml:"supported_targets"`
 	MTLS             string   `yaml:"mtls"`
 	Upstream         string   `yaml:"upstream"`
+	Executor         string   `yaml:"executor"`
 }
 
 // ParseConfig reads and parses a builder YAML configuration file.
@@ -26,7 +47,10 @@ func ParseConfig(path string) (*Config, error) {
 
 // ParseConfigBytes parses builder YAML configuration from bytes.
 func ParseConfigBytes(data []byte) (*Config, error) {
-	var cfg Config
+	cfg := Config{
+		PollInterval: DefaultPollInterval,
+		Executor:     "docker",
+	}
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
@@ -39,6 +63,9 @@ func ParseConfigBytes(data []byte) (*Config, error) {
 }
 
 func (cfg *Config) validate() error {
+	if cfg.PollInterval < 1 || cfg.PollInterval > 86400 {
+		return fmt.Errorf("poll_interval must be between 1 and 86400 seconds")
+	}
 	if cfg.ID == "" {
 		return fmt.Errorf("config must specify a builder id")
 	}
@@ -55,6 +82,15 @@ func (cfg *Config) validate() error {
 	}
 	if cfg.Upstream == "" {
 		return fmt.Errorf("config must specify an upstream server address")
+	}
+	if cfg.Executor == "" {
+		cfg.Executor = "docker"
+	}
+	switch cfg.Executor {
+	case "docker", "local":
+		// valid
+	default:
+		return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cfg.Executor)
 	}
 	return nil
 }

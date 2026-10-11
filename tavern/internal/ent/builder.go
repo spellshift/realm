@@ -29,6 +29,8 @@ type Builder struct {
 	SupportedTargets []c2pb.Host_Platform `json:"supported_targets,omitempty"`
 	// The server address that the builder should connect to.
 	Upstream string `json:"upstream,omitempty"`
+	// Builder task polling interval in seconds.
+	PollInterval int `json:"poll_interval,omitempty"`
 	// Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
 	LastSeenAt *time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -66,7 +68,7 @@ func (*Builder) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case builder.FieldSupportedTargets:
 			values[i] = new([]byte)
-		case builder.FieldID:
+		case builder.FieldID, builder.FieldPollInterval:
 			values[i] = new(sql.NullInt64)
 		case builder.FieldIdentifier, builder.FieldUpstream:
 			values[i] = new(sql.NullString)
@@ -124,6 +126,12 @@ func (b *Builder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field upstream", values[i])
 			} else if value.Valid {
 				b.Upstream = value.String
+			}
+		case builder.FieldPollInterval:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field poll_interval", values[i])
+			} else if value.Valid {
+				b.PollInterval = int(value.Int64)
 			}
 		case builder.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -187,6 +195,9 @@ func (b *Builder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("upstream=")
 	builder.WriteString(b.Upstream)
+	builder.WriteString(", ")
+	builder.WriteString("poll_interval=")
+	builder.WriteString(fmt.Sprintf("%v", b.PollInterval))
 	builder.WriteString(", ")
 	if v := b.LastSeenAt; v != nil {
 		builder.WriteString("last_seen_at=")

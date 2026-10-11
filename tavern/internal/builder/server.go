@@ -65,6 +65,17 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		return nil, status.Errorf(codes.Internal, "failed to query build tasks: %v", err)
 	}
 
+	// Legacy tasks lack historical inputs and cannot safely be executed.
+	eligible := tasks[:0]
+	for _, task := range tasks {
+		if task.ProfileAtCreation == nil {
+			slog.WarnContext(ctx, "build task has no saved profile; recreate it to execute", "task_id", task.ID)
+			continue
+		}
+		eligible = append(eligible, task)
+	}
+	tasks = eligible
+
 	// Prepare transaction for claiming tasks
 	tx, err := s.graph.Tx(ctx)
 	if err != nil {
@@ -107,10 +118,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		}
 
 		// Derive the IMIX config YAML from the build task's stored transports.
-		profile, err := claimedTask.Profile(ctx)
-		if err != nil || profile == nil {
-			return nil, status.Errorf(codes.Internal, "failed to load build profile task %d: %v", taskID, err)
-		}
+		profile := claimedTask.ProfileAtCreation
 		transports := profile.Transports
 
 		imixTransports := make([]ImixTransportConfig, len(transports))
@@ -135,15 +143,9 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		// Tome content is downloaded separately via DownloadTome RPC.
 		var protoTomes []*builderpb.Tome
 		for _, pt := range profile.Tomes {
-			tomeEntity, err := s.graph.Tome.Get(ctx, pt.TomeID)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to load tome for build task",
-					"task_id", taskID, "tome_id", pt.TomeID, "error", err)
-				continue
-			}
 			protoTomes = append(protoTomes, &builderpb.Tome{
 				Id:     int64(pt.TomeID),
-				Name:   tomeEntity.Name,
+				Name:   pt.Name,
 				Params: pt.Params,
 			})
 		}
@@ -292,6 +294,10 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		taskID       int64
 		artifactName string
 		buf          bytes.Buffer
+		// bt is loaded once below, from the first stream message, to validate
+		// task ownership. It's reused after the loop for target_os/target_format
+		// and the saved profile instead of querying the build task a second time.
+		bt *ent.BuildTask
 	)
 
 	for {
@@ -314,7 +320,8 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 				artifactName = fmt.Sprintf("artifact-%d", taskID)
 			}
 
-			bt, err := s.graph.BuildTask.Get(ctx, int(taskID))
+			var err error
+			bt, err = s.graph.BuildTask.Get(ctx, int(taskID))
 			if err != nil {
 				return status.Errorf(codes.NotFound, "build task %d not found: %v", taskID, err)
 			}
@@ -338,15 +345,9 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Error(codes.InvalidArgument, "empty artifact")
 	}
 
-	// Load build task to get target_os and target_format for the asset name.
-	bt, err := s.graph.BuildTask.Get(ctx, int(taskID))
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load build task for asset naming: %v", err)
-	}
-
-	profile, err := bt.Profile(ctx)
-	if err != nil || profile == nil {
-		return status.Errorf(codes.Internal, "failed to load build profile for task %d: %v", taskID, err)
+	profile := bt.ProfileAtCreation
+	if profile == nil {
+		return status.Error(codes.FailedPrecondition, "build task has no saved profile")
 	}
 
 	profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
@@ -355,12 +356,24 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 	osName := strings.ToLower(strings.TrimPrefix(bt.TargetOs.String(), "PLATFORM_"))
 	formatName := strings.ToLower(strings.TrimPrefix(bt.TargetFormat.String(), "TARGET_FORMAT_"))
 	assetName := fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, randomName)
-	asset, err := s.graph.Asset.Create().
+	tx, err := s.graph.Tx(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "begin artifact transaction: %v", err)
+	}
+	defer tx.Rollback()
+	asset, err := tx.Client().Asset.Create().
 		SetName(assetName).
 		SetContent(buf.Bytes()).
 		Save(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to create asset: %v", err)
+	}
+
+	if _, err := tx.Client().BuildTask.UpdateOneID(bt.ID).SetArtifact(asset).Save(ctx); err != nil {
+		return status.Errorf(codes.Internal, "attach build artifact: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return status.Errorf(codes.Internal, "commit build artifact: %v", err)
 	}
 
 	slog.InfoContext(ctx, "build artifact uploaded",
@@ -406,32 +419,28 @@ func (s *Server) DownloadTome(req *builderpb.DownloadTomeRequest, stream builder
 		return status.Errorf(codes.PermissionDenied, "build task %d is not assigned to this builder", req.TaskId)
 	}
 
-	// Verify the tome is part of the task's build profile.
-	profile, err := bt.Profile(ctx)
-	if err != nil || profile == nil {
-		return status.Errorf(codes.Internal, "failed to load build profile for task %d: %v", req.TaskId, err)
+	// Membership, names, and content all come from creation-time inputs.
+	profile := bt.ProfileAtCreation
+	if profile == nil {
+		return status.Error(codes.FailedPrecondition, "build task has no saved profile")
 	}
-	tomeFound := false
-	for _, pt := range profile.Tomes {
-		if int64(pt.TomeID) == req.TomeId {
-			tomeFound = true
+	var selected *builderpb.BuildTomeSnapshot
+	for i := range profile.Tomes {
+		if int64(profile.Tomes[i].TomeID) == req.TomeId {
+			selected = &profile.Tomes[i]
 			break
 		}
 	}
-	if !tomeFound {
-		return status.Errorf(codes.InvalidArgument, "tome %d is not part of the build profile for task %d", req.TomeId, req.TaskId)
+	if selected == nil {
+		return status.Errorf(codes.InvalidArgument, "tome %d is not part of the saved build profile for task %d", req.TomeId, req.TaskId)
 	}
-
-	// Package the tome into a tar.gz archive.
-	data, err := PackageTome(ctx, s.graph, int(req.TomeId))
+	bundle, err := bt.QueryBundle().Only(ctx)
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to package tome %d: %v", req.TomeId, err)
+		return status.Errorf(codes.FailedPrecondition, "load frozen build inputs: %v", err)
 	}
-
-	// Get the tome name for the first message.
-	tomeEntity, err := s.graph.Tome.Get(ctx, int(req.TomeId))
+	data, err := FrozenTome(bundle.Content, selected.TomeID)
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load tome %d: %v", req.TomeId, err)
+		return status.Errorf(codes.Internal, "read frozen tome: %v", err)
 	}
 
 	// Stream the data in 1MB chunks.
@@ -447,7 +456,7 @@ func (s *Server) DownloadTome(req *builderpb.DownloadTomeRequest, stream builder
 		}
 		// Include the name on the first message only.
 		if i == 0 {
-			msg.Name = tomeEntity.Name
+			msg.Name = selected.Name
 		}
 
 		if err := stream.Send(msg); err != nil {

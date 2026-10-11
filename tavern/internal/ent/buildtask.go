@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -26,6 +27,8 @@ type BuildTask struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
+	// Immutable build profile captured at task creation. Null for legacy tasks whose original inputs are unknown.
+	ProfileAtCreation *builderpb.BuildProfileSnapshot `json:"profile_at_creation,omitempty"`
 	// The target operating system platform for this build.
 	TargetOs c2pb.Host_Platform `json:"target_os,omitempty"`
 	// The output format for the build (BIN, CDYLIB, WINDOWS_SERVICE).
@@ -57,6 +60,7 @@ type BuildTask struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuildTaskQuery when eager-loading is set.
 	Edges               BuildTaskEdges `json:"edges"`
+	build_task_bundle   *int
 	build_task_builder  *int
 	build_task_profile  *int
 	build_task_artifact *int
@@ -65,6 +69,8 @@ type BuildTask struct {
 
 // BuildTaskEdges holds the relations/edges for other nodes in the graph.
 type BuildTaskEdges struct {
+	// Frozen tome archives captured at task creation.
+	Bundle *Asset `json:"bundle,omitempty"`
 	// The builder assigned to execute this build task.
 	Builder *Builder `json:"builder,omitempty"`
 	// The profile assigned to this build Task
@@ -73,9 +79,20 @@ type BuildTaskEdges struct {
 	Artifact *Asset `json:"artifact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
+}
+
+// BundleOrErr returns the Bundle value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BuildTaskEdges) BundleOrErr() (*Asset, error) {
+	if e.Bundle != nil {
+		return e.Bundle, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: asset.Label}
+	}
+	return nil, &NotLoadedError{edge: "bundle"}
 }
 
 // BuilderOrErr returns the Builder value or an error if the edge
@@ -83,7 +100,7 @@ type BuildTaskEdges struct {
 func (e BuildTaskEdges) BuilderOrErr() (*Builder, error) {
 	if e.Builder != nil {
 		return e.Builder, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: builder.Label}
 	}
 	return nil, &NotLoadedError{edge: "builder"}
@@ -94,7 +111,7 @@ func (e BuildTaskEdges) BuilderOrErr() (*Builder, error) {
 func (e BuildTaskEdges) ProfileOrErr() (*BuildProfile, error) {
 	if e.Profile != nil {
 		return e.Profile, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: buildprofile.Label}
 	}
 	return nil, &NotLoadedError{edge: "profile"}
@@ -105,7 +122,7 @@ func (e BuildTaskEdges) ProfileOrErr() (*BuildProfile, error) {
 func (e BuildTaskEdges) ArtifactOrErr() (*Asset, error) {
 	if e.Artifact != nil {
 		return e.Artifact, nil
-	} else if e.loadedTypes[2] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: asset.Label}
 	}
 	return nil, &NotLoadedError{edge: "artifact"}
@@ -116,6 +133,8 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case buildtask.FieldProfileAtCreation:
+			values[i] = new([]byte)
 		case buildtask.FieldTargetFormat:
 			values[i] = new(builderpb.TargetFormat)
 		case buildtask.FieldTargetOs:
@@ -126,11 +145,13 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case buildtask.FieldCreatedAt, buildtask.FieldLastModifiedAt, buildtask.FieldClaimedAt, buildtask.FieldStartedAt, buildtask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
-		case buildtask.ForeignKeys[0]: // build_task_builder
+		case buildtask.ForeignKeys[0]: // build_task_bundle
 			values[i] = new(sql.NullInt64)
-		case buildtask.ForeignKeys[1]: // build_task_profile
+		case buildtask.ForeignKeys[1]: // build_task_builder
 			values[i] = new(sql.NullInt64)
-		case buildtask.ForeignKeys[2]: // build_task_artifact
+		case buildtask.ForeignKeys[2]: // build_task_profile
+			values[i] = new(sql.NullInt64)
+		case buildtask.ForeignKeys[3]: // build_task_artifact
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -164,6 +185,14 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				bt.LastModifiedAt = value.Time
+			}
+		case buildtask.FieldProfileAtCreation:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field profile_at_creation", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bt.ProfileAtCreation); err != nil {
+					return fmt.Errorf("unmarshal field profile_at_creation: %w", err)
+				}
 			}
 		case buildtask.FieldTargetOs:
 			if value, ok := values[i].(*c2pb.Host_Platform); !ok {
@@ -252,19 +281,26 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 			}
 		case buildtask.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field build_task_bundle", value)
+			} else if value.Valid {
+				bt.build_task_bundle = new(int)
+				*bt.build_task_bundle = int(value.Int64)
+			}
+		case buildtask.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field build_task_builder", value)
 			} else if value.Valid {
 				bt.build_task_builder = new(int)
 				*bt.build_task_builder = int(value.Int64)
 			}
-		case buildtask.ForeignKeys[1]:
+		case buildtask.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field build_task_profile", value)
 			} else if value.Valid {
 				bt.build_task_profile = new(int)
 				*bt.build_task_profile = int(value.Int64)
 			}
-		case buildtask.ForeignKeys[2]:
+		case buildtask.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field build_task_artifact", value)
 			} else if value.Valid {
@@ -282,6 +318,11 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (bt *BuildTask) Value(name string) (ent.Value, error) {
 	return bt.selectValues.Get(name)
+}
+
+// QueryBundle queries the "bundle" edge of the BuildTask entity.
+func (bt *BuildTask) QueryBundle() *AssetQuery {
+	return NewBuildTaskClient(bt.config).QueryBundle(bt)
 }
 
 // QueryBuilder queries the "builder" edge of the BuildTask entity.
@@ -327,6 +368,9 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
 	builder.WriteString(bt.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("profile_at_creation=")
+	builder.WriteString(fmt.Sprintf("%v", bt.ProfileAtCreation))
 	builder.WriteString(", ")
 	builder.WriteString("target_os=")
 	builder.WriteString(fmt.Sprintf("%v", bt.TargetOs))

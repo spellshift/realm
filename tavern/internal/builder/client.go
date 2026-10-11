@@ -23,9 +23,6 @@ import (
 )
 
 const (
-	// taskPollInterval is how often the builder polls for new build tasks.
-	taskPollInterval = 5 * time.Second
-
 	// maxConcurrentBuilds is the maximum number of builds that can run simultaneously.
 	maxConcurrentBuilds = 4
 
@@ -113,6 +110,14 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 // then enters a polling loop to claim and execute build tasks using the
 // provided executor.
 func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
+	if cfg.PollInterval == 0 {
+		copy := *cfg
+		copy.PollInterval = DefaultPollInterval
+		cfg = &copy
+	}
+	if err := cfg.validate(); err != nil {
+		return err
+	}
 	slog.InfoContext(ctx, "builder started",
 		"id", cfg.ID,
 		"supported_targets", cfg.SupportedTargets,
@@ -166,7 +171,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
-	ticker := time.NewTicker(taskPollInterval)
+	ticker := time.NewTicker(time.Duration(cfg.PollInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -232,7 +237,12 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 			"task_id", task.Id, "tome_id", t.Id, "name", name, "size", len(data))
 	}
 
-	stream, err := client.StreamBuildTaskOutput(ctx)
+	// taskCtx is cancelled if the output stream fails so the executor stops
+	// instead of blocking on channels that nothing is reading anymore.
+	taskCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	stream, err := client.StreamBuildTaskOutput(taskCtx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to open build output stream",
 			"task_id", task.Id, "error", err)
@@ -255,12 +265,16 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 					outCh = nil
 					continue
 				}
+				if sendErr != nil {
+					continue // Keep draining so the executor never blocks while exiting.
+				}
 				if err := stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 					TaskId: task.Id,
 					Output: line,
 				}); err != nil {
 					sendErr = err
-					return
+					cancel()
+					continue
 				}
 				slog.InfoContext(ctx, "build output",
 					"task_id", task.Id, "line", line)
@@ -269,12 +283,16 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 					errCh = nil
 					continue
 				}
+				if sendErr != nil {
+					continue
+				}
 				if err := stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 					TaskId: task.Id,
 					Error:  line,
 				}); err != nil {
 					sendErr = err
-					return
+					cancel()
+					continue
 				}
 				slog.WarnContext(ctx, "build error output",
 					"task_id", task.Id, "line", line)
@@ -282,9 +300,9 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 		}
 	}()
 
-	// Run the build through the executor.
-	// The executor closes both channels when done.
-	result, buildErr := exec.Build(ctx, executor.BuildSpec{
+	// Run the build through the executor using taskCtx so a stream failure
+	// cancels the subprocess. The executor closes both channels when done.
+	result, buildErr := exec.Build(taskCtx, executor.BuildSpec{
 		TaskID:          task.Id,
 		TargetOS:        task.TargetOs,
 		BuildImage:      task.BuildImage,

@@ -2,15 +2,14 @@ package executor
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
@@ -84,7 +83,10 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		&container.Config{
 			Image:      spec.BuildImage,
 			Entrypoint: []string{"/bin/sh", "-c", entrypoint},
-			Env:        spec.Env,
+			Env: append(slices.Clone(spec.Env),
+				"REALM_WORKSPACE_DIR=/mnt",
+				"REALM_TOMES_DIR=/mnt/tomes",
+			),
 		},
 		nil, // host config
 		nil, // networking config
@@ -141,16 +143,10 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		scanner := bufio.NewScanner(stderrPR)
-		for scanner.Scan() {
-			errorCh <- scanner.Text()
-		}
+		streamBuildLines(ctx, stderrPR, errorCh)
 	}()
 
-	scanner := bufio.NewScanner(stdoutPR)
-	for scanner.Scan() {
-		outputCh <- scanner.Text()
-	}
+	streamBuildLines(ctx, stdoutPR, outputCh)
 
 	// Wait for stderr goroutine to finish.
 	<-done
@@ -182,9 +178,14 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 
 	data, name, extractErr := d.extractArtifact(ctx, containerID, spec.ArtifactPath)
 	if extractErr != nil {
+		// Build already reported ExpectedExitCode, so without a distinct
+		// error the task would otherwise show as a successful build with no
+		// artifact. Surface it through the existing build-error stream
+		// (client.go sets StreamBuildTaskOutputRequest.Error from this
+		// return value) so it's indistinguishable from any other failure.
 		slog.WarnContext(ctx, "artifact extraction failed",
 			"task_id", spec.TaskID, "path", spec.ArtifactPath, "error", extractErr)
-		return &buildResult, nil
+		return &buildResult, fmt.Errorf("artifact extraction failed: %w", extractErr)
 	}
 
 	buildResult.Artifact = data
@@ -250,145 +251,6 @@ func (d *DockerExecutor) copyDirToContainer(ctx context.Context, containerID, lo
 	return d.client.CopyToContainer(ctx, containerID, destPath, &buf, container.CopyToContainerOptions{})
 }
 
-// prepareMountDir creates a temporary directory with /scripts and /tomes
-// subdirectories populated from the BuildSpec. It writes the pre-build,
-// build, and post-build scripts to numbered files under /scripts so they
-// execute in order. Returns the tmp dir path (caller must clean up).
-func prepareMountDir(spec BuildSpec) (string, error) {
-	tmpDir, err := os.MkdirTemp("", "realm-build-*")
-	if err != nil {
-		return "", fmt.Errorf("creating temp dir: %w", err)
-	}
-
-	scriptsDir := filepath.Join(tmpDir, "scripts")
-	if err := os.MkdirAll(scriptsDir, 0o755); err != nil {
-		return tmpDir, fmt.Errorf("creating scripts dir: %w", err)
-	}
-
-	tomesDir := filepath.Join(tmpDir, "tomes")
-	if err := os.MkdirAll(tomesDir, 0o755); err != nil {
-		return tmpDir, fmt.Errorf("creating tomes dir: %w", err)
-	}
-
-	// Write setup script.
-	if spec.SetupScript != "" {
-		if err := os.WriteFile(filepath.Join(scriptsDir, "0_setup.sh"), []byte(spec.SetupScript), 0o755); err != nil {
-			return tmpDir, fmt.Errorf("writing setup script: %w", err)
-		}
-	}
-
-	// Write pre-build script.
-	if spec.PreBuildScript != "" {
-		if err := os.WriteFile(filepath.Join(scriptsDir, "1_pre_build.sh"), []byte(spec.PreBuildScript), 0o755); err != nil {
-			return tmpDir, fmt.Errorf("writing pre-build script: %w", err)
-		}
-	}
-
-	// Write build script.
-	if spec.BuildScript != "" {
-		if err := os.WriteFile(filepath.Join(scriptsDir, "4_build.sh"), []byte(spec.BuildScript), 0o755); err != nil {
-			return tmpDir, fmt.Errorf("writing build script: %w", err)
-		}
-	}
-
-	// Write post-build script.
-	if spec.PostBuildScript != "" {
-		if err := os.WriteFile(filepath.Join(scriptsDir, "9_post_build.sh"), []byte(spec.PostBuildScript), 0o755); err != nil {
-			return tmpDir, fmt.Errorf("writing post-build script: %w", err)
-		}
-	}
-
-	// Copy tomes from source directory if provided.
-	if spec.TomesDir != "" {
-		err := filepath.Walk(spec.TomesDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			relPath, err := filepath.Rel(spec.TomesDir, path)
-			if err != nil {
-				return err
-			}
-			destPath := filepath.Join(tomesDir, relPath)
-			if info.IsDir() {
-				return os.MkdirAll(destPath, info.Mode())
-			}
-			data, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			return os.WriteFile(destPath, data, info.Mode())
-		})
-		if err != nil {
-			return tmpDir, fmt.Errorf("copying tomes dir: %w", err)
-		}
-	}
-
-	// Extract downloaded tome tar.gz archives into per-tome subdirectories.
-	for _, t := range spec.Tomes {
-		tomeDir := filepath.Join(tomesDir, fmt.Sprintf("%d", t.ID))
-		if err := os.MkdirAll(tomeDir, 0o755); err != nil {
-			return tmpDir, fmt.Errorf("creating tome dir %d: %w", t.ID, err)
-		}
-
-		if err := extractTomeArchive(t.Contents, tomeDir); err != nil {
-			return tmpDir, fmt.Errorf("extracting tome %d: %w", t.ID, err)
-		}
-
-		// Write params as a JSON file if present.
-		if t.Params != "" {
-			if err := os.WriteFile(filepath.Join(tomeDir, "params.json"), []byte(t.Params), 0o644); err != nil {
-				return tmpDir, fmt.Errorf("writing params for tome %d: %w", t.ID, err)
-			}
-		}
-	}
-
-	return tmpDir, nil
-}
-
-// extractTomeArchive decompresses a tar.gz archive and extracts all regular
-// files into destDir, preserving their path names and creating subdirectories
-// as needed.
-func extractTomeArchive(data []byte, destDir string) error {
-	gr, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return fmt.Errorf("opening gzip reader: %w", err)
-	}
-	defer gr.Close()
-
-	tr := tar.NewReader(gr)
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("reading tar entry: %w", err)
-		}
-		if hdr.Typeflag != tar.TypeReg {
-			continue
-		}
-
-		destPath := filepath.Join(destDir, hdr.Name)
-
-		// Create parent directories for nested asset paths.
-		if dir := filepath.Dir(destPath); dir != destDir {
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				return fmt.Errorf("creating dir for %s: %w", hdr.Name, err)
-			}
-		}
-
-		content, err := io.ReadAll(tr)
-		if err != nil {
-			return fmt.Errorf("reading %s: %w", hdr.Name, err)
-		}
-		if err := os.WriteFile(destPath, content, 0o644); err != nil {
-			return fmt.Errorf("writing %s: %w", hdr.Name, err)
-		}
-	}
-
-	return nil
-}
-
 // extractArtifact copies a file from a stopped container using the Docker API.
 // CopyFromContainer returns a tar archive; this method extracts the first
 // regular file from that archive and returns its contents and basename.
@@ -414,6 +276,14 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 		data, err := io.ReadAll(tr)
 		if err != nil {
 			return nil, "", fmt.Errorf("reading artifact data: %w", err)
+		}
+		if len(data) == 0 {
+			// Asset content must be non-empty server-side, and the upload
+			// RPC can't even open its stream for a zero-byte payload (it has
+			// no chunk to carry the initial task/name metadata). Fail here
+			// with a clear reason instead of letting the upload fail later
+			// with a confusing "no messages received" error.
+			return nil, "", fmt.Errorf("artifact file %q is empty", path)
 		}
 		return data, filepath.Base(hdr.Name), nil
 	}

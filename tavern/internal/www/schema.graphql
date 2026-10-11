@@ -970,6 +970,14 @@ type BuildProfile implements Node {
   """
   buildImage: String!
   """
+  Go template for the build command. BuildCommand supplies the platform default.
+  """
+  buildScript: String!
+  """
+  Go template for the artifact path. ArtifactPath supplies the platform default.
+  """
+  artifactPath: String!
+  """
   Bash script to run before build command
   """
   prebuildscript: String!
@@ -1111,6 +1119,38 @@ input BuildProfileWhereInput {
   buildImageEqualFold: String
   buildImageContainsFold: String
   """
+  build_script field predicates
+  """
+  buildScript: String
+  buildScriptNEQ: String
+  buildScriptIn: [String!]
+  buildScriptNotIn: [String!]
+  buildScriptGT: String
+  buildScriptGTE: String
+  buildScriptLT: String
+  buildScriptLTE: String
+  buildScriptContains: String
+  buildScriptHasPrefix: String
+  buildScriptHasSuffix: String
+  buildScriptEqualFold: String
+  buildScriptContainsFold: String
+  """
+  artifact_path field predicates
+  """
+  artifactPath: String
+  artifactPathNEQ: String
+  artifactPathIn: [String!]
+  artifactPathNotIn: [String!]
+  artifactPathGT: String
+  artifactPathGTE: String
+  artifactPathLT: String
+  artifactPathLTE: String
+  artifactPathContains: String
+  artifactPathHasPrefix: String
+  artifactPathHasSuffix: String
+  artifactPathEqualFold: String
+  artifactPathContainsFold: String
+  """
   prebuildscript field predicates
   """
   prebuildscript: String
@@ -1193,6 +1233,10 @@ type BuildTask implements Node {
   """
   lastModifiedAt: Time!
   """
+  Immutable build profile captured at task creation. Null for legacy tasks whose original inputs are unknown.
+  """
+  profileAtCreation: BuildProfileSnapshot
+  """
   The target operating system platform for this build.
   """
   targetOs: HostPlatform!
@@ -1248,6 +1292,10 @@ type BuildTask implements Node {
   JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
   """
   unique: String
+  """
+  Frozen tome archives captured at task creation.
+  """
+  bundle: Asset
   """
   The builder assigned to execute this build task.
   """
@@ -1563,6 +1611,11 @@ input BuildTaskWhereInput {
   uniqueEqualFold: String
   uniqueContainsFold: String
   """
+  bundle edge predicates
+  """
+  hasBundle: Boolean
+  hasBundleWith: [AssetWhereInput!]
+  """
   builder edge predicates
   """
   hasBuilder: Boolean
@@ -1600,6 +1653,10 @@ type Builder implements Node {
   The server address that the builder should connect to.
   """
   upstream: String!
+  """
+  Builder task polling interval in seconds.
+  """
+  pollInterval: Int!
   """
   Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
   """
@@ -1761,6 +1818,17 @@ input BuilderWhereInput {
   upstreamEqualFold: String
   upstreamContainsFold: String
   """
+  poll_interval field predicates
+  """
+  pollInterval: Int
+  pollIntervalNEQ: Int
+  pollIntervalIn: [Int!]
+  pollIntervalNotIn: [Int!]
+  pollIntervalGT: Int
+  pollIntervalGTE: Int
+  pollIntervalLT: Int
+  pollIntervalLTE: Int
+  """
   last_seen_at field predicates
   """
   lastSeenAt: Time
@@ -1813,6 +1881,10 @@ input CreateBuilderInput {
   The server address that the builder should connect to.
   """
   upstream: String
+  """
+  Builder task polling interval in seconds.
+  """
+  pollInterval: Int
 }
 """
 CreateDeviceAuthInput is used for create DeviceAuth object.
@@ -7921,6 +7993,15 @@ input CreateBuildProfileInput {
   """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
   transports: [BuildProfileTransportInput!]
 
+  """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
+  buildImage: String
+
+  """Go template for the build command. Defaults to {{.BuildCommand}}."""
+  buildScript: String
+
+  """Go template for the artifact path. Defaults to {{.ArtifactPath}}."""
+  artifactPath: String
+
   """Bash script to run before the build command."""
   prebuildscript: String!
 
@@ -7947,6 +8028,27 @@ type RegisterBuilderOutput {
 
   """YAML-formatted configuration for the builder."""
   config: String!
+}
+
+"""The immutable build recipe captured at task creation."""
+type BuildProfileSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileSnapshot") {
+  name: String!
+  buildImage: String!
+  setupscript: String!
+  prebuildscript: String!
+  buildScript: String!
+  postbuildscript: String!
+  artifactPath: String!
+  unique: String!
+  transports: [BuildProfileTransport!]!
+  tomes: [BuildTomeSnapshot!]!
+}
+
+"""Tome identity and parameters captured alongside frozen contents."""
+type BuildTomeSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTomeSnapshot") {
+  tomeID: Int!
+  name: String!
+  params: String!
 }
 extend type Query {
   metrics: Metrics! @requireRole(role: USER)
@@ -8086,6 +8188,11 @@ type Mutation {
     ###
     registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
+
+    ###
+    # BuildProfile
+    ###
+    createBuildProfile(input: CreateBuildProfileInput!): BuildProfile! @requireRole(role: ADMIN)
 
     ###
     # BuildTask

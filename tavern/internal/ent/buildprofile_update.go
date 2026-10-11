@@ -84,6 +84,34 @@ func (bpu *BuildProfileUpdate) SetNillableBuildImage(s *string) *BuildProfileUpd
 	return bpu
 }
 
+// SetBuildScript sets the "build_script" field.
+func (bpu *BuildProfileUpdate) SetBuildScript(s string) *BuildProfileUpdate {
+	bpu.mutation.SetBuildScript(s)
+	return bpu
+}
+
+// SetNillableBuildScript sets the "build_script" field if the given value is not nil.
+func (bpu *BuildProfileUpdate) SetNillableBuildScript(s *string) *BuildProfileUpdate {
+	if s != nil {
+		bpu.SetBuildScript(*s)
+	}
+	return bpu
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (bpu *BuildProfileUpdate) SetArtifactPath(s string) *BuildProfileUpdate {
+	bpu.mutation.SetArtifactPath(s)
+	return bpu
+}
+
+// SetNillableArtifactPath sets the "artifact_path" field if the given value is not nil.
+func (bpu *BuildProfileUpdate) SetNillableArtifactPath(s *string) *BuildProfileUpdate {
+	if s != nil {
+		bpu.SetArtifactPath(*s)
+	}
+	return bpu
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (bpu *BuildProfileUpdate) SetPrebuildscript(s string) *BuildProfileUpdate {
 	bpu.mutation.SetPrebuildscript(s)
@@ -239,6 +267,16 @@ func (bpu *BuildProfileUpdate) check() error {
 			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_image": %w`, err)}
 		}
 	}
+	if v, ok := bpu.mutation.BuildScript(); ok {
+		if err := buildprofile.BuildScriptValidator(v); err != nil {
+			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_script": %w`, err)}
+		}
+	}
+	if v, ok := bpu.mutation.ArtifactPath(); ok {
+		if err := buildprofile.ArtifactPathValidator(v); err != nil {
+			return &ValidationError{Name: "artifact_path", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.artifact_path": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -270,6 +308,12 @@ func (bpu *BuildProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := bpu.mutation.BuildImage(); ok {
 		_spec.SetField(buildprofile.FieldBuildImage, field.TypeString, value)
+	}
+	if value, ok := bpu.mutation.BuildScript(); ok {
+		_spec.SetField(buildprofile.FieldBuildScript, field.TypeString, value)
+	}
+	if value, ok := bpu.mutation.ArtifactPath(); ok {
+		_spec.SetField(buildprofile.FieldArtifactPath, field.TypeString, value)
 	}
 	if value, ok := bpu.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
@@ -412,6 +456,34 @@ func (bpuo *BuildProfileUpdateOne) SetBuildImage(s string) *BuildProfileUpdateOn
 func (bpuo *BuildProfileUpdateOne) SetNillableBuildImage(s *string) *BuildProfileUpdateOne {
 	if s != nil {
 		bpuo.SetBuildImage(*s)
+	}
+	return bpuo
+}
+
+// SetBuildScript sets the "build_script" field.
+func (bpuo *BuildProfileUpdateOne) SetBuildScript(s string) *BuildProfileUpdateOne {
+	bpuo.mutation.SetBuildScript(s)
+	return bpuo
+}
+
+// SetNillableBuildScript sets the "build_script" field if the given value is not nil.
+func (bpuo *BuildProfileUpdateOne) SetNillableBuildScript(s *string) *BuildProfileUpdateOne {
+	if s != nil {
+		bpuo.SetBuildScript(*s)
+	}
+	return bpuo
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (bpuo *BuildProfileUpdateOne) SetArtifactPath(s string) *BuildProfileUpdateOne {
+	bpuo.mutation.SetArtifactPath(s)
+	return bpuo
+}
+
+// SetNillableArtifactPath sets the "artifact_path" field if the given value is not nil.
+func (bpuo *BuildProfileUpdateOne) SetNillableArtifactPath(s *string) *BuildProfileUpdateOne {
+	if s != nil {
+		bpuo.SetArtifactPath(*s)
 	}
 	return bpuo
 }
@@ -584,6 +656,16 @@ func (bpuo *BuildProfileUpdateOne) check() error {
 			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_image": %w`, err)}
 		}
 	}
+	if v, ok := bpuo.mutation.BuildScript(); ok {
+		if err := buildprofile.BuildScriptValidator(v); err != nil {
+			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_script": %w`, err)}
+		}
+	}
+	if v, ok := bpuo.mutation.ArtifactPath(); ok {
+		if err := buildprofile.ArtifactPathValidator(v); err != nil {
+			return &ValidationError{Name: "artifact_path", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.artifact_path": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -632,6 +714,12 @@ func (bpuo *BuildProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuildPro
 	}
 	if value, ok := bpuo.mutation.BuildImage(); ok {
 		_spec.SetField(buildprofile.FieldBuildImage, field.TypeString, value)
+	}
+	if value, ok := bpuo.mutation.BuildScript(); ok {
+		_spec.SetField(buildprofile.FieldBuildScript, field.TypeString, value)
+	}
+	if value, ok := bpuo.mutation.ArtifactPath(); ok {
+		_spec.SetField(buildprofile.FieldArtifactPath, field.TypeString, value)
 	}
 	if value, ok := bpuo.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)

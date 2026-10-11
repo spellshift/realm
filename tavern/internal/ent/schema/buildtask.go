@@ -24,6 +24,15 @@ type BuildTask struct {
 // Fields of the BuildTask.
 func (BuildTask) Fields() []ent.Field {
 	return []ent.Field{
+		field.JSON("profile_at_creation", &builderpb.BuildProfileSnapshot{}).
+			Optional().
+			Immutable().
+			Annotations(
+				entgql.Type("BuildProfileSnapshot"),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Immutable build profile captured at task creation. Null for legacy tasks whose original inputs are unknown."),
+
 		field.Enum("target_os").
 			GoType(c2pb.Host_Platform(0)).
 			Annotations(
@@ -115,6 +124,12 @@ func (BuildTask) Fields() []ent.Field {
 // Edges of the BuildTask.
 func (BuildTask) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("bundle", Asset.Type).
+			Unique().
+			Immutable().
+			Annotations(entgql.Skip(entgql.SkipMutationCreateInput)).
+			Comment("Frozen tome archives captured at task creation."),
+
 		edge.To("builder", Builder.Type).
 			Required().
 			Unique().

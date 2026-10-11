@@ -154,16 +154,56 @@ func init() {
 	buildprofile.DefaultBuildImage = buildprofileDescBuildImage.Default.(string)
 	// buildprofile.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
 	buildprofile.BuildImageValidator = buildprofileDescBuildImage.Validators[0].(func(string) error)
+	// buildprofileDescBuildScript is the schema descriptor for build_script field.
+	buildprofileDescBuildScript := buildprofileFields[4].Descriptor()
+	// buildprofile.DefaultBuildScript holds the default value on creation for the build_script field.
+	buildprofile.DefaultBuildScript = buildprofileDescBuildScript.Default.(string)
+	// buildprofile.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
+	buildprofile.BuildScriptValidator = func() func(string) error {
+		validators := buildprofileDescBuildScript.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(build_script string) error {
+			for _, fn := range fns {
+				if err := fn(build_script); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// buildprofileDescArtifactPath is the schema descriptor for artifact_path field.
+	buildprofileDescArtifactPath := buildprofileFields[5].Descriptor()
+	// buildprofile.DefaultArtifactPath holds the default value on creation for the artifact_path field.
+	buildprofile.DefaultArtifactPath = buildprofileDescArtifactPath.Default.(string)
+	// buildprofile.ArtifactPathValidator is a validator for the "artifact_path" field. It is called by the builders before save.
+	buildprofile.ArtifactPathValidator = func() func(string) error {
+		validators := buildprofileDescArtifactPath.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(artifact_path string) error {
+			for _, fn := range fns {
+				if err := fn(artifact_path); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// buildprofileDescPrebuildscript is the schema descriptor for prebuildscript field.
-	buildprofileDescPrebuildscript := buildprofileFields[4].Descriptor()
+	buildprofileDescPrebuildscript := buildprofileFields[6].Descriptor()
 	// buildprofile.DefaultPrebuildscript holds the default value on creation for the prebuildscript field.
 	buildprofile.DefaultPrebuildscript = buildprofileDescPrebuildscript.Default.(string)
 	// buildprofileDescSetupscript is the schema descriptor for setupscript field.
-	buildprofileDescSetupscript := buildprofileFields[5].Descriptor()
+	buildprofileDescSetupscript := buildprofileFields[7].Descriptor()
 	// buildprofile.DefaultSetupscript holds the default value on creation for the setupscript field.
 	buildprofile.DefaultSetupscript = buildprofileDescSetupscript.Default.(string)
 	// buildprofileDescPostbuildscript is the schema descriptor for postbuildscript field.
-	buildprofileDescPostbuildscript := buildprofileFields[6].Descriptor()
+	buildprofileDescPostbuildscript := buildprofileFields[8].Descriptor()
 	// buildprofile.DefaultPostbuildscript holds the default value on creation for the postbuildscript field.
 	buildprofile.DefaultPostbuildscript = buildprofileDescPostbuildscript.Default.(string)
 	buildtaskMixin := schema.BuildTask{}.Mixin()
@@ -184,17 +224,17 @@ func init() {
 	// buildtask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	buildtask.UpdateDefaultLastModifiedAt = buildtaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// buildtaskDescBuildScript is the schema descriptor for build_script field.
-	buildtaskDescBuildScript := buildtaskFields[2].Descriptor()
+	buildtaskDescBuildScript := buildtaskFields[3].Descriptor()
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
 	// buildtaskDescOutputSize is the schema descriptor for output_size field.
-	buildtaskDescOutputSize := buildtaskFields[7].Descriptor()
+	buildtaskDescOutputSize := buildtaskFields[8].Descriptor()
 	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
 	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
 	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
 	// buildtaskDescErrorSize is the schema descriptor for error_size field.
-	buildtaskDescErrorSize := buildtaskFields[9].Descriptor()
+	buildtaskDescErrorSize := buildtaskFields[10].Descriptor()
 	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
 	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
 	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.
@@ -224,6 +264,26 @@ func init() {
 	builderDescUpstream := builderFields[2].Descriptor()
 	// builder.DefaultUpstream holds the default value on creation for the upstream field.
 	builder.DefaultUpstream = builderDescUpstream.Default.(string)
+	// builderDescPollInterval is the schema descriptor for poll_interval field.
+	builderDescPollInterval := builderFields[3].Descriptor()
+	// builder.DefaultPollInterval holds the default value on creation for the poll_interval field.
+	builder.DefaultPollInterval = builderDescPollInterval.Default.(int)
+	// builder.PollIntervalValidator is a validator for the "poll_interval" field. It is called by the builders before save.
+	builder.PollIntervalValidator = func() func(int) error {
+		validators := builderDescPollInterval.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(poll_interval int) error {
+			for _, fn := range fns {
+				if err := fn(poll_interval); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	deviceauthMixin := schema.DeviceAuth{}.Mixin()
 	deviceauthMixinFields0 := deviceauthMixin[0].Fields()
 	_ = deviceauthMixinFields0

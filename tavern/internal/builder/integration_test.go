@@ -71,6 +71,7 @@ func TestBuilderE2E(t *testing.T) {
 	}`, &registerResp, client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX", "PLATFORM_MACOS"},
 		"upstream":         "https://tavern.example.com:443",
+		"pollInterval":     30,
 	}))
 	require.NoError(t, err)
 	require.NotEmpty(t, registerResp.RegisterBuilder.Builder.ID)
@@ -82,6 +83,7 @@ func TestBuilderE2E(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, cfg.SupportedTargets, "linux")
 	assert.Contains(t, cfg.SupportedTargets, "macos")
+	assert.Equal(t, 30, cfg.PollInterval)
 	assert.NotEmpty(t, cfg.MTLS)
 	assert.NotEmpty(t, cfg.ID)
 	assert.Equal(t, "https://tavern.example.com:443", cfg.Upstream)
@@ -91,6 +93,7 @@ func TestBuilderE2E(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
 	assert.Equal(t, cfg.ID, builders[0].Identifier)
+	assert.Equal(t, cfg.PollInterval, builders[0].PollInterval)
 
 	// 7. Setup builder gRPC server via bufconn with mTLS auth interceptor
 	lis := bufconn.Listen(1024 * 1024)
@@ -189,6 +192,7 @@ func TestBuilderE2E(t *testing.T) {
 			SetBuildScript("echo hello && go build ./...").
 			SetBuilderID(builders[0].ID).
 			SetProfileID(explictProfile.ID).
+			SetProfileAtCreation(snapshotForTest(t, graph, explictProfile)).
 			SaveX(ctx)
 
 		// Claim tasks
@@ -223,6 +227,21 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Empty(t, resp2.Tasks)
 	})
 
+	t.Run("ProfileSnapshotLifecycle", func(t *testing.T) {
+		creds, err := builder.NewCredentialsFromConfig(cfg)
+		require.NoError(t, err)
+		conn, err := grpc.NewClient("passthrough:///bufnet",
+			grpc.WithContextDialer(bufDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithPerRPCCredentials(creds),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+		testProfileTemplateValidation(t, graph)
+		testProfileSnapshotLifecycle(t, graph, gqlClient, builderpb.NewBuilderClient(conn), builders[0].ID)
+		testTaskOverridesApplyToSnapshot(t, graph, gqlClient, builderpb.NewBuilderClient(conn), builders[0].ID)
+	})
+
 	// 11. Test: StreamBuildTaskOutput sets output and finished_at
 	t.Run("StreamBuildTaskOutput", func(t *testing.T) {
 		creds, err := builder.NewCredentialsFromConfig(cfg)
@@ -244,6 +263,7 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildScript("cargo build --release").
 			SetProfileID(profile.ID).
+			SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -299,6 +319,7 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildScript("go build ./...").
 			SetProfileID(profile.ID).
+			SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -357,6 +378,7 @@ func TestBuilderE2E(t *testing.T) {
 
 		cfg2, err := builder.ParseConfigBytes([]byte(registerResp2.RegisterBuilder.Config))
 		require.NoError(t, err)
+		assert.Equal(t, 5, cfg2.PollInterval)
 
 		// Get the second builder's DB entity
 		allBuilders, err := graph.Builder.Query().All(ctx)
@@ -376,6 +398,7 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildScript("msbuild /t:Build").
 			SetProfileID(profile.ID).
+			SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 			SetBuilderID(secondBuilder).
 			SaveX(ctx)
 

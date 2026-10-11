@@ -1373,6 +1373,22 @@ func (c *BuildTaskClient) GetX(ctx context.Context, id int) *BuildTask {
 	return obj
 }
 
+// QueryBundle queries the bundle edge of a BuildTask.
+func (c *BuildTaskClient) QueryBundle(bt *BuildTask) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := bt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildtask.Table, buildtask.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.BundleTable, buildtask.BundleColumn),
+		)
+		fromV = sqlgraph.Neighbors(bt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBuilder queries the builder edge of a BuildTask.
 func (c *BuildTaskClient) QueryBuilder(bt *BuildTask) *BuilderQuery {
 	query := (&BuilderClient{config: c.config}).Query()

@@ -63,6 +63,27 @@ func (bu *BuilderUpdate) SetNillableUpstream(s *string) *BuilderUpdate {
 	return bu
 }
 
+// SetPollInterval sets the "poll_interval" field.
+func (bu *BuilderUpdate) SetPollInterval(i int) *BuilderUpdate {
+	bu.mutation.ResetPollInterval()
+	bu.mutation.SetPollInterval(i)
+	return bu
+}
+
+// SetNillablePollInterval sets the "poll_interval" field if the given value is not nil.
+func (bu *BuilderUpdate) SetNillablePollInterval(i *int) *BuilderUpdate {
+	if i != nil {
+		bu.SetPollInterval(*i)
+	}
+	return bu
+}
+
+// AddPollInterval adds i to the "poll_interval" field.
+func (bu *BuilderUpdate) AddPollInterval(i int) *BuilderUpdate {
+	bu.mutation.AddPollInterval(i)
+	return bu
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (bu *BuilderUpdate) SetLastSeenAt(t time.Time) *BuilderUpdate {
 	bu.mutation.SetLastSeenAt(t)
@@ -160,7 +181,20 @@ func (bu *BuilderUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (bu *BuilderUpdate) check() error {
+	if v, ok := bu.mutation.PollInterval(); ok {
+		if err := builder.PollIntervalValidator(v); err != nil {
+			return &ValidationError{Name: "poll_interval", err: fmt.Errorf(`ent: validator failed for field "Builder.poll_interval": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := bu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(builder.Table, builder.Columns, sqlgraph.NewFieldSpec(builder.FieldID, field.TypeInt))
 	if ps := bu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -182,6 +216,12 @@ func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := bu.mutation.Upstream(); ok {
 		_spec.SetField(builder.FieldUpstream, field.TypeString, value)
+	}
+	if value, ok := bu.mutation.PollInterval(); ok {
+		_spec.SetField(builder.FieldPollInterval, field.TypeInt, value)
+	}
+	if value, ok := bu.mutation.AddedPollInterval(); ok {
+		_spec.AddField(builder.FieldPollInterval, field.TypeInt, value)
 	}
 	if value, ok := bu.mutation.LastSeenAt(); ok {
 		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
@@ -283,6 +323,27 @@ func (buo *BuilderUpdateOne) SetNillableUpstream(s *string) *BuilderUpdateOne {
 	if s != nil {
 		buo.SetUpstream(*s)
 	}
+	return buo
+}
+
+// SetPollInterval sets the "poll_interval" field.
+func (buo *BuilderUpdateOne) SetPollInterval(i int) *BuilderUpdateOne {
+	buo.mutation.ResetPollInterval()
+	buo.mutation.SetPollInterval(i)
+	return buo
+}
+
+// SetNillablePollInterval sets the "poll_interval" field if the given value is not nil.
+func (buo *BuilderUpdateOne) SetNillablePollInterval(i *int) *BuilderUpdateOne {
+	if i != nil {
+		buo.SetPollInterval(*i)
+	}
+	return buo
+}
+
+// AddPollInterval adds i to the "poll_interval" field.
+func (buo *BuilderUpdateOne) AddPollInterval(i int) *BuilderUpdateOne {
+	buo.mutation.AddPollInterval(i)
 	return buo
 }
 
@@ -396,7 +457,20 @@ func (buo *BuilderUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (buo *BuilderUpdateOne) check() error {
+	if v, ok := buo.mutation.PollInterval(); ok {
+		if err := builder.PollIntervalValidator(v); err != nil {
+			return &ValidationError{Name: "poll_interval", err: fmt.Errorf(`ent: validator failed for field "Builder.poll_interval": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err error) {
+	if err := buo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(builder.Table, builder.Columns, sqlgraph.NewFieldSpec(builder.FieldID, field.TypeInt))
 	id, ok := buo.mutation.ID()
 	if !ok {
@@ -435,6 +509,12 @@ func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err e
 	}
 	if value, ok := buo.mutation.Upstream(); ok {
 		_spec.SetField(builder.FieldUpstream, field.TypeString, value)
+	}
+	if value, ok := buo.mutation.PollInterval(); ok {
+		_spec.SetField(builder.FieldPollInterval, field.TypeInt, value)
+	}
+	if value, ok := buo.mutation.AddedPollInterval(); ok {
+		_spec.AddField(builder.FieldPollInterval, field.TypeInt, value)
 	}
 	if value, ok := buo.mutation.LastSeenAt(); ok {
 		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)

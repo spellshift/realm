@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
@@ -531,11 +532,13 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 	}
 
 	configData := struct {
+		PollInterval     int      `yaml:"poll_interval"`
 		ID               string   `yaml:"id"`
 		SupportedTargets []string `yaml:"supported_targets"`
 		MTLS             string   `yaml:"mtls"`
 		Upstream         string   `yaml:"upstream"`
 	}{
+		PollInterval:     b.PollInterval,
 		ID:               b.Identifier,
 		SupportedTargets: targetNames,
 		MTLS:             mtlsCert,
@@ -562,11 +565,69 @@ func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (in
 	return builderID, nil
 }
 
+// CreateBuildProfile is the resolver for the createBuildProfile field.
+func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error) {
+	creator := r.client.BuildProfile.Create().
+		SetName(input.Name).
+		SetDescription(input.Description).
+		SetPrebuildscript(input.Prebuildscript).
+		SetSetupscript(input.Setupscript).
+		SetPostbuildscript(input.Postbuildscript)
+
+	if input.Unique != nil && *input.Unique != "" {
+		creator.SetUnique(*input.Unique)
+	}
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		creator.SetBuildImage(*input.BuildImage)
+	}
+	if input.BuildScript != nil && *input.BuildScript != "" {
+		creator.SetBuildScript(*input.BuildScript)
+	}
+	if input.ArtifactPath != nil && *input.ArtifactPath != "" {
+		creator.SetArtifactPath(*input.ArtifactPath)
+	}
+	if len(input.Transports) > 0 {
+		transports := make([]builderpb.BuildProfileTransport, len(input.Transports))
+		for i, t := range input.Transports {
+			var extra string
+			if t.Extra != nil {
+				extra = *t.Extra
+			}
+			transports[i] = builderpb.BuildProfileTransport{
+				URI:      t.URI,
+				Interval: t.Interval,
+				Type:     c2pb.Transport_Type(t.Type),
+				Extra:    extra,
+			}
+		}
+		creator.SetTransports(transports)
+	}
+	if len(input.Tomes) > 0 {
+		tomes := make([]builderpb.BuildProfileTome, len(input.Tomes))
+		for i, t := range input.Tomes {
+			tomes[i] = builderpb.BuildProfileTome{
+				TomeID: t.TomeID,
+				Params: t.Params,
+			}
+		}
+		creator.SetTomes(tomes)
+	}
+
+	return creator.Save(ctx)
+}
+
 // CreateBuildTask is the resolver for the createBuildTask field.
 func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin build task transaction: %w", err)
+	}
+	defer tx.Rollback()
+	graph := tx.Client()
+
 	// 1. Load the build profile; its values serve as defaults for transports,
 	//    preBuildScript, and postBuildScript.
-	profile, err := r.client.BuildProfile.Get(ctx, input.ProfileID)
+	profile, err := graph.BuildProfile.Get(ctx, input.ProfileID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load build profile: %w", err)
 	}
@@ -599,45 +660,100 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	}
 
 	// Resolve pre/post build scripts: input > profile > default
-	preBuildScript := input.PreBuildScript
-	if preBuildScript == nil && profile.Prebuildscript != "" {
-		preBuildScript = &profile.Prebuildscript
+	preBuildScript := profile.Prebuildscript
+	if input.PreBuildScript != nil {
+		preBuildScript = *input.PreBuildScript
 	}
-	postBuildScript := input.PostBuildScript
-	if postBuildScript == nil && profile.Postbuildscript != "" {
-		postBuildScript = &profile.Postbuildscript
+	postBuildScript := profile.Postbuildscript
+	if input.PostBuildScript != nil {
+		postBuildScript = *input.PostBuildScript
 	}
 
 	// Resolve setup script: input > profile > default
-	setupScript := input.SetupScript
-	if setupScript == nil && profile.Setupscript != "" {
-		setupScript = &profile.Setupscript
+	setupScript := profile.Setupscript
+	if input.SetupScript != nil {
+		setupScript = *input.SetupScript
 	}
 
-	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
+	// Resolve build image: input > profile
+	buildImage := profile.BuildImage
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		buildImage = *input.BuildImage
+	}
+
+	// Resolve unique: input > profile
+	var unique *string
+	if profile.Unique != "" {
+		unique = &profile.Unique
+	}
+	if input.Unique != nil {
+		unique = input.Unique
+	}
+
+	// Resolve tomes: input > profile
+	tomes := profile.Tomes
+	if input.Tomes != nil {
+		tomes = make([]builderpb.BuildProfileTome, 0, len(input.Tomes))
+		for _, t := range input.Tomes {
+			if t == nil {
+				continue
+			}
+			tomes = append(tomes, builderpb.BuildProfileTome{
+				TomeID: t.TomeID,
+				Params: t.Params,
+			})
+		}
+	}
+
+	buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, input.TargetOs, targetFormat)
+	if err != nil {
+		return nil, fmt.Errorf("resolve build recipe: %w", err)
+	}
 	if input.ArtifactPath != nil {
 		artifactPath = *input.ArtifactPath
 	}
 
-	// 3. Validate target format for the given OS
-	if err := builder.ValidateTargetFormat(input.TargetOs, targetFormat); err != nil {
-		return nil, err
+	// snapshot.BuildScript/ArtifactPath are set to the already-resolved
+	// (templated and input-overridden) values so profileAtCreation matches
+	// what's actually stored on the task and executed by the builder,
+	// rather than the raw profile template.
+	snapshot := builder.NewProfileSnapshot(profile)
+	snapshot.BuildImage = buildImage
+	snapshot.Setupscript = setupScript
+	snapshot.Prebuildscript = preBuildScript
+	snapshot.BuildScript = buildScript
+	snapshot.Postbuildscript = postBuildScript
+	snapshot.ArtifactPath = artifactPath
+	snapshot.Transports = transports
+	if unique != nil {
+		snapshot.Unique = *unique
 	}
 
-	// 4. Derive the build script from configuration
-	buildScript, err := builder.BuildCommand(input.TargetOs, targetFormat)
+	bundleContent, err := builder.SnapshotProfile(ctx, graph, snapshot, tomes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate build script: %w", err)
+		return nil, fmt.Errorf("capture build profile: %w", err)
+	}
+	var bundleID *int
+	if len(bundleContent) > 0 {
+		bundle, err := graph.Asset.Create().
+			SetName("BuildInputs-" + uuid.NewString()).
+			SetContent(bundleContent).
+			Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("save build input bundle: %w", err)
+		}
+		bundleID = &bundle.ID
 	}
 
-	// 5. Query healthy builders (checked in within the stale threshold).
-	// Use the first transport's interval for the stale threshold.
-	staleThreshold := time.Duration(transports[0].Interval) * time.Second
-	staleCutoff := time.Now().Add(-staleThreshold)
-	healthyBuilders, err := r.client.Builder.Query().
+	// 5. Query builders that have checked in; freshness uses each builder's own interval,
+	// so the precise check happens below in application code. Still bound the query at
+	// the DB layer using the longest possible staleness window (3x the max poll interval)
+	// to avoid pulling every builder that has ever checked in, including long-dead ones.
+	now := time.Now()
+	healthyBuilders, err := graph.Builder.Query().
 		Where(
 			entbuilder.LastSeenAtNotNil(),
-			entbuilder.LastSeenAtGTE(staleCutoff),
+			entbuilder.LastSeenAtGTE(now.Add(-builder.MaxStaleAge)),
 		).
 		All(ctx)
 	if err != nil {
@@ -648,6 +764,9 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// SupportedTargets is a JSON field so it must be filtered in application code.
 	var candidates []*ent.Builder
 	for _, b := range healthyBuilders {
+		if !builder.BuilderHealthy(*b.LastSeenAt, b.PollInterval, now) {
+			continue
+		}
 		for _, target := range b.SupportedTargets {
 			if target == input.TargetOs {
 				candidates = append(candidates, b)
@@ -664,19 +783,19 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	selected := candidates[mathrand.Intn(len(candidates))]
 
 	// 8. Create the build task
-	create := r.client.BuildTask.Create().
+	create := graph.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
 		SetTargetFormat(targetFormat).
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected).
 		SetBuildScript(buildScript).
-		SetProfile(profile)
+		SetProfile(profile).
+		SetProfileAtCreation(snapshot).
+		SetNillableBundleID(bundleID).
+		SetSetupscript(setupScript)
 
-	if setupScript != nil {
-		create.SetSetupscript(*setupScript)
-	}
-	if input.Unique != nil {
-		create.SetUnique(*input.Unique)
+	if unique != nil {
+		create.SetUnique(*unique)
 	}
 
 	bt, err := create.Save(ctx)
@@ -684,7 +803,10 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		return nil, fmt.Errorf("failed to create build task: %w", err)
 	}
 
-	return bt, nil
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit build task: %w", err)
+	}
+	return bt.Unwrap(), nil
 }
 
 // CreateScheduledTask is the resolver for the createScheduledTask field.

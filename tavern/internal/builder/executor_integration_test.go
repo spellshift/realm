@@ -83,6 +83,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -231,6 +232,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -385,6 +387,7 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -519,6 +522,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -650,6 +654,7 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildScript("go build -o /app/output/binary ./...").
 		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetArtifactPath("/app/output/binary").
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
@@ -739,4 +744,209 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	assert.Contains(t, asset.Name, "build/linux/bin/imix-")
 	assert.Equal(t, artifactData, asset.Content)
 	assert.Equal(t, len(artifactData), asset.Size)
+}
+
+func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
+	ctx := context.Background()
+
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	_, caPrivKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	caCert, err := builder.CreateCA(caPrivKey)
+	require.NoError(t, err)
+
+	git := tomes.NewGitImporter(graph)
+	srv := tavernhttp.NewServer(
+		tavernhttp.RouteMap{
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
+		},
+		tavernhttp.WithAuthenticationBypass(graph),
+	)
+	gqlClient := client.New(srv, client.Path("/graphql"))
+
+	// Register builder
+	var registerResp struct {
+		RegisterBuilder struct {
+			Builder struct{ ID string }
+			Config  string
+		}
+	}
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
+		registerBuilder(input: $input) {
+			builder { id }
+			config
+		}
+	}`, &registerResp, client.Var("input", map[string]any{
+		"supportedTargets": []string{"PLATFORM_LINUX"},
+		"upstream":         "https://tavern.example.com:443",
+	}))
+	require.NoError(t, err)
+
+	// Create profile via createBuildProfile mutation
+	var profileResp struct {
+		CreateBuildProfile struct {
+			ID   string
+			Name string
+		}
+	}
+	err = gqlClient.Post(`mutation createProfile($input: CreateBuildProfileInput!) {
+		createBuildProfile(input: $input) {
+			id
+			name
+		}
+	}`, &profileResp, client.Var("input", map[string]any{
+		"name":            "local-e2e-profile",
+		"description":     "Local executor test profile",
+		"setupscript":     "echo setup_done",
+		"prebuildscript":  "echo prebuild_done",
+		"buildScript":     "mkdir -p output && echo 'local-compiled-binary-payload' > output/imix",
+		"postbuildscript": "echo postbuild_done",
+		"artifactPath":    "output/imix",
+	}))
+	require.NoError(t, err)
+	profileID := profileResp.CreateBuildProfile.ID
+
+	// Setup gRPC
+	lis := bufconn.Listen(1024 * 1024)
+	grpcSrv := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			builder.NewMTLSAuthInterceptor(caCert, graph),
+		),
+		grpc.ChainStreamInterceptor(
+			builder.NewMTLSStreamAuthInterceptor(caCert, graph),
+		),
+	)
+	builderSrv := builder.New(graph, "dGVzdC1wdWJrZXk=")
+	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
+
+	go func() {
+		if err := grpcSrv.Serve(lis); err != nil {
+			t.Logf("gRPC server exited: %v", err)
+		}
+	}()
+	defer grpcSrv.Stop()
+
+	bufDialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}
+
+	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
+	require.NoError(t, err)
+
+	creds, err := builder.NewCredentialsFromConfig(cfg)
+	require.NoError(t, err)
+
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(bufDialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithPerRPCCredentials(creds),
+	)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	authClient := builderpb.NewBuilderClient(conn)
+
+	// Poll once so builder's lastSeenAt is updated and builder is considered healthy
+	claimResp0, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+	require.NoError(t, err)
+	assert.Empty(t, claimResp0.Tasks)
+
+	// Create a build task via GraphQL mutation
+	var taskResp struct {
+		CreateBuildTask struct {
+			ID string
+		}
+	}
+	err = gqlClient.Post(`mutation createTask($input: CreateBuildTaskInput!) {
+		createBuildTask(input: $input) {
+			id
+		}
+	}`, &taskResp, client.Var("input", map[string]any{
+		"targetOS":  "PLATFORM_LINUX",
+		"profileID": profileID,
+	}))
+	require.NoError(t, err)
+
+	// Claim the task
+	claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+	require.NoError(t, err)
+	require.Len(t, claimResp.Tasks, 1)
+
+	task := claimResp.Tasks[0]
+	assert.Equal(t, "output/imix", task.ArtifactPath)
+
+	// Execute with LocalExecutor
+	exec := executor.NewLocalExecutor()
+	outputCh := make(chan string, 64)
+	errorCh := make(chan string, 64)
+
+	buildResult, buildErr := exec.Build(ctx, executor.BuildSpec{
+		TaskID:          task.Id,
+		TargetOS:        task.TargetOs,
+		BuildImage:      task.BuildImage,
+		BuildScript:     task.BuildScript,
+		ArtifactPath:    task.ArtifactPath,
+		Env:             task.Env,
+		SetupScript:     task.SetupScript,
+		PreBuildScript:  task.PreBuildScript,
+		PostBuildScript: task.PostBuildScript,
+	}, outputCh, errorCh)
+	require.NoError(t, buildErr)
+	require.NotNil(t, buildResult)
+	assert.Equal(t, int64(0), buildResult.ExitCode)
+	assert.Equal(t, "imix", buildResult.ArtifactName)
+	assert.Equal(t, "local-compiled-binary-payload\n", string(buildResult.Artifact))
+
+	// Stream build output
+	stream, err := authClient.StreamBuildTaskOutput(ctx)
+	require.NoError(t, err)
+
+	for line := range outputCh {
+		require.NoError(t, stream.Send(&builderpb.StreamBuildTaskOutputRequest{
+			TaskId: task.Id,
+			Output: line,
+		}))
+	}
+
+	require.NoError(t, stream.Send(&builderpb.StreamBuildTaskOutputRequest{
+		TaskId:   task.Id,
+		Finished: true,
+	}))
+
+	streamResp, err := stream.CloseAndRecv()
+	require.NoError(t, err)
+	require.NotNil(t, streamResp)
+
+	// Upload artifact
+	artifactStream, err := authClient.UploadBuildArtifact(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, artifactStream.Send(&builderpb.UploadBuildArtifactRequest{
+		TaskId:       task.Id,
+		ArtifactName: buildResult.ArtifactName,
+		Chunk:        buildResult.Artifact,
+	}))
+
+	artifactResp, err := artifactStream.CloseAndRecv()
+	require.NoError(t, err)
+	require.NotNil(t, artifactResp)
+
+	// Verify asset in DB
+	asset, err := graph.Asset.Get(ctx, int(artifactResp.AssetId))
+	require.NoError(t, err)
+	assert.Contains(t, asset.Name, "build/linux/bin/imix-local-e2e-profile-")
+	assert.Equal(t, buildResult.Artifact, asset.Content)
+
+	// Verify build task in DB
+	bt, err := graph.BuildTask.Get(ctx, int(task.Id))
+	require.NoError(t, err)
+	assert.False(t, bt.FinishedAt.IsZero())
+	assert.Contains(t, bt.Output, "setup_done")
+	assert.Contains(t, bt.Output, "prebuild_done")
+	assert.Contains(t, bt.Output, "postbuild_done")
+	linkedAsset, err := bt.QueryArtifact().Only(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, asset.ID, linkedAsset.ID)
 }
