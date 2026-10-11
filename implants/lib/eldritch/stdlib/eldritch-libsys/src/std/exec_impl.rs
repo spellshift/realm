@@ -162,6 +162,28 @@ fn handle_exec(
                 }
             }
         }
+        #[cfg(target_os = "solaris")]
+        {
+            let mut child = Command::new(path)
+                .args(args)
+                .envs(env_vars)
+                .stdin(stdinpipe)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()?;
+
+            if let Some(text) = input {
+                if let Some(mut stdin) = child.stdin.take() {
+                    let _ = stdin.write_all(text.as_bytes());
+                }
+            }
+
+            Ok(CommandOutput {
+                stdout: "".to_string(),
+                stderr: "".to_string(),
+                status: 0,
+            })
+        }
     }
 }
 

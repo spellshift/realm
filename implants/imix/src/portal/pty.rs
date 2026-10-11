@@ -1,15 +1,21 @@
 use anyhow::Result;
-use pb::portal::{BytesPayload, BytesPayloadKind, Mote, mote::Payload};
-use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
-use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::sync::{Arc, Mutex};
+use pb::portal::Mote;
 use tokio::sync::mpsc;
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(target_os = "solaris"))]
+use {
+    pb::portal::{BytesPayload, BytesPayloadKind, mote::Payload},
+    portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system},
+    std::collections::HashMap,
+    std::io::{Read, Write},
+    std::sync::{Arc, Mutex},
+};
+
+#[cfg(all(not(target_os = "windows"), not(target_os = "solaris")))]
 use std::path::Path;
 
 /// A single PTY session with its writer, master handle, and cancel channel.
+#[cfg(not(target_os = "solaris"))]
 struct PtySession {
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
     // Keep the master PTY handle alive for the lifetime of the session.
@@ -19,16 +25,19 @@ struct PtySession {
 }
 
 /// Manages PTY sessions keyed by stream_id.
+#[cfg(not(target_os = "solaris"))]
 pub struct PtyManager {
     sessions: HashMap<String, PtySession>,
 }
 
+#[cfg(not(target_os = "solaris"))]
 impl Default for PtyManager {
     fn default() -> Self {
         Self::new()
     }
 }
 
+#[cfg(not(target_os = "solaris"))]
 impl PtyManager {
     pub fn new() -> Self {
         Self {
@@ -65,6 +74,7 @@ impl PtyManager {
 
 /// Spawn a new PTY process and return a PtySession with a writer handle.
 /// A background task reads PTY output and sends it as portal motes.
+#[cfg(not(target_os = "solaris"))]
 fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<PtySession> {
     let pty_system = native_pty_system();
 
@@ -160,4 +170,32 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
         _master: pair.master,
         _cancel_tx: cancel_tx,
     })
+}
+
+#[cfg(target_os = "solaris")]
+pub struct PtyManager {}
+
+#[cfg(target_os = "solaris")]
+impl Default for PtyManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(target_os = "solaris")]
+impl PtyManager {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub async fn handle_mote(
+        &mut self,
+        _stream_id: String,
+        _data: Vec<u8>,
+        _out_tx: mpsc::Sender<Mote>,
+    ) -> Result<()> {
+        #[cfg(feature = "print_debug")]
+        log::error!("PTY portals are not supported on Solaris");
+        Err(anyhow::anyhow!("PTY portals are not supported on Solaris"))
+    }
 }
