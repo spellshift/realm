@@ -58,6 +58,9 @@ base64 = { workspace = true }
 [target.'cfg(not(target_os = "solaris"))'.dependencies]
 portable-pty = { workspace = true }
 
+[target.'cfg(target_os = "solaris")'.dependencies]
+libc = { workspace = true }
+
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
 
