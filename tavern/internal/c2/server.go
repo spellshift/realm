@@ -16,7 +16,6 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
 )
@@ -24,7 +23,6 @@ import (
 type Server struct {
 	MaxFileChunkSize uint64
 	graph            *ent.Client
-	mux              *stream.Mux
 	portalMux        *mux.Mux
 	jwtPrivateKey    ed25519.PrivateKey
 	jwtPublicKey     ed25519.PublicKey
@@ -32,11 +30,10 @@ type Server struct {
 	c2pb.UnimplementedC2Server
 }
 
-func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtPublicKey ed25519.PublicKey, jwtPrivateKey ed25519.PrivateKey, opts ...Option) *Server {
+func New(graph *ent.Client, portalMux *mux.Mux, jwtPublicKey ed25519.PublicKey, jwtPrivateKey ed25519.PrivateKey, opts ...Option) *Server {
 	srv := &Server{
 		MaxFileChunkSize: 1024 * 1024, // 1 MB
 		graph:            graph,
-		mux:              mux,
 		portalMux:        portalMux,
 		jwtPrivateKey:    jwtPrivateKey,
 		jwtPublicKey:     jwtPublicKey,

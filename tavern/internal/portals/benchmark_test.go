@@ -25,7 +25,6 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
-	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
@@ -90,14 +89,11 @@ func BenchmarkPortalThroughput(b *testing.B) {
 	// 3. Setup Server Components
 	portalMux := mux.New(mux.WithSubscriberBufferSize(1000))
 
-	// Create a placeholder shellMux since C2 requires it, but we won't use it.
-	var shellMux *stream.Mux = nil
-
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(b, err)
 
-	c2Srv := c2.New(client, shellMux, portalMux, testPubKey, testPrivKey)
+	c2Srv := c2.New(client, portalMux, testPubKey, testPrivKey)
 	portalSrv := portals.New(client, portalMux)
 
 	// 4. Start gRPC Server
