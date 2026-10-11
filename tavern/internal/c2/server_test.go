@@ -26,7 +26,7 @@ func TestGetClientIP(t *testing.T) {
 			name: "X-Forwarded-For_Only",
 			setupContext: func() context.Context {
 				ctx := context.Background()
-			md := metadata.New(map[string]string{
+				md := metadata.New(map[string]string{
 					"x-forwarded-for": "203.0.113.42",
 				})
 				return metadata.NewIncomingContext(ctx, md)
@@ -37,7 +37,7 @@ func TestGetClientIP(t *testing.T) {
 			name: "X-Redirected-For_With_X-Forwarded-For",
 			setupContext: func() context.Context {
 				ctx := context.Background()
-			md := metadata.New(map[string]string{
+				md := metadata.New(map[string]string{
 					"x-forwarded-for":  "203.0.113.42",
 					"x-redirected-for": "198.51.100.99",
 				})
@@ -49,7 +49,7 @@ func TestGetClientIP(t *testing.T) {
 			name: "Neither_Header_Set_Uses_Peer_IP",
 			setupContext: func() context.Context {
 				ctx := context.Background()
-			p := &peer.Peer{
+				p := &peer.Peer{
 					Addr: &net.TCPAddr{
 						IP:   net.ParseIP("1.1.1.1"),
 						Port: 12345,
@@ -63,7 +63,7 @@ func TestGetClientIP(t *testing.T) {
 			name: "X-Forwarded-For_With_Multiple_IPs",
 			setupContext: func() context.Context {
 				ctx := context.Background()
-			md := metadata.New(map[string]string{
+				md := metadata.New(map[string]string{
 					"x-forwarded-for": "203.0.113.42, 198.51.100.1, 192.0.2.5",
 				})
 				return metadata.NewIncomingContext(ctx, md)
@@ -74,7 +74,7 @@ func TestGetClientIP(t *testing.T) {
 			name: "X-Forwarded-For_With_Whitespace",
 			setupContext: func() context.Context {
 				ctx := context.Background()
-			md := metadata.New(map[string]string{
+				md := metadata.New(map[string]string{
 					"x-forwarded-for": "  203.0.113.42  ",
 				})
 				return metadata.NewIncomingContext(ctx, md)
@@ -146,7 +146,7 @@ func TestGetClientIP(t *testing.T) {
 			name: "Malformed_X-Forwarded-For_Without_Peer_Returns_Unknown",
 			setupContext: func() context.Context {
 				ctx := context.Background()
-			md := metadata.New(map[string]string{
+				md := metadata.New(map[string]string{
 					"x-forwarded-for": "not-an-ip",
 				})
 				return metadata.NewIncomingContext(ctx, md)
