@@ -18,13 +18,14 @@ import (
 
 func TestReportProcessList(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
 
 	// Test Data
 	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
 	existingTask := c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier)
+	token := mintJWT(existingBeacon.ID)
 	existingHost := existingBeacon.QueryHost().OnlyX(ctx)
 
 	// Test Cases

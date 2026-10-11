@@ -177,9 +177,9 @@ func TestJWTValidate(t *testing.T) {
 	}
 
 	claims := jwt.MapClaims{
-		"task_id": 1234,
-		"iat":     time.Now().Unix(),
-		"exp":     time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		ClaimBeaconID: 1234,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -187,8 +187,22 @@ func TestJWTValidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to sign JWT: %v", err)
 	}
-	// Verify
-	err = srv.ValidateJWT(tokenStr)
+	// Verify bound token succeeds and returns the beacon ID
+	beaconID, err := srv.ValidateJWT(tokenStr)
 	fmt.Println(err)
 	assert.Nil(t, err)
+	assert.Equal(t, 1234, beaconID)
+
+	// Verify unbound (legacy) token without beacon_id is rejected
+	legacyClaims := jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	}
+	legacyToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, legacyClaims)
+	legacyStr, err := legacyToken.SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign JWT: %v", err)
+	}
+	_, err = srv.ValidateJWT(legacyStr)
+	assert.NotNil(t, err)
 }

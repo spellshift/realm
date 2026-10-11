@@ -19,7 +19,7 @@ import (
 
 func TestReportOutput(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
 
@@ -31,6 +31,7 @@ func TestReportOutput(t *testing.T) {
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier),
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier),
 	}
+	token := mintJWT(existingBeacon.ID)
 
 	// Test Cases
 	tests := []struct {

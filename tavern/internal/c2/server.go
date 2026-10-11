@@ -100,11 +100,16 @@ func GetClientIP(ctx context.Context) string {
 	return "unknown"
 }
 
-// generateTaskJWT creates a signed JWT token containing the beacon ID
-func (srv *Server) generateTaskJWT() (string, error) {
+// ClaimBeaconID is the JWT claim carrying the beacon DB ID the token is bound to.
+const ClaimBeaconID = "beacon_id"
+
+// generateTaskJWT creates a signed JWT token bound to the given beacon ID.
+// Beacons may only use the token to report data for tasks owned by that beacon.
+func (srv *Server) generateTaskJWT(beaconID int) (string, error) {
 	claims := jwt.MapClaims{
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		ClaimBeaconID: beaconID,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -116,7 +121,10 @@ func (srv *Server) generateTaskJWT() (string, error) {
 	return signedToken, nil
 }
 
-func (srv *Server) ValidateJWT(jwttoken string) error {
+// ValidateJWT verifies the token signature + expiry and returns the beacon ID
+// the token is bound to. Tokens without a valid beacon_id claim are rejected so
+// a beacon can only report data attached to its own beacon.
+func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
 	token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (any, error) {
 		// 1. Verify the signing method is EdDSA
 		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
@@ -127,9 +135,77 @@ func (srv *Server) ValidateJWT(jwttoken string) error {
 	})
 
 	if err != nil || !token.Valid {
-		return status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
+		return 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
 	}
 
-	slog.Info(fmt.Sprintf("received valid JWT: %s", jwttoken))
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, status.Errorf(codes.PermissionDenied, "invalid token claims")
+	}
+
+	beaconID, err := parseBeaconIDClaim(claims[ClaimBeaconID])
+	if err != nil {
+		return 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
+	}
+
+	return beaconID, nil
+}
+
+// authorizeTaskForBeacon ensures the task belongs to the beacon bound to the JWT.
+func (srv *Server) authorizeTaskForBeacon(ctx context.Context, t *ent.Task, beaconID int) error {
+	ownerID, err := t.QueryBeacon().OnlyID(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to load task owner: %v", err)
+	}
+	if ownerID != beaconID {
+		return status.Errorf(codes.PermissionDenied, "task %d does not belong to this beacon", t.ID)
+	}
 	return nil
+}
+
+// authorizeShellTaskForBeacon ensures the shell task belongs (via its shell) to the beacon bound to the JWT.
+func (srv *Server) authorizeShellTaskForBeacon(ctx context.Context, st *ent.ShellTask, beaconID int) error {
+	ownerID, err := st.QueryShell().QueryBeacon().OnlyID(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to load shell task owner: %v", err)
+	}
+	if ownerID != beaconID {
+		return status.Errorf(codes.PermissionDenied, "shell task %d does not belong to this beacon", st.ID)
+	}
+	return nil
+}
+
+// parseBeaconIDClaim extracts the beacon ID from the JWT beacon_id claim.
+// Numeric JSON claims decode as float64, so accept float64, int variants, and strings.
+func parseBeaconIDClaim(v any) (int, error) {
+	switch id := v.(type) {
+	case float64:
+		if id <= 0 || id != float64(int(id)) {
+			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
+		}
+		return int(id), nil
+	case float32:
+		if id <= 0 || id != float32(int(id)) {
+			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
+		}
+		return int(id), nil
+	case int:
+		if id <= 0 {
+			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
+		}
+		return id, nil
+	case int64:
+		if id <= 0 {
+			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
+		}
+		return int(id), nil
+	case string:
+		var parsed int
+		if _, err := fmt.Sscanf(id, "%d", &parsed); err != nil || parsed <= 0 {
+			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
+		}
+		return parsed, nil
+	default:
+		return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
+	}
 }
