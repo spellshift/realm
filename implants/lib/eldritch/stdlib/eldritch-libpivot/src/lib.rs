@@ -98,6 +98,41 @@ pub trait PivotLibrary {
         timeout: Option<i64>,
     ) -> Result<String, String>;
 
+    #[allow(clippy::too_many_arguments)]
+    #[eldritch_method]
+    /// Creates a persistent SSH session for reuse across multiple commands.
+    ///
+    /// Unlike `ssh_exec` which opens a new connection per call, this establishes
+    /// one connection and returns a session object whose `exec()` can be called
+    /// repeatedly. This reduces authentication log noise and handshake latency.
+    ///
+    /// **Parameters**
+    /// - `target` (`str`): The remote host IP or hostname.
+    /// - `port` (`int`): The SSH port (usually 22).
+    /// - `username` (`str`): SSH username.
+    /// - `password` (`Option<str>`): SSH password (optional).
+    /// - `key` (`Option<str>`): SSH private key (optional).
+    /// - `key_password` (`Option<str>`): Password for the private key (optional).
+    /// - `timeout` (`Option<int>`): Connection timeout in seconds (optional, defaults to 3).
+    ///
+    /// **Returns**
+    /// - `<ssh_session>`: A session object with methods:
+    ///   - `exec(command: str) -> Dict{stdout, stderr, status}`
+    ///   - `close() -> None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if connection fails.
+    fn ssh_session(
+        &self,
+        target: String,
+        port: i64,
+        username: String,
+        password: Option<String>,
+        key: Option<String>,
+        key_password: Option<String>,
+        timeout: Option<i64>,
+    ) -> Result<Value, String>;
+
     #[eldritch_method]
     /// Scans TCP/UDP ports on target hosts.
     ///

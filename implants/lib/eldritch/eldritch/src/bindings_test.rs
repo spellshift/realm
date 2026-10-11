@@ -17,16 +17,22 @@ fn create_interp() -> Interpreter {
             jwt: "a test jwt".to_string(),
         };
         let backend = Arc::new(EmptyAssets {});
-        Interpreter::new().with_default_libs().with_context(
-            agent_mock,
-            eldritch_agent::Context::Task(task_context),
-            vec![],
-            backend,
-        )
+        // with_default_libs registers Std then Fake (fake wins).
+        // with_context re-registers Std (std wins – bug). Chain with_fake_agent
+        // to make fake win again so tests use fake impls.
+        Interpreter::new()
+            .with_default_libs()
+            .with_context(
+                agent_mock,
+                eldritch_agent::Context::Task(task_context),
+                vec![],
+                backend,
+            )
+            .with_fake_agent()
     }
     #[cfg(not(feature = "stdlib"))]
     {
-        Interpreter::new()
+        Interpreter::new().with_fake_agent()
     }
 }
 
@@ -67,6 +73,7 @@ fn test_file_bindings() {
             "is_dir",
             "is_file",
             "list",
+            "list_named_pipes",
             "list_recent",
             "mkdir",
             "move",
@@ -74,6 +81,7 @@ fn test_file_bindings() {
             "pwd",
             "read",
             "read_binary",
+            "read_named_pipe",
             "remove",
             "replace",
             "replace_all",
@@ -81,6 +89,7 @@ fn test_file_bindings() {
             "template",
             "template_str",
             "timestomp",
+            "tmp_dir",
             "write",
             "write_binary",
         ],
@@ -136,8 +145,79 @@ fn test_pivot_bindings() {
             "ssh_copy",
             "ssh_deploy",
             "ssh_exec",
+            "ssh_session",
         ],
     );
+}
+
+#[test]
+fn test_ssh_session_object_methods() {
+    // with_fake_agent returns FakeSshSessionHandle which has exec + close
+    let mut interp = create_interp();
+    let code = r#"
+s = pivot.ssh_session("127.0.0.1", 22, "root", "pass", None, None, None)
+dir(s)
+"#;
+    let val = interp
+        .interpret(code)
+        .expect("interpret ssh_session failed");
+    if let Value::List(l) = val {
+        let list = l.read();
+        let actual: Vec<String> = list
+            .iter()
+            .map(|v| v.to_string().replace("\"", ""))
+            .collect();
+        assert!(
+            actual.contains(&"exec".to_string()),
+            "ssh_session dir should contain exec, got {actual:?}"
+        );
+        assert!(
+            actual.contains(&"close".to_string()),
+            "ssh_session dir should contain close, got {actual:?}"
+        );
+    } else {
+        panic!("Expected list for dir(ssh_session)");
+    }
+}
+
+#[test]
+fn test_ssh_session_fake_exec_and_close() {
+    let mut interp = create_interp();
+    // Fake exec returns stdout="fake output"
+    let code = r#"
+s = pivot.ssh_session("127.0.0.1", 22, "root", "pass", None, None, None)
+r = s.exec("whoami")
+r["stdout"]
+"#;
+    let val = interp.interpret(code).expect("interpret exec failed");
+    assert_eq!(val.to_string(), "fake output");
+
+    // After close, exec should raise.
+    let code2 = r#"
+s = pivot.ssh_session("127.0.0.1", 22, "root", "pass", None, None, None)
+s.close()
+s.exec("whoami")
+"#;
+    let res2 = interp.interpret(code2);
+    assert!(
+        res2.is_err(),
+        "expected error after close, got ok: {res2:?}"
+    );
+}
+
+#[test]
+fn test_ssh_session_fake_reuse_multiple_execs() {
+    let mut interp = create_interp();
+    let code = r#"
+s = pivot.ssh_session("127.0.0.1", 22, "root", "pass", None, None, None)
+r1 = s.exec("whoami")
+r2 = s.exec("id")
+r3 = s.exec("hostname")
+s.close()
+r1["stdout"] + "|" + r2["stdout"] + "|" + r3["stdout"]
+"#;
+    let val = interp.interpret(code).expect("multi exec should succeed");
+    assert_eq!(val.to_string(), "fake output|fake output|fake output");
 }
 
 #[test]

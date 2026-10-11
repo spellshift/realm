@@ -5,6 +5,7 @@ pub mod port_scan_impl;
 pub mod ssh_copy_impl;
 pub mod ssh_deploy_impl;
 pub mod ssh_exec_impl;
+pub mod ssh_session_impl;
 
 use alloc::collections::BTreeMap;
 use alloc::string::String;
@@ -102,6 +103,28 @@ impl PivotLibrary for StdPivotLibrary {
             port as i32,
             src,
             dst,
+            username,
+            password,
+            key,
+            key_password,
+            timeout.map(|t| t as u32),
+        )
+        .map_err(|e| e.to_string())
+    }
+
+    fn ssh_session(
+        &self,
+        target: String,
+        port: i64,
+        username: String,
+        password: Option<String>,
+        key: Option<String>,
+        key_password: Option<String>,
+        timeout: Option<i64>,
+    ) -> Result<Value, String> {
+        ssh_session_impl::ssh_session(
+            target,
+            port as i32,
             username,
             password,
             key,
