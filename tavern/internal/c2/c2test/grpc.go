@@ -25,7 +25,7 @@ import (
 	"realm.pub/tavern/internal/portals/mux"
 )
 
-func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
+func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), func(int) string) {
 	t.Helper()
 	ctx := context.Background()
 
@@ -50,17 +50,17 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	// Generate a signed JWT string for tests
-	claims := jwt.MapClaims{
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(1 * time.Hour).Unix(),
-	}
-	testToken := ""
-	{
+	// mintBeaconJWT returns a signed JWT bound to the given beacon ID for tests.
+	mintBeaconJWT := func(beaconID int) string {
+		claims := jwt.MapClaims{
+			c2.ClaimBeaconID: beaconID,
+			"iat":           time.Now().Unix(),
+			"exp":           time.Now().Add(1 * time.Hour).Unix(),
+		}
 		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 		s, err := token.SignedString(testPrivKey)
 		require.NoError(t, err)
-		testToken = s
+		return s
 	}
 
 	// gRPC Server
@@ -95,5 +95,5 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
 		if err := <-grpcErrCh; err != nil {
 			t.Fatalf("failed to serve grpc: %v", err)
 		}
-	}, testToken
+	}, mintBeaconJWT
 }

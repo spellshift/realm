@@ -21,9 +21,14 @@ import (
 
 func TestFetchAsset(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
+
+	// Beacon-bound JWT: asset fetches must reference a task owned by the token's beacon.
+	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
+	existingTask := c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier)
+	token := mintJWT(existingBeacon.ID)
 
 	// Test Cases
 	type testCase struct {
@@ -72,10 +77,10 @@ func TestFetchAsset(t *testing.T) {
 				SaveX(ctx)
 		}
 
-		// Ensure request contains JWT
+		// Ensure request contains JWT + owned task reference
 		if tc.req.Context == nil {
 			tc.req.Context = &c2pb.FetchAssetRequest_TaskContext{
-				TaskContext: &c2pb.TaskContext{Jwt: token},
+				TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
 			}
 		} else {
 			switch c := tc.req.Context.(type) {

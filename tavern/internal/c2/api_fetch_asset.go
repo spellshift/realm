@@ -15,19 +15,45 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
-	var jwt string
+	var beaconID int
 	if tc := req.GetTaskContext(); tc != nil {
-		jwt = tc.GetJwt()
+		var err error
+		beaconID, err = srv.ValidateJWT(tc.GetJwt())
+		if err != nil {
+			return err
+		}
+		// The referenced task must exist and belong to the JWT's beacon,
+		// otherwise any valid token could fetch arbitrary tome assets.
+		t, err := srv.graph.Task.Get(ctx, int(tc.GetTaskId()))
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "task not found: %v", err)
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load task: %v", err)
+		}
+		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
+			return err
+		}
 	} else if stc := req.GetShellTaskContext(); stc != nil {
-		jwt = stc.GetJwt()
+		var err error
+		beaconID, err = srv.ValidateJWT(stc.GetJwt())
+		if err != nil {
+			return err
+		}
+		st, err := srv.graph.ShellTask.Get(ctx, int(stc.GetShellTaskId()))
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "shell task not found: %v", err)
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
+		}
+		if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
+			return err
+		}
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
-
-	err := srv.ValidateJWT(jwt)
-	if err != nil {
-		return err
-	}
+	_ = beaconID
 
 	// Load Asset
 	name := req.GetName()

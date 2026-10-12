@@ -20,7 +20,7 @@ import (
 
 func TestReportFile(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
 
@@ -39,6 +39,9 @@ func TestReportFile(t *testing.T) {
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacons[0].Identifier),
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacons[1].Identifier),
 	}
+	token0 := mintJWT(existingBeacons[0].ID)
+	token1 := mintJWT(existingBeacons[1].ID)
+	token := token0
 	existingHostFiles := []*ent.HostFile{
 		graph.HostFile.Create().
 			SetPath("/existing/path").
@@ -219,7 +222,7 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token1},
 					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
@@ -245,7 +248,7 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token1},
 					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
@@ -277,7 +280,7 @@ func TestReportFile(t *testing.T) {
 				return []*c2pb.ReportFileRequest{
 					{
 						Context: &c2pb.ReportFileRequest_TaskContext{
-							TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+							TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token1},
 						},
 						Chunk: &epb.File{
 							Metadata: &epb.FileMetadata{
@@ -316,7 +319,7 @@ func TestReportFile(t *testing.T) {
 				return []*c2pb.ReportFileRequest{
 					{
 						Context: &c2pb.ReportFileRequest_TaskContext{
-							TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+							TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token1},
 						},
 						Chunk: &epb.File{
 							Metadata: &epb.FileMetadata{
@@ -346,7 +349,7 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token1},
 					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
