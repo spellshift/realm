@@ -49,25 +49,34 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 			return ErrFileNotFound
 		}
 
-		// Check DownloadLimit
+		// Reserve one download atomically. The conditional UPDATE
+		// (SET downloads = downloads + 1 WHERE id = ? AND downloads < limit)
+		// executes as a single statement, so concurrent requests cannot all
+		// observe the same stale count and exceed the limit. Zero affected
+		// rows means the limit was reached (possibly by a concurrent request).
 		downloadLimit := -1
 		if l.DownloadLimit != nil {
 			downloadLimit = *l.DownloadLimit
 		}
-		if downloadLimit > 0 && l.Downloads >= downloadLimit {
-			slog.Info("Failed attempt to download link, maximum downloads reached", "path", linkPath, "downloads", l.Downloads, "download_limit", l.DownloadLimit)
-			return ErrFileNotFound
-		}
-
-		// Increment Link Downloads
-		if _, err := graph.Link.UpdateOne(l).
-			SetDownloads(l.Downloads + 1).
-			Save(ctx); err != nil {
-			slog.Error("failed to increment downloads for link", "path", linkPath, "downloads", l.Downloads, "err", err)
-
-			// Only error if a download limit is enforced
-			if downloadLimit > 0 {
+		if downloadLimit > 0 {
+			n, err := graph.Link.Update().
+				Where(link.ID(l.ID), link.DownloadsLT(downloadLimit)).
+				AddDownloads(1).
+				Save(ctx)
+			if err != nil {
+				slog.Error("failed to increment downloads for link", "path", linkPath, "err", err)
 				return ErrFileNotFound
+			}
+			if n == 0 {
+				slog.Info("Failed attempt to download link, maximum downloads reached", "path", linkPath, "download_limit", downloadLimit)
+				return ErrFileNotFound
+			}
+		} else {
+			// No limit enforced: best-effort atomic increment, still served on error.
+			if _, err := graph.Link.UpdateOne(l).
+				AddDownloads(1).
+				Save(ctx); err != nil {
+				slog.Error("failed to increment downloads for link", "path", linkPath, "err", err)
 			}
 		}
 
