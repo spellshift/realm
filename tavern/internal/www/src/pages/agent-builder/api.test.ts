@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { mapProfile, profileInput, taskStatus, buildTaskRows, BuildTask, ProfileRecord } from "../api";
-import { BuildProfile, Tome } from "../types";
+import { mapProfile, profileInput, taskStatus, buildTaskRows, BuildTask, ProfileRecord } from "./api";
+import { BuildProfile, Tome } from "./types";
 
 const catalog: Tome[] = [
     { id: "101", name: "Exfil Recon", description: "", tactic: "RECON" },
