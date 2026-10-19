@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useMutation } from "@apollo/client";
+import AlertError from "../../components/tavern-base-ui/AlertError";
+import { CREATE_BUILD_PROFILE, mapProfile, profileInput, ProfileRecord, useBuildProfiles } from "./api";
 import { Heading, Textarea } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon, ChevronDownIcon, ChevronUpIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import Button from "../../components/tavern-base-ui/button/Button";
@@ -7,15 +10,16 @@ import SingleDropdownSelector from "../../components/tavern-base-ui/SingleDropdo
 import { FormRadioGroup } from "../../components/tavern-base-ui/FormRadioGroup";
 import Modal from "../../components/tavern-base-ui/Modal";
 import {
-    MOCK_TRANSPORT_TYPES,
-    MOCK_DEFAULT_TRANSPORT,
-    MOCK_COMPILE_TARGETS,
-    MOCK_TOME_CATALOG,
-    MockTransportConfig,
-    MockTomeRef,
-    MockBuildProfile,
+    TRANSPORT_TYPES,
+    DEFAULT_TRANSPORT,
+    COMPILE_TARGETS,
+    Tome,
+    DEFAULT_SETUP_SCRIPT,
+    TransportConfig,
+    TomeRef,
+    BuildProfile,
     NO_INSTALL_WARNING,
-} from "./mockData";
+} from "./types";
 
 const textareaClass =
     "block w-full p-2 font-mono text-xs placeholder-gray-500 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600";
@@ -24,7 +28,7 @@ const advancedScriptFields = [
     { label: "Build script", defaultValue: "{{.BuildCommand}}", rows: 2 },
     { label: "Artifact path", defaultValue: "{{.ArtifactPath}}", rows: 2 },
     { label: "Prebuild script", defaultValue: "echo 'no prebuild set'", rows: 2 },
-    { label: "Setup script", defaultValue: "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm", rows: 3 },
+    { label: "Setup script", defaultValue: DEFAULT_SETUP_SCRIPT, rows: 3 },
     { label: "Postbuild script", defaultValue: "echo 'no postbuild set'", rows: 2 },
     {
         label: "Unique (JSON, optional)",
@@ -48,29 +52,34 @@ export const NewBuildProfile = ({
     onSave,
 }: {
     onCancel: () => void;
-    onSave: (profile: MockBuildProfile) => void;
+    onSave: (profile: BuildProfile) => void;
 }) => {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [buildImage, setBuildImage] = useState("spellshift/devcontainer:main");
-    const [transports, setTransports] = useState<MockTransportConfig[]>([MOCK_DEFAULT_TRANSPORT]);
-    const [tomes, setTomes] = useState<MockTomeRef[]>([]);
+    const [transports, setTransports] = useState<TransportConfig[]>([DEFAULT_TRANSPORT]);
+    const [tomes, setTomes] = useState<TomeRef[]>([]);
     const [addingTome, setAddingTome] = useState(false);
-    const [tomeToAdd, setTomeToAdd] = useState(MOCK_TOME_CATALOG[0]);
+    const { tomes: catalog, error: catalogError } = useBuildProfiles();
+    const [tomeToAdd, setTomeToAdd] = useState<Tome | null>(null);
+    const [tomeParams, setTomeParams] = useState("{}");
+    const [scripts, setScripts] = useState(advancedScriptFields.map((field, index) => field.defaultValue));
+    const [error, setError] = useState<string | null>(null);
+    const [createProfile, { loading: saving }] = useMutation<{ createBuildProfile: ProfileRecord }>(CREATE_BUILD_PROFILE);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [transportModalOpen, setTransportModalOpen] = useState(false);
-    const [transportDraft, setTransportDraft] = useState<MockTransportConfig | null>(null);
+    const [transportDraft, setTransportDraft] = useState<TransportConfig | null>(null);
 
     const openAddTransport = () => {
         setTransportDraft({ id: `t${Date.now()}`, type: "HTTP1", uri: "", interval: 30 });
         setTransportModalOpen(true);
     };
-    const openEditTransport = (transport: MockTransportConfig) => {
+    const openEditTransport = (transport: TransportConfig) => {
         setTransportDraft({ ...transport });
         setTransportModalOpen(true);
     };
     const saveTransport = () => {
-        if (!transportDraft?.uri.trim() || !Number.isFinite(transportDraft.interval) || transportDraft.interval <= 0) return;
+        if (!transportDraft?.uri.trim() || !Number.isInteger(transportDraft.interval) || transportDraft.interval <= 0) return;
         const next = { ...transportDraft, uri: transportDraft.uri.trim() };
         setTransports((list) => list.some((transport) => transport.id === next.id)
             ? list.map((transport) => transport.id === next.id ? next : transport)
@@ -80,39 +89,50 @@ export const NewBuildProfile = ({
     const removeTransport = (id: string) => setTransports((t) => t.filter((x) => x.id !== id));
 
     const confirmAddTome = () => {
+        if (!tomeToAdd) return;
+        try {
+            const params = JSON.parse(tomeParams);
+            if (!params || Array.isArray(params) || typeof params !== "object") throw new Error("Tome parameters must be a JSON object.");
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+            return;
+        }
+        setError(null);
         setTomes((list) => [
             ...list,
-            { id: `tr${list.length + 1}-${Date.now()}`, tomeId: tomeToAdd.id, tomeName: tomeToAdd.name, paramSummary: "No params", tactic: tomeToAdd.tactic },
+            { id: `tr${list.length + 1}-${Date.now()}`, tomeId: tomeToAdd.id, tomeName: tomeToAdd.name, paramSummary: tomeParams === "{}" ? "No params" : tomeParams, params: tomeParams, tactic: tomeToAdd.tactic },
         ]);
         setAddingTome(false);
     };
 
     const hasPersistenceTome = tomes.some((t) => t.tactic === "PERSISTENCE");
 
-    const handleSave = () => {
-        if (!name.trim()) return;
-        onSave({
-            id: `new-${Date.now()}`,
-            name,
-            description,
-            transports: transports.map((transport) => ({ ...transport })),
-            buildImage,
-            platforms: ["LINUX", "MACOS", "WINDOWS"],
-            supportedTargets: MOCK_COMPILE_TARGETS.map((target) => target.id),
-            tomes: tomes.map((tome) => ({ ...tome })),
-            tomeCount: tomes.length,
-            hasPersistenceTome,
-            buildScript: "{{.BuildCommand}}",
-            artifactPath: "{{.ArtifactPath}}",
-            prebuildscript: "echo 'no prebuild set'",
-            setupscript: "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm",
-            postbuildscript: "echo 'no postbuild set'",
-        });
+    const handleSave = async () => {
+        if (!name.trim() || saving) return;
+        setError(null);
+        try {
+            if (scripts[5].trim()) JSON.parse(scripts[5]);
+            const profile: BuildProfile = {
+                id: "", name, description, transports, buildImage,
+                platforms: ["LINUX", "MACOS", "WINDOWS"],
+                supportedTargets: COMPILE_TARGETS.map((target) => target.id),
+                tomes, tomeCount: tomes.length, hasPersistenceTome,
+                buildScript: scripts[0], artifactPath: scripts[1], prebuildscript: scripts[2],
+                setupscript: scripts[3], postbuildscript: scripts[4], unique: scripts[5],
+            };
+            const { data } = await createProfile({ variables: { input: profileInput(profile) } });
+            if (!data) throw new Error("The server did not return a build profile.");
+            onSave(mapProfile(data.createBuildProfile, catalog));
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+        }
     };
 
     return (
         <>
         <div className="flex flex-col gap-4 w-full min-w-0 max-w-xl">
+            {error && <AlertError label="Unable to save profile" details={error} />}
+            {catalogError && <AlertError label="Unable to load tomes" details={catalogError.message} />}
             <div className="flex flex-col gap-1">
                 <Heading size="sm">New build profile</Heading>
                 <p className="text-sm text-gray-500">
@@ -154,7 +174,7 @@ export const NewBuildProfile = ({
                         <div key={t.id} className="flex items-center gap-3 rounded-md border border-gray-200 p-3 min-w-0">
                             <div className="flex flex-col min-w-0 flex-1">
                                 <span className="text-sm font-medium text-gray-900">
-                                    {MOCK_TRANSPORT_TYPES.find((type) => type.value === t.type)?.label} · Every {t.interval}s
+                                    {TRANSPORT_TYPES.find((type) => type.value === t.type)?.label} · Every {t.interval}s
                                 </span>
                                 <span className="text-xs text-gray-500 break-all">{t.uri}</span>
                             </div>
@@ -222,15 +242,23 @@ export const NewBuildProfile = ({
                     <div className="flex flex-col gap-3 rounded-md border border-gray-200 p-3">
                         <FormRadioGroup
                             label="Choose a tome"
-                            data={MOCK_TOME_CATALOG}
+                            data={catalog}
                             selected={tomeToAdd}
-                            setSelected={setTomeToAdd}
+                            setSelected={(tome: Tome) => {
+                                setTomeToAdd(tome);
+                                try {
+                                    const definitions = JSON.parse(tome.paramDefs || "{}").params || [];
+                                    setTomeParams(JSON.stringify(Object.fromEntries(definitions.map((param: { name: string; value?: string }) => [param.name, param.value || ""])), null, 2));
+                                } catch { setTomeParams("{}"); }
+                            }}
                         />
+                        {catalog.length === 0 && <p className="text-sm text-gray-500">No tomes available. Import a tome before adding it to this profile.</p>}
+                        {tomeToAdd && <FormTextField htmlFor="tomeParams" label="Parameters (JSON object)" value={tomeParams} onChange={(event) => setTomeParams(event.target.value)} />}
                         <div className="flex flex-row gap-2">
                             <Button buttonVariant="ghost" buttonStyle={{ size: "sm" }} onClick={() => setAddingTome(false)}>
                                 Cancel
                             </Button>
-                            <Button buttonStyle={{ size: "sm" }} onClick={confirmAddTome}>
+                            <Button buttonStyle={{ size: "sm" }} onClick={confirmAddTome} disabled={!tomeToAdd}>
                                 Add to profile
                             </Button>
                         </div>
@@ -263,10 +291,10 @@ export const NewBuildProfile = ({
                 </p>
                 {showAdvanced && (
                     <div className="flex flex-col gap-4 mt-2">
-                        {advancedScriptFields.map((field) => (
+                        {advancedScriptFields.map((field, index) => (
                             <div key={field.label} className="flex flex-col gap-1">
                                 <label className="block text-sm font-medium text-gray-900">{field.label}</label>
-                                <Textarea className={textareaClass} rows={field.rows} defaultValue={field.defaultValue} />
+                                <Textarea className={textareaClass} rows={field.rows} value={scripts[index]} onChange={(event) => setScripts((current) => current.map((value, i) => i === index ? event.target.value : value))} />
                                 {field.description && <p className="text-xs text-gray-500">{field.description}</p>}
                             </div>
                         ))}
@@ -276,7 +304,7 @@ export const NewBuildProfile = ({
 
             <div className="flex flex-row gap-2">
                 <Button buttonVariant="ghost" onClick={onCancel}>Cancel</Button>
-                <Button onClick={handleSave} disabled={!name.trim()}>Save profile</Button>
+                <Button onClick={handleSave} isLoading={saving} disabled={!name.trim() || !buildImage.trim() || !scripts[0].trim() || !scripts[1].trim()}>Save profile</Button>
             </div>
         </div>
         <Modal isOpen={transportModalOpen} setOpen={setTransportModalOpen} size="sm">
@@ -294,9 +322,9 @@ export const NewBuildProfile = ({
                             <SingleDropdownSelector
                                 key={`${transportDraft.id}-${transportDraft.type}`}
                                 label="Type"
-                                options={MOCK_TRANSPORT_TYPES.map((type) => ({ label: type.label, value: type.value }))}
-                                defaultValue={MOCK_TRANSPORT_TYPES.find((type) => type.value === transportDraft.type)}
-                                setSelectedOption={(option: { value: MockTransportConfig["type"] }) =>
+                                options={TRANSPORT_TYPES.map((type) => ({ label: type.label, value: type.value }))}
+                                defaultValue={TRANSPORT_TYPES.find((type) => type.value === transportDraft.type)}
+                                setSelectedOption={(option: { value: TransportConfig["type"] }) =>
                                     setTransportDraft((draft) => draft && { ...draft, type: option.value })}
                             />
                         </div>
@@ -321,7 +349,7 @@ export const NewBuildProfile = ({
                     <Button buttonVariant="ghost" onClick={() => setTransportModalOpen(false)}>Cancel</Button>
                     <Button
                         onClick={saveTransport}
-                        disabled={!transportDraft || !transportDraft.uri.trim() || !Number.isFinite(transportDraft.interval) || transportDraft.interval <= 0}
+                        disabled={!transportDraft || !transportDraft.uri.trim() || !Number.isInteger(transportDraft.interval) || transportDraft.interval <= 0}
                     >
                         Save transport
                     </Button>

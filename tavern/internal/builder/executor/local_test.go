@@ -171,6 +171,26 @@ func TestLocalExecutor_Build_ScriptStages(t *testing.T) {
 	}
 }
 
+func TestLocalExecutor_Build_SetupWorkingDirectoryPersists(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	spec := executor.BuildSpec{
+		TaskID:       9,
+		TargetOS:     "linux",
+		SetupScript:  "mkdir -p app && cd app",
+		BuildScript:  "printf 'built in app' > artifact.bin",
+		ArtifactPath: "app/artifact.bin",
+	}
+	outputCh := make(chan string, 100)
+	errorCh := make(chan string, 100)
+
+	result, err := executor.NewLocalExecutor().Build(ctx, spec, outputCh, errorCh)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.Equal(t, "built in app", string(result.Artifact))
+}
+
 func TestLocalExecutor_Build_ExtractArtifact_Relative(t *testing.T) {
 	exec := executor.NewLocalExecutor()
 

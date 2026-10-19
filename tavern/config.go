@@ -68,6 +68,8 @@ var (
 	EnvMySQLUser   = EnvString{"MYSQL_USER", "root"}
 	EnvMySQLPasswd = EnvString{"MYSQL_PASSWD", ""}
 	EnvMySQLDB     = EnvString{"MYSQL_DB", "tavern"}
+	// EnvSQLiteDSN optionally stores SQLite data on disk when MySQL is not configured.
+	EnvSQLiteDSN = EnvString{"SQLITE_DSN", ""}
 
 	// EnvDBMaxIdleConns defines the maximum number of idle db connections to allow.
 	// EnvDBMaxOpenConns defines the maximum number of open db connections to allow.
@@ -148,6 +150,9 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 		mysqlDSN = "file:ent?mode=memory&cache=shared&_fk=1"
 		driver   = "sqlite3"
 	)
+	if sqliteDSN := EnvSQLiteDSN.String(); sqliteDSN != "" {
+		mysqlDSN = sqliteDSN
+	}
 	if cfg != nil && cfg.mysqlDSN != "" {
 		mysqlDSN = cfg.mysqlDSN
 		driver = "mysql"

@@ -76,7 +76,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	// The container entrypoint runs all scripts in /mnt/scripts in order.
 	entrypoint := strings.Join([]string{
 		"set -e",
-		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; sh \"$s\"; done",
+		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; . \"$s\"; done",
 	}, " && ")
 
 	resp, err := d.client.ContainerCreate(ctx,

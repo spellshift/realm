@@ -6,7 +6,9 @@ import { ExclamationTriangleIcon, PlusIcon } from "@heroicons/react/24/outline";
 import Select, { createFilter, MultiValue } from "react-select";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import Button from "../../components/tavern-base-ui/button/Button";
-import FormTextField from "../../components/tavern-base-ui/FormTextField";
+import AlertError from "../../components/tavern-base-ui/AlertError";
+import { useMutation } from "@apollo/client";
+import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "./api";
 import FreeTextSearch from "../../components/tavern-base-ui/FreeTextSearch";
 import { FormRadioGroup } from "../../components/tavern-base-ui/FormRadioGroup";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
@@ -14,7 +16,7 @@ import Badge from "../../components/tavern-base-ui/badge/Badge";
 import CodeBlock from "../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../components/form-steps";
 import { TomeTactic } from "../../utils/enums";
-import { MOCK_PROFILES, MOCK_COMPILE_TARGETS, MOCK_TRANSPORT_TYPES, MOCK_TOME_CATALOG, MockCompileTarget, MockBuildProfile, NO_INSTALL_WARNING } from "./mockData";
+import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile, NO_INSTALL_WARNING } from "./types";
 import NewBuildProfile from "./NewBuildProfile";
 
 function classNames(...classes: string[]) {
@@ -30,26 +32,22 @@ const STEPS = [
 type ProfileFilter = { label: string; value: string; kind: "os" | "format" | "tomeType" };
 
 const OS_OPTIONS: ProfileFilter[] = [
-    ...Array.from(new Map(MOCK_COMPILE_TARGETS.map((target) => [target.platform, {
+    ...Array.from(new Map(COMPILE_TARGETS.map((target) => [target.platform, {
         label: target.platformLabel,
         value: target.platform,
         kind: "os" as const,
     }])).values()),
 ];
 const FORMAT_OPTIONS: ProfileFilter[] = [
-    ...Array.from(new Map(MOCK_COMPILE_TARGETS.map((target) => [target.format, {
+    ...Array.from(new Map(COMPILE_TARGETS.map((target) => [target.format, {
         label: target.formatLabel,
         value: target.format,
         kind: "format" as const,
     }])).values()),
 ];
-const TOME_TYPE_OPTIONS: ProfileFilter[] = [
-    ...Array.from(new Map(MOCK_TOME_CATALOG.map((tome) => [tome.tactic, {
-        label: TomeTactic[tome.tactic],
-        value: tome.tactic,
-        kind: "tomeType" as const,
-    }])).values()),
-];
+const TOME_TYPE_OPTIONS: ProfileFilter[] = Object.entries(TomeTactic).map(([value, label]) => ({
+    label, value, kind: "tomeType",
+}));
 const PROFILE_FILTER_OPTIONS = [
     { label: "OS", options: OS_OPTIONS },
     { label: "Target format", options: FORMAT_OPTIONS },
@@ -64,9 +62,15 @@ export const AgentBuilderWizardPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [currStep, setCurrStep] = useState(0);
-    const [profiles, setProfiles] = useState<MockBuildProfile[]>(MOCK_PROFILES);
-    const [selectedProfile, setSelectedProfile] = useState(MOCK_PROFILES[0]);
-    const [selectedTarget, setSelectedTarget] = useState<MockCompileTarget>(MOCK_COMPILE_TARGETS[0]);
+    const { profiles, loading, error: profilesError, refetch } = useBuildProfiles();
+    const { builders, error: buildersError } = useBuilders();
+    const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+    const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
+    const setSelectedProfile = (profile: BuildProfile) => setSelectedProfileId(profile.id);
+    const [createTask, { loading: creating }] = useMutation(CREATE_BUILD_TASK);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedTarget, setSelectedTarget] = useState<CompileTarget>(COMPILE_TARGETS[0]);
+    const targetAvailable = builders.some((builder) => builder.supportedTargets.includes(selectedTarget.platform));
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [authoring, setAuthoring] = useState(searchParams.get("authoring") === "1");
     const [profileSearch, setProfileSearch] = useState("");
@@ -75,7 +79,7 @@ export const AgentBuilderWizardPage = () => {
     const selectedOS = profileFields.filter((field) => field.kind === "os").map((field) => field.value);
     const selectedFormats = profileFields.filter((field) => field.kind === "format").map((field) => field.value);
     const selectedTomeTypes = profileFields.filter((field) => field.kind === "tomeType").map((field) => field.value);
-    const targetMatchesFilters = (target: MockCompileTarget) =>
+    const targetMatchesFilters = (target: CompileTarget) =>
         (selectedOS.length === 0 || selectedOS.includes(target.platform)) &&
         (selectedFormats.length === 0 || selectedFormats.includes(target.format));
 
@@ -85,8 +89,8 @@ export const AgentBuilderWizardPage = () => {
         setSearchKey((key) => key + 1);
     };
 
-    const handleSaveProfile = (profile: MockBuildProfile) => {
-        setProfiles((p) => [...p, profile]);
+    const handleSaveProfile = (profile: BuildProfile) => {
+        void refetch();
         setSelectedProfile(profile);
         clearProfileFilters();
         setAuthoring(false);
@@ -96,18 +100,18 @@ export const AgentBuilderWizardPage = () => {
     const filteredProfiles = profiles.filter((profile) => {
         if (query && !profile.name.toLocaleLowerCase().includes(query) && !profile.description.toLocaleLowerCase().includes(query)) return false;
         if (!profile.supportedTargets.some((targetId) => {
-            const target = MOCK_COMPILE_TARGETS.find((item) => item.id === targetId);
+            const target = COMPILE_TARGETS.find((item) => item.id === targetId);
             return target && targetMatchesFilters(target);
         })) return false;
         if (selectedTomeTypes.length > 0 && !profile.tomes.some((tome) => selectedTomeTypes.includes(tome.tactic))) return false;
         return true;
     });
-    const visibleSelectedProfile = filteredProfiles.find((profile) => profile.id === selectedProfile.id) ?? filteredProfiles[0] ?? null;
+    const visibleSelectedProfile = filteredProfiles.find((profile) => profile.id === selectedProfile?.id) ?? filteredProfiles[0] ?? null;
     const hasProfileFilters = !!profileSearch.trim() || profileFields.length > 0;
 
     const targetsByPlatform = useMemo(() => {
-        const groups: Array<{ platformLabel: string; targets: MockCompileTarget[] }> = [];
-        MOCK_COMPILE_TARGETS.filter((target) => selectedProfile.supportedTargets.includes(target.id)).forEach((target) => {
+        const groups: Array<{ platformLabel: string; targets: CompileTarget[] }> = [];
+        COMPILE_TARGETS.filter((target) => selectedProfile?.supportedTargets.includes(target.id)).forEach((target) => {
             let group = groups.find((g) => g.platformLabel === target.platformLabel);
             if (!group) {
                 group = { platformLabel: target.platformLabel, targets: [] };
@@ -118,6 +122,22 @@ export const AgentBuilderWizardPage = () => {
         return groups;
     }, [selectedProfile]);
 
+    const startBuild = async () => {
+        if (!selectedProfile || creating) return;
+        setError(null);
+        try {
+            const { data } = await createTask({ variables: { input: {
+                profileID: selectedProfile.id,
+                targetOS: `PLATFORM_${selectedTarget.platform}`,
+                targetFormat: `TARGET_FORMAT_${selectedTarget.format}`,
+            } } });
+            if (!data?.createBuildTask?.id) throw new Error("The server did not return a build task.");
+            navigate(`/scratch-agent-builder?tab=agents&task=${data.createBuildTask.id}`);
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error));
+        }
+    };
+
     return (
         <div className="max-w-3xl mx-auto w-full flex flex-col gap-4">
             <Breadcrumbs
@@ -127,7 +147,11 @@ export const AgentBuilderWizardPage = () => {
                 ]}
             />
 
-            <form className="flex flex-col gap-4">
+            {profilesError && <AlertError label="Unable to load build profiles" details={profilesError.message} />}
+            {buildersError && <AlertError label="Unable to load builders" details={buildersError.message} />}
+            {error && <AlertError label="Unable to start build" details={error} />}
+            {loading && profiles.length === 0 && <p role="status">Loading build profiles…</p>}
+            <form className="flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); if (currStep === 2) void startBuild(); }}>
                 <h2 className="text-xl font-semibold text-gray-900">Generate agent</h2>
                 <div className="flex flex-row gap-6">
                     <div className="flex-shrink-0 mt-2 lg:block hidden">
@@ -167,7 +191,7 @@ export const AgentBuilderWizardPage = () => {
                                 </div>
                                 {filteredProfiles.length === 0 ? (
                                     <div className="rounded-md border border-gray-200 py-6">
-                                        <EmptyState type={EmptyStateType.noMatches} label="No matching profiles" details="Try a different search or clear the filters." />
+                                        <EmptyState type={EmptyStateType.noMatches} label={profiles.length ? "No matching profiles" : "No build profiles available"} details={profiles.length ? "Try a different search or clear the filters." : "Create a profile to get started."} />
                                     </div>
                                 ) : (
                                     <FormRadioGroup
@@ -175,7 +199,7 @@ export const AgentBuilderWizardPage = () => {
                                         data={filteredProfiles}
                                         selected={visibleSelectedProfile}
                                         setSelected={setSelectedProfile}
-                                        renderNameAddon={(profile: MockBuildProfile) => !profile.hasPersistenceTome && (
+                                        renderNameAddon={(profile: BuildProfile) => !profile.hasPersistenceTome && (
                                             <Tooltip label={NO_INSTALL_WARNING} hasArrow placement="right" maxW="280px">
                                                 <span tabIndex={0} aria-label="No install warning" className="inline-flex text-amber-500">
                                                     <ExclamationTriangleIcon className="h-4 w-4" />
@@ -196,7 +220,7 @@ export const AgentBuilderWizardPage = () => {
                                 <div className="flex flex-row gap-2">
                                     <Button disabled={!visibleSelectedProfile} onClick={() => {
                                         if (!visibleSelectedProfile) return;
-                                        const matchingTarget = MOCK_COMPILE_TARGETS.find((target) =>
+                                        const matchingTarget = COMPILE_TARGETS.find((target) =>
                                             visibleSelectedProfile.supportedTargets.includes(target.id) &&
                                             targetMatchesFilters(target)
                                         );
@@ -217,7 +241,7 @@ export const AgentBuilderWizardPage = () => {
                             />
                         )}
 
-                        {currStep === 1 && (
+                        {currStep === 1 && selectedProfile && (
                             <div className="flex flex-col gap-6">
                                 <RadioGroup value={selectedTarget} onChange={setSelectedTarget}>
                                     <RadioGroup.Label>
@@ -277,14 +301,15 @@ export const AgentBuilderWizardPage = () => {
                                         ))}
                                     </div>
                                 </RadioGroup>
+                                {!targetAvailable && <p className="text-sm text-amber-700">Enroll a builder that supports {selectedTarget.platformLabel} before starting this build.</p>}
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(0)}>Back</Button>
-                                    <Button onClick={() => setCurrStep(2)}>Continue</Button>
+                                    <Button onClick={() => setCurrStep(2)} disabled={!targetAvailable}>Continue</Button>
                                 </div>
                             </div>
                         )}
 
-                        {currStep === 2 && (
+                        {currStep === 2 && selectedProfile && (
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col gap-3">
                                     <Heading size="sm">Summary</Heading>
@@ -302,7 +327,7 @@ export const AgentBuilderWizardPage = () => {
                                                     <div key={transport.id} className="flex flex-row items-start justify-between gap-2 p-3">
                                                         <div className="min-w-0 flex flex-col gap-1">
                                                             <span className="text-sm font-medium text-gray-900">
-                                                                {MOCK_TRANSPORT_TYPES.find((type) => type.value === transport.type)?.label ?? transport.type}
+                                                                {TRANSPORT_TYPES.find((type) => type.value === transport.type)?.label ?? transport.type}
                                                             </span>
                                                             <code className="text-xs text-gray-500 break-all">{transport.uri || "—"}</code>
                                                         </div>
@@ -334,16 +359,11 @@ export const AgentBuilderWizardPage = () => {
                                     )}
                                 </div>
 
-                                <FormTextField
-                                    htmlFor="buildName"
-                                    label="Build name"
-                                    placeholder="Provide a recognizable name for this build"
-                                    defaultValue="agile-falcon-build"
-                                />
+                                <p className="text-sm text-gray-500">The server generates a unique artifact name for this build.</p>
 
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(1)}>Back</Button>
-                                    <Button type="submit" onClick={(e) => { e.preventDefault(); navigate("/scratch-agent-builder"); }}>
+                                    <Button type="submit" isLoading={creating} disabled={!targetAvailable}>
                                         Start build
                                     </Button>
                                 </div>
