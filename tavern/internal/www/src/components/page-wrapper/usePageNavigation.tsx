@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuthorization } from '../../context/AuthorizationContext';
 import { PageNavItem } from '../../utils/enums';
-import { FileTerminal, LibraryBigIcon } from 'lucide-react';
+import { FileTerminal, LibraryBigIcon, Hammer } from 'lucide-react';
 
 interface NavigationItemType {
     name: string;
@@ -29,6 +29,7 @@ export const usePageNavigation = () => {
         { name: PageNavItem.quests, href: '/quests', icon: FileTerminal, internal: true },
         { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true },
         { name: PageNavItem.assets, href: '/assets', icon: LibraryBigIcon, internal: true },
+        { name: PageNavItem.agentBuilder, href: '/scratch-agent-builder', icon: Hammer, internal: true },
         ...data?.me?.isAdmin ? [{ name: PageNavItem.admin, href: '/admin', icon: UserGroupIcon, internal: true, adminOnly: true }] : [],
         { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
         { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },

@@ -14,7 +14,8 @@ export enum PageNavItem {
     assets="Assets",
     admin="Admin",
     processes="Processes",
-    files="Files"
+    files="Files",
+    agentBuilder="Agent Builder"
 }
 export enum SupportedPlatforms {
     Windows="PLATFORM_WINDOWS",

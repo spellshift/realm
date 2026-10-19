@@ -20,6 +20,8 @@ import Hosts from "./pages/hosts/Hosts";
 import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
 import Profile from "./pages/profile/Profile";
+import AgentBuilderLandingPage from "./pages/agent-builder/AgentBuilderLandingPage";
+import AgentBuilderWizardPage from "./pages/agent-builder/AgentBuilderWizardPage";
 
 
 const router = createBrowserRouter([
@@ -74,6 +76,15 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <Profile />,
+      },
+      {
+        // Agent builder UI preview, backed by mock data.
+        path: "scratch-agent-builder",
+        element: <AgentBuilderLandingPage />,
+      },
+      {
+        path: "scratch-agent-builder/new",
+        element: <AgentBuilderWizardPage />,
       },
     ]
   },
