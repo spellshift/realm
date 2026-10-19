@@ -5,7 +5,7 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import AgentBuilderLandingPage from "./AgentBuilderLandingPage";
-import { GET_BUILD_PROFILES, GET_BUILDERS, GET_BUILD_TASKS, REGISTER_BUILDER } from "./api";
+import { GET_BUILD_PROFILES, GET_BUILDERS, GET_BUILD_TASKS, REGISTER_BUILDER } from "./queries";
 
 beforeAll(() => {
     if (typeof globalThis.ResizeObserver === "undefined") {
@@ -36,7 +36,7 @@ const registerBuilderInput = {
     pollInterval: 5,
 };
 
-function renderPage(mocks: ReadonlyArray<MockedResponse>, initialEntry = "/scratch-agent-builder?tab=builders") {
+function renderPage(mocks: ReadonlyArray<MockedResponse>, initialEntry = "/builder?tab=builders") {
     return render(
         <ChakraProvider>
             <MemoryRouter initialEntries={[initialEntry]}>

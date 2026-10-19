@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { BookOpen, Copy, FilePlus, Share, Trash2 } from "lucide-react";
+import { Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import { useMutation } from "@apollo/client";
 import moment from "moment";
@@ -191,8 +191,8 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                             buttonVariant="ghost"
                             buttonStyle={{ color: "gray", size: "xs" }}
                             leftIcon={<Share className="w-4 h-4" />}
-                            onClick={(event) => {
-                                event.stopPropagation();
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 onCreateLink(asset.id, asset.name);
                             }}
                             aria-label="Create Link"

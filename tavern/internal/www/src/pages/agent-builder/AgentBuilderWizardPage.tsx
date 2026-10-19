@@ -8,7 +8,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import Button from "../../components/tavern-base-ui/button/Button";
 import AlertError from "../../components/tavern-base-ui/AlertError";
 import { useMutation } from "@apollo/client";
-import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "./api";
+import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "./queries";
 import FreeTextSearch from "../../components/tavern-base-ui/FreeTextSearch";
 import { FormRadioGroup } from "../../components/tavern-base-ui/FormRadioGroup";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
@@ -16,12 +16,9 @@ import Badge from "../../components/tavern-base-ui/badge/Badge";
 import CodeBlock from "../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../components/form-steps";
 import { TomeTactic } from "../../utils/enums";
+import { classNames } from "../../utils/utils";
 import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile, NO_INSTALL_WARNING } from "./types";
 import NewBuildProfile from "./NewBuildProfile";
-
-function classNames(...classes: string[]) {
-    return classes.filter(Boolean).join(" ");
-}
 
 const STEPS = [
     { name: "Choose profile", description: "Step 1", href: "#", step: 0 },
@@ -62,7 +59,7 @@ export const AgentBuilderWizardPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [currStep, setCurrStep] = useState(0);
-    const { profiles, loading, error: profilesError, refetch } = useBuildProfiles();
+    const { profiles, tomes, loading, error: profilesError, refetch } = useBuildProfiles();
     const { builders, error: buildersError } = useBuilders();
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
@@ -70,7 +67,10 @@ export const AgentBuilderWizardPage = () => {
     const [createTask, { loading: creating }] = useMutation(CREATE_BUILD_TASK);
     const [error, setError] = useState<string | null>(null);
     const [selectedTarget, setSelectedTarget] = useState<CompileTarget>(COMPILE_TARGETS[0]);
-    const targetAvailable = builders.some((builder) => builder.supportedTargets.includes(selectedTarget.platform));
+    // A target is only actually buildable if some builder supporting it is
+    // also online -- matching CreateBuildTask's resolver, which only
+    // considers healthy builders (tavern/internal/graphql/mutation.resolvers.go).
+    const targetAvailable = builders.some((builder) => builder.online && builder.supportedTargets.includes(selectedTarget.platform));
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [authoring, setAuthoring] = useState(searchParams.get("authoring") === "1");
     const [profileSearch, setProfileSearch] = useState("");
@@ -89,8 +89,12 @@ export const AgentBuilderWizardPage = () => {
         setSearchKey((key) => key + 1);
     };
 
-    const handleSaveProfile = (profile: BuildProfile) => {
-        void refetch();
+    // Save the new profile before selecting it -- `refetch` is what pulls
+    // the just-created profile into `profiles` (createBuildProfile doesn't
+    // update the query cache on its own), so selecting it before that
+    // completes would fall back to `profiles[0]` for a render or two.
+    const handleSaveProfile = async (profile: BuildProfile) => {
+        await refetch();
         setSelectedProfile(profile);
         clearProfileFilters();
         setAuthoring(false);
@@ -99,19 +103,18 @@ export const AgentBuilderWizardPage = () => {
     const query = profileSearch.trim().toLocaleLowerCase();
     const filteredProfiles = profiles.filter((profile) => {
         if (query && !profile.name.toLocaleLowerCase().includes(query) && !profile.description.toLocaleLowerCase().includes(query)) return false;
-        if (!profile.supportedTargets.some((targetId) => {
-            const target = COMPILE_TARGETS.find((item) => item.id === targetId);
-            return target && targetMatchesFilters(target);
-        })) return false;
         if (selectedTomeTypes.length > 0 && !profile.tomes.some((tome) => selectedTomeTypes.includes(tome.tactic))) return false;
         return true;
     });
     const visibleSelectedProfile = filteredProfiles.find((profile) => profile.id === selectedProfile?.id) ?? filteredProfiles[0] ?? null;
     const hasProfileFilters = !!profileSearch.trim() || profileFields.length > 0;
 
+    // Every profile can build every compile target -- BuildProfile doesn't
+    // track target capabilities on the backend, so this groups the full
+    // COMPILE_TARGETS list by platform rather than filtering it per-profile.
     const targetsByPlatform = useMemo(() => {
         const groups: Array<{ platformLabel: string; targets: CompileTarget[] }> = [];
-        COMPILE_TARGETS.filter((target) => selectedProfile?.supportedTargets.includes(target.id)).forEach((target) => {
+        COMPILE_TARGETS.forEach((target) => {
             let group = groups.find((g) => g.platformLabel === target.platformLabel);
             if (!group) {
                 group = { platformLabel: target.platformLabel, targets: [] };
@@ -120,7 +123,7 @@ export const AgentBuilderWizardPage = () => {
             group.targets.push(target);
         });
         return groups;
-    }, [selectedProfile]);
+    }, []);
 
     const startBuild = async () => {
         if (!selectedProfile || creating) return;
@@ -132,7 +135,7 @@ export const AgentBuilderWizardPage = () => {
                 targetFormat: `TARGET_FORMAT_${selectedTarget.format}`,
             } } });
             if (!data?.createBuildTask?.id) throw new Error("The server did not return a build task.");
-            navigate(`/scratch-agent-builder?tab=agents&task=${data.createBuildTask.id}`);
+            navigate(`/builder?tab=agents&task=${data.createBuildTask.id}`);
         } catch (error) {
             setError(error instanceof Error ? error.message : String(error));
         }
@@ -142,8 +145,8 @@ export const AgentBuilderWizardPage = () => {
         <div className="max-w-3xl mx-auto w-full flex flex-col gap-4">
             <Breadcrumbs
                 pages={[
-                    { label: "Agent Builder", link: "/scratch-agent-builder" },
-                    { label: "Generate agent", link: "/scratch-agent-builder/new" },
+                    { label: "Agent Builder", link: "/builder" },
+                    { label: "Generate agent", link: "/builder/new" },
                 ]}
             />
 
@@ -220,11 +223,8 @@ export const AgentBuilderWizardPage = () => {
                                 <div className="flex flex-row gap-2">
                                     <Button disabled={!visibleSelectedProfile} onClick={() => {
                                         if (!visibleSelectedProfile) return;
-                                        const matchingTarget = COMPILE_TARGETS.find((target) =>
-                                            visibleSelectedProfile.supportedTargets.includes(target.id) &&
-                                            targetMatchesFilters(target)
-                                        );
-                                        if (matchingTarget && (selectedOS.length > 0 || selectedFormats.length > 0 || !visibleSelectedProfile.supportedTargets.includes(selectedTarget.id))) {
+                                        const matchingTarget = COMPILE_TARGETS.find(targetMatchesFilters);
+                                        if (matchingTarget && (selectedOS.length > 0 || selectedFormats.length > 0)) {
                                             setSelectedTarget(matchingTarget);
                                         }
                                         setSelectedProfile(visibleSelectedProfile);
@@ -236,6 +236,7 @@ export const AgentBuilderWizardPage = () => {
 
                         {currStep === 0 && authoring && (
                             <NewBuildProfile
+                                catalog={tomes}
                                 onCancel={() => setAuthoring(false)}
                                 onSave={handleSaveProfile}
                             />

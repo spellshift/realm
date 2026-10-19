@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapProfile, profileInput, taskStatus, buildTaskRows, BuildTask, ProfileRecord } from "./api";
+import { mapProfile, profileInput, taskStatus, buildTaskRows, BuildTask, ProfileRecord } from "./queries";
 import { BuildProfile, Tome } from "./types";
 
 const catalog: Tome[] = [
@@ -56,8 +56,6 @@ describe("profileInput", () => {
         description: "DNS-only transport",
         transports: [{ id: "t1", type: "DNS", uri: "dns://127.0.0.1:53", interval: 60 }],
         buildImage: "ghcr.io/realm/builder:stealth",
-        platforms: ["WINDOWS"],
-        supportedTargets: ["windows-bin"],
         tomes: [{ id: "tr1", tomeId: "101", tomeName: "Exfil Recon", paramSummary: "No params", params: "{}", tactic: "RECON" }],
         tomeCount: 1,
         hasPersistenceTome: false,

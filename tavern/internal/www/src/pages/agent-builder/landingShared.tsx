@@ -27,17 +27,25 @@ export const builderColumns: ColumnDef<Builder>[] = [
         header: "Last seen",
         cell: ({ row }) =>
             row.original.lastSeenAt ? (
-                <Badge badgeStyle={{ color: "green" }}>{row.original.lastSeenAt}</Badge>
+                <Badge badgeStyle={{ color: row.original.online ? "green" : "gray" }}>{row.original.lastSeenAt}</Badge>
             ) : (
                 <Badge badgeStyle={{ color: "gray" }}>Never</Badge>
             ),
+    },
+    {
+        id: "online",
+        header: "Status",
+        cell: ({ row }) => (
+            <Badge badgeStyle={{ color: row.original.online ? "green" : "red" }}>
+                {row.original.online ? "Online" : "Offline"}
+            </Badge>
+        ),
     },
 ];
 
 export const profileColumns: ColumnDef<BuildProfile>[] = [
     { accessorKey: "name", header: "Name", cell: ({ row }) => <span className="text-sm font-medium text-gray-900">{row.original.name}</span> },
     { accessorKey: "description", header: "Description", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.description}</span> },
-    { accessorKey: "platforms", header: "Platforms", cell: ({ row }) => platformBadges(row.original.platforms) },
     { accessorKey: "tomeCount", header: "Tomes", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.tomeCount}</span> },
 ];
 
@@ -63,11 +71,23 @@ const statusBadge = (status: BuildTaskStatus) => {
 };
 
 // Built agents tab's table -- every BuildTask is a row (see buildTaskRows
-// in api.ts), so queued/claimed/building tasks show their live status here
+// in queries.ts), so queued/claimed/building tasks show their live status here
 // instead of a separate banner. Only `Built` rows carry an asset to
 // download/share; `Failed` rows surface their error in a tooltip.
-export const buildTaskColumns = (onCreateLink: (assetId: string, assetName: string) => void): ColumnDef<BuildTaskRow>[] => [
-    { accessorKey: "status", header: "Status", cell: ({ row }) => statusBadge(row.original.status) },
+// `highlightTaskId` marks the row for the task the operator just started
+// (navigated here via `?task=<id>` from the wizard's "Start build") so they
+// can find it in a list that may already contain many other rows.
+export const buildTaskColumns = (onCreateLink: (assetId: string, assetName: string) => void, highlightTaskId?: string | null): ColumnDef<BuildTaskRow>[] => [
+    {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+            <div className="flex flex-row items-center gap-2">
+                {statusBadge(row.original.status)}
+                {row.original.id === highlightTaskId && <Badge badgeStyle={{ color: "purple" }}>New</Badge>}
+            </div>
+        ),
+    },
     { accessorKey: "profileName", header: "Profile", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.profileName}</span> },
     { accessorKey: "platform", header: "Platform", cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{row.original.platform}</Badge> },
     { accessorKey: "format", header: "Format", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.format}</span> },

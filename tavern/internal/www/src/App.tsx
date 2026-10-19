@@ -78,12 +78,11 @@ const router = createBrowserRouter([
         element: <Profile />,
       },
       {
-        // Agent builder UI preview, backed by mock data.
-        path: "scratch-agent-builder",
+        path: "builder",
         element: <AgentBuilderLandingPage />,
       },
       {
-        path: "scratch-agent-builder/new",
+        path: "builder/new",
         element: <AgentBuilderWizardPage />,
       },
     ]

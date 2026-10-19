@@ -11,7 +11,7 @@ const pathToNavItem: Record<string, PageNavItem> = {
     '/tomes': PageNavItem.tomes,
     '/assets': PageNavItem.assets,
     '/admin': PageNavItem.admin,
-    '/scratch-agent-builder': PageNavItem.agentBuilder,
+    '/builder': PageNavItem.agentBuilder,
 };
 
 export function getNavItemFromPath(pathname: string): PageNavItem {
@@ -23,7 +23,7 @@ export function getNavItemFromPath(pathname: string): PageNavItem {
     if (pathname.startsWith('/hosts/')) return PageNavItem.hosts;
     if (pathname.startsWith('/tasks/')) return PageNavItem.tasks;
     if (pathname.startsWith('/shells/')) return PageNavItem.hosts;
-    if (pathname.startsWith('/scratch-agent-builder')) return PageNavItem.agentBuilder;
+    if (pathname.startsWith('/builder')) return PageNavItem.agentBuilder;
 
     return PageNavItem.dashboard;
 }

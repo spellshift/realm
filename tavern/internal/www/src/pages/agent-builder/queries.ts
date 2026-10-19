@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { gql, useQuery } from "@apollo/client";
 import { formatDistanceToNow } from "date-fns";
-import { Builder, BuildProfile, BuildTaskRow, COMPILE_TARGETS, Tome, TransportConfig, Platform, Format } from "./types";
+import { Builder, BuilderHealthy, BuildProfile, BuildTaskRow, Tome, TransportConfig, Platform, Format } from "./types";
 
 export const PROFILE_FIELDS = gql`
     fragment BuildProfileFields on BuildProfile {
@@ -54,11 +55,11 @@ type Connection<T> = { edges: Array<{ node: T | null } | null> | null };
 export const nodes = <T,>(connection?: Connection<T>): T[] =>
     connection?.edges?.flatMap((edge) => edge?.node ? [edge.node] : []) ?? [];
 
-export type ProfileRecord = Omit<BuildProfile, "transports" | "tomes" | "platforms" | "supportedTargets" | "tomeCount" | "hasPersistenceTome"> & {
+export type ProfileRecord = Omit<BuildProfile, "transports" | "tomes" | "tomeCount" | "hasPersistenceTome"> & {
     transports: Array<Omit<TransportConfig, "id" | "type"> & { type: string }>;
     tomes: Array<{ tomeID: number; params: string }> | null;
 };
-export type BuilderRecord = Omit<Builder, "supportedTargets"> & { supportedTargets: string[] };
+export type BuilderRecord = Omit<Builder, "supportedTargets" | "lastSeenAtRaw" | "online"> & { supportedTargets: string[] };
 export type BuildTask = {
     id: string;
     targetOs: string;
@@ -94,8 +95,6 @@ export function mapProfile(profile: ProfileRecord, catalog: Tome[]): BuildProfil
             type: transport.type.replace(/^TRANSPORT_/, "") as TransportConfig["type"],
         })),
         tomes,
-        platforms: ["LINUX", "MACOS", "WINDOWS"],
-        supportedTargets: COMPILE_TARGETS.map((target) => target.id),
         tomeCount: tomes.length,
         hasPersistenceTome: tomes.some((tome) => tome.tactic === "PERSISTENCE"),
     };
@@ -112,7 +111,21 @@ export function profileInput(profile: BuildProfile) {
     };
 }
 
-export function taskStatus(task: BuildTask): BuildTaskRow["status"] {
+// DockerExecutor.Build (tavern/internal/builder/executor/docker.go) reports a
+// failed artifact extraction by returning an error containing this text
+// alongside a successful (0) exit code, specifically so a successful build
+// with a missing artifact isn't mistaken for one still in progress.
+const EXTRACTION_FAILURE_TEXT = "artifact extraction failed";
+
+// A finished task with exitCode 0 and no artifact yet is normally just the
+// brief gap before the builder's separate UploadBuildArtifact call lands --
+// but if extraction failed, or the upload itself silently never arrives
+// (the builder only logs that failure locally), no artifact is ever coming.
+// Treat either case, or a gap that's stretched well past that window, as
+// terminal so the row doesn't spin forever.
+const AWAITING_ARTIFACT_TIMEOUT_MS = 5 * 60 * 1000;
+
+export function taskStatus(task: BuildTask, now: number = Date.now()): BuildTaskRow["status"] {
     if (task.finishedAt) {
         // `error` holds whatever the build container wrote to stderr, which
         // for a normal cargo build includes non-fatal progress/warnings --
@@ -120,7 +133,10 @@ export function taskStatus(task: BuildTask): BuildTaskRow["status"] {
         // whether an artifact was produced) is the source of truth; a
         // successful build can still have populated `error` text.
         if (task.exitCode !== 0) return "Failed";
-        return task.artifact ? "Built" : "Awaiting artifact";
+        if (task.artifact) return "Built";
+        if (task.error?.includes(EXTRACTION_FAILURE_TEXT)) return "Failed";
+        const elapsed = now - new Date(task.finishedAt).getTime();
+        return elapsed > AWAITING_ARTIFACT_TIMEOUT_MS ? "Failed" : "Awaiting artifact";
     }
     if (task.startedAt) return "Building";
     return task.claimedAt ? "Claimed" : "Queued";
@@ -130,8 +146,9 @@ export function taskStatus(task: BuildTask): BuildTaskRow["status"] {
 // with an in-progress status and no artifact fields, failed tasks carry
 // their error, and only `Built` rows have a downloadable asset attached.
 export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
+    const now = Date.now();
     return tasks.map((task) => {
-        const status = taskStatus(task);
+        const status = taskStatus(task, now);
         const timestamp = formatDistanceToNow(new Date(task.finishedAt ?? task.createdAt), { addSuffix: true });
         return {
             id: task.id,
@@ -139,7 +156,7 @@ export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
             profileName: task.profileAtCreation?.name ?? task.profile.name,
             platform: task.targetOs.replace(/^PLATFORM_/, "") as Platform,
             format: task.targetFormat.replace(/^TARGET_FORMAT_/, "") as Format,
-            error: task.error,
+            error: task.error ?? (status === "Failed" && task.exitCode === 0 ? "The build finished but no artifact was produced." : null),
             timestamp,
             assetId: task.artifact?.id ?? null,
             assetName: task.artifact?.name ?? null,
@@ -155,20 +172,52 @@ export function useBuildProfiles() {
     return { ...result, tomes, profiles: nodes(result.data?.buildProfiles).map((profile) => mapProfile(profile, tomes)) };
 }
 
-export function useBuilders(skip = false) {
-    const result = useQuery<{ builders: Connection<BuilderRecord> }>(GET_BUILDERS, { skip, pollInterval: 5000, fetchPolicy: "cache-and-network" });
+export function useBuilders(options: { skip?: boolean } = {}) {
+    const { skip = false } = options;
+    const result = useQuery<{ builders: Connection<BuilderRecord> }>(GET_BUILDERS, {
+        skip,
+        pollInterval: skip ? 0 : 5000,
+        fetchPolicy: "cache-and-network",
+    });
+    const now = Date.now();
     const builders: Builder[] = nodes(result.data?.builders).map((builder) => ({
         ...builder,
         supportedTargets: builder.supportedTargets.map((target) => target.replace(/^PLATFORM_/, "") as Platform),
+        lastSeenAtRaw: builder.lastSeenAt,
+        online: BuilderHealthy(builder.lastSeenAt, builder.pollInterval, now),
         lastSeenAt: builder.lastSeenAt ? formatDistanceToNow(new Date(builder.lastSeenAt), { addSuffix: true }) : null,
     }));
     return { ...result, builders };
 }
 
-export function useBuildTasks() {
-    const result = useQuery<{ buildTasks: Connection<BuildTask> }>(GET_BUILD_TASKS, { pollInterval: 3000, fetchPolicy: "cache-and-network" });
+export function useBuildTasks(options: { skip?: boolean } = {}) {
+    const { skip = false } = options;
+    const result = useQuery<{ buildTasks: Connection<BuildTask> }>(GET_BUILD_TASKS, {
+        skip,
+        fetchPolicy: "cache-and-network",
+    });
     const tasks = nodes(result.data?.buildTasks);
-    return { ...result, tasks, rows: buildTaskRows(tasks) };
+    const rows = buildTaskRows(tasks);
+    // The task list only grows (every build task ever created is a row), so
+    // polling it every few seconds forever is wasted work once nothing is
+    // actually in flight -- poll only while at least one row is still
+    // Queued/Claimed/Building/Awaiting artifact, and stop the moment
+    // everything has reached a terminal status.
+    const hasActiveTask = rows.some((row) => row.status !== "Built" && row.status !== "Failed");
+    useEffect(() => {
+        if (skip) {
+            result.stopPolling();
+            return;
+        }
+        if (hasActiveTask) {
+            result.startPolling(3000);
+        } else {
+            result.stopPolling();
+        }
+        return () => result.stopPolling();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasActiveTask, skip]);
+    return { ...result, tasks, rows };
 }
 
 export function downloadBuilderConfig(config: string, identifier: string) {

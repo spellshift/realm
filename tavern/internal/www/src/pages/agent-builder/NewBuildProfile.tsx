@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import AlertError from "../../components/tavern-base-ui/AlertError";
-import { CREATE_BUILD_PROFILE, mapProfile, profileInput, ProfileRecord, useBuildProfiles } from "./api";
+import { CREATE_BUILD_PROFILE, mapProfile, profileInput, ProfileRecord } from "./queries";
+import { safelyJsonParse } from "../../utils/utils";
 import { Heading, Textarea } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon, ChevronDownIcon, ChevronUpIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import Button from "../../components/tavern-base-ui/button/Button";
@@ -12,7 +13,6 @@ import Modal from "../../components/tavern-base-ui/Modal";
 import {
     TRANSPORT_TYPES,
     DEFAULT_TRANSPORT,
-    COMPILE_TARGETS,
     Tome,
     DEFAULT_SETUP_SCRIPT,
     TransportConfig,
@@ -48,9 +48,11 @@ const advancedScriptFields = [
  * design decision -- most operators will never touch them.
  */
 export const NewBuildProfile = ({
+    catalog,
     onCancel,
     onSave,
 }: {
+    catalog: Tome[];
     onCancel: () => void;
     onSave: (profile: BuildProfile) => void;
 }) => {
@@ -60,7 +62,6 @@ export const NewBuildProfile = ({
     const [transports, setTransports] = useState<TransportConfig[]>([DEFAULT_TRANSPORT]);
     const [tomes, setTomes] = useState<TomeRef[]>([]);
     const [addingTome, setAddingTome] = useState(false);
-    const { tomes: catalog, error: catalogError } = useBuildProfiles();
     const [tomeToAdd, setTomeToAdd] = useState<Tome | null>(null);
     const [tomeParams, setTomeParams] = useState("{}");
     const [scripts, setScripts] = useState(advancedScriptFields.map((field, index) => field.defaultValue));
@@ -114,8 +115,6 @@ export const NewBuildProfile = ({
             if (scripts[5].trim()) JSON.parse(scripts[5]);
             const profile: BuildProfile = {
                 id: "", name, description, transports, buildImage,
-                platforms: ["LINUX", "MACOS", "WINDOWS"],
-                supportedTargets: COMPILE_TARGETS.map((target) => target.id),
                 tomes, tomeCount: tomes.length, hasPersistenceTome,
                 buildScript: scripts[0], artifactPath: scripts[1], prebuildscript: scripts[2],
                 setupscript: scripts[3], postbuildscript: scripts[4], unique: scripts[5],
@@ -132,7 +131,6 @@ export const NewBuildProfile = ({
         <>
         <div className="flex flex-col gap-4 w-full min-w-0 max-w-xl">
             {error && <AlertError label="Unable to save profile" details={error} />}
-            {catalogError && <AlertError label="Unable to load tomes" details={catalogError.message} />}
             <div className="flex flex-col gap-1">
                 <Heading size="sm">New build profile</Heading>
                 <p className="text-sm text-gray-500">
@@ -246,10 +244,8 @@ export const NewBuildProfile = ({
                             selected={tomeToAdd}
                             setSelected={(tome: Tome) => {
                                 setTomeToAdd(tome);
-                                try {
-                                    const definitions = JSON.parse(tome.paramDefs || "{}").params || [];
-                                    setTomeParams(JSON.stringify(Object.fromEntries(definitions.map((param: { name: string; value?: string }) => [param.name, param.value || ""])), null, 2));
-                                } catch { setTomeParams("{}"); }
+                                const { params: definitions } = safelyJsonParse(tome.paramDefs || "[]");
+                                setTomeParams(JSON.stringify(Object.fromEntries(definitions.map((param: { name: string; value?: string }) => [param.name, param.value || ""])), null, 2));
                             }}
                         />
                         {catalog.length === 0 && <p className="text-sm text-gray-500">No tomes available. Import a tome before adding it to this profile.</p>}

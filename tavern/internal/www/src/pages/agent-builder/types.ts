@@ -71,9 +71,6 @@ export type BuildProfile = {
     description: string;
     transports: TransportConfig[];
     buildImage: string;
-    platforms: Platform[];
-    // Derived from the backend-supported compile targets.
-    supportedTargets: string[];
     tomes: TomeRef[];
     tomeCount: number;
     hasPersistenceTome: boolean;
@@ -94,7 +91,24 @@ export type Builder = {
     upstream: string;
     pollInterval: number;
     lastSeenAt: string | null;
+    // Raw ISO timestamp lastSeenAt is derived from, kept alongside the
+    // human-readable string above so health can be recomputed without a
+    // round trip, and whether that check currently passes.
+    lastSeenAtRaw: string | null;
+    online: boolean;
 };
+
+// Mirrors BuilderHealthy (tavern/internal/builder/config.go): a builder is
+// healthy if it has checked in within three of its own polling intervals.
+// Build creation (CreateBuildTask resolver) only considers healthy builders,
+// so the UI uses the same rule to decide whether a target is actually
+// buildable right now, not just nominally supported by some builder.
+export function BuilderHealthy(lastSeenAt: string | null, pollInterval: number, now: number = Date.now()): boolean {
+    if (!lastSeenAt || !Number.isFinite(pollInterval) || pollInterval <= 0) return false;
+    const lastSeen = new Date(lastSeenAt).getTime();
+    if (Number.isNaN(lastSeen)) return false;
+    return lastSeen >= now - 3 * pollInterval * 1000;
+}
 
 export type BuildTaskStatus = "Queued" | "Claimed" | "Building" | "Awaiting artifact" | "Built" | "Failed";
 

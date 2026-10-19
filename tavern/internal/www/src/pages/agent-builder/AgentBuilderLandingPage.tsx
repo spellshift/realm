@@ -14,7 +14,7 @@ import FormTextField from "../../components/tavern-base-ui/FormTextField";
 import CodeBlock from "../../components/tavern-base-ui/CodeBlock";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { builderColumns, profileColumns, buildTaskColumns } from "./landingShared";
-import { useBuilders, useBuildProfiles, useBuildTasks, REGISTER_BUILDER, downloadBuilderConfig } from "./api";
+import { useBuilders, useBuildProfiles, useBuildTasks, REGISTER_BUILDER, downloadBuilderConfig } from "./queries";
 import CreateLinkModal from "../assets/components/CreateLinkModal/CreateLinkModal";
 import { Platform } from "./types";
 
@@ -49,32 +49,36 @@ const tabClass = ({ selected }: { selected: boolean }) =>
  * carries "Generate agent". Empty states reuse the FilesTab/ProcessTab
  * "no data" CTA pattern.
  *
- * `?emptydemo=profiles|builders` forces that tab's list empty, purely to
- * screenshot the empty-state CTA -- not real app behavior.
- *
  * Built agents' table shows one row per BuildTask (see buildTaskRows in
- * api.ts) -- queued/claimed/building tasks render with a live status badge
- * and no artifact yet, so there's no separate "build in progress" banner;
- * the table itself is the live status view.
+ * queries.ts) -- queued/claimed/building tasks render with a live status
+ * badge and no artifact yet, so there's no separate "build in progress"
+ * banner; the table itself is the live status view. `?task=<id>` (set by
+ * the wizard's "Start build" redirect) surfaces the just-created task by
+ * sorting it to the top of that table and tagging it "New".
  */
 export const AgentBuilderLandingPage = () => {
     const navigate = useNavigate();
     const [selectedAsset, setSelectedAsset] = useState<{ id: string; name: string } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const tabParam = searchParams.get("tab");
-    const emptyDemo = searchParams.get("emptydemo");
+    const highlightTaskId = searchParams.get("task");
     const selectedIndex = Math.max(0, TAB_NAMES.indexOf(tabParam as typeof TAB_NAMES[number]));
 
     const { profiles, loading: profilesLoading, error: profilesError } = useBuildProfiles();
     const { builders, loading: buildersLoading, error: buildersError, refetch: refetchBuilders } = useBuilders();
-    const { rows, loading: tasksLoading, error: tasksError } = useBuildTasks();
+    const { rows: taskRows, loading: tasksLoading, error: tasksError } = useBuildTasks();
+    // Bring the just-started task (if any) to the top, rather than leaving
+    // the operator to hunt for it in createdAt order.
+    const rows = highlightTaskId
+        ? [...taskRows].sort((a, b) => (a.id === highlightTaskId ? -1 : b.id === highlightTaskId ? 1 : 0))
+        : taskRows;
 
     const handleTabChange = (index: number) => {
-        setSearchParams({ tab: TAB_NAMES[index] }, { replace: true });
+        const next: Record<string, string> = { tab: TAB_NAMES[index] };
+        if (highlightTaskId) next.task = highlightTaskId;
+        setSearchParams(next, { replace: true });
     };
 
-    const visibleProfiles = emptyDemo === "profiles" ? [] : profiles;
-    const visibleBuilders = emptyDemo === "builders" ? [] : builders;
     const handleCreateLink = useCallback((id: string, name: string) => {
         setSelectedAsset({ id, name });
     }, []);
@@ -104,8 +108,12 @@ export const AgentBuilderLandingPage = () => {
         setEnrolling(false);
         resetEnrollForm();
     };
+    // Mirrors the Builder ent schema's poll_interval validation (Min(1)) --
+    // checked client-side so a bad value fails on the "Enroll" button
+    // rather than round-tripping to the server first.
+    const pollIntervalValid = Number.isInteger(enrollPollInterval) && enrollPollInterval >= 1;
     const submitEnroll = async () => {
-        if (enrollTargets.length === 0 || enrollSubmitting) return;
+        if (enrollTargets.length === 0 || !pollIntervalValid || enrollSubmitting) return;
         setEnrollError(null);
         try {
             const { data } = await registerBuilder({ variables: { input: {
@@ -124,11 +132,11 @@ export const AgentBuilderLandingPage = () => {
     return (
         <div className="flex flex-col gap-4 w-full min-w-0">
             <div className="flex flex-col sm:flex-row gap-3 justify-between w-full min-w-0 items-start sm:items-center">
-                <Breadcrumbs pages={[{ label: "Agent Builder", link: "/scratch-agent-builder" }]} />
+                <Breadcrumbs pages={[{ label: "Agent Builder", link: "/builder" }]} />
                 <Button
                     leftIcon={<FileTerminal className="w-5 h-5" />}
                     buttonStyle={{ color: "purple", size: "md" }}
-                    onClick={() => navigate("/scratch-agent-builder/new")}
+                    onClick={() => navigate("/builder/new")}
                 >
                     Generate agent
                 </Button>
@@ -144,12 +152,12 @@ export const AgentBuilderLandingPage = () => {
                     <Tab className={tabClass}>
                         <Settings2 className="w-4 h-4" />
                         <div>Build profiles</div>
-                        <div>({visibleProfiles.length})</div>
+                        <div>({profiles.length})</div>
                     </Tab>
                     <Tab className={tabClass}>
                         <Hammer className="w-4 h-4" />
                         <div>Builders</div>
-                        <div>({visibleBuilders.length})</div>
+                        <div>({builders.length})</div>
                     </Tab>
                 </TabList>
                 <TabPanels className="min-w-0">
@@ -168,7 +176,7 @@ export const AgentBuilderLandingPage = () => {
                                         <Button
                                             leftIcon={<PlusIcon className="w-4 h-4" />}
                                             buttonStyle={{ color: "purple", size: "md" }}
-                                            onClick={() => navigate("/scratch-agent-builder/new")}
+                                            onClick={() => navigate("/builder/new")}
                                         >
                                             Generate agent
                                         </Button>
@@ -178,14 +186,14 @@ export const AgentBuilderLandingPage = () => {
                                 <>
                                     <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
                                         <div className="min-w-[720px] w-full">
-                                            <Table data={rows} columns={buildTaskColumns(handleCreateLink)} />
+                                            <Table data={rows} columns={buildTaskColumns(handleCreateLink, highlightTaskId)} />
                                         </div>
                                     </div>
                                     <Button
                                         buttonVariant="ghost"
                                         buttonStyle={{ color: "purple", size: "sm" }}
                                         leftIcon={<PlusIcon className="w-4 h-4" />}
-                                        onClick={() => navigate("/scratch-agent-builder/new")}
+                                        onClick={() => navigate("/builder/new")}
                                         className="w-fit"
                                     >
                                         Generate agent
@@ -199,7 +207,7 @@ export const AgentBuilderLandingPage = () => {
                         {profilesError && <AlertError label="Unable to load build profiles" details={profilesError.message} />}
                         {profilesLoading && profiles.length === 0 ? (
                             <p role="status">Loading build profiles…</p>
-                        ) : visibleProfiles.length === 0 ? (
+                        ) : profiles.length === 0 ? (
                             <div className="rounded-md border border-gray-200 border-t-0 overflow-hidden">
                                 <EmptyState
                                     type={EmptyStateType.noData}
@@ -209,7 +217,7 @@ export const AgentBuilderLandingPage = () => {
                                     <Button
                                         leftIcon={<PlusIcon className="w-4 h-4" />}
                                         buttonStyle={{ color: "purple", size: "md" }}
-                                        onClick={() => navigate("/scratch-agent-builder/new?authoring=1")}
+                                        onClick={() => navigate("/builder/new?authoring=1")}
                                     >
                                         Add build profile
                                     </Button>
@@ -219,14 +227,14 @@ export const AgentBuilderLandingPage = () => {
                             <div className="flex flex-col gap-2">
                                 <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
                                     <div className="min-w-[720px] w-full">
-                                        <Table data={visibleProfiles} columns={profileColumns} />
+                                        <Table data={profiles} columns={profileColumns} />
                                     </div>
                                 </div>
                                 <Button
                                     buttonVariant="ghost"
                                     buttonStyle={{ color: "purple", size: "sm" }}
                                     leftIcon={<PlusIcon className="w-4 h-4" />}
-                                    onClick={() => navigate("/scratch-agent-builder/new?authoring=1")}
+                                    onClick={() => navigate("/builder/new?authoring=1")}
                                     className="w-fit"
                                 >
                                     Add build profile
@@ -239,7 +247,7 @@ export const AgentBuilderLandingPage = () => {
                         {buildersError && <AlertError label="Unable to load builders" details={buildersError.message} />}
                         {buildersLoading && builders.length === 0 ? (
                             <p role="status">Loading builders…</p>
-                        ) : visibleBuilders.length === 0 ? (
+                        ) : builders.length === 0 ? (
                             <div className="rounded-md border border-gray-200 border-t-0 overflow-hidden">
                                 <EmptyState
                                     type={EmptyStateType.noData}
@@ -259,7 +267,7 @@ export const AgentBuilderLandingPage = () => {
                             <div className="flex flex-col gap-2">
                                 <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
                                     <div className="min-w-[720px] w-full">
-                                        <Table data={visibleBuilders} columns={builderColumns} />
+                                        <Table data={builders} columns={builderColumns} />
                                     </div>
                                 </div>
                                 <Button
@@ -336,7 +344,7 @@ export const AgentBuilderLandingPage = () => {
                             />
                             <div className="flex flex-row gap-2">
                                 <Button buttonVariant="ghost" onClick={closeEnrollModal}>Cancel</Button>
-                                <Button onClick={submitEnroll} isLoading={enrollSubmitting} disabled={enrollTargets.length === 0}>
+                                <Button onClick={submitEnroll} isLoading={enrollSubmitting} disabled={enrollTargets.length === 0 || !pollIntervalValid}>
                                     Enroll
                                 </Button>
                             </div>
