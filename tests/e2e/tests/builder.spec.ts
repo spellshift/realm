@@ -245,7 +245,7 @@ test.describe('Builder E2E Test', () => {
     console.log(`Saved screenshot to ${screenshotPath}`);
 
     // The agent builder UI must show the completed task with its artifact actions.
-    await page.goto('/scratch-agent-builder?tab=agents');
+    await page.goto('/builder?tab=agents');
     const buildRow = page.getByRole('row').filter({ hasText: profileName });
     await expect(buildRow).toBeVisible({ timeout: 15000 });
     await expect(buildRow.getByText('Built', { exact: true })).toBeVisible();

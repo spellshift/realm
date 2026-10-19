@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { gql, useQuery } from "@apollo/client";
 import { formatDistanceToNow } from "date-fns";
 import { Builder, BuilderHealthy, BuildProfile, BuildTaskRow, Tome, TransportConfig, Platform, Format } from "./types";
@@ -176,7 +175,6 @@ export function useBuilders(options: { skip?: boolean } = {}) {
     const { skip = false } = options;
     const result = useQuery<{ builders: Connection<BuilderRecord> }>(GET_BUILDERS, {
         skip,
-        pollInterval: skip ? 0 : 5000,
         fetchPolicy: "cache-and-network",
     });
     const now = Date.now();
@@ -198,25 +196,6 @@ export function useBuildTasks(options: { skip?: boolean } = {}) {
     });
     const tasks = nodes(result.data?.buildTasks);
     const rows = buildTaskRows(tasks);
-    // The task list only grows (every build task ever created is a row), so
-    // polling it every few seconds forever is wasted work once nothing is
-    // actually in flight -- poll only while at least one row is still
-    // Queued/Claimed/Building/Awaiting artifact, and stop the moment
-    // everything has reached a terminal status.
-    const hasActiveTask = rows.some((row) => row.status !== "Built" && row.status !== "Failed");
-    useEffect(() => {
-        if (skip) {
-            result.stopPolling();
-            return;
-        }
-        if (hasActiveTask) {
-            result.startPolling(3000);
-        } else {
-            result.stopPolling();
-        }
-        return () => result.stopPolling();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hasActiveTask, skip]);
     return { ...result, tasks, rows };
 }
 
