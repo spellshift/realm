@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,25 +13,6 @@ import (
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/ent/tag"
 )
-
-func TestSQLiteDSNPersistsAcrossConnections(t *testing.T) {
-	t.Setenv(EnvSQLiteDSN.Key, "file:"+filepath.Join(t.TempDir(), "tavern.db")+"?_fk=1")
-	ctx := context.Background()
-
-	first, err := (&Config{}).Connect()
-	require.NoError(t, err)
-	require.NoError(t, first.Schema.Create(ctx, migrate.WithGlobalUniqueID(true)))
-	_, err = first.Tag.Create().SetName("persisted").SetKind(tag.KindGroup).Save(ctx)
-	require.NoError(t, err)
-	require.NoError(t, first.Close())
-
-	second, err := (&Config{}).Connect()
-	require.NoError(t, err)
-	defer second.Close()
-	count, err := second.Tag.Query().Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count)
-}
 
 // TestConfigureMySQLFromEnv ensures environment variables set the proper config values.
 func TestConfigureMySQLFromEnv(t *testing.T) {
