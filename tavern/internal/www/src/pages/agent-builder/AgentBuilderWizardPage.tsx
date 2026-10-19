@@ -131,8 +131,8 @@ export const AgentBuilderWizardPage = () => {
         try {
             const { data } = await createTask({ variables: { input: {
                 profileID: selectedProfile.id,
-                targetOS: `PLATFORM_${selectedTarget.platform}`,
-                targetFormat: `TARGET_FORMAT_${selectedTarget.format}`,
+                targetOS: selectedTarget.platform,
+                targetFormat: selectedTarget.format,
             } } });
             if (!data?.createBuildTask?.id) throw new Error("The server did not return a build task.");
             navigate(`/builder?tab=agents&task=${data.createBuildTask.id}`);

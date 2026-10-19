@@ -4,50 +4,10 @@ import { Tooltip } from "@chakra-ui/react";
 import { Share } from "lucide-react";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { Ring } from "@uiball/loaders";
-import Button from "../../components/tavern-base-ui/button/Button";
-import Badge from "../../components/tavern-base-ui/badge/Badge";
-import DownloadButton from "../assets/components/DownloadButton";
-import { Builder, BuildProfile, BuildTaskRow, BuildTaskStatus } from "./types";
-
-const platformBadges = (platforms: string[]) => (
-    <div className="flex flex-row gap-1 flex-wrap">
-        {platforms.map((p) => (
-            <Badge key={p} badgeStyle={{ color: "gray" }}>{p}</Badge>
-        ))}
-    </div>
-);
-
-export const builderColumns: ColumnDef<Builder>[] = [
-    { accessorKey: "identifier", header: "Identifier", cell: ({ row }) => <span className="font-mono text-xs">{row.original.identifier}</span> },
-    { accessorKey: "supportedTargets", header: "Supports", cell: ({ row }) => platformBadges(row.original.supportedTargets) },
-    { accessorKey: "upstream", header: "Upstream", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.upstream}</span> },
-    { accessorKey: "pollInterval", header: "Poll interval", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.pollInterval}s</span> },
-    {
-        accessorKey: "lastSeenAt",
-        header: "Last seen",
-        cell: ({ row }) =>
-            row.original.lastSeenAt ? (
-                <Badge badgeStyle={{ color: row.original.online ? "green" : "gray" }}>{row.original.lastSeenAt}</Badge>
-            ) : (
-                <Badge badgeStyle={{ color: "gray" }}>Never</Badge>
-            ),
-    },
-    {
-        id: "online",
-        header: "Status",
-        cell: ({ row }) => (
-            <Badge badgeStyle={{ color: row.original.online ? "green" : "red" }}>
-                {row.original.online ? "Online" : "Offline"}
-            </Badge>
-        ),
-    },
-];
-
-export const profileColumns: ColumnDef<BuildProfile>[] = [
-    { accessorKey: "name", header: "Name", cell: ({ row }) => <span className="text-sm font-medium text-gray-900">{row.original.name}</span> },
-    { accessorKey: "description", header: "Description", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.description}</span> },
-    { accessorKey: "tomeCount", header: "Tomes", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.tomeCount}</span> },
-];
+import Button from "../../../components/tavern-base-ui/button/Button";
+import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import DownloadButton from "../../assets/components/DownloadButton";
+import { BuildTaskRow, BuildTaskStatus, PLATFORM_LABELS, FORMAT_LABELS } from "../types";
 
 // Status -> badge color + icon for build task rows. Queued/Claimed/Building
 // (and the brief post-build "Awaiting artifact" gap) all get the same
@@ -89,8 +49,8 @@ export const buildTaskColumns = (onCreateLink: (assetId: string, assetName: stri
         ),
     },
     { accessorKey: "profileName", header: "Profile", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.profileName}</span> },
-    { accessorKey: "platform", header: "Platform", cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{row.original.platform}</Badge> },
-    { accessorKey: "format", header: "Format", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.format}</span> },
+    { accessorKey: "platform", header: "Platform", cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{PLATFORM_LABELS[row.original.platform]}</Badge> },
+    { accessorKey: "format", header: "Format", cell: ({ row }) => <span className="text-sm text-gray-600">{FORMAT_LABELS[row.original.format]}</span> },
     {
         accessorKey: "artifactName",
         header: "Artifact",

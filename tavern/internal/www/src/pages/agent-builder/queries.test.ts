@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mapProfile, profileInput, taskStatus, buildTaskRows, BuildTask, ProfileRecord } from "./queries";
 import { BuildProfile, Tome } from "./types";
+import { SupportedTransports } from "../../utils/enums";
 
 const catalog: Tome[] = [
     { id: "101", name: "Exfil Recon", description: "", tactic: "RECON" },
@@ -23,10 +24,10 @@ describe("mapProfile", () => {
         tomes: [{ tomeID: 102, params: "{}" }],
     };
 
-    it("strips the TRANSPORT_ prefix and assigns stable ids to transports", () => {
+    it("assigns stable ids to transports, keeping the gRPC-schema type value as-is", () => {
         const mapped = mapProfile(record, catalog);
         expect(mapped.transports).toEqual([
-            { type: "GRPC", uri: "http://127.0.0.1:8000", interval: 5, extra: undefined, id: "transport-0" },
+            { type: "TRANSPORT_GRPC", uri: "http://127.0.0.1:8000", interval: 5, extra: undefined, id: "transport-0" },
         ]);
     });
 
@@ -54,7 +55,7 @@ describe("profileInput", () => {
         id: "1",
         name: "  Stealth DNS  ",
         description: "DNS-only transport",
-        transports: [{ id: "t1", type: "DNS", uri: "dns://127.0.0.1:53", interval: 60 }],
+        transports: [{ id: "t1", type: SupportedTransports.DNS, uri: "dns://127.0.0.1:53", interval: 60 }],
         buildImage: "ghcr.io/realm/builder:stealth",
         tomes: [{ id: "tr1", tomeId: "101", tomeName: "Exfil Recon", paramSummary: "No params", params: "{}", tactic: "RECON" }],
         tomeCount: 1,
@@ -67,7 +68,7 @@ describe("profileInput", () => {
         unique: "",
     };
 
-    it("trims the name and re-adds the TRANSPORT_ prefix", () => {
+    it("trims the name and passes the gRPC-schema transport type through unchanged", () => {
         const input = profileInput(profile);
         expect(input.name).toBe("Stealth DNS");
         expect(input.transports).toEqual([{ type: "TRANSPORT_DNS", uri: "dns://127.0.0.1:53", interval: 60, extra: undefined }]);
@@ -192,8 +193,8 @@ describe("buildTaskRows", () => {
             assetName: "build/macos/bin/imix-calm-raven",
             artifactName: "imix-calm-raven",
             artifactSize: "2.00 MB",
-            platform: "MACOS",
-            format: "BIN",
+            platform: "PLATFORM_MACOS",
+            format: "TARGET_FORMAT_BIN",
         });
     });
 });

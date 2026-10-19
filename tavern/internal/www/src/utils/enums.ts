@@ -25,6 +25,14 @@ export enum SupportedPlatforms {
     Platform_Unknown='PLATFORM_UNSPECIFIED'
 }
 
+// Mirrors builderpb.TargetFormat (tavern/internal/builder/builderpb) --
+// the artifact formats a BuildTask can target.
+export enum SupportedFormats {
+    Bin = "TARGET_FORMAT_BIN",
+    Cdylib = "TARGET_FORMAT_CDYLIB",
+    WindowsService = "TARGET_FORMAT_WINDOWS_SERVICE",
+}
+
 export enum SupportedTransports {
     DNS="TRANSPORT_DNS",
     GRPC="TRANSPORT_GRPC",

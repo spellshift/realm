@@ -10,6 +10,7 @@ import FormTextField from "../../components/tavern-base-ui/FormTextField";
 import SingleDropdownSelector from "../../components/tavern-base-ui/SingleDropdownSelector";
 import { FormRadioGroup } from "../../components/tavern-base-ui/FormRadioGroup";
 import Modal from "../../components/tavern-base-ui/Modal";
+import { SupportedTransports } from "../../utils/enums";
 import {
     TRANSPORT_TYPES,
     DEFAULT_TRANSPORT,
@@ -76,7 +77,7 @@ export const NewBuildProfile = ({
     const [transportDraft, setTransportDraft] = useState<TransportConfig | null>(null);
 
     const openAddTransport = () => {
-        setTransportDraft({ id: `t${Date.now()}`, type: "HTTP1", uri: "", interval: 30 });
+        setTransportDraft({ id: `t${Date.now()}`, type: SupportedTransports.HTTP1, uri: "", interval: 30 });
         setTransportModalOpen(true);
     };
     const openEditTransport = (transport: TransportConfig) => {

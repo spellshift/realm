@@ -1,7 +1,26 @@
+import { SupportedPlatforms, SupportedFormats, SupportedTransports, TomeTactic } from "../../utils/enums";
+
 export const NO_INSTALL_WARNING = "No persistence tome is bundled. Without one, the install command won't persist the agent.";
 
-export type Platform = "LINUX" | "MACOS" | "WINDOWS";
-export type Format = "BIN" | "CDYLIB" | "WINDOWS_SERVICE";
+// BuildTasks/Builders can only target the OSes imix actually builds for --
+// SupportedPlatforms also carries BSD and PLATFORM_UNSPECIFIED, which aren't
+// valid build targets, so this narrows to the three that are.
+export type Platform = SupportedPlatforms.Linux | SupportedPlatforms.MacOS | SupportedPlatforms.Windows;
+export type Format = SupportedFormats;
+
+// Friendly labels for the raw gRPC enum values above -- used anywhere a
+// Platform/Format needs to render as text (badges, selects) rather than
+// its wire value.
+export const PLATFORM_LABELS: Record<Platform, string> = {
+    [SupportedPlatforms.Linux]: "Linux",
+    [SupportedPlatforms.MacOS]: "macOS",
+    [SupportedPlatforms.Windows]: "Windows",
+};
+export const FORMAT_LABELS: Record<Format, string> = {
+    [SupportedFormats.Bin]: "Executable",
+    [SupportedFormats.Cdylib]: "Shared library",
+    [SupportedFormats.WindowsService]: "Windows service",
+};
 
 export type CompileTarget = {
     id: string;
@@ -19,26 +38,40 @@ export type CompileTarget = {
 // Linux and macOS builds are BIN-only today; only Windows has multiple
 // output formats (BIN, CDYLIB, WINDOWS_SERVICE).
 export const COMPILE_TARGETS: CompileTarget[] = [
-    { id: "linux-bin", platform: "LINUX", platformLabel: "Linux", format: "BIN", formatLabel: "Executable", description: "ELF binary, glibc/musl" },
-    { id: "macos-bin", platform: "MACOS", platformLabel: "macOS", format: "BIN", formatLabel: "Executable", description: "Mach-O binary, arm64/x86_64" },
-    { id: "windows-bin", platform: "WINDOWS", platformLabel: "Windows", format: "BIN", formatLabel: "Executable", description: "PE binary" },
-    { id: "windows-cdylib", platform: "WINDOWS", platformLabel: "Windows", format: "CDYLIB", formatLabel: "Shared library", description: "Loadable .dll" },
-    { id: "windows-service", platform: "WINDOWS", platformLabel: "Windows", format: "WINDOWS_SERVICE", formatLabel: "Windows service", description: "Installs as a service" },
+    { id: "linux-bin", platform: SupportedPlatforms.Linux, platformLabel: PLATFORM_LABELS[SupportedPlatforms.Linux], format: SupportedFormats.Bin, formatLabel: FORMAT_LABELS[SupportedFormats.Bin], description: "ELF binary, glibc/musl" },
+    { id: "macos-bin", platform: SupportedPlatforms.MacOS, platformLabel: PLATFORM_LABELS[SupportedPlatforms.MacOS], format: SupportedFormats.Bin, formatLabel: FORMAT_LABELS[SupportedFormats.Bin], description: "Mach-O binary, arm64/x86_64" },
+    { id: "windows-bin", platform: SupportedPlatforms.Windows, platformLabel: PLATFORM_LABELS[SupportedPlatforms.Windows], format: SupportedFormats.Bin, formatLabel: FORMAT_LABELS[SupportedFormats.Bin], description: "PE binary" },
+    { id: "windows-cdylib", platform: SupportedPlatforms.Windows, platformLabel: PLATFORM_LABELS[SupportedPlatforms.Windows], format: SupportedFormats.Cdylib, formatLabel: FORMAT_LABELS[SupportedFormats.Cdylib], description: "Loadable .dll" },
+    { id: "windows-service", platform: SupportedPlatforms.Windows, platformLabel: PLATFORM_LABELS[SupportedPlatforms.Windows], format: SupportedFormats.WindowsService, formatLabel: FORMAT_LABELS[SupportedFormats.WindowsService], description: "Installs as a service" },
 ];
+
+// Platforms a Builder can be enrolled to support -- same restriction as
+// Platform/CompileTarget above (a builder can't be enrolled for BSD or an
+// unspecified platform).
+export type PlatformOption = { label: string; value: Platform };
+export const PLATFORM_OPTIONS: PlatformOption[] = [
+    { label: PLATFORM_LABELS[SupportedPlatforms.Linux], value: SupportedPlatforms.Linux },
+    { label: PLATFORM_LABELS[SupportedPlatforms.MacOS], value: SupportedPlatforms.MacOS },
+    { label: PLATFORM_LABELS[SupportedPlatforms.Windows], value: SupportedPlatforms.Windows },
+];
+
+// A build profile's transports are restricted to the subset of
+// SupportedTransports that imix/the builder actually support today.
+export type TransportTypeValue = SupportedTransports.GRPC | SupportedTransports.HTTP1 | SupportedTransports.DNS | SupportedTransports.ICMP;
 
 // Mirrors builderpb.BuildProfileTransport (URI, Interval, Type) -- a
 // profile holds a priority-ordered list of these, not a flat string list.
-export type TransportType = { label: string; value: "GRPC" | "HTTP1" | "DNS" | "ICMP" };
+export type TransportType = { label: string; value: TransportTypeValue };
 export const TRANSPORT_TYPES: TransportType[] = [
-    { label: "gRPC", value: "GRPC" },
-    { label: "HTTP", value: "HTTP1" },
-    { label: "DNS", value: "DNS" },
-    { label: "ICMP", value: "ICMP" },
+    { label: "gRPC", value: SupportedTransports.GRPC },
+    { label: "HTTP", value: SupportedTransports.HTTP1 },
+    { label: "DNS", value: SupportedTransports.DNS },
+    { label: "ICMP", value: SupportedTransports.ICMP },
 ];
 
 export type TransportConfig = {
     id: string;
-    type: TransportType["value"];
+    type: TransportTypeValue;
     uri: string;
     interval: number;
     extra?: string;
@@ -47,7 +80,7 @@ export type TransportConfig = {
 // Mirrors builder.DefaultTransports (tavern/internal/builder/build_config.go).
 export const DEFAULT_TRANSPORT: TransportConfig = {
     id: "t1",
-    type: "GRPC",
+    type: SupportedTransports.GRPC,
     uri: "http://127.0.0.1:8000",
     interval: 5,
 };
@@ -55,14 +88,14 @@ export const DEFAULT_TRANSPORT: TransportConfig = {
 // Mirrors builderpb.BuildProfileTome (TomeID, Params) -- a reference to a
 // tome plus its configured params, the same shape used by quest creation's
 // tome-selection step.
-export type TomeTactic = keyof typeof import("../../utils/enums").TomeTactic;
+export type TomeTacticKey = keyof typeof TomeTactic;
 export type TomeRef = {
     id: string;
     tomeId: string;
     tomeName: string;
     paramSummary: string;
     params: string;
-    tactic: TomeTactic;
+    tactic: TomeTacticKey;
 };
 
 export type BuildProfile = {
@@ -133,4 +166,4 @@ export type BuildTaskRow = {
 
 export const DEFAULT_SETUP_SCRIPT = "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true";
 
-export type Tome = { id: string; name: string; description: string; tactic: TomeTactic; paramDefs?: string | null };
+export type Tome = { id: string; name: string; description: string; tactic: TomeTacticKey; paramDefs?: string | null };

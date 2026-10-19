@@ -2,17 +2,18 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
-import Table from "../../components/tavern-base-ui/table/Table";
-import { buildTaskColumns } from "./landingShared";
-import { BuildTaskRow } from "./types";
+import Table from "../../../components/tavern-base-ui/table/Table";
+import { buildTaskColumns } from "./AgentsTable";
+import { BuildTaskRow } from "../types";
+import { SupportedPlatforms, SupportedFormats } from "../../../utils/enums";
 
 function row(overrides: Partial<BuildTaskRow>): BuildTaskRow {
     return {
         id: "t1",
         status: "Queued",
         profileName: "Default Imix",
-        platform: "LINUX",
-        format: "BIN",
+        platform: SupportedPlatforms.Linux,
+        format: SupportedFormats.Bin,
         error: null,
         timestamp: "2m ago",
         assetId: null,
@@ -62,5 +63,11 @@ describe("buildTaskColumns", () => {
         expect(screen.getByText("Failed")).toBeInTheDocument();
         expect(screen.getByText("Details")).toBeInTheDocument();
         expect(screen.queryByLabelText("Download")).not.toBeInTheDocument();
+    });
+
+    it("renders friendly labels for the raw gRPC platform/format enum values", () => {
+        renderTable([row({ id: "w1", platform: SupportedPlatforms.Windows, format: SupportedFormats.Cdylib })]);
+        expect(screen.getByText("Windows")).toBeInTheDocument();
+        expect(screen.getByText("Shared library")).toBeInTheDocument();
     });
 });

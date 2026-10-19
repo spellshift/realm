@@ -91,7 +91,7 @@ export function mapProfile(profile: ProfileRecord, catalog: Tome[]): BuildProfil
         transports: profile.transports.map((transport, index) => ({
             ...transport,
             id: `transport-${index}`,
-            type: transport.type.replace(/^TRANSPORT_/, "") as TransportConfig["type"],
+            type: transport.type as TransportConfig["type"],
         })),
         tomes,
         tomeCount: tomes.length,
@@ -105,7 +105,7 @@ export function profileInput(profile: BuildProfile) {
         buildScript: profile.buildScript, artifactPath: profile.artifactPath,
         prebuildscript: profile.prebuildscript, setupscript: profile.setupscript, postbuildscript: profile.postbuildscript,
         unique: profile.unique || undefined,
-        transports: profile.transports.map(({ type, uri, interval, extra }) => ({ type: `TRANSPORT_${type}`, uri, interval, extra })),
+        transports: profile.transports.map(({ type, uri, interval, extra }) => ({ type, uri, interval, extra })),
         tomes: profile.tomes.map(({ tomeId, params }) => ({ tomeID: tomeId, params })),
     };
 }
@@ -153,8 +153,8 @@ export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
             id: task.id,
             status,
             profileName: task.profileAtCreation?.name ?? task.profile.name,
-            platform: task.targetOs.replace(/^PLATFORM_/, "") as Platform,
-            format: task.targetFormat.replace(/^TARGET_FORMAT_/, "") as Format,
+            platform: task.targetOs as Platform,
+            format: task.targetFormat as Format,
             error: task.error ?? (status === "Failed" && task.exitCode === 0 ? "The build finished but no artifact was produced." : null),
             timestamp,
             assetId: task.artifact?.id ?? null,
@@ -180,7 +180,7 @@ export function useBuilders(options: { skip?: boolean } = {}) {
     const now = Date.now();
     const builders: Builder[] = nodes(result.data?.builders).map((builder) => ({
         ...builder,
-        supportedTargets: builder.supportedTargets.map((target) => target.replace(/^PLATFORM_/, "") as Platform),
+        supportedTargets: builder.supportedTargets.map((target) => target as Platform),
         lastSeenAtRaw: builder.lastSeenAt,
         online: BuilderHealthy(builder.lastSeenAt, builder.pollInterval, now),
         lastSeenAt: builder.lastSeenAt ? formatDistanceToNow(new Date(builder.lastSeenAt), { addSuffix: true }) : null,
