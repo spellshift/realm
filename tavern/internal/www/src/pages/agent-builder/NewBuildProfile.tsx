@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import AlertError from "../../components/tavern-base-ui/AlertError";
-import { CREATE_BUILD_PROFILE, mapProfile, profileInput, ProfileRecord } from "./queries";
+import { CREATE_BUILD_PROFILE, GET_BUILD_PROFILES, mapProfile, profileInput, ProfileRecord } from "./queries";
 import { safelyJsonParse } from "../../utils/utils";
 import { Heading, Textarea } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon, ChevronDownIcon, ChevronUpIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
@@ -54,7 +54,7 @@ export const NewBuildProfile = ({
 }: {
     catalog: Tome[];
     onCancel: () => void;
-    onSave: (profile: BuildProfile) => void;
+    onSave: (profile: BuildProfile) => Promise<void> | void;
 }) => {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -66,7 +66,11 @@ export const NewBuildProfile = ({
     const [tomeParams, setTomeParams] = useState("{}");
     const [scripts, setScripts] = useState(advancedScriptFields.map((field, index) => field.defaultValue));
     const [error, setError] = useState<string | null>(null);
-    const [createProfile, { loading: saving }] = useMutation<{ createBuildProfile: ProfileRecord }>(CREATE_BUILD_PROFILE);
+    const [submitting, setSubmitting] = useState(false);
+    const [savedProfileRecord, setSavedProfileRecord] = useState<ProfileRecord | null>(null);
+    const [createProfile, { loading: saving }] = useMutation<{ createBuildProfile: ProfileRecord }>(CREATE_BUILD_PROFILE, {
+        refetchQueries: [{ query: GET_BUILD_PROFILES }],
+    });
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [transportModalOpen, setTransportModalOpen] = useState(false);
     const [transportDraft, setTransportDraft] = useState<TransportConfig | null>(null);
@@ -109,21 +113,29 @@ export const NewBuildProfile = ({
     const hasPersistenceTome = tomes.some((t) => t.tactic === "PERSISTENCE");
 
     const handleSave = async () => {
-        if (!name.trim() || saving) return;
+        if (!name.trim() || saving || submitting) return;
         setError(null);
+        setSubmitting(true);
         try {
             if (scripts[5].trim()) JSON.parse(scripts[5]);
-            const profile: BuildProfile = {
-                id: "", name, description, transports, buildImage,
-                tomes, tomeCount: tomes.length, hasPersistenceTome,
-                buildScript: scripts[0], artifactPath: scripts[1], prebuildscript: scripts[2],
-                setupscript: scripts[3], postbuildscript: scripts[4], unique: scripts[5],
-            };
-            const { data } = await createProfile({ variables: { input: profileInput(profile) } });
-            if (!data) throw new Error("The server did not return a build profile.");
-            onSave(mapProfile(data.createBuildProfile, catalog));
+            let profileRecord = savedProfileRecord;
+            if (!profileRecord) {
+                const profile: BuildProfile = {
+                    id: "", name, description, transports, buildImage,
+                    tomes, tomeCount: tomes.length, hasPersistenceTome,
+                    buildScript: scripts[0], artifactPath: scripts[1], prebuildscript: scripts[2],
+                    setupscript: scripts[3], postbuildscript: scripts[4], unique: scripts[5],
+                };
+                const { data } = await createProfile({ variables: { input: profileInput(profile) } });
+                if (!data?.createBuildProfile) throw new Error("The server did not return a build profile.");
+                profileRecord = data.createBuildProfile;
+                setSavedProfileRecord(profileRecord);
+            }
+            await onSave(mapProfile(profileRecord, catalog));
         } catch (error) {
             setError(error instanceof Error ? error.message : String(error));
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -300,7 +312,7 @@ export const NewBuildProfile = ({
 
             <div className="flex flex-row gap-2">
                 <Button buttonVariant="ghost" onClick={onCancel}>Cancel</Button>
-                <Button onClick={handleSave} isLoading={saving} disabled={!name.trim() || !buildImage.trim() || !scripts[0].trim() || !scripts[1].trim()}>Save profile</Button>
+                <Button onClick={handleSave} isLoading={saving || submitting} disabled={!name.trim() || !buildImage.trim() || !scripts[0].trim() || !scripts[1].trim()}>Save profile</Button>
             </div>
         </div>
         <Modal isOpen={transportModalOpen} setOpen={setTransportModalOpen} size="sm">
