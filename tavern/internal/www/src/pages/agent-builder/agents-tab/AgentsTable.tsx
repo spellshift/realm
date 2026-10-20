@@ -1,73 +1,103 @@
-import { ReactElement } from "react";
+import { ReactElement, useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Tooltip } from "@chakra-ui/react";
-import { Share } from "lucide-react";
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { Tooltip, useToast } from "@chakra-ui/react";
+import { Share, Copy, Trash2, CircleCheck, CircleX, CirclePause } from "lucide-react";
 import { Ring } from "@uiball/loaders";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import DownloadButton from "../../assets/components/DownloadButton";
-import { BuildTaskRow, BuildTaskStatus, PLATFORM_LABELS, FORMAT_LABELS } from "../types";
+import { BuildTaskRow, BuildTaskStatus, PLATFORM_LABELS } from "../types";
 
-// Status -> badge color + icon for build task rows. Queued/Claimed/Building
-// (and the brief post-build "Awaiting artifact" gap) all get the same
-// in-progress spinner so operators can see at a glance which rows are
-// still moving; Built/Failed get a terminal check/x icon. Spinner color is
-// matched to each badge's own text color (solidBadge in BadgeStyles.ts) --
-// white on the solid purple "Building" badge, dark gray on the light gray
-// "Queued"/"Claimed" badge -- so it isn't invisible against its background.
-const STATUS_BADGE: Record<BuildTaskStatus, { color: "gray" | "purple" | "green" | "red"; icon: ReactElement }> = {
-    Queued: { color: "gray", icon: <Ring size={10} lineWeight={3} speed={2} color="#111827" /> },
-    Claimed: { color: "gray", icon: <Ring size={10} lineWeight={3} speed={2} color="#111827" /> },
-    Building: { color: "purple", icon: <Ring size={10} lineWeight={3} speed={2} color="#FFFFFF" /> },
-    "Awaiting artifact": { color: "purple", icon: <Ring size={10} lineWeight={3} speed={2} color="#FFFFFF" /> },
-    Built: { color: "green", icon: <CheckCircleIcon className="w-3.5 h-3.5" /> },
-    Failed: { color: "red", icon: <XCircleIcon className="w-3.5 h-3.5" /> },
+// Status icon for the leading cell of the "Agent & Profile" column -- mirrors
+// TaskStatusField.tsx / quest task rows: a pure icon (no badge/tooltip
+// wrapper) so the row's status reads at a glance alongside the agent name.
+// Queued/Claimed share the same paused icon; Building and the brief
+// post-build "Awaiting artifact" gap share the same in-progress spinner.
+const STATUS_ICON: Record<BuildTaskStatus, ReactElement> = {
+    Queued: <CirclePause className="w-5 h-5 text-gray-400 shrink-0" />,
+    Claimed: <CirclePause className="w-5 h-5 text-gray-400 shrink-0" />,
+    Building: <span className="shrink-0"><Ring size={16} lineWeight={2.5} speed={2} color="#7C3AED" /></span>,
+    "Awaiting artifact": <span className="shrink-0"><Ring size={16} lineWeight={2.5} speed={2} color="#7C3AED" /></span>,
+    Built: <CircleCheck className="w-5 h-5 text-green-600 shrink-0" />,
+    Failed: <CircleX className="w-5 h-5 text-red-600 shrink-0" />,
 };
 
-const statusBadge = (status: BuildTaskStatus) => {
-    const { color, icon } = STATUS_BADGE[status];
-    return <Badge badgeStyle={{ color }} leftIcon={icon}>{status}</Badge>;
+// Hash cell -- matches AssetsTable.tsx's truncated-hash-plus-copy pattern,
+// including the "Copied to clipboard" toast on click.
+const HashCell = ({ hash }: { hash: string | null }) => {
+    const toast = useToast();
+    const handleCopy = useCallback((event: React.MouseEvent) => {
+        event.stopPropagation();
+        if (!hash) return;
+        navigator.clipboard.writeText(hash);
+        toast({ title: "Copied to clipboard", status: "success", duration: 2000, isClosable: true });
+    }, [hash, toast]);
+
+    if (!hash) {
+        return <span className="text-gray-400 font-mono text-xs">—</span>;
+    }
+    return (
+        <div className="flex items-center gap-1 font-mono text-xs text-gray-600">
+            <span>{hash.substring(0, 12)}...</span>
+            <Copy className="w-3 h-3 text-gray-400 hover:text-purple-600 cursor-pointer" onClick={handleCopy} />
+        </div>
+    );
 };
 
 // Built agents tab's table -- every BuildTask is a row (see buildTaskRows
 // in queries.ts), so queued/claimed/building tasks show their live status here
 // instead of a separate banner. Only `Built` rows carry an asset to
-// download/share; `Failed` rows surface their error in a tooltip.
-// `highlightTaskId` marks the row for the task the operator just started
-// (navigated here via `?task=<id>` from the wizard's "Start build") so they
-// can find it in a list that may already contain many other rows.
-export const buildTaskColumns = (onCreateLink: (assetId: string, assetName: string) => void, highlightTaskId?: string | null): ColumnDef<BuildTaskRow>[] => [
+// download/share/delete; `Failed` rows surface their error inline instead of
+// a separate "Status" column. `highlightTaskId` marks the row for the task
+// the operator just started (navigated here via `?task=<id>` from the
+// wizard's "Start build") so they can find it in a list that may already
+// contain many other rows. `onDeleteAsset` (wired to the DELETE_ASSET
+// mutation in AgentsTab.tsx) is optional so the column still renders sans
+// delete action if a caller doesn't supply one.
+export const buildTaskColumns = (
+    onCreateLink: (assetId: string, assetName: string) => void,
+    highlightTaskId?: string | null,
+    onDeleteAsset?: (assetId: string) => void,
+): ColumnDef<BuildTaskRow>[] => [
     {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => (
-            <div className="flex flex-row items-center gap-2">
-                {statusBadge(row.original.status)}
-                {row.original.id === highlightTaskId && <Badge badgeStyle={{ color: "purple" }}>New</Badge>}
-            </div>
-        ),
+        accessorKey: "profileName",
+        header: "Agent & Profile",
+        cell: ({ row }) => {
+            const task = row.original;
+            const primary = task.artifactName ?? task.profileName;
+            return (
+                <div className="flex flex-row items-center gap-2">
+                    {STATUS_ICON[task.status]}
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900 text-sm font-mono">{primary}</span>
+                            {task.id === highlightTaskId && <Badge badgeStyle={{ color: "purple" }}>New</Badge>}
+                        </div>
+                        {task.status === "Failed" ? (
+                            <span className="text-xs text-red-600 font-medium">
+                                Build failed (exit code {task.exitCode ?? "unknown"}): {task.error}
+                            </span>
+                        ) : (
+                            <span className="text-xs text-gray-500 font-sans">Profile: {task.profileName}</span>
+                        )}
+                    </div>
+                </div>
+            );
+        },
     },
-    { accessorKey: "profileName", header: "Profile", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.profileName}</span> },
     { accessorKey: "platform", header: "Platform", cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{PLATFORM_LABELS[row.original.platform]}</Badge> },
-    { accessorKey: "format", header: "Format", cell: ({ row }) => <span className="text-sm text-gray-600">{FORMAT_LABELS[row.original.format]}</span> },
-    {
-        accessorKey: "artifactName",
-        header: "Artifact",
-        cell: ({ row }) => row.original.artifactName
-            ? <span className="font-mono text-xs">{row.original.artifactName}</span>
-            : <span className="text-sm text-gray-400">—</span>,
-    },
     { accessorKey: "artifactSize", header: "Size", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.artifactSize ?? "—"}</span> },
+    { accessorKey: "artifactHash", header: "Hash", cell: ({ row }) => <HashCell hash={row.original.artifactHash} /> },
     { accessorKey: "timestamp", header: "Updated", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.timestamp}</span> },
     {
         id: "actions",
         header: "",
         cell: ({ row }) => {
-            if (row.original.status === "Built" && row.original.assetId && row.original.assetName) {
+            const task = row.original;
+            if (task.status === "Built" && task.assetId && task.assetName) {
                 return (
                     <div className="flex flex-row gap-2">
-                        <DownloadButton assetName={row.original.assetName} />
+                        <DownloadButton assetName={task.assetName} />
                         <Tooltip label="Create Link" bg="white" color="black">
                             <Button
                                 buttonVariant="ghost"
@@ -75,22 +105,47 @@ export const buildTaskColumns = (onCreateLink: (assetId: string, assetName: stri
                                 leftIcon={<Share className="w-4 h-4" />}
                                 onClick={(event) => {
                                     event.stopPropagation();
-                                    onCreateLink(row.original.assetId!, row.original.assetName!);
+                                    onCreateLink(task.assetId!, task.assetName!);
                                 }}
                                 aria-label="Create Link"
                             />
                         </Tooltip>
+                        {onDeleteAsset && (
+                            <Tooltip label="Delete" bg="white" color="black">
+                                <Button
+                                    buttonVariant="ghost"
+                                    buttonStyle={{ color: "gray", size: "xs" }}
+                                    leftIcon={<Trash2 className="w-4 h-4" />}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onDeleteAsset(task.assetId!);
+                                    }}
+                                    aria-label="Delete"
+                                />
+                            </Tooltip>
+                        )}
                     </div>
                 );
             }
-            if (row.original.status === "Failed" && row.original.error) {
+            if (task.status === "Failed" && task.assetId && onDeleteAsset) {
                 return (
-                    <Tooltip label={row.original.error} bg="white" color="black">
-                        <span className="text-xs text-gray-500 underline cursor-help">Details</span>
+                    <Tooltip label="Delete" bg="white" color="black">
+                        <Button
+                            buttonVariant="ghost"
+                            buttonStyle={{ color: "gray", size: "xs" }}
+                            leftIcon={<Trash2 className="w-4 h-4" />}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onDeleteAsset(task.assetId!);
+                            }}
+                            aria-label="Delete"
+                        />
                     </Tooltip>
                 );
             }
-            return null;
+            // Building/Queued/Claimed/Awaiting artifact/Failed-without-asset:
+            // builds can't be cancelled, so there's nothing actionable here.
+            return <span className="text-sm text-gray-400">—</span>;
         },
     },
 ];

@@ -28,7 +28,7 @@ export const GET_BUILD_TASKS = gql`
                 id targetOs targetFormat createdAt claimedAt startedAt finishedAt exitCode error
                 profile { id name }
                 profileAtCreation { name }
-                artifact { id name size }
+                artifact { id name size hash }
             } }
         }
     }
@@ -71,7 +71,7 @@ export type BuildTask = {
     error: string | null;
     profile: { id: string; name: string };
     profileAtCreation: { name: string } | null;
-    artifact: { id: string; name: string; size: number } | null;
+    artifact: { id: string; name: string; size: number; hash: string } | null;
 };
 
 export function mapProfile(profile: ProfileRecord, catalog: Tome[]): BuildProfile {
@@ -156,11 +156,13 @@ export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
             platform: task.targetOs as Platform,
             format: task.targetFormat as Format,
             error: task.error ?? (status === "Failed" && task.exitCode === 0 ? "The build finished but no artifact was produced." : null),
+            exitCode: task.exitCode,
             timestamp,
             assetId: task.artifact?.id ?? null,
             assetName: task.artifact?.name ?? null,
             artifactName: task.artifact ? task.artifact.name.split("/").pop()! : null,
             artifactSize: task.artifact ? `${(task.artifact.size / 1024 / 1024).toFixed(2)} MB` : null,
+            artifactHash: task.artifact ? task.artifact.hash : null,
         };
     });
 }

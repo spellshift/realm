@@ -125,7 +125,7 @@ describe("taskStatus", () => {
     });
 
     it("reports Built once an artifact is attached", () => {
-        expect(taskStatus(buildTask({ startedAt: "t", finishedAt: "t", exitCode: 0, artifact: { id: "a1", name: "build/linux/bin/imix", size: 1024 } }))).toBe("Built");
+        expect(taskStatus(buildTask({ startedAt: "t", finishedAt: "t", exitCode: 0, artifact: { id: "a1", name: "build/linux/bin/imix", size: 1024, hash: "h1" } }))).toBe("Built");
     });
 
     // Cargo writes its normal build progress/warnings to stderr, and Tavern
@@ -137,7 +137,7 @@ describe("taskStatus", () => {
             finishedAt: "t",
             exitCode: 0,
             error: "warning: unused import `foo`\n   Compiling imix v0.1.0\n    Finished release [optimized] target(s) in 42.17s",
-            artifact: { id: "a1", name: "build/linux/bin/imix", size: 1024 },
+            artifact: { id: "a1", name: "build/linux/bin/imix", size: 1024, hash: "h1" },
         }))).toBe("Built");
     });
 });
@@ -154,7 +154,7 @@ describe("buildTaskRows", () => {
                 startedAt: "t",
                 finishedAt: new Date().toISOString(),
                 exitCode: 0,
-                artifact: { id: "a1", name: "build/linux/bin/imix", size: 1024 },
+                artifact: { id: "a1", name: "build/linux/bin/imix", size: 1024, hash: "h1" },
             }),
         ];
         const rows = buildTaskRows(tasks);
@@ -169,8 +169,10 @@ describe("buildTaskRows", () => {
             expect(row.assetName).toBeNull();
             expect(row.artifactName).toBeNull();
             expect(row.artifactSize).toBeNull();
+            expect(row.artifactHash).toBeNull();
         }
         expect(rows[1].error).toBe("boom");
+        expect(rows[1].exitCode).toBe(1);
     });
 
     it("derives download-ready artifact fields for Built rows", () => {
@@ -182,7 +184,7 @@ describe("buildTaskRows", () => {
                 startedAt: "t",
                 finishedAt: new Date().toISOString(),
                 exitCode: 0,
-                artifact: { id: "a1", name: "build/macos/bin/imix-calm-raven", size: 1024 * 1024 * 2 },
+                artifact: { id: "a1", name: "build/macos/bin/imix-calm-raven", size: 1024 * 1024 * 2, hash: "deadbeef00112233" },
             }),
         ]);
         expect(rows).toHaveLength(1);
@@ -193,6 +195,7 @@ describe("buildTaskRows", () => {
             assetName: "build/macos/bin/imix-calm-raven",
             artifactName: "imix-calm-raven",
             artifactSize: "2.00 MB",
+            artifactHash: "deadbeef00112233",
             platform: "PLATFORM_MACOS",
             format: "TARGET_FORMAT_BIN",
         });

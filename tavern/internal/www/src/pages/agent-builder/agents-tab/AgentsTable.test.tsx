@@ -15,59 +15,77 @@ function row(overrides: Partial<BuildTaskRow>): BuildTaskRow {
         platform: SupportedPlatforms.Linux,
         format: SupportedFormats.Bin,
         error: null,
+        exitCode: null,
         timestamp: "2m ago",
         assetId: null,
         assetName: null,
         artifactName: null,
         artifactSize: null,
+        artifactHash: null,
         ...overrides,
     };
 }
 
-const renderTable = (rows: BuildTaskRow[], onCreateLink = vi.fn()) =>
+const renderTable = (rows: BuildTaskRow[], onCreateLink = vi.fn(), onDeleteAsset = vi.fn()) =>
     render(
         <ChakraProvider>
-            <Table data={rows} columns={buildTaskColumns(onCreateLink)} />
+            <Table data={rows} columns={buildTaskColumns(onCreateLink, undefined, onDeleteAsset)} />
         </ChakraProvider>
     );
 
 describe("buildTaskColumns", () => {
-    it("shows a live status badge and no artifact columns for in-progress rows", () => {
+    it("shows the profile name and no artifact/hash columns for in-progress rows", () => {
         renderTable([row({ id: "q1", status: "Queued" })]);
-        expect(screen.getByText("Queued")).toBeInTheDocument();
-        expect(screen.getAllByText("—")).toHaveLength(2); // Artifact + Size columns
+        expect(screen.getByText("Profile: Default Imix")).toBeInTheDocument();
         expect(screen.queryByLabelText("Download")).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Create Link")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Delete")).not.toBeInTheDocument();
     });
 
-    it("shows download/create-link actions only for Built rows", () => {
+    it("shows download/create-link/delete actions, size, and hash only for Built rows", () => {
         renderTable([
             row({
                 id: "b1",
                 status: "Built",
                 assetId: "a1",
                 assetName: "build/linux/bin/imix-default-imix",
-                artifactName: "imix",
+                artifactName: "imix-default-imix",
                 artifactSize: "6.10 MB",
+                artifactHash: "abcdef0123456789",
             }),
         ]);
-        expect(screen.getByText("Built")).toBeInTheDocument();
-        expect(screen.getByText("imix")).toBeInTheDocument();
+        expect(screen.getByText("imix-default-imix")).toBeInTheDocument();
+        expect(screen.getByText("Profile: Default Imix")).toBeInTheDocument();
         expect(screen.getByText("6.10 MB")).toBeInTheDocument();
+        expect(screen.getByText("abcdef012345...")).toBeInTheDocument();
         expect(screen.getByLabelText("Download")).toBeInTheDocument();
         expect(screen.getByLabelText("Create Link")).toBeInTheDocument();
+        expect(screen.getByLabelText("Delete")).toBeInTheDocument();
     });
 
-    it("surfaces the build error for Failed rows instead of download actions", () => {
-        renderTable([row({ id: "f1", status: "Failed", error: "exit code 1: build step failed" })]);
-        expect(screen.getByText("Failed")).toBeInTheDocument();
-        expect(screen.getByText("Details")).toBeInTheDocument();
+    it("surfaces the build failure reason inline instead of a Details tooltip", () => {
+        renderTable([row({ id: "f1", status: "Failed", error: "build step failed", exitCode: 1 })]);
+        expect(screen.getByText("Build failed (exit code 1): build step failed")).toBeInTheDocument();
         expect(screen.queryByLabelText("Download")).not.toBeInTheDocument();
+        expect(screen.queryByText("Details")).not.toBeInTheDocument();
     });
 
-    it("renders friendly labels for the raw gRPC platform/format enum values", () => {
+    it("shows a dash in the hash column when no artifact hash is present", () => {
+        renderTable([row({ id: "h1", status: "Queued" })]);
+        expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+    });
+
+    it("renders friendly labels for the raw gRPC platform enum values", () => {
         renderTable([row({ id: "w1", platform: SupportedPlatforms.Windows, format: SupportedFormats.Cdylib })]);
         expect(screen.getByText("Windows")).toBeInTheDocument();
-        expect(screen.getByText("Shared library")).toBeInTheDocument();
+    });
+
+    it("tags the highlighted row with a New badge", () => {
+        render(
+            <ChakraProvider>
+                <Table data={[row({ id: "n1" })]} columns={buildTaskColumns(vi.fn(), "n1", vi.fn())} />
+            </ChakraProvider>
+        );
+        expect(screen.getByText("New")).toBeInTheDocument();
     });
 });

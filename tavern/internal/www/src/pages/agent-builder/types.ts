@@ -156,11 +156,13 @@ export type BuildTaskRow = {
     platform: Platform;
     format: Format;
     error: string | null;
+    exitCode: number | null;
     timestamp: string;
     assetId: string | null;
     assetName: string | null;
     artifactName: string | null;
     artifactSize: string | null;
+    artifactHash: string | null;
 };
 
 
