@@ -67,7 +67,7 @@ export const buildTaskColumns = (
             const task = row.original;
             const primary = task.artifactName ?? task.profileName;
             return (
-                <div className="flex flex-row items-center gap-2">
+                <div className="flex flex-row items-center gap-2 min-w-[300px]">
                     {STATUS_ICON[task.status]}
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">

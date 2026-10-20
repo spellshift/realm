@@ -19,7 +19,23 @@ export const ProfilesTab = ({
     error?: ApolloError;
     onAddProfile: () => void;
 }) => (
-    <>
+    <div className="flex flex-col gap-2">
+        <div className="flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 py-2 sticky top-0 z-5 shadow-sm">
+            <div className="flex flex-row gap-2 items-center">
+                <h3 className="text-xl font-semibold leading-6 text-gray-900">Build profiles</h3>
+                <p className="text-md text-gray-600">{profiles.length !== undefined && `(${profiles.length})`}</p>
+            </div>
+            <div className="flex flex-row justify-end gap-2 w-full">
+                <Button
+                    buttonVariant="ghost"
+                    buttonStyle={{ color: "purple", size: "sm" }}
+                    leftIcon={<PlusIcon className="w-4 h-4" />}
+                    onClick={onAddProfile}
+                >
+                    Add build profile
+                </Button>
+            </div>
+        </div>
         {error && <AlertError label="Unable to load build profiles" details={error.message} />}
         {loading && profiles.length === 0 ? (
             <p role="status">Loading build profiles…</p>
@@ -40,24 +56,13 @@ export const ProfilesTab = ({
                 </EmptyState>
             </div>
         ) : (
-            <div className="flex flex-col gap-2">
-                <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
-                    <div className="min-w-[720px] w-full">
-                        <Table data={profiles} columns={profileColumns} />
-                    </div>
+            <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
+                <div className="min-w-[720px] w-full">
+                    <Table data={profiles} columns={profileColumns} />
                 </div>
-                <Button
-                    buttonVariant="ghost"
-                    buttonStyle={{ color: "purple", size: "sm" }}
-                    leftIcon={<PlusIcon className="w-4 h-4" />}
-                    onClick={onAddProfile}
-                    className="w-fit"
-                >
-                    Add build profile
-                </Button>
             </div>
         )}
-    </>
+    </div>
 );
 
 export default ProfilesTab;

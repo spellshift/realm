@@ -24,7 +24,23 @@ export const BuildersTab = ({
     const [enrolling, setEnrolling] = useState(false);
 
     return (
-        <>
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 py-2 sticky top-0 z-5 shadow-sm">
+                <div className="flex flex-row gap-2 items-center">
+                    <h3 className="text-xl font-semibold leading-6 text-gray-900">Builders</h3>
+                    <p className="text-md text-gray-600">{builders.length !== undefined && `(${builders.length})`}</p>
+                </div>
+                <div className="flex flex-row justify-end gap-2 w-full">
+                    <Button
+                        buttonVariant="ghost"
+                        buttonStyle={{ color: "purple", size: "sm" }}
+                        leftIcon={<PlusIcon className="w-4 h-4" />}
+                        onClick={() => setEnrolling(true)}
+                    >
+                        Enroll builder
+                    </Button>
+                </div>
+            </div>
             {error && <AlertError label="Unable to load builders" details={error.message} />}
             {loading && builders.length === 0 ? (
                 <p role="status">Loading builders…</p>
@@ -45,21 +61,10 @@ export const BuildersTab = ({
                     </EmptyState>
                 </div>
             ) : (
-                <div className="flex flex-col gap-2">
-                    <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
-                        <div className="min-w-[720px] w-full">
-                            <Table data={builders} columns={builderColumns} />
-                        </div>
+                <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
+                    <div className="min-w-[720px] w-full">
+                        <Table data={builders} columns={builderColumns} />
                     </div>
-                    <Button
-                        buttonVariant="ghost"
-                        buttonStyle={{ color: "purple", size: "sm" }}
-                        leftIcon={<PlusIcon className="w-4 h-4" />}
-                        onClick={() => setEnrolling(true)}
-                        className="w-fit"
-                    >
-                        Enroll builder
-                    </Button>
                 </div>
             )}
             <EnrollBuilderModal
@@ -67,7 +72,7 @@ export const BuildersTab = ({
                 onClose={() => setEnrolling(false)}
                 onEnrolled={onEnrolled}
             />
-        </>
+        </div>
     );
 };
 
