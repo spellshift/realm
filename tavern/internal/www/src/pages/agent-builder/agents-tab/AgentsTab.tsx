@@ -56,7 +56,7 @@ export const AgentsTab = ({
                 <div className="flex flex-row justify-end gap-2 w-full">
                     <Button
                         buttonVariant="ghost"
-                        buttonStyle={{ color: "purple", size: "sm" }}
+                        buttonStyle={{ color: "gray", size: "sm" }}
                         leftIcon={<PlusIcon className="w-4 h-4" />}
                         onClick={onGenerateAgent}
                     >
@@ -85,7 +85,7 @@ export const AgentsTab = ({
                 </div>
             ) : (
                 <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
-                    <div className="min-w-[960px] w-full">
+                    <div className="min-w-[1060px] w-full">
                         <Table data={rows} columns={buildTaskColumns(onCreateLink, highlightTaskId, handleDeleteAsset)} />
                     </div>
                 </div>

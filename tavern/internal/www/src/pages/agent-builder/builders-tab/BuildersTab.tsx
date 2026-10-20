@@ -33,7 +33,7 @@ export const BuildersTab = ({
                 <div className="flex flex-row justify-end gap-2 w-full">
                     <Button
                         buttonVariant="ghost"
-                        buttonStyle={{ color: "purple", size: "sm" }}
+                        buttonStyle={{ color: "gray", size: "sm" }}
                         leftIcon={<PlusIcon className="w-4 h-4" />}
                         onClick={() => setEnrolling(true)}
                     >

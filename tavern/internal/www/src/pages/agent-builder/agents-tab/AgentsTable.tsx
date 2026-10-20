@@ -63,29 +63,29 @@ export const buildTaskColumns = (
     {
         accessorKey: "profileName",
         header: "Agent & Profile",
-        size: 280,
+        size: 320,
         cell: ({ row }) => {
             const task = row.original;
             const primary = task.artifactName ?? task.profileName;
             return (
-                <div className="flex flex-row items-center gap-2 min-w-0 max-w-full">
-                    {STATUS_ICON[task.status]}
-                    <div className="flex flex-col min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-semibold text-gray-900 text-sm font-mono truncate" title={primary}>
+                <div className="flex flex-row items-center gap-2 min-w-0 w-full overflow-hidden">
+                    <div className="shrink-0">{STATUS_ICON[task.status]}</div>
+                    <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+                        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                            <span className="block font-semibold text-gray-900 text-sm font-mono truncate" title={primary}>
                                 {primary}
                             </span>
                             {task.id === highlightTaskId && <Badge badgeStyle={{ color: "purple" }}>New</Badge>}
                         </div>
                         {task.status === "Failed" ? (
                             <span
-                                className="text-xs text-red-600 font-medium truncate"
+                                className="block text-xs text-red-600 font-medium truncate"
                                 title={`Build failed (exit code ${task.exitCode ?? "unknown"}): ${task.error}`}
                             >
                                 Build failed (exit code {task.exitCode ?? "unknown"}): {task.error}
                             </span>
                         ) : (
-                            <span className="text-xs text-gray-500 font-sans truncate" title={`Profile: ${task.profileName}`}>
+                            <span className="block text-xs text-gray-500 font-sans truncate" title={`Profile: ${task.profileName}`}>
                                 Profile: {task.profileName}
                             </span>
                         )}
