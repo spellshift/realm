@@ -1,4 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
+import { CircleCheck, CircleX } from "lucide-react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { Builder, Platform, PLATFORM_LABELS } from "../types";
 
@@ -11,27 +12,24 @@ const platformBadges = (platforms: Platform[]) => (
 );
 
 export const builderColumns: ColumnDef<Builder>[] = [
-    { accessorKey: "identifier", header: "Identifier", cell: ({ row }) => <span className="font-mono text-xs">{row.original.identifier}</span> },
+    {
+        accessorKey: "identifier",
+        header: "Identifier",
+        cell: ({ row }) => (
+            <div className="flex flex-row items-center gap-2">
+                {row.original.online ? (
+                    <CircleCheck className="w-5 h-5 text-green-600 shrink-0" />
+                ) : (
+                    <CircleX className="w-5 h-5 text-red-600 shrink-0" />
+                )}
+                <span className="font-mono text-xs font-semibold text-gray-900">{row.original.identifier}</span>
+            </div>
+        ),
+    },
     { accessorKey: "supportedTargets", header: "Supports", cell: ({ row }) => platformBadges(row.original.supportedTargets) },
-    { accessorKey: "upstream", header: "Upstream", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.upstream}</span> },
-    { accessorKey: "pollInterval", header: "Poll interval", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.pollInterval}s</span> },
     {
         accessorKey: "lastSeenAt",
         header: "Last seen",
-        cell: ({ row }) =>
-            row.original.lastSeenAt ? (
-                <Badge badgeStyle={{ color: row.original.online ? "green" : "gray" }}>{row.original.lastSeenAt}</Badge>
-            ) : (
-                <Badge badgeStyle={{ color: "gray" }}>Never</Badge>
-            ),
-    },
-    {
-        id: "online",
-        header: "Status",
-        cell: ({ row }) => (
-            <Badge badgeStyle={{ color: row.original.online ? "green" : "red" }}>
-                {row.original.online ? "Online" : "Offline"}
-            </Badge>
-        ),
+        cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.lastSeenAt ?? "Never"}</span>,
     },
 ];

@@ -16,6 +16,7 @@ function row(overrides: Partial<BuildTaskRow>): BuildTaskRow {
         format: SupportedFormats.Bin,
         error: null,
         exitCode: null,
+        creator: null,
         timestamp: "2m ago",
         assetId: null,
         assetName: null,
@@ -87,5 +88,27 @@ describe("buildTaskColumns", () => {
             </ChakraProvider>
         );
         expect(screen.getByText("New")).toBeInTheDocument();
+    });
+
+    it("renders Creator and Actions column headers", () => {
+        renderTable([row({ id: "c1" })]);
+        expect(screen.getByText("Creator")).toBeInTheDocument();
+        expect(screen.getByText("Actions")).toBeInTheDocument();
+    });
+
+    it("renders user information in the creator column when present", () => {
+        renderTable([
+            row({
+                id: "c2",
+                creator: {
+                    id: "u1",
+                    name: "Alice Operator",
+                    photoURL: "",
+                    isActivated: true,
+                    isAdmin: false,
+                },
+            }),
+        ]);
+        expect(screen.getByText("Alice Operator")).toBeInTheDocument();
     });
 });

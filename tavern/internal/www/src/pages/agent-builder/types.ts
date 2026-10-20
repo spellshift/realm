@@ -1,4 +1,5 @@
 import { SupportedPlatforms, SupportedFormats, SupportedTransports, TomeTactic } from "../../utils/enums";
+import { UserNode } from "../../utils/interfacesQuery";
 
 export const NO_INSTALL_WARNING = "No persistence tome is bundled. Without one, the install command won't persist the agent.";
 
@@ -157,6 +158,7 @@ export type BuildTaskRow = {
     format: Format;
     error: string | null;
     exitCode: number | null;
+    creator: UserNode | null;
     timestamp: string;
     assetId: string | null;
     assetName: string | null;

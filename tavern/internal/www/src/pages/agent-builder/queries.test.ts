@@ -200,4 +200,15 @@ describe("buildTaskRows", () => {
             format: "TARGET_FORMAT_BIN",
         });
     });
+
+    it("maps artifact creator to row creator field", () => {
+        const creator = { id: "u1", name: "Operator Bob", photoURL: "", isActivated: true, isAdmin: false };
+        const rows = buildTaskRows([
+            buildTask({
+                id: "t3",
+                artifact: { id: "a1", name: "build/linux/bin/imix", size: 1024, hash: "h1", creator },
+            }),
+        ]);
+        expect(rows[0].creator).toEqual(creator);
+    });
 });

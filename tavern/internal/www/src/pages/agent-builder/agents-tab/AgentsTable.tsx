@@ -5,6 +5,7 @@ import { Share, Copy, Trash2, CircleCheck, CircleX, CirclePause } from "lucide-r
 import { Ring } from "@uiball/loaders";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import UserImageAndName from "../../../components/UserImageAndName";
 import DownloadButton from "../../assets/components/DownloadButton";
 import { BuildTaskRow, BuildTaskStatus, PLATFORM_LABELS } from "../types";
 
@@ -86,12 +87,25 @@ export const buildTaskColumns = (
         },
     },
     { accessorKey: "platform", header: "Platform", cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{PLATFORM_LABELS[row.original.platform]}</Badge> },
+    {
+        accessorKey: "creator",
+        header: "Creator",
+        cell: ({ row }) => (
+            <div className="flex items-center">
+                {row.original.creator ? (
+                    <UserImageAndName userData={row.original.creator} />
+                ) : (
+                    <span className="text-sm text-gray-400">—</span>
+                )}
+            </div>
+        ),
+    },
     { accessorKey: "artifactSize", header: "Size", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.artifactSize ?? "—"}</span> },
     { accessorKey: "artifactHash", header: "Hash", cell: ({ row }) => <HashCell hash={row.original.artifactHash} /> },
     { accessorKey: "timestamp", header: "Updated", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.timestamp}</span> },
     {
         id: "actions",
-        header: "",
+        header: "Actions",
         cell: ({ row }) => {
             const task = row.original;
             if (task.status === "Built" && task.assetId && task.assetName) {

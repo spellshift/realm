@@ -1,5 +1,6 @@
 import { gql, useQuery } from "@apollo/client";
 import { formatDistanceToNow } from "date-fns";
+import { UserNode } from "../../utils/interfacesQuery";
 import { Builder, BuilderHealthy, BuildProfile, BuildTaskRow, Tome, TransportConfig, Platform, Format } from "./types";
 
 export const PROFILE_FIELDS = gql`
@@ -28,7 +29,7 @@ export const GET_BUILD_TASKS = gql`
                 id targetOs targetFormat createdAt claimedAt startedAt finishedAt exitCode error
                 profile { id name }
                 profileAtCreation { name }
-                artifact { id name size hash }
+                artifact { id name size hash creator { id name photoURL } }
             } }
         }
     }
@@ -71,7 +72,7 @@ export type BuildTask = {
     error: string | null;
     profile: { id: string; name: string };
     profileAtCreation: { name: string } | null;
-    artifact: { id: string; name: string; size: number; hash: string } | null;
+    artifact: { id: string; name: string; size: number; hash: string; creator?: UserNode | null } | null;
 };
 
 export function mapProfile(profile: ProfileRecord, catalog: Tome[]): BuildProfile {
@@ -157,6 +158,7 @@ export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
             format: task.targetFormat as Format,
             error: task.error ?? (status === "Failed" && task.exitCode === 0 ? "The build finished but no artifact was produced." : null),
             exitCode: task.exitCode,
+            creator: (task.artifact?.creator as UserNode) ?? null,
             timestamp,
             assetId: task.artifact?.id ?? null,
             assetName: task.artifact?.name ?? null,
