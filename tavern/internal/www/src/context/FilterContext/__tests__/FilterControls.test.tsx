@@ -57,6 +57,12 @@ vi.mock('../../../components/UserFilterBar', () => ({
   ),
 }));
 
+vi.mock('../../../components/AgentFilterBar', () => ({
+  default: () => (
+    <div data-testid="agent-filter-bar" />
+  ),
+}));
+
 function FiltersDisplay() {
   const { filters, isLocked } = useFilters();
   return (
@@ -123,6 +129,15 @@ describe('FilterControls', () => {
       expect(screen.getByTestId('free-text-search-Tome definition & values')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Quest name')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
+      expect(screen.queryByTestId('beacon-filter-bar')).not.toBeInTheDocument();
+    });
+
+    it('should render asset name, user, and agent filters for ASSETS page', () => {
+      render(<TestWrapper path="/assets" />);
+
+      expect(screen.getByTestId('free-text-search-Asset name')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('agent-filter-bar')).toBeInTheDocument();
       expect(screen.queryByTestId('beacon-filter-bar')).not.toBeInTheDocument();
     });
 

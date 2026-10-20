@@ -9,6 +9,7 @@ import { TomeFilterBar } from "../../components/TomeFilterBar";
 import { Tooltip } from "@chakra-ui/react";
 import { useLocation } from "react-router-dom";
 import UserFilterBar from "../../components/UserFilterBar";
+import AgentFilterBar from "../../components/AgentFilterBar";
 
 function getFilterFields(pathname: string): FilterFieldType[] | null {
     if (pathname.startsWith('/hosts/')) {
@@ -24,7 +25,7 @@ function getFilterFields(pathname: string): FilterFieldType[] | null {
         return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.USER, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.TASK_OUTPUT];
     }
     if (pathname === '/assets') {
-        return [FilterFieldType.ASSET_NAME, FilterFieldType.USER];
+        return [FilterFieldType.ASSET_NAME, FilterFieldType.USER, FilterFieldType.AGENT];
     }
 
     return null;
@@ -118,6 +119,13 @@ export default function FilterControls() {
             return (
                 <div key={field}>
                     <UserFilterBar />
+                </div>
+            );
+        }
+        else if (field === FilterFieldType.AGENT) {
+            return (
+                <div key={field}>
+                    <AgentFilterBar />
                 </div>
             );
         }

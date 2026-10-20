@@ -106,6 +106,10 @@ const getAssetIdsQuery = (
     where.hasCreatorWith = [{ id: filters.userId }];
   }
 
+  if (filters.agentOnly) {
+    where.nameHasPrefix = "build/";
+  }
+
   const query: GetAssetIdsQueryVariables = {
     where: Object.keys(where).length > 0 ? where : undefined,
     ...(sort && { orderBy: [sort] }),

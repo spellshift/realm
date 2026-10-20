@@ -4,6 +4,7 @@ import AssetsHeader from "./components/AssetsHeader";
 import AssetsTable from "./AssetsTable";
 import CreateLinkModal from "./components/CreateLinkModal/CreateLinkModal";
 import UploadAssetModal from "./components/UploadAssetModal/UploadAssetModal";
+import GenerateAgentModal from "./components/GenerateAgentModal/GenerateAgentModal";
 import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
 import { PageNavItem } from "../../utils/enums";
 
@@ -20,6 +21,7 @@ export const Assets = () => {
 
     const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
     const [uploadAssetModalOpen, setUploadAssetModalOpen] = useState(false);
+    const [generateAgentModalOpen, setGenerateAgentModalOpen] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState<{ id: string; name: string } | null>(null);
 
     const handleCreateLink = (assetId: string, assetName: string) => {
@@ -30,7 +32,10 @@ export const Assets = () => {
     return (
         <>
             <div className="flex flex-col gap-6">
-                <AssetsHeader setOpen={setUploadAssetModalOpen} />
+                <AssetsHeader
+                    setOpen={setUploadAssetModalOpen}
+                    onGenerateAgent={() => setGenerateAgentModalOpen(true)}
+                />
                 <VirtualizedTableWrapper
                     title="Assets"
                     totalItems={data?.assets?.totalCount}
@@ -64,6 +69,14 @@ export const Assets = () => {
                     isOpen={uploadAssetModalOpen}
                     setOpen={setUploadAssetModalOpen}
                     onUploadSuccess={refetch}
+                />
+            )}
+
+            {generateAgentModalOpen && (
+                <GenerateAgentModal
+                    isOpen={generateAgentModalOpen}
+                    setOpen={setGenerateAgentModalOpen}
+                    onSuccess={refetch}
                 />
             )}
         </>
