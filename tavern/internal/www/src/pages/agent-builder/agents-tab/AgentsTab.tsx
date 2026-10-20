@@ -50,7 +50,7 @@ export const AgentsTab = ({
         <div className="flex flex-col gap-2">
             <div className="flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 py-2 sticky top-0 z-5 shadow-sm">
                 <div className="flex flex-row gap-2 items-center">
-                    <h3 className="text-xl font-semibold leading-6 text-gray-900">Built agents</h3>
+                    <h3 className="text-xl font-semibold leading-6 text-gray-900">Agents</h3>
                     <p className="text-md text-gray-600">{rows.length !== undefined && `(${rows.length})`}</p>
                 </div>
                 <div className="flex flex-row justify-end gap-2 w-full">

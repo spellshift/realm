@@ -22,7 +22,7 @@ export const ProfilesTab = ({
     <div className="flex flex-col gap-2">
         <div className="flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 py-2 sticky top-0 z-5 shadow-sm">
             <div className="flex flex-row gap-2 items-center">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900">Build profiles</h3>
+                <h3 className="text-xl font-semibold leading-6 text-gray-900">Profiles</h3>
                 <p className="text-md text-gray-600">{profiles.length !== undefined && `(${profiles.length})`}</p>
             </div>
             <div className="flex flex-row justify-end gap-2 w-full">

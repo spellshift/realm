@@ -43,11 +43,11 @@ function renderPage(mocks: ReadonlyArray<MockedResponse>, initialEntry = "/build
 }
 
 describe("AgentBuilderLandingPage -- tab coordination", () => {
-    it("defaults to the Built agents tab and shows its empty state", async () => {
+    it("defaults to the Agents tab and shows its empty state", async () => {
         renderPage([emptyProfilesMock, emptyTasksMock, emptyBuildersMock]);
 
         expect(await screen.findByText("No built agents yet")).toBeInTheDocument();
-        expect(screen.getByRole("tab", { name: /Built agents/ }).getAttribute("aria-selected")).toBe("true");
+        expect(screen.getByRole("tab", { name: /Agents/ }).getAttribute("aria-selected")).toBe("true");
     });
 
     it("selects the tab named by the `tab` search param", async () => {
@@ -57,11 +57,11 @@ describe("AgentBuilderLandingPage -- tab coordination", () => {
         expect(screen.getByRole("tab", { name: /Builders/ }).getAttribute("aria-selected")).toBe("true");
     });
 
-    it("switches to the Build profiles tab on click", async () => {
+    it("switches to the Profiles tab on click", async () => {
         renderPage([emptyProfilesMock, emptyTasksMock, emptyBuildersMock]);
 
         await screen.findByText("No built agents yet");
-        screen.getByRole("tab", { name: /Build profiles/ }).click();
+        screen.getByRole("tab", { name: /Profiles/ }).click();
 
         expect(await screen.findByText("No build profiles available")).toBeInTheDocument();
     });

@@ -21,12 +21,12 @@ export const AgentBuilderTabs = ({
     <TabList className="flex flex-row gap-2 border-gray-200 w-full min-w-0 overflow-x-auto bg-gray-100">
         <Tab className={tabClass}>
             <PackageCheck className="w-4 h-4" />
-            <div>Built agents</div>
+            <div>Agents</div>
             <div>({agentCount})</div>
         </Tab>
         <Tab className={tabClass}>
             <Settings2 className="w-4 h-4" />
-            <div>Build profiles</div>
+            <div>Profiles</div>
             <div>({profileCount})</div>
         </Tab>
         <Tab className={tabClass}>
