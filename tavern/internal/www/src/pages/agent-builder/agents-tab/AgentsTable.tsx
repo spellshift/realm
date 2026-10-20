@@ -63,35 +63,49 @@ export const buildTaskColumns = (
     {
         accessorKey: "profileName",
         header: "Agent & Profile",
+        size: 280,
         cell: ({ row }) => {
             const task = row.original;
             const primary = task.artifactName ?? task.profileName;
             return (
-                <div className="flex flex-row items-center gap-2 min-w-[300px]">
+                <div className="flex flex-row items-center gap-2 min-w-0 max-w-full">
                     {STATUS_ICON[task.status]}
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900 text-sm font-mono">{primary}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-semibold text-gray-900 text-sm font-mono truncate" title={primary}>
+                                {primary}
+                            </span>
                             {task.id === highlightTaskId && <Badge badgeStyle={{ color: "purple" }}>New</Badge>}
                         </div>
                         {task.status === "Failed" ? (
-                            <span className="text-xs text-red-600 font-medium">
+                            <span
+                                className="text-xs text-red-600 font-medium truncate"
+                                title={`Build failed (exit code ${task.exitCode ?? "unknown"}): ${task.error}`}
+                            >
                                 Build failed (exit code {task.exitCode ?? "unknown"}): {task.error}
                             </span>
                         ) : (
-                            <span className="text-xs text-gray-500 font-sans">Profile: {task.profileName}</span>
+                            <span className="text-xs text-gray-500 font-sans truncate" title={`Profile: ${task.profileName}`}>
+                                Profile: {task.profileName}
+                            </span>
                         )}
                     </div>
                 </div>
             );
         },
     },
-    { accessorKey: "platform", header: "Platform", cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{PLATFORM_LABELS[row.original.platform]}</Badge> },
+    {
+        accessorKey: "platform",
+        header: "Platform",
+        size: 110,
+        cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{PLATFORM_LABELS[row.original.platform]}</Badge>,
+    },
     {
         accessorKey: "creator",
         header: "Creator",
+        size: 160,
         cell: ({ row }) => (
-            <div className="flex items-center">
+            <div className="flex items-center min-w-0">
                 {row.original.creator ? (
                     <UserImageAndName userData={row.original.creator} />
                 ) : (
@@ -100,12 +114,28 @@ export const buildTaskColumns = (
             </div>
         ),
     },
-    { accessorKey: "artifactSize", header: "Size", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.artifactSize ?? "—"}</span> },
-    { accessorKey: "artifactHash", header: "Hash", cell: ({ row }) => <HashCell hash={row.original.artifactHash} /> },
-    { accessorKey: "timestamp", header: "Updated", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.timestamp}</span> },
+    {
+        accessorKey: "artifactSize",
+        header: "Size",
+        size: 90,
+        cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.artifactSize ?? "—"}</span>,
+    },
+    {
+        accessorKey: "artifactHash",
+        header: "Hash",
+        size: 140,
+        cell: ({ row }) => <HashCell hash={row.original.artifactHash} />,
+    },
+    {
+        accessorKey: "timestamp",
+        header: "Updated",
+        size: 120,
+        cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.timestamp}</span>,
+    },
     {
         id: "actions",
         header: "Actions",
+        size: 120,
         cell: ({ row }) => {
             const task = row.original;
             if (task.status === "Built" && task.assetId && task.assetName) {

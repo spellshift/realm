@@ -27,6 +27,6 @@
   ],
   "elfMagicBytes": "0x7f 0x45 0x4c 0x46",
   "elfFileOutput": "ELF 64-bit LSB pie/shared object (decoded from header; 'file' utility unavailable)",
-  "artifactName": "build/linux/bin/imix-e2e-elf-570169-inhuman-jack-o-lantern",
+  "artifactName": "build/linux/bin/imix-e2e-elf-530534-noxious-wig",
   "artifactId": "4294967299"
 }
