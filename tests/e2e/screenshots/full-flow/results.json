@@ -5,32 +5,32 @@
       "caption": "Step 1: Assets page with \"Generate agent\" action button in the header"
     },
     {
-      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/2-modal-choose-profile.png",
-      "caption": "Step 2: Generate agent modal opened to Step 1 (Choose profile) with \"+ New profile\" button"
+      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/2-agent-build-page.png",
+      "caption": "Step 2: Dedicated Agent Build page (/assets/build) with breadcrumbs and \"+ New profile\" button"
     },
     {
       "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/3-modal-new-profile-form.png",
-      "caption": "Step 3: In-modal build profile authoring form rendered directly inside the wizard"
+      "caption": "Step 3: Build profile creation modal opened on the right side over the build page"
     },
     {
       "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/4-modal-profile-filled.png",
-      "caption": "Step 4: Profile details configured (Name, Description, and build scripts under Advanced)"
+      "caption": "Step 4: Profile details configured inside the modal (Name, Description, Advanced scripts)"
     },
     {
-      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/5-modal-profile-selected.png",
-      "caption": "Step 5: Profile saved and automatically selected in Step 1"
+      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/5-profile-selected-on-page.png",
+      "caption": "Step 5: Profile saved, modal closed, and newly created profile selected on the page"
     },
     {
-      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/6-modal-choose-target.png",
-      "caption": "Step 2: Choose compilation target (Linux x86_64 Executable)"
+      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/6-page-choose-target.png",
+      "caption": "Step 6: Step 2 Compilation target selection on dedicated page"
     },
     {
-      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/7-modal-confirm-build.png",
-      "caption": "Step 3: Review configuration summary and submit \"Build agent\""
+      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/7-page-confirm-build.png",
+      "caption": "Step 7: Step 3 Configuration review summary with \"Start build\" button"
     },
     {
-      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/8-build-queued-toast.png",
-      "caption": "Step 8: Build task queued with success toast notification and modal auto-closing"
+      "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/8-redirect-assets-toast.png",
+      "caption": "Step 8: Redirected back to Assets page with success toast notification"
     },
     {
       "path": "/persistent/workspaces/realm/tests/e2e/screenshots/full-flow/9-assets-built-agent-icon.png",

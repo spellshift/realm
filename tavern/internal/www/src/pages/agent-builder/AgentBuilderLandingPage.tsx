@@ -8,6 +8,7 @@ import AgentBuilderTabs from "./components/AgentBuilderTabs";
 import { AgentsTab } from "./agents-tab";
 import { ProfilesTab } from "./profiles-tab";
 import { BuildersTab } from "./builders-tab";
+import NewBuildProfileModal from "./components/NewBuildProfileModal";
 import { useBuilders, useBuildProfiles, useBuildTasks } from "./queries";
 import CreateLinkModal from "../assets/components/CreateLinkModal/CreateLinkModal";
 
@@ -41,7 +42,7 @@ export const AgentBuilderLandingPage = () => {
     const highlightTaskId = searchParams.get("task");
     const selectedIndex = Math.max(0, TAB_NAMES.indexOf(tabParam as typeof TAB_NAMES[number]));
 
-    const { profiles, loading: profilesLoading, error: profilesError } = useBuildProfiles();
+    const { profiles, tomes, loading: profilesLoading, error: profilesError, refetch: refetchProfiles } = useBuildProfiles();
     const { builders, loading: buildersLoading, error: buildersError, refetch: refetchBuilders } = useBuilders();
     const { rows: taskRows, loading: tasksLoading, error: tasksError } = useBuildTasks();
     // Bring the just-started task (if any) to the top, rather than leaving
@@ -60,8 +61,10 @@ export const AgentBuilderLandingPage = () => {
         setSelectedAsset({ id, name });
     }, []);
 
+    const [newProfileModalOpen, setNewProfileModalOpen] = useState(false);
+
     const goToWizard = () => navigate("/builder/new");
-    const goToNewProfile = () => navigate("/builder/new?authoring=1");
+    const goToNewProfile = () => setNewProfileModalOpen(true);
 
     return (
         <div className="flex flex-col gap-4 w-full min-w-0">
@@ -119,6 +122,14 @@ export const AgentBuilderLandingPage = () => {
                     assetName={selectedAsset.name}
                 />
             )}
+            <NewBuildProfileModal
+                isOpen={newProfileModalOpen}
+                setOpen={setNewProfileModalOpen}
+                catalog={tomes}
+                onSave={async () => {
+                    await refetchProfiles();
+                }}
+            />
         </div>
     );
 };

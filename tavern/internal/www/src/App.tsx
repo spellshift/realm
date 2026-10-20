@@ -66,6 +66,10 @@ const router = createBrowserRouter([
         element: <Assets />,
       },
       {
+        path: "assets/build",
+        element: <AgentBuilderWizardPage />,
+      },
+      {
         path: "shells/:shellId",
         element: <Shell />,
       },

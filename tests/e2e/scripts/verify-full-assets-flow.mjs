@@ -37,10 +37,31 @@ async function main() {
   const page = await pageCtx.newPage();
 
   let builderProcess = null;
+  let tavernProcess = null;
   let configPath = null;
   const results = { screenshots: [] };
 
   try {
+    // Start Tavern server if not already running
+    const tavernBin = process.env.TAVERN_BIN || '/tmp/tavern_bin';
+    try {
+      await apiCtx.get(`${baseURL}/assets`);
+    } catch (_) {
+      console.log('Starting local tavern server...');
+      tavernProcess = child_process.spawn(
+        tavernBin,
+        [],
+        { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MYSQL_ADDR: '', HTTP_LISTEN_ADDR: '127.0.0.1:8000' } }
+      );
+      for (let i = 0; i < 30; i++) {
+        try {
+          const res = await apiCtx.get(`${baseURL}/assets`);
+          if (res.ok()) break;
+        } catch (_) {}
+        await sleep(1000);
+      }
+    }
+
     // 0. Clean up stale builders
     console.log('[0] Cleaning up stale builders...');
     const existing = await graphql(apiCtx, `query listBuilders { builders { edges { node { id } } } }`);
@@ -84,7 +105,6 @@ async function main() {
     configPath = `/tmp/builder-full-flow-${Date.now()}.yaml`;
     fs.writeFileSync(configPath, configYaml);
 
-    const tavernBin = process.env.TAVERN_BIN || '/tmp/tavern_bin';
     builderProcess = child_process.spawn(
       tavernBin,
       ['builder', '--config', configPath, '--executor', 'local'],
@@ -121,44 +141,46 @@ async function main() {
     results.screenshots.push({ path: shot1, caption: 'Step 1: Assets page with "Generate agent" action button in the header' });
     console.log(`    Saved: ${shot1}`);
 
-    // ---------- Step 2: Open Generate Agent Modal (Step 1: Choose Profile) ----------
-    console.log('[Step 2] Clicking "Generate agent"...');
+    // ---------- Step 2: Click "Generate agent" -> Navigates to dedicated page /assets/build ----------
+    console.log('[Step 2] Clicking "Generate agent" to navigate to /assets/build...');
     await generateBtn.click();
-    await page.waitForSelector('[data-testid="generate-agent-modal"]', { state: 'visible', timeout: 10000 });
+    await page.waitForURL('**/assets/build', { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
     await page.waitForTimeout(600);
 
-    const shot2 = path.join(screenshotsDir, '2-modal-choose-profile.png');
+    const shot2 = path.join(screenshotsDir, '2-agent-build-page.png');
     await page.screenshot({ path: shot2, fullPage: true });
-    results.screenshots.push({ path: shot2, caption: 'Step 2: Generate agent modal opened to Step 1 (Choose profile) with "+ New profile" button' });
+    results.screenshots.push({ path: shot2, caption: 'Step 2: Dedicated Agent Build page (/assets/build) with breadcrumbs and "+ New profile" button' });
     console.log(`    Saved: ${shot2}`);
 
-    // ---------- Step 3: Click "New profile" inside modal ----------
-    console.log('[Step 3] Clicking "New profile"...');
+    // ---------- Step 3: Click "New profile" -> Opens New Profile Modal ----------
+    console.log('[Step 3] Clicking "New profile" to open profile modal...');
     const newProfileBtn = page.getByRole('button', { name: 'New profile' });
     await newProfileBtn.waitFor({ state: 'visible', timeout: 5000 });
     await newProfileBtn.click();
+    await page.waitForSelector('[data-testid="new-profile-modal"]', { state: 'visible', timeout: 10000 });
     await page.waitForTimeout(600);
 
     const shot3 = path.join(screenshotsDir, '3-modal-new-profile-form.png');
     await page.screenshot({ path: shot3, fullPage: true });
-    results.screenshots.push({ path: shot3, caption: 'Step 3: In-modal build profile authoring form rendered directly inside the wizard' });
+    results.screenshots.push({ path: shot3, caption: 'Step 3: Build profile creation modal opened on the right side over the build page' });
     console.log(`    Saved: ${shot3}`);
 
-    // ---------- Step 4: Fill in Profile Fields ----------
+    // ---------- Step 4: Fill in Profile Fields in Modal ----------
     console.log('[Step 4] Filling in profile form...');
     const nameInput = page.locator('input[name="profileName"]');
     await nameInput.waitFor({ state: 'visible', timeout: 10000 });
     await nameInput.fill('Stealth Operations Agent');
 
     const descInput = page.locator('textarea[placeholder="What is this profile for?"]');
-    await descInput.fill('Modular Linux beacon profile created directly from the Assets modal workflow.');
+    await descInput.fill('Modular Linux beacon profile created in modal from the agent build page.');
 
     // Expand Advanced
     const advancedBtn = page.locator('button:has-text("Advanced")');
     await advancedBtn.click();
     await page.waitForTimeout(400);
 
-    // Fill Build script, Setup script, and Artifact path for local compile
+    // Fill Setup script, Build script, and Artifact path
     const setupScriptArea = page.getByText('cd /home/vscode');
     await setupScriptArea.fill('echo "setup ready"');
 
@@ -170,21 +192,22 @@ async function main() {
 
     const shot4 = path.join(screenshotsDir, '4-modal-profile-filled.png');
     await page.screenshot({ path: shot4, fullPage: true });
-    results.screenshots.push({ path: shot4, caption: 'Step 4: Profile details configured (Name, Description, and build scripts under Advanced)' });
+    results.screenshots.push({ path: shot4, caption: 'Step 4: Profile details configured inside the modal (Name, Description, Advanced scripts)' });
     console.log(`    Saved: ${shot4}`);
 
-    // ---------- Step 5: Save Profile ----------
+    // ---------- Step 5: Save Profile in Modal -> Closes modal and selects new profile ----------
     console.log('[Step 5] Saving profile...');
     const saveProfileBtn = page.getByRole('button', { name: 'Save profile' });
     await saveProfileBtn.click();
 
-    // Wait for the modal to return to Step 1 with the new profile selected
+    // Modal closes and new profile is selected
+    await page.waitForSelector('[data-testid="new-profile-modal"]', { state: 'hidden', timeout: 10000 });
     await page.waitForSelector('text=Stealth Operations Agent', { timeout: 10000 });
     await page.waitForTimeout(600);
 
-    const shot5 = path.join(screenshotsDir, '5-modal-profile-selected.png');
+    const shot5 = path.join(screenshotsDir, '5-profile-selected-on-page.png');
     await page.screenshot({ path: shot5, fullPage: true });
-    results.screenshots.push({ path: shot5, caption: 'Step 5: Profile saved and automatically selected in Step 1' });
+    results.screenshots.push({ path: shot5, caption: 'Step 5: Profile saved, modal closed, and newly created profile selected on the page' });
     console.log(`    Saved: ${shot5}`);
 
     // ---------- Step 6: Step 2 Compilation Target ----------
@@ -193,9 +216,9 @@ async function main() {
     await continueBtn1.click();
     await page.waitForTimeout(600);
 
-    const shot6 = path.join(screenshotsDir, '6-modal-choose-target.png');
+    const shot6 = path.join(screenshotsDir, '6-page-choose-target.png');
     await page.screenshot({ path: shot6, fullPage: true });
-    results.screenshots.push({ path: shot6, caption: 'Step 2: Choose compilation target (Linux x86_64 Executable)' });
+    results.screenshots.push({ path: shot6, caption: 'Step 6: Step 2 Compilation target selection on dedicated page' });
     console.log(`    Saved: ${shot6}`);
 
     // ---------- Step 7: Step 3 Confirm & Build ----------
@@ -204,27 +227,25 @@ async function main() {
     await continueBtn2.click();
     await page.waitForTimeout(600);
 
-    const shot7 = path.join(screenshotsDir, '7-modal-confirm-build.png');
+    const shot7 = path.join(screenshotsDir, '7-page-confirm-build.png');
     await page.screenshot({ path: shot7, fullPage: true });
-    results.screenshots.push({ path: shot7, caption: 'Step 3: Review configuration summary and submit "Build agent"' });
+    results.screenshots.push({ path: shot7, caption: 'Step 7: Step 3 Configuration review summary with "Start build" button' });
     console.log(`    Saved: ${shot7}`);
 
-    // ---------- Step 8: Build Agent & Toast ----------
-    console.log('[Step 8] Clicking "Start build"...');
+    // ---------- Step 8: Start Build -> Redirects back to /assets with Toast ----------
+    console.log('[Step 8] Clicking "Start build" to queue task and redirect to /assets...');
     const buildBtn = page.getByRole('button', { name: 'Start build' });
     await buildBtn.click();
 
-    // Wait for toast notification
+    // Wait for redirect to /assets and toast notification
+    await page.waitForURL('**/assets', { timeout: 10000 });
     await page.waitForSelector('text=Agent build started', { timeout: 10000 });
     await page.waitForTimeout(400);
 
-    const shot8 = path.join(screenshotsDir, '8-build-queued-toast.png');
+    const shot8 = path.join(screenshotsDir, '8-redirect-assets-toast.png');
     await page.screenshot({ path: shot8, fullPage: true });
-    results.screenshots.push({ path: shot8, caption: 'Step 8: Build task queued with success toast notification and modal auto-closing' });
+    results.screenshots.push({ path: shot8, caption: 'Step 8: Redirected back to Assets page with success toast notification' });
     console.log(`    Saved: ${shot8}`);
-
-    // Wait for modal to dismiss
-    await page.waitForTimeout(1500);
 
     // ---------- Step 9: Wait for build completion & show artifact with black bug icon ----------
     console.log('[Step 9] Waiting for build task to complete...');
@@ -232,7 +253,7 @@ async function main() {
       const taskList = await graphql(
         apiCtx,
         `query listTasks {
-          buildTasks(first: 5) {
+          buildTasks(first: 5, orderBy: [{ field: CREATED_AT, direction: DESC }]) {
             edges {
               node {
                 id
@@ -299,7 +320,7 @@ async function main() {
     results.screenshots.push({ path: shot11, caption: 'Step 11: Filtered Assets view showing "Filters (1)" and only built agent artifacts' });
     console.log(`    Saved: ${shot11}`);
 
-    console.log('\n=== FULL ASSETS AGENT & PROFILE CREATION FLOW COMPLETED SUCCESSFULLY ===');
+    console.log('\n=== FULL DEDICATED PAGE AGENT BUILD FLOW COMPLETED SUCCESSFULLY ===');
     fs.writeFileSync(path.join(screenshotsDir, 'results.json'), JSON.stringify(results, null, 2));
   } finally {
     await browser.close();
@@ -307,6 +328,11 @@ async function main() {
       builderProcess.kill('SIGTERM');
       await sleep(1000);
       try { builderProcess.kill('SIGKILL'); } catch (_) {}
+    }
+    if (tavernProcess) {
+      tavernProcess.kill('SIGTERM');
+      await sleep(1000);
+      try { tavernProcess.kill('SIGKILL'); } catch (_) {}
     }
     if (configPath && fs.existsSync(configPath)) {
       try { fs.unlinkSync(configPath); } catch (_) {}

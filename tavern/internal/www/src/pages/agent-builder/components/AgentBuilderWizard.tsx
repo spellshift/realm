@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Heading, Tooltip } from "@chakra-ui/react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Heading, Tooltip, useToast } from "@chakra-ui/react";
 import { RadioGroup } from "@headlessui/react";
 import { ExclamationTriangleIcon, PlusIcon } from "@heroicons/react/24/outline";
 import Select, { createFilter, MultiValue } from "react-select";
@@ -18,7 +18,7 @@ import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
 import { classNames } from "../../../utils/utils";
 import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile, NO_INSTALL_WARNING } from "../types";
-import NewBuildProfile from "../NewBuildProfile";
+import NewBuildProfileModal from "./NewBuildProfileModal";
 
 const STEPS = [
     { name: "Choose profile", description: "Step 1", href: "#", step: 0 },
@@ -65,7 +65,10 @@ export const AgentBuilderWizard = ({
     initialAuthoring = false,
 }: AgentBuilderWizardProps) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
+    const toast = useToast();
+    const isAssetsFlow = location.pathname.startsWith("/assets");
     const [currStep, setCurrStep] = useState(0);
     const { profiles, tomes, loading, error: profilesError, refetch } = useBuildProfiles();
     const { builders, error: buildersError } = useBuilders();
@@ -77,7 +80,7 @@ export const AgentBuilderWizard = ({
     const [selectedTarget, setSelectedTarget] = useState<CompileTarget>(COMPILE_TARGETS[0]);
     const targetAvailable = builders.some((builder) => builder.online && builder.supportedTargets.includes(selectedTarget.platform));
     const [showAdvanced, setShowAdvanced] = useState(false);
-    const [authoring, setAuthoring] = useState(initialAuthoring || searchParams.get("authoring") === "1");
+    const [newProfileModalOpen, setNewProfileModalOpen] = useState(initialAuthoring || searchParams.get("authoring") === "1");
     const [profileSearch, setProfileSearch] = useState("");
     const [profileFields, setProfileFields] = useState<ProfileFilter[]>([]);
     const [searchKey, setSearchKey] = useState(0);
@@ -98,7 +101,7 @@ export const AgentBuilderWizard = ({
         await refetch();
         setSelectedProfile(profile);
         clearProfileFilters();
-        setAuthoring(false);
+        setNewProfileModalOpen(false);
     };
 
     const query = profileSearch.trim().toLocaleLowerCase();
@@ -133,10 +136,17 @@ export const AgentBuilderWizard = ({
                 targetFormat: selectedTarget.format,
             } } });
             if (!data?.createBuildTask?.id) throw new Error("The server did not return a build task.");
+            toast({
+                title: "Agent build started",
+                description: `Build task #${data.createBuildTask.id} queued. The generated artifact will appear in Assets once built.`,
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+            });
             if (onComplete) {
                 onComplete(data.createBuildTask.id);
             } else {
-                navigate(`/builder?tab=agents&task=${data.createBuildTask.id}`);
+                navigate("/assets");
             }
         } catch (error) {
             setError(error instanceof Error ? error.message : String(error));
@@ -147,10 +157,17 @@ export const AgentBuilderWizard = ({
         <div className="max-w-3xl mx-auto w-full flex flex-col gap-4">
             {showHeader && (
                 <Breadcrumbs
-                    pages={[
-                        { label: "Agent Builder", link: "/builder" },
-                        { label: "Generate agent", link: "/builder/new" },
-                    ]}
+                    pages={
+                        isAssetsFlow
+                            ? [
+                                  { label: "Assets", link: "/assets" },
+                                  { label: "Generate agent", link: "/assets/build" },
+                              ]
+                            : [
+                                  { label: "Agent Builder", link: "/builder" },
+                                  { label: "Generate agent", link: "/builder/new" },
+                              ]
+                    }
                 />
             )}
 
@@ -165,7 +182,7 @@ export const AgentBuilderWizard = ({
                         <FormSteps steps={STEPS} currStep={currStep} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        {currStep === 0 && !authoring && (
+                        {currStep === 0 && (
                             <div className="flex flex-col gap-4">
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="min-w-0">
@@ -198,7 +215,21 @@ export const AgentBuilderWizard = ({
                                 </div>
                                 {filteredProfiles.length === 0 ? (
                                     <div className="rounded-md border border-gray-200 py-6">
-                                        <EmptyState type={EmptyStateType.noMatches} label={profiles.length ? "No matching profiles" : "No build profiles available"} details={profiles.length ? "Try a different search or clear the filters." : "Create a profile to get started."} />
+                                        <EmptyState
+                                            type={EmptyStateType.noMatches}
+                                            label={profiles.length ? "No matching profiles" : "No build profiles available"}
+                                            details={profiles.length ? "Try a different search or clear the filters." : "Create a profile to get started."}
+                                        >
+                                            {profiles.length === 0 && (
+                                                <Button
+                                                    leftIcon={<PlusIcon className="w-4 h-4" />}
+                                                    buttonStyle={{ color: "purple", size: "sm" }}
+                                                    onClick={() => setNewProfileModalOpen(true)}
+                                                >
+                                                    Add build profile
+                                                </Button>
+                                            )}
+                                        </EmptyState>
                                     </div>
                                 ) : (
                                     <FormRadioGroup
@@ -219,17 +250,25 @@ export const AgentBuilderWizard = ({
                                     buttonVariant="ghost"
                                     buttonStyle={{ color: "purple", size: "sm" }}
                                     leftIcon={<PlusIcon className="w-4 h-4" />}
-                                    onClick={() => setAuthoring(true)}
+                                    onClick={() => setNewProfileModalOpen(true)}
                                     className="w-fit"
                                 >
                                     New profile
                                 </Button>
                                 <div className="flex flex-row gap-2">
-                                    {onCancel && (
-                                        <Button buttonVariant="outline" buttonStyle={{ color: "gray", size: "md" }} onClick={onCancel}>
-                                            Cancel
-                                        </Button>
-                                    )}
+                                    <Button
+                                        buttonVariant="outline"
+                                        buttonStyle={{ color: "gray", size: "md" }}
+                                        onClick={() => {
+                                            if (onCancel) {
+                                                onCancel();
+                                            } else {
+                                                navigate(isAssetsFlow ? "/assets" : "/builder");
+                                            }
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
                                     <Button disabled={!visibleSelectedProfile} onClick={() => {
                                         if (!visibleSelectedProfile) return;
                                         const matchingTarget = COMPILE_TARGETS.find(targetMatchesFilters);
@@ -243,14 +282,6 @@ export const AgentBuilderWizard = ({
                             </div>
                         )}
 
-                        {currStep === 0 && authoring && (
-                            <NewBuildProfile
-                                catalog={tomes}
-                                onCancel={() => setAuthoring(false)}
-                                onSave={handleSaveProfile}
-                            />
-                        )}
-
                         {currStep === 1 && selectedProfile && (
                             <div className="flex flex-col gap-6">
                                 <RadioGroup value={selectedTarget} onChange={setSelectedTarget}>
@@ -259,7 +290,7 @@ export const AgentBuilderWizard = ({
                                     </RadioGroup.Label>
                                     <div className="mt-4 flex flex-col gap-5 max-w-md">
                                         {targetsByPlatform.map((group) => (
-                                            <div key={group.platformLabel} className="flex flex-col gap-2">
+                                             <div key={group.platformLabel} className="flex flex-col gap-2">
                                                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                                     {group.platformLabel}
                                                 </span>
@@ -311,42 +342,60 @@ export const AgentBuilderWizard = ({
                                         ))}
                                     </div>
                                 </RadioGroup>
-                                {!targetAvailable && <p className="text-sm text-amber-700">Enroll a builder that supports {selectedTarget.platformLabel} before starting this build.</p>}
+
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(0)}>Back</Button>
-                                    <Button onClick={() => setCurrStep(2)} disabled={!targetAvailable}>Continue</Button>
+                                    <Button onClick={() => setCurrStep(2)}>Continue</Button>
                                 </div>
                             </div>
                         )}
 
                         {currStep === 2 && selectedProfile && (
                             <div className="flex flex-col gap-6">
-                                <div className="flex flex-col gap-3">
-                                    <Heading size="sm">Summary</Heading>
-                                    <div className="rounded-md border border-gray-200 p-4 flex flex-col gap-2">
-                                        <div className="flex flex-row flex-wrap gap-2 items-center">
-                                            <Badge badgeStyle={{ color: "purple" }}>{selectedProfile.name}</Badge>
-                                            <Badge badgeStyle={{ color: "gray" }}>{selectedTarget.platformLabel}</Badge>
-                                            <Badge badgeStyle={{ color: "gray" }}>{selectedTarget.formatLabel}</Badge>
+                                <div className="flex flex-col gap-2">
+                                    <Heading size="sm">Build summary</Heading>
+                                    <p className="text-sm text-gray-500">
+                                        Review the configuration below before starting the build.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-md border border-gray-200 divide-y divide-gray-200 text-sm">
+                                    <div className="p-3 flex justify-between">
+                                        <span className="text-gray-500">Profile</span>
+                                        <span className="font-medium text-gray-900">{selectedProfile.name}</span>
+                                    </div>
+                                    <div className="p-3 flex justify-between">
+                                        <span className="text-gray-500">Target</span>
+                                        <span className="font-medium text-gray-900">
+                                            {selectedTarget.platformLabel} ({selectedTarget.formatLabel})
+                                        </span>
+                                    </div>
+                                    <div className="p-3 flex justify-between">
+                                        <span className="text-gray-500">Build image</span>
+                                        <code className="text-xs font-mono text-gray-900">{selectedProfile.buildImage}</code>
+                                    </div>
+                                    <div className="p-3 flex justify-between">
+                                        <span className="text-gray-500">Transports</span>
+                                        <div className="flex flex-col gap-1 items-end">
+                                            {selectedProfile.transports.map((transport, idx) => (
+                                                <Badge key={idx} badgeStyle={{ color: "purple" }}>
+                                                    {TRANSPORT_TYPES.find((t) => t.value === transport.type)?.label ?? transport.type}
+                                                </Badge>
+                                            ))}
                                         </div>
-                                        <p className="text-sm text-gray-500">{selectedProfile.description}</p>
-                                        <div className="pt-2">
-                                            <h3 className="text-sm font-medium text-gray-900 mb-2">Transports</h3>
-                                            <div className="rounded-md border border-gray-200 divide-y divide-gray-200">
-                                                {selectedProfile.transports.map((transport) => (
-                                                    <div key={transport.id} className="flex flex-row items-start justify-between gap-2 p-3">
-                                                        <div className="min-w-0 flex flex-col gap-1">
-                                                            <span className="text-sm font-medium text-gray-900">
-                                                                {TRANSPORT_TYPES.find((type) => type.value === transport.type)?.label ?? transport.type}
-                                                            </span>
-                                                            <code className="text-xs text-gray-500 break-all">{transport.uri || "—"}</code>
-                                                        </div>
-                                                        <Badge badgeStyle={{ color: "gray" }}>
-                                                            <span className="sr-only">Callback interval </span>{transport.interval} s
-                                                        </Badge>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                    </div>
+                                    <div className="p-3 flex justify-between">
+                                        <span className="text-gray-500">Embedded tomes</span>
+                                        <div className="flex flex-col gap-1 items-end">
+                                            {selectedProfile.tomes.length === 0 ? (
+                                                <span className="text-gray-400">None</span>
+                                            ) : (
+                                                selectedProfile.tomes.map((tome) => (
+                                                    <span key={tome.tomeId} className="font-medium text-gray-900">
+                                                        {tome.tomeName}
+                                                    </span>
+                                                ))
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -382,6 +431,13 @@ export const AgentBuilderWizard = ({
                     </div>
                 </div>
             </form>
+
+            <NewBuildProfileModal
+                isOpen={newProfileModalOpen}
+                setOpen={setNewProfileModalOpen}
+                catalog={tomes}
+                onSave={handleSaveProfile}
+            />
         </div>
     );
 };
