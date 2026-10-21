@@ -178,7 +178,14 @@ export const AgentBuilderWizard = ({
                                             />
                                         </div>
                                         <div className="relative z-20 flex flex-col gap-1 min-w-0">
-                                            <label className="font-medium text-gray-700">Profile fields</label>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <label className="font-medium text-gray-700">Profile fields</label>
+                                                {hasProfileFilters && (
+                                                    <Button buttonVariant="ghost" buttonStyle={{ color: "purple", size: "sm" }} onClick={clearProfileFilters}>
+                                                        Clear filters
+                                                    </Button>
+                                                )}
+                                            </div>
                                             <Select<ProfileFilter, true>
                                                 isSearchable
                                                 isMulti
@@ -189,13 +196,6 @@ export const AgentBuilderWizard = ({
                                             />
                                         </div>
                                     </div>
-                                    {hasProfileFilters && (
-                                        <div className="flex justify-end">
-                                            <Button buttonVariant="ghost" buttonStyle={{ color: "purple", size: "sm" }} onClick={clearProfileFilters}>
-                                                Clear filters
-                                            </Button>
-                                        </div>
-                                    )}
                                     {filteredProfiles.length === 0 ? (
                                         <div className="rounded-md border border-gray-200 py-6">
                                             <EmptyState
