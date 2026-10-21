@@ -148,22 +148,32 @@ async function main() {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(600);
 
+    // Verify "New profile" button is NOT on the form
+    const newProfileBtnCount = await page.getByRole('button', { name: 'New profile' }).count();
+    if (newProfileBtnCount > 0) {
+      throw new Error('Expected "New profile" button to be removed from the agent builder form');
+    }
+
     const shot2 = path.join(screenshotsDir, '2-agent-build-page.png');
     await page.screenshot({ path: shot2, fullPage: true });
-    results.screenshots.push({ path: shot2, caption: 'Step 2: Dedicated Agent Build page (/assets/build) with breadcrumbs and "+ New profile" button' });
+    results.screenshots.push({ path: shot2, caption: 'Step 2: Dedicated Agent Build page (/assets/build) without "New profile" button on the form' });
     console.log(`    Saved: ${shot2}`);
 
-    // ---------- Step 3: Click "New profile" -> Opens New Profile Modal ----------
-    console.log('[Step 3] Clicking "New profile" to open profile modal...');
-    const newProfileBtn = page.getByRole('button', { name: 'New profile' });
-    await newProfileBtn.waitFor({ state: 'visible', timeout: 5000 });
-    await newProfileBtn.click();
+    // ---------- Step 3: Open Profile Modal in Admin Panel ----------
+    console.log('[Step 3] Navigating to /admin?tab=profiles to create build profile as admin...');
+    await page.goto(`${baseURL}/admin?tab=profiles`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(600);
+
+    const addProfileBtn = page.getByRole('button', { name: 'Add build profile' }).first();
+    await addProfileBtn.waitFor({ state: 'visible', timeout: 5000 });
+    await addProfileBtn.click();
     await page.waitForSelector('[data-testid="new-profile-modal"]', { state: 'visible', timeout: 10000 });
     await page.waitForTimeout(600);
 
     const shot3 = path.join(screenshotsDir, '3-modal-new-profile-form.png');
     await page.screenshot({ path: shot3, fullPage: true });
-    results.screenshots.push({ path: shot3, caption: 'Step 3: Build profile creation modal opened on the right side over the build page' });
+    results.screenshots.push({ path: shot3, caption: 'Step 3: Build profile creation modal opened in the Admin panel' });
     console.log(`    Saved: ${shot3}`);
 
     // ---------- Step 4: Fill in Profile Fields in Modal ----------
@@ -173,7 +183,7 @@ async function main() {
     await nameInput.fill('Stealth Operations Agent');
 
     const descInput = page.locator('textarea[placeholder="What is this profile for?"]');
-    await descInput.fill('Modular Linux beacon profile created in modal from the agent build page.');
+    await descInput.fill('Modular Linux beacon profile created in modal from the admin panel.');
 
     // Expand Advanced
     const advancedBtn = page.locator('button:has-text("Advanced")');
@@ -192,22 +202,32 @@ async function main() {
 
     const shot4 = path.join(screenshotsDir, '4-modal-profile-filled.png');
     await page.screenshot({ path: shot4, fullPage: true });
-    results.screenshots.push({ path: shot4, caption: 'Step 4: Profile details configured inside the modal (Name, Description, Advanced scripts)' });
+    results.screenshots.push({ path: shot4, caption: 'Step 4: Profile details configured inside the modal in Admin panel' });
     console.log(`    Saved: ${shot4}`);
 
-    // ---------- Step 5: Save Profile in Modal -> Closes modal and selects new profile ----------
-    console.log('[Step 5] Saving profile...');
+    // ---------- Step 5: Save Profile in Modal & Return to /assets/build ----------
+    console.log('[Step 5] Saving profile and returning to /assets/build...');
     const saveProfileBtn = page.getByRole('button', { name: 'Save profile' });
     await saveProfileBtn.click();
 
-    // Modal closes and new profile is selected
+    // Modal closes
     await page.waitForSelector('[data-testid="new-profile-modal"]', { state: 'hidden', timeout: 10000 });
+    await page.waitForTimeout(600);
+
+    // Return to /assets and click "Generate agent"
+    await page.goto(`${baseURL}/assets`);
+    await page.waitForLoadState('networkidle');
+    const genBtn2 = page.getByRole('button', { name: 'Generate agent' });
+    await genBtn2.waitFor({ state: 'visible', timeout: 5000 });
+    await genBtn2.click();
+    await page.waitForURL('**/assets/build', { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
     await page.waitForSelector('text=Stealth Operations Agent', { timeout: 10000 });
     await page.waitForTimeout(600);
 
     const shot5 = path.join(screenshotsDir, '5-profile-selected-on-page.png');
     await page.screenshot({ path: shot5, fullPage: true });
-    results.screenshots.push({ path: shot5, caption: 'Step 5: Profile saved, modal closed, and newly created profile selected on the page' });
+    results.screenshots.push({ path: shot5, caption: 'Step 5: Profile created in Admin panel is now available and selected on the Agent Build page' });
     console.log(`    Saved: ${shot5}`);
 
     // ---------- Step 6: Step 2 Compilation Target ----------

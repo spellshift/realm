@@ -89,7 +89,7 @@ export function mapProfile(profile: ProfileRecord, catalog: Tome[]): BuildProfil
     });
     return {
         ...profile,
-        transports: profile.transports.map((transport, index) => ({
+        transports: (profile.transports ?? []).map((transport, index) => ({
             ...transport,
             id: `transport-${index}`,
             type: transport.type as TransportConfig["type"],

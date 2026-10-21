@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Heading, Tooltip, useToast } from "@chakra-ui/react";
 import { RadioGroup } from "@headlessui/react";
-import { ExclamationTriangleIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import Select, { createFilter, MultiValue } from "react-select";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -18,7 +18,6 @@ import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
 import { classNames } from "../../../utils/utils";
 import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile, NO_INSTALL_WARNING } from "../types";
-import NewBuildProfileModal from "./NewBuildProfileModal";
 
 const STEPS = [
     { name: "Choose profile", description: "Step 1", href: "#", step: 0 },
@@ -55,20 +54,17 @@ export type AgentBuilderWizardProps = {
     showHeader?: boolean;
     onComplete?: (taskId: string) => void;
     onCancel?: () => void;
-    initialAuthoring?: boolean;
 };
 
 export const AgentBuilderWizard = ({
     showHeader = true,
     onComplete,
     onCancel,
-    initialAuthoring = false,
 }: AgentBuilderWizardProps) => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
     const toast = useToast();
     const [currStep, setCurrStep] = useState(0);
-    const { profiles, tomes, loading, error: profilesError, refetch } = useBuildProfiles();
+    const { profiles, loading, error: profilesError } = useBuildProfiles();
     const { builders, error: buildersError } = useBuilders();
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
@@ -78,7 +74,6 @@ export const AgentBuilderWizard = ({
     const [selectedTarget, setSelectedTarget] = useState<CompileTarget>(COMPILE_TARGETS[0]);
     const targetAvailable = builders.some((builder) => builder.online && builder.supportedTargets.includes(selectedTarget.platform));
     const [showAdvanced, setShowAdvanced] = useState(false);
-    const [newProfileModalOpen, setNewProfileModalOpen] = useState(initialAuthoring || searchParams.get("authoring") === "1");
     const [profileSearch, setProfileSearch] = useState("");
     const [profileFields, setProfileFields] = useState<ProfileFilter[]>([]);
     const [searchKey, setSearchKey] = useState(0);
@@ -93,13 +88,6 @@ export const AgentBuilderWizard = ({
         setProfileSearch("");
         setProfileFields([]);
         setSearchKey((key) => key + 1);
-    };
-
-    const handleSaveProfile = async (profile: BuildProfile) => {
-        await refetch();
-        setSelectedProfile(profile);
-        clearProfileFilters();
-        setNewProfileModalOpen(false);
     };
 
     const query = profileSearch.trim().toLocaleLowerCase();
@@ -207,20 +195,10 @@ export const AgentBuilderWizard = ({
                                 {filteredProfiles.length === 0 ? (
                                     <div className="rounded-md border border-gray-200 py-6">
                                         <EmptyState
-                                            type={EmptyStateType.noMatches}
+                                            type={profiles.length ? EmptyStateType.noMatches : EmptyStateType.noData}
                                             label={profiles.length ? "No matching profiles" : "No build profiles available"}
-                                            details={profiles.length ? "Try a different search or clear the filters." : "Create a profile to get started."}
-                                        >
-                                            {profiles.length === 0 && (
-                                                <Button
-                                                    leftIcon={<PlusIcon className="w-4 h-4" />}
-                                                    buttonStyle={{ color: "purple", size: "sm" }}
-                                                    onClick={() => setNewProfileModalOpen(true)}
-                                                >
-                                                    Add build profile
-                                                </Button>
-                                            )}
-                                        </EmptyState>
+                                            details={profiles.length ? "Try a different search or clear the filters." : "Please ask an admin to add a profile in the admin panel."}
+                                        />
                                     </div>
                                 ) : (
                                     <FormRadioGroup
@@ -237,15 +215,6 @@ export const AgentBuilderWizard = ({
                                         )}
                                     />
                                 )}
-                                <Button
-                                    buttonVariant="ghost"
-                                    buttonStyle={{ color: "purple", size: "sm" }}
-                                    leftIcon={<PlusIcon className="w-4 h-4" />}
-                                    onClick={() => setNewProfileModalOpen(true)}
-                                    className="w-fit"
-                                >
-                                    New profile
-                                </Button>
                                 <div className="flex flex-row gap-2">
                                     <Button
                                         buttonVariant="outline"
@@ -422,13 +391,6 @@ export const AgentBuilderWizard = ({
                     </div>
                 </div>
             </form>
-
-            <NewBuildProfileModal
-                isOpen={newProfileModalOpen}
-                setOpen={setNewProfileModalOpen}
-                catalog={tomes}
-                onSave={handleSaveProfile}
-            />
         </div>
     );
 };
