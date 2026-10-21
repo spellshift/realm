@@ -60,35 +60,31 @@ async function main() {
     console.log(`    Sidebar contains Admin: ${sidebarText.includes('Admin')}`);
     console.log(`    Sidebar contains Agent Builder: ${sidebarText.includes('Agent Builder')}`);
 
-    // 2. Click Agents tab
-    console.log('[2] Switching to Agents tab...');
-    const agentsTab = page.locator('role=tab[name*="Agents"]');
-    await agentsTab.click();
-    await sleep(1500);
+    // Verify Agents tab is NOT present on Admin
+    const agentsTabCount = await page.locator('role=tab[name*="Agents"]').count();
+    console.log(`    Agents tab present on admin: ${agentsTabCount > 0}`);
+    if (agentsTabCount > 0) {
+      throw new Error('Agents tab should not be present on Admin portal!');
+    }
 
-    const agentsTabScreenshot = path.join(screenshotsDir, '2-admin-agents-tab.png');
-    await page.screenshot({ path: agentsTabScreenshot });
-    results.screenshots.push({ step: 'Agents tab on Admin portal', file: agentsTabScreenshot });
-    console.log(`    Captured: ${agentsTabScreenshot}`);
-
-    // 3. Click Profiles tab
-    console.log('[3] Switching to Profiles tab...');
+    // 2. Click Profiles tab
+    console.log('[2] Switching to Profiles tab...');
     const profilesTab = page.locator('role=tab[name*="Profiles"]');
     await profilesTab.click();
     await sleep(1500);
 
-    const profilesTabScreenshot = path.join(screenshotsDir, '3-admin-profiles-tab.png');
+    const profilesTabScreenshot = path.join(screenshotsDir, '2-admin-profiles-tab.png');
     await page.screenshot({ path: profilesTabScreenshot });
     results.screenshots.push({ step: 'Profiles tab on Admin portal', file: profilesTabScreenshot });
     console.log(`    Captured: ${profilesTabScreenshot}`);
 
     // Open Add Profile modal
-    console.log('[3b] Opening Add Build Profile modal...');
+    console.log('[2b] Opening Add Build Profile modal...');
     const addProfileBtn = page.locator('button:has-text("Add build profile")').first();
     if (await addProfileBtn.isVisible()) {
       await addProfileBtn.click();
       await sleep(1000);
-      const modalScreenshot = path.join(screenshotsDir, '3b-admin-new-profile-modal.png');
+      const modalScreenshot = path.join(screenshotsDir, '2b-admin-new-profile-modal.png');
       await page.screenshot({ path: modalScreenshot });
       results.screenshots.push({ step: 'New Build Profile modal on Admin', file: modalScreenshot });
       console.log(`    Captured: ${modalScreenshot}`);
@@ -100,24 +96,24 @@ async function main() {
       }
     }
 
-    // 4. Click Builders tab
-    console.log('[4] Switching to Builders tab...');
+    // 3. Click Builders tab
+    console.log('[3] Switching to Builders tab...');
     const buildersTab = page.locator('role=tab[name*="Builders"]');
     await buildersTab.click();
     await sleep(1500);
 
-    const buildersTabScreenshot = path.join(screenshotsDir, '4-admin-builders-tab.png');
+    const buildersTabScreenshot = path.join(screenshotsDir, '3-admin-builders-tab.png');
     await page.screenshot({ path: buildersTabScreenshot });
     results.screenshots.push({ step: 'Builders tab on Admin portal', file: buildersTabScreenshot });
     console.log(`    Captured: ${buildersTabScreenshot}`);
 
     // Open Enroll Builder modal
-    console.log('[4b] Opening Enroll Builder modal...');
+    console.log('[3b] Opening Enroll Builder modal...');
     const enrollBuilderBtn = page.locator('button:has-text("Enroll builder")').first();
     if (await enrollBuilderBtn.isVisible()) {
       await enrollBuilderBtn.click();
       await sleep(1000);
-      const enrollModalScreenshot = path.join(screenshotsDir, '4b-admin-enroll-builder-modal.png');
+      const enrollModalScreenshot = path.join(screenshotsDir, '3b-admin-enroll-builder-modal.png');
       await page.screenshot({ path: enrollModalScreenshot });
       results.screenshots.push({ step: 'Enroll Builder modal on Admin', file: enrollModalScreenshot });
       console.log(`    Captured: ${enrollModalScreenshot}`);
@@ -129,16 +125,32 @@ async function main() {
       }
     }
 
-    // 5. Test /builder redirect to /admin?tab=agents
-    console.log('[5] Testing /builder redirect...');
+    // 4. Test /builder redirect to /admin?tab=profiles
+    console.log('[4] Testing /builder redirect...');
     await page.goto(`${baseURL}/builder`, { waitUntil: 'networkidle' });
     await sleep(1500);
     console.log(`    URL after navigating to /builder: ${page.url()}`);
 
-    const redirectScreenshot = path.join(screenshotsDir, '5-builder-redirect-to-admin-agents.png');
+    const redirectScreenshot = path.join(screenshotsDir, '4-builder-redirect-to-admin-profiles.png');
     await page.screenshot({ path: redirectScreenshot });
-    results.screenshots.push({ step: 'Redirect /builder to /admin?tab=agents', file: redirectScreenshot });
+    results.screenshots.push({ step: 'Redirect /builder to /admin?tab=profiles', file: redirectScreenshot });
     console.log(`    Captured: ${redirectScreenshot}`);
+
+    // 5. Test Assets page has Generate agent button that navigates to /assets/build
+    console.log('[5] Testing Assets page Generate agent flow...');
+    await page.goto(`${baseURL}/assets`, { waitUntil: 'networkidle' });
+    await sleep(1000);
+
+    const generateBtn = page.locator('button:has-text("Generate agent")');
+    console.log(`    Generate agent button visible on Assets: ${await generateBtn.isVisible()}`);
+    await generateBtn.click();
+    await sleep(1000);
+    console.log(`    URL after clicking Generate agent: ${page.url()}`);
+
+    const wizardScreenshot = path.join(screenshotsDir, '5-assets-generate-agent-page.png');
+    await page.screenshot({ path: wizardScreenshot });
+    results.screenshots.push({ step: 'Generate agent page reached from Assets', file: wizardScreenshot });
+    console.log(`    Captured: ${wizardScreenshot}`);
 
     fs.writeFileSync(path.join(screenshotsDir, 'results.json'), JSON.stringify(results, null, 2));
     console.log('Admin tabs verification completed successfully!');

@@ -5,28 +5,28 @@
       "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/1-admin-users-tab.png"
     },
     {
-      "step": "Agents tab on Admin portal",
-      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/2-admin-agents-tab.png"
-    },
-    {
       "step": "Profiles tab on Admin portal",
-      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/3-admin-profiles-tab.png"
+      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/2-admin-profiles-tab.png"
     },
     {
       "step": "New Build Profile modal on Admin",
-      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/3b-admin-new-profile-modal.png"
+      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/2b-admin-new-profile-modal.png"
     },
     {
       "step": "Builders tab on Admin portal",
-      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/4-admin-builders-tab.png"
+      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/3-admin-builders-tab.png"
     },
     {
       "step": "Enroll Builder modal on Admin",
-      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/4b-admin-enroll-builder-modal.png"
+      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/3b-admin-enroll-builder-modal.png"
     },
     {
-      "step": "Redirect /builder to /admin?tab=agents",
-      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/5-builder-redirect-to-admin-agents.png"
+      "step": "Redirect /builder to /admin?tab=profiles",
+      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/4-builder-redirect-to-admin-profiles.png"
+    },
+    {
+      "step": "Generate agent page reached from Assets",
+      "file": "/persistent/workspaces/realm/tests/e2e/screenshots/admin-tabs/5-assets-generate-agent-page.png"
     }
   ]
 }

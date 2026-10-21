@@ -7,7 +7,7 @@ import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import { AdminPortal } from "./AdminPortal";
 import { AuthorizationContext } from "../../context/AuthorizationContext";
 import { GET_USER_IDS_QUERY } from "./queries";
-import { GET_BUILD_PROFILES, GET_BUILDERS, GET_BUILD_TASKS } from "../agent-builder/queries";
+import { GET_BUILD_PROFILES, GET_BUILDERS } from "../agent-builder/queries";
 
 beforeAll(() => {
     if (typeof globalThis.ResizeObserver === "undefined") {
@@ -42,17 +42,12 @@ const emptyProfilesMock = {
     result: { data: { buildProfiles: { edges: [] }, tomes: { edges: [] } } },
 };
 
-const emptyTasksMock = {
-    request: { query: GET_BUILD_TASKS },
-    result: { data: { buildTasks: { edges: [] } } },
-};
-
 const emptyBuildersMock = {
     request: { query: GET_BUILDERS },
     result: { data: { builders: { edges: [] } } },
 };
 
-const defaultMocks = [emptyUsersMock, emptyProfilesMock, emptyTasksMock, emptyBuildersMock];
+const defaultMocks = [emptyUsersMock, emptyProfilesMock, emptyBuildersMock];
 
 const adminAuthValue = {
     data: {
@@ -83,13 +78,13 @@ function renderAdminPage(mocks: ReadonlyArray<MockedResponse> = defaultMocks, in
 }
 
 describe("AdminPortal -- tab coordination", () => {
-    it("renders the 4 tabs: Users, Agents, Profiles, Builders", async () => {
+    it("renders the 3 tabs (Users, Profiles, Builders) and does not render Agents tab", async () => {
         renderAdminPage();
 
         expect(screen.getByRole("tab", { name: /Users/ })).toBeInTheDocument();
-        expect(screen.getByRole("tab", { name: /Agents/ })).toBeInTheDocument();
         expect(screen.getByRole("tab", { name: /Profiles/ })).toBeInTheDocument();
         expect(screen.getByRole("tab", { name: /Builders/ })).toBeInTheDocument();
+        expect(screen.queryByRole("tab", { name: /Agents/ })).not.toBeInTheDocument();
     });
 
     it("defaults to the Users tab", async () => {
@@ -98,11 +93,11 @@ describe("AdminPortal -- tab coordination", () => {
         expect(screen.getByRole("tab", { name: /Users/ }).getAttribute("aria-selected")).toBe("true");
     });
 
-    it("selects the tab named by the `tab` search param (e.g. agents)", async () => {
-        renderAdminPage(defaultMocks, "/admin?tab=agents");
+    it("selects the profiles tab via search param", async () => {
+        renderAdminPage(defaultMocks, "/admin?tab=profiles");
 
-        expect(screen.getByRole("tab", { name: /Agents/ }).getAttribute("aria-selected")).toBe("true");
-        expect(await screen.findByText("No built agents yet")).toBeInTheDocument();
+        expect(screen.getByRole("tab", { name: /Profiles/ }).getAttribute("aria-selected")).toBe("true");
+        expect(await screen.findByText("No build profiles available")).toBeInTheDocument();
     });
 
     it("selects the builders tab via search param", async () => {

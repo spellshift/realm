@@ -1,5 +1,5 @@
 import { Tab, TabList } from "@headlessui/react";
-import { Hammer, Settings2, PackageCheck, Users } from "lucide-react";
+import { Hammer, Settings2, Users } from "lucide-react";
 
 const tabClass = ({ selected }: { selected: boolean }) =>
     `p-3 sm:p-4 flex flex-row gap-1 items-center flex-shrink-0 whitespace-nowrap border-t-2 border-l-2 border-r-2 rounded-t-lg ${
@@ -10,14 +10,12 @@ const tabClass = ({ selected }: { selected: boolean }) =>
 
 export interface AdminTabsProps {
     userCount?: number;
-    agentCount?: number;
     profileCount?: number;
     builderCount?: number;
 }
 
 export const AdminTabs = ({
     userCount,
-    agentCount,
     profileCount,
     builderCount,
 }: AdminTabsProps) => (
@@ -26,11 +24,6 @@ export const AdminTabs = ({
             <Users className="w-4 h-4" />
             <div>Users</div>
             {userCount !== undefined && <div>({userCount})</div>}
-        </Tab>
-        <Tab className={tabClass}>
-            <PackageCheck className="w-4 h-4" />
-            <div>Agents</div>
-            {agentCount !== undefined && <div>({agentCount})</div>}
         </Tab>
         <Tab className={tabClass}>
             <Settings2 className="w-4 h-4" />

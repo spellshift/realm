@@ -82,7 +82,7 @@ const router = createBrowserRouter([
       },
       {
         path: "builder",
-        element: <Navigate to="/admin?tab=agents" replace />,
+        element: <Navigate to="/admin?tab=profiles" replace />,
       },
       {
         path: "builder/new",

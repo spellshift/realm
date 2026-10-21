@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Heading, Tooltip, useToast } from "@chakra-ui/react";
 import { RadioGroup } from "@headlessui/react";
 import { ExclamationTriangleIcon, PlusIcon } from "@heroicons/react/24/outline";
@@ -65,10 +65,8 @@ export const AgentBuilderWizard = ({
     initialAuthoring = false,
 }: AgentBuilderWizardProps) => {
     const navigate = useNavigate();
-    const location = useLocation();
     const [searchParams] = useSearchParams();
     const toast = useToast();
-    const isAssetsFlow = location.pathname.startsWith("/assets");
     const [currStep, setCurrStep] = useState(0);
     const { profiles, tomes, loading, error: profilesError, refetch } = useBuildProfiles();
     const { builders, error: buildersError } = useBuilders();
@@ -157,17 +155,10 @@ export const AgentBuilderWizard = ({
         <div className="max-w-3xl mx-auto w-full flex flex-col gap-4">
             {showHeader && (
                 <Breadcrumbs
-                    pages={
-                        isAssetsFlow
-                            ? [
-                                  { label: "Assets", link: "/assets" },
-                                  { label: "Generate agent", link: "/assets/build" },
-                              ]
-                            : [
-                                  { label: "Agent Builder", link: "/builder" },
-                                  { label: "Generate agent", link: "/builder/new" },
-                              ]
-                    }
+                    pages={[
+                        { label: "Assets", link: "/assets" },
+                        { label: "Generate agent", link: "/assets/build" },
+                    ]}
                 />
             )}
 
@@ -263,7 +254,7 @@ export const AgentBuilderWizard = ({
                                             if (onCancel) {
                                                 onCancel();
                                             } else {
-                                                navigate(isAssetsFlow ? "/assets" : "/builder");
+                                                navigate("/assets");
                                             }
                                         }}
                                     >
