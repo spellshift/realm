@@ -167,49 +167,51 @@ export const AgentBuilderWizard = ({
                                         Select a profile to configure your agent build
                                     </p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="min-w-0">
-                                        <FreeTextSearch
-                                            key={searchKey}
-                                            placeholder="Profile name or description"
-                                            defaultValue={profileSearch}
-                                            setSearch={setProfileSearch}
-                                        />
+                                <div className="flex flex-col gap-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="min-w-0">
+                                            <FreeTextSearch
+                                                key={searchKey}
+                                                placeholder="Profile name or description"
+                                                defaultValue={profileSearch}
+                                                setSearch={setProfileSearch}
+                                            />
+                                        </div>
+                                        <div className="relative z-20 flex flex-col gap-1 min-w-0">
+                                            <label className="font-medium text-gray-700">Profile fields</label>
+                                            <Select<ProfileFilter, true>
+                                                isSearchable
+                                                isMulti
+                                                options={PROFILE_FILTER_OPTIONS}
+                                                onChange={(fields: MultiValue<ProfileFilter>) => setProfileFields([...fields])}
+                                                filterOption={createFilter({ matchFrom: "any", stringify: (option) => option.label })}
+                                                value={profileFields}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="relative z-20 flex flex-col gap-1 min-w-0">
-                                        <label className="font-medium text-gray-700">Profile fields</label>
-                                        <Select<ProfileFilter, true>
-                                            isSearchable
-                                            isMulti
-                                            options={PROFILE_FILTER_OPTIONS}
-                                            onChange={(fields: MultiValue<ProfileFilter>) => setProfileFields([...fields])}
-                                            filterOption={createFilter({ matchFrom: "any", stringify: (option) => option.label })}
-                                            value={profileFields}
+                                    {hasProfileFilters && (
+                                        <div className="flex justify-end">
+                                            <Button buttonVariant="ghost" buttonStyle={{ color: "purple", size: "sm" }} onClick={clearProfileFilters}>
+                                                Clear filters
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {filteredProfiles.length === 0 ? (
+                                        <div className="rounded-md border border-gray-200 py-6">
+                                            <EmptyState
+                                                type={profiles.length ? EmptyStateType.noMatches : EmptyStateType.noData}
+                                                label={profiles.length ? "No matching profiles" : "No build profiles available"}
+                                                details={profiles.length ? "Try a different search or clear the filters." : "Please ask an admin to add a profile in the admin panel."}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <ProfileSelectionTable
+                                            profiles={filteredProfiles}
+                                            selectedProfileId={visibleSelectedProfile?.id ?? null}
+                                            onSelectProfile={setSelectedProfile}
                                         />
-                                    </div>
+                                    )}
                                 </div>
-                                {hasProfileFilters && (
-                                    <div className="flex justify-end">
-                                        <Button buttonVariant="ghost" buttonStyle={{ color: "purple", size: "sm" }} onClick={clearProfileFilters}>
-                                            Clear filters
-                                        </Button>
-                                    </div>
-                                )}
-                                {filteredProfiles.length === 0 ? (
-                                    <div className="rounded-md border border-gray-200 py-6">
-                                        <EmptyState
-                                            type={profiles.length ? EmptyStateType.noMatches : EmptyStateType.noData}
-                                            label={profiles.length ? "No matching profiles" : "No build profiles available"}
-                                            details={profiles.length ? "Try a different search or clear the filters." : "Please ask an admin to add a profile in the admin panel."}
-                                        />
-                                    </div>
-                                ) : (
-                                    <ProfileSelectionTable
-                                        profiles={filteredProfiles}
-                                        selectedProfileId={visibleSelectedProfile?.id ?? null}
-                                        onSelectProfile={setSelectedProfile}
-                                    />
-                                )}
                                 <div className="flex flex-row gap-2">
                                     <Button
                                         buttonStyle={{ color: "gray", size: "md" }}
