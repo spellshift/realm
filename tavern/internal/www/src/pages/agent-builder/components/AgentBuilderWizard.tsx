@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heading, Tooltip, useToast } from "@chakra-ui/react";
+import { Heading, useToast } from "@chakra-ui/react";
 import { RadioGroup } from "@headlessui/react";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import Select, { createFilter, MultiValue } from "react-select";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -10,14 +9,14 @@ import AlertError from "../../../components/tavern-base-ui/AlertError";
 import { useMutation } from "@apollo/client";
 import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "../queries";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
-import { FormRadioGroup } from "../../../components/tavern-base-ui/FormRadioGroup";
+import { ProfileSelectionTable } from "./ProfileSelectionTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
 import { classNames } from "../../../utils/utils";
-import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile, NO_INSTALL_WARNING } from "../types";
+import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile } from "../types";
 
 const STEPS = [
     { name: "Choose profile", description: "Step 1", href: "#", step: 0 },
@@ -206,18 +205,10 @@ export const AgentBuilderWizard = ({
                                         />
                                     </div>
                                 ) : (
-                                    <FormRadioGroup
-                                        label="Build profile"
-                                        data={filteredProfiles}
-                                        selected={visibleSelectedProfile}
-                                        setSelected={setSelectedProfile}
-                                        renderNameAddon={(profile: BuildProfile) => !profile.hasPersistenceTome && (
-                                            <Tooltip label={NO_INSTALL_WARNING} hasArrow placement="right" maxW="280px">
-                                                <span tabIndex={0} aria-label="No install warning" className="inline-flex text-amber-500">
-                                                    <ExclamationTriangleIcon className="h-4 w-4" />
-                                                </span>
-                                            </Tooltip>
-                                        )}
+                                    <ProfileSelectionTable
+                                        profiles={filteredProfiles}
+                                        selectedProfileId={visibleSelectedProfile?.id ?? null}
+                                        onSelectProfile={setSelectedProfile}
                                     />
                                 )}
                                 <div className="flex flex-row gap-2">
