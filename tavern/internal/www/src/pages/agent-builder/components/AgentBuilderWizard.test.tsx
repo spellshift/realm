@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
@@ -6,6 +6,28 @@ import { MemoryRouter } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing";
 import AgentBuilderWizard from "./AgentBuilderWizard";
 import { GET_BUILD_PROFILES, GET_BUILDERS } from "../queries";
+
+vi.mock("@tanstack/react-virtual", async () => {
+    const React = await import("react");
+    return {
+        useVirtualizer: ({ count }: { count: number }) => {
+            const virtualizer = React.useMemo(() => ({
+                getVirtualItems: () =>
+                    Array.from({ length: count }, (_, index) => ({
+                        index,
+                        key: index,
+                        start: index * 80,
+                        size: 80,
+                        end: (index + 1) * 80,
+                    })),
+                getTotalSize: () => count * 80,
+                measureElement: () => {},
+                range: { startIndex: 0, endIndex: Math.max(0, count - 1) },
+            }), [count]);
+            return virtualizer;
+        },
+    };
+});
 
 beforeAll(() => {
     if (typeof globalThis.ResizeObserver === "undefined") {

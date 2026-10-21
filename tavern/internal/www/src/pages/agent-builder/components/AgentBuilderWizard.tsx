@@ -167,7 +167,7 @@ export const AgentBuilderWizard = ({
                                         Select a profile to configure your agent build
                                     </p>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-2">
                                     <div className="min-w-0">
                                         <FreeTextSearch
                                             key={searchKey}
@@ -188,14 +188,13 @@ export const AgentBuilderWizard = ({
                                         />
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between gap-2 text-sm text-gray-500">
-                                    <span>{filteredProfiles.length} of {profiles.length} profiles</span>
-                                    {hasProfileFilters && (
+                                {hasProfileFilters && (
+                                    <div className="flex justify-end">
                                         <Button buttonVariant="ghost" buttonStyle={{ color: "purple", size: "sm" }} onClick={clearProfileFilters}>
                                             Clear filters
                                         </Button>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                                 {filteredProfiles.length === 0 ? (
                                     <div className="rounded-md border border-gray-200 py-6">
                                         <EmptyState

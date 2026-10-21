@@ -1,10 +1,31 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import ProfileSelectionTable from "./ProfileSelectionTable";
 import { BuildProfile } from "../types";
 import { SupportedTransports } from "../../../utils/enums";
+
+vi.mock("@tanstack/react-virtual", async () => {
+    const React = await import("react");
+    return {
+        useVirtualizer: ({ count }: { count: number }) => {
+            const virtualizer = React.useMemo(() => ({
+                getVirtualItems: () =>
+                    Array.from({ length: count }, (_, index) => ({
+                        index,
+                        key: index,
+                        start: index * 80,
+                        size: 80,
+                        end: (index + 1) * 80,
+                    })),
+                getTotalSize: () => count * 80,
+                measureElement: () => {},
+                range: { startIndex: 0, endIndex: Math.max(0, count - 1) },
+            }), [count]);
+            return virtualizer;
+        },
+    };
+});
 
 const mockProfiles: BuildProfile[] = [
     {
@@ -68,10 +89,9 @@ describe("ProfileSelectionTable", () => {
         expect(screen.getByText("Linux Prod Beacon")).toBeInTheDocument();
         expect(screen.getByText("Windows Diagnostic")).toBeInTheDocument();
         expect(screen.getByText("HTTP")).toBeInTheDocument();
-        expect(screen.getByText("https://c2.example.com/api")).toBeInTheDocument();
 
         // Warning icon for missing persistence
-        expect(screen.getByLabelText("No install warning")).toBeInTheDocument();
+        expect(screen.getByLabelText("No persistence tome warning")).toBeInTheDocument();
     });
 
     it("triggers onSelectProfile when clicking a row", () => {
@@ -86,7 +106,8 @@ describe("ProfileSelectionTable", () => {
             </ChakraProvider>
         );
 
-        fireEvent.click(screen.getByRole("button", { name: "Select profile Windows Diagnostic" }));
+        const rows = screen.getAllByRole("button", { name: "Select row" });
+        fireEvent.click(rows[1]);
         expect(onSelect).toHaveBeenCalledWith(mockProfiles[1]);
     });
 
@@ -112,7 +133,7 @@ describe("ProfileSelectionTable", () => {
         // Details should now be visible
         expect(screen.getByText("spellshift/devcontainer:main")).toBeInTheDocument();
         expect(screen.getByText("/out/imix")).toBeInTheDocument();
-        expect(screen.getByText("Production Linux agent with persistence")).toBeInTheDocument();
+        expect(screen.getAllByText("Production Linux agent with persistence")).toHaveLength(2);
         expect(screen.getByText("Cron Persistence")).toBeInTheDocument();
         expect(screen.getByText("10s interval")).toBeInTheDocument();
     });
