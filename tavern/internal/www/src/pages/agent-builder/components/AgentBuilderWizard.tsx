@@ -22,7 +22,7 @@ import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile, NO_INSTA
 const STEPS = [
     { name: "Choose profile", description: "Step 1", href: "#", step: 0 },
     { name: "Target", description: "Step 2", href: "#", step: 1 },
-    { name: "Confirm", description: "Step 3", href: "#", step: 2 },
+    { name: "Confirm details", description: "Step 3", href: "#", step: 2 },
 ];
 
 type ProfileFilter = { label: string; value: string; kind: "os" | "format" | "tomeType" };
@@ -140,7 +140,7 @@ export const AgentBuilderWizard = ({
     };
 
     return (
-        <div className="max-w-3xl mx-auto w-full flex flex-col gap-4">
+        <div className="max-w-4xl mx-auto w-full flex flex-col gap-6">
             {showHeader && (
                 <Breadcrumbs
                     pages={[
@@ -155,15 +155,20 @@ export const AgentBuilderWizard = ({
             {error && <AlertError label="Unable to start build" details={error} />}
             {loading && profiles.length === 0 && <p role="status">Loading build profiles…</p>}
             <form className="flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); if (currStep === 2) void startBuild(); }}>
-                <h2 className="text-xl font-semibold text-gray-900">Generate agent</h2>
                 <div className="flex flex-row gap-6">
                     <div className="flex-shrink-0 mt-2 lg:block hidden">
                         <FormSteps steps={STEPS} currStep={currStep} />
                     </div>
                     <div className="flex-1 min-w-0">
                         {currStep === 0 && (
-                            <div className="flex flex-col gap-4">
-                                <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-6">
+                                <div className="flex flex-col gap-1">
+                                    <h2 className="text-xl font-semibold text-gray-900">Choose build profile</h2>
+                                    <p className="text-sm text-gray-700 italic">
+                                        Select a profile to configure your agent build
+                                    </p>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="min-w-0">
                                         <FreeTextSearch
                                             key={searchKey}
@@ -217,7 +222,6 @@ export const AgentBuilderWizard = ({
                                 )}
                                 <div className="flex flex-row gap-2">
                                     <Button
-                                        buttonVariant="outline"
                                         buttonStyle={{ color: "gray", size: "md" }}
                                         onClick={() => {
                                             if (onCancel) {
@@ -229,26 +233,35 @@ export const AgentBuilderWizard = ({
                                     >
                                         Cancel
                                     </Button>
-                                    <Button disabled={!visibleSelectedProfile} onClick={() => {
-                                        if (!visibleSelectedProfile) return;
-                                        const matchingTarget = COMPILE_TARGETS.find(targetMatchesFilters);
-                                        if (matchingTarget && (selectedOS.length > 0 || selectedFormats.length > 0)) {
-                                            setSelectedTarget(matchingTarget);
-                                        }
-                                        setSelectedProfile(visibleSelectedProfile);
-                                        setCurrStep(1);
-                                    }}>Continue</Button>
+                                    <Button
+                                        buttonStyle={{ color: "purple", size: "md" }}
+                                        disabled={!visibleSelectedProfile}
+                                        onClick={() => {
+                                            if (!visibleSelectedProfile) return;
+                                            const matchingTarget = COMPILE_TARGETS.find(targetMatchesFilters);
+                                            if (matchingTarget && (selectedOS.length > 0 || selectedFormats.length > 0)) {
+                                                setSelectedTarget(matchingTarget);
+                                            }
+                                            setSelectedProfile(visibleSelectedProfile);
+                                            setCurrStep(1);
+                                        }}
+                                    >
+                                        Continue
+                                    </Button>
                                 </div>
                             </div>
                         )}
 
                         {currStep === 1 && selectedProfile && (
                             <div className="flex flex-col gap-6">
+                                <div className="flex flex-col gap-1">
+                                    <h2 className="text-xl font-semibold text-gray-900">Compilation target</h2>
+                                    <p className="text-sm text-gray-700 italic">
+                                        Select an operating system and target format
+                                    </p>
+                                </div>
                                 <RadioGroup value={selectedTarget} onChange={setSelectedTarget}>
-                                    <RadioGroup.Label>
-                                        <Heading size="sm">Compilation target</Heading>
-                                    </RadioGroup.Label>
-                                    <div className="mt-4 flex flex-col gap-5 max-w-md">
+                                    <div className="flex flex-col gap-5 max-w-md">
                                         {targetsByPlatform.map((group) => (
                                              <div key={group.platformLabel} className="flex flex-col gap-2">
                                                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -305,17 +318,19 @@ export const AgentBuilderWizard = ({
 
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(0)}>Back</Button>
-                                    <Button onClick={() => setCurrStep(2)}>Continue</Button>
+                                    <Button buttonStyle={{ color: "purple", size: "md" }} onClick={() => setCurrStep(2)}>
+                                        Continue
+                                    </Button>
                                 </div>
                             </div>
                         )}
 
                         {currStep === 2 && selectedProfile && (
                             <div className="flex flex-col gap-6">
-                                <div className="flex flex-col gap-2">
-                                    <Heading size="sm">Build summary</Heading>
-                                    <p className="text-sm text-gray-500">
-                                        Review the configuration below before starting the build.
+                                <div className="flex flex-col gap-1">
+                                    <h2 className="text-xl font-semibold text-gray-900">Confirm build details</h2>
+                                    <p className="text-sm text-gray-700 italic">
+                                        Review the configuration before starting the build
                                     </p>
                                 </div>
 
@@ -382,7 +397,12 @@ export const AgentBuilderWizard = ({
 
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(1)}>Back</Button>
-                                    <Button type="submit" isLoading={creating} disabled={!targetAvailable}>
+                                    <Button
+                                        type="submit"
+                                        buttonStyle={{ color: "purple", size: "md" }}
+                                        isLoading={creating}
+                                        disabled={!targetAvailable}
+                                    >
                                         Start build
                                     </Button>
                                 </div>
