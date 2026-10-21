@@ -229,12 +229,14 @@ export const AgentBuilderWizard = ({
                                                 navigate("/assets");
                                             }
                                         }}
+                                        aria-label="cancel"
                                     >
                                         Cancel
                                     </Button>
                                     <Button
                                         buttonStyle={{ color: "purple", size: "md" }}
                                         disabled={!visibleSelectedProfile}
+                                        aria-label="continue profile step"
                                         onClick={() => {
                                             if (!visibleSelectedProfile) return;
                                             const matchingTarget = COMPILE_TARGETS.find(targetMatchesFilters);
@@ -316,8 +318,14 @@ export const AgentBuilderWizard = ({
                                 </RadioGroup>
 
                                 <div className="flex flex-row gap-2">
-                                    <Button buttonVariant="ghost" onClick={() => setCurrStep(0)}>Back</Button>
-                                    <Button buttonStyle={{ color: "purple", size: "md" }} onClick={() => setCurrStep(2)}>
+                                    <Button buttonVariant="ghost" onClick={() => setCurrStep(0)} aria-label="back button">
+                                        Back
+                                    </Button>
+                                    <Button
+                                        buttonStyle={{ color: "purple", size: "md" }}
+                                        onClick={() => setCurrStep(2)}
+                                        aria-label="continue target step"
+                                    >
                                         Continue
                                     </Button>
                                 </div>
@@ -328,7 +336,9 @@ export const AgentBuilderWizard = ({
                             <div className="flex flex-col gap-6">
                                 <h2 className="text-xl font-semibold text-gray-900">Confirm build details</h2>
 
-                                <div className="rounded-md border border-gray-200 divide-y divide-gray-200 text-sm">
+                                <div className="flex flex-col gap-3">
+                                    <Heading size="sm">Build configuration</Heading>
+                                    <div className="rounded-md border border-gray-200 divide-y divide-gray-200 text-sm">
                                     <div className="p-3 flex justify-between">
                                         <span className="text-gray-500">Profile</span>
                                         <span className="font-medium text-gray-900">{selectedProfile.name}</span>
@@ -420,6 +430,7 @@ export const AgentBuilderWizard = ({
                                             )}
                                         </div>
                                     </div>
+                                    </div>
                                 </div>
 
                                 <div className="flex flex-col gap-2">
@@ -451,7 +462,7 @@ export const AgentBuilderWizard = ({
                                         disabled={!targetAvailable}
                                         aria-label="submit agent build"
                                     >
-                                        Submit
+                                        {creating ? "Submitting..." : "Submit"}
                                     </Button>
                                 </div>
                             </div>
