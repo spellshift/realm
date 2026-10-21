@@ -19,8 +19,8 @@ import { classNames } from "../../../utils/utils";
 import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile } from "../types";
 
 const STEPS = [
-    { name: "Choose profile", description: "Step 1", href: "#", step: 0 },
-    { name: "Target", description: "Step 2", href: "#", step: 1 },
+    { name: "Select profile", description: "Step 1", href: "#", step: 0 },
+    { name: "Select target", description: "Step 2", href: "#", step: 1 },
     { name: "Confirm details", description: "Step 3", href: "#", step: 2 },
 ];
 
@@ -162,7 +162,7 @@ export const AgentBuilderWizard = ({
                         {currStep === 0 && (
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col gap-1">
-                                    <h2 className="text-xl font-semibold text-gray-900">Choose build profile</h2>
+                                    <h2 className="text-xl font-semibold text-gray-900">Select build profile</h2>
                                     <p className="text-sm text-gray-700 italic">
                                         Select a profile to configure your agent build
                                     </p>
@@ -247,7 +247,7 @@ export const AgentBuilderWizard = ({
                         {currStep === 1 && selectedProfile && (
                             <div className="flex flex-col gap-6">
                                 <div className="flex flex-col gap-1">
-                                    <h2 className="text-xl font-semibold text-gray-900">Compilation target</h2>
+                                    <h2 className="text-xl font-semibold text-gray-900">Select compilation target</h2>
                                     <p className="text-sm text-gray-700 italic">
                                         Select an operating system and target format
                                     </p>
