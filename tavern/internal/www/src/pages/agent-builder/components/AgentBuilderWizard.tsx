@@ -11,7 +11,7 @@ import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "../queries";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { ProfileSelectionTable } from "./ProfileSelectionTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
@@ -73,6 +73,13 @@ export const AgentBuilderWizard = ({
     const [selectedTarget, setSelectedTarget] = useState<CompileTarget>(COMPILE_TARGETS[0]);
     const targetAvailable = builders.some((builder) => builder.online && builder.supportedTargets.includes(selectedTarget.platform));
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [expandedTransports, setExpandedTransports] = useState<Record<number, boolean>>({});
+    const toggleTransportExpanded = (index: number) => {
+        setExpandedTransports((prev) => ({
+            ...prev,
+            [index]: !prev[index],
+        }));
+    };
     const [profileSearch, setProfileSearch] = useState("");
     const [profileFields, setProfileFields] = useState<ProfileFilter[]>([]);
     const [searchKey, setSearchKey] = useState(0);
@@ -319,12 +326,7 @@ export const AgentBuilderWizard = ({
 
                         {currStep === 2 && selectedProfile && (
                             <div className="flex flex-col gap-6">
-                                <div className="flex flex-col gap-1">
-                                    <h2 className="text-xl font-semibold text-gray-900">Confirm build details</h2>
-                                    <p className="text-sm text-gray-700 italic">
-                                        Review the configuration before starting the build
-                                    </p>
-                                </div>
+                                <h2 className="text-xl font-semibold text-gray-900">Confirm build details</h2>
 
                                 <div className="rounded-md border border-gray-200 divide-y divide-gray-200 text-sm">
                                     <div className="p-3 flex justify-between">
@@ -341,15 +343,68 @@ export const AgentBuilderWizard = ({
                                         <span className="text-gray-500">Build image</span>
                                         <code className="text-xs font-mono text-gray-900">{selectedProfile.buildImage}</code>
                                     </div>
-                                    <div className="p-3 flex justify-between">
-                                        <span className="text-gray-500">Transports</span>
-                                        <div className="flex flex-col gap-1 items-end">
-                                            {selectedProfile.transports.map((transport, idx) => (
-                                                <Badge key={idx} badgeStyle={{ color: "purple" }}>
-                                                    {TRANSPORT_TYPES.find((t) => t.value === transport.type)?.label ?? transport.type}
-                                                </Badge>
-                                            ))}
+                                    <div className="p-3 flex flex-col gap-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500">Transports</span>
+                                            <span className="text-xs text-gray-500">
+                                                {selectedProfile.transports.length} configured
+                                            </span>
                                         </div>
+                                        {selectedProfile.transports.length === 0 ? (
+                                            <span className="text-gray-400 text-xs italic">None</span>
+                                        ) : (
+                                            <div className="max-h-48 overflow-y-auto flex flex-col gap-2 pr-1">
+                                                {selectedProfile.transports.map((transport, idx) => {
+                                                    const isExpanded = !!expandedTransports[idx];
+                                                    const typeLabel =
+                                                        TRANSPORT_TYPES.find((t) => t.value === transport.type)?.label ??
+                                                        transport.type;
+                                                    return (
+                                                        <div
+                                                            key={transport.id || idx}
+                                                            className="rounded border border-gray-200 bg-gray-50/50 text-xs overflow-hidden"
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                className="w-full p-2.5 flex items-center justify-between hover:bg-gray-100 transition-colors text-left"
+                                                                onClick={() => toggleTransportExpanded(idx)}
+                                                                aria-expanded={isExpanded}
+                                                                aria-label={`Toggle details for ${typeLabel} transport`}
+                                                            >
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    {isExpanded ? (
+                                                                        <ChevronDownIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                                                    ) : (
+                                                                        <ChevronRightIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                                                    )}
+                                                                    <span className="font-semibold text-gray-900">{typeLabel}</span>
+                                                                    <span className="text-gray-500 font-mono truncate">{transport.uri}</span>
+                                                                </div>
+                                                                <span className="text-gray-500 flex-shrink-0 ml-2">{transport.interval}s interval</span>
+                                                            </button>
+                                                            {isExpanded && (
+                                                                <div className="p-2.5 pt-2 border-t border-gray-200 bg-white flex flex-col gap-1.5">
+                                                                    <div className="flex justify-between items-start gap-2">
+                                                                        <span className="text-gray-500 flex-shrink-0">URI:</span>
+                                                                        <span className="font-mono text-gray-900 break-all text-right">{transport.uri}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between items-center gap-2">
+                                                                        <span className="text-gray-500 flex-shrink-0">Beacon interval:</span>
+                                                                        <span className="text-gray-900">{transport.interval} seconds</span>
+                                                                    </div>
+                                                                    {transport.extra && (
+                                                                        <div className="flex justify-between items-start gap-2">
+                                                                            <span className="text-gray-500 flex-shrink-0">Extra:</span>
+                                                                            <span className="font-mono text-gray-900 break-all text-right">{transport.extra}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-3 flex justify-between">
                                         <span className="text-gray-500">Embedded tomes</span>
@@ -385,17 +440,18 @@ export const AgentBuilderWizard = ({
                                     )}
                                 </div>
 
-                                <p className="text-sm text-gray-500">The server generates a unique artifact name for this build.</p>
-
                                 <div className="flex flex-row gap-2">
-                                    <Button buttonVariant="ghost" onClick={() => setCurrStep(1)}>Back</Button>
+                                    <Button buttonVariant="ghost" onClick={() => setCurrStep(1)} disabled={creating} aria-label="back button">
+                                        Back
+                                    </Button>
                                     <Button
                                         type="submit"
                                         buttonStyle={{ color: "purple", size: "md" }}
                                         isLoading={creating}
                                         disabled={!targetAvailable}
+                                        aria-label="submit agent build"
                                     >
-                                        Start build
+                                        Submit
                                     </Button>
                                 </div>
                             </div>

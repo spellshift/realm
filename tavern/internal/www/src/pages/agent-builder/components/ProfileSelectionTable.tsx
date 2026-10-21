@@ -172,7 +172,7 @@ export const ProfileSelectionTable = ({
                         profile.transports.map((t, idx) => {
                             const typeLabel = TRANSPORT_TYPES.find((tt) => tt.value === t.type)?.label || t.type;
                             return (
-                                <Badge key={idx} badgeStyle={{ color: "purple" }}>
+                                <Badge key={idx} badgeStyle={{ color: "gray" }}>
                                     {typeLabel}
                                 </Badge>
                             );
