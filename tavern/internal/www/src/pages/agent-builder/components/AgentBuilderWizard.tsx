@@ -111,12 +111,10 @@ export const AgentBuilderWizard = ({
     const [targetSearch, setTargetSearch] = useState("");
     const [targetFields, setTargetFields] = useState<ProfileFilter[]>([]);
     const [targetSearchKey, setTargetSearchKey] = useState(0);
-    const [platformFilter, setPlatformFilter] = useState<"ALL" | string>("ALL");
 
     const clearTargetFilters = () => {
         setTargetSearch("");
         setTargetFields([]);
-        setPlatformFilter("ALL");
         setTargetSearchKey((key) => key + 1);
     };
 
@@ -125,7 +123,6 @@ export const AgentBuilderWizard = ({
     const selectedTargetFormats = targetFields.filter((f) => f.kind === "format").map((f) => f.value);
 
     const filteredTargets = COMPILE_TARGETS.filter((target) => {
-        if (platformFilter !== "ALL" && target.platformLabel !== platformFilter) return false;
         if (selectedTargetOS.length > 0 && !selectedTargetOS.includes(target.platform)) return false;
         if (selectedTargetFormats.length > 0 && !selectedTargetFormats.includes(target.format)) return false;
         if (targetQuery) {
@@ -137,7 +134,7 @@ export const AgentBuilderWizard = ({
         return true;
     });
 
-    const hasTargetFilters = !!targetSearch.trim() || targetFields.length > 0 || platformFilter !== "ALL";
+    const hasTargetFilters = !!targetSearch.trim() || targetFields.length > 0;
     const visibleSelectedTarget = filteredTargets.find((t) => t.id === selectedTarget.id) ?? filteredTargets[0] ?? null;
 
     const startBuild = async () => {
@@ -198,16 +195,20 @@ export const AgentBuilderWizard = ({
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <div className="grid grid-cols-2 gap-2">
-                                        <div className="min-w-0">
+                                        <div className="flex flex-col gap-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2 min-h-[24px]">
+                                                <label className="font-medium text-gray-700">Search</label>
+                                            </div>
                                             <FreeTextSearch
                                                 key={searchKey}
                                                 placeholder="Profile name or description"
                                                 defaultValue={profileSearch}
                                                 setSearch={setProfileSearch}
+                                                labelVisible={false}
                                             />
                                         </div>
                                         <div className="relative z-20 flex flex-col gap-1 min-w-0">
-                                            <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center justify-between gap-2 min-h-[24px]">
                                                 <label className="font-medium text-gray-700">Profile fields</label>
                                                 {hasProfileFilters && (
                                                     <Button buttonVariant="ghost" buttonStyle={{ color: "purple", size: "sm" }} onClick={clearProfileFilters}>
@@ -287,15 +288,18 @@ export const AgentBuilderWizard = ({
                                 <div className="flex flex-col gap-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="flex flex-col gap-1 min-w-0">
-                                            <label className="font-medium text-gray-700">Search</label>
+                                            <div className="flex items-center justify-between gap-2 min-h-[24px]">
+                                                <label className="font-medium text-gray-700">Search</label>
+                                            </div>
                                             <FreeTextSearch
                                                 key={targetSearchKey}
                                                 placeholder="Target description, format or platform..."
                                                 setSearch={setTargetSearch}
+                                                labelVisible={false}
                                             />
                                         </div>
                                         <div className="relative z-20 flex flex-col gap-1 min-w-0">
-                                            <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center justify-between gap-2 min-h-[24px]">
                                                 <label className="font-medium text-gray-700">Target fields</label>
                                                 {hasTargetFilters && (
                                                     <Button
@@ -316,24 +320,6 @@ export const AgentBuilderWizard = ({
                                                 value={targetFields}
                                             />
                                         </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Platform:</span>
-                                        {(["ALL", "Linux", "macOS", "Windows"] as const).map((plat) => {
-                                            const isSelected = platformFilter === plat;
-                                            return (
-                                                <Button
-                                                    key={plat}
-                                                    buttonVariant={isSelected ? "solid" : "ghost"}
-                                                    buttonStyle={{ color: isSelected ? "purple" : "gray", size: "sm" }}
-                                                    onClick={() => setPlatformFilter(plat)}
-                                                    aria-label={`filter by ${plat}`}
-                                                >
-                                                    {plat === "ALL" ? "All" : plat}
-                                                </Button>
-                                            );
-                                        })}
                                     </div>
 
                                     {filteredTargets.length === 0 ? (
