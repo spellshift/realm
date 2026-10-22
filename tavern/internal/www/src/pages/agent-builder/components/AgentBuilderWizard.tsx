@@ -11,7 +11,7 @@ import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "../queries";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { ProfileSelectionTable } from "./ProfileSelectionTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
@@ -262,38 +262,33 @@ export const AgentBuilderWizard = ({
                                     </p>
                                 </div>
                                 <RadioGroup value={selectedTarget} onChange={setSelectedTarget}>
-                                    <div className="flex flex-col gap-5 max-w-md">
+                                    <RadioGroup.Label className="sr-only">Compilation target</RadioGroup.Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         {targetsByPlatform.map((group) => (
-                                             <div key={group.platformLabel} className="flex flex-col gap-2">
-                                                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                            <div
+                                                key={group.platformLabel}
+                                                className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex flex-col gap-3"
+                                            >
+                                                <span className="inline-flex self-start items-center rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-700">
                                                     {group.platformLabel}
                                                 </span>
-                                                <div className="-space-y-px rounded-md bg-white flex flex-col">
-                                                    {group.targets.map((target, idx) => (
+                                                <div className="flex flex-col gap-2">
+                                                    {group.targets.map((target) => (
                                                         <RadioGroup.Option
                                                             key={target.id}
                                                             value={target}
                                                             className={({ checked }) =>
                                                                 classNames(
-                                                                    idx === 0 ? "rounded-tl-md rounded-tr-md" : "",
-                                                                    idx === group.targets.length - 1 ? "rounded-bl-md rounded-br-md" : "",
-                                                                    checked ? "z-10 border-purple-200 bg-purple-50" : "border-gray-200",
-                                                                    "relative flex cursor-pointer border p-3 focus:outline-none"
+                                                                    checked
+                                                                        ? "border-purple-600 bg-purple-50 ring-1 ring-purple-600"
+                                                                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50",
+                                                                    "relative flex cursor-pointer rounded-md border p-3 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-1"
                                                                 )
                                                             }
                                                         >
                                                             {({ checked }) => (
-                                                                <>
-                                                                    <span
-                                                                        className={classNames(
-                                                                            checked ? "bg-purple-700 border-transparent" : "bg-white border-gray-300",
-                                                                            "mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded-full border flex items-center justify-center"
-                                                                        )}
-                                                                        aria-hidden="true"
-                                                                    >
-                                                                        <span className="rounded-full bg-white w-1.5 h-1.5" />
-                                                                    </span>
-                                                                    <span className="ml-3 flex flex-col">
+                                                                <div className="flex w-full items-start justify-between gap-2">
+                                                                    <span className="flex flex-col">
                                                                         <RadioGroup.Label
                                                                             as="span"
                                                                             className={classNames(checked ? "text-purple-900" : "text-gray-900", "block text-sm font-medium")}
@@ -307,7 +302,13 @@ export const AgentBuilderWizard = ({
                                                                             {target.description}
                                                                         </RadioGroup.Description>
                                                                     </span>
-                                                                </>
+                                                                    {checked && (
+                                                                        <CheckCircleIcon
+                                                                            className="h-5 w-5 flex-shrink-0 text-purple-600"
+                                                                            aria-hidden="true"
+                                                                        />
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </RadioGroup.Option>
                                                     ))}
