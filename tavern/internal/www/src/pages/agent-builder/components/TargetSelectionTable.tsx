@@ -38,27 +38,29 @@ export const TargetSelectionTable = ({
 
     const columns: VirtualizedTableColumn<CompileTarget>[] = useMemo(() => [
         {
-            key: "platform",
-            label: "Platform",
-            width: "minmax(120px, 160px)",
+            key: "description",
+            label: "Description",
+            width: "minmax(200px, 1fr)",
             render: (target) => (
-                <Badge badgeStyle={{ color: "gray" }}>{target.platformLabel}</Badge>
+                <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium text-gray-900 truncate">{target.description}</span>
+                </div>
             ),
         },
         {
             key: "format",
             label: "Format",
-            width: "minmax(160px, 220px)",
+            width: "minmax(140px, 180px)",
             render: (target) => (
-                <span className="text-sm font-medium text-gray-900">{target.formatLabel}</span>
+                <span className="text-sm text-gray-700">{target.formatLabel}</span>
             ),
         },
         {
-            key: "description",
-            label: "Description",
-            width: "minmax(200px, 1fr)",
+            key: "platform",
+            label: "Platform",
+            width: "minmax(120px, 160px)",
             render: (target) => (
-                <span className="text-xs text-gray-500 truncate">{target.description}</span>
+                <Badge badgeStyle={{ color: "gray" }}>{target.platformLabel}</Badge>
             ),
         },
         {

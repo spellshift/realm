@@ -47,6 +47,10 @@ const PROFILE_FILTER_OPTIONS = [
     { label: "Target format", options: FORMAT_OPTIONS },
     { label: "Embedded tome type", options: TOME_TYPE_OPTIONS },
 ];
+const TARGET_FILTER_OPTIONS = [
+    { label: "OS", options: OS_OPTIONS },
+    { label: "Target format", options: FORMAT_OPTIONS },
+];
 
 export type AgentBuilderWizardProps = {
     showHeader?: boolean;
@@ -103,6 +107,38 @@ export const AgentBuilderWizard = ({
     });
     const visibleSelectedProfile = filteredProfiles.find((profile) => profile.id === selectedProfile?.id) ?? filteredProfiles[0] ?? null;
     const hasProfileFilters = !!profileSearch.trim() || profileFields.length > 0;
+
+    const [targetSearch, setTargetSearch] = useState("");
+    const [targetFields, setTargetFields] = useState<ProfileFilter[]>([]);
+    const [targetSearchKey, setTargetSearchKey] = useState(0);
+    const [platformFilter, setPlatformFilter] = useState<"ALL" | string>("ALL");
+
+    const clearTargetFilters = () => {
+        setTargetSearch("");
+        setTargetFields([]);
+        setPlatformFilter("ALL");
+        setTargetSearchKey((key) => key + 1);
+    };
+
+    const targetQuery = targetSearch.trim().toLocaleLowerCase();
+    const selectedTargetOS = targetFields.filter((f) => f.kind === "os").map((f) => f.value);
+    const selectedTargetFormats = targetFields.filter((f) => f.kind === "format").map((f) => f.value);
+
+    const filteredTargets = COMPILE_TARGETS.filter((target) => {
+        if (platformFilter !== "ALL" && target.platformLabel !== platformFilter) return false;
+        if (selectedTargetOS.length > 0 && !selectedTargetOS.includes(target.platform)) return false;
+        if (selectedTargetFormats.length > 0 && !selectedTargetFormats.includes(target.format)) return false;
+        if (targetQuery) {
+            const matchesDesc = target.description.toLocaleLowerCase().includes(targetQuery);
+            const matchesFormat = target.formatLabel.toLocaleLowerCase().includes(targetQuery);
+            const matchesPlatform = target.platformLabel.toLocaleLowerCase().includes(targetQuery);
+            if (!matchesDesc && !matchesFormat && !matchesPlatform) return false;
+        }
+        return true;
+    });
+
+    const hasTargetFilters = !!targetSearch.trim() || targetFields.length > 0 || platformFilter !== "ALL";
+    const visibleSelectedTarget = filteredTargets.find((t) => t.id === selectedTarget.id) ?? filteredTargets[0] ?? null;
 
     const startBuild = async () => {
         if (!selectedProfile || creating) return;
@@ -247,11 +283,75 @@ export const AgentBuilderWizard = ({
                                         Choose the target operating system and format for the compiled agent.
                                     </p>
                                 </div>
-                                <TargetSelectionTable
-                                    targets={COMPILE_TARGETS}
-                                    selectedTargetId={selectedTarget.id}
-                                    onSelectTarget={setSelectedTarget}
-                                />
+
+                                <div className="flex flex-col gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-1 min-w-0">
+                                            <label className="font-medium text-gray-700">Search</label>
+                                            <FreeTextSearch
+                                                key={targetSearchKey}
+                                                placeholder="Target description, format or platform..."
+                                                setSearch={setTargetSearch}
+                                            />
+                                        </div>
+                                        <div className="relative z-20 flex flex-col gap-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <label className="font-medium text-gray-700">Target fields</label>
+                                                {hasTargetFilters && (
+                                                    <Button
+                                                        buttonVariant="ghost"
+                                                        buttonStyle={{ color: "purple", size: "sm" }}
+                                                        onClick={clearTargetFilters}
+                                                    >
+                                                        Clear filters
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            <Select<ProfileFilter, true>
+                                                isSearchable
+                                                isMulti
+                                                options={TARGET_FILTER_OPTIONS}
+                                                onChange={(fields: MultiValue<ProfileFilter>) => setTargetFields([...fields])}
+                                                filterOption={createFilter({ matchFrom: "any", stringify: (option) => option.label })}
+                                                value={targetFields}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Platform:</span>
+                                        {(["ALL", "Linux", "macOS", "Windows"] as const).map((plat) => {
+                                            const isSelected = platformFilter === plat;
+                                            return (
+                                                <Button
+                                                    key={plat}
+                                                    buttonVariant={isSelected ? "solid" : "ghost"}
+                                                    buttonStyle={{ color: isSelected ? "purple" : "gray", size: "sm" }}
+                                                    onClick={() => setPlatformFilter(plat)}
+                                                    aria-label={`filter by ${plat}`}
+                                                >
+                                                    {plat === "ALL" ? "All" : plat}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {filteredTargets.length === 0 ? (
+                                        <div className="rounded-md border border-gray-200 py-6">
+                                            <EmptyState
+                                                type={EmptyStateType.noMatches}
+                                                label="No matching compilation targets"
+                                                details="Try a different search or clear the filters."
+                                            />
+                                        </div>
+                                    ) : (
+                                        <TargetSelectionTable
+                                            targets={filteredTargets}
+                                            selectedTargetId={visibleSelectedTarget?.id ?? null}
+                                            onSelectTarget={setSelectedTarget}
+                                        />
+                                    )}
+                                </div>
 
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(0)} aria-label="back button">
@@ -259,7 +359,13 @@ export const AgentBuilderWizard = ({
                                     </Button>
                                     <Button
                                         buttonStyle={{ color: "purple", size: "md" }}
-                                        onClick={() => setCurrStep(2)}
+                                        disabled={!visibleSelectedTarget}
+                                        onClick={() => {
+                                            if (visibleSelectedTarget) {
+                                                setSelectedTarget(visibleSelectedTarget);
+                                            }
+                                            setCurrStep(2);
+                                        }}
                                         aria-label="continue target step"
                                     >
                                         Continue
