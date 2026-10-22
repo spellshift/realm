@@ -67,14 +67,20 @@ export interface VirtualizedTableProps<TData, TResponse = unknown> {
     /** Column definitions including header labels, widths, and render functions */
     columns: VirtualizedTableColumn<TData>[];
 
-    /** GraphQL query to fetch data for each row. Can be a function for different queries per row. */
-    query: DocumentNode | ((itemId: string) => DocumentNode);
+    /** GraphQL query to fetch data for each row. Can be a function for different queries per row. (Optional if getItem or dataMap is provided) */
+    query?: DocumentNode | ((itemId: string) => DocumentNode);
 
     /** Function to generate query variables from itemId */
-    getVariables: (itemId: string) => OperationVariables;
+    getVariables?: (itemId: string) => OperationVariables;
 
     /** Function to extract the data node from the query response */
-    extractData: (response: TResponse, itemId: string) => TData | null;
+    extractData?: (response: TResponse, itemId: string) => TData | null;
+
+    /** Direct data lookup function (alternative to GraphQL query) */
+    getItem?: (itemId: string) => TData | null;
+
+    /** Direct data map lookup (alternative to GraphQL query) */
+    dataMap?: Map<string, TData>;
 
     /** Poll interval in milliseconds when row is visible (default: 5000) */
     pollInterval?: number;
@@ -132,6 +138,30 @@ export interface VirtualizedTableRowInternalProps<TData, TResponse> {
     /** Poll interval in milliseconds when row is visible */
     pollInterval: number;
     /** Callback when the row is clicked. Receives the item ID and the fetched data (null if not loaded). */
+    onRowClick?: (id: string, data: TData | null) => void;
+    /** Minimum width for horizontal scrolling */
+    minWidth: string;
+    /** Grid template columns for row layout */
+    gridTemplateColumns: string;
+    /** Whether the row is currently expanded */
+    isExpanded: boolean;
+    /** Callback to toggle row expansion */
+    onToggleExpand: (id: string) => void;
+    /** Configuration for expandable row behavior */
+    expandable?: ExpandableConfig<TData>;
+}
+
+/**
+ * Props for the static row component that receives data directly without GraphQL queries
+ */
+export interface VirtualizedTableRowStaticProps<TData> {
+    /** Unique identifier for this row's item */
+    itemId: string;
+    /** Direct item data */
+    data: TData | null;
+    /** Column definitions */
+    columns: VirtualizedTableColumn<TData>[];
+    /** Callback when the row is clicked */
     onRowClick?: (id: string, data: TData | null) => void;
     /** Minimum width for horizontal scrolling */
     minWidth: string;

@@ -12,9 +12,10 @@ type Props = {
     data: Array<any>;
     selected: any,
     setSelected: (arg: any) => void;
+    renderNameAddon?: (item: any) => React.ReactNode;
  }
 export const FormRadioGroup = (props: Props) => {
-    const { label, data, selected, setSelected } = props;
+    const { label, data, selected, setSelected, renderNameAddon } = props;
     return (
         <RadioGroup value={selected} onChange={setSelected}>
         <RadioGroup.Label> 
@@ -52,9 +53,10 @@ export const FormRadioGroup = (props: Props) => {
                     <span className="ml-3 flex flex-col">
                     <RadioGroup.Label
                         as="span"
-                        className={classNames(checked ? 'text-purple-900' : 'text-gray-900', 'block text-sm font-medium')}
+                        className={classNames(checked ? 'text-purple-900' : 'text-gray-900', 'flex items-center gap-1 text-sm font-medium')}
                     >
                         {item.name}
+                        {renderNameAddon?.(item)}
                     </RadioGroup.Label>
                     <RadioGroup.Description
                         as="span"

@@ -4,7 +4,7 @@ import {
 } from "@chakra-ui/react";
 import './style.css';
 
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import 'react-virtualized/styles.css';
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import HostDetails from "./pages/host-details/HostDetails";
@@ -20,6 +20,7 @@ import Hosts from "./pages/hosts/Hosts";
 import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
 import Profile from "./pages/profile/Profile";
+import AgentBuilderWizardPage from "./pages/agent-builder/AgentBuilderWizardPage";
 
 
 const router = createBrowserRouter([
@@ -64,6 +65,10 @@ const router = createBrowserRouter([
         element: <Assets />,
       },
       {
+        path: "assets/build",
+        element: <AgentBuilderWizardPage />,
+      },
+      {
         path: "shells/:shellId",
         element: <Shell />,
       },
@@ -74,6 +79,14 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <Profile />,
+      },
+      {
+        path: "builder",
+        element: <Navigate to="/admin?tab=profiles" replace />,
+      },
+      {
+        path: "builder/new",
+        element: <Navigate to="/assets/build" replace />,
       },
     ]
   },

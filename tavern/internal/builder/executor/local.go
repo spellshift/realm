@@ -61,7 +61,7 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 	// Execute all scripts in scripts/ in alphabetical order, mirroring Docker's entrypoint.
 	entrypoint := strings.Join([]string{
 		"set -e",
-		"for s in $(ls scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; sh \"$s\"; done",
+		"for s in $(ls \"$REALM_WORKSPACE_DIR\"/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; . \"$s\"; done",
 	}, " && ")
 
 	cmd := exec.CommandContext(ctx, "/bin/sh", "-c", entrypoint)
