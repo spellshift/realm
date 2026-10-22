@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heading, useToast } from "@chakra-ui/react";
-import { RadioGroup } from "@headlessui/react";
 import Select, { createFilter, MultiValue } from "react-select";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -10,12 +9,12 @@ import { useMutation } from "@apollo/client";
 import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "../queries";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { ProfileSelectionTable } from "./ProfileSelectionTable";
+import { TargetSelectionTable } from "./TargetSelectionTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import { CheckCircleIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
-import { classNames } from "../../../utils/utils";
 import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile } from "../types";
 
 const STEPS = [
@@ -104,19 +103,6 @@ export const AgentBuilderWizard = ({
     });
     const visibleSelectedProfile = filteredProfiles.find((profile) => profile.id === selectedProfile?.id) ?? filteredProfiles[0] ?? null;
     const hasProfileFilters = !!profileSearch.trim() || profileFields.length > 0;
-
-    const targetsByPlatform = useMemo(() => {
-        const groups: Array<{ platformLabel: string; targets: CompileTarget[] }> = [];
-        COMPILE_TARGETS.forEach((target) => {
-            let group = groups.find((g) => g.platformLabel === target.platformLabel);
-            if (!group) {
-                group = { platformLabel: target.platformLabel, targets: [] };
-                groups.push(group);
-            }
-            group.targets.push(target);
-        });
-        return groups;
-    }, []);
 
     const startBuild = async () => {
         if (!selectedProfile || creating) return;
@@ -258,65 +244,14 @@ export const AgentBuilderWizard = ({
                                 <div className="flex flex-col gap-1">
                                     <h2 className="text-xl font-semibold text-gray-900">Select compilation target</h2>
                                     <p className="text-sm text-gray-700 italic">
-                                        Select an operating system and target format
+                                        Choose the target operating system and format for the compiled agent.
                                     </p>
                                 </div>
-                                <RadioGroup value={selectedTarget} onChange={setSelectedTarget}>
-                                    <RadioGroup.Label className="sr-only">Compilation target</RadioGroup.Label>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        {targetsByPlatform.map((group) => (
-                                            <div
-                                                key={group.platformLabel}
-                                                className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 flex flex-col gap-3"
-                                            >
-                                                <span className="inline-flex self-start items-center rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-700">
-                                                    {group.platformLabel}
-                                                </span>
-                                                <div className="flex flex-col gap-2">
-                                                    {group.targets.map((target) => (
-                                                        <RadioGroup.Option
-                                                            key={target.id}
-                                                            value={target}
-                                                            className={({ checked }) =>
-                                                                classNames(
-                                                                    checked
-                                                                        ? "border-purple-600 bg-purple-50 ring-1 ring-purple-600"
-                                                                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50",
-                                                                    "relative flex cursor-pointer rounded-md border p-3 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-1"
-                                                                )
-                                                            }
-                                                        >
-                                                            {({ checked }) => (
-                                                                <div className="flex w-full items-start justify-between gap-2">
-                                                                    <span className="flex flex-col">
-                                                                        <RadioGroup.Label
-                                                                            as="span"
-                                                                            className={classNames(checked ? "text-purple-900" : "text-gray-900", "block text-sm font-medium")}
-                                                                        >
-                                                                            {target.formatLabel}
-                                                                        </RadioGroup.Label>
-                                                                        <RadioGroup.Description
-                                                                            as="span"
-                                                                            className={classNames(checked ? "text-purple-700" : "text-gray-500", "block text-sm")}
-                                                                        >
-                                                                            {target.description}
-                                                                        </RadioGroup.Description>
-                                                                    </span>
-                                                                    {checked && (
-                                                                        <CheckCircleIcon
-                                                                            className="h-5 w-5 flex-shrink-0 text-purple-600"
-                                                                            aria-hidden="true"
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </RadioGroup.Option>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </RadioGroup>
+                                <TargetSelectionTable
+                                    targets={COMPILE_TARGETS}
+                                    selectedTargetId={selectedTarget.id}
+                                    onSelectTarget={setSelectedTarget}
+                                />
 
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(0)} aria-label="back button">
