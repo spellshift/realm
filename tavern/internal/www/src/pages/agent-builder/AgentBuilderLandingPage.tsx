@@ -45,7 +45,7 @@ export const AgentBuilderLandingPage = () => {
     const selectedIndex = Math.max(0, TAB_NAMES.indexOf(tabParam as typeof TAB_NAMES[number]));
 
     const { profiles, tomes, loading: profilesLoading, error: profilesError, refetch: refetchProfiles } = useBuildProfiles();
-    const { builders, loading: buildersLoading, error: buildersError, refetch: refetchBuilders } = useBuilders();
+    const { builders, loading: buildersLoading, error: buildersError } = useBuilders();
     const { rows: taskRows, loading: tasksLoading, error: tasksError } = useBuildTasks();
     // Bring the just-started task (if any) to the top, rather than leaving
     // the operator to hunt for it in createdAt order.
@@ -127,7 +127,6 @@ export const AgentBuilderLandingPage = () => {
                             builders={builders}
                             loading={buildersLoading}
                             error={buildersError}
-                            onEnrolled={() => void refetchBuilders()}
                         />
                     </TabPanel>
                 </TabPanels>

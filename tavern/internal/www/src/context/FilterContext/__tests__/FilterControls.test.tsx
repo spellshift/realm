@@ -57,12 +57,6 @@ vi.mock('../../../components/UserFilterBar', () => ({
   ),
 }));
 
-vi.mock('../../../components/AgentFilterBar', () => ({
-  default: () => (
-    <div data-testid="agent-filter-bar" />
-  ),
-}));
-
 function FiltersDisplay() {
   const { filters, isLocked } = useFilters();
   return (

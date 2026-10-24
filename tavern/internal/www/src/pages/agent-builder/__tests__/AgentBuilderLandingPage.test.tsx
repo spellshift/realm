@@ -4,8 +4,8 @@ import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
-import AgentBuilderLandingPage from "./AgentBuilderLandingPage";
-import { GET_BUILD_PROFILES, GET_BUILDERS, GET_BUILD_TASKS } from "./queries";
+import AgentBuilderLandingPage from "../AgentBuilderLandingPage";
+import { GET_BUILD_PROFILES, GET_BUILDERS, GET_BUILD_TASKS } from "../queries";
 
 beforeAll(() => {
     if (typeof globalThis.ResizeObserver === "undefined") {

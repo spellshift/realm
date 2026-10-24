@@ -1,9 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
-import Table from "../../../components/tavern-base-ui/table/Table";
-import { getProfileColumns } from "./ProfilesTable";
-import { BuildProfile, DEFAULT_BUILD_PROFILE_NAME } from "../types";
+import Table from "../../../../components/tavern-base-ui/table/Table";
+import { getProfileColumns } from "../ProfilesTable";
+import { BuildProfile, DEFAULT_BUILD_PROFILE_NAME } from "../../types";
+import { SupportedTransports } from "../../../../utils/enums";
 
 const editableProfile: BuildProfile = {
     id: "profile-1",
@@ -18,7 +19,10 @@ const editableProfile: BuildProfile = {
     unique: "",
     hasPersistenceTome: true,
     tomeCount: 0,
-    transports: [],
+    transports: [
+        { id: "first", type: SupportedTransports.HTTP1, uri: "https://example.test", interval: 5 },
+        { id: "second", type: SupportedTransports.GRPC, uri: "grpc://example.test", interval: 5 },
+    ],
     tomes: [],
 };
 
@@ -41,6 +45,10 @@ function renderTable(profiles: BuildProfile[], onEdit = vi.fn(), onDelete = vi.f
 describe("ProfilesTable", () => {
     it("renders edit and delete buttons for a non-default profile", () => {
         renderTable([editableProfile]);
+        expect(screen.getByRole("columnheader", { name: "Transport" })).toBeInTheDocument();
+        expect(screen.getByText("HTTP")).toBeInTheDocument();
+        expect(screen.queryByText("gRPC")).not.toBeInTheDocument();
+        expect(screen.getByRole("columnheader", { name: "Actions" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
     });

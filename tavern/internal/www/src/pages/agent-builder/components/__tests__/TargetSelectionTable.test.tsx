@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
-import TargetSelectionTable from "./TargetSelectionTable";
-import { COMPILE_TARGETS } from "../types";
+import TargetSelectionTable from "../TargetSelectionTable";
+import { COMPILE_TARGETS } from "../../types";
 
 vi.mock("@tanstack/react-virtual", async () => {
     const React = await import("react");
@@ -77,7 +77,7 @@ describe("TargetSelectionTable", () => {
             </ChakraProvider>
         );
 
-        const rows = screen.getAllByRole("button", { name: "Select row" });
+        const rows = screen.getAllByRole("row").slice(1);
         fireEvent.click(rows[1]);
         expect(onSelect).toHaveBeenCalledWith(COMPILE_TARGETS[1]);
     });

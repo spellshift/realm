@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { ApolloError } from "@apollo/client";
+import { useNavigate } from "react-router-dom";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
-import EnrollBuilderModal from "../components/EnrollBuilderModal";
 import { Builder } from "../types";
 import { builderColumns } from "./BuildersTable";
 
@@ -14,14 +13,13 @@ export const BuildersTab = ({
     builders,
     loading,
     error,
-    onEnrolled,
 }: {
     builders: Builder[];
     loading: boolean;
     error?: ApolloError;
-    onEnrolled: () => void;
 }) => {
-    const [enrolling, setEnrolling] = useState(false);
+    const navigate = useNavigate();
+    const enroll = () => navigate("/admin/builders/enroll");
 
     return (
         <div className="flex flex-col gap-2">
@@ -35,7 +33,7 @@ export const BuildersTab = ({
                         buttonVariant="ghost"
                         buttonStyle={{ color: "gray", size: "sm" }}
                         leftIcon={<PlusIcon className="w-4 h-4" />}
-                        onClick={() => setEnrolling(true)}
+                        onClick={enroll}
                     >
                         Enroll builder
                     </Button>
@@ -54,7 +52,7 @@ export const BuildersTab = ({
                         <Button
                             leftIcon={<PlusIcon className="w-4 h-4" />}
                             buttonStyle={{ color: "purple", size: "md" }}
-                            onClick={() => setEnrolling(true)}
+                            onClick={enroll}
                         >
                             Enroll builder
                         </Button>
@@ -67,11 +65,6 @@ export const BuildersTab = ({
                     </div>
                 </div>
             )}
-            <EnrollBuilderModal
-                isOpen={enrolling}
-                onClose={() => setEnrolling(false)}
-                onEnrolled={onEnrolled}
-            />
         </div>
     );
 };

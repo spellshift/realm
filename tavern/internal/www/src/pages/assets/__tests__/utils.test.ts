@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isAgentAsset, truncateAssetName } from "./utils";
+import { isAgentAsset, truncateAssetName } from "../utils";
 
 describe("isAgentAsset", () => {
     it("identifies build/ paths as agent assets", () => {

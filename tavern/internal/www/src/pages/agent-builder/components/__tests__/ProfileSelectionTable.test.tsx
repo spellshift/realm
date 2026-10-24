@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
-import ProfileSelectionTable from "./ProfileSelectionTable";
-import { BuildProfile } from "../types";
-import { SupportedTransports } from "../../../utils/enums";
+import ProfileSelectionTable from "../ProfileSelectionTable";
+import { BuildProfile } from "../../types";
+import { SupportedTransports } from "../../../../utils/enums";
 
 vi.mock("@tanstack/react-virtual", async () => {
     const React = await import("react");
@@ -106,7 +106,7 @@ describe("ProfileSelectionTable", () => {
             </ChakraProvider>
         );
 
-        const rows = screen.getAllByRole("button", { name: "Select row" });
+        const rows = screen.getAllByRole("row").slice(1);
         fireEvent.click(rows[1]);
         expect(onSelect).toHaveBeenCalledWith(mockProfiles[1]);
     });

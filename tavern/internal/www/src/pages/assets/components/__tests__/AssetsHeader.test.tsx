@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import AssetsHeader from "./AssetsHeader";
+import AssetsHeader from "../AssetsHeader";
 
 describe("AssetsHeader", () => {
     it("renders Generate agent and Upload Assets buttons and triggers callbacks", async () => {

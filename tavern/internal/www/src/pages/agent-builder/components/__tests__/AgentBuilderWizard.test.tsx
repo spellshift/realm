@@ -4,8 +4,8 @@ import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing";
-import AgentBuilderWizard from "./AgentBuilderWizard";
-import { GET_BUILD_PROFILES, GET_BUILDERS } from "../queries";
+import AgentBuilderWizard from "../AgentBuilderWizard";
+import { GET_BUILD_PROFILES, GET_BUILDERS } from "../../queries";
 
 vi.mock("@tanstack/react-virtual", async () => {
     const React = await import("react");
@@ -144,14 +144,14 @@ describe("AgentBuilderWizard", () => {
             expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getAllByRole("button", { name: "Select row" })[0]);
+        fireEvent.click(screen.getAllByRole("row")[1]);
         fireEvent.click(screen.getByRole("button", { name: "continue profile step" }));
 
         await waitFor(() => {
             expect(screen.getByText("Select compilation target")).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getAllByRole("button", { name: "Select row" })[0]);
+        fireEvent.click(screen.getAllByRole("row")[1]);
         fireEvent.click(screen.getByRole("button", { name: "continue target step" }));
 
         await waitFor(() => {

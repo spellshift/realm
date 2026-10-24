@@ -889,22 +889,30 @@ func defaultBuildProfileCallbackURI() string {
 
 // ensureDefaultBuildProfile creates a "Default" build profile the first time
 // Tavern starts up, so operators have a usable starting point in the Agent
-// Builder UI without first having to configure one from scratch. It is a
-// no-op if a build profile with this name already exists.
+// Builder UI without first having to configure one from scratch. Existing
+// default profiles are kept, with the older generated description cleared.
 func ensureDefaultBuildProfile(ctx context.Context, client *ent.Client) error {
-	exists, err := client.BuildProfile.Query().
+	profile, err := client.BuildProfile.Query().
 		Where(buildprofile.Name(builder.DefaultBuildProfileName)).
-		Exist(ctx)
-	if err != nil {
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		profile = nil
+	} else if err != nil {
 		return fmt.Errorf("failed to check for existing default build profile: %w", err)
 	}
-	if exists {
+	if profile != nil {
+		if profile.Description == "" {
+			return nil
+		}
+		if err := client.BuildProfile.UpdateOne(profile).SetDescription("").Exec(ctx); err != nil {
+			return fmt.Errorf("failed to clear default build profile description: %w", err)
+		}
 		return nil
 	}
 
 	if _, err := client.BuildProfile.Create().
 		SetName(builder.DefaultBuildProfileName).
-		SetDescription("Default build profile. Callback points at the configured OAuth domain, or localhost if OAuth is not configured.").
+		SetDescription("").
 		SetTransports([]builderpb.BuildProfileTransport{
 			{
 				URI:      defaultBuildProfileCallbackURI(),

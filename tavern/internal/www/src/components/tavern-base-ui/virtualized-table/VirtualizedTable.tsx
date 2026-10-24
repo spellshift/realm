@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { DocumentNode } from "@apollo/client";
 import { VirtualizedTableProps } from "./types";
-import { VirtualizedTableRowInternal, VirtualizedTableRowStatic } from "./VirtualizedTableRowInternal";
+import { VirtualizedTableRowInternal } from "./VirtualizedTableRowInternal";
 
 export function VirtualizedTable<TData, TResponse = unknown>({
     items,
@@ -10,8 +10,6 @@ export function VirtualizedTable<TData, TResponse = unknown>({
     query,
     getVariables,
     extractData,
-    getItem,
-    dataMap,
     pollInterval = 5000,
     onItemClick,
     hasMore = false,
@@ -44,9 +42,6 @@ export function VirtualizedTable<TData, TResponse = unknown>({
 
     // Get query for a specific item (supports both static and dynamic queries)
     const getQueryForItem = useCallback((itemId: string): DocumentNode => {
-        if (!query) {
-            return undefined as unknown as DocumentNode;
-        }
         if (typeof query === 'function') {
             return query(itemId);
         }
@@ -178,35 +173,21 @@ export function VirtualizedTable<TData, TResponse = unknown>({
                                 transform: `translateY(${virtualRow.start}px)`,
                             }}
                         >
-                            {getItem || dataMap ? (
-                                <VirtualizedTableRowStatic<TData>
-                                    itemId={itemId}
-                                    data={getItem ? getItem(itemId) : (dataMap?.get(itemId) ?? null)}
-                                    columns={columns}
-                                    onRowClick={onItemClick ? handleItemClick : undefined}
-                                    minWidth={minWidth}
-                                    gridTemplateColumns={gridTemplateColumns}
-                                    isExpanded={expandedItems.has(itemId)}
-                                    onToggleExpand={handleToggleExpand}
-                                    expandable={expandable}
-                                />
-                            ) : (
-                                <VirtualizedTableRowInternal<TData, TResponse>
-                                    itemId={itemId}
-                                    query={getQueryForItem(itemId)}
-                                    getVariables={getVariables!}
-                                    extractData={extractData!}
-                                    columns={columns}
-                                    isVisible={isVisible}
-                                    pollInterval={pollInterval}
-                                    onRowClick={onItemClick ? handleItemClick : undefined}
-                                    minWidth={minWidth}
-                                    gridTemplateColumns={gridTemplateColumns}
-                                    isExpanded={expandedItems.has(itemId)}
-                                    onToggleExpand={handleToggleExpand}
-                                    expandable={expandable}
-                                />
-                            )}
+                            <VirtualizedTableRowInternal<TData, TResponse>
+                                itemId={itemId}
+                                query={getQueryForItem(itemId)}
+                                getVariables={getVariables}
+                                extractData={extractData}
+                                columns={columns}
+                                isVisible={isVisible}
+                                pollInterval={pollInterval}
+                                onRowClick={onItemClick ? handleItemClick : undefined}
+                                minWidth={minWidth}
+                                gridTemplateColumns={gridTemplateColumns}
+                                isExpanded={expandedItems.has(itemId)}
+                                onToggleExpand={handleToggleExpand}
+                                expandable={expandable}
+                            />
                         </div>
                     );
                 })}

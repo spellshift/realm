@@ -107,17 +107,17 @@ async function main() {
     results.screenshots.push({ step: 'Builders tab on Admin portal', file: buildersTabScreenshot });
     console.log(`    Captured: ${buildersTabScreenshot}`);
 
-    // Open Enroll Builder modal
-    console.log('[3b] Opening Enroll Builder modal...');
+    // Open the full-page enrollment flow
+    console.log('[3b] Opening Enroll Builder page...');
     const enrollBuilderBtn = page.locator('button:has-text("Enroll builder")').first();
     if (await enrollBuilderBtn.isVisible()) {
       await enrollBuilderBtn.click();
       await sleep(1000);
-      const enrollModalScreenshot = path.join(screenshotsDir, '3b-admin-enroll-builder-modal.png');
-      await page.screenshot({ path: enrollModalScreenshot });
-      results.screenshots.push({ step: 'Enroll Builder modal on Admin', file: enrollModalScreenshot });
-      console.log(`    Captured: ${enrollModalScreenshot}`);
-      // Close modal
+      const enrollPageScreenshot = path.join(screenshotsDir, '3b-admin-enroll-builder-page.png');
+      await page.screenshot({ path: enrollPageScreenshot });
+      results.screenshots.push({ step: 'Enroll Builder page', file: enrollPageScreenshot });
+      console.log(`    Captured: ${enrollPageScreenshot}`);
+      if (!page.url().includes('/admin/builders/enroll')) throw new Error('Enrollment did not open as a page');
       const cancelBtn = page.locator('button:has-text("Cancel")');
       if (await cancelBtn.isVisible()) {
         await cancelBtn.click();

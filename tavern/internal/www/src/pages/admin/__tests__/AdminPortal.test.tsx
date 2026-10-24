@@ -4,10 +4,10 @@ import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
-import { AdminPortal } from "./AdminPortal";
-import { AuthorizationContext } from "../../context/AuthorizationContext";
-import { GET_USER_IDS_QUERY } from "./queries";
-import { GET_BUILD_PROFILES, GET_BUILDERS } from "../agent-builder/queries";
+import { AdminPortal } from "../AdminPortal";
+import { AuthorizationContext } from "../../../context/AuthorizationContext";
+import { GET_USER_IDS_QUERY } from "../queries";
+import { GET_BUILD_PROFILES, GET_BUILDERS } from "../../agent-builder/queries";
 
 beforeAll(() => {
     if (typeof globalThis.ResizeObserver === "undefined") {

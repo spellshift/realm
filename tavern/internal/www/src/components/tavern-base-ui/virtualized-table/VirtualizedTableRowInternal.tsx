@@ -1,64 +1,56 @@
 import { useMemo } from "react";
 import { useQuery } from "@apollo/client";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { VirtualizedTableRowInternalProps, VirtualizedTableRowStaticProps } from "./types";
+import { VirtualizedTableRowInternalProps } from "./types";
 import { renderCellSkeleton } from "./CellDefaultSkeleton";
 
-interface VirtualizedTableRowContentProps<TData> {
-    itemId: string;
-    itemData: TData;
-    columns: VirtualizedTableRowStaticProps<TData>["columns"];
-    onRowClick?: (id: string, data: TData | null) => void;
-    minWidth: string;
-    gridTemplateColumns: string;
-    isExpanded: boolean;
-    onToggleExpand: (id: string) => void;
-    expandable?: VirtualizedTableRowStaticProps<TData>["expandable"];
-}
-
-function VirtualizedTableRowSkeleton<TData>({
-    columns,
-    minWidth,
-    gridTemplateColumns,
-    supportsExpand,
-}: {
-    columns: VirtualizedTableRowStaticProps<TData>["columns"];
-    minWidth: string;
-    gridTemplateColumns: string;
-    supportsExpand: boolean;
-}) {
-    const fullGridTemplateColumns = supportsExpand ? `32px ${gridTemplateColumns}` : gridTemplateColumns;
-    const rowClassName = "grid gap-2 px-4 py-4 border-b border-gray-200 bg-white hover:bg-gray-50";
-
-    return (
-        <div
-            className={rowClassName}
-            style={{ gridTemplateColumns: fullGridTemplateColumns, minWidth }}
-        >
-            {supportsExpand && <div />}
-            {columns.map((column) => (
-                <div key={column.key}>
-                    {renderCellSkeleton(column)}
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function VirtualizedTableRowContent<TData>({
+export function VirtualizedTableRowInternal<TData, TResponse>({
     itemId,
-    itemData,
+    query,
+    getVariables,
+    extractData,
     columns,
+    isVisible,
+    pollInterval,
     onRowClick,
     minWidth,
     gridTemplateColumns,
     isExpanded,
     onToggleExpand,
     expandable,
-}: VirtualizedTableRowContentProps<TData>) {
+}: VirtualizedTableRowInternalProps<TData, TResponse>) {
+    const variables = useMemo(() => getVariables(itemId), [itemId, getVariables]);
+
+    const { data } = useQuery<TResponse>(query, {
+        variables,
+        pollInterval: isVisible ? pollInterval : 0,
+        fetchPolicy: 'cache-and-network',
+    });
+
     const supportsExpand = expandable !== undefined;
     const fullGridTemplateColumns = supportsExpand ? `32px ${gridTemplateColumns}` : gridTemplateColumns;
     const rowClassName = "grid gap-2 px-4 py-4 border-b border-gray-200 bg-white hover:bg-gray-50";
+
+    if (!data) {
+        return (
+            <div
+                className={rowClassName}
+                style={{ gridTemplateColumns: fullGridTemplateColumns, minWidth }}
+            >
+                {supportsExpand && <div />}
+                {columns.map((column) => (
+                    <div key={column.key}>
+                        {renderCellSkeleton(column)}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    const itemData = extractData(data, itemId);
+    if (!itemData) {
+        return null;
+    }
 
     const canExpand = expandable?.isExpandable?.(itemData) ?? true;
 
@@ -114,96 +106,5 @@ function VirtualizedTableRowContent<TData>({
                 </div>
             )}
         </div>
-    );
-}
-
-export function VirtualizedTableRowStatic<TData>({
-    itemId,
-    data,
-    columns,
-    onRowClick,
-    minWidth,
-    gridTemplateColumns,
-    isExpanded,
-    onToggleExpand,
-    expandable,
-}: VirtualizedTableRowStaticProps<TData>) {
-    if (!data) {
-        return (
-            <VirtualizedTableRowSkeleton
-                columns={columns}
-                minWidth={minWidth}
-                gridTemplateColumns={gridTemplateColumns}
-                supportsExpand={expandable !== undefined}
-            />
-        );
-    }
-
-    return (
-        <VirtualizedTableRowContent
-            itemId={itemId}
-            itemData={data}
-            columns={columns}
-            onRowClick={onRowClick}
-            minWidth={minWidth}
-            gridTemplateColumns={gridTemplateColumns}
-            isExpanded={isExpanded}
-            onToggleExpand={onToggleExpand}
-            expandable={expandable}
-        />
-    );
-}
-
-export function VirtualizedTableRowInternal<TData, TResponse>({
-    itemId,
-    query,
-    getVariables,
-    extractData,
-    columns,
-    isVisible,
-    pollInterval,
-    onRowClick,
-    minWidth,
-    gridTemplateColumns,
-    isExpanded,
-    onToggleExpand,
-    expandable,
-}: VirtualizedTableRowInternalProps<TData, TResponse>) {
-    const variables = useMemo(() => getVariables(itemId), [itemId, getVariables]);
-
-    const { data } = useQuery<TResponse>(query, {
-        variables,
-        pollInterval: isVisible ? pollInterval : 0,
-        fetchPolicy: 'cache-and-network',
-    });
-
-    if (!data) {
-        return (
-            <VirtualizedTableRowSkeleton
-                columns={columns}
-                minWidth={minWidth}
-                gridTemplateColumns={gridTemplateColumns}
-                supportsExpand={expandable !== undefined}
-            />
-        );
-    }
-
-    const itemData = extractData(data, itemId);
-    if (!itemData) {
-        return null;
-    }
-
-    return (
-        <VirtualizedTableRowContent
-            itemId={itemId}
-            itemData={itemData}
-            columns={columns}
-            onRowClick={onRowClick}
-            minWidth={minWidth}
-            gridTemplateColumns={gridTemplateColumns}
-            isExpanded={isExpanded}
-            onToggleExpand={onToggleExpand}
-            expandable={expandable}
-        />
     );
 }

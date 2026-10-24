@@ -4,7 +4,7 @@ import { Tooltip } from "@chakra-ui/react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { TomeTactic } from "../../../utils/enums";
-import { BuildProfile, DEFAULT_BUILD_PROFILE_NAME } from "../types";
+import { BuildProfile, DEFAULT_BUILD_PROFILE_NAME, TRANSPORT_TYPES } from "../types";
 
 /**
  * Columns for the Profiles tab table. The Default build profile (seeded by
@@ -19,6 +19,15 @@ export const getProfileColumns = (
 ): ColumnDef<BuildProfile>[] => [
     { accessorKey: "name", header: "Name", cell: ({ row }) => <span className="text-sm font-medium text-gray-900">{row.original.name}</span> },
     { accessorKey: "description", header: "Description", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.description}</span> },
+    {
+        id: "transport",
+        header: "Transport",
+        cell: ({ row }) => {
+            const transport = row.original.transports[0];
+            const label = transport && (TRANSPORT_TYPES.find((type) => type.value === transport.type)?.label || transport.type);
+            return <span className="text-sm text-gray-600">{label || "—"}</span>;
+        },
+    },
     { accessorKey: "tomeCount", header: "Tomes", cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.tomeCount}</span> },
     {
         id: "tomeTypes",
@@ -47,7 +56,7 @@ export const getProfileColumns = (
     },
     {
         id: "actions",
-        header: "",
+        header: "Actions",
         cell: ({ row }) => {
             const profile = row.original;
             if (profile.name === DEFAULT_BUILD_PROFILE_NAME) {

@@ -3,9 +3,9 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
-import NewBuildProfile from "./NewBuildProfile";
-import { CREATE_BUILD_PROFILE, GET_BUILD_PROFILES, profileInput } from "./queries";
-import { BuildProfile, DEFAULT_SETUP_SCRIPT, DEFAULT_TRANSPORT, Tome } from "./types";
+import NewBuildProfile from "../NewBuildProfile";
+import { CREATE_BUILD_PROFILE, GET_BUILD_PROFILES, profileInput } from "../queries";
+import { BuildProfile, DEFAULT_SETUP_SCRIPT, DEFAULT_TRANSPORT, Tome } from "../types";
 
 beforeAll(() => {
     if (typeof globalThis.ResizeObserver === "undefined") {

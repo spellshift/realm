@@ -42,7 +42,7 @@ export const AdminPortal = () => {
     } = useUserIds();
 
     const { profiles, tomes, loading: profilesLoading, error: profilesError, refetch: refetchProfiles } = useBuildProfiles();
-    const { builders, loading: buildersLoading, error: buildersError, refetch: refetchBuilders } = useBuilders();
+    const { builders, loading: buildersLoading, error: buildersError } = useBuilders();
 
     const { data: authData } = useAuthorization();
     const currentUser = authData?.me as UserNode | undefined;
@@ -121,7 +121,6 @@ export const AdminPortal = () => {
                                 builders={builders}
                                 loading={buildersLoading}
                                 error={buildersError}
-                                onEnrolled={() => void refetchBuilders()}
                             />
                         </TabPanel>
                     </TabPanels>

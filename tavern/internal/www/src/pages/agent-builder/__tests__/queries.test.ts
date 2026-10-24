@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { mapProfile, profileInput, taskStatus, buildTaskRows, BuildTask, ProfileRecord } from "./queries";
-import { BuildProfile, Tome } from "./types";
-import { SupportedTransports } from "../../utils/enums";
+import { mapProfile, profileInput, taskStatus, buildTaskRows, BuildTask, ProfileRecord } from "../queries";
+import { BuildProfile, Tome } from "../types";
+import { SupportedTransports } from "../../../utils/enums";
 
 const catalog: Tome[] = [
     { id: "101", name: "Exfil Recon", description: "", tactic: "RECON" },

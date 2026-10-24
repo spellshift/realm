@@ -1,9 +1,9 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
+import { ColumnDef, Row } from "@tanstack/react-table";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
-import { VirtualizedTable } from "../../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
-import { VirtualizedTableColumn } from "../../../components/tavern-base-ui/virtualized-table/types";
+import Table from "../../../components/tavern-base-ui/table/Table";
 import { CompileTarget } from "../types";
 
 export interface TargetSelectionTableProps {
@@ -12,101 +12,44 @@ export interface TargetSelectionTableProps {
     onSelectTarget: (target: CompileTarget) => void;
 }
 
-export const TargetSelectionTable = ({
-    targets,
-    selectedTargetId,
-    onSelectTarget,
-}: TargetSelectionTableProps) => {
-    const targetMap = useMemo(() => {
-        const map = new Map<string, CompileTarget>();
-        for (const t of targets) {
-            map.set(t.id, t);
-        }
-        return map;
-    }, [targets]);
-
-    const targetIds = useMemo(() => targets.map((t) => t.id), [targets]);
-    const getItem = useCallback((id: string) => targetMap.get(id) ?? null, [targetMap]);
-
-    const handleItemClick = useCallback(
-        (_id: string, target: CompileTarget | null) => {
-            if (!target) return;
-            onSelectTarget(target);
-        },
-        [onSelectTarget]
-    );
-
-    const columns: VirtualizedTableColumn<CompileTarget>[] = useMemo(() => [
+export const TargetSelectionTable = ({ targets, selectedTargetId, onSelectTarget }: TargetSelectionTableProps) => {
+    const columns: ColumnDef<CompileTarget>[] = useMemo(() => [
         {
-            key: "description",
-            label: "Description",
-            width: "minmax(200px, 1fr)",
-            render: (target) => (
-                <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-medium text-gray-900 truncate">{target.description}</span>
-                </div>
+            accessorKey: "description",
+            header: "Description",
+            cell: ({ row }) => <span className="text-sm font-medium text-gray-900">{row.original.description}</span>,
+        },
+        {
+            accessorKey: "formatLabel",
+            header: "Format",
+            cell: ({ row }) => <span className="text-sm text-gray-700">{row.original.formatLabel}</span>,
+        },
+        {
+            accessorKey: "platformLabel",
+            header: "Platform",
+            cell: ({ row }) => <Badge badgeStyle={{ color: "gray" }}>{row.original.platformLabel}</Badge>,
+        },
+        {
+            id: "selection",
+            header: "",
+            size: 48,
+            enableSorting: false,
+            cell: ({ row }) => selectedTargetId === row.original.id ? (
+                <CheckCircleIcon className="w-6 h-6 text-purple-800" />
+            ) : (
+                <span aria-hidden="true" className="block w-5 h-5 rounded-full border-2 border-black border-opacity-10" />
             ),
-        },
-        {
-            key: "format",
-            label: "Format",
-            width: "minmax(140px, 180px)",
-            render: (target) => (
-                <span className="text-sm text-gray-700">{target.formatLabel}</span>
-            ),
-        },
-        {
-            key: "platform",
-            label: "Platform",
-            width: "minmax(120px, 160px)",
-            render: (target) => (
-                <Badge badgeStyle={{ color: "gray" }}>{target.platformLabel}</Badge>
-            ),
-        },
-        {
-            key: "selection",
-            label: "",
-            width: "minmax(24px, 30px)",
-            render: (target) => {
-                if (selectedTargetId === target.id) {
-                    return (
-                        <div className="flex items-center justify-center h-full text-purple-800">
-                            <CheckCircleIcon className="w-6 h-6" />
-                        </div>
-                    );
-                }
-                return (
-                    <div className="flex items-center justify-center h-full text-purple-800">
-                        <span
-                            aria-hidden="true"
-                            className="w-5 h-5 rounded-full border-2 border-black border-opacity-10"
-                        />
-                    </div>
-                );
-            },
         },
     ], [selectedTargetId]);
 
-    const rowSize = 48;
-    const maxRows = 7;
-    const maxHeight = "280px";
-    const minHeight = targetIds.length > maxRows
-        ? maxHeight
-        : `${(targetIds.length * rowSize) + 20}px`;
-
     return (
-        <VirtualizedTable<CompileTarget>
-            items={targetIds}
-            columns={columns}
-            getItem={getItem}
-            onItemClick={handleItemClick}
-            estimateRowSize={rowSize}
-            height={maxHeight}
-            minHeight={minHeight}
-            minWidth="300px"
-            headerVisible={true}
-            growWithContent={true}
-        />
+        <div className="rounded-md border border-gray-200 overflow-y-auto max-h-[280px]">
+            <Table
+                data={targets}
+                columns={columns}
+                onRowClick={(row: Row<CompileTarget>) => onSelectTarget(row.original)}
+            />
+        </div>
     );
 };
 

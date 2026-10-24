@@ -81,8 +81,6 @@ export const FinalizeSelection = ({
                         event.preventDefault();
                         formik.handleSubmit();
                     }}
-                    buttonStyle={{ color: "purple", size: "md" }}
-                    isLoading={loading}
                     disabled={isContinueDisabled}
                     type="submit"
                     aria-label="submit quest"

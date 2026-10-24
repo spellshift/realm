@@ -2,10 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
-import Table from "../../../components/tavern-base-ui/table/Table";
-import { buildTaskColumns } from "./AgentsTable";
-import { BuildTaskRow } from "../types";
-import { SupportedPlatforms, SupportedFormats } from "../../../utils/enums";
+import Table from "../../../../components/tavern-base-ui/table/Table";
+import { buildTaskColumns } from "../AgentsTable";
+import { BuildTaskRow } from "../../types";
+import { SupportedPlatforms, SupportedFormats } from "../../../../utils/enums";
 
 function row(overrides: Partial<BuildTaskRow>): BuildTaskRow {
     return {
