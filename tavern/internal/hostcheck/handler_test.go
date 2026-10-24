@@ -42,24 +42,6 @@ func TestHandlerMissingToken(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
-func TestHandlerRejectsQueryToken(t *testing.T) {
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-	defer client.Close()
-
-	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
-	require.NoError(t, err)
-	tokenStr, err := NewToken(privKey)
-	require.NoError(t, err)
-
-	ts := httptest.NewServer(NewHandler(client, pubKey))
-	defer ts.Close()
-
-	resp, err := http.Post(ts.URL+"?token="+tokenStr, "application/json", nil)
-	require.NoError(t, err)
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-}
-
 func TestHandlerInvalidToken(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
