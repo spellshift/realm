@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation } from "@apollo/client";
 import { TabGroup, TabPanels, TabPanel } from "@headlessui/react";
 import { useSearchParams } from "react-router-dom";
 import { AdminAccessGate } from "../../components/admin-access-gate";
@@ -14,7 +15,8 @@ import AdminTabs from "./components/AdminTabs";
 import { ProfilesTab } from "../agent-builder/profiles-tab";
 import { BuildersTab } from "../agent-builder/builders-tab";
 import NewBuildProfileModal from "../agent-builder/components/NewBuildProfileModal";
-import { useBuilders, useBuildProfiles } from "../agent-builder/queries";
+import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, useBuilders, useBuildProfiles } from "../agent-builder/queries";
+import { BuildProfile } from "../agent-builder/types";
 
 const TAB_NAMES = ["users", "profiles", "builders"] as const;
 
@@ -25,6 +27,10 @@ export const AdminPortal = () => {
     const selectedIndex = tabIndex >= 0 ? tabIndex : 0;
 
     const [newProfileModalOpen, setNewProfileModalOpen] = useState(false);
+    const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
+    const [deleteProfile] = useMutation(DELETE_BUILD_PROFILE, {
+        refetchQueries: [{ query: GET_BUILD_PROFILES }],
+    });
 
     const {
         data,
@@ -45,7 +51,17 @@ export const AdminPortal = () => {
         setSearchParams({ tab: TAB_NAMES[index] }, { replace: true });
     };
 
-    const goToNewProfile = () => setNewProfileModalOpen(true);
+    const goToNewProfile = () => {
+        setEditingProfile(null);
+        setNewProfileModalOpen(true);
+    };
+    const goToEditProfile = (profile: BuildProfile) => {
+        setEditingProfile(profile);
+        setNewProfileModalOpen(true);
+    };
+    const handleDeleteProfile = (profile: BuildProfile) => {
+        void deleteProfile({ variables: { profileID: profile.id } });
+    };
 
     if (!currentUser) {
         return (
@@ -96,6 +112,8 @@ export const AdminPortal = () => {
                                 loading={profilesLoading}
                                 error={profilesError}
                                 onAddProfile={goToNewProfile}
+                                onEditProfile={goToEditProfile}
+                                onDeleteProfile={handleDeleteProfile}
                             />
                         </TabPanel>
                         <TabPanel>
@@ -112,6 +130,7 @@ export const AdminPortal = () => {
                     isOpen={newProfileModalOpen}
                     setOpen={setNewProfileModalOpen}
                     catalog={tomes}
+                    existingProfile={editingProfile ?? undefined}
                     onSave={async () => {
                         await refetchProfiles();
                     }}

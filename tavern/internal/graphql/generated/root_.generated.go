@@ -462,6 +462,7 @@ type ComplexityRoot struct {
 		CreateTome                  func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteAllNotifications      func(childComplexity int) int
 		DeleteAsset                 func(childComplexity int, assetID int) int
+		DeleteBuildProfile          func(childComplexity int, profileID int) int
 		DeleteBuilder               func(childComplexity int, builderID int) int
 		DeleteTome                  func(childComplexity int, tomeID int) int
 		DisableLink                 func(childComplexity int, linkID int) int
@@ -477,6 +478,7 @@ type ComplexityRoot struct {
 		UnfavoriteHost              func(childComplexity int, hostID int) int
 		UnsubscribeFromHost         func(childComplexity int, hostID int) int
 		UpdateBeacon                func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateBuildProfile          func(childComplexity int, profileID int, input models.UpdateBuildProfileInput) int
 		UpdateHost                  func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink                  func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
 		UpdateTag                   func(childComplexity int, tagID int, input ent.UpdateTagInput) int
@@ -2981,6 +2983,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.DeleteAsset(childComplexity, args["assetID"].(int)), true
 
+	case "Mutation.deleteBuildProfile":
+		if e.ComplexityRoot.Mutation.DeleteBuildProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteBuildProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteBuildProfile(childComplexity, args["profileID"].(int)), true
+
 	case "Mutation.deleteBuilder":
 		if e.ComplexityRoot.Mutation.DeleteBuilder == nil {
 			break
@@ -3150,6 +3164,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateBeacon(childComplexity, args["beaconID"].(int), args["input"].(ent.UpdateBeaconInput)), true
+
+	case "Mutation.updateBuildProfile":
+		if e.ComplexityRoot.Mutation.UpdateBuildProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateBuildProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateBuildProfile(childComplexity, args["profileID"].(int), args["input"].(models.UpdateBuildProfileInput)), true
 
 	case "Mutation.updateHost":
 		if e.ComplexityRoot.Mutation.UpdateHost == nil {
@@ -5320,6 +5346,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTomeOrder,
 		ec.unmarshalInputTomeWhereInput,
 		ec.unmarshalInputUpdateBeaconInput,
+		ec.unmarshalInputUpdateBuildProfileInput,
 		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
@@ -6390,7 +6417,7 @@ type BuildProfile implements Node {
   """
   prebuildscript: String!
   """
-  Bash script to run before prebuild script
+  Bash script to run before prebuild script. Go template, supports the same values as build_script (BuildDir, BuildCommand, ArtifactPath, TargetOS, TargetFormat, TargetTriple).
   """
   setupscript: String!
   """
@@ -13655,6 +13682,8 @@ scalar Uint64
     # BuildProfile
     ###
     createBuildProfile(input: CreateBuildProfileInput!): BuildProfile! @requireRole(role: ADMIN)
+    updateBuildProfile(profileID: ID!, input: UpdateBuildProfileInput!): BuildProfile! @requireRole(role: ADMIN)
+    deleteBuildProfile(profileID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # BuildTask
@@ -13811,6 +13840,44 @@ input CreateBuildTaskInput {
 
 """Input for creating a new build profile."""
 input CreateBuildProfileInput {
+  """The name of the build profile."""
+  name: String!
+
+  """A user facing build profile description."""
+  description: String!
+
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildProfileTransportInput!]
+
+  """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
+  buildImage: String
+
+  """Go template for the build command. Defaults to {{.BuildCommand}}."""
+  buildScript: String
+
+  """Go template for the artifact path. Defaults to {{.ArtifactPath}}."""
+  artifactPath: String
+
+  """Bash script to run before the build command."""
+  prebuildscript: String!
+
+  """Bash script to run before the prebuild script."""
+  setupscript: String!
+
+  """Bash script to run after the build command."""
+  postbuildscript: String!
+
+  """List of tomes to include in builds using this profile."""
+  tomes: [BuildProfileTomeInput!]
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
+}
+
+"""Input for updating an existing build profile. Mirrors CreateBuildProfileInput --
+fields set here replace the profile's current value, so clients should resend the
+full profile rather than relying on partial updates."""
+input UpdateBuildProfileInput {
   """The name of the build profile."""
   name: String!
 

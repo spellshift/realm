@@ -182,32 +182,6 @@ export const ProfileSelectionTable = ({
             ),
         },
         {
-            key: "tomes",
-            label: "Tomes",
-            width: "minmax(100px, 150px)",
-            render: (profile) => {
-                const tacticTypes = Array.from(
-                    new Set(
-                        (profile.tomes || [])
-                            .map((t) => (t.tactic && TomeTactic[t.tactic]) || t.tactic)
-                            .filter(Boolean)
-                    )
-                );
-                return (
-                    <div className="flex flex-wrap gap-1 items-center">
-                        <Badge badgeStyle={{ color: "gray" }}>
-                            {profile.tomeCount} {profile.tomeCount === 1 ? "tome" : "tomes"}
-                        </Badge>
-                        {tacticTypes.map((tactic) => (
-                            <Badge key={tactic} badgeStyle={{ color: "purple" }}>
-                                {tactic}
-                            </Badge>
-                        ))}
-                    </div>
-                );
-            },
-        },
-        {
             key: "selection",
             label: "",
             width: "minmax(24px, 30px)",

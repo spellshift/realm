@@ -191,7 +191,7 @@ async function main() {
     await page.waitForTimeout(400);
 
     // Fill Setup script, Build script, and Artifact path
-    const setupScriptArea = page.getByText('cd /home/vscode');
+    const setupScriptArea = page.getByText('mkdir -p {{.BuildDir}}');
     await setupScriptArea.fill('echo "setup ready"');
 
     const buildScriptArea = page.getByText('{{.BuildCommand}}');

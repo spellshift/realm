@@ -58,8 +58,19 @@ describe("EnrollBuilderModal", () => {
         fireEvent.click(within(dialog).getByRole("button", { name: "Enroll" }));
 
         await waitFor(() => expect(within(dialog).getByText(/mTLS credentials are only shown once/)).toBeInTheDocument());
-        expect(within(dialog).getByText((_, element) => element?.tagName.toLowerCase() === "pre" && !!element.textContent?.includes("builder-a1b2c3"))).toBeInTheDocument();
+        expect(within(dialog).getByText((_, element) => element?.tagName.toLowerCase() === "pre" && !!element.textContent?.includes("upstream: http://127.0.0.1:8000"))).toBeInTheDocument();
         expect(onEnrolled).toHaveBeenCalledTimes(1);
+
+        expect(within(dialog).getByText("Step 1: Save the config")).toBeInTheDocument();
+        expect(within(dialog).getByText("Step 2: Run the builder")).toBeInTheDocument();
+        expect(within(dialog).getByText("builder-builder-a1b2c3.yaml")).toBeInTheDocument();
+        expect(
+            within(dialog).getByText(
+                (_, element) =>
+                    element?.tagName.toLowerCase() === "pre" &&
+                    element.textContent === "./tavern builder --config builder-builder-a1b2c3.yaml"
+            )
+        ).toBeInTheDocument();
     });
 
     it("surfaces a registerBuilder error without closing the enroll form", async () => {

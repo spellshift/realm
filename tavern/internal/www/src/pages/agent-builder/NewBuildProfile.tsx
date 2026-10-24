@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import AlertError from "../../components/tavern-base-ui/AlertError";
-import { CREATE_BUILD_PROFILE, GET_BUILD_PROFILES, mapProfile, profileInput, ProfileRecord } from "./queries";
+import { CREATE_BUILD_PROFILE, UPDATE_BUILD_PROFILE, GET_BUILD_PROFILES, mapProfile, profileInput, ProfileRecord } from "./queries";
 import { safelyJsonParse } from "../../utils/utils";
 import { Heading, Textarea } from "@chakra-ui/react";
 import { TrashIcon, PlusIcon, ChevronDownIcon, ChevronUpIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
@@ -40,38 +40,51 @@ const advancedScriptFields = [
 ];
 
 /**
- * New build profile authoring screen, reached via "+ New profile" from the
- * profile-picker step of the wizard. Fields mirror the
- * BuildProfile ent schema (tavern/internal/ent/schema/buildprofile.go):
- * name, description, transports (ordered list of {type, uri, interval}),
- * build_image, tomes (ordered list of {tome, params}), and the Go-template
- * script fields, which are collapsed under "Advanced" per the earlier
- * design decision -- most operators will never touch them.
+ * Build profile authoring screen -- used both to create a new profile
+ * (reached via "+ New profile" from the profile-picker step of the wizard)
+ * and, when `existingProfile` is passed, to edit one in place from the
+ * Profiles tab. Fields mirror the BuildProfile ent schema
+ * (tavern/internal/ent/schema/buildprofile.go): name, description,
+ * transports (ordered list of {type, uri, interval}), build_image, tomes
+ * (ordered list of {tome, params}), and the Go-template script fields,
+ * which are collapsed under "Advanced" per the earlier design decision --
+ * most operators will never touch them.
  */
 export const NewBuildProfile = ({
     catalog,
+    existingProfile,
     onCancel,
     onSave,
 }: {
     catalog: Tome[];
+    existingProfile?: BuildProfile;
     onCancel: () => void;
     onSave: (profile: BuildProfile) => Promise<void> | void;
 }) => {
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [buildImage, setBuildImage] = useState("spellshift/devcontainer:main");
-    const [transports, setTransports] = useState<TransportConfig[]>([DEFAULT_TRANSPORT]);
-    const [tomes, setTomes] = useState<TomeRef[]>([]);
+    const isEditing = !!existingProfile;
+    const [name, setName] = useState(existingProfile?.name ?? "");
+    const [description, setDescription] = useState(existingProfile?.description ?? "");
+    const [buildImage, setBuildImage] = useState(existingProfile?.buildImage ?? "spellshift/devcontainer:main");
+    const [transports, setTransports] = useState<TransportConfig[]>(existingProfile?.transports ?? [DEFAULT_TRANSPORT]);
+    const [tomes, setTomes] = useState<TomeRef[]>(existingProfile?.tomes ?? []);
     const [addingTome, setAddingTome] = useState(false);
     const [tomeToAdd, setTomeToAdd] = useState<Tome | null>(null);
     const [tomeParams, setTomeParams] = useState("{}");
-    const [scripts, setScripts] = useState(advancedScriptFields.map((field, index) => field.defaultValue));
+    const [scripts, setScripts] = useState(
+        existingProfile
+            ? [existingProfile.buildScript, existingProfile.artifactPath, existingProfile.prebuildscript, existingProfile.setupscript, existingProfile.postbuildscript, existingProfile.unique ?? ""]
+            : advancedScriptFields.map((field) => field.defaultValue)
+    );
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [savedProfileRecord, setSavedProfileRecord] = useState<ProfileRecord | null>(null);
-    const [createProfile, { loading: saving }] = useMutation<{ createBuildProfile: ProfileRecord }>(CREATE_BUILD_PROFILE, {
+    const [createProfile, { loading: creating }] = useMutation<{ createBuildProfile: ProfileRecord }>(CREATE_BUILD_PROFILE, {
         refetchQueries: [{ query: GET_BUILD_PROFILES }],
     });
+    const [updateProfile, { loading: updating }] = useMutation<{ updateBuildProfile: ProfileRecord }>(UPDATE_BUILD_PROFILE, {
+        refetchQueries: [{ query: GET_BUILD_PROFILES }],
+    });
+    const saving = creating || updating;
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [transportModalOpen, setTransportModalOpen] = useState(false);
     const [transportDraft, setTransportDraft] = useState<TransportConfig | null>(null);
@@ -122,14 +135,20 @@ export const NewBuildProfile = ({
             let profileRecord = savedProfileRecord;
             if (!profileRecord) {
                 const profile: BuildProfile = {
-                    id: "", name, description, transports, buildImage,
+                    id: existingProfile?.id ?? "", name, description, transports, buildImage,
                     tomes, tomeCount: tomes.length, hasPersistenceTome,
                     buildScript: scripts[0], artifactPath: scripts[1], prebuildscript: scripts[2],
                     setupscript: scripts[3], postbuildscript: scripts[4], unique: scripts[5],
                 };
-                const { data } = await createProfile({ variables: { input: profileInput(profile) } });
-                if (!data?.createBuildProfile) throw new Error("The server did not return a build profile.");
-                profileRecord = data.createBuildProfile;
+                if (existingProfile) {
+                    const { data } = await updateProfile({ variables: { profileID: existingProfile.id, input: profileInput(profile) } });
+                    if (!data?.updateBuildProfile) throw new Error("The server did not return a build profile.");
+                    profileRecord = data.updateBuildProfile;
+                } else {
+                    const { data } = await createProfile({ variables: { input: profileInput(profile) } });
+                    if (!data?.createBuildProfile) throw new Error("The server did not return a build profile.");
+                    profileRecord = data.createBuildProfile;
+                }
                 setSavedProfileRecord(profileRecord);
             }
             await onSave(mapProfile(profileRecord, catalog));
@@ -145,7 +164,7 @@ export const NewBuildProfile = ({
         <div className="flex flex-col gap-4 w-full min-w-0 max-w-xl">
             {error && <AlertError label="Unable to save profile" details={error} />}
             <div className="flex flex-col gap-1">
-                <Heading size="sm">New build profile</Heading>
+                <Heading size="sm">{isEditing ? "Edit build profile" : "New build profile"}</Heading>
                 <p className="text-sm text-gray-500">
                     Set the defaults operators will use when creating a build.
                 </p>
@@ -267,7 +286,7 @@ export const NewBuildProfile = ({
                             <Button buttonVariant="ghost" buttonStyle={{ size: "sm" }} onClick={() => setAddingTome(false)}>
                                 Cancel
                             </Button>
-                            <Button buttonStyle={{ size: "sm" }} onClick={confirmAddTome} disabled={!tomeToAdd}>
+                            <Button buttonStyle={{ color: "purple", size: "sm" }} onClick={confirmAddTome} disabled={!tomeToAdd}>
                                 Add to profile
                             </Button>
                         </div>
@@ -313,7 +332,7 @@ export const NewBuildProfile = ({
 
             <div className="flex flex-row gap-2">
                 <Button buttonVariant="ghost" onClick={onCancel}>Cancel</Button>
-                <Button onClick={handleSave} isLoading={saving || submitting} disabled={!name.trim() || !buildImage.trim() || !scripts[0].trim() || !scripts[1].trim()}>Save profile</Button>
+                <Button onClick={handleSave} isLoading={saving || submitting} disabled={!name.trim() || !buildImage.trim() || !scripts[0].trim() || !scripts[1].trim()}>{isEditing ? "Save changes" : "Save profile"}</Button>
             </div>
         </div>
         <Modal isOpen={transportModalOpen} setOpen={setTransportModalOpen} size="sm">

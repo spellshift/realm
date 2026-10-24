@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useMutation } from "@apollo/client";
 import { TabGroup, TabPanels, TabPanel } from "@headlessui/react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { FileTerminal } from "lucide-react";
@@ -9,7 +10,8 @@ import { AgentsTab } from "./agents-tab";
 import { ProfilesTab } from "./profiles-tab";
 import { BuildersTab } from "./builders-tab";
 import NewBuildProfileModal from "./components/NewBuildProfileModal";
-import { useBuilders, useBuildProfiles, useBuildTasks } from "./queries";
+import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, useBuilders, useBuildProfiles, useBuildTasks } from "./queries";
+import { BuildProfile } from "./types";
 import CreateLinkModal from "../assets/components/CreateLinkModal/CreateLinkModal";
 
 // Built agents / Build profiles / Builders --
@@ -62,9 +64,23 @@ export const AgentBuilderLandingPage = () => {
     }, []);
 
     const [newProfileModalOpen, setNewProfileModalOpen] = useState(false);
+    const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
+    const [deleteProfile] = useMutation(DELETE_BUILD_PROFILE, {
+        refetchQueries: [{ query: GET_BUILD_PROFILES }],
+    });
 
     const goToWizard = () => navigate("/builder/new");
-    const goToNewProfile = () => setNewProfileModalOpen(true);
+    const goToNewProfile = () => {
+        setEditingProfile(null);
+        setNewProfileModalOpen(true);
+    };
+    const goToEditProfile = (profile: BuildProfile) => {
+        setEditingProfile(profile);
+        setNewProfileModalOpen(true);
+    };
+    const handleDeleteProfile = (profile: BuildProfile) => {
+        void deleteProfile({ variables: { profileID: profile.id } });
+    };
 
     return (
         <div className="flex flex-col gap-4 w-full min-w-0">
@@ -102,6 +118,8 @@ export const AgentBuilderLandingPage = () => {
                             loading={profilesLoading}
                             error={profilesError}
                             onAddProfile={goToNewProfile}
+                            onEditProfile={goToEditProfile}
+                            onDeleteProfile={handleDeleteProfile}
                         />
                     </TabPanel>
                     <TabPanel>
@@ -126,6 +144,7 @@ export const AgentBuilderLandingPage = () => {
                 isOpen={newProfileModalOpen}
                 setOpen={setNewProfileModalOpen}
                 catalog={tomes}
+                existingProfile={editingProfile ?? undefined}
                 onSave={async () => {
                     await refetchProfiles();
                 }}

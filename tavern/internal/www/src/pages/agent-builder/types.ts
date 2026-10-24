@@ -3,6 +3,12 @@ import { UserNode } from "../../utils/interfacesQuery";
 
 export const NO_INSTALL_WARNING = "No persistence tome is bundled. Without one, the install command won't persist the agent.";
 
+// Matches builder.DefaultBuildProfileName (tavern/internal/builder/build_config.go) --
+// Tavern seeds a profile with this exact name on startup, and the server
+// rejects editing/deleting it. The frontend hides those actions for it too,
+// so operators aren't shown a button that will just error.
+export const DEFAULT_BUILD_PROFILE_NAME = "Default";
+
 // BuildTasks/Builders can only target the OSes imix actually builds for --
 // SupportedPlatforms also carries BSD and PLATFORM_UNSPECIFIED, which aren't
 // valid build targets, so this narrows to the three that are.
@@ -168,6 +174,6 @@ export type BuildTaskRow = {
 };
 
 
-export const DEFAULT_SETUP_SCRIPT = "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true";
+export const DEFAULT_SETUP_SCRIPT = "mkdir -p {{.BuildDir}} && cd {{.BuildDir}} && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true";
 
 export type Tome = { id: string; name: string; description: string; tactic: TomeTacticKey; paramDefs?: string | null };

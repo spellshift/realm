@@ -168,6 +168,44 @@ input CreateBuildProfileInput {
   unique: String
 }
 
+"""Input for updating an existing build profile. Mirrors CreateBuildProfileInput --
+fields set here replace the profile's current value, so clients should resend the
+full profile rather than relying on partial updates."""
+input UpdateBuildProfileInput {
+  """The name of the build profile."""
+  name: String!
+
+  """A user facing build profile description."""
+  description: String!
+
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildProfileTransportInput!]
+
+  """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
+  buildImage: String
+
+  """Go template for the build command. Defaults to {{.BuildCommand}}."""
+  buildScript: String
+
+  """Go template for the artifact path. Defaults to {{.ArtifactPath}}."""
+  artifactPath: String
+
+  """Bash script to run before the build command."""
+  prebuildscript: String!
+
+  """Bash script to run before the prebuild script."""
+  setupscript: String!
+
+  """Bash script to run after the build command."""
+  postbuildscript: String!
+
+  """List of tomes to include in builds using this profile."""
+  tomes: [BuildProfileTomeInput!]
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
+}
+
 """Output returned when registering a new builder."""
 type RegisterBuilderOutput {
   """The created builder entity."""

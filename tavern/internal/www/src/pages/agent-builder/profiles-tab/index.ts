@@ -1,2 +1,2 @@
 export { default as ProfilesTab } from "./ProfilesTab";
-export { profileColumns } from "./ProfilesTable";
+export { getProfileColumns } from "./ProfilesTable";

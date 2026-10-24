@@ -479,6 +479,13 @@ export const AgentBuilderWizard = ({
                                     )}
                                 </div>
 
+                                {!targetAvailable && (
+                                    <AlertError
+                                        label="No online builders available"
+                                        details={`No online builders available for ${selectedTarget.platformLabel}. Please enroll and start a builder supporting this target to proceed.`}
+                                    />
+                                )}
+
                                 <div className="flex flex-row gap-2">
                                     <Button buttonVariant="ghost" onClick={() => setCurrStep(1)} disabled={creating} aria-label="back button">
                                         Back

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
@@ -127,5 +127,38 @@ describe("AgentBuilderWizard", () => {
         });
 
         expect(screen.queryByRole("button", { name: "New profile" })).not.toBeInTheDocument();
+    });
+
+    it("explains why Submit is disabled when no online builder supports the selected target", async () => {
+        render(
+            <MemoryRouter>
+                <ChakraProvider>
+                    <MockedProvider mocks={[populatedProfilesMock, emptyBuildersMock]} addTypename={false}>
+                        <AgentBuilderWizard />
+                    </MockedProvider>
+                </ChakraProvider>
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getAllByRole("button", { name: "Select row" })[0]);
+        fireEvent.click(screen.getByRole("button", { name: "continue profile step" }));
+
+        await waitFor(() => {
+            expect(screen.getByText("Select compilation target")).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getAllByRole("button", { name: "Select row" })[0]);
+        fireEvent.click(screen.getByRole("button", { name: "continue target step" }));
+
+        await waitFor(() => {
+            expect(screen.getByText("Confirm build details")).toBeInTheDocument();
+        });
+
+        expect(screen.getByText("No online builders available")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "submit agent build" })).toBeDisabled();
     });
 });

@@ -80,15 +80,36 @@ export const EnrollBuilderModal = ({
                 {enrollError && <AlertError label="Unable to enroll builder" details={enrollError} />}
 
                 {enrollResult ? (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-4">
                         <p className="text-sm text-amber-700">
                             Save this configuration now -- its mTLS credentials are only shown once.
                         </p>
-                        <CodeBlock code={enrollResult.config} language="yaml" showCopyButton />
-                        <div className="flex flex-row gap-2">
+                        <div className="flex flex-col gap-2">
+                            <p className="text-sm font-medium text-gray-900">
+                                Step 1: Save the config
+                            </p>
+                            <CodeBlock code={enrollResult.config} language="yaml" showCopyButton />
                             <Button onClick={() => downloadBuilderConfig(enrollResult.config, enrollResult.identifier)}>
                                 Download config
                             </Button>
+                            <p className="text-sm text-gray-700">
+                                Saved as <code>builder-{enrollResult.identifier}.yaml</code> when downloaded.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <p className="text-sm font-medium text-gray-900">
+                                Step 2: Run the builder
+                            </p>
+                            <p className="text-sm text-gray-700">
+                                From the Tavern project root, start the builder with the saved config:
+                            </p>
+                            <CodeBlock
+                                code={`./tavern builder --config builder-${enrollResult.identifier}.yaml`}
+                                language="bash"
+                                showCopyButton
+                            />
+                        </div>
+                        <div className="flex flex-row gap-2">
                             <Button buttonVariant="ghost" onClick={closeModal}>Done</Button>
                         </div>
                     </div>

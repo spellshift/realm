@@ -40,6 +40,17 @@ export const CREATE_BUILD_PROFILE = gql`
         createBuildProfile(input: $input) { ...BuildProfileFields }
     }
 `;
+export const UPDATE_BUILD_PROFILE = gql`
+    ${PROFILE_FIELDS}
+    mutation UpdateAgentBuildProfile($profileID: ID!, $input: UpdateBuildProfileInput!) {
+        updateBuildProfile(profileID: $profileID, input: $input) { ...BuildProfileFields }
+    }
+`;
+export const DELETE_BUILD_PROFILE = gql`
+    mutation DeleteAgentBuildProfile($profileID: ID!) {
+        deleteBuildProfile(profileID: $profileID)
+    }
+`;
 export const CREATE_BUILD_TASK = gql`
     mutation CreateAgentBuildTask($input: CreateBuildTaskInput!) {
         createBuildTask(input: $input) { id }

@@ -977,7 +977,7 @@ type BuildProfile implements Node {
   """
   prebuildscript: String!
   """
-  Bash script to run before prebuild script
+  Bash script to run before prebuild script. Go template, supports the same values as build_script (BuildDir, BuildCommand, ArtifactPath, TargetOS, TargetFormat, TargetTriple).
   """
   setupscript: String!
   """

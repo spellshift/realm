@@ -616,6 +616,84 @@ func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.
 	return creator.Save(ctx)
 }
 
+// UpdateBuildProfile is the resolver for the updateBuildProfile field.
+func (r *mutationResolver) UpdateBuildProfile(ctx context.Context, profileID int, input models.UpdateBuildProfileInput) (*ent.BuildProfile, error) {
+	profile, err := r.client.BuildProfile.Get(ctx, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load build profile: %w", err)
+	}
+	if profile.Name == builder.DefaultBuildProfileName {
+		return nil, fmt.Errorf("the default build profile cannot be edited")
+	}
+
+	updater := profile.Update().
+		SetName(input.Name).
+		SetDescription(input.Description).
+		SetPrebuildscript(input.Prebuildscript).
+		SetSetupscript(input.Setupscript).
+		SetPostbuildscript(input.Postbuildscript)
+
+	if input.Unique != nil && *input.Unique != "" {
+		updater.SetUnique(*input.Unique)
+	} else {
+		updater.ClearUnique()
+	}
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		updater.SetBuildImage(*input.BuildImage)
+	}
+	if input.BuildScript != nil && *input.BuildScript != "" {
+		updater.SetBuildScript(*input.BuildScript)
+	}
+	if input.ArtifactPath != nil && *input.ArtifactPath != "" {
+		updater.SetArtifactPath(*input.ArtifactPath)
+	}
+
+	// Unlike CreateBuildProfile, transports/tomes are always fully replaced
+	// here (even with an empty list) rather than left untouched when absent --
+	// an update means "this is the new value", so a client removing the last
+	// tome must actually clear it rather than have the old list silently stick.
+	transports := make([]builderpb.BuildProfileTransport, len(input.Transports))
+	for i, t := range input.Transports {
+		var extra string
+		if t.Extra != nil {
+			extra = *t.Extra
+		}
+		transports[i] = builderpb.BuildProfileTransport{
+			URI:      t.URI,
+			Interval: t.Interval,
+			Type:     c2pb.Transport_Type(t.Type),
+			Extra:    extra,
+		}
+	}
+	updater.SetTransports(transports)
+
+	tomes := make([]builderpb.BuildProfileTome, len(input.Tomes))
+	for i, t := range input.Tomes {
+		tomes[i] = builderpb.BuildProfileTome{
+			TomeID: t.TomeID,
+			Params: t.Params,
+		}
+	}
+	updater.SetTomes(tomes)
+
+	return updater.Save(ctx)
+}
+
+// DeleteBuildProfile is the resolver for the deleteBuildProfile field.
+func (r *mutationResolver) DeleteBuildProfile(ctx context.Context, profileID int) (int, error) {
+	profile, err := r.client.BuildProfile.Get(ctx, profileID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to load build profile: %w", err)
+	}
+	if profile.Name == builder.DefaultBuildProfileName {
+		return 0, fmt.Errorf("the default build profile cannot be deleted")
+	}
+	if err := r.client.BuildProfile.DeleteOneID(profileID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return profileID, nil
+}
+
 // CreateBuildTask is the resolver for the createBuildTask field.
 func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
 	tx, err := r.client.Tx(ctx)
@@ -705,7 +783,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		}
 	}
 
-	buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, input.TargetOs, targetFormat)
+	setupScript, buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, setupScript, input.TargetOs, targetFormat)
 	if err != nil {
 		return nil, fmt.Errorf("resolve build recipe: %w", err)
 	}

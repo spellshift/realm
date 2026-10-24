@@ -7,6 +7,7 @@ type NewBuildProfileModalProps = {
     isOpen: boolean;
     setOpen: (open: boolean) => void;
     catalog: Tome[];
+    existingProfile?: BuildProfile;
     onSave: (profile: BuildProfile) => Promise<void> | void;
 };
 
@@ -14,6 +15,7 @@ export const NewBuildProfileModal: FC<NewBuildProfileModalProps> = ({
     isOpen,
     setOpen,
     catalog,
+    existingProfile,
     onSave,
 }) => {
     return (
@@ -21,6 +23,7 @@ export const NewBuildProfileModal: FC<NewBuildProfileModalProps> = ({
             <div className="flex flex-col gap-4 pb-6" data-testid="new-profile-modal">
                 <NewBuildProfile
                     catalog={catalog}
+                    existingProfile={existingProfile}
                     onCancel={() => setOpen(false)}
                     onSave={async (profile) => {
                         await onSave(profile);

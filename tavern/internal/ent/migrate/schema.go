@@ -108,7 +108,7 @@ var (
 		{Name: "build_script", Type: field.TypeString, Size: 2147483647, Default: "{{.BuildCommand}}"},
 		{Name: "artifact_path", Type: field.TypeString, Size: 2147483647, Default: "{{.ArtifactPath}}"},
 		{Name: "prebuildscript", Type: field.TypeString, Default: "echo 'no prebuild set'"},
-		{Name: "setupscript", Type: field.TypeString, Default: "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"},
+		{Name: "setupscript", Type: field.TypeString, Default: "mkdir -p {{.BuildDir}} && cd {{.BuildDir}} && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"},
 		{Name: "postbuildscript", Type: field.TypeString, Default: "echo 'no postbuild set'"},
 		{Name: "unique", Type: field.TypeString, Nullable: true},
 		{Name: "tomes", Type: field.TypeJSON, Nullable: true},
