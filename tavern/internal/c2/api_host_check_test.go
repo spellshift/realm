@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,6 +21,16 @@ import (
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/hostcheck"
 )
+
+func postHostCheck(t *testing.T, endpoint, token string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodPost, endpoint, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	return resp
+}
 
 // TestHostAccessLost verifies the end-to-end flow:
 //  1. A beacon checks in, establishing a host.
@@ -116,11 +125,8 @@ func TestHostAccessLost(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	tokenURL := fmt.Sprintf("%s?token=%s", ts.URL, hostCheckToken)
-
 	// Call the host-check handler (it polls all hosts, no body needed)
-	resp, err := http.Post(tokenURL, "application/json", nil)
-	require.NoError(t, err)
+	resp := postHostCheck(t, ts.URL, hostCheckToken)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "host check handler should return 200")
 
@@ -155,8 +161,7 @@ func TestHostAccessLost(t *testing.T) {
 	}
 
 	// Verify idempotency: calling host check again should NOT create a duplicate event
-	resp2, err := http.Post(tokenURL, "application/json", nil)
-	require.NoError(t, err)
+	resp2 := postHostCheck(t, ts.URL, hostCheckToken)
 	defer resp2.Body.Close()
 	assert.Equal(t, http.StatusOK, resp2.StatusCode)
 
@@ -211,8 +216,7 @@ func TestHostAccessLost(t *testing.T) {
 	_, err = graph.Host.UpdateOne(h).SetNextSeenAt(pastTime2).Save(ctx)
 	require.NoError(t, err)
 
-	resp4, err := http.Post(tokenURL, "application/json", nil)
-	require.NoError(t, err)
+	resp4 := postHostCheck(t, ts.URL, hostCheckToken)
 	defer resp4.Body.Close()
 	assert.Equal(t, http.StatusOK, resp4.StatusCode)
 
@@ -260,11 +264,8 @@ func TestHostAccessLostSkippedWhenNotOverdue(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	tokenURL := fmt.Sprintf("%s?token=%s", ts.URL, hostCheckToken)
-
 	// Call the host-check handler (no body needed)
-	resp, err := http.Post(tokenURL, "application/json", nil)
-	require.NoError(t, err)
+	resp := postHostCheck(t, ts.URL, hostCheckToken)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
