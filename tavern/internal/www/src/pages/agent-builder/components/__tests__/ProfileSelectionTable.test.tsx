@@ -5,28 +5,6 @@ import ProfileSelectionTable from "../ProfileSelectionTable";
 import { BuildProfile } from "../../types";
 import { SupportedTransports } from "../../../../utils/enums";
 
-vi.mock("@tanstack/react-virtual", async () => {
-    const React = await import("react");
-    return {
-        useVirtualizer: ({ count }: { count: number }) => {
-            const virtualizer = React.useMemo(() => ({
-                getVirtualItems: () =>
-                    Array.from({ length: count }, (_, index) => ({
-                        index,
-                        key: index,
-                        start: index * 80,
-                        size: 80,
-                        end: (index + 1) * 80,
-                    })),
-                getTotalSize: () => count * 80,
-                measureElement: () => {},
-                range: { startIndex: 0, endIndex: Math.max(0, count - 1) },
-            }), [count]);
-            return virtualizer;
-        },
-    };
-});
-
 const mockProfiles: BuildProfile[] = [
     {
         id: "profile-1",

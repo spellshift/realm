@@ -887,25 +887,22 @@ func defaultBuildProfileCallbackURI() string {
 	return domain
 }
 
+const legacyDefaultBuildProfileDescription = "Default build profile. Callback points at the configured OAuth domain, or localhost if OAuth is not configured."
+
 // ensureDefaultBuildProfile creates a "Default" build profile the first time
-// Tavern starts up, so operators have a usable starting point in the Agent
-// Builder UI without first having to configure one from scratch. Existing
-// default profiles are kept, with the older generated description cleared.
+// Tavern starts up and clears the old generated description where it remains.
 func ensureDefaultBuildProfile(ctx context.Context, client *ent.Client) error {
-	profile, err := client.BuildProfile.Query().
+	exists, err := client.BuildProfile.Query().
 		Where(buildprofile.Name(builder.DefaultBuildProfileName)).
-		Only(ctx)
-	if ent.IsNotFound(err) {
-		profile = nil
-	} else if err != nil {
+		Exist(ctx)
+	if err != nil {
 		return fmt.Errorf("failed to check for existing default build profile: %w", err)
 	}
-	if profile != nil {
-		if profile.Description == "" {
-			return nil
-		}
-		if err := client.BuildProfile.UpdateOne(profile).SetDescription("").Exec(ctx); err != nil {
-			return fmt.Errorf("failed to clear default build profile description: %w", err)
+	if exists {
+		if err := client.BuildProfile.Update().
+			Where(buildprofile.Name(builder.DefaultBuildProfileName), buildprofile.Description(legacyDefaultBuildProfileDescription)).
+			SetDescription("").Exec(ctx); err != nil {
+			return fmt.Errorf("failed to clear legacy default build profile description: %w", err)
 		}
 		return nil
 	}

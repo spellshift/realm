@@ -11,6 +11,8 @@ import { Tooltip } from "@chakra-ui/react";
 import { useLocation } from "react-router-dom";
 import UserFilterBar from "../../components/UserFilterBar";
 
+const AGENT_FILTER_OPTIONS = [{ value: "agents", label: "Agents" }];
+
 function getFilterFields(pathname: string): FilterFieldType[] | null {
     if (pathname.startsWith('/hosts/')) {
         return [FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.USER, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
@@ -132,8 +134,8 @@ export default function FilterControls() {
                     <Select
                         isClearable
                         placeholder="Filter by Type"
-                        options={[{ value: "agents", label: "Agents" }]}
-                        value={filters.agentOnly ? { value: "agents", label: "Agents" } : null}
+                        options={AGENT_FILTER_OPTIONS}
+                        value={filters.agentOnly ? AGENT_FILTER_OPTIONS[0] : null}
                         onChange={(option) => updateFilters({ agentOnly: option?.value === "agents" })}
                     />
                 </div>

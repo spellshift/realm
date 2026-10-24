@@ -4,28 +4,6 @@ import { ChakraProvider } from "@chakra-ui/react";
 import TargetSelectionTable from "../TargetSelectionTable";
 import { COMPILE_TARGETS } from "../../types";
 
-vi.mock("@tanstack/react-virtual", async () => {
-    const React = await import("react");
-    return {
-        useVirtualizer: ({ count }: { count: number }) => {
-            const virtualizer = React.useMemo(() => ({
-                getVirtualItems: () =>
-                    Array.from({ length: count }, (_, index) => ({
-                        index,
-                        key: index,
-                        start: index * 48,
-                        size: 48,
-                        end: (index + 1) * 48,
-                    })),
-                getTotalSize: () => count * 48,
-                measureElement: () => {},
-                range: { startIndex: 0, endIndex: Math.max(0, count - 1) },
-            }), [count]);
-            return virtualizer;
-        },
-    };
-});
-
 describe("TargetSelectionTable", () => {
     it("renders target platforms, formats, and descriptions", () => {
         const onSelect = vi.fn();
