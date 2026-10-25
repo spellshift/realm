@@ -202,16 +202,17 @@ export function useBuilders(options: { skip?: boolean } = {}) {
         skip,
         fetchPolicy: "cache-and-network",
     });
-    const builders = nodes(result.data?.builders).map(mapBuilder);
+    const now = Date.now();
+    const builders = nodes(result.data?.builders).map((builder) => mapBuilder(builder, now));
     return { ...result, builders };
 }
 
-function mapBuilder(builder: BuilderRecord): Builder {
+function mapBuilder(builder: BuilderRecord, now: number = Date.now()): Builder {
     return {
         ...builder,
         supportedTargets: builder.supportedTargets.map((target) => target as Platform),
         lastSeenAtRaw: builder.lastSeenAt,
-        online: BuilderHealthy(builder.lastSeenAt, builder.pollInterval),
+        online: BuilderHealthy(builder.lastSeenAt, builder.pollInterval, now),
         lastSeenAt: builder.lastSeenAt ? formatDistanceToNow(new Date(builder.lastSeenAt), { addSuffix: true }) : null,
     };
 }

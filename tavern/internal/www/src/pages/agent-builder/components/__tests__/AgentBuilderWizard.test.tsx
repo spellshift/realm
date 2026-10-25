@@ -59,6 +59,11 @@ const emptyBuildersMock = {
     },
 };
 
+const profilesErrorMock = {
+    request: { query: GET_BUILD_PROFILES },
+    error: new Error("boom"),
+};
+
 const windowsBuilderMock = {
     request: { query: GET_ONLINE_BUILDER_PLATFORMS },
     result: { data: { onlineBuilderPlatforms: ["PLATFORM_WINDOWS"] } },
@@ -141,6 +146,12 @@ describe("AgentBuilderWizard", () => {
         expect(screen.queryByRole("button", { name: "Enroll builder" })).not.toBeInTheDocument();
         expect(screen.queryByText("Select build profile")).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "continue profile step" })).not.toBeInTheDocument();
+    });
+
+    it("still surfaces a build profile load error while the no-online-builders empty state is shown", async () => {
+        renderWizard(profilesErrorMock, emptyBuildersMock);
+        await waitFor(() => expect(screen.getByText("No online builders available")).toBeInTheDocument());
+        expect(screen.getByText("Unable to load build profiles")).toBeInTheDocument();
     });
 
     it("shows enrollment guidance on the first step according to admin access", async () => {
