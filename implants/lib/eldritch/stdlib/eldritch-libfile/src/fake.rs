@@ -101,6 +101,25 @@ impl FileLibrary for FileLibraryFake {
         Err("Path not found".to_string())
     }
 
+    fn append_binary(&self, path: String, content: Value) -> Result<(), String> {
+        let bytes = match content {
+            Value::Bytes(b) => b,
+            _ => return Err("content must be of type Bytes".into()),
+        };
+
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+
+        if let Some(entry) = Self::traverse(&mut root, &parts) {
+            if let FsEntry::File(data) = entry {
+                data.extend_from_slice(&bytes);
+                return Ok(());
+            }
+            return Err("Not a file".to_string());
+        }
+        Err("Path not found".to_string())
+    }
+
     fn compress(&self, _src: String, _dst: String) -> Result<(), String> {
         Ok(())
     }

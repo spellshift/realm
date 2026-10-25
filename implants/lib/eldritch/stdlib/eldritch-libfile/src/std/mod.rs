@@ -34,6 +34,7 @@ pub mod timestomp_impl;
 pub mod tmp_dir_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
+mod append_binary_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]
@@ -42,6 +43,10 @@ pub struct StdFileLibrary;
 impl FileLibrary for StdFileLibrary {
     fn append(&self, path: String, content: String) -> Result<(), String> {
         append_impl::append(path, content)
+    }
+
+    fn append_binary(&self, path: String, content: Value) -> Result<(), String> {
+        append_binary_impl::append_binary(path, content)
     }
 
     fn compress(&self, src: String, dst: String) -> Result<(), String> {
