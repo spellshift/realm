@@ -36,6 +36,9 @@ func TestBuildProfileMutations(t *testing.T) {
 			id name description buildImage
 		}
 	}`
+	createMut := `mutation createBuildProfile($input: CreateBuildProfileInput!) {
+		createBuildProfile(input: $input) { id name }
+	}`
 	deleteMut := `mutation deleteBuildProfile($profileID: ID!) {
 		deleteBuildProfile(profileID: $profileID)
 	}`
@@ -50,6 +53,10 @@ func TestBuildProfileMutations(t *testing.T) {
 			"buildImage":      "updated:image",
 		}
 	}
+	seededDefault := graph.BuildProfile.Create().
+		SetName(builder.DefaultBuildProfileName).
+		SetDescription("").
+		SaveX(ctx)
 
 	t.Run("UpdateBuildProfile", func(t *testing.T) {
 		profile := graph.BuildProfile.Create().
@@ -70,17 +77,58 @@ func TestBuildProfileMutations(t *testing.T) {
 	})
 
 	t.Run("UpdateBuildProfile_DefaultBlocked", func(t *testing.T) {
-		defaultProfile := graph.BuildProfile.Create().
-			SetName(builder.DefaultBuildProfileName).
-			SetDescription("seeded default").
-			SaveX(ctx)
-
 		var resp struct {
 			UpdateBuildProfile struct{ ID string }
 		}
-		err := gqlClient.Post(updateMut, &resp, client.Var("profileID", strconv.Itoa(defaultProfile.ID)), client.Var("input", baseInput(builder.DefaultBuildProfileName)))
+		err := gqlClient.Post(updateMut, &resp, client.Var("profileID", strconv.Itoa(seededDefault.ID)), client.Var("input", baseInput(builder.DefaultBuildProfileName)))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot be edited")
+	})
+
+	t.Run("CreateBuildProfile_DefaultRejected", func(t *testing.T) {
+		var resp struct {
+			CreateBuildProfile struct{ ID, Name string }
+		}
+		err := gqlClient.Post(createMut, &resp, client.Var("input", baseInput(builder.DefaultBuildProfileName)))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "reserved")
+	})
+
+	t.Run("UpdateBuildProfile_RenameToDefaultRejected", func(t *testing.T) {
+		profile := graph.BuildProfile.Create().
+			SetName("another-profile").
+			SetDescription("original description").
+			SaveX(ctx)
+		var resp struct {
+			UpdateBuildProfile struct{ ID, Name, Description, BuildImage string }
+		}
+		err := gqlClient.Post(updateMut, &resp, client.Var("profileID", strconv.Itoa(profile.ID)), client.Var("input", baseInput(builder.DefaultBuildProfileName)))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "reserved")
+	})
+
+	t.Run("ExistingDuplicateDefaultRecoverable", func(t *testing.T) {
+		duplicate := graph.BuildProfile.Create().
+			SetName(builder.DefaultBuildProfileName).
+			SetDescription("operator-created duplicate").
+			SaveX(ctx)
+		var updated struct {
+			UpdateBuildProfile struct{ ID, Name, Description, BuildImage string }
+		}
+		err := gqlClient.Post(updateMut, &updated, client.Var("profileID", strconv.Itoa(duplicate.ID)), client.Var("input", baseInput("recovered-default")))
+		require.NoError(t, err)
+		assert.Equal(t, "recovered-default", updated.UpdateBuildProfile.Name)
+
+		duplicate = graph.BuildProfile.Create().
+			SetName(builder.DefaultBuildProfileName).
+			SetDescription("second duplicate").
+			SaveX(ctx)
+		var deleted struct {
+			DeleteBuildProfile string
+		}
+		err = gqlClient.Post(deleteMut, &deleted, client.Var("profileID", strconv.Itoa(duplicate.ID)))
+		require.NoError(t, err)
+		assert.Equal(t, strconv.Itoa(duplicate.ID), deleted.DeleteBuildProfile)
 	})
 
 	t.Run("DeleteBuildProfile", func(t *testing.T) {
@@ -101,19 +149,14 @@ func TestBuildProfileMutations(t *testing.T) {
 	})
 
 	t.Run("DeleteBuildProfile_DefaultBlocked", func(t *testing.T) {
-		defaultProfile := graph.BuildProfile.Create().
-			SetName(builder.DefaultBuildProfileName).
-			SetDescription("seeded default").
-			SaveX(ctx)
-
 		var resp struct {
 			DeleteBuildProfile string
 		}
-		err := gqlClient.Post(deleteMut, &resp, client.Var("profileID", strconv.Itoa(defaultProfile.ID)))
+		err := gqlClient.Post(deleteMut, &resp, client.Var("profileID", strconv.Itoa(seededDefault.ID)))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot be deleted")
 
-		_, err = graph.BuildProfile.Get(ctx, defaultProfile.ID)
+		_, err = graph.BuildProfile.Get(ctx, seededDefault.ID)
 		require.NoError(t, err, "default profile should not have been deleted")
 	})
 }

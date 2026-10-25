@@ -24,7 +24,7 @@ export const ProfilesTab = ({
     onEditProfile: (profile: BuildProfile) => void;
     onDeleteProfile: (profile: BuildProfile) => void;
 }) => {
-    const columns = useMemo(() => getProfileColumns(onEditProfile, onDeleteProfile), [onEditProfile, onDeleteProfile]);
+    const columns = useMemo(() => getProfileColumns(profiles, onEditProfile, onDeleteProfile), [profiles, onEditProfile, onDeleteProfile]);
 
     return (
         <div className="flex flex-col gap-2">

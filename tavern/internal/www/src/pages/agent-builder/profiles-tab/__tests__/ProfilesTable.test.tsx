@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ChakraProvider } from "@chakra-ui/react";
 import Table from "../../../../components/tavern-base-ui/table/Table";
 import { getProfileColumns } from "../ProfilesTable";
@@ -7,7 +7,7 @@ import { BuildProfile, DEFAULT_BUILD_PROFILE_NAME } from "../../types";
 import { SupportedTransports } from "../../../../utils/enums";
 
 const editableProfile: BuildProfile = {
-    id: "profile-1",
+    id: "2",
     name: "Linux Prod Beacon",
     description: "Production Linux agent",
     buildImage: "spellshift/devcontainer:main",
@@ -28,12 +28,18 @@ const editableProfile: BuildProfile = {
 
 const defaultProfile: BuildProfile = {
     ...editableProfile,
-    id: "profile-default",
+    id: "1",
+    name: DEFAULT_BUILD_PROFILE_NAME,
+};
+
+const duplicateDefaultProfile: BuildProfile = {
+    ...editableProfile,
+    id: "3",
     name: DEFAULT_BUILD_PROFILE_NAME,
 };
 
 function renderTable(profiles: BuildProfile[], onEdit = vi.fn(), onDelete = vi.fn()) {
-    const columns = getProfileColumns(onEdit, onDelete);
+    const columns = getProfileColumns(profiles, onEdit, onDelete);
     render(
         <ChakraProvider>
             <Table data={profiles} columns={columns} />
@@ -60,9 +66,8 @@ describe("ProfilesTable", () => {
         expect(screen.getByText("Default profile")).toBeInTheDocument();
     });
 
-    it("calls onEdit/onDelete with the clicked profile", async () => {
+    it("calls onEdit/onDelete with the clicked profile", () => {
         const { onEdit, onDelete } = renderTable([editableProfile]);
-        const { fireEvent } = await import("@testing-library/react");
         fireEvent.click(screen.getByRole("button", { name: "Edit" }));
         expect(onEdit).toHaveBeenCalledWith(editableProfile);
         fireEvent.click(screen.getByRole("button", { name: "Delete" }));
@@ -73,6 +78,18 @@ describe("ProfilesTable", () => {
         renderTable([editableProfile, defaultProfile]);
         const rows = screen.getAllByRole("row").slice(1); // skip header row
         expect(within(rows[0]).getByRole("button", { name: "Edit" })).toBeInTheDocument();
+        expect(within(rows[1]).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    });
+
+    it("keeps a later Default duplicate editable and deletable", () => {
+        const onEdit = vi.fn();
+        const onDelete = vi.fn();
+        renderTable([duplicateDefaultProfile, defaultProfile], onEdit, onDelete);
+        const rows = screen.getAllByRole("row").slice(1);
+        fireEvent.click(within(rows[0]).getByRole("button", { name: "Edit" }));
+        fireEvent.click(within(rows[0]).getByRole("button", { name: "Delete" }));
+        expect(onEdit).toHaveBeenCalledWith(duplicateDefaultProfile);
+        expect(onDelete).toHaveBeenCalledWith(duplicateDefaultProfile);
         expect(within(rows[1]).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
     });
 });

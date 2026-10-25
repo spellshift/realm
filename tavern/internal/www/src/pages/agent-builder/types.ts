@@ -4,9 +4,8 @@ import { UserNode } from "../../utils/interfacesQuery";
 export const NO_INSTALL_WARNING = "No persistence tome is bundled. Without one, the install command won't persist the agent.";
 
 // Matches builder.DefaultBuildProfileName (tavern/internal/builder/build_config.go) --
-// Tavern seeds a profile with this exact name on startup, and the server
-// rejects editing/deleting it. The frontend hides those actions for it too,
-// so operators aren't shown a button that will just error.
+// Tavern seeds a profile with this exact name on startup. The oldest matching
+// profile is protected; later duplicates remain editable so they can be removed.
 export const DEFAULT_BUILD_PROFILE_NAME = "Default";
 
 // BuildTasks/Builders can only target the OSes imix actually builds for --

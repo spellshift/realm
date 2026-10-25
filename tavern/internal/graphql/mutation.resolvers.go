@@ -567,6 +567,9 @@ func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (in
 
 // CreateBuildProfile is the resolver for the createBuildProfile field.
 func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error) {
+	if input.Name == builder.DefaultBuildProfileName {
+		return nil, fmt.Errorf("the name %q is reserved for the default build profile", builder.DefaultBuildProfileName)
+	}
 	creator := r.client.BuildProfile.Create().
 		SetName(input.Name).
 		SetDescription(input.Description).
@@ -622,8 +625,15 @@ func (r *mutationResolver) UpdateBuildProfile(ctx context.Context, profileID int
 	if err != nil {
 		return nil, fmt.Errorf("failed to load build profile: %w", err)
 	}
-	if profile.Name == builder.DefaultBuildProfileName {
+	protected, err := r.isSeededDefaultBuildProfile(ctx, profile)
+	if err != nil {
+		return nil, err
+	}
+	if protected {
 		return nil, fmt.Errorf("the default build profile cannot be edited")
+	}
+	if input.Name == builder.DefaultBuildProfileName && profile.Name != builder.DefaultBuildProfileName {
+		return nil, fmt.Errorf("the name %q is reserved for the default build profile", builder.DefaultBuildProfileName)
 	}
 
 	updater := profile.Update().
@@ -685,7 +695,11 @@ func (r *mutationResolver) DeleteBuildProfile(ctx context.Context, profileID int
 	if err != nil {
 		return 0, fmt.Errorf("failed to load build profile: %w", err)
 	}
-	if profile.Name == builder.DefaultBuildProfileName {
+	protected, err := r.isSeededDefaultBuildProfile(ctx, profile)
+	if err != nil {
+		return 0, err
+	}
+	if protected {
 		return 0, fmt.Errorf("the default build profile cannot be deleted")
 	}
 	if err := r.client.BuildProfile.DeleteOneID(profileID).Exec(ctx); err != nil {
