@@ -39,7 +39,9 @@ fn test_golem_main_basic_non_interactive() -> anyhow::Result<()> {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(r#"HELLO"#))
-        .stdout(predicate::str::contains(r#""append", "append_binary", "compress""#));
+        .stdout(predicate::str::contains(
+            r#""append", "append_binary", "compress""#,
+        ));
 
     Ok(())
 }
