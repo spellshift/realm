@@ -1781,6 +1781,21 @@ $> sys.shell('whoami')['stdout']
 domain\administrator
 ```
 
+### sys.whereis
+
+`sys.whereis(bin: str) -> str`
+
+The **sys.whereis** method returns the resolved path of a binary. If this binary does not resolve to anything, an empty string is returned.
+
+Example:
+
+```python
+$> sys.whereis("sh")
+"/usr/bin/sh"
+$> sys.whereis("some_random_binary_that_doesnt_exist")
+""
+```
+
 ### sys.write_reg
 
 `sys.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
