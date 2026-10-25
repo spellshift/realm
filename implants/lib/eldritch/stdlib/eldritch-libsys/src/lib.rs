@@ -218,6 +218,16 @@ pub trait SysLibrary {
     fn use_token(&self, id: i64) -> Result<bool, String>;
 
     #[eldritch_method]
+    /// Looks up the full path in PATH
+    ///
+    /// **Parameters**
+    /// - `bin` (`str`): The binary to lookup
+    ///
+    /// **Returns**
+    /// - `bool`: True on success.
+    fn whereis(&self, bin: String) -> Result<String, String>;
+
+    #[eldritch_method]
     /// Writes a value to the Windows Registry.
     ///
     /// **Parameters**

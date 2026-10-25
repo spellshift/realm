@@ -403,14 +403,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
 		hostCheckSchedule = "* * * * *"
 	}
-	// Generate a JWT scoped to the host-check endpoint and append it as a query parameter.
+	// Generate a JWT scoped to the host-check endpoint.
 	hostCheckToken, err := hostcheck.NewToken(privKey)
 	if err != nil {
 		client.Close()
 		sched.Close()
 		return nil, fmt.Errorf("failed to generate host-check JWT: %w", err)
 	}
-	hostCheckURL = fmt.Sprintf("%s?token=%s", hostCheckURL, url.QueryEscape(hostCheckToken))
 	slog.InfoContext(ctx, "resolved host check configuration", "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
 
 	// Schedule a recurring host-lost check.
@@ -423,8 +422,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		Name:     "host-lost-poll",
 		Schedule: hostCheckSchedule,
 		HTTPTarget: scheduler.HTTPTarget{
-			URL:    hostCheckURL,
-			Method: "POST",
+			URL:     hostCheckURL,
+			Method:  "POST",
+			Headers: map[string]string{"Authorization": "Bearer " + hostCheckToken},
 		},
 	}); err != nil {
 		if errors.Is(err, scheduler.ErrJobExists) {
