@@ -9,7 +9,8 @@ export enum FilterFieldType {
     TOME_FIELDS = 'tomeFields',
     TOME_MULTI_SEARCH = "tomeMultiSearch",
     ASSET_NAME = "assetName",
-    USER = "user"
+    USER = "user",
+    AGENT = "agent"
 }
 
 const STORAGE_KEY = 'realm-filters-v1.1'
@@ -22,6 +23,7 @@ export type Filters = {
     tomeMultiSearch: string,
     assetName: string,
     userId: string,
+    agentOnly: boolean,
 }
 
 // Storage format includes isLocked alongside filter values
@@ -34,7 +36,8 @@ const defaultFilters: Filters = {
     tomeFields: [],
     tomeMultiSearch: "",
     assetName: "",
-    userId: ""
+    userId: "",
+    agentOnly: false,
 }
 
 function isValidFilterBarOption(item: any): item is FilterBarOption {
@@ -62,6 +65,7 @@ function validateStoredFilters(data: any): StoredFilters {
         tomeMultiSearch: (v) => typeof v === 'string',
         assetName: (v) => typeof v === 'string',
         userId: (v) => typeof v === 'string',
+        agentOnly: (v) => typeof v === 'boolean',
         beaconFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
         tomeFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
     }
@@ -110,6 +114,8 @@ export function calculateFilterCount(filters: Filters, field: FilterFieldType): 
             return filters.assetName !== "" ? 1 : 0;
         case FilterFieldType.USER:
             return filters.userId !== "" ? 1 : 0;
+        case FilterFieldType.AGENT:
+            return filters.agentOnly ? 1 : 0;
         case FilterFieldType.BEACON_FIELDS:
             return filters.beaconFields.length;
         case FilterFieldType.TOME_FIELDS:

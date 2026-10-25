@@ -3,6 +3,9 @@
 package builder
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -26,6 +29,8 @@ const (
 	FieldUpstream = "upstream"
 	// FieldPollInterval holds the string denoting the poll_interval field in the database.
 	FieldPollInterval = "poll_interval"
+	// FieldExecutor holds the string denoting the executor field in the database.
+	FieldExecutor = "executor"
 	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
 	FieldLastSeenAt = "last_seen_at"
 	// EdgeBuildtasks holds the string denoting the buildtasks edge name in mutations.
@@ -50,6 +55,7 @@ var Columns = []string{
 	FieldSupportedTargets,
 	FieldUpstream,
 	FieldPollInterval,
+	FieldExecutor,
 	FieldLastSeenAt,
 }
 
@@ -81,6 +87,32 @@ var (
 	// PollIntervalValidator is a validator for the "poll_interval" field. It is called by the builders before save.
 	PollIntervalValidator func(int) error
 )
+
+// Executor defines the type for the "executor" enum field.
+type Executor string
+
+// ExecutorDocker is the default value of the Executor enum.
+const DefaultExecutor = ExecutorDocker
+
+// Executor values.
+const (
+	ExecutorDocker Executor = "docker"
+	ExecutorLocal  Executor = "local"
+)
+
+func (e Executor) String() string {
+	return string(e)
+}
+
+// ExecutorValidator is a validator for the "executor" field enum values. It is called by the builders before save.
+func ExecutorValidator(e Executor) error {
+	switch e {
+	case ExecutorDocker, ExecutorLocal:
+		return nil
+	default:
+		return fmt.Errorf("builder: invalid enum value for executor field: %q", e)
+	}
+}
 
 // OrderOption defines the ordering options for the Builder queries.
 type OrderOption func(*sql.Selector)
@@ -115,6 +147,11 @@ func ByPollInterval(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPollInterval, opts...).ToFunc()
 }
 
+// ByExecutor orders the results by the executor field.
+func ByExecutor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExecutor, opts...).ToFunc()
+}
+
 // ByLastSeenAt orders the results by the last_seen_at field.
 func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
@@ -139,4 +176,22 @@ func newBuildtasksStep() *sqlgraph.Step {
 		sqlgraph.To(BuildtasksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, BuildtasksTable, BuildtasksColumn),
 	)
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e Executor) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *Executor) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = Executor(str)
+	if err := ExecutorValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid Executor", str)
+	}
+	return nil
 }

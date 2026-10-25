@@ -31,6 +31,8 @@ type Builder struct {
 	Upstream string `json:"upstream,omitempty"`
 	// Builder task polling interval in seconds.
 	PollInterval int `json:"poll_interval,omitempty"`
+	// Execution mode written into the builder configuration.
+	Executor builder.Executor `json:"executor,omitempty"`
 	// Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
 	LastSeenAt *time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -70,7 +72,7 @@ func (*Builder) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case builder.FieldID, builder.FieldPollInterval:
 			values[i] = new(sql.NullInt64)
-		case builder.FieldIdentifier, builder.FieldUpstream:
+		case builder.FieldIdentifier, builder.FieldUpstream, builder.FieldExecutor:
 			values[i] = new(sql.NullString)
 		case builder.FieldCreatedAt, builder.FieldLastModifiedAt, builder.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
@@ -132,6 +134,12 @@ func (b *Builder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field poll_interval", values[i])
 			} else if value.Valid {
 				b.PollInterval = int(value.Int64)
+			}
+		case builder.FieldExecutor:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field executor", values[i])
+			} else if value.Valid {
+				b.Executor = builder.Executor(value.String)
 			}
 		case builder.FieldLastSeenAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -198,6 +206,9 @@ func (b *Builder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("poll_interval=")
 	builder.WriteString(fmt.Sprintf("%v", b.PollInterval))
+	builder.WriteString(", ")
+	builder.WriteString("executor=")
+	builder.WriteString(fmt.Sprintf("%v", b.Executor))
 	builder.WriteString(", ")
 	if v := b.LastSeenAt; v != nil {
 		builder.WriteString("last_seen_at=")

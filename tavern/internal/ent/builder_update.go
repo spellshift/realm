@@ -84,6 +84,20 @@ func (bu *BuilderUpdate) AddPollInterval(i int) *BuilderUpdate {
 	return bu
 }
 
+// SetExecutor sets the "executor" field.
+func (bu *BuilderUpdate) SetExecutor(b builder.Executor) *BuilderUpdate {
+	bu.mutation.SetExecutor(b)
+	return bu
+}
+
+// SetNillableExecutor sets the "executor" field if the given value is not nil.
+func (bu *BuilderUpdate) SetNillableExecutor(b *builder.Executor) *BuilderUpdate {
+	if b != nil {
+		bu.SetExecutor(*b)
+	}
+	return bu
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (bu *BuilderUpdate) SetLastSeenAt(t time.Time) *BuilderUpdate {
 	bu.mutation.SetLastSeenAt(t)
@@ -188,6 +202,11 @@ func (bu *BuilderUpdate) check() error {
 			return &ValidationError{Name: "poll_interval", err: fmt.Errorf(`ent: validator failed for field "Builder.poll_interval": %w`, err)}
 		}
 	}
+	if v, ok := bu.mutation.Executor(); ok {
+		if err := builder.ExecutorValidator(v); err != nil {
+			return &ValidationError{Name: "executor", err: fmt.Errorf(`ent: validator failed for field "Builder.executor": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -222,6 +241,9 @@ func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := bu.mutation.AddedPollInterval(); ok {
 		_spec.AddField(builder.FieldPollInterval, field.TypeInt, value)
+	}
+	if value, ok := bu.mutation.Executor(); ok {
+		_spec.SetField(builder.FieldExecutor, field.TypeEnum, value)
 	}
 	if value, ok := bu.mutation.LastSeenAt(); ok {
 		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
@@ -347,6 +369,20 @@ func (buo *BuilderUpdateOne) AddPollInterval(i int) *BuilderUpdateOne {
 	return buo
 }
 
+// SetExecutor sets the "executor" field.
+func (buo *BuilderUpdateOne) SetExecutor(b builder.Executor) *BuilderUpdateOne {
+	buo.mutation.SetExecutor(b)
+	return buo
+}
+
+// SetNillableExecutor sets the "executor" field if the given value is not nil.
+func (buo *BuilderUpdateOne) SetNillableExecutor(b *builder.Executor) *BuilderUpdateOne {
+	if b != nil {
+		buo.SetExecutor(*b)
+	}
+	return buo
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (buo *BuilderUpdateOne) SetLastSeenAt(t time.Time) *BuilderUpdateOne {
 	buo.mutation.SetLastSeenAt(t)
@@ -464,6 +500,11 @@ func (buo *BuilderUpdateOne) check() error {
 			return &ValidationError{Name: "poll_interval", err: fmt.Errorf(`ent: validator failed for field "Builder.poll_interval": %w`, err)}
 		}
 	}
+	if v, ok := buo.mutation.Executor(); ok {
+		if err := builder.ExecutorValidator(v); err != nil {
+			return &ValidationError{Name: "executor", err: fmt.Errorf(`ent: validator failed for field "Builder.executor": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -515,6 +556,9 @@ func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err e
 	}
 	if value, ok := buo.mutation.AddedPollInterval(); ok {
 		_spec.AddField(builder.FieldPollInterval, field.TypeInt, value)
+	}
+	if value, ok := buo.mutation.Executor(); ok {
+		_spec.SetField(builder.FieldExecutor, field.TypeEnum, value)
 	}
 	if value, ok := buo.mutation.LastSeenAt(); ok {
 		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
