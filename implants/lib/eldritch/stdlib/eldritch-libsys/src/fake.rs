@@ -132,6 +132,10 @@ impl SysLibrary for SysLibraryFake {
         Ok(true)
     }
 
+    fn whereis(&self, bin: String) -> Result<String, String> {
+        Ok("".to_string())
+    }
+
     fn write_reg(
         &self,
         _path: String,

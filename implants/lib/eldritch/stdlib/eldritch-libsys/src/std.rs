@@ -25,6 +25,7 @@ mod reg_utils;
 mod shell_impl;
 pub mod tokens_impl;
 mod use_token_impl;
+mod whereis_impl;
 mod write_reg_impl;
 
 #[derive(Debug)]
@@ -121,6 +122,10 @@ impl SysLibrary for StdSysLibrary {
 
     fn use_token(&self, id: i64) -> Result<bool, String> {
         use_token_impl::use_token(id)
+    }
+
+    fn whereis(&self, bin: String) -> Result<String, String> {
+        whereis_impl::whereis(bin)
     }
 
     fn write_reg(
