@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useMutation } from "@apollo/client";
+import { useToast } from "@chakra-ui/react";
 import { TabGroup, TabPanels, TabPanel } from "@headlessui/react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { FileTerminal } from "lucide-react";
@@ -38,6 +39,7 @@ const TAB_NAMES = ["agents", "profiles", "builders"] as const;
  */
 export const AgentBuilderLandingPage = () => {
     const navigate = useNavigate();
+    const toast = useToast();
     const [selectedAsset, setSelectedAsset] = useState<{ id: string; name: string } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const tabParam = searchParams.get("tab");
@@ -67,6 +69,18 @@ export const AgentBuilderLandingPage = () => {
     const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
     const [deleteProfile] = useMutation(DELETE_BUILD_PROFILE, {
         refetchQueries: [{ query: GET_BUILD_PROFILES }],
+        onCompleted: () => {
+            toast({ title: "Build profile deleted", status: "success", duration: 2000, isClosable: true });
+        },
+        onError: (err) => {
+            toast({
+                title: "Failed to delete build profile",
+                description: err.message,
+                status: "error",
+                duration: 4000,
+                isClosable: true,
+            });
+        },
     });
 
     const goToWizard = () => navigate("/builder/new");

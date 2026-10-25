@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import AgentBuilderLandingPage from "../AgentBuilderLandingPage";
-import { GET_BUILD_PROFILES, GET_BUILDERS, GET_BUILD_TASKS } from "../queries";
+import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, GET_BUILDERS, GET_BUILD_TASKS } from "../queries";
 
 beforeAll(() => {
     if (typeof globalThis.ResizeObserver === "undefined") {
@@ -28,6 +28,27 @@ const emptyTasksMock = {
 const emptyBuildersMock = {
     request: { query: GET_BUILDERS },
     result: { data: { builders: { edges: [] } } },
+};
+
+const oneProfileMock = {
+    request: { query: GET_BUILD_PROFILES },
+    result: { data: { buildProfiles: { edges: [
+        { node: {
+            __typename: "BuildProfile",
+            id: "profile-1",
+            name: "Linux Default Beacon",
+            description: "Standard Linux agent",
+            buildImage: "spellshift/devcontainer:main",
+            buildScript: "{{.BuildCommand}}",
+            artifactPath: "{{.ArtifactPath}}",
+            prebuildscript: "",
+            setupscript: "",
+            postbuildscript: "",
+            unique: "",
+            transports: [{ __typename: "BuildProfileTransport", uri: "http://127.0.0.1:8000", interval: 5, type: "GRPC", extra: "" }],
+            tomes: [],
+        } },
+    ] }, tomes: { edges: [] } } },
 };
 
 function renderPage(mocks: ReadonlyArray<MockedResponse>, initialEntry = "/builder") {
@@ -64,5 +85,18 @@ describe("AgentBuilderLandingPage -- tab coordination", () => {
         screen.getByRole("tab", { name: /Profiles/ }).click();
 
         expect(await screen.findByText("No build profiles available")).toBeInTheDocument();
+    });
+
+    it("shows a 'Build profile deleted' toast after deleting a profile", async () => {
+        const deleteMock = {
+            request: { query: DELETE_BUILD_PROFILE, variables: { profileID: "profile-1" } },
+            result: { data: { deleteBuildProfile: "profile-1" } },
+        };
+        renderPage([oneProfileMock, emptyTasksMock, emptyBuildersMock, deleteMock, oneProfileMock], "/builder?tab=profiles");
+
+        await screen.findByText("Linux Default Beacon");
+        fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+        await waitFor(() => expect(screen.getByText("Build profile deleted")).toBeInTheDocument());
     });
 });
