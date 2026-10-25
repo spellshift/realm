@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
+mod append_binary_impl;
 pub mod append_impl;
 pub mod compress_impl;
 pub mod copy_impl;
@@ -42,6 +43,10 @@ pub struct StdFileLibrary;
 impl FileLibrary for StdFileLibrary {
     fn append(&self, path: String, content: String) -> Result<(), String> {
         append_impl::append(path, content)
+    }
+
+    fn append_binary(&self, path: String, content: Value) -> Result<(), String> {
+        append_binary_impl::append_binary(path, content)
     }
 
     fn compress(&self, src: String, dst: String) -> Result<(), String> {

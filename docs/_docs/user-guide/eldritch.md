@@ -663,7 +663,13 @@ The `file` library gives you comprehensive control to interact with files and di
 
 `file.append(path: str, content: str) -> None`
 
-The **file.append** method appends the `content` to file at `path`. If no file exists at path create the file with the content.
+The **file.append** method appends the `content` to file at `path`. If no file exists at path, it will create the file with the content.
+
+### file.append_binary
+
+`file.append_binary(path: str, content: Bytes) -> None`
+
+The **file.append_binary** method appends binary data to `path`. If no file exists at the path, it will create the file with the content.
 
 ### file.compress
 
