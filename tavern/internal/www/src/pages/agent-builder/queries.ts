@@ -22,6 +22,16 @@ export const GET_BUILDERS = gql`
         builders { edges { node { id identifier supportedTargets upstream pollInterval lastSeenAt } } }
     }
 `;
+export const GET_ENROLLED_BUILDER = gql`
+    query EnrolledAgentBuilder($identifier: String!) {
+        builders(where: { identifier: $identifier }) { edges { node { id identifier pollInterval lastSeenAt } } }
+    }
+`;
+export const GET_ONLINE_BUILDER_PLATFORMS = gql`
+    query OnlineAgentBuilderPlatforms {
+        onlineBuilderPlatforms
+    }
+`;
 export const GET_BUILD_TASKS = gql`
     query AgentBuildTasks {
         buildTasks(orderBy: [{ field: CREATED_AT, direction: DESC }]) {
@@ -201,6 +211,22 @@ export function useBuilders(options: { skip?: boolean } = {}) {
         lastSeenAt: builder.lastSeenAt ? formatDistanceToNow(new Date(builder.lastSeenAt), { addSuffix: true }) : null,
     }));
     return { ...result, builders };
+}
+
+export function useOnlineBuilderPlatforms() {
+    const result = useQuery<{ onlineBuilderPlatforms: Platform[] }>(GET_ONLINE_BUILDER_PLATFORMS, {
+        fetchPolicy: "network-only",
+    });
+    return { ...result, platforms: result.loading || result.error ? [] : result.data?.onlineBuilderPlatforms ?? [] };
+}
+
+export function useEnrolledBuilder(identifier: string | null, skip: boolean) {
+    const result = useQuery<{ builders: Connection<Pick<BuilderRecord, "id" | "identifier" | "pollInterval" | "lastSeenAt">> }>(
+        GET_ENROLLED_BUILDER,
+        { variables: { identifier: identifier ?? "" }, skip: skip || !identifier, fetchPolicy: "network-only" }
+    );
+    const enrolled = nodes(result.data?.builders).find((builder) => builder.identifier === identifier);
+    return { ...result, online: !result.loading && !result.error && !!enrolled && BuilderHealthy(enrolled.lastSeenAt, enrolled.pollInterval) };
 }
 
 export function useBuildTasks(options: { skip?: boolean } = {}) {

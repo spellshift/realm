@@ -5,7 +5,7 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import AgentBuilderWizard from "../AgentBuilderWizard";
-import { GET_BUILD_PROFILES, GET_BUILDERS } from "../../queries";
+import { GET_BUILD_PROFILES, GET_ONLINE_BUILDER_PLATFORMS } from "../../queries";
 import { AuthorizationContext } from "../../../../context/AuthorizationContext";
 
 vi.mock("@tanstack/react-virtual", async () => {
@@ -51,12 +51,17 @@ const emptyProfilesMock = {
 };
 
 const emptyBuildersMock = {
-    request: { query: GET_BUILDERS },
+    request: { query: GET_ONLINE_BUILDER_PLATFORMS },
     result: {
         data: {
-            builders: { edges: [] },
+            onlineBuilderPlatforms: [],
         },
     },
+};
+
+const windowsBuilderMock = {
+    request: { query: GET_ONLINE_BUILDER_PLATFORMS },
+    result: { data: { onlineBuilderPlatforms: ["PLATFORM_WINDOWS"] } },
 };
 
 const populatedProfilesMock = {
@@ -160,5 +165,19 @@ describe("AgentBuilderWizard", () => {
         renderWizard(populatedProfilesMock, emptyBuildersMock, true);
         await waitFor(() => expect(screen.getByText("No online builders available")).toBeInTheDocument());
         expect(screen.getByRole("button", { name: "Enroll builder" })).toBeInTheDocument();
+    });
+
+    it("keeps target compatibility gating when another platform has an online builder", async () => {
+        renderWizard(populatedProfilesMock, windowsBuilderMock);
+        await waitFor(() => expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument());
+        expect(screen.queryByText("No online builders available")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByRole("row")[1]);
+        fireEvent.click(screen.getByRole("button", { name: "continue profile step" }));
+        fireEvent.click(screen.getAllByRole("row")[1]);
+        fireEvent.click(screen.getByRole("button", { name: "continue target step" }));
+
+        expect(screen.getByText("No compatible online builder")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "submit agent build" })).toBeDisabled();
     });
 });

@@ -9,7 +9,7 @@ import AlertError from "../../components/tavern-base-ui/AlertError";
 import FormTextField from "../../components/tavern-base-ui/FormTextField";
 import CodeBlock from "../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../components/form-steps";
-import { REGISTER_BUILDER, downloadBuilderConfig, useBuilders } from "./queries";
+import { REGISTER_BUILDER, downloadBuilderConfig, useEnrolledBuilder } from "./queries";
 import { PlatformOption, PLATFORM_OPTIONS } from "./types";
 
 const DEFAULT_UPSTREAM = "http://127.0.0.1:8000";
@@ -29,13 +29,12 @@ export const EnrollBuilderPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<{ identifier: string; config: string } | null>(null);
     const [registerBuilder, { loading }] = useMutation(REGISTER_BUILDER);
-    const { builders, refetch } = useBuilders({ skip: step !== 2 || !result });
-    const registered = builders.some((builder) => builder.identifier === result?.identifier && builder.online);
+    const { online: registered, refetch, error: statusError } = useEnrolledBuilder(result?.identifier ?? null, step !== 2);
     const pollIntervalValid = Number.isInteger(pollInterval) && pollInterval >= 1;
 
     useEffect(() => {
         if (step !== 2 || !result || registered) return;
-        const timer = setInterval(() => { void refetch(); }, 5000);
+        const timer = setInterval(() => { void refetch().catch(() => undefined); }, 5000);
         return () => clearInterval(timer);
     }, [step, result, registered, refetch]);
 
@@ -116,6 +115,7 @@ export const EnrollBuilderPage = () => {
                             <p role="status" className="text-sm text-gray-700">
                                 {registered ? "Builder is online and ready to build agents." : "Waiting for the builder to connect to Tavern…"}
                             </p>
+                            {statusError && <AlertError label="Unable to check builder connection" details={statusError.message} />}
                             <div className="flex gap-2">
                                 <Button buttonVariant="ghost" onClick={() => setStep(1)}>Previous</Button>
                                 <Button buttonStyle={{ color: "purple", size: "md" }} disabled={!registered}

@@ -5,7 +5,7 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import EnrollBuilderPage from "../EnrollBuilderPage";
-import { GET_BUILDERS, REGISTER_BUILDER } from "../queries";
+import { GET_ENROLLED_BUILDER, REGISTER_BUILDER } from "../queries";
 
 const registerBuilderInput = {
     supportedTargets: ["PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_WINDOWS"],
@@ -15,7 +15,7 @@ const registerBuilderInput = {
 };
 
 const offlineBuildersMock = {
-    request: { query: GET_BUILDERS },
+    request: { query: GET_ENROLLED_BUILDER, variables: { identifier: "builder-a1b2c3" } },
     result: { data: { builders: { edges: [
         { node: { id: "b1", identifier: "builder-a1b2c3", supportedTargets: ["PLATFORM_LINUX"], upstream: "http://127.0.0.1:8000", pollInterval: 5, lastSeenAt: null } },
         { node: { id: "b2", identifier: "another-builder", supportedTargets: ["PLATFORM_LINUX"], upstream: "http://127.0.0.1:8000", pollInterval: 5, lastSeenAt: new Date().toISOString() } },
@@ -67,15 +67,15 @@ describe("EnrollBuilderPage", () => {
         expect(screen.getByRole("button", { name: "Configure" })).toBeInTheDocument();
     });
 
-    it("enables Next when the enrolled builder calls back", async () => {
+    it("polls the enrolled identifier and enables Next only after it calls back", async () => {
         renderPage([{
             request: { query: REGISTER_BUILDER, variables: { input: registerBuilderInput } },
             result: { data: { registerBuilder: {
                 builder: { id: "b1", identifier: "builder-a1b2c3" },
                 config: "executor: docker\n",
             } } },
-        }, {
-            request: { query: GET_BUILDERS },
+        }, offlineBuildersMock, {
+            request: { query: GET_ENROLLED_BUILDER, variables: { identifier: "builder-a1b2c3" } },
             result: { data: { builders: { edges: [{ node: {
                 id: "b1", identifier: "builder-a1b2c3", supportedTargets: ["PLATFORM_LINUX"],
                 upstream: "http://127.0.0.1:8000", pollInterval: 5, lastSeenAt: new Date().toISOString(),
@@ -85,6 +85,7 @@ describe("EnrollBuilderPage", () => {
         fireEvent.click(screen.getByRole("button", { name: "Configure" }));
         await waitFor(() => expect(screen.getByText(/mTLS credentials are shown only once/)).toBeInTheDocument());
         fireEvent.click(screen.getByRole("button", { name: "Next" }));
-        await waitFor(() => expect(screen.getByRole("button", { name: "Next" })).toBeEnabled());
-    });
+        await waitFor(() => expect(screen.getByRole("button", { name: "Next" })).toBeDisabled());
+        await waitFor(() => expect(screen.getByRole("button", { name: "Next" })).toBeEnabled(), { timeout: 8500 });
+    }, 15000);
 });

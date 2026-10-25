@@ -6,7 +6,7 @@ import Breadcrumbs from "../../../components/Breadcrumbs";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
 import { useMutation } from "@apollo/client";
-import { CREATE_BUILD_TASK, useBuildProfiles, useBuilders } from "../queries";
+import { CREATE_BUILD_TASK, useBuildProfiles, useOnlineBuilderPlatforms } from "../queries";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { ProfileSelectionTable } from "./ProfileSelectionTable";
 import { TargetSelectionTable } from "./TargetSelectionTable";
@@ -68,16 +68,16 @@ export const AgentBuilderWizard = ({
     const toast = useToast();
     const [currStep, setCurrStep] = useState(0);
     const { profiles, loading, error: profilesError } = useBuildProfiles();
-    const { builders, loading: buildersLoading, error: buildersError } = useBuilders();
+    const { platforms, loading: buildersLoading, error: buildersError } = useOnlineBuilderPlatforms();
     const { data: authorization } = useAuthorization();
-    const noOnlineBuilders = !buildersLoading && !buildersError && builders.every((builder) => !builder.online);
+    const noOnlineBuilders = !buildersLoading && !buildersError && platforms.length === 0;
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
     const setSelectedProfile = (profile: BuildProfile) => setSelectedProfileId(profile.id);
     const [createTask, { loading: creating }] = useMutation(CREATE_BUILD_TASK);
     const [error, setError] = useState<string | null>(null);
     const [selectedTarget, setSelectedTarget] = useState<CompileTarget>(COMPILE_TARGETS[0]);
-    const targetAvailable = builders.some((builder) => builder.online && builder.supportedTargets.includes(selectedTarget.platform));
+    const targetAvailable = platforms.includes(selectedTarget.platform);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [expandedTransports, setExpandedTransports] = useState<Record<number, boolean>>({});
     const toggleTransportExpanded = (index: number) => {
