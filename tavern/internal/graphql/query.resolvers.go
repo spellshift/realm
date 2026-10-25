@@ -8,10 +8,15 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
 
 	"entgo.io/contrib/entgql"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	entbuilder "realm.pub/tavern/internal/ent/builder"
 )
 
 // Assets is the resolver for the assets field.
@@ -253,6 +258,34 @@ func (r *queryResolver) Builders(ctx context.Context, after *entgql.Cursor[int],
 		return query.Paginate(ctx, after, first, before, last, ent.WithBuilderOrder(orderBy))
 	}
 	return query.Paginate(ctx, after, first, before, last, ent.WithBuilderOrder(orderBy))
+}
+
+// OnlineBuilderPlatforms is the resolver for the onlineBuilderPlatforms field.
+func (r *queryResolver) OnlineBuilderPlatforms(ctx context.Context) ([]c2pb.Host_Platform, error) {
+	now := time.Now()
+	builders, err := r.client.Builder.Query().
+		Where(entbuilder.LastSeenAtNotNil(), entbuilder.LastSeenAtGTE(now.Add(-builder.MaxStaleAge))).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query online builder platforms: %w", err)
+	}
+
+	platforms := make(map[c2pb.Host_Platform]struct{})
+	for _, b := range builders {
+		if !builder.BuilderHealthy(*b.LastSeenAt, b.PollInterval, now) {
+			continue
+		}
+		for _, platform := range b.SupportedTargets {
+			platforms[platform] = struct{}{}
+		}
+	}
+
+	available := make([]c2pb.Host_Platform, 0, len(platforms))
+	for platform := range platforms {
+		available = append(available, platform)
+	}
+	sort.Slice(available, func(i, j int) bool { return available[i] < available[j] })
+	return available, nil
 }
 
 // ScheduledTasks is the resolver for the scheduledTasks field.

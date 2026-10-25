@@ -91,31 +91,54 @@ func FrozenTome(bundle []byte, tomeID int) ([]byte, error) {
 	}
 }
 
-// ResolveBuildRecipe renders a profile's command and output path for one target.
-func ResolveBuildRecipe(profile *ent.BuildProfile, os c2pb.Host_Platform, format TargetFormat) (string, string, error) {
+// ResolveBuildRecipe renders a profile's setup script, build command, and
+// output path for one target. setupScript is the already input>profile
+// resolved setup script (see CreateBuildTask), rendered here rather than in
+// profile.Setupscript directly so callers can override it per-task before
+// templating happens.
+//
+// All three recipes are rendered against the same values, notably a freshly
+// generated BuildDir (see NewBuildDir) -- this is what lets the setup
+// script clone the repo into an arbitrary unique directory while the build
+// script and artifact path still agree on exactly where to find it.
+func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.Host_Platform, format TargetFormat) (string, string, string, error) {
 	if err := ValidateTargetFormat(os, format); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	command, err := BuildCommand(os, format)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
+	buildDir := NewBuildDir()
 	values := map[string]string{
 		"BuildCommand": command,
-		"ArtifactPath": DeriveArtifactPath(os),
+		"ArtifactPath": DeriveArtifactPath(os, buildDir),
+		"BuildDir":     buildDir,
 		"TargetOS":     os.String(),
 		"TargetFormat": format.String(),
 		"TargetTriple": buildTarget[os],
 	}
+
+	// Setup scripts predate recipe templating, so most won't reference any
+	// of the values above -- only render non-empty ones through the
+	// template engine (renderRecipe rejects an empty result).
+	resolvedSetupScript := setupScript
+	if strings.TrimSpace(setupScript) != "" {
+		resolvedSetupScript, err = renderRecipe("setup_script", setupScript, values)
+		if err != nil {
+			return "", "", "", err
+		}
+	}
+
 	script, err := renderRecipe("build_script", profile.BuildScript, values)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	path, err := renderRecipe("artifact_path", profile.ArtifactPath, values)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
-	return script, path, nil
+	return resolvedSetupScript, script, path, nil
 }
 
 func renderRecipe(name, source string, values map[string]string) (string, error) {

@@ -182,6 +182,34 @@ type TomeTaskMetrics struct {
 	TasksStale                int       `json:"tasksStale"`
 }
 
+// Input for updating an existing build profile. Mirrors CreateBuildProfileInput --
+// fields set here replace the profile's current value, so clients should resend the
+// full profile rather than relying on partial updates.
+type UpdateBuildProfileInput struct {
+	// The name of the build profile.
+	Name string `json:"name"`
+	// A user facing build profile description.
+	Description string `json:"description"`
+	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
+	Transports []*BuildProfileTransportInput `json:"transports,omitempty"`
+	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
+	BuildImage *string `json:"buildImage,omitempty"`
+	// Go template for the build command. Defaults to {{.BuildCommand}}.
+	BuildScript *string `json:"buildScript,omitempty"`
+	// Go template for the artifact path. Defaults to {{.ArtifactPath}}.
+	ArtifactPath *string `json:"artifactPath,omitempty"`
+	// Bash script to run before the build command.
+	Prebuildscript string `json:"prebuildscript"`
+	// Bash script to run before the prebuild script.
+	Setupscript string `json:"setupscript"`
+	// Bash script to run after the build command.
+	Postbuildscript string `json:"postbuildscript"`
+	// List of tomes to include in builds using this profile.
+	Tomes []*BuildProfileTomeInput `json:"tomes,omitempty"`
+	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+	Unique *string `json:"unique,omitempty"`
+}
+
 type Role string
 
 const (

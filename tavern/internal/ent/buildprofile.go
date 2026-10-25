@@ -32,7 +32,7 @@ type BuildProfile struct {
 	ArtifactPath string `json:"artifact_path,omitempty"`
 	// Bash script to run before build command
 	Prebuildscript string `json:"prebuildscript,omitempty"`
-	// Bash script to run before prebuild script
+	// Bash script to run before prebuild script. Go template, supports the same values as build_script (BuildDir, BuildCommand, ArtifactPath, TargetOS, TargetFormat, TargetTriple).
 	Setupscript string `json:"setupscript,omitempty"`
 	// Bash script to run after build command
 	Postbuildscript string `json:"postbuildscript,omitempty"`

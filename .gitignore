@@ -16,6 +16,7 @@ dist/**
 # Playwright E2E Test Results
 tests/e2e/test-results/**
 tests/e2e/playwright-report/**
+tests/e2e/screenshots/**
 
 # Binaries for programs and plugins
 *.exe

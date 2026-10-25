@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
+import { BugAntIcon } from "@heroicons/react/24/outline";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import { useMutation } from "@apollo/client";
 import moment from "moment";
@@ -9,7 +10,7 @@ import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtuali
 import { AssetNode } from "../../utils/interfacesQuery";
 import Button from "../../components/tavern-base-ui/button/Button";
 import UserImageAndName from "../../components/UserImageAndName";
-import { truncateAssetName } from "./utils";
+import { isAgentAsset, truncateAssetName } from "./utils";
 import { GET_ASSET_DETAIL_QUERY, DELETE_ASSET } from "./queries";
 import { AssetDetailQueryResponse } from "./types";
 import AssetAccordion from "./components/AssetAccordion";
@@ -74,11 +75,18 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             label: 'Name',
             width: 'minmax(250px,3fr)',
             render: (asset) => {
+                const isAgent = isAgentAsset(asset.name);
                 const hasTomes = asset.tomes.totalCount > 0;
                 const truncatedName = truncateAssetName(asset.name);
                 return (
                     <div className="flex items-center gap-4">
-                        {hasTomes ? (
+                        {isAgent ? (
+                            <Tooltip label="Built agent artifact" bg="white" color="black">
+                                <div className="shrink-0" data-testid="agent-bug-icon">
+                                    <BugAntIcon className="w-4 h-4 text-black" />
+                                </div>
+                            </Tooltip>
+                        ) : hasTomes ? (
                             <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
                                 <div className="shrink-0">
                                     <BookOpen className="w-4 h-4 text-gray-500" />

@@ -12,6 +12,7 @@ import (
 	"net"
 	"time"
 
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
@@ -69,6 +70,56 @@ func createTestData(ctx context.Context, client *ent.Client) {
 	processListQuest := client.Quest.Create().
 		SetName("ProcessList").
 		SetTome(processListTome).
+		SaveX(ctx)
+
+	/*
+	 * Example Build Profiles
+	 */
+	client.BuildProfile.Create().
+		SetName("Production Linux Beacon").
+		SetDescription("Standard Linux agent with HTTP fallback and persistence").
+		SetBuildImage("spellshift/devcontainer:main").
+		SetBuildScript("cargo build --release\ncp target/release/imix /out/imix").
+		SetArtifactPath("/out/imix").
+		SetUnique("prod-linux-01").
+		SetTransports([]builderpb.BuildProfileTransport{
+			{
+				URI:      "https://c2.example.com/api",
+				Interval: 10,
+				Type:     c2pb.Transport_TRANSPORT_HTTP1,
+				Extra:    "",
+			},
+			{
+				URI:      "tcp://backup.c2.example.com:8443",
+				Interval: 60,
+				Type:     c2pb.Transport_TRANSPORT_TCP_BIND,
+				Extra:    "",
+			},
+		}).
+		SetTomes([]builderpb.BuildProfileTome{
+			{
+				TomeID: processListTome.ID,
+				Params: "{}",
+			},
+		}).
+		SaveX(ctx)
+
+	client.BuildProfile.Create().
+		SetName("Windows Diagnostic Agent").
+		SetDescription("Workstation triage agent without persistence").
+		SetBuildImage("spellshift/devcontainer:windows").
+		SetBuildScript("cargo build --release --target x86_64-pc-windows-gnu").
+		SetArtifactPath("/out/imix.exe").
+		SetUnique("win-diag-02").
+		SetTransports([]builderpb.BuildProfileTransport{
+			{
+				URI:      "https://diag.internal.lan/c2",
+				Interval: 5,
+				Type:     c2pb.Transport_TRANSPORT_HTTP1,
+				Extra:    "",
+			},
+		}).
+		SetTomes([]builderpb.BuildProfileTome{}).
 		SaveX(ctx)
 
 	// Create test beacons (with tags)

@@ -64,8 +64,8 @@ func (BuildProfile) Fields() []ent.Field {
 			Default("echo 'no prebuild set'").
 			Comment("Bash script to run before build command"),
 		field.String("setupscript").
-			Default(fmt.Sprintf("cd /home/vscode && git clone %s realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true", builder.DefaultRealmRepoURL)).
-			Comment("Bash script to run before prebuild script"),
+			Default(fmt.Sprintf("mkdir -p {{.BuildDir}} && cd {{.BuildDir}} && git clone %s realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true", builder.DefaultRealmRepoURL)).
+			Comment("Bash script to run before prebuild script. Go template, supports the same values as build_script (BuildDir, BuildCommand, ArtifactPath, TargetOS, TargetFormat, TargetTriple)."),
 		field.String("postbuildscript").
 			Default("echo 'no postbuild set'").
 			Comment("Bash script to run after build command"),

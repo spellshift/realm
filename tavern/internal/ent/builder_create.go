@@ -100,6 +100,20 @@ func (bc *BuilderCreate) SetNillablePollInterval(i *int) *BuilderCreate {
 	return bc
 }
 
+// SetExecutor sets the "executor" field.
+func (bc *BuilderCreate) SetExecutor(b builder.Executor) *BuilderCreate {
+	bc.mutation.SetExecutor(b)
+	return bc
+}
+
+// SetNillableExecutor sets the "executor" field if the given value is not nil.
+func (bc *BuilderCreate) SetNillableExecutor(b *builder.Executor) *BuilderCreate {
+	if b != nil {
+		bc.SetExecutor(*b)
+	}
+	return bc
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (bc *BuilderCreate) SetLastSeenAt(t time.Time) *BuilderCreate {
 	bc.mutation.SetLastSeenAt(t)
@@ -184,6 +198,10 @@ func (bc *BuilderCreate) defaults() {
 		v := builder.DefaultPollInterval
 		bc.mutation.SetPollInterval(v)
 	}
+	if _, ok := bc.mutation.Executor(); !ok {
+		v := builder.DefaultExecutor
+		bc.mutation.SetExecutor(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -214,6 +232,14 @@ func (bc *BuilderCreate) check() error {
 	if v, ok := bc.mutation.PollInterval(); ok {
 		if err := builder.PollIntervalValidator(v); err != nil {
 			return &ValidationError{Name: "poll_interval", err: fmt.Errorf(`ent: validator failed for field "Builder.poll_interval": %w`, err)}
+		}
+	}
+	if _, ok := bc.mutation.Executor(); !ok {
+		return &ValidationError{Name: "executor", err: errors.New(`ent: missing required field "Builder.executor"`)}
+	}
+	if v, ok := bc.mutation.Executor(); ok {
+		if err := builder.ExecutorValidator(v); err != nil {
+			return &ValidationError{Name: "executor", err: fmt.Errorf(`ent: validator failed for field "Builder.executor": %w`, err)}
 		}
 	}
 	return nil
@@ -266,6 +292,10 @@ func (bc *BuilderCreate) createSpec() (*Builder, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.PollInterval(); ok {
 		_spec.SetField(builder.FieldPollInterval, field.TypeInt, value)
 		_node.PollInterval = value
+	}
+	if value, ok := bc.mutation.Executor(); ok {
+		_spec.SetField(builder.FieldExecutor, field.TypeEnum, value)
+		_node.Executor = value
 	}
 	if value, ok := bc.mutation.LastSeenAt(); ok {
 		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
@@ -390,6 +420,18 @@ func (u *BuilderUpsert) UpdatePollInterval() *BuilderUpsert {
 // AddPollInterval adds v to the "poll_interval" field.
 func (u *BuilderUpsert) AddPollInterval(v int) *BuilderUpsert {
 	u.Add(builder.FieldPollInterval, v)
+	return u
+}
+
+// SetExecutor sets the "executor" field.
+func (u *BuilderUpsert) SetExecutor(v builder.Executor) *BuilderUpsert {
+	u.Set(builder.FieldExecutor, v)
+	return u
+}
+
+// UpdateExecutor sets the "executor" field to the value that was provided on create.
+func (u *BuilderUpsert) UpdateExecutor() *BuilderUpsert {
+	u.SetExcluded(builder.FieldExecutor)
 	return u
 }
 
@@ -519,6 +561,20 @@ func (u *BuilderUpsertOne) AddPollInterval(v int) *BuilderUpsertOne {
 func (u *BuilderUpsertOne) UpdatePollInterval() *BuilderUpsertOne {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdatePollInterval()
+	})
+}
+
+// SetExecutor sets the "executor" field.
+func (u *BuilderUpsertOne) SetExecutor(v builder.Executor) *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetExecutor(v)
+	})
+}
+
+// UpdateExecutor sets the "executor" field to the value that was provided on create.
+func (u *BuilderUpsertOne) UpdateExecutor() *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdateExecutor()
 	})
 }
 
@@ -817,6 +873,20 @@ func (u *BuilderUpsertBulk) AddPollInterval(v int) *BuilderUpsertBulk {
 func (u *BuilderUpsertBulk) UpdatePollInterval() *BuilderUpsertBulk {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdatePollInterval()
+	})
+}
+
+// SetExecutor sets the "executor" field.
+func (u *BuilderUpsertBulk) SetExecutor(v builder.Executor) *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetExecutor(v)
+	})
+}
+
+// UpdateExecutor sets the "executor" field to the value that was provided on create.
+func (u *BuilderUpsertBulk) UpdateExecutor() *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdateExecutor()
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/shellpivot"
@@ -83,6 +84,7 @@ type CreateBuilderInput struct {
 	SupportedTargets []c2pb.Host_Platform
 	Upstream         *string
 	PollInterval     *int
+	Executor         *builder.Executor
 }
 
 // Mutate applies the CreateBuilderInput on the BuilderMutation builder.
@@ -95,6 +97,9 @@ func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
 	}
 	if v := i.PollInterval; v != nil {
 		m.SetPollInterval(*v)
+	}
+	if v := i.Executor; v != nil {
+		m.SetExecutor(*v)
 	}
 }
 

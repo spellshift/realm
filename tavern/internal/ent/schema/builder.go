@@ -42,6 +42,10 @@ func (Builder) Fields() []ent.Field {
 			Min(1).
 			Max(86400).
 			Comment("Builder task polling interval in seconds."),
+		field.Enum("executor").
+			Values("docker", "local").
+			Default("docker").
+			Comment("Execution mode written into the builder configuration."),
 		field.Time("last_seen_at").
 			Optional().
 			Nillable().

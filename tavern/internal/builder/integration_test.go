@@ -87,6 +87,7 @@ func TestBuilderE2E(t *testing.T) {
 	assert.NotEmpty(t, cfg.MTLS)
 	assert.NotEmpty(t, cfg.ID)
 	assert.Equal(t, "https://tavern.example.com:443", cfg.Upstream)
+	assert.Equal(t, "docker", cfg.Executor)
 
 	// 6. Verify builder exists in DB
 	builders, err := graph.Builder.Query().All(ctx)
@@ -373,12 +374,14 @@ func TestBuilderE2E(t *testing.T) {
 		}`, &registerResp2, client.Var("input", map[string]any{
 			"supportedTargets": []string{"PLATFORM_WINDOWS"},
 			"upstream":         "https://tavern.example.com:443",
+			"executor":         "local",
 		}))
 		require.NoError(t, err)
 
 		cfg2, err := builder.ParseConfigBytes([]byte(registerResp2.RegisterBuilder.Config))
 		require.NoError(t, err)
 		assert.Equal(t, 5, cfg2.PollInterval)
+		assert.Equal(t, "local", cfg2.Executor)
 
 		// Get the second builder's DB entity
 		allBuilders, err := graph.Builder.Query().All(ctx)

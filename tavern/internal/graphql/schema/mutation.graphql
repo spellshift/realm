@@ -85,6 +85,8 @@ type Mutation {
     # BuildProfile
     ###
     createBuildProfile(input: CreateBuildProfileInput!): BuildProfile! @requireRole(role: ADMIN)
+    updateBuildProfile(profileID: ID!, input: UpdateBuildProfileInput!): BuildProfile! @requireRole(role: ADMIN)
+    deleteBuildProfile(profileID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # BuildTask
