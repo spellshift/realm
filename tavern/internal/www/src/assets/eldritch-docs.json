@@ -293,7 +293,11 @@
   },
   "file.append": {
     "signature": "file.append(path: str, content: str) -> None",
-    "description": "The **file.append** method appends the `content` to file at `path`. If no file exists at path, it will create the file with the content.\n`file.append_binary(path: str, content: Bytes) -> None`\nThe **file.append_binary** method appends binary data to `path`. If no file exists at the path, it will create the file with the content."
+    "description": "The **file.append** method appends the `content` to file at `path`. If no file exists at path, it will create the file with the content."
+  },
+  "file.append_binary": {
+    "signature": "file.append_binary(path: str, content: Bytes) -> None",
+    "description": "The **file.append_binary** method appends binary data to `path`. If no file exists at the path, it will create the file with the content."
   },
   "file.compress": {
     "signature": "file.compress(src: str, dst: str) -> None",
