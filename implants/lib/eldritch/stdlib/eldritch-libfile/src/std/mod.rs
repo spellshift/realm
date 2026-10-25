@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
+mod append_binary_impl;
 pub mod append_impl;
 pub mod compress_impl;
 pub mod copy_impl;
@@ -34,7 +35,6 @@ pub mod timestomp_impl;
 pub mod tmp_dir_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
-mod append_binary_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]
