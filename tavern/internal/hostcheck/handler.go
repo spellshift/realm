@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"realm.pub/tavern/internal/ent"
@@ -19,7 +20,7 @@ import (
 // The HookDeriveNotifications hook on the Event entity will automatically
 // create URGENT notifications for each host's subscribers.
 //
-// The handler requires a valid JWT in the "token" query parameter, signed
+// The handler requires a valid JWT in the Authorization Bearer header, signed
 // with the server's ed25519 key and scoped to the host-check audience.
 func NewHandler(client *ent.Client, pubKey ed25519.PublicKey) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -28,13 +29,13 @@ func NewHandler(client *ent.Client, pubKey ed25519.PublicKey) http.Handler {
 			return
 		}
 
-		// Verify the JWT from the "token" query parameter.
-		tokenStr := r.URL.Query().Get("token")
-		if tokenStr == "" {
+		// Verify the JWT from the Authorization Bearer header.
+		auth := strings.Fields(r.Header.Get("Authorization"))
+		if len(auth) != 2 || !strings.EqualFold(auth[0], "Bearer") {
 			http.Error(w, "missing token", http.StatusUnauthorized)
 			return
 		}
-		if err := VerifyToken(tokenStr, pubKey); err != nil {
+		if err := VerifyToken(auth[1], pubKey); err != nil {
 			slog.ErrorContext(r.Context(), "hostcheck: invalid token", "err", err)
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
