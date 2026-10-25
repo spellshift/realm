@@ -243,5 +243,14 @@ test.describe('Builder E2E Test', () => {
     const screenshotPath = testInfo.outputPath('builder-e2e-asset.png');
     await page.screenshot({ path: screenshotPath, fullPage: true });
     console.log(`Saved screenshot to ${screenshotPath}`);
+
+    // The agent builder UI must show the completed task with its artifact actions.
+    await page.goto('/builder?tab=agents');
+    const buildRow = page.getByRole('row').filter({ hasText: profileName });
+    await expect(buildRow).toBeVisible({ timeout: 15000 });
+    await expect(buildRow.getByText('Built', { exact: true })).toBeVisible();
+    await expect(buildRow.getByText(artifactName.split('/').pop()!)).toBeVisible();
+    await expect(buildRow.getByRole('button', { name: 'Download' })).toBeVisible();
+    await expect(buildRow.getByRole('button', { name: 'Create Link' })).toBeVisible();
   });
 });

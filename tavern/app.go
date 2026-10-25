@@ -36,6 +36,7 @@ import (
 	"realm.pub/tavern/internal/crypto"
 	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	"realm.pub/tavern/internal/hostcheck"
@@ -301,6 +302,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
 			slog.ErrorContext(ctx, "failed to upload default tomes", "err", err)
 		}
+	}
+
+	// Ensure Default Build Profile
+	if err := ensureDefaultBuildProfile(ctx, client); err != nil {
+		slog.ErrorContext(ctx, "failed to ensure default build profile", "err", err)
 	}
 
 	// Initialize Git Tome Importer
@@ -864,4 +870,55 @@ func portFromAddr(addr string) string {
 		return addr[i:]
 	}
 	return ":80"
+}
+
+// defaultBuildProfileCallbackURI determines the callback URI for the
+// default build profile's gRPC transport -- the configured OAuth domain if
+// set (mirroring how the OAuth redirect URL is derived in config.go),
+// falling back to localhost for deployments that haven't configured OAuth.
+func defaultBuildProfileCallbackURI() string {
+	domain := EnvOAuthDomain.String()
+	if domain == "" {
+		return "http://127.0.0.1:8000"
+	}
+	if !strings.HasPrefix(domain, "http") {
+		domain = fmt.Sprintf("https://%s", domain)
+	}
+	return domain
+}
+
+const legacyDefaultBuildProfileDescription = "Default build profile. Callback points at the configured OAuth domain, or localhost if OAuth is not configured."
+
+// ensureDefaultBuildProfile creates a "Default" build profile the first time
+// Tavern starts up and clears the old generated description where it remains.
+func ensureDefaultBuildProfile(ctx context.Context, client *ent.Client) error {
+	exists, err := client.BuildProfile.Query().
+		Where(buildprofile.Name(builder.DefaultBuildProfileName)).
+		Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check for existing default build profile: %w", err)
+	}
+	if exists {
+		if err := client.BuildProfile.Update().
+			Where(buildprofile.Name(builder.DefaultBuildProfileName), buildprofile.Description(legacyDefaultBuildProfileDescription)).
+			SetDescription("").Exec(ctx); err != nil {
+			return fmt.Errorf("failed to clear legacy default build profile description: %w", err)
+		}
+		return nil
+	}
+
+	if _, err := client.BuildProfile.Create().
+		SetName(builder.DefaultBuildProfileName).
+		SetDescription("").
+		SetTransports([]builderpb.BuildProfileTransport{
+			{
+				URI:      defaultBuildProfileCallbackURI(),
+				Interval: 5,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
+			},
+		}).
+		Save(ctx); err != nil {
+		return fmt.Errorf("failed to create default build profile: %w", err)
+	}
+	return nil
 }

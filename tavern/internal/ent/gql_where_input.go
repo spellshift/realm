@@ -3267,6 +3267,12 @@ type BuilderWhereInput struct {
 	PollIntervalLT    *int  `json:"pollIntervalLT,omitempty"`
 	PollIntervalLTE   *int  `json:"pollIntervalLTE,omitempty"`
 
+	// "executor" field predicates.
+	Executor      *builder.Executor  `json:"executor,omitempty"`
+	ExecutorNEQ   *builder.Executor  `json:"executorNEQ,omitempty"`
+	ExecutorIn    []builder.Executor `json:"executorIn,omitempty"`
+	ExecutorNotIn []builder.Executor `json:"executorNotIn,omitempty"`
+
 	// "last_seen_at" field predicates.
 	LastSeenAt       *time.Time  `json:"lastSeenAt,omitempty"`
 	LastSeenAtNEQ    *time.Time  `json:"lastSeenAtNEQ,omitempty"`
@@ -3528,6 +3534,18 @@ func (i *BuilderWhereInput) P() (predicate.Builder, error) {
 	}
 	if i.PollIntervalLTE != nil {
 		predicates = append(predicates, builder.PollIntervalLTE(*i.PollIntervalLTE))
+	}
+	if i.Executor != nil {
+		predicates = append(predicates, builder.ExecutorEQ(*i.Executor))
+	}
+	if i.ExecutorNEQ != nil {
+		predicates = append(predicates, builder.ExecutorNEQ(*i.ExecutorNEQ))
+	}
+	if len(i.ExecutorIn) > 0 {
+		predicates = append(predicates, builder.ExecutorIn(i.ExecutorIn...))
+	}
+	if len(i.ExecutorNotIn) > 0 {
+		predicates = append(predicates, builder.ExecutorNotIn(i.ExecutorNotIn...))
 	}
 	if i.LastSeenAt != nil {
 		predicates = append(predicates, builder.LastSeenAtEQ(*i.LastSeenAt))

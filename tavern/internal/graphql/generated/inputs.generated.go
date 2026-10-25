@@ -636,6 +636,8 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context
 				return ec.fieldContext_Builder_upstream(ctx, field)
 			case "pollInterval":
 				return ec.fieldContext_Builder_pollInterval(ctx, field)
+			case "executor":
+				return ec.fieldContext_Builder_executor(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
 			case "buildtasks":
@@ -1161,6 +1163,106 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateBuildProfileInput(ctx context.Context, obj any) (models.UpdateBuildProfileInput, error) {
+	var it models.UpdateBuildProfileInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "description", "transports", "buildImage", "buildScript", "artifactPath", "prebuildscript", "setupscript", "postbuildscript", "tomes", "unique"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "transports":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transports"))
+			data, err := ec.unmarshalOBuildProfileTransportInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildProfileTransportInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Transports = data
+		case "buildImage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildImage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BuildImage = data
+		case "buildScript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildScript"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BuildScript = data
+		case "artifactPath":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artifactPath"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ArtifactPath = data
+		case "prebuildscript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prebuildscript"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Prebuildscript = data
+		case "setupscript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("setupscript"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Setupscript = data
+		case "postbuildscript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postbuildscript"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Postbuildscript = data
+		case "tomes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tomes"))
+			data, err := ec.unmarshalOBuildProfileTomeInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildProfileTomeInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tomes = data
+		case "unique":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unique"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unique = data
+		}
+	}
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -1526,6 +1628,11 @@ func (ec *executionContext) marshalNRegisterBuilderOutput2ᚖrealmᚗpubᚋtaver
 		return graphql.Null
 	}
 	return ec._RegisterBuilderOutput(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUpdateBuildProfileInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐUpdateBuildProfileInput(ctx context.Context, v any) (models.UpdateBuildProfileInput, error) {
+	res, err := ec.unmarshalInputUpdateBuildProfileInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOBuildProfileSnapshot2ᚖrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileSnapshot(ctx context.Context, sel ast.SelectionSet, v *builderpb.BuildProfileSnapshot) graphql.Marshaler {

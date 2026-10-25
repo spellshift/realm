@@ -284,6 +284,8 @@ extend type Query {
     """Filtering options for Builders returned from the connection."""
     where: BuilderWhereInput
   ): BuilderConnection! @requireRole(role: ADMIN)
+  """Platforms supported by builders that have checked in recently."""
+  onlineBuilderPlatforms: [HostPlatform!]! @requireRole(role: USER)
   scheduledTasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

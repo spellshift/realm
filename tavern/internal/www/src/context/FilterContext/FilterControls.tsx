@@ -1,4 +1,5 @@
-import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
+import { AdjustmentsHorizontalIcon, BugAntIcon } from "@heroicons/react/24/outline";
+import Select from "react-select";
 import { calculateTotalFilterCount, FilterFieldType, useFilters } from "./FilterContext";
 import { BeaconFilterBar } from "../../components/beacon-filter-bar";
 import { ButtonDialogPopover } from "../../components/ButtonDialogPopover";
@@ -9,6 +10,8 @@ import { TomeFilterBar } from "../../components/TomeFilterBar";
 import { Tooltip } from "@chakra-ui/react";
 import { useLocation } from "react-router-dom";
 import UserFilterBar from "../../components/UserFilterBar";
+
+const AGENT_FILTER_OPTIONS = [{ value: "agents", label: "Agents" }];
 
 function getFilterFields(pathname: string): FilterFieldType[] | null {
     if (pathname.startsWith('/hosts/')) {
@@ -24,7 +27,7 @@ function getFilterFields(pathname: string): FilterFieldType[] | null {
         return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.USER, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.TASK_OUTPUT];
     }
     if (pathname === '/assets') {
-        return [FilterFieldType.ASSET_NAME, FilterFieldType.USER];
+        return [FilterFieldType.ASSET_NAME, FilterFieldType.USER, FilterFieldType.AGENT];
     }
 
     return null;
@@ -118,6 +121,23 @@ export default function FilterControls() {
             return (
                 <div key={field}>
                     <UserFilterBar />
+                </div>
+            );
+        }
+        else if (field === FilterFieldType.AGENT) {
+            return (
+                <div key={field} className="flex flex-col gap-1" data-testid="agent-filter-bar">
+                    <label className="text-gray-700 font-medium flex items-center gap-1.5">
+                        <BugAntIcon className="w-4 h-4 text-black" />
+                        Type
+                    </label>
+                    <Select
+                        isClearable
+                        placeholder="Filter by Type"
+                        options={AGENT_FILTER_OPTIONS}
+                        value={filters.agentOnly ? AGENT_FILTER_OPTIONS[0] : null}
+                        onChange={(option) => updateFilters({ agentOnly: option?.value === "agents" })}
+                    />
                 </div>
             );
         }

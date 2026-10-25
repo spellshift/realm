@@ -37,6 +37,22 @@ pub trait FileLibrary {
     fn append(&self, path: String, content: String) -> Result<(), String>;
 
     #[eldritch_method]
+    /// Appends binary content to a file.
+    ///
+    /// If the file does not exist, it will be created.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The path to the file.
+    /// - `content` (`Bytes`): The bytes content to append.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if the file cannot be opened or written to.
+    fn append_binary(&self, path: String, content: Value) -> Result<(), String>;
+
+    #[eldritch_method]
     /// Compresses a file or directory using GZIP.
     ///
     /// If `src` is a directory, it will be archived (tar) before compression.

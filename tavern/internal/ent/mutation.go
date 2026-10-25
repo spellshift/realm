@@ -6138,6 +6138,7 @@ type BuilderMutation struct {
 	upstream                *string
 	poll_interval           *int
 	addpoll_interval        *int
+	executor                *builder.Executor
 	last_seen_at            *time.Time
 	clearedFields           map[string]struct{}
 	buildtasks              map[int]struct{}
@@ -6497,6 +6498,42 @@ func (m *BuilderMutation) ResetPollInterval() {
 	m.addpoll_interval = nil
 }
 
+// SetExecutor sets the "executor" field.
+func (m *BuilderMutation) SetExecutor(b builder.Executor) {
+	m.executor = &b
+}
+
+// Executor returns the value of the "executor" field in the mutation.
+func (m *BuilderMutation) Executor() (r builder.Executor, exists bool) {
+	v := m.executor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecutor returns the old "executor" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldExecutor(ctx context.Context) (v builder.Executor, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecutor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecutor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecutor: %w", err)
+	}
+	return oldValue.Executor, nil
+}
+
+// ResetExecutor resets all changes to the "executor" field.
+func (m *BuilderMutation) ResetExecutor() {
+	m.executor = nil
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (m *BuilderMutation) SetLastSeenAt(t time.Time) {
 	m.last_seen_at = &t
@@ -6634,7 +6671,7 @@ func (m *BuilderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuilderMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, builder.FieldCreatedAt)
 	}
@@ -6652,6 +6689,9 @@ func (m *BuilderMutation) Fields() []string {
 	}
 	if m.poll_interval != nil {
 		fields = append(fields, builder.FieldPollInterval)
+	}
+	if m.executor != nil {
+		fields = append(fields, builder.FieldExecutor)
 	}
 	if m.last_seen_at != nil {
 		fields = append(fields, builder.FieldLastSeenAt)
@@ -6676,6 +6716,8 @@ func (m *BuilderMutation) Field(name string) (ent.Value, bool) {
 		return m.Upstream()
 	case builder.FieldPollInterval:
 		return m.PollInterval()
+	case builder.FieldExecutor:
+		return m.Executor()
 	case builder.FieldLastSeenAt:
 		return m.LastSeenAt()
 	}
@@ -6699,6 +6741,8 @@ func (m *BuilderMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpstream(ctx)
 	case builder.FieldPollInterval:
 		return m.OldPollInterval(ctx)
+	case builder.FieldExecutor:
+		return m.OldExecutor(ctx)
 	case builder.FieldLastSeenAt:
 		return m.OldLastSeenAt(ctx)
 	}
@@ -6751,6 +6795,13 @@ func (m *BuilderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPollInterval(v)
+		return nil
+	case builder.FieldExecutor:
+		v, ok := value.(builder.Executor)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecutor(v)
 		return nil
 	case builder.FieldLastSeenAt:
 		v, ok := value.(time.Time)
@@ -6849,6 +6900,9 @@ func (m *BuilderMutation) ResetField(name string) error {
 		return nil
 	case builder.FieldPollInterval:
 		m.ResetPollInterval()
+		return nil
+	case builder.FieldExecutor:
+		m.ResetExecutor()
 		return nil
 	case builder.FieldLastSeenAt:
 		m.ResetLastSeenAt()

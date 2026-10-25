@@ -335,6 +335,26 @@ func PollIntervalLTE(v int) predicate.Builder {
 	return predicate.Builder(sql.FieldLTE(FieldPollInterval, v))
 }
 
+// ExecutorEQ applies the EQ predicate on the "executor" field.
+func ExecutorEQ(v Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldExecutor, v))
+}
+
+// ExecutorNEQ applies the NEQ predicate on the "executor" field.
+func ExecutorNEQ(v Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldNEQ(FieldExecutor, v))
+}
+
+// ExecutorIn applies the In predicate on the "executor" field.
+func ExecutorIn(vs ...Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldIn(FieldExecutor, vs...))
+}
+
+// ExecutorNotIn applies the NotIn predicate on the "executor" field.
+func ExecutorNotIn(vs ...Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldNotIn(FieldExecutor, vs...))
+}
+
 // LastSeenAtEQ applies the EQ predicate on the "last_seen_at" field.
 func LastSeenAtEQ(v time.Time) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldLastSeenAt, v))
