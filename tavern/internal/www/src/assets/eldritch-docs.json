@@ -293,7 +293,7 @@
   },
   "file.append": {
     "signature": "file.append(path: str, content: str) -> None",
-    "description": "The **file.append** method appends the `content` to file at `path`. If no file exists at path create the file with the content."
+    "description": "The **file.append** method appends the `content` to file at `path`. If no file exists at path, it will create the file with the content.\n`file.append_binary(path: str, content: Bytes) -> None`\nThe **file.append_binary** method appends binary data to `path`. If no file exists at the path, it will create the file with the content."
   },
   "file.compress": {
     "signature": "file.compress(src: str, dst: str) -> None",
@@ -642,6 +642,10 @@
   "sys.use_token": {
     "signature": "sys.use_token(id: int) -> bool",
     "description": "The **sys.use_token** method activates a stored token by ID. Deactivates any currently active token and applies the specified one to the beacon.\nID `0` is the process token (original identity). `sys.use_token(0)` reverts to base permissions.\nFor this example, assume PID 6767 is running as SYSTEM and the base process token is running as Administrator.\n```python\n$> sys.tokens()\n| active | id | process        | source               | user                 |\n| ------ | -- | -------------- | -------------------- | -------------------- |\n| False  | 0  | imix.exe       | process_token        | DOMAIN\\Administrator |\n| True   | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\\SYSTEM  |\n$> sys.shell('whoami')['stdout']\nnt authority\\system\n$> sys.use_token(0)\nTrue\n$> sys.tokens()\n| active | id | process        | source               | user                 |\n| ------ | -- | -------------- | -------------------- | -------------------- |\n| True   | 0  | imix.exe       | process_token        | DOMAIN\\Administrator |\n| False  | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\\SYSTEM  |\n$> sys.shell('whoami')['stdout']\ndomain\\administrator\n```"
+  },
+  "sys.whereis": {
+    "signature": "sys.whereis(bin: str) -> str",
+    "description": "The **sys.whereis** method returns the resolved path of a binary. If this binary does not resolve to anything, an empty string is returned.\nExample:\n```python\n$> sys.whereis(\"sh\")\n\"/usr/bin/sh\"\n$> sys.whereis(\"some_random_binary_that_doesnt_exist\")\n\"\"\n```"
   },
   "sys.write_reg": {
     "signature": "sys.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool",
