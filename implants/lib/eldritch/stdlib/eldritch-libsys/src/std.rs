@@ -25,8 +25,8 @@ mod reg_utils;
 mod shell_impl;
 pub mod tokens_impl;
 mod use_token_impl;
-mod write_reg_impl;
 mod whereis_impl;
+mod write_reg_impl;
 
 #[derive(Debug)]
 #[eldritch_library_impl(SysLibrary)]

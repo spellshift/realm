@@ -225,10 +225,7 @@ pub trait SysLibrary {
     ///
     /// **Returns**
     /// - `bool`: True on success.
-    fn whereis(
-        &self,
-        bin: String
-    ) -> Result<String, String>;
+    fn whereis(&self, bin: String) -> Result<String, String>;
 
     #[eldritch_method]
     /// Writes a value to the Windows Registry.
