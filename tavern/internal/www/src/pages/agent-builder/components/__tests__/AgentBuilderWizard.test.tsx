@@ -110,7 +110,7 @@ function renderWizard(profilesMock: MockedResponse, buildersMock: MockedResponse
 
 describe("AgentBuilderWizard", () => {
     it("renders empty state asking an admin to add a profile and omits New profile button when no profiles exist", async () => {
-        renderWizard(emptyProfilesMock);
+        renderWizard(emptyProfilesMock, windowsBuilderMock);
 
         await waitFor(() => {
             expect(screen.getByText("No build profiles available")).toBeInTheDocument();
@@ -124,7 +124,7 @@ describe("AgentBuilderWizard", () => {
     });
 
     it("renders profile options without New profile button when profiles exist", async () => {
-        renderWizard(populatedProfilesMock);
+        renderWizard(populatedProfilesMock, windowsBuilderMock);
 
         await waitFor(() => {
             expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument();
@@ -133,38 +133,21 @@ describe("AgentBuilderWizard", () => {
         expect(screen.queryByRole("button", { name: "New profile" })).not.toBeInTheDocument();
     });
 
-    it("explains why Submit is disabled when no online builder supports the selected target", async () => {
+    it("shows a full-page empty state without the wizard for a non-admin when no builder is online", async () => {
         renderWizard(populatedProfilesMock);
 
-        await waitFor(() => {
-            expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument();
-        }, { timeout: 5000 });
-
+        await waitFor(() => expect(screen.getByText("No online builders available")).toBeInTheDocument());
         expect(screen.getByText("Ask an admin to enroll and start a builder before generating an agent.")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Enroll builder" })).not.toBeInTheDocument();
-
-        fireEvent.click(screen.getAllByRole("row")[1]);
-        fireEvent.click(screen.getByRole("button", { name: "continue profile step" }));
-
-        await waitFor(() => {
-            expect(screen.getByText("Select compilation target")).toBeInTheDocument();
-        });
-
-        fireEvent.click(screen.getAllByRole("row")[1]);
-        fireEvent.click(screen.getByRole("button", { name: "continue target step" }));
-
-        await waitFor(() => {
-            expect(screen.getByText("Confirm build details")).toBeInTheDocument();
-        });
-
-        expect(screen.getByText("No online builders available")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "submit agent build" })).toBeDisabled();
+        expect(screen.queryByText("Select build profile")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "continue profile step" })).not.toBeInTheDocument();
     });
 
     it("shows enrollment guidance on the first step according to admin access", async () => {
         renderWizard(populatedProfilesMock, emptyBuildersMock, true);
         await waitFor(() => expect(screen.getByText("No online builders available")).toBeInTheDocument());
         expect(screen.getByRole("button", { name: "Enroll builder" })).toBeInTheDocument();
+        expect(screen.queryByText("Select build profile")).not.toBeInTheDocument();
     });
 
     it("keeps target compatibility gating when another platform has an online builder", async () => {
@@ -179,5 +162,22 @@ describe("AgentBuilderWizard", () => {
 
         expect(screen.getByText("No compatible online builder")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "submit agent build" })).toBeDisabled();
+    });
+
+    it("shows static transport details on confirmation", async () => {
+        const profileWithExtra = structuredClone(populatedProfilesMock);
+        profileWithExtra.result.data.buildProfiles.edges[0].node.transports[0].extra = "proxy=enabled";
+        renderWizard(profileWithExtra, windowsBuilderMock);
+        await waitFor(() => expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument());
+        fireEvent.click(screen.getAllByRole("row")[1]);
+        fireEvent.click(screen.getByRole("button", { name: "continue profile step" }));
+        fireEvent.click(screen.getAllByRole("row")[1]);
+        fireEvent.click(screen.getByRole("button", { name: "continue target step" }));
+
+        expect(screen.getByText("http://127.0.0.1:8000")).toBeInTheDocument();
+        expect(screen.getByText("5s interval")).toBeInTheDocument();
+        expect(screen.getByText("proxy=enabled")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Toggle details for/ })).not.toBeInTheDocument();
+        expect(screen.queryByText("Beacon interval:")).not.toBeInTheDocument();
     });
 });

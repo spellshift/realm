@@ -9,6 +9,8 @@ import AlertError from "../../components/tavern-base-ui/AlertError";
 import FormTextField from "../../components/tavern-base-ui/FormTextField";
 import CodeBlock from "../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../components/form-steps";
+import Table from "../../components/tavern-base-ui/table/Table";
+import { builderColumns } from "./builders-tab";
 import { REGISTER_BUILDER, downloadBuilderConfig, useEnrolledBuilder } from "./queries";
 import { PlatformOption, PLATFORM_OPTIONS } from "./types";
 
@@ -29,7 +31,7 @@ export const EnrollBuilderPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<{ identifier: string; config: string } | null>(null);
     const [registerBuilder, { loading }] = useMutation(REGISTER_BUILDER);
-    const { online: registered, refetch, error: statusError } = useEnrolledBuilder(result?.identifier ?? null, step !== 2);
+    const { builder, online: registered, refetch, error: statusError } = useEnrolledBuilder(result?.identifier ?? null, step !== 2);
     const pollIntervalValid = Number.isInteger(pollInterval) && pollInterval >= 1;
 
     useEffect(() => {
@@ -112,14 +114,20 @@ export const EnrollBuilderPage = () => {
                             <h2 className="text-xl font-semibold">Start builder</h2>
                             <p className="text-sm text-gray-700">From the Realm project root, run the builder with the saved config:</p>
                             <CodeBlock code={`go run ./tavern builder --config builder-${result.identifier}.yaml`} language="bash" showCopyButton />
-                            <p role="status" className="text-sm text-gray-700">
-                                {registered ? "Builder is online and ready to build agents." : "Waiting for the builder to connect to Tavern…"}
-                            </p>
+                            {registered && builder ? (
+                                <div className="rounded-md border border-gray-200 overflow-x-auto max-w-full">
+                                    <div className="min-w-[720px] w-full">
+                                        <Table data={[builder]} columns={builderColumns} />
+                                    </div>
+                                </div>
+                            ) : (
+                                <p role="status" className="text-sm text-gray-700">Waiting for the builder to connect to Tavern…</p>
+                            )}
                             {statusError && <AlertError label="Unable to check builder connection" details={statusError.message} />}
                             <div className="flex gap-2">
                                 <Button buttonVariant="ghost" onClick={() => setStep(1)}>Previous</Button>
                                 <Button buttonStyle={{ color: "purple", size: "md" }} disabled={!registered}
-                                    onClick={() => navigate("/admin?tab=builders")}>Next</Button>
+                                    onClick={() => navigate("/admin?tab=builders")}>Done</Button>
                             </div>
                         </div>
                     )}

@@ -24,7 +24,7 @@ export const GET_BUILDERS = gql`
 `;
 export const GET_ENROLLED_BUILDER = gql`
     query EnrolledAgentBuilder($identifier: String!) {
-        builders(where: { identifier: $identifier }) { edges { node { id identifier pollInterval lastSeenAt } } }
+        builders(where: { identifier: $identifier }) { edges { node { id identifier supportedTargets upstream pollInterval lastSeenAt } } }
     }
 `;
 export const GET_ONLINE_BUILDER_PLATFORMS = gql`
@@ -202,15 +202,18 @@ export function useBuilders(options: { skip?: boolean } = {}) {
         skip,
         fetchPolicy: "cache-and-network",
     });
-    const now = Date.now();
-    const builders: Builder[] = nodes(result.data?.builders).map((builder) => ({
+    const builders = nodes(result.data?.builders).map(mapBuilder);
+    return { ...result, builders };
+}
+
+function mapBuilder(builder: BuilderRecord): Builder {
+    return {
         ...builder,
         supportedTargets: builder.supportedTargets.map((target) => target as Platform),
         lastSeenAtRaw: builder.lastSeenAt,
-        online: BuilderHealthy(builder.lastSeenAt, builder.pollInterval, now),
+        online: BuilderHealthy(builder.lastSeenAt, builder.pollInterval),
         lastSeenAt: builder.lastSeenAt ? formatDistanceToNow(new Date(builder.lastSeenAt), { addSuffix: true }) : null,
-    }));
-    return { ...result, builders };
+    };
 }
 
 export function useOnlineBuilderPlatforms() {
@@ -221,12 +224,13 @@ export function useOnlineBuilderPlatforms() {
 }
 
 export function useEnrolledBuilder(identifier: string | null, skip: boolean) {
-    const result = useQuery<{ builders: Connection<Pick<BuilderRecord, "id" | "identifier" | "pollInterval" | "lastSeenAt">> }>(
+    const result = useQuery<{ builders: Connection<BuilderRecord> }>(
         GET_ENROLLED_BUILDER,
         { variables: { identifier: identifier ?? "" }, skip: skip || !identifier, fetchPolicy: "network-only" }
     );
     const enrolled = nodes(result.data?.builders).find((builder) => builder.identifier === identifier);
-    return { ...result, online: !result.loading && !result.error && !!enrolled && BuilderHealthy(enrolled.lastSeenAt, enrolled.pollInterval) };
+    const builder = !result.loading && !result.error && enrolled ? mapBuilder(enrolled) : null;
+    return { ...result, builder, online: !!builder?.online };
 }
 
 export function useBuildTasks(options: { skip?: boolean } = {}) {

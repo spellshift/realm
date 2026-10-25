@@ -11,7 +11,6 @@ import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { ProfileSelectionTable } from "./ProfileSelectionTable";
 import { TargetSelectionTable } from "./TargetSelectionTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
@@ -70,7 +69,6 @@ export const AgentBuilderWizard = ({
     const { profiles, loading, error: profilesError } = useBuildProfiles();
     const { platforms, loading: buildersLoading, error: buildersError } = useOnlineBuilderPlatforms();
     const { data: authorization } = useAuthorization();
-    const noOnlineBuilders = !buildersLoading && !buildersError && platforms.length === 0;
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
     const setSelectedProfile = (profile: BuildProfile) => setSelectedProfileId(profile.id);
@@ -79,13 +77,6 @@ export const AgentBuilderWizard = ({
     const [selectedTarget, setSelectedTarget] = useState<CompileTarget>(COMPILE_TARGETS[0]);
     const targetAvailable = platforms.includes(selectedTarget.platform);
     const [showAdvanced, setShowAdvanced] = useState(false);
-    const [expandedTransports, setExpandedTransports] = useState<Record<number, boolean>>({});
-    const toggleTransportExpanded = (index: number) => {
-        setExpandedTransports((prev) => ({
-            ...prev,
-            [index]: !prev[index],
-        }));
-    };
     const [profileSearch, setProfileSearch] = useState("");
     const [profileFields, setProfileFields] = useState<ProfileFilter[]>([]);
     const [searchKey, setSearchKey] = useState(0);
@@ -167,26 +158,41 @@ export const AgentBuilderWizard = ({
         }
     };
 
+    const breadcrumbs = showHeader && (
+        <Breadcrumbs pages={[
+            { label: "Assets", link: "/assets" },
+            { label: "Generate agent", link: "/assets/build" },
+        ]} />
+    );
+
+    if (buildersLoading || buildersError || platforms.length === 0) {
+        return (
+            <div className="w-full flex flex-col gap-6">
+                {breadcrumbs}
+                <div className="min-h-[60vh] flex items-center justify-center">
+                    {buildersLoading ? (
+                        <EmptyState type={EmptyStateType.loading} label="Loading builders…" />
+                    ) : buildersError ? (
+                        <EmptyState type={EmptyStateType.error} label="Unable to load builders" details={buildersError.message} />
+                    ) : (
+                        <EmptyState type={EmptyStateType.noData} label="No online builders available"
+                            details={authorization?.me.isAdmin
+                                ? "Enroll and start a builder before generating an agent."
+                                : "Ask an admin to enroll and start a builder before generating an agent."}>
+                            {authorization?.me.isAdmin && <Button buttonStyle={{ color: "purple", size: "md" }}
+                                onClick={() => navigate("/admin/builders/enroll")}>Enroll builder</Button>}
+                        </EmptyState>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-4xl mx-auto w-full flex flex-col gap-6">
-            {showHeader && (
-                <Breadcrumbs
-                    pages={[
-                        { label: "Assets", link: "/assets" },
-                        { label: "Generate agent", link: "/assets/build" },
-                    ]}
-                />
-            )}
+            {breadcrumbs}
 
             {profilesError && <AlertError label="Unable to load build profiles" details={profilesError.message} />}
-            {buildersError && <AlertError label="Unable to load builders" details={buildersError.message} />}
-            {noOnlineBuilders && <div className="flex flex-col items-start gap-2">
-                <AlertError label="No online builders available" details={authorization?.me.isAdmin
-                    ? "Enroll and start a builder before generating an agent."
-                    : "Ask an admin to enroll and start a builder before generating an agent."} />
-                {authorization?.me.isAdmin && <Button buttonStyle={{ color: "purple", size: "md" }}
-                    onClick={() => navigate("/admin/builders/enroll")}>Enroll builder</Button>}
-            </div>}
             {error && <AlertError label="Unable to start build" details={error} />}
             {loading && profiles.length === 0 && <p role="status">Loading build profiles…</p>}
             <form className="flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); if (currStep === 2) void startBuild(); }}>
@@ -403,51 +409,25 @@ export const AgentBuilderWizard = ({
                                         ) : (
                                             <div className="max-h-48 overflow-y-auto flex flex-col gap-2 pr-1">
                                                 {selectedProfile.transports.map((transport, idx) => {
-                                                    const isExpanded = !!expandedTransports[idx];
                                                     const typeLabel =
                                                         TRANSPORT_TYPES.find((t) => t.value === transport.type)?.label ??
                                                         transport.type;
                                                     return (
                                                         <div
                                                             key={transport.id || idx}
-                                                            className="rounded border border-gray-200 bg-gray-50/50 text-xs overflow-hidden"
+                                                            className="rounded border border-gray-200 bg-gray-50/50 p-2.5 text-xs flex flex-col gap-1"
                                                         >
-                                                            <button
-                                                                type="button"
-                                                                className="w-full p-2.5 flex items-center justify-between hover:bg-gray-100 transition-colors text-left"
-                                                                onClick={() => toggleTransportExpanded(idx)}
-                                                                aria-expanded={isExpanded}
-                                                                aria-label={`Toggle details for ${typeLabel} transport`}
-                                                            >
+                                                            <div className="flex items-center justify-between gap-2">
                                                                 <div className="flex items-center gap-2 min-w-0">
-                                                                    {isExpanded ? (
-                                                                        <ChevronDownIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                                                    ) : (
-                                                                        <ChevronRightIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                                                    )}
                                                                     <span className="font-semibold text-gray-900">{typeLabel}</span>
-                                                                    <span className="text-gray-500 font-mono truncate">{transport.uri}</span>
+                                                                    <span className="text-gray-500 font-mono break-all">{transport.uri}</span>
                                                                 </div>
                                                                 <span className="text-gray-500 flex-shrink-0 ml-2">{transport.interval}s interval</span>
-                                                            </button>
-                                                            {isExpanded && (
-                                                                <div className="p-2.5 pt-2 border-t border-gray-200 bg-white flex flex-col gap-1.5">
-                                                                    <div className="flex justify-between items-start gap-2">
-                                                                        <span className="text-gray-500 flex-shrink-0">URI:</span>
-                                                                        <span className="font-mono text-gray-900 break-all text-right">{transport.uri}</span>
-                                                                    </div>
-                                                                    <div className="flex justify-between items-center gap-2">
-                                                                        <span className="text-gray-500 flex-shrink-0">Beacon interval:</span>
-                                                                        <span className="text-gray-900">{transport.interval} seconds</span>
-                                                                    </div>
-                                                                    {transport.extra && (
-                                                                        <div className="flex justify-between items-start gap-2">
-                                                                            <span className="text-gray-500 flex-shrink-0">Extra:</span>
-                                                                            <span className="font-mono text-gray-900 break-all text-right">{transport.extra}</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            </div>
+                                                            {transport.extra && <div className="flex gap-2 text-gray-500">
+                                                                <span className="flex-shrink-0">Extra:</span>
+                                                                <span className="font-mono text-gray-900 break-all">{transport.extra}</span>
+                                                            </div>}
                                                         </div>
                                                     );
                                                 })}
@@ -489,7 +469,7 @@ export const AgentBuilderWizard = ({
                                     )}
                                 </div>
 
-                                {!noOnlineBuilders && !targetAvailable && (
+                                {!targetAvailable && (
                                     <AlertError
                                         label="No compatible online builder"
                                         details={`No online builders are available for ${selectedTarget.platformLabel}. Please enroll and start a builder supporting this target to proceed.`}

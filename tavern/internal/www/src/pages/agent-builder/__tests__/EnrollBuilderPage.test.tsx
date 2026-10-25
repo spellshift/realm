@@ -52,7 +52,7 @@ describe("EnrollBuilderPage", () => {
         expect(screen.getByText((_, element) => element?.tagName.toLowerCase() === "pre" && !!element.textContent?.includes("--config builder-builder-a1b2c3.yaml"))).toBeInTheDocument();
         expect(screen.queryByText("Wait for builder to register")).not.toBeInTheDocument();
         await waitFor(() => expect(screen.getByText(/Waiting for the builder to connect/)).toBeInTheDocument());
-        expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Done" })).toBeDisabled();
         fireEvent.click(screen.getByRole("button", { name: "Previous" }));
         expect(screen.getByText(/mTLS credentials are shown only once/)).toBeInTheDocument();
     });
@@ -67,7 +67,7 @@ describe("EnrollBuilderPage", () => {
         expect(screen.getByRole("button", { name: "Configure" })).toBeInTheDocument();
     });
 
-    it("polls the enrolled identifier and enables Next only after it calls back", async () => {
+    it("polls the enrolled identifier and shows only its row before enabling Done", async () => {
         renderPage([{
             request: { query: REGISTER_BUILDER, variables: { input: registerBuilderInput } },
             result: { data: { registerBuilder: {
@@ -79,13 +79,21 @@ describe("EnrollBuilderPage", () => {
             result: { data: { builders: { edges: [{ node: {
                 id: "b1", identifier: "builder-a1b2c3", supportedTargets: ["PLATFORM_LINUX"],
                 upstream: "http://127.0.0.1:8000", pollInterval: 5, lastSeenAt: new Date().toISOString(),
+            } }, { node: {
+                id: "b2", identifier: "another-builder", supportedTargets: ["PLATFORM_WINDOWS"],
+                upstream: "http://127.0.0.1:8000", pollInterval: 5, lastSeenAt: new Date().toISOString(),
             } }] } } },
         }]);
 
         fireEvent.click(screen.getByRole("button", { name: "Configure" }));
         await waitFor(() => expect(screen.getByText(/mTLS credentials are shown only once/)).toBeInTheDocument());
         fireEvent.click(screen.getByRole("button", { name: "Next" }));
-        await waitFor(() => expect(screen.getByRole("button", { name: "Next" })).toBeDisabled());
-        await waitFor(() => expect(screen.getByRole("button", { name: "Next" })).toBeEnabled(), { timeout: 8500 });
+        await waitFor(() => expect(screen.getByRole("button", { name: "Done" })).toBeDisabled());
+        await waitFor(() => expect(screen.getByRole("button", { name: "Done" })).toBeEnabled(), { timeout: 8500 });
+        expect(screen.getByRole("columnheader", { name: "Identifier" })).toBeInTheDocument();
+        expect(screen.getByRole("columnheader", { name: "Supports" })).toBeInTheDocument();
+        expect(screen.getByText("builder-a1b2c3")).toBeInTheDocument();
+        expect(screen.queryByText("another-builder")).not.toBeInTheDocument();
+        expect(screen.getAllByRole("row")).toHaveLength(2);
     }, 15000);
 });
