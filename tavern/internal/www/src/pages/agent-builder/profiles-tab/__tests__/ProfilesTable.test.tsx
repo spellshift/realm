@@ -63,7 +63,8 @@ describe("ProfilesTable", () => {
         renderTable([defaultProfile]);
         expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
-        expect(screen.getByText("Default profile")).toBeInTheDocument();
+        expect(screen.getByRole("columnheader", { name: "Actions" })).toBeInTheDocument();
+        expect(screen.queryByText("Default profile")).not.toBeInTheDocument();
     });
 
     it("calls onEdit/onDelete with the clicked profile", () => {

@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -5456,6 +5457,8 @@ func (ec *executionContext) fieldContext_BuildTask_builder(_ context.Context, fi
 				return ec.fieldContext_Builder_upstream(ctx, field)
 			case "pollInterval":
 				return ec.fieldContext_Builder_pollInterval(ctx, field)
+			case "executor":
+				return ec.fieldContext_Builder_executor(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
 			case "buildtasks":
@@ -5983,6 +5986,35 @@ func (ec *executionContext) fieldContext_Builder_pollInterval(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Builder_executor(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Builder_executor,
+		func(ctx context.Context) (any, error) {
+			return obj.Executor, nil
+		},
+		nil,
+		ec.marshalNBuilderExecutor2realmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Builder_executor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Builder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type BuilderExecutor does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Builder_lastSeenAt(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6202,6 +6234,8 @@ func (ec *executionContext) fieldContext_BuilderEdge_node(_ context.Context, fie
 				return ec.fieldContext_Builder_upstream(ctx, field)
 			case "pollInterval":
 				return ec.fieldContext_Builder_pollInterval(ctx, field)
+			case "executor":
+				return ec.fieldContext_Builder_executor(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
 			case "buildtasks":
@@ -25028,7 +25062,7 @@ func (ec *executionContext) unmarshalInputBuilderWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "upstream", "upstreamNEQ", "upstreamIn", "upstreamNotIn", "upstreamGT", "upstreamGTE", "upstreamLT", "upstreamLTE", "upstreamContains", "upstreamHasPrefix", "upstreamHasSuffix", "upstreamEqualFold", "upstreamContainsFold", "pollInterval", "pollIntervalNEQ", "pollIntervalIn", "pollIntervalNotIn", "pollIntervalGT", "pollIntervalGTE", "pollIntervalLT", "pollIntervalLTE", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "hasBuildtasks", "hasBuildtasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "upstream", "upstreamNEQ", "upstreamIn", "upstreamNotIn", "upstreamGT", "upstreamGTE", "upstreamLT", "upstreamLTE", "upstreamContains", "upstreamHasPrefix", "upstreamHasSuffix", "upstreamEqualFold", "upstreamContainsFold", "pollInterval", "pollIntervalNEQ", "pollIntervalIn", "pollIntervalNotIn", "pollIntervalGT", "pollIntervalGTE", "pollIntervalLT", "pollIntervalLTE", "executor", "executorNEQ", "executorIn", "executorNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "hasBuildtasks", "hasBuildtasksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25462,6 +25496,34 @@ func (ec *executionContext) unmarshalInputBuilderWhereInput(ctx context.Context,
 				return it, err
 			}
 			it.PollIntervalLTE = data
+		case "executor":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executor"))
+			data, err := ec.unmarshalOBuilderExecutor2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Executor = data
+		case "executorNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executorNEQ"))
+			data, err := ec.unmarshalOBuilderExecutor2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExecutorNEQ = data
+		case "executorIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executorIn"))
+			data, err := ec.unmarshalOBuilderExecutor2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutorᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExecutorIn = data
+		case "executorNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executorNotIn"))
+			data, err := ec.unmarshalOBuilderExecutor2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutorᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExecutorNotIn = data
 		case "lastSeenAt":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastSeenAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
@@ -25629,7 +25691,7 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"supportedTargets", "upstream", "pollInterval"}
+	fieldsInOrder := [...]string{"supportedTargets", "upstream", "pollInterval", "executor"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25657,6 +25719,13 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 				return it, err
 			}
 			it.PollInterval = data
+		case "executor":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("executor"))
+			data, err := ec.unmarshalOBuilderExecutor2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Executor = data
 		}
 	}
 	return it, nil
@@ -41542,6 +41611,11 @@ func (ec *executionContext) _Builder(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "executor":
+			out.Values[i] = ec._Builder_executor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "lastSeenAt":
 			out.Values[i] = ec._Builder_lastSeenAt(ctx, field, obj)
 		case "buildtasks":
@@ -48663,6 +48737,16 @@ func (ec *executionContext) marshalNBuilderConnection2ᚖrealmᚗpubᚋtavernᚋ
 	return ec._BuilderConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBuilderExecutor2realmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx context.Context, v any) (builder.Executor, error) {
+	var res builder.Executor
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBuilderExecutor2realmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx context.Context, sel ast.SelectionSet, v builder.Executor) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNBuilderOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderOrder(ctx context.Context, v any) (*ent.BuilderOrder, error) {
 	res, err := ec.unmarshalInputBuilderOrder(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -50491,6 +50575,59 @@ func (ec *executionContext) marshalOBuilderEdge2ᚖrealmᚗpubᚋtavernᚋintern
 		return graphql.Null
 	}
 	return ec._BuilderEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBuilderExecutor2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutorᚄ(ctx context.Context, v any) ([]builder.Executor, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]builder.Executor, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBuilderExecutor2realmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOBuilderExecutor2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutorᚄ(ctx context.Context, sel ast.SelectionSet, v []builder.Executor) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBuilderExecutor2realmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOBuilderExecutor2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx context.Context, v any) (*builder.Executor, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(builder.Executor)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOBuilderExecutor2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx context.Context, sel ast.SelectionSet, v *builder.Executor) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOBuilderOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderOrderᚄ(ctx context.Context, v any) ([]*ent.BuilderOrder, error) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@apollo/client";
 import Select, { MultiValue } from "react-select";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
 import Button from "../../components/tavern-base-ui/button/Button";
@@ -17,7 +17,6 @@ const STEPS = [
     { name: "Configure builder", description: "Step 1", href: "#", step: 0 },
     { name: "Copy config", description: "Step 2", href: "#", step: 1 },
     { name: "Start builder", description: "Step 3", href: "#", step: 2 },
-    { name: "Wait for builder to register", description: "Step 4", href: "#", step: 3 },
 ];
 
 export const EnrollBuilderPage = () => {
@@ -30,15 +29,15 @@ export const EnrollBuilderPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<{ identifier: string; config: string } | null>(null);
     const [registerBuilder, { loading }] = useMutation(REGISTER_BUILDER);
-    const { builders, refetch } = useBuilders({ skip: step !== 3 });
+    const { builders, refetch } = useBuilders({ skip: step !== 2 || !result });
     const registered = builders.some((builder) => builder.identifier === result?.identifier && builder.online);
     const pollIntervalValid = Number.isInteger(pollInterval) && pollInterval >= 1;
 
     useEffect(() => {
-        if (step !== 3 || registered) return;
+        if (step !== 2 || !result || registered) return;
         const timer = setInterval(() => { void refetch(); }, 5000);
         return () => clearInterval(timer);
-    }, [step, registered, refetch]);
+    }, [step, result, registered, refetch]);
 
     const submit = async () => {
         if (targets.length === 0 || !pollIntervalValid || loading) return;
@@ -48,6 +47,7 @@ export const EnrollBuilderPage = () => {
                 supportedTargets: targets.map((target) => target.value),
                 upstream: upstream.trim() || undefined,
                 pollInterval,
+                executor,
             } } });
             if (!data?.registerBuilder) throw new Error("The server did not return a builder.");
             setResult({ identifier: data.registerBuilder.builder.identifier, config: data.registerBuilder.config });
@@ -92,7 +92,7 @@ export const EnrollBuilderPage = () => {
                             <div className="flex gap-2">
                                 <Button buttonVariant="ghost" onClick={() => navigate("/admin?tab=builders")}>Cancel</Button>
                                 <Button type="submit" buttonStyle={{ color: "purple", size: "md" }} isLoading={loading}
-                                    disabled={targets.length === 0 || !pollIntervalValid}>Enroll</Button>
+                                    disabled={targets.length === 0 || !pollIntervalValid}>Configure</Button>
                             </div>
                         </form>
                     )}
@@ -112,17 +112,15 @@ export const EnrollBuilderPage = () => {
                         <div className="flex flex-col gap-4">
                             <h2 className="text-xl font-semibold">Start builder</h2>
                             <p className="text-sm text-gray-700">From the Realm project root, run the builder with the saved config:</p>
-                            <CodeBlock code={`go run ./tavern builder --config builder-${result.identifier}.yaml --executor ${executor}`} language="bash" showCopyButton />
-                            <Button buttonStyle={{ color: "purple", size: "md" }} onClick={() => setStep(3)}>I started the builder</Button>
-                        </div>
-                    )}
-                    {step === 3 && (
-                        <div className="flex flex-col gap-4">
-                            <h2 className="text-xl font-semibold">Wait for builder to register</h2>
+                            <CodeBlock code={`go run ./tavern builder --config builder-${result.identifier}.yaml`} language="bash" showCopyButton />
                             <p role="status" className="text-sm text-gray-700">
                                 {registered ? "Builder is online and ready to build agents." : "Waiting for the builder to connect to Tavern…"}
                             </p>
-                            {registered && <Link className="text-purple-700 underline" to="/admin?tab=builders">View builders</Link>}
+                            <div className="flex gap-2">
+                                <Button buttonVariant="ghost" onClick={() => setStep(1)}>Previous</Button>
+                                <Button buttonStyle={{ color: "purple", size: "md" }} disabled={!registered}
+                                    onClick={() => navigate("/admin?tab=builders")}>Next</Button>
+                            </div>
                         </div>
                     )}
                 </div>

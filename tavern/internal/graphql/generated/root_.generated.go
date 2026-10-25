@@ -240,6 +240,7 @@ type ComplexityRoot struct {
 	Builder struct {
 		Buildtasks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
 		CreatedAt        func(childComplexity int) int
+		Executor         func(childComplexity int) int
 		ID               func(childComplexity int) int
 		Identifier       func(childComplexity int) int
 		LastModifiedAt   func(childComplexity int) int
@@ -1833,6 +1834,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Builder.CreatedAt(childComplexity), true
+
+	case "Builder.executor":
+		if e.ComplexityRoot.Builder.Executor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Builder.Executor(childComplexity), true
 
 	case "Builder.id":
 		if e.ComplexityRoot.Builder.ID == nil {
@@ -7093,6 +7101,10 @@ type Builder implements Node {
   """
   pollInterval: Int!
   """
+  Execution mode written into the builder configuration.
+  """
+  executor: BuilderExecutor!
+  """
   Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
   """
   lastSeenAt: Time
@@ -7157,6 +7169,13 @@ type BuilderEdge {
   A cursor for use in pagination.
   """
   cursor: Cursor!
+}
+"""
+BuilderExecutor is enum for the field executor
+"""
+enum BuilderExecutor @goModel(model: "realm.pub/tavern/internal/ent/builder.Executor") {
+  docker
+  local
 }
 """
 Ordering options for Builder connections
@@ -7264,6 +7283,13 @@ input BuilderWhereInput {
   pollIntervalLT: Int
   pollIntervalLTE: Int
   """
+  executor field predicates
+  """
+  executor: BuilderExecutor
+  executorNEQ: BuilderExecutor
+  executorIn: [BuilderExecutor!]
+  executorNotIn: [BuilderExecutor!]
+  """
   last_seen_at field predicates
   """
   lastSeenAt: Time
@@ -7320,6 +7346,10 @@ input CreateBuilderInput {
   Builder task polling interval in seconds.
   """
   pollInterval: Int
+  """
+  Execution mode written into the builder configuration.
+  """
+  executor: BuilderExecutor
 }
 """
 CreateDeviceAuthInput is used for create DeviceAuth object.

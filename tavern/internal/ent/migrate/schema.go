@@ -185,6 +185,7 @@ var (
 		{Name: "supported_targets", Type: field.TypeJSON},
 		{Name: "upstream", Type: field.TypeString, Default: "http://127.0.0.1:8000"},
 		{Name: "poll_interval", Type: field.TypeInt, Default: 5},
+		{Name: "executor", Type: field.TypeEnum, Enums: []string{"docker", "local"}, Default: "docker"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// BuildersTable holds the schema information for the "builders" table.

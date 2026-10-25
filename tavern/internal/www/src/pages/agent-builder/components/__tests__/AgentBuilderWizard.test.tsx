@@ -3,9 +3,10 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { MemoryRouter } from "react-router-dom";
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider, MockedResponse } from "@apollo/client/testing";
 import AgentBuilderWizard from "../AgentBuilderWizard";
 import { GET_BUILD_PROFILES, GET_BUILDERS } from "../../queries";
+import { AuthorizationContext } from "../../../../context/AuthorizationContext";
 
 vi.mock("@tanstack/react-virtual", async () => {
     const React = await import("react");
@@ -88,17 +89,23 @@ const populatedProfilesMock = {
     },
 };
 
-describe("AgentBuilderWizard", () => {
-    it("renders empty state asking an admin to add a profile and omits New profile button when no profiles exist", async () => {
-        render(
-            <MemoryRouter>
-                <ChakraProvider>
-                    <MockedProvider mocks={[emptyProfilesMock, emptyBuildersMock]} addTypename={false}>
+function renderWizard(profilesMock: MockedResponse, buildersMock: MockedResponse = emptyBuildersMock, isAdmin = false) {
+    return render(
+        <MemoryRouter>
+            <ChakraProvider>
+                <AuthorizationContext.Provider value={{ data: { me: { isAdmin } as never }, isLoading: false, error: undefined }}>
+                    <MockedProvider mocks={[profilesMock, buildersMock]} addTypename={false}>
                         <AgentBuilderWizard />
                     </MockedProvider>
-                </ChakraProvider>
-            </MemoryRouter>
-        );
+                </AuthorizationContext.Provider>
+            </ChakraProvider>
+        </MemoryRouter>
+    );
+}
+
+describe("AgentBuilderWizard", () => {
+    it("renders empty state asking an admin to add a profile and omits New profile button when no profiles exist", async () => {
+        renderWizard(emptyProfilesMock);
 
         await waitFor(() => {
             expect(screen.getByText("No build profiles available")).toBeInTheDocument();
@@ -112,15 +119,7 @@ describe("AgentBuilderWizard", () => {
     });
 
     it("renders profile options without New profile button when profiles exist", async () => {
-        render(
-            <MemoryRouter>
-                <ChakraProvider>
-                    <MockedProvider mocks={[populatedProfilesMock, emptyBuildersMock]} addTypename={false}>
-                        <AgentBuilderWizard />
-                    </MockedProvider>
-                </ChakraProvider>
-            </MemoryRouter>
-        );
+        renderWizard(populatedProfilesMock);
 
         await waitFor(() => {
             expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument();
@@ -130,19 +129,14 @@ describe("AgentBuilderWizard", () => {
     });
 
     it("explains why Submit is disabled when no online builder supports the selected target", async () => {
-        render(
-            <MemoryRouter>
-                <ChakraProvider>
-                    <MockedProvider mocks={[populatedProfilesMock, emptyBuildersMock]} addTypename={false}>
-                        <AgentBuilderWizard />
-                    </MockedProvider>
-                </ChakraProvider>
-            </MemoryRouter>
-        );
+        renderWizard(populatedProfilesMock);
 
         await waitFor(() => {
             expect(screen.getByText("Linux Default Beacon")).toBeInTheDocument();
-        });
+        }, { timeout: 5000 });
+
+        expect(screen.getByText("Ask an admin to enroll and start a builder before generating an agent.")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Enroll builder" })).not.toBeInTheDocument();
 
         fireEvent.click(screen.getAllByRole("row")[1]);
         fireEvent.click(screen.getByRole("button", { name: "continue profile step" }));
@@ -160,5 +154,11 @@ describe("AgentBuilderWizard", () => {
 
         expect(screen.getByText("No online builders available")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "submit agent build" })).toBeDisabled();
+    });
+
+    it("shows enrollment guidance on the first step according to admin access", async () => {
+        renderWizard(populatedProfilesMock, emptyBuildersMock, true);
+        await waitFor(() => expect(screen.getByText("No online builders available")).toBeInTheDocument());
+        expect(screen.getByRole("button", { name: "Enroll builder" })).toBeInTheDocument();
     });
 });

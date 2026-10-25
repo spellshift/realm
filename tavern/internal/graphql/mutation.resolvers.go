@@ -537,12 +537,14 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 		SupportedTargets []string `yaml:"supported_targets"`
 		MTLS             string   `yaml:"mtls"`
 		Upstream         string   `yaml:"upstream"`
+		Executor         string   `yaml:"executor"`
 	}{
 		PollInterval:     b.PollInterval,
 		ID:               b.Identifier,
 		SupportedTargets: targetNames,
 		MTLS:             mtlsCert,
 		Upstream:         b.Upstream,
+		Executor:         string(b.Executor),
 	}
 
 	configBytes, err := yaml.Marshal(configData)

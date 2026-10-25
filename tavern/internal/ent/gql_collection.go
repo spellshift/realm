@@ -1681,6 +1681,11 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 				selectedFields = append(selectedFields, builder.FieldPollInterval)
 				fieldSeen[builder.FieldPollInterval] = struct{}{}
 			}
+		case "executor":
+			if _, ok := fieldSeen[builder.FieldExecutor]; !ok {
+				selectedFields = append(selectedFields, builder.FieldExecutor)
+				fieldSeen[builder.FieldExecutor] = struct{}{}
+			}
 		case "lastSeenAt":
 			if _, ok := fieldSeen[builder.FieldLastSeenAt]; !ok {
 				selectedFields = append(selectedFields, builder.FieldLastSeenAt)

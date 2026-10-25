@@ -636,6 +636,8 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context
 				return ec.fieldContext_Builder_upstream(ctx, field)
 			case "pollInterval":
 				return ec.fieldContext_Builder_pollInterval(ctx, field)
+			case "executor":
+				return ec.fieldContext_Builder_executor(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
 			case "buildtasks":

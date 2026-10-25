@@ -66,7 +66,7 @@ export const getProfileColumns = (
             cell: ({ row }) => {
                 const profile = row.original;
                 if (profile.id === defaultProfileId) {
-                    return <span className="text-xs text-gray-400 italic">Default profile</span>;
+                    return null;
                 }
                 return (
                     <div className="flex flex-row gap-2 justify-end">

@@ -15,6 +15,7 @@ import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import { FormSteps } from "../../../components/form-steps";
 import { TomeTactic } from "../../../utils/enums";
+import { useAuthorization } from "../../../context/AuthorizationContext";
 import { COMPILE_TARGETS, TRANSPORT_TYPES, CompileTarget, BuildProfile } from "../types";
 
 const STEPS = [
@@ -67,7 +68,9 @@ export const AgentBuilderWizard = ({
     const toast = useToast();
     const [currStep, setCurrStep] = useState(0);
     const { profiles, loading, error: profilesError } = useBuildProfiles();
-    const { builders, error: buildersError } = useBuilders();
+    const { builders, loading: buildersLoading, error: buildersError } = useBuilders();
+    const { data: authorization } = useAuthorization();
+    const noOnlineBuilders = !buildersLoading && !buildersError && builders.every((builder) => !builder.online);
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
     const setSelectedProfile = (profile: BuildProfile) => setSelectedProfileId(profile.id);
@@ -138,7 +141,7 @@ export const AgentBuilderWizard = ({
     const visibleSelectedTarget = filteredTargets.find((t) => t.id === selectedTarget.id) ?? filteredTargets[0] ?? null;
 
     const startBuild = async () => {
-        if (!selectedProfile || creating) return;
+        if (!selectedProfile || creating || !targetAvailable) return;
         setError(null);
         try {
             const { data } = await createTask({ variables: { input: {
@@ -177,6 +180,13 @@ export const AgentBuilderWizard = ({
 
             {profilesError && <AlertError label="Unable to load build profiles" details={profilesError.message} />}
             {buildersError && <AlertError label="Unable to load builders" details={buildersError.message} />}
+            {noOnlineBuilders && <div className="flex flex-col items-start gap-2">
+                <AlertError label="No online builders available" details={authorization?.me.isAdmin
+                    ? "Enroll and start a builder before generating an agent."
+                    : "Ask an admin to enroll and start a builder before generating an agent."} />
+                {authorization?.me.isAdmin && <Button buttonStyle={{ color: "purple", size: "md" }}
+                    onClick={() => navigate("/admin/builders/enroll")}>Enroll builder</Button>}
+            </div>}
             {error && <AlertError label="Unable to start build" details={error} />}
             {loading && profiles.length === 0 && <p role="status">Loading build profiles…</p>}
             <form className="flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); if (currStep === 2) void startBuild(); }}>
@@ -479,10 +489,10 @@ export const AgentBuilderWizard = ({
                                     )}
                                 </div>
 
-                                {!targetAvailable && (
+                                {!noOnlineBuilders && !targetAvailable && (
                                     <AlertError
-                                        label="No online builders available"
-                                        details={`No online builders available for ${selectedTarget.platformLabel}. Please enroll and start a builder supporting this target to proceed.`}
+                                        label="No compatible online builder"
+                                        details={`No online builders are available for ${selectedTarget.platformLabel}. Please enroll and start a builder supporting this target to proceed.`}
                                     />
                                 )}
 
