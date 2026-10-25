@@ -8,7 +8,7 @@ import EnrollBuilderPage from "../EnrollBuilderPage";
 import { GET_ENROLLED_BUILDER, REGISTER_BUILDER } from "../queries";
 
 const registerBuilderInput = {
-    supportedTargets: ["PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_WINDOWS"],
+    supportedTargets: ["PLATFORM_LINUX", "PLATFORM_WINDOWS"],
     upstream: "http://127.0.0.1:8000",
     pollInterval: 5,
     executor: "docker",

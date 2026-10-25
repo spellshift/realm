@@ -13,8 +13,10 @@ import Table from "../../components/tavern-base-ui/table/Table";
 import { builderColumns } from "./builders-tab";
 import { REGISTER_BUILDER, downloadBuilderConfig, useEnrolledBuilder } from "./queries";
 import { PlatformOption, PLATFORM_OPTIONS } from "./types";
+import { SupportedPlatforms } from "../../utils/enums";
 
 const DEFAULT_UPSTREAM = "http://127.0.0.1:8000";
+const DEFAULT_PLATFORM_OPTIONS = PLATFORM_OPTIONS.filter((option) => option.value !== SupportedPlatforms.MacOS);
 const STEPS = [
     { name: "Configure builder", description: "Step 1", href: "#", step: 0 },
     { name: "Copy config", description: "Step 2", href: "#", step: 1 },
@@ -24,7 +26,7 @@ const STEPS = [
 export const EnrollBuilderPage = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
-    const [targets, setTargets] = useState<PlatformOption[]>(PLATFORM_OPTIONS);
+    const [targets, setTargets] = useState<PlatformOption[]>(DEFAULT_PLATFORM_OPTIONS);
     const [upstream, setUpstream] = useState(DEFAULT_UPSTREAM);
     const [pollInterval, setPollInterval] = useState(5);
     const [executor, setExecutor] = useState("docker");
