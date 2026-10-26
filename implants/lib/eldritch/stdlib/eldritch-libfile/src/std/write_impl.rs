@@ -1,8 +1,9 @@
 use ::std::fs;
 use alloc::format;
 use alloc::string::String;
+use alloc::vec::Vec;
 
-pub fn write(path: String, content: String) -> Result<(), String> {
+pub fn write(path: String, content: Vec<u8>) -> Result<(), String> {
     fs::write(&path, content).map_err(|e| format!("Failed to write to file {path}: {e}"))
 }
 
@@ -16,8 +17,9 @@ mod tests {
         let tmp = NamedTempFile::new().unwrap();
         let path = tmp.path().to_string_lossy().to_string();
 
-        write(path.clone(), "hello".to_string()).unwrap();
+        let data = vec![0xDE, 0xAD, 0xBE, 0xEF];
+        write(path.clone(), data.clone()).unwrap();
 
-        assert_eq!(fs::read_to_string(path).unwrap(), "hello");
+        assert_eq!(fs::read(path).unwrap(), data);
     }
 }

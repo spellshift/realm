@@ -1,12 +1,11 @@
 use super::CryptoLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
-use eldritch_core::Value;
+use eldritch_core::{Value, call_bound_method};
 use eldritch_libaes::{AesLibrary, fake::AesLibraryFake};
 use eldritch_libbase64::{Base64Library, fake::Base64LibraryFake};
 use eldritch_libhash::{HashLibrary, fake::HashLibraryFake};
 use eldritch_libjson::{JsonLibrary, fake::JsonLibraryFake};
-use eldritch_libutf16le::{Utf16leLibrary, fake::Utf16leLibraryFake};
 use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
@@ -67,11 +66,25 @@ impl CryptoLibrary for CryptoLibraryFake {
     }
 
     fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String> {
-        Utf16leLibraryFake.encode(content)
+        match call_bound_method(
+            &Value::String(content),
+            "encode",
+            &[Value::String("utf16le".into())],
+        )? {
+            Value::Bytes(b) => Ok(b),
+            _ => unreachable!(),
+        }
     }
 
     fn decode_utf16le(&self, content: Vec<u8>) -> Result<String, String> {
-        Utf16leLibraryFake.decode(content)
+        match call_bound_method(
+            &Value::Bytes(content),
+            "decode",
+            &[Value::String("utf16le".into())],
+        )? {
+            Value::String(s) => Ok(s),
+            _ => unreachable!(),
+        }
     }
 }
 

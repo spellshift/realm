@@ -58,7 +58,6 @@ fn test_file_bindings() {
         "file",
         &[
             "append",
-            "append_binary",
             "compress",
             "copy",
             "decompress",
@@ -75,7 +74,6 @@ fn test_file_bindings() {
             "parent_dir",
             "pwd",
             "read",
-            "read_binary",
             "read_named_pipe",
             "remove",
             "replace",
@@ -88,7 +86,6 @@ fn test_file_bindings() {
             "tmp_dir",
             "which",
             "write",
-            "write_binary",
         ],
     );
 }
@@ -172,7 +169,7 @@ fn test_linux_bindings() {
 
 #[test]
 fn test_net_bindings() {
-    check_bindings("net", &["interfaces", "sockets", "tcp", "udp"]);
+    check_bindings("net", &["conns", "interfaces", "tcp", "udp"]);
 }
 
 #[test]
@@ -193,16 +190,6 @@ fn test_ssh_bindings() {
 #[test]
 fn test_user_bindings() {
     check_bindings("user", &["info", "list"]);
-}
-
-#[test]
-fn test_utf8_bindings() {
-    check_bindings("utf8", &["decode", "encode"]);
-}
-
-#[test]
-fn test_utf16le_bindings() {
-    check_bindings("utf16le", &["decode", "encode"]);
 }
 
 #[test]
@@ -242,7 +229,7 @@ fn test_pivot_bindings() {
 
 #[test]
 fn test_assets_bindings() {
-    check_bindings("assets", &["copy", "list", "read", "read_binary"]);
+    check_bindings("assets", &["copy", "list", "read"]);
 }
 
 #[test]
@@ -383,15 +370,23 @@ fn test_deprecated_delegation_and_warning() {
 
     // Verify new 0.4.1 functions work end-to-end through the interpreter
     let utf8_roundtrip = interp
-        .interpret("utf8.decode(utf8.encode('eldritch 0.4.1'))")
+        .interpret("'eldritch 0.4.1'.encode().decode()")
         .unwrap();
     assert_eq!(
         utf8_roundtrip,
         eldritch_core::Value::String("eldritch 0.4.1".into())
     );
 
+    let utf16le_roundtrip = interp
+        .interpret("'eldritch 0.4.1'.encode('utf16le').decode('utf16le')")
+        .unwrap();
+    assert_eq!(
+        utf16le_roundtrip,
+        eldritch_core::Value::String("eldritch 0.4.1".into())
+    );
+
     let gzip_roundtrip = interp
-        .interpret("utf8.decode(gzip.decompress(gzip.compress(utf8.encode('compress me'))))")
+        .interpret("gzip.decompress(gzip.compress('compress me'.encode())).decode()")
         .unwrap();
     assert_eq!(
         gzip_roundtrip,

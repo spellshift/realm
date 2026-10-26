@@ -84,7 +84,7 @@ pub trait ProcessLibrary {
 
     #[eldritch_method]
     #[eldritch_deprecated(
-        "process.netstat has been deprecated and will be removed in a future version of eldritch. Please use net.sockets instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+        "process.netstat has been deprecated and will be removed in a future version of eldritch. Please use net.conns instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
     /// Returns a list of active network connections (TCP/UDP/Unix).
     ///

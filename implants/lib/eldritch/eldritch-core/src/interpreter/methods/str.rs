@@ -281,8 +281,28 @@ pub fn handle_string_methods(
             Ok(Value::List(Arc::new(RwLock::new(chars))))
         })()),
         "encode" => Some((|| {
-            args.require(0, "encode")?;
-            Ok(Value::Bytes(s.as_bytes().to_vec()))
+            args.require_range(0, 1, "encode")?;
+            let encoding = if args.is_empty() {
+                "utf8".to_string()
+            } else if let Value::String(enc) = &args[0] {
+                enc.to_lowercase().replace(['-', '_'], "")
+            } else {
+                return Err("TypeError: encode() argument 'encoding' must be str".into());
+            };
+
+            match encoding.as_str() {
+                "utf8" => Ok(Value::Bytes(s.as_bytes().to_vec())),
+                "utf16le" => {
+                    let mut encoded: Vec<u8> = Vec::with_capacity(s.len() * 2);
+                    for c in s.encode_utf16() {
+                        let bytes = c.to_le_bytes();
+                        encoded.push(bytes[0]);
+                        encoded.push(bytes[1]);
+                    }
+                    Ok(Value::Bytes(encoded))
+                }
+                _ => Err(alloc::format!("LookupError: unknown encoding: {}", args[0])),
+            }
         })()),
         "isalnum" => Some((|| {
             args.require(0, "isalnum")?;

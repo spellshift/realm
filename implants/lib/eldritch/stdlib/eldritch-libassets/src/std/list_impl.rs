@@ -10,7 +10,7 @@ impl StdAssetsLibrary {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::std::read_binary_impl::tests::TestAsset;
+    use crate::std::read_impl::tests::TestAsset;
     use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
     use eldritch_mockagent::MockAgent;
     use pb::c2::TaskContext;

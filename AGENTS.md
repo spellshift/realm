@@ -102,7 +102,7 @@ func doAThing(myparam *Thing):
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `crypto` and `pivot`):
+The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
 | Module    | Purpose                                                       |
 |-----------|---------------------------------------------------------------|
@@ -118,7 +118,7 @@ The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `cry
 | `http`    | HTTP/HTTPS requests                                           |
 | `json`    | JSON encoding, decoding, and validation                       |
 | `linux`   | Linux-specific operations (`uname`)                           |
-| `net`     | Network interfaces, listening sockets, and TCP/UDP clients    |
+| `net`     | Network interfaces, listening connections, and TCP/UDP clients |
 | `portal`  | Bi-directional portal streams                                 |
 | `process` | Process management, PID, and environment variables            |
 | `random`  | Cryptographically secure random                               |
@@ -130,8 +130,6 @@ The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `cry
 | `template` | Jinja2 template rendering from strings and files            |
 | `time`    | Time formatting and delays                                    |
 | `user`    | Current user info and user account enumeration                |
-| `utf8`    | UTF-8 byte/string encoding and decoding                       |
-| `utf16le` | UTF-16LE byte/string encoding and decoding                    |
 | `windows` | Windows-specific DLL injection/reflection, registry, & tokens |
 
 # Eldritch Changelog
@@ -146,12 +144,16 @@ To automatically migrate existing `.eldritch` tomes to the `0.4.1` API, run:
 python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 ```
 
-### Renamed Functions
+### Renamed Functions & Type Conversions
 
 - `file.temp_file` → `file.tmp`
 - `file.pwd` → `process.cwd`
 - `file.template` → `template.render_file`
 - `file.template_str` → `template.render`
+- `file.read_binary` → `file.read` (`file.read` now returns `Bytes`)
+- `file.write_binary` → `file.write` (`file.write` now accepts `Bytes`)
+- `file.append_binary` → `file.append` (`file.append` now accepts `Bytes`)
+- `assets.read_binary` → `assets.read` (`assets.read` now returns `Bytes`)
 - `time.format_to_epoch` → `time.to_epoch`
 - `time.format_to_readable` → `time.format`
 - `agent.get_config` → `agent.config`
@@ -162,9 +164,9 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 - `crypto.aes_encrypt` → `aes.encrypt`
 - `crypto.aes_encrypt_file` → `aes.encrypt_file`
 - `crypto.decode_b64` → `base64.decode`
-- `crypto.decode_utf16le` → `utf16le.decode`
+- `crypto.decode_utf16le` → `bytes.decode("utf16le")`
 - `crypto.encode_b64` → `base64.encode`
-- `crypto.encode_utf16le` → `utf16le.encode`
+- `crypto.encode_utf16le` → `str.encode("utf16le")`
 - `crypto.from_json` → `json.decode`
 - `crypto.hash_file` → `hash.file`
 - `crypto.is_json` → `json.is_valid`
@@ -182,7 +184,7 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 - `pivot.ssh_copy` → `ssh.copy`
 - `pivot.ssh_deploy` → `ssh.deploy`
 - `pivot.ssh_exec` → `ssh.exec`
-- `process.netstat` → `net.sockets`
+- `process.netstat` → `net.conns`
 - `sys.dll_inject` → `windows.dll_inject`
 - `sys.dll_reflect` → `windows.dll_reflect`
 - `sys.get_env` → `process.env`
@@ -198,10 +200,11 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 - `sys.whereis` → `file.which`
 - `sys.write_reg` → `windows.write_reg`
 
-### New Functions
+### New Functions & Built-in Methods
 
-- `utf8.encode(content: str) -> Bytes`
-- `utf8.decode(content: Bytes, lossy: Optional<bool>) -> str`
+- `str.encode(encoding: Optional<str> = "utf8") -> Bytes` (supports `"utf8"` and `"utf16le"`)
+- `bytes.decode(encoding: Optional<str> = "utf8") -> str` (supports `"utf8"` and `"utf16le"`)
+- `str(b"...")` and `bytes("...")` assume default UTF-8 encoding
 - `gzip.compress(data: Bytes) -> Bytes`
 - `gzip.decompress(data: Bytes) -> Bytes`
 - `linux.uname() -> Dict`

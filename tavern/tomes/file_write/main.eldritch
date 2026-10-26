@@ -19,7 +19,7 @@ def main():
         print("[INFO] File was successfully removed!")
 
     # if unable to write to destination will error
-    file.write(new_file_path, new_file_content)
+    file.write(new_file_path, bytes(new_file_content))
 
     # Print a Success!
     print(f"[INFO] The file '{new_file_path}' was successfully written!")

@@ -68,7 +68,7 @@ const writeHelpMessage = (term: Terminal, version: string) => {
     term.write("\r\n");
     term.write("\x1b[1;33m## Process\x1b[0m\r\n");
     term.write("  \x1b[1m`process.list()`\x1b[0m                                             — List processes\r\n");
-    term.write("  \x1b[1m`net.sockets()`\x1b[0m                                              — List network connections\r\n");
+    term.write("  \x1b[1m`net.conns()`\x1b[0m                                                — List network connections\r\n");
     term.write("  \x1b[1m`user.info()`\x1b[0m                                                — Get user info and permissions\r\n");
     term.write("\r\n");
     term.write("\x1b[1;33m## Execution\x1b[0m\r\n");

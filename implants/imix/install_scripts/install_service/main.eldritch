@@ -238,7 +238,7 @@ def get_systemd_dir():
 
 def systemd(service_name, service_desc, executable_path, executable_args):
     # assets.copy("persist_service/files/systemd.service.j2","/tmp/systemd.service.j2")
-    file.write("/tmp/systemd.service.j2", systemd_service_template)
+    file.write("/tmp/systemd.service.j2", bytes(systemd_service_template))
     args = {
         "SERVICE_NAME": service_name,
         "SERVICE_DESC": service_desc,
@@ -265,7 +265,7 @@ def systemd(service_name, service_desc, executable_path, executable_args):
 
 def sysvinit(service_name, service_desc, executable_path, executable_args):
     # assets.copy("persist_service/files/sysvinit.sh.j2","/tmp/svc.sh.j2")
-    file.write("/tmp/svc.sh.j2", sysvinit_template)
+    file.write("/tmp/svc.sh.j2", bytes(sysvinit_template))
     args = {
         "SERVICE_NAME": service_name,
         "SERVICE_DESC": service_desc,
@@ -291,7 +291,7 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
         print(startup_dir+" not found")
         return
 
-    file.write("/tmp/svc.sh.j2", bsdinit_template)
+    file.write("/tmp/svc.sh.j2", bytes(bsdinit_template))
     args = {
         "service_name": service_name,
         "service_desc": service_desc,
@@ -310,7 +310,7 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
 
 def launch_daemon(service_name, executable_path, executable_args):
     # assets.copy("persist_service/files/launch_daemon.plist.j2","/tmp/plist.j2")
-    file.write("/tmp/plist.j2", launch_daemon_template)
+    file.write("/tmp/plist.j2", bytes(launch_daemon_template))
     args = {
         "service_name": "com.testing."+service_name,
         "bin_path": executable_path,

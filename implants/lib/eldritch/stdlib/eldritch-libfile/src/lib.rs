@@ -21,22 +21,6 @@ pub mod std;
 /// - content searching and replacement.
 pub trait FileLibrary {
     #[eldritch_method]
-    /// Appends content to a file.
-    ///
-    /// If the file does not exist, it will be created.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The path to the file.
-    /// - `content` (`str`): The string content to append.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the file cannot be opened or written to.
-    fn append(&self, path: String, content: String) -> Result<(), String>;
-
-    #[eldritch_method]
     /// Appends binary content to a file.
     ///
     /// If the file does not exist, it will be created.
@@ -50,7 +34,7 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be opened or written to.
-    fn append_binary(&self, path: String, content: Value) -> Result<(), String>;
+    fn append(&self, path: String, content: Vec<u8>) -> Result<(), String>;
 
     #[eldritch_method]
     #[eldritch_deprecated(
@@ -257,23 +241,9 @@ pub trait FileLibrary {
     fn parent_dir(&self, path: String) -> Result<String, String>;
 
     #[eldritch_method]
-    /// Reads the entire content of a file as a string.
-    ///
-    /// Supports globbing; if multiple files match, reads the first one (or behavior may vary, usually reads specific file).
-    /// *Note*: v1 docs say it errors if a directory matches.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The file path.
-    ///
-    /// **Returns**
-    /// - `str`: The file content.
-    ///
-    /// **Errors**
-    /// - Returns an error string if the file cannot be read or contains invalid UTF-8.
-    fn read(&self, path: String) -> Result<String, String>;
-
-    #[eldritch_method]
     /// Reads the entire content of a file as binary data.
+    ///
+    /// Supports globbing; if multiple files match, concatenates their content.
     ///
     /// **Parameters**
     /// - `path` (`str`): The file path.
@@ -283,7 +253,7 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
-    fn read_binary(&self, path: String) -> Result<Value, String>;
+    fn read(&self, path: String) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
     /// Reads data from a named pipe.
@@ -454,20 +424,6 @@ pub trait FileLibrary {
     fn which(&self, bin: String) -> Result<String, String>;
 
     #[eldritch_method]
-    /// Writes content to a file, overwriting it if it exists.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The file path.
-    /// - `content` (`str`): The string content to write.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if writing fails.
-    fn write(&self, path: String, content: String) -> Result<(), String>;
-
-    #[eldritch_method]
     /// Writes binary content to a file, overwriting it if it exists.
     ///
     /// **Parameters**
@@ -479,7 +435,7 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if writing fails.
-    fn write_binary(&self, path: String, content: Value) -> Result<(), String>;
+    fn write(&self, path: String, content: Vec<u8>) -> Result<(), String>;
 
     #[eldritch_method]
     /// Finds files matching specific criteria.

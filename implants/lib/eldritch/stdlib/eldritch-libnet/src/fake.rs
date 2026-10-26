@@ -23,7 +23,7 @@ impl NetLibrary for NetLibraryFake {
         Ok(vec![net, lo])
     }
 
-    fn sockets(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
+    fn conns(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
         let mut conn = BTreeMap::new();
         conn.insert("protocol".into(), Value::String("tcp".into()));
         conn.insert("local_address".into(), Value::String("127.0.0.1".into()));

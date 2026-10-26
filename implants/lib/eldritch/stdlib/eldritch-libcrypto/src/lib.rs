@@ -238,7 +238,7 @@ pub trait CryptoLibrary {
 
     #[eldritch_method]
     #[eldritch_deprecated(
-        "crypto.encode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use utf16le.encode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+        "crypto.encode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use str.encode(\"utf16le\") instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
     /// Encodes a UTF-8 string into UTF-16LE bytes.
     ///
@@ -251,7 +251,7 @@ pub trait CryptoLibrary {
 
     #[eldritch_method]
     #[eldritch_deprecated(
-        "crypto.decode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use utf16le.decode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+        "crypto.decode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use bytes.decode(\"utf16le\") instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
     /// Decodes UTF-16LE bytes into a UTF-8 string.
     ///

@@ -96,7 +96,7 @@ impl ProcessLibrary for ProcessLibraryFake {
 
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
         use eldritch_libnet::NetLibrary;
-        eldritch_libnet::fake::NetLibraryFake.sockets()
+        eldritch_libnet::fake::NetLibraryFake.conns()
     }
 
     fn pid(&self) -> Result<i64, String> {

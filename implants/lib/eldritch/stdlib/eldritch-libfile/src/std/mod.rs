@@ -5,7 +5,6 @@ use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
-mod append_binary_impl;
 pub mod append_impl;
 pub mod copy_impl;
 pub mod exists_impl;
@@ -19,7 +18,6 @@ pub mod list_recent_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
 pub mod parent_dir_impl;
-pub mod read_binary_impl;
 pub mod read_impl;
 pub mod read_named_pipe_impl;
 pub mod remove_impl;
@@ -29,7 +27,6 @@ pub mod timestomp_impl;
 pub mod tmp_dir_impl;
 pub mod tmp_impl;
 pub mod which_impl;
-pub mod write_binary_impl;
 pub mod write_impl;
 
 #[derive(Debug, Default)]
@@ -37,12 +34,8 @@ pub mod write_impl;
 pub struct StdFileLibrary;
 
 impl FileLibrary for StdFileLibrary {
-    fn append(&self, path: String, content: String) -> Result<(), String> {
+    fn append(&self, path: String, content: Vec<u8>) -> Result<(), String> {
         append_impl::append(path, content)
-    }
-
-    fn append_binary(&self, path: String, content: Value) -> Result<(), String> {
-        append_binary_impl::append_binary(path, content)
     }
 
     fn compress(&self, src: String, dst: String) -> Result<(), String> {
@@ -105,12 +98,8 @@ impl FileLibrary for StdFileLibrary {
         parent_dir_impl::parent_dir(path)
     }
 
-    fn read(&self, path: String) -> Result<String, String> {
+    fn read(&self, path: String) -> Result<Vec<u8>, String> {
         read_impl::read(path)
-    }
-
-    fn read_binary(&self, path: String) -> Result<Value, String> {
-        read_binary_impl::read_binary(path).map(Value::Bytes)
     }
 
     fn read_named_pipe(&self, name: String, max_bytes: Option<i64>) -> Result<String, String> {
@@ -187,12 +176,8 @@ impl FileLibrary for StdFileLibrary {
         which_impl::which(bin)
     }
 
-    fn write(&self, path: String, content: String) -> Result<(), String> {
+    fn write(&self, path: String, content: Vec<u8>) -> Result<(), String> {
         write_impl::write(path, content)
-    }
-
-    fn write_binary(&self, path: String, content: Value) -> Result<(), String> {
-        write_binary_impl::write_binary(path, content)
     }
 
     fn find(

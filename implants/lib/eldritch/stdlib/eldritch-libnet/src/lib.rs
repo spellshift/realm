@@ -26,7 +26,7 @@ pub trait NetLibrary {
     ///
     /// **Returns**
     /// - `List<Dict>`: A list of connection details including socket type, local/remote address/port, and associated PID.
-    fn sockets(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+    fn conns(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
     /// Sends arbitrary data to a host via TCP and waits for a response.

@@ -16,8 +16,7 @@ use eldritch::{
     dns::fake::DnsLibraryFake, file::fake::FileLibraryFake, gzip::fake::GzipLibraryFake,
     hash::fake::HashLibraryFake, http::fake::HttpLibraryFake, json::fake::JsonLibraryFake,
     process::fake::ProcessLibraryFake, regex::fake::RegexLibraryFake,
-    template::fake::TemplateLibraryFake, utf8::fake::Utf8LibraryFake,
-    utf16le::fake::Utf16leLibraryFake,
+    template::fake::TemplateLibraryFake,
 };
 
 fn main() -> io::Result<()> {
@@ -45,10 +44,6 @@ fn main() -> io::Result<()> {
         interpreter.inner.register_lib(DnsLibraryFake::default());
         interpreter.inner.register_lib(RegexLibraryFake::default());
         interpreter.inner.register_lib(CryptoLibraryFake::default());
-        interpreter.inner.register_lib(Utf8LibraryFake::default());
-        interpreter
-            .inner
-            .register_lib(Utf16leLibraryFake::default());
     }
 
     let mut repl = Repl::new();

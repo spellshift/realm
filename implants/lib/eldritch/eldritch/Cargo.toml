@@ -35,8 +35,6 @@ eldritch-libsys = { workspace = true, default-features = false }
 eldritch-libtemplate = { workspace = true, default-features = false }
 eldritch-libtime = { workspace = true, default-features = false }
 eldritch-libuser = { workspace = true, default-features = false }
-eldritch-libutf8 = { workspace = true, default-features = false }
-eldritch-libutf16le = { workspace = true, default-features = false }
 eldritch-libwindows = { workspace = true, default-features = false }
 eldritch-libchain = { workspace = true, default-features = false }
 eldritch-libdns = { workspace = true, default-features = false }
@@ -71,8 +69,6 @@ fake_bindings = [
     "fake_template",
     "fake_time",
     "fake_user",
-    "fake_utf8",
-    "fake_utf16le",
     "fake_windows",
     "fake_chain",
     "fake_dns",
@@ -101,8 +97,6 @@ fake_sys = ["eldritch-libsys/fake_bindings"]
 fake_template = ["eldritch-libtemplate/fake_bindings"]
 fake_time = ["eldritch-libtime/fake_bindings"]
 fake_user = ["eldritch-libuser/fake_bindings"]
-fake_utf8 = ["eldritch-libutf8/fake_bindings"]
-fake_utf16le = ["eldritch-libutf16le/fake_bindings"]
 fake_windows = ["eldritch-libwindows/fake_bindings"]
 fake_chain = ["eldritch-libchain/fake_bindings"]
 fake_dns = ["eldritch-libdns/fake_bindings"]
@@ -140,8 +134,6 @@ stdlib = [
     "eldritch-libtemplate/stdlib",
     "eldritch-libtime/stdlib",
     "eldritch-libuser/stdlib",
-    "eldritch-libutf8/stdlib",
-    "eldritch-libutf16le/stdlib",
     "eldritch-libwindows/stdlib",
     "eldritch-libchain/stdlib",
     "eldritch-libdns/stdlib",

@@ -35,8 +35,6 @@ members = [
     "lib/eldritch/stdlib/eldritch-libtemplate",
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/stdlib/eldritch-libuser",
-    "lib/eldritch/stdlib/eldritch-libutf8",
-    "lib/eldritch/stdlib/eldritch-libutf16le",
     "lib/eldritch/stdlib/eldritch-libwindows",
     "lib/eldritch/eldritch",
     "lib/eldritch/eldritch-wasm",
@@ -86,8 +84,6 @@ eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features
 eldritch-libtemplate = {path = "lib/eldritch/stdlib/eldritch-libtemplate",default-features = false }
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
 eldritch-libuser = {path = "lib/eldritch/stdlib/eldritch-libuser", default-features = false }
-eldritch-libutf8 = {path = "lib/eldritch/stdlib/eldritch-libutf8", default-features = false }
-eldritch-libutf16le = {path = "lib/eldritch/stdlib/eldritch-libutf16le", default-features = false }
 eldritch-libwindows = {path = "lib/eldritch/stdlib/eldritch-libwindows", default-features = false }
 eldritch-libdns = {path = "lib/eldritch/stdlib/eldritch-libdns",default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }

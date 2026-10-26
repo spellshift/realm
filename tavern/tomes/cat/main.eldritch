@@ -3,7 +3,7 @@ def cat(path):
         eprint(f"Error: Path must be a file, not a directory: '{path}'")
         return
 
-    res = file.read(path)
+    res = str(file.read(path))
     print(res)
     return
 

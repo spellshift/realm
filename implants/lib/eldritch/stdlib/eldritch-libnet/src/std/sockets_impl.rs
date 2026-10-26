@@ -66,11 +66,11 @@ mod tests {
     use tokio::task;
 
     #[test]
-    fn test_std_net_sockets() {
+    fn test_std_net_conns() {
         let lib = StdNetLibrary;
-        // sockets relies on system permissions and open ports, so we just check it doesn't crash
+        // conns relies on system permissions and open ports, so we just check it doesn't crash
         // and returns a result (even empty).
-        let res = lib.sockets();
+        let res = lib.conns();
         assert!(res.is_ok());
     }
 
@@ -96,7 +96,7 @@ mod tests {
         let test_port: u32 = listener.local_addr().unwrap().port().into();
         let _listen_task = task::spawn(local_accept_tcp(listener));
         let lib = StdNetLibrary;
-        let res = lib.sockets().unwrap();
+        let res = lib.conns().unwrap();
         let real_pid = id();
 
         let mut found = false;
@@ -166,7 +166,7 @@ mod tests {
     #[tokio::test]
     async fn test_netstat_all_fields_present() {
         let lib = StdNetLibrary;
-        let res = lib.sockets().unwrap();
+        let res = lib.conns().unwrap();
 
         // Verify every entry has all required fields
         for socket in res {

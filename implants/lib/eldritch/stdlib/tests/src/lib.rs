@@ -53,8 +53,6 @@ mod tests {
         interp.register_lib(eldritch::random::std::StdRandomLibrary);
         interp.register_lib(eldritch::regex::std::StdRegexLibrary);
         interp.register_lib(eldritch::time::std::StdTimeLibrary);
-        interp.register_lib(eldritch::utf8::std::StdUtf8Library);
-        interp.register_lib(eldritch::utf16le::std::StdUtf16leLibrary);
     }
 
     #[test]

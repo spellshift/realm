@@ -97,7 +97,7 @@ The `docs/_docs/` folder contains three guides:
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `crypto` and `pivot`):
+The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
 | Module    | Purpose                                                       |
 |-----------|---------------------------------------------------------------|
@@ -113,7 +113,7 @@ The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `cry
 | `http`    | HTTP/HTTPS requests                                           |
 | `json`    | JSON encoding, decoding, and validation                       |
 | `linux`   | Linux-specific operations (`uname`)                           |
-| `net`     | Network interfaces, listening sockets, and TCP/UDP clients    |
+| `net`     | Network interfaces, listening connections, and TCP/UDP clients |
 | `portal`  | Bi-directional portal streams                                 |
 | `process` | Process management, PID, and environment variables            |
 | `random`  | Cryptographically secure random                               |
@@ -125,8 +125,6 @@ The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `cry
 | `template` | Jinja2 template rendering from strings and files            |
 | `time`    | Time formatting and delays                                    |
 | `user`    | Current user info and user account enumeration                |
-| `utf8`    | UTF-8 byte/string encoding and decoding                       |
-| `utf16le` | UTF-16LE byte/string encoding and decoding                    |
 | `windows` | Windows-specific DLL injection/reflection, registry, & tokens |
 
 ## Testing Requirements

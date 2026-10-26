@@ -8,14 +8,12 @@ default = ["stdlib"]
 stdlib = [
     "eldritch-libaes/stdlib",
     "eldritch-libbase64/stdlib",
-    "eldritch-libutf16le/stdlib",
     "eldritch-libjson/stdlib",
     "eldritch-libhash/stdlib",
 ]
 fake_bindings = [
     "eldritch-libaes/fake_bindings",
     "eldritch-libbase64/fake_bindings",
-    "eldritch-libutf16le/fake_bindings",
     "eldritch-libjson/fake_bindings",
     "eldritch-libhash/fake_bindings",
 ]
@@ -25,7 +23,6 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-libaes = { workspace = true, default-features = false }
 eldritch-libbase64 = { workspace = true, default-features = false }
-eldritch-libutf16le = { workspace = true, default-features = false }
 eldritch-libjson = { workspace = true, default-features = false }
 eldritch-libhash = { workspace = true, default-features = false }
 spin = { version = "0.10.0", features = ["rwlock"] }

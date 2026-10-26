@@ -87,32 +87,13 @@ impl FileLibraryFake {
 }
 
 impl FileLibrary for FileLibraryFake {
-    fn append(&self, path: String, content: String) -> Result<(), String> {
+    fn append(&self, path: String, content: Vec<u8>) -> Result<(), String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
 
         if let Some(entry) = Self::traverse(&mut root, &parts) {
             if let FsEntry::File(data) = entry {
-                data.extend_from_slice(content.as_bytes());
-                return Ok(());
-            }
-            return Err("Not a file".to_string());
-        }
-        Err("Path not found".to_string())
-    }
-
-    fn append_binary(&self, path: String, content: Value) -> Result<(), String> {
-        let bytes = match content {
-            Value::Bytes(b) => b,
-            _ => return Err("content must be of type Bytes".into()),
-        };
-
-        let mut root = self.root.lock();
-        let parts = Self::normalize_path(&path);
-
-        if let Some(entry) = Self::traverse(&mut root, &parts) {
-            if let FsEntry::File(data) = entry {
-                data.extend_from_slice(&bytes);
+                data.extend_from_slice(&content);
                 return Ok(());
             }
             return Err("Not a file".to_string());
@@ -327,23 +308,12 @@ impl FileLibrary for FileLibraryFake {
         Ok(format!("/{}", parent.join("/")))
     }
 
-    fn read(&self, path: String) -> Result<String, String> {
+    fn read(&self, path: String) -> Result<Vec<u8>, String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
 
         if let Some(FsEntry::File(data)) = Self::traverse(&mut root, &parts) {
-            Ok(String::from_utf8_lossy(data).into_owned())
-        } else {
-            Err("File not found".to_string())
-        }
-    }
-
-    fn read_binary(&self, path: String) -> Result<Value, String> {
-        let mut root = self.root.lock();
-        let parts = Self::normalize_path(&path);
-
-        if let Some(FsEntry::File(data)) = Self::traverse(&mut root, &parts) {
-            Ok(Value::Bytes(data.clone()))
+            Ok(data.clone())
         } else {
             Err("File not found".to_string())
         }
@@ -441,7 +411,7 @@ impl FileLibrary for FileLibraryFake {
         Ok(format!("/usr/bin/{}", bin))
     }
 
-    fn write(&self, path: String, content: String) -> Result<(), String> {
+    fn write(&self, path: String, content: Vec<u8>) -> Result<(), String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
         if parts.is_empty() {
@@ -453,32 +423,7 @@ impl FileLibrary for FileLibraryFake {
 
         if let Some(parent) = Self::traverse(&mut root, parent_parts) {
             if let FsEntry::Dir(map) = parent {
-                map.insert(name.clone(), FsEntry::File(content.into_bytes()));
-                return Ok(());
-            }
-            return Err("Parent is not a directory".to_string());
-        }
-        Err("Parent path not found".to_string())
-    }
-
-    fn write_binary(&self, path: String, content: Value) -> Result<(), String> {
-        let bytes = match content {
-            Value::Bytes(b) => b,
-            _ => return Err("content must be of type Bytes".into()),
-        };
-
-        let mut root = self.root.lock();
-        let parts = Self::normalize_path(&path);
-        if parts.is_empty() {
-            return Err("Invalid path".to_string());
-        }
-
-        let (parent_parts, name) = parts.split_at(parts.len() - 1);
-        let name = &name[0];
-
-        if let Some(parent) = Self::traverse(&mut root, parent_parts) {
-            if let FsEntry::Dir(map) = parent {
-                map.insert(name.clone(), FsEntry::File(bytes));
+                map.insert(name.clone(), FsEntry::File(content));
                 return Ok(());
             }
             return Err("Parent is not a directory".to_string());
@@ -515,12 +460,16 @@ mod tests {
         // Read
         assert_eq!(
             file.read("/home/user/notes.txt".into()).unwrap(),
-            "secret plans"
+            b"secret plans".to_vec()
         );
 
         // Write
-        file.write("/tmp/test.txt".into(), "hello".into()).unwrap();
-        assert_eq!(file.read("/tmp/test.txt".into()).unwrap(), "hello");
+        file.write("/tmp/test.txt".into(), b"hello".to_vec())
+            .unwrap();
+        assert_eq!(
+            file.read("/tmp/test.txt".into()).unwrap(),
+            b"hello".to_vec()
+        );
 
         // List
         let items = file.list(Some("/home/user".into())).unwrap();
@@ -542,7 +491,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             file.read("/tmp/notes_backup.txt".into()).unwrap(),
-            "secret plans"
+            b"secret plans".to_vec()
         );
 
         // Remove

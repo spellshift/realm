@@ -19,7 +19,9 @@ pub use ast::{
 };
 pub use interpreter::builtins::pprint::pretty_format;
 pub use interpreter::builtins::tprint::format_tprint;
-pub use interpreter::{BufferPrinter, Interpreter, NoopPrinter, Printer, StdoutPrinter};
+pub use interpreter::{
+    BufferPrinter, Interpreter, NoopPrinter, Printer, StdoutPrinter, call_bound_method,
+};
 pub use lexer::Lexer;
 pub use token::{Span, TokenKind};
 

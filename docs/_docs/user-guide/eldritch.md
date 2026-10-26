@@ -36,7 +36,7 @@ file.remove(cur_bin_path)
 _Parse a JSON file_
 
 ```python
-json_str = file.read("/tmp/config.json")
+json_str = str(file.read("/tmp/config.json"))
 config_data = json.decode(json_str)
 print(config_data['key1'])
 ```
@@ -57,7 +57,7 @@ For example:
 def read_passwd():
     if sys.is_linux():
         if file.is_file("/etc/passwd"):
-            print(file.read("/etc/passwd"))
+            print(str(file.read("/etc/passwd")))
 read_passwd()
 ```
 
@@ -122,7 +122,10 @@ The **bool** method converts a value to a Boolean. Returns True when the argumen
 The **bytes** method creates a bytes object.
 - If source is an integer, the array will have that size and will be initialized with null bytes.
 - If source is a string, it will be converted using UTF-8 encoding.
+- If source is already a bytes object, it is returned directly.
 - If source is an iterable, it must be an iterable of integers in the range 0 <= x < 256.
+
+Bytes objects also support `.decode(encoding: Optional<str> = "utf8") -> str` for decoding `"utf8"` (default) or `"utf16le"` bytes into a string (e.g. `b"data".decode("utf16le")`).
 
 ### chr
 
@@ -280,7 +283,9 @@ The **sorted** method returns a new sorted list from the items in iterable.
 
 `str(object) -> Str`
 
-The **str** method returns a string containing a nicely printable representation of an object.
+The **str** method returns a string containing a nicely printable representation of an object. If `object` is a `Bytes` value, it is decoded using default UTF-8 encoding.
+
+Strings also support `.encode(encoding: Optional<str> = "utf8") -> Bytes` for encoding into `"utf8"` (default) or `"utf16le"` bytes (e.g. `"data".encode()` or `"data".encode("utf16le")`).
 
 ### tprint
 
@@ -322,7 +327,7 @@ The standard library is the default functionality that eldritch provides. It con
 - `http` - Used to make http(s) requests from the agent.
 - `json` - Used to encode, decode, and validate JSON data.
 - `linux` - Linux-specific system operations (such as `uname`).
-- `net` - Network interface enumeration, socket listing, and TCP/UDP connections.
+- `net` - Network interface enumeration, connection listing, and TCP/UDP connections.
 - `portal` - Used to open bi-directional portal streams.
 - `process` - Used to interact with processes on the system.
 - `random` - Used to generate cryptographically secure random values.
@@ -334,8 +339,6 @@ The standard library is the default functionality that eldritch provides. It con
 - `template` - Renders Jinja2 templates from strings and files.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
 - `user` - User account enumeration and current user inspection.
-- `utf8` - UTF-8 string and byte encoding/decoding.
-- `utf16le` - UTF-16LE string and byte encoding/decoding.
 - `windows` - Windows-specific operations (DLL injection/reflection, registry, token manipulation).
 
 **🚨 DANGER 🚨: Name shadowing**
@@ -494,17 +497,11 @@ deploy_agent()
 
 The **assets.list** method returns a list of asset names that the agent is aware of.
 
-### assets.read_binary
-
-`assets.read_binary(src: str) -> Bytes`
-
-The **assets.read_binary** method returns a list of bytes representing the asset files bytes.
-
 ### assets.read
 
-`assets.read(src: str) -> str`
+`assets.read(src: str) -> Bytes`
 
-The **assets.read** method returns a UTF-8 string representation of the asset file.
+The **assets.read** method returns a `Bytes` object containing the raw bytes of the embedded asset file. Use `str(assets.read(src))` or `assets.read(src).decode()` to decode text assets as UTF-8.
 
 ---
 
@@ -601,15 +598,9 @@ The `file` library gives you comprehensive control to interact with files and di
 
 ### file.append
 
-`file.append(path: str, content: str) -> None`
+`file.append(path: str, content: Bytes) -> None`
 
-The **file.append** method appends the `content` to file at `path`. If no file exists at path, it will create the file with the content.
-
-### file.append_binary
-
-`file.append_binary(path: str, content: Bytes) -> None`
-
-The **file.append_binary** method appends binary data to `path`. If no file exists at the path, it will create the file with the content.
+The **file.append** method appends binary `content` (`Bytes`) to the file at `path`. If no file exists at `path`, it will create the file with the content.
 
 ### file.copy
 
@@ -791,28 +782,15 @@ The **file.parent_dir** method returns the parent directory of a give path. Eg `
 
 ### file.read
 
-`file.read(path: str) -> str`
+`file.read(path: str) -> Bytes`
 
-The **file.read** method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+The **file.read** method will read the contents of a file, **returning a `Bytes` object**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 This function supports globbing with `*` for example:
 
 ```python
 file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
 file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
 file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
-```
-
-### file.read_binary
-
-`file.read_binary(path: str) -> Bytes`
-
-The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
-This function supports globbing with `*` for example:
-
-```python
-file.read_binary("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
-file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
-file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
 ### file.read_named_pipe
@@ -896,24 +874,16 @@ $> file.which("some_random_binary_that_doesnt_exist")
 
 ### file.write
 
-`file.write(path: str, content: str) -> None`
+`file.write(path: str, content: Bytes) -> None`
 
-The **file.write** method writes to a given file path with the given content.
-If a file already exists at this path, the method will overwite it. If a directory
-already exists at the path the method will error.
-
-### file.write_binary
-
-`file.write_binary(path: str, content: Bytes) -> None`
-
-The **file.write_binary** method writes binary content to a given file path.
+The **file.write** method writes binary content (`Bytes`) to a given file path.
 If a file already exists at this path, the method will overwrite it. If a directory
 already exists at the path the method will error.
 
 ```python
-# Write bytes returned from file.read_binary to another file
-data = file.read_binary("/etc/passwd")
-file.write_binary("/tmp/passwd_copy", data)
+# Write bytes returned from file.read to another file
+data = file.read("/etc/passwd")
+file.write("/tmp/passwd_copy", data)
 ```
 
 ### file.find
@@ -1127,11 +1097,11 @@ The **net.interfaces** method returns a list of network interfaces as dictionari
 ]
 ```
 
-### net.sockets
+### net.conns
 
-`net.sockets() -> List<Dict>`
+`net.conns() -> List<Dict>`
 
-The **net.sockets** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
+The **net.conns** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
 _Currently only shows LISTENING TCP connections_
 
@@ -1497,7 +1467,7 @@ The **ssh.deploy** method deploys a payload and/or command across a set of hosts
 - `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
 - `cmd` is the command to run on the remote system (ideally as root).
 - `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
-- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read_binary(path)` or `assets.read_binary(name)`.
+- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read(path)` or `assets.read(name)`.
 - `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.
 - `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
 - `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
@@ -1751,42 +1721,6 @@ For users, will return name and groups of user.
 `user.list() -> List<Dict>`
 
 The **user.list** method lists all user accounts on the system.
-
----
-
-## UTF8
-
-The `utf8` library provides UTF-8 string and byte conversion helpers.
-
-### utf8.decode
-
-`utf8.decode(content: Bytes, lossy: Optional<bool>) -> str`
-
-The **utf8.decode** method decodes UTF-8 bytes into a string. When `lossy=True`, invalid UTF-8 sequences are replaced with the Unicode replacement character instead of raising an error.
-
-### utf8.encode
-
-`utf8.encode(content: str) -> Bytes`
-
-The **utf8.encode** method encodes a UTF-8 string into its byte representation.
-
----
-
-## UTF16LE
-
-The `utf16le` library provides UTF-16LE string and byte conversion helpers commonly needed on Windows.
-
-### utf16le.decode
-
-`utf16le.decode(content: Bytes) -> str`
-
-The **utf16le.decode** method decodes UTF-16LE bytes into a standard UTF-8 string. Errors if the bytes are not valid UTF-16LE.
-
-### utf16le.encode
-
-`utf16le.encode(content: str) -> Bytes`
-
-The **utf16le.encode** method encodes a UTF-8 string into UTF-16LE bytes, which are commonly used in Windows environments.
 
 ---
 

@@ -45,7 +45,7 @@ impl ProcessLibrary for StdProcessLibrary {
     }
 
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        StdNetLibrary.sockets()
+        StdNetLibrary.conns()
     }
 
     fn pid(&self) -> Result<i64, String> {

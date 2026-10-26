@@ -12,7 +12,7 @@ def copy_script_and_execute():
 
 if sys.hostname() == "eldritch-test-box":
     print("we are in a mock env")
-    print(assets.read("exec_script/hello_world.sh")) # Print this so the test passes
+    print(str(assets.read("exec_script/hello_world.sh"))) # Print this so the test passes
     #print("hello from an embedded shell script") 
 else:
     copy_script_and_execute()

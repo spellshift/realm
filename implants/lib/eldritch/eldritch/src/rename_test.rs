@@ -14,6 +14,7 @@ fn check_aliases(interp: &mut Interpreter, printer: &BufferPrinter) {
         ("agent.get_transport", "agent.transport", ""),
         ("agent.get_callback_interval", "agent.callback_interval", ""),
         ("file.pwd", "process.cwd", ""),
+        ("process.netstat", "net.conns", ""),
         (
             "file.template_str",
             "template.render",
@@ -38,6 +39,28 @@ fn check_aliases(interp: &mut Interpreter, printer: &BufferPrinter) {
         );
         assert_eq!(printer.read_out(), "");
     }
+
+    printer.clear();
+    let expected_enc = interp.interpret("'hello'.encode('utf16le')").unwrap();
+    let actual_enc = interp.interpret("crypto.encode_utf16le('hello')").unwrap();
+    assert_eq!(actual_enc, expected_enc);
+    assert_eq!(
+        printer.read_err(),
+        "crypto.encode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use str.encode(\"utf16le\") instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    );
+
+    printer.clear();
+    let expected_dec = interp
+        .interpret("'hello'.encode('utf16le').decode('utf16le')")
+        .unwrap();
+    let actual_dec = interp
+        .interpret("crypto.decode_utf16le('hello'.encode('utf16le'))")
+        .unwrap();
+    assert_eq!(actual_dec, expected_dec);
+    assert_eq!(
+        printer.read_err(),
+        "crypto.decode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use bytes.decode(\"utf16le\") instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    );
 }
 
 #[test]
@@ -45,7 +68,9 @@ fn test_std_renames_delegate_and_warn() {
     let printer = Arc::new(BufferPrinter::new());
     let mut interp = Interpreter::new_with_printer(printer.clone())
         .with_agent(Arc::new(eldritch_mockagent::MockAgent::new()));
+    interp.register_lib(crate::crypto::std::StdCryptoLibrary);
     interp.register_lib(crate::file::std::StdFileLibrary);
+    interp.register_lib(crate::net::std::StdNetLibrary);
     interp.register_lib(crate::process::std::StdProcessLibrary);
     interp.register_lib(crate::time::std::StdTimeLibrary);
     interp.register_lib(crate::template::std::StdTemplateLibrary);
@@ -82,7 +107,9 @@ fn test_fake_renames_delegate_and_warn() {
     let printer = Arc::new(BufferPrinter::new());
     let mut interp = Interpreter::new_with_printer(printer.clone());
     interp.register_lib(crate::agent::fake::AgentLibraryFake);
+    interp.register_lib(crate::crypto::fake::CryptoLibraryFake);
     interp.register_lib(crate::file::fake::FileLibraryFake::default());
+    interp.register_lib(crate::net::fake::NetLibraryFake);
     interp.register_lib(crate::process::fake::ProcessLibraryFake);
     interp.register_lib(crate::time::fake::TimeLibraryFake);
     interp.register_lib(crate::template::fake::TemplateLibraryFake);

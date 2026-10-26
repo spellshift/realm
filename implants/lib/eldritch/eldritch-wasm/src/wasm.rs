@@ -17,8 +17,7 @@ use eldritch::{
     process::fake::ProcessLibraryFake, random::fake::RandomLibraryFake,
     regex::fake::RegexLibraryFake, report::fake::ReportLibraryFake, scan::fake::ScanLibraryFake,
     ssh::fake::SshLibraryFake, sys::fake::SysLibraryFake, template::fake::TemplateLibraryFake,
-    time::fake::TimeLibraryFake, user::fake::UserLibraryFake, utf8::fake::Utf8LibraryFake,
-    utf16le::fake::Utf16leLibraryFake, windows::fake::WindowsLibraryFake,
+    time::fake::TimeLibraryFake, user::fake::UserLibraryFake, windows::fake::WindowsLibraryFake,
 };
 
 #[wasm_bindgen]
@@ -125,8 +124,6 @@ impl WasmRepl {
             interp.register_lib(ReportLibraryFake::default());
             interp.register_lib(TimeLibraryFake::default());
             interp.register_lib(UserLibraryFake::default());
-            interp.register_lib(Utf8LibraryFake::default());
-            interp.register_lib(Utf16leLibraryFake::default());
             interp.register_lib(WindowsLibraryFake::default());
         }
 

@@ -47,7 +47,7 @@ Currently Eldritch has the following libraries your function can be bound to:
 * `http`: Is used for any web requests needed to be made.
 * `json`: Used to encode, decode, and validate JSON data.
 * `linux`: Linux-specific system operations.
-* `net`: Network interface enumeration, socket listing, and TCP/UDP connections.
+* `net`: Network interface enumeration, connection listing, and TCP/UDP connections.
 * `portal`: Used to open bi-directional portal streams.
 * `process`: Is used to manage running processes on a system.
 * `random`: Used to generate cryptographically secure random values.
@@ -56,10 +56,9 @@ Currently Eldritch has the following libraries your function can be bound to:
 * `scan`: Network scanning capabilities (`arp`, `port`).
 * `ssh`: Remote execution, file copy, and deployment over SSH.
 * `sys`: Is used to check system specific configurations and start new processes.
+* `template`: Renders Jinja2 templates from strings and files.
 * `time`: Is used for obtaining and formatting time or adding delays into code.
 * `user`: User account enumeration and current user inspection.
-* `utf8`: UTF-8 string and byte encoding/decoding.
-* `utf16le`: UTF-16LE string and byte encoding/decoding.
 * `windows`: Windows-specific operations (DLL injection/reflection, registry, token manipulation).
 
 If your function does not fall under a specific standard library reach out to the core developers about adding a new library or finding the right fit.

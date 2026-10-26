@@ -19,7 +19,7 @@ impl NetLibrary for StdNetLibrary {
         interfaces_impl::get_ip().map_err(|e| e.to_string())
     }
 
-    fn sockets(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
+    fn conns(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
         sockets_impl::netstat()
     }
 

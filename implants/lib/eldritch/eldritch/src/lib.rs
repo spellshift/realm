@@ -32,8 +32,6 @@ pub use eldritch_libsys as sys;
 pub use eldritch_libtemplate as template;
 pub use eldritch_libtime as time;
 pub use eldritch_libuser as user;
-pub use eldritch_libutf8 as utf8;
-pub use eldritch_libutf16le as utf16le;
 pub use eldritch_libwindows as windows;
 pub use eldritch_repl as repl;
 
@@ -112,10 +110,6 @@ use crate::time::std::StdTimeLibrary;
 #[cfg(feature = "stdlib")]
 use crate::user::std::StdUserLibrary;
 #[cfg(feature = "stdlib")]
-use crate::utf8::std::StdUtf8Library;
-#[cfg(feature = "stdlib")]
-use crate::utf16le::std::StdUtf16leLibrary;
-#[cfg(feature = "stdlib")]
 use crate::windows::std::StdWindowsLibrary;
 
 #[cfg(feature = "fake_aes")]
@@ -170,10 +164,6 @@ use crate::template::fake::TemplateLibraryFake;
 use crate::time::fake::TimeLibraryFake;
 #[cfg(feature = "fake_user")]
 use crate::user::fake::UserLibraryFake;
-#[cfg(feature = "fake_utf8")]
-use crate::utf8::fake::Utf8LibraryFake;
-#[cfg(feature = "fake_utf16le")]
-use crate::utf16le::fake::Utf16leLibraryFake;
 #[cfg(feature = "fake_windows")]
 use crate::windows::fake::WindowsLibraryFake;
 
@@ -224,8 +214,6 @@ impl Interpreter {
             self.inner.register_lib(StdTemplateLibrary);
             self.inner.register_lib(StdTimeLibrary);
             self.inner.register_lib(StdUserLibrary);
-            self.inner.register_lib(StdUtf8Library);
-            self.inner.register_lib(StdUtf16leLibrary);
             self.inner.register_lib(StdWindowsLibrary);
             self.inner.register_lib(StdDnsLibrary);
         }
@@ -272,10 +260,6 @@ impl Interpreter {
         self.inner.register_lib(TimeLibraryFake);
         #[cfg(feature = "fake_user")]
         self.inner.register_lib(UserLibraryFake);
-        #[cfg(feature = "fake_utf8")]
-        self.inner.register_lib(Utf8LibraryFake);
-        #[cfg(feature = "fake_utf16le")]
-        self.inner.register_lib(Utf16leLibraryFake);
         #[cfg(feature = "fake_windows")]
         self.inner.register_lib(WindowsLibraryFake);
         #[cfg(feature = "fake_dns")]
