@@ -27,7 +27,7 @@ def netstat():
     counts = [6, 6, 7, 6, 8]
     rows = [["PROTO", "LOCAL", "REMOTE", "STATE", "PROCESS"]]
     # Loop through each net result and format the columns
-    for n in process.netstat():
+    for n in net.sockets():
         fields = [
             n["socket_type"],
             n.get("local_address", "") + ":" + str(n["local_port"]),

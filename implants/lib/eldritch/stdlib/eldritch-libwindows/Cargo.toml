@@ -1,0 +1,43 @@
+[package]
+name = "eldritch-libwindows"
+version = "0.4.1"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+anyhow = { workspace = true, optional = true }
+hex = { workspace = true, optional = true }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+
+[target.'cfg(windows)'.dependencies]
+winreg = { workspace = true }
+object = { workspace = true }
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_System_Memory",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_Security",
+    "Win32_System_SystemInformation",
+    "Win32_System_SystemServices",
+    "Win32_UI_Shell",
+    "Win32_System_Pipes",
+    "Win32_System_Environment",
+] }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:anyhow", "dep:hex"]
+fake_bindings = []
+
+[dev-dependencies]
+anyhow = { workspace = true }
+sysinfo = { workspace = true }
+uuid = { version = "1.0", features = ["v4"] }
+tempfile = { workspace = true }
+
+[build-dependencies]
+anyhow = { workspace = true }

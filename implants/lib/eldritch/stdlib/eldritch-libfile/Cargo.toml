@@ -1,13 +1,13 @@
 [package]
 name = "eldritch-libfile"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 
 [features]
 default = ["stdlib"]
 stdlib = [
-    "dep:flate2",
-    "dep:tar",
+    "dep:eldritch-libgzip",
+    "eldritch-libgzip/stdlib",
     "dep:tera",
     "dep:tempfile",
     "dep:glob",
@@ -16,14 +16,17 @@ stdlib = [
     "dep:serde_json",
     "dep:notify",
     "dep:jiff",
+    "dep:which",
 ]
-fake_bindings = []
+fake_bindings = [
+    "dep:eldritch-libgzip",
+    "eldritch-libgzip/fake_bindings",
+]
 
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
-flate2 = { workspace = true, optional = true, features = ["rust_backend"] }
-tar = { workspace = true, optional = true }
+eldritch-libgzip = { path = "../eldritch-libgzip", default-features = false, optional = true }
 tera = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
 glob = { workspace = true, optional = true }
@@ -32,6 +35,7 @@ anyhow = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 notify = { workspace = true, optional = true }
 jiff = { workspace = true, optional = true }
+which = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(all(unix, not(target_os = "solaris")))'.dependencies]

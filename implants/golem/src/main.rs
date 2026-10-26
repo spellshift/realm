@@ -60,6 +60,8 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
     interp.register_lib(report_lib);
     let pivot_lib = eldritch::pivot::std::StdPivotLibrary::new(agent.clone(), context.clone());
     interp.register_lib(pivot_lib);
+    let portal_lib = eldritch::portal::std::StdPortalLibrary::new(agent.clone(), context.clone());
+    interp.register_lib(portal_lib);
     interp.register_lib(assetlib);
     interp
 }

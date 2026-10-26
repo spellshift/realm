@@ -20,7 +20,7 @@ def print_table(rows: list[list]):
 def ifconfig():
     print("HOSTNAME " + sys.hostname())
     rows = [["IFACE", "IP"]]
-    ip_res = sys.get_ip()
+    ip_res = net.interfaces()
     for interface in ip_res:
         rows.append([interface['name'], interface['ip']])
 

@@ -2,6 +2,11 @@ use super::CryptoLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
+use eldritch_libaes::{AesLibrary, fake::AesLibraryFake};
+use eldritch_libbase64::{Base64Library, fake::Base64LibraryFake};
+use eldritch_libhash::{HashLibrary, fake::HashLibraryFake};
+use eldritch_libjson::{JsonLibrary, fake::JsonLibraryFake};
+use eldritch_libutf16le::{Utf16leLibrary, fake::Utf16leLibraryFake};
 use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
@@ -9,100 +14,64 @@ use eldritch_macros::eldritch_library_impl;
 pub struct CryptoLibraryFake;
 
 impl CryptoLibrary for CryptoLibraryFake {
-    fn aes_decrypt(&self, _key: Vec<u8>, _iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
-        // Mock: just reverse
-        let mut d = data;
-        d.reverse();
-        Ok(d)
+    fn aes_decrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
+        AesLibraryFake.decrypt(key, iv, data)
     }
 
-    fn aes_encrypt(&self, _key: Vec<u8>, _iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
-        // Mock: just reverse
-        let mut d = data;
-        d.reverse();
-        Ok(d)
+    fn aes_encrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
+        AesLibraryFake.encrypt(key, iv, data)
     }
 
-    fn aes_decrypt_file(&self, _src: String, _dst: String, _key: String) -> Result<(), String> {
-        Err("File decryption not supported in fake/wasm environment".into())
+    fn aes_decrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String> {
+        AesLibraryFake.decrypt_file(src, dst, key)
     }
 
-    fn aes_encrypt_file(&self, _src: String, _dst: String, _key: String) -> Result<(), String> {
-        Err("File encryption not supported in fake/wasm environment".into())
+    fn aes_encrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String> {
+        AesLibraryFake.encrypt_file(src, dst, key)
     }
 
-    fn md5(&self, _data: Vec<u8>) -> Result<String, String> {
-        Ok(String::from("d41d8cd98f00b204e9800998ecf8427e")) // Empty md5
+    fn md5(&self, data: Vec<u8>) -> Result<String, String> {
+        HashLibraryFake.md5(data)
     }
 
-    fn sha1(&self, _data: Vec<u8>) -> Result<String, String> {
-        Ok(String::from("da39a3ee5e6b4b0d3255bfef95601890afd80709")) // Empty sha1
+    fn sha1(&self, data: Vec<u8>) -> Result<String, String> {
+        HashLibraryFake.sha1(data)
     }
 
-    fn sha256(&self, _data: Vec<u8>) -> Result<String, String> {
-        Ok(String::from(
-            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        )) // Empty sha256
+    fn sha256(&self, data: Vec<u8>) -> Result<String, String> {
+        HashLibraryFake.sha256(data)
     }
 
-    fn hash_file(&self, _file: String, _algo: String) -> Result<String, String> {
-        Err("File hashing not supported in fake/wasm environment".into())
+    fn hash_file(&self, file: String, algo: String) -> Result<String, String> {
+        HashLibraryFake.file(file, algo)
     }
 
-    fn encode_b64(&self, content: String, _encode_type: Option<String>) -> Result<String, String> {
-        // Simple mock if needed, or implement using base64 crate if available.
-        // For fake/wasm, maybe we can rely on pure rust base64 if available or just return input.
-        // But usually we want some encoding.
-        // Let's check imports.
-        // Just mocking it by prefixing for now or using a simple implementation?
-        // Actually, `base64` crate is a dependency of `eldritch-libcrypto`.
-        // We can use it if available.
-        // But `fake_bindings` usually implies minimal dependencies.
-        // Let's just return the content prefixed with "B64:" to prove it was called?
-        Ok(format!("B64:{}", content))
+    fn encode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+        Base64LibraryFake.encode(content, encode_type)
     }
 
-    fn decode_b64(&self, content: String, _encode_type: Option<String>) -> Result<String, String> {
-        if let Some(stripped) = content.strip_prefix("B64:") {
-            Ok(stripped.into())
-        } else {
-            Ok(content)
-        }
+    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+        Base64LibraryFake.decode(content, encode_type)
     }
 
-    fn is_json(&self, _content: String) -> Result<bool, String> {
-        Ok(true) // Always pretend valid JSON
+    fn is_json(&self, content: String) -> Result<bool, String> {
+        JsonLibraryFake.is_valid(content)
     }
 
     fn from_json(&self, content: String) -> Result<Value, String> {
-        Ok(Value::String(content)) // Just return as string for now
+        JsonLibraryFake.decode(content)
     }
 
     fn to_json(&self, content: Value) -> Result<String, String> {
-        Ok(format!("{:?}", content))
+        JsonLibraryFake.encode(content)
     }
 
     fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String> {
-        let mut encoded: Vec<u8> = Vec::with_capacity(content.len() * 2);
-        for c in content.encode_utf16() {
-            let bytes = c.to_le_bytes();
-            encoded.push(bytes[0]);
-            encoded.push(bytes[1]);
-        }
-        Ok(encoded)
+        Utf16leLibraryFake.encode(content)
     }
 
     fn decode_utf16le(&self, content: Vec<u8>) -> Result<String, String> {
-        if content.len() % 2 != 0 {
-            return Err("Input bytes length must be a multiple of 2".into());
-        }
-
-        let utf16_units: Vec<u16> = content
-            .chunks_exact(2)
-            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
-            .collect();
-
-        String::from_utf16(&utf16_units).map_err(|e| format!("Invalid UTF-16: {}", e))
+        Utf16leLibraryFake.decode(content)
     }
 }
 

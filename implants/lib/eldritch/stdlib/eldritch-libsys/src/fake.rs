@@ -1,8 +1,14 @@
 use super::SysLibrary;
 use alloc::collections::BTreeMap;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
+use eldritch_libfile::{FileLibrary, fake::FileLibraryFake};
+use eldritch_libnet::{NetLibrary, fake::NetLibraryFake};
+use eldritch_libprocess::{ProcessLibrary, fake::ProcessLibraryFake};
+use eldritch_libuser::{UserLibrary, fake::UserLibraryFake};
+use eldritch_libwindows::{WindowsLibrary, fake::WindowsLibraryFake};
 use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
@@ -10,17 +16,17 @@ use eldritch_macros::eldritch_library_impl;
 pub struct SysLibraryFake;
 
 impl SysLibrary for SysLibraryFake {
-    fn dll_inject(&self, _dll_path: String, _pid: i64) -> Result<(), String> {
-        Ok(())
+    fn dll_inject(&self, dll_path: String, pid: i64) -> Result<(), String> {
+        WindowsLibraryFake.dll_inject(dll_path, pid)
     }
 
     fn dll_reflect(
         &self,
-        _dll_bytes: Vec<u8>,
-        _pid: i64,
-        _function_name: String,
+        dll_bytes: Vec<u8>,
+        pid: i64,
+        function_name: String,
     ) -> Result<(), String> {
-        Ok(())
+        WindowsLibraryFake.dll_reflect(dll_bytes, pid, function_name)
     }
 
     fn exec(
@@ -35,52 +41,44 @@ impl SysLibrary for SysLibraryFake {
     }
 
     fn get_env(&self) -> Result<BTreeMap<String, String>, String> {
-        let mut map = BTreeMap::new();
-        map.insert("PATH".into(), "/usr/local/bin:/usr/bin:/bin".into());
-        map.insert("HOME".into(), "/home/user".into());
-        map.insert("USER".into(), "user".into());
-        map.insert("TERM".into(), "xterm-256color".into());
-        Ok(map)
+        ProcessLibraryFake.env()
     }
 
     fn get_ip(&self) -> Result<Vec<BTreeMap<String, String>>, String> {
-        let mut iface = BTreeMap::new();
-        iface.insert("name".into(), "eth0".into());
-        iface.insert("ip".into(), "192.168.1.100".into());
-        Ok(vec![iface])
+        NetLibraryFake.interfaces()
     }
 
     fn get_os(&self) -> Result<BTreeMap<String, String>, String> {
-        let mut map = BTreeMap::new();
-        map.insert("os".into(), "linux".into());
-        map.insert("arch".into(), "x86_64".into());
-        map.insert("version".into(), "5.4.0-generic".into());
-        map.insert("platform".into(), "PLATFORM_LINUX".into()); // Fixed key value to match expected constant
-        Ok(map)
+        self.info()
     }
 
     fn get_pid(&self) -> Result<i64, String> {
-        Ok(1337)
+        ProcessLibraryFake.pid()
     }
 
-    fn get_reg(&self, _path: String) -> Result<BTreeMap<String, String>, String> {
-        Ok(BTreeMap::new())
+    fn get_reg(&self, path: String) -> Result<BTreeMap<String, String>, String> {
+        WindowsLibraryFake.read_reg(path)
     }
 
     fn get_user(&self) -> Result<BTreeMap<String, Value>, String> {
-        let mut map = BTreeMap::new();
-        map.insert("username".into(), Value::String("root".into()));
-        map.insert("uid".into(), Value::Int(0));
-        map.insert("gid".into(), Value::Int(0));
-        Ok(map)
+        UserLibraryFake.info()
     }
 
     fn hostname(&self) -> Result<String, String> {
         Ok(String::from("eldritch-test-box"))
     }
 
-    fn impersonate(&self, _pid: i64) -> Result<i64, String> {
-        Ok(1)
+    fn impersonate(&self, pid: i64) -> Result<i64, String> {
+        WindowsLibraryFake.impersonate(pid)
+    }
+
+    fn info(&self) -> Result<BTreeMap<String, String>, String> {
+        let mut map = BTreeMap::new();
+        map.insert("os".into(), "linux".into());
+        map.insert("arch".into(), "x86_64".into());
+        map.insert("version".into(), "5.4.0-generic".into());
+        map.insert("platform".into(), "PLATFORM_LINUX".into());
+        Ok(map)
     }
 
     fn is_bsd(&self) -> Result<bool, String> {
@@ -100,13 +98,7 @@ impl SysLibrary for SysLibraryFake {
     }
 
     fn list_users(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        let mut users = Vec::new();
-        let mut root = BTreeMap::new();
-        root.insert("principal".into(), Value::String("root".into()));
-        root.insert("uid".into(), Value::Int(0));
-        root.insert("gid".into(), Value::Int(0));
-        users.push(root);
-        Ok(users)
+        UserLibraryFake.list()
     }
 
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String> {
@@ -117,33 +109,26 @@ impl SysLibrary for SysLibraryFake {
         Ok(map)
     }
 
-    fn tokens(&self, _pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        let mut entry = BTreeMap::new();
-        entry.insert("id".into(), Value::Int(1));
-        entry.insert(
-            "source".into(),
-            Value::String("impersonate:explorer.exe".into()),
-        );
-        entry.insert("active".into(), Value::Bool(true));
-        Ok(vec![entry])
+    fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        WindowsLibraryFake.tokens(pid)
     }
 
-    fn use_token(&self, _id: i64) -> Result<bool, String> {
-        Ok(true)
+    fn use_token(&self, id: i64) -> Result<bool, String> {
+        WindowsLibraryFake.use_token(id)
     }
 
     fn whereis(&self, bin: String) -> Result<String, String> {
-        Ok("".to_string())
+        FileLibraryFake::default().which(bin)
     }
 
     fn write_reg(
         &self,
-        _path: String,
-        _regname: String,
-        _regtype: String,
-        _regvalue: Value,
+        path: String,
+        regname: String,
+        regtype: String,
+        regvalue: Value,
     ) -> Result<bool, String> {
-        Ok(true)
+        WindowsLibraryFake.write_reg(path, regname, regtype, regvalue)
     }
 }
 
@@ -159,6 +144,6 @@ mod tests {
         assert!(!sys.is_windows().unwrap());
         assert_eq!(sys.hostname().unwrap(), "eldritch-test-box");
         assert!(sys.get_env().unwrap().contains_key("PATH"));
-        assert!(sys.get_os().unwrap().contains_key("platform"));
+        assert!(sys.info().unwrap().contains_key("platform"));
     }
 }

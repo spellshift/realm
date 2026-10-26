@@ -3,7 +3,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -53,6 +53,9 @@ pub trait FileLibrary {
     fn append_binary(&self, path: String, content: Value) -> Result<(), String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "file.compress has been deprecated and will be removed in a future version of eldritch. Please use gzip.compress_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Compresses a file or directory using GZIP.
     ///
     /// If `src` is a directory, it will be archived (tar) before compression.
@@ -85,6 +88,9 @@ pub trait FileLibrary {
     fn copy(&self, src: String, dst: String) -> Result<(), String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "file.decompress has been deprecated and will be removed in a future version of eldritch. Please use gzip.decompress_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Decompresses a GZIP file.
     ///
     /// If the file is a tar archive, it will be extracted to the destination directory.
@@ -446,6 +452,16 @@ pub trait FileLibrary {
         ctime: Option<Value>,
         ref_file: Option<String>,
     ) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Locates the executable path for a given command name (searches `PATH`).
+    ///
+    /// **Parameters**
+    /// - `bin` (`str`): The name of the binary to find (e.g., `"ls"`, `"python"`).
+    ///
+    /// **Returns**
+    /// - `str`: The full path to the executable.
+    fn which(&self, bin: String) -> Result<String, String>;
 
     #[eldritch_method]
     /// Writes content to a file, overwriting it if it exists.

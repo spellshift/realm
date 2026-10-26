@@ -11,18 +11,32 @@ members = [
     "lib/eldritch/eldritch-macros",
     "lib/eldritch/eldritch-repl",
     "lib/eldritch/eldritch-agent",
+    "lib/eldritch/stdlib/eldritch-libaes",
     "lib/eldritch/stdlib/eldritch-libagent",
     "lib/eldritch/stdlib/eldritch-libassets",
+    "lib/eldritch/stdlib/eldritch-libbase64",
     "lib/eldritch/stdlib/eldritch-libcrypto",
     "lib/eldritch/stdlib/eldritch-libfile",
+    "lib/eldritch/stdlib/eldritch-libgzip",
+    "lib/eldritch/stdlib/eldritch-libhash",
     "lib/eldritch/stdlib/eldritch-libhttp",
+    "lib/eldritch/stdlib/eldritch-libjson",
+    "lib/eldritch/stdlib/eldritch-liblinux",
+    "lib/eldritch/stdlib/eldritch-libnet",
     "lib/eldritch/stdlib/eldritch-libpivot",
+    "lib/eldritch/stdlib/eldritch-libportal",
     "lib/eldritch/stdlib/eldritch-libprocess",
     "lib/eldritch/stdlib/eldritch-librandom",
     "lib/eldritch/stdlib/eldritch-libregex",
     "lib/eldritch/stdlib/eldritch-libreport",
+    "lib/eldritch/stdlib/eldritch-libscan",
+    "lib/eldritch/stdlib/eldritch-libssh",
     "lib/eldritch/stdlib/eldritch-libsys",
     "lib/eldritch/stdlib/eldritch-libtime",
+    "lib/eldritch/stdlib/eldritch-libuser",
+    "lib/eldritch/stdlib/eldritch-libutf8",
+    "lib/eldritch/stdlib/eldritch-libutf16le",
+    "lib/eldritch/stdlib/eldritch-libwindows",
     "lib/eldritch/eldritch",
     "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
@@ -47,18 +61,32 @@ eldritch-macros = {path = "lib/eldritch/eldritch-macros", default-features = fal
 eldritch-repl = {path = "lib/eldritch/eldritch-repl", default-features = false}
 eldritch = {path = "lib/eldritch/eldritch", default-features = false}
 eldritch-agent = {path = "lib/eldritch/eldritch-agent"}
+eldritch-libaes = {path = "lib/eldritch/stdlib/eldritch-libaes", default-features = false}
 eldritch-libagent = {path = "lib/eldritch/stdlib/eldritch-libagent", default-features = false}
 eldritch-libassets = {path = "lib/eldritch/stdlib/eldritch-libassets", default-features = false}
+eldritch-libbase64 = {path = "lib/eldritch/stdlib/eldritch-libbase64", default-features = false}
 eldritch-libcrypto = {path = "lib/eldritch/stdlib/eldritch-libcrypto",default-features = false }
 eldritch-libfile = {path = "lib/eldritch/stdlib/eldritch-libfile",default-features = false }
+eldritch-libgzip = {path = "lib/eldritch/stdlib/eldritch-libgzip", default-features = false }
+eldritch-libhash = {path = "lib/eldritch/stdlib/eldritch-libhash", default-features = false }
 eldritch-libhttp = {path = "lib/eldritch/stdlib/eldritch-libhttp",default-features = false }
+eldritch-libjson = {path = "lib/eldritch/stdlib/eldritch-libjson", default-features = false }
+eldritch-liblinux = {path = "lib/eldritch/stdlib/eldritch-liblinux", default-features = false }
+eldritch-libnet = {path = "lib/eldritch/stdlib/eldritch-libnet", default-features = false }
 eldritch-libpivot = {path = "lib/eldritch/stdlib/eldritch-libpivot",default-features = false }
+eldritch-libportal = {path = "lib/eldritch/stdlib/eldritch-libportal", default-features = false }
 eldritch-libprocess = {path = "lib/eldritch/stdlib/eldritch-libprocess",default-features = false }
 eldritch-librandom = {path = "lib/eldritch/stdlib/eldritch-librandom", default-features = false }
 eldritch-libregex = {path = "lib/eldritch/stdlib/eldritch-libregex",default-features = false }
 eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-features = false }
+eldritch-libscan = {path = "lib/eldritch/stdlib/eldritch-libscan", default-features = false }
+eldritch-libssh = {path = "lib/eldritch/stdlib/eldritch-libssh", default-features = false }
 eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features = false }
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
+eldritch-libuser = {path = "lib/eldritch/stdlib/eldritch-libuser", default-features = false }
+eldritch-libutf8 = {path = "lib/eldritch/stdlib/eldritch-libutf8", default-features = false }
+eldritch-libutf16le = {path = "lib/eldritch/stdlib/eldritch-libutf16le", default-features = false }
+eldritch-libwindows = {path = "lib/eldritch/stdlib/eldritch-libwindows", default-features = false }
 eldritch-libdns = {path = "lib/eldritch/stdlib/eldritch-libdns",default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }
 

@@ -3,7 +3,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -16,10 +16,16 @@ pub mod std;
 ///
 /// It supports:
 /// - Listing running processes.
-/// - Retrieving process details (info, name).
-/// - Killing processes.
-/// - Inspecting network connections (netstat).
+/// - Retrieving process details (info, name, pid, env).
+/// - Killing and signaling processes.
 pub trait ProcessLibrary {
+    #[eldritch_method]
+    /// Returns the current process's environment variables.
+    ///
+    /// **Returns**
+    /// - `Dict<str, str>`: Map of environment variables.
+    fn env(&self) -> Result<BTreeMap<String, String>, String>;
+
     #[eldritch_method]
     /// Returns detailed information about a specific process.
     ///
@@ -73,6 +79,9 @@ pub trait ProcessLibrary {
     fn name(&self, pid: i64) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "process.netstat has been deprecated and will be removed in a future version of eldritch. Please use net.sockets instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Returns a list of active network connections (TCP/UDP/Unix).
     ///
     /// **Returns**
@@ -81,6 +90,13 @@ pub trait ProcessLibrary {
     /// **Errors**
     /// - Returns an error string if network information cannot be retrieved.
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
+    /// Returns the current process ID.
+    ///
+    /// **Returns**
+    /// - `int`: The PID.
+    fn pid(&self) -> Result<i64, String>;
 
     #[eldritch_method]
     /// Sends a signal to a process by its ID.

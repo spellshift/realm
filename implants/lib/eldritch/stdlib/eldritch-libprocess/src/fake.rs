@@ -10,6 +10,15 @@ use eldritch_macros::eldritch_library_impl;
 pub struct ProcessLibraryFake;
 
 impl ProcessLibrary for ProcessLibraryFake {
+    fn env(&self) -> Result<BTreeMap<String, String>, String> {
+        let mut map = BTreeMap::new();
+        map.insert("PATH".into(), "/usr/local/bin:/usr/bin:/bin".into());
+        map.insert("HOME".into(), "/home/user".into());
+        map.insert("USER".into(), "user".into());
+        map.insert("TERM".into(), "xterm-256color".into());
+        Ok(map)
+    }
+
     fn info(&self, _pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
         map.insert("cmd".into(), Value::String("target/debug/golem -i".into()));
@@ -82,16 +91,12 @@ impl ProcessLibrary for ProcessLibraryFake {
     }
 
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        let mut conn = BTreeMap::new();
-        conn.insert("protocol".into(), Value::String("tcp".into()));
-        conn.insert("local_address".into(), Value::String("127.0.0.1".into()));
-        conn.insert("local_port".into(), Value::Int(80));
-        conn.insert("remote_address".into(), Value::String("0.0.0.0".into()));
-        conn.insert("remote_port".into(), Value::Int(0));
-        conn.insert("state".into(), Value::String("LISTEN".into()));
-        conn.insert("pid".into(), Value::Int(1337));
-        conn.insert("socket_type".into(), Value::String("STREAM".into()));
-        Ok(vec![conn])
+        use eldritch_libnet::NetLibrary;
+        eldritch_libnet::fake::NetLibraryFake.sockets()
+    }
+
+    fn pid(&self) -> Result<i64, String> {
+        Ok(1337)
     }
 
     fn signal(&self, _pid: i64, _signal: i64) -> Result<(), String> {

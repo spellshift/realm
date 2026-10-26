@@ -97,23 +97,36 @@ The `docs/_docs/` folder contains three guides:
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 13 modules:
+The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
-| Module    | Purpose                              |
-|-----------|--------------------------------------|
-| `agent`   | Agent metadata and control           |
-| `assets`  | Embedded file access                 |
-| `chain`   | Multi-agent chaining                 |
-| `crypto`  | Encryption, decryption, hashing      |
-| `file`    | File system operations               |
-| `http`    | HTTP/HTTPS requests                  |
-| `pivot`   | Network enumeration, lateral movement|
-| `process` | Process management                   |
-| `random`  | Cryptographically secure random      |
-| `regex`   | Regular expression operations        |
-| `report`  | Structured reporting to Tavern       |
-| `sys`     | System info and execution            |
-| `time`    | Time formatting and delays           |
+| Module    | Purpose                                                       |
+|-----------|---------------------------------------------------------------|
+| `aes`     | AES encryption and decryption for bytes and files             |
+| `agent`   | Agent metadata and control                                    |
+| `assets`  | Embedded file access                                          |
+| `base64`  | Base64 encoding and decoding                                  |
+| `chain`   | Multi-agent C2 chaining                                       |
+| `dns`     | DNS lookups                                                   |
+| `file`    | File system operations                                        |
+| `gzip`    | Gzip compression and decompression for bytes and files        |
+| `hash`    | Cryptographic hashing (`md5`, `sha1`, `sha256`, `file`)       |
+| `http`    | HTTP/HTTPS requests                                           |
+| `json`    | JSON encoding, decoding, and validation                       |
+| `linux`   | Linux-specific operations (`uname`)                           |
+| `net`     | Network interfaces, listening sockets, and TCP/UDP clients    |
+| `portal`  | Bi-directional portal streams                                 |
+| `process` | Process management, PID, and environment variables            |
+| `random`  | Cryptographically secure random                               |
+| `regex`   | Regular expression operations                                 |
+| `report`  | Structured reporting to Tavern                                |
+| `scan`    | Network discovery and port scanning (`arp`, `port`)           |
+| `ssh`     | SSH command execution, file copy, and deployment              |
+| `sys`     | System OS info, hostname, and command execution               |
+| `time`    | Time formatting and delays                                    |
+| `user`    | Current user info and user account enumeration                |
+| `utf8`    | UTF-8 byte/string encoding and decoding                       |
+| `utf16le` | UTF-16LE byte/string encoding and decoding                    |
+| `windows` | Windows-specific DLL injection/reflection, registry, & tokens |
 
 ## Testing Requirements
 

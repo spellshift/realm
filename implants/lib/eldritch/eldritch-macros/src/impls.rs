@@ -42,9 +42,10 @@ pub fn expand_eldritch_library(
 
     for item in &mut trait_def.items {
         if let TraitItem::Method(method) = item {
-            // Check for eldritch_method attribute
+            // Check for eldritch_method and eldritch_deprecated attributes
             let mut is_eldritch = false;
             let mut rename = None;
+            let mut deprecated_msg = None;
             let mut cfg_attrs = Vec::new();
 
             for attr in &method.attrs {
@@ -53,6 +54,35 @@ pub fn expand_eldritch_library(
                     if let Ok(Meta::List(meta)) = attr.parse_meta() {
                         if let Some(NestedMeta::Lit(Lit::Str(lit))) = meta.nested.first() {
                             rename = Some(lit.value());
+                        }
+                    }
+                } else if attr.path.is_ident("eldritch_deprecated") {
+                    match attr.parse_meta() {
+                        Ok(Meta::List(meta)) => {
+                            if let Some(NestedMeta::Lit(Lit::Str(lit))) = meta.nested.first() {
+                                deprecated_msg = Some(lit.value());
+                            } else {
+                                return Err(syn::Error::new_spanned(
+                                    attr,
+                                    "Expected string literal in #[eldritch_deprecated(\"...\")]",
+                                ));
+                            }
+                        }
+                        Ok(Meta::NameValue(nv)) => {
+                            if let Lit::Str(lit) = nv.lit {
+                                deprecated_msg = Some(lit.value());
+                            } else {
+                                return Err(syn::Error::new_spanned(
+                                    attr,
+                                    "Expected string literal in #[eldritch_deprecated = \"...\"]",
+                                ));
+                            }
+                        }
+                        _ => {
+                            return Err(syn::Error::new_spanned(
+                                attr,
+                                "Expected #[eldritch_deprecated(\"...\")]",
+                            ));
                         }
                     }
                 } else if attr.path.is_ident("cfg") {
@@ -64,10 +94,18 @@ pub fn expand_eldritch_library(
                 let method_name = &method.sig.ident;
                 let bind_name = rename.unwrap_or_else(|| method_name.to_string());
                 let (args_parsing, arg_names) = generate_args_parsing(&method.sig)?;
+                let deprecation_warning = if let Some(msg) = deprecated_msg {
+                    quote! {
+                        interp.env.read().printer.print_err(&eldritch_core::Span::new(0, 0, 0), #msg);
+                    }
+                } else {
+                    quote! {}
+                };
 
                 method_dispatches.push(quote! {
                     #(#cfg_attrs)*
                     #bind_name => {
+                        #deprecation_warning
                         #args_parsing
                         let result = self.#method_name(#arg_names);
                         eldritch_core::conversion::IntoEldritchResult::into_eldritch_result(result)

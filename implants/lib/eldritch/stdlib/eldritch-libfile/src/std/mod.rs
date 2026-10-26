@@ -7,9 +7,7 @@ use eldritch_macros::eldritch_library_impl;
 
 mod append_binary_impl;
 pub mod append_impl;
-pub mod compress_impl;
 pub mod copy_impl;
-pub mod decompress_impl;
 pub mod exists_impl;
 pub mod find_impl;
 pub mod follow_impl;
@@ -33,6 +31,7 @@ pub mod template_impl;
 pub mod template_str_impl;
 pub mod timestomp_impl;
 pub mod tmp_dir_impl;
+pub mod which_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
 
@@ -50,7 +49,8 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn compress(&self, src: String, dst: String) -> Result<(), String> {
-        compress_impl::compress(src, dst)
+        use eldritch_libgzip::GzipLibrary;
+        eldritch_libgzip::std::StdGzipLibrary.compress_file(src, dst)
     }
 
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
@@ -58,7 +58,8 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn decompress(&self, src: String, dst: String) -> Result<(), String> {
-        decompress_impl::decompress(src, dst)
+        use eldritch_libgzip::GzipLibrary;
+        eldritch_libgzip::std::StdGzipLibrary.decompress_file(src, dst)
     }
 
     fn exists(&self, path: String) -> Result<bool, String> {
@@ -171,6 +172,10 @@ impl FileLibrary for StdFileLibrary {
         ref_file: Option<String>,
     ) -> Result<(), String> {
         timestomp_impl::timestomp(path, mtime, atime, ctime, ref_file)
+    }
+
+    fn which(&self, bin: String) -> Result<String, String> {
+        which_impl::which(bin)
     }
 
     fn write(&self, path: String, content: String) -> Result<(), String> {

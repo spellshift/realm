@@ -120,8 +120,9 @@ impl FileLibrary for FileLibraryFake {
         Err("Path not found".to_string())
     }
 
-    fn compress(&self, _src: String, _dst: String) -> Result<(), String> {
-        Ok(())
+    fn compress(&self, src: String, dst: String) -> Result<(), String> {
+        use eldritch_libgzip::GzipLibrary;
+        eldritch_libgzip::fake::GzipLibraryFake.compress_file(src, dst)
     }
 
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
@@ -152,8 +153,9 @@ impl FileLibrary for FileLibraryFake {
         Err("Destination path not found".to_string())
     }
 
-    fn decompress(&self, _src: String, _dst: String) -> Result<(), String> {
-        Ok(())
+    fn decompress(&self, src: String, dst: String) -> Result<(), String> {
+        use eldritch_libgzip::GzipLibrary;
+        eldritch_libgzip::fake::GzipLibraryFake.decompress_file(src, dst)
     }
 
     fn exists(&self, path: String) -> Result<bool, String> {
@@ -421,6 +423,10 @@ impl FileLibrary for FileLibraryFake {
         ref_file: Option<String>,
     ) -> Result<(), String> {
         Ok(())
+    }
+
+    fn which(&self, bin: String) -> Result<String, String> {
+        Ok(format!("/usr/bin/{}", bin))
     }
 
     fn write(&self, path: String, content: String) -> Result<(), String> {

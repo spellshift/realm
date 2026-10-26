@@ -12,8 +12,10 @@ use std::time::Duration;
 
 #[cfg(feature = "fake_bindings")]
 use eldritch::{
-    crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake, file::fake::FileLibraryFake,
-    http::fake::HttpLibraryFake, regex::fake::RegexLibraryFake,
+    aes::fake::AesLibraryFake, base64::fake::Base64LibraryFake, crypto::fake::CryptoLibraryFake,
+    dns::fake::DnsLibraryFake, file::fake::FileLibraryFake, gzip::fake::GzipLibraryFake,
+    hash::fake::HashLibraryFake, http::fake::HttpLibraryFake, json::fake::JsonLibraryFake,
+    regex::fake::RegexLibraryFake, utf8::fake::Utf8LibraryFake, utf16le::fake::Utf16leLibraryFake,
 };
 
 fn main() -> io::Result<()> {
@@ -29,11 +31,20 @@ fn main() -> io::Result<()> {
     #[cfg(all(not(feature = "stdlib"), feature = "fake_bindings"))]
     {
         use std::sync::Arc;
+        interpreter.inner.register_lib(AesLibraryFake::default());
+        interpreter.inner.register_lib(Base64LibraryFake::default());
         interpreter.inner.register_lib(FileLibraryFake::default());
+        interpreter.inner.register_lib(GzipLibraryFake::default());
+        interpreter.inner.register_lib(HashLibraryFake::default());
         interpreter.inner.register_lib(HttpLibraryFake::default());
+        interpreter.inner.register_lib(JsonLibraryFake::default());
         interpreter.inner.register_lib(DnsLibraryFake::default());
         interpreter.inner.register_lib(RegexLibraryFake::default());
         interpreter.inner.register_lib(CryptoLibraryFake::default());
+        interpreter.inner.register_lib(Utf8LibraryFake::default());
+        interpreter
+            .inner
+            .register_lib(Utf16leLibraryFake::default());
     }
 
     let mut repl = Repl::new();

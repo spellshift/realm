@@ -135,7 +135,7 @@ const ShellV2 = () => {
     };
 
     const handleNewPortal = () => {
-        setShellInput("pivot.create_portal()");
+        setShellInput("portal.create()");
         // HeadlessUI Menu restores focus to Menu.Button after onClick;
         // delay refocus so the terminal regains focus after the menu closes.
         setTimeout(() => focusTerminal(), 0);

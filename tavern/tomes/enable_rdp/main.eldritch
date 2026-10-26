@@ -3,14 +3,14 @@ def enable_rdp_registry():
     key = "fDenyTSConnections"
 
     print(f"Setting {path}\\{key} to 0")
-    if sys.write_reg(path, key, "REG_DWORD", 0):
+    if windows.write_reg(path, key, "REG_DWORD", 0):
         print("Registry write successful.")
     else:
         print("Registry write failed. Are you running as Administrator?")
         return False
 
     # Verify
-    reg_vals = sys.get_reg(path)
+    reg_vals = windows.read_reg(path)
     if key in reg_vals:
         val = reg_vals[key]
         if val == 0:

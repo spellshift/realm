@@ -16,7 +16,7 @@ interface ShellActionsMenuProps {
     onSendCtrlR: () => void;
 }
 
-const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using pivot.create_portal().";
+const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using portal.create().";
 
 const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     portalId,
