@@ -97,7 +97,7 @@ The `docs/_docs/` folder contains three guides:
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `crypto` and `pivot`):
+The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
 | Module    | Purpose                                                       |
 |-----------|---------------------------------------------------------------|
@@ -122,6 +122,7 @@ The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `cry
 | `scan`    | Network discovery and port scanning (`arp`, `port`)           |
 | `ssh`     | SSH command execution, file copy, and deployment              |
 | `sys`     | System OS info, hostname, and command execution               |
+| `template` | Jinja2 template rendering from strings and files            |
 | `time`    | Time formatting and delays                                    |
 | `user`    | Current user info and user account enumeration                |
 | `utf8`    | UTF-8 byte/string encoding and decoding                       |

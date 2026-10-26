@@ -102,7 +102,7 @@ func doAThing(myparam *Thing):
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `crypto` and `pivot`):
+The Eldritch DSL provides 27 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
 | Module    | Purpose                                                       |
 |-----------|---------------------------------------------------------------|
@@ -127,6 +127,7 @@ The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `cry
 | `scan`    | Network discovery and port scanning (`arp`, `port`)           |
 | `ssh`     | SSH command execution, file copy, and deployment              |
 | `sys`     | System OS info, hostname, and command execution               |
+| `template` | Jinja2 template rendering from strings and files            |
 | `time`    | Time formatting and delays                                    |
 | `user`    | Current user info and user account enumeration                |
 | `utf8`    | UTF-8 byte/string encoding and decoding                       |
@@ -147,6 +148,15 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 
 ### Renamed Functions
 
+- `file.temp_file` → `file.tmp`
+- `file.pwd` → `process.cwd`
+- `file.template` → `template.render_file`
+- `file.template_str` → `template.render`
+- `time.format_to_epoch` → `time.to_epoch`
+- `time.format_to_readable` → `time.format`
+- `agent.get_config` → `agent.config`
+- `agent.get_transport` → `agent.transport`
+- `agent.get_callback_interval` → `agent.callback_interval`
 - `crypto.aes_decrypt` → `aes.decrypt`
 - `crypto.aes_decrypt_file` → `aes.decrypt_file`
 - `crypto.aes_encrypt` → `aes.encrypt`

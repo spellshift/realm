@@ -20,6 +20,10 @@ pub mod std;
 /// - Killing and signaling processes.
 pub trait ProcessLibrary {
     #[eldritch_method]
+    /// Returns the current working directory, or None if it cannot be determined.
+    fn cwd(&self) -> Result<Option<String>, String>;
+
+    #[eldritch_method]
     /// Returns the current process's environment variables.
     ///
     /// **Returns**

@@ -248,7 +248,7 @@ def systemd(service_name, service_desc, executable_path, executable_args):
     if systemd_dir == False:
         eprint("No systemd dir found aborting")
         return False
-    file.template("/tmp/systemd.service.j2", systemd_dir+service_name+".service", args, False)
+    template.render_file("/tmp/systemd.service.j2", systemd_dir+service_name+".service", args, False)
     file.remove("/tmp/systemd.service.j2")
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
@@ -271,7 +271,7 @@ def sysvinit(service_name, service_desc, executable_path, executable_args):
         "SERVICE_DESC": service_desc,
         "SERVICE_START_CMD": executable_path+" "+executable_args
     }
-    file.template("/tmp/svc.sh.j2", "/etc/init.d/"+service_name, args, False)
+    template.render_file("/tmp/svc.sh.j2", "/etc/init.d/"+service_name, args, False)
     file.remove("/tmp/svc.sh.j2")
     sys.shell("chmod +x "+"/etc/init.d/"+service_name)
 
@@ -297,7 +297,7 @@ def bsdinit(service_name, service_desc, executable_path, executable_args):
         "service_desc": service_desc,
         "service_start_cmd": executable_path+" "+executable_args
     }
-    file.template("/tmp/svc.sh.j2", startup_dir +
+    template.render_file("/tmp/svc.sh.j2", startup_dir +
                   service_name+".sh", args, False)
     file.remove("/tmp/svc.sh.j2")
 
@@ -316,7 +316,7 @@ def launch_daemon(service_name, executable_path, executable_args):
         "bin_path": executable_path,
         "bin_args": executable_args
     }
-    file.template("/tmp/plist.j2", "/Library/LaunchDaemons/" +
+    template.render_file("/tmp/plist.j2", "/Library/LaunchDaemons/" +
                   service_name+".plist", args, False)
     file.remove("/tmp/plist.j2")
 

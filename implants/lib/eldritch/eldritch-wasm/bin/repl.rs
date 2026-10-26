@@ -15,7 +15,9 @@ use eldritch::{
     aes::fake::AesLibraryFake, base64::fake::Base64LibraryFake, crypto::fake::CryptoLibraryFake,
     dns::fake::DnsLibraryFake, file::fake::FileLibraryFake, gzip::fake::GzipLibraryFake,
     hash::fake::HashLibraryFake, http::fake::HttpLibraryFake, json::fake::JsonLibraryFake,
-    regex::fake::RegexLibraryFake, utf8::fake::Utf8LibraryFake, utf16le::fake::Utf16leLibraryFake,
+    process::fake::ProcessLibraryFake, regex::fake::RegexLibraryFake,
+    template::fake::TemplateLibraryFake, utf8::fake::Utf8LibraryFake,
+    utf16le::fake::Utf16leLibraryFake,
 };
 
 fn main() -> io::Result<()> {
@@ -34,6 +36,8 @@ fn main() -> io::Result<()> {
         interpreter.inner.register_lib(AesLibraryFake::default());
         interpreter.inner.register_lib(Base64LibraryFake::default());
         interpreter.inner.register_lib(FileLibraryFake::default());
+        interpreter.inner.register_lib(ProcessLibraryFake);
+        interpreter.inner.register_lib(TemplateLibraryFake);
         interpreter.inner.register_lib(GzipLibraryFake::default());
         interpreter.inner.register_lib(HashLibraryFake::default());
         interpreter.inner.register_lib(HttpLibraryFake::default());

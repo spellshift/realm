@@ -354,7 +354,8 @@ impl FileLibrary for FileLibraryFake {
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {
-        Ok(Some("/home/user".to_string()))
+        use eldritch_libprocess::ProcessLibrary;
+        eldritch_libprocess::fake::ProcessLibraryFake.cwd()
     }
 
     fn remove(&self, path: String) -> Result<(), String> {
@@ -383,6 +384,10 @@ impl FileLibrary for FileLibraryFake {
     }
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
+        self.tmp(name)
+    }
+
+    fn tmp(&self, name: Option<String>) -> Result<String, String> {
         let name = name.unwrap_or_else(|| "random".to_string());
         Ok(format!("/tmp/{}", name))
     }
@@ -396,21 +401,28 @@ impl FileLibrary for FileLibraryFake {
 
     fn template(
         &self,
-        _template_path: String,
-        _dst: String,
-        _args: BTreeMap<String, Value>,
-        _autoescape: bool,
+        template_path: String,
+        dst: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
     ) -> Result<(), String> {
-        Ok(())
+        use eldritch_libtemplate::TemplateLibrary;
+        eldritch_libtemplate::fake::TemplateLibraryFake.render_file(
+            template_path,
+            dst,
+            args,
+            autoescape,
+        )
     }
 
     fn template_str(
         &self,
-        _template: String,
-        _args: BTreeMap<String, Value>,
-        _autoescape: bool,
+        template: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
     ) -> Result<String, String> {
-        Ok(String::new())
+        use eldritch_libtemplate::TemplateLibrary;
+        eldritch_libtemplate::fake::TemplateLibraryFake.render(template, args, autoescape)
     }
 
     #[allow(unused_variables)]

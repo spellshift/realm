@@ -8,12 +8,12 @@ default = ["stdlib"]
 stdlib = [
     "dep:eldritch-libgzip",
     "eldritch-libgzip/stdlib",
-    "dep:tera",
+    "eldritch-libtemplate/stdlib",
+    "eldritch-libprocess/stdlib",
     "dep:tempfile",
     "dep:glob",
     "dep:regex",
     "dep:anyhow",
-    "dep:serde_json",
     "dep:notify",
     "dep:jiff",
     "dep:which",
@@ -21,18 +21,20 @@ stdlib = [
 fake_bindings = [
     "dep:eldritch-libgzip",
     "eldritch-libgzip/fake_bindings",
+    "eldritch-libtemplate/fake_bindings",
+    "eldritch-libprocess/fake_bindings",
 ]
 
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-libgzip = { path = "../eldritch-libgzip", default-features = false, optional = true }
-tera = { workspace = true, optional = true }
+eldritch-libtemplate = { workspace = true, default-features = false }
+eldritch-libprocess = { workspace = true, default-features = false }
 tempfile = { workspace = true, optional = true }
 glob = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
 notify = { workspace = true, optional = true }
 jiff = { workspace = true, optional = true }
 which = { workspace = true, optional = true }

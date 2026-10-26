@@ -55,7 +55,7 @@ impl StdlibIndex {
              let defaults = vec![
                  "aes", "agent", "assets", "base64", "chain", "crypto", "dns", "file", "gzip",
                  "hash", "http", "json", "linux", "net", "pivot", "portal", "process", "random",
-                 "regex", "report", "scan", "ssh", "sys", "time", "user", "utf8", "utf16le",
+                 "regex", "report", "scan", "ssh", "sys", "template", "time", "user", "utf8", "utf16le",
                  "windows",
              ];
              for m in defaults {

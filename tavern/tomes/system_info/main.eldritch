@@ -8,7 +8,7 @@ def main():
     pprint(user.info())
     print()
     print("System time:")
-    print(time.format_to_readable(time.now(), "%Y-%m-%d %H:%M:%S"))
+    print(time.format(time.now(), "%Y-%m-%d %H:%M:%S"))
     print()
     print("Network information:")
     pprint(net.interfaces())

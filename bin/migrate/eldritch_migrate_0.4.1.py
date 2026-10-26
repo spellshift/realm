@@ -36,6 +36,16 @@ RENAMES: List[Tuple[str, str]] = [
     # file -> gzip
     ("file.compress", "gzip.compress_file"),
     ("file.decompress", "gzip.decompress_file"),
+    ("file.temp_file", "file.tmp"),
+    ("file.pwd", "process.cwd"),
+    ("file.template", "template.render_file"),
+    ("file.template_str", "template.render"),
+    # time and agent accessor names
+    ("time.format_to_epoch", "time.to_epoch"),
+    ("time.format_to_readable", "time.format"),
+    ("agent.get_config", "agent.config"),
+    ("agent.get_transport", "agent.transport"),
+    ("agent.get_callback_interval", "agent.callback_interval"),
     # pivot -> scan, portal, smb, ssh
     ("pivot.arp_scan", "scan.arp"),
     ("pivot.create_portal", "portal.create"),

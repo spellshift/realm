@@ -6,6 +6,7 @@ use eldritch_core::Value;
 use eldritch_libnet::{NetLibrary, std::StdNetLibrary};
 use eldritch_macros::eldritch_library_impl;
 
+pub mod cwd_impl;
 pub mod env_impl;
 pub mod info_impl;
 pub mod kill_impl;
@@ -19,6 +20,10 @@ pub mod signal_impl;
 pub struct StdProcessLibrary;
 
 impl ProcessLibrary for StdProcessLibrary {
+    fn cwd(&self) -> Result<Option<String>, String> {
+        cwd_impl::cwd()
+    }
+
     fn env(&self) -> Result<BTreeMap<String, String>, String> {
         env_impl::get_env().map_err(|e| e.to_string())
     }

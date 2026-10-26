@@ -84,6 +84,7 @@ fn test_file_bindings() {
             "template",
             "template_str",
             "timestomp",
+            "tmp",
             "tmp_dir",
             "which",
             "write",
@@ -97,7 +98,7 @@ fn test_process_bindings() {
     check_bindings(
         "process",
         &[
-            "env", "info", "kill", "list", "name", "netstat", "pid", "signal",
+            "cwd", "env", "info", "kill", "list", "name", "netstat", "pid", "signal",
         ],
     );
 }
@@ -272,8 +273,20 @@ fn test_crypto_bindings() {
 fn test_time_bindings() {
     check_bindings(
         "time",
-        &["format_to_epoch", "format_to_readable", "now", "sleep"],
+        &[
+            "to_epoch",
+            "format",
+            "format_to_epoch",
+            "format_to_readable",
+            "now",
+            "sleep",
+        ],
     );
+}
+
+#[test]
+fn test_template_bindings() {
+    check_bindings("template", &["render", "render_file"]);
 }
 
 #[test]
@@ -312,6 +325,9 @@ fn test_agent_bindings() {
         "agent",
         &[
             "_terminate_this_process_clowntown",
+            "callback_interval",
+            "config",
+            "transport",
             "get_callback_interval",
             "get_config",
             "get_transport",

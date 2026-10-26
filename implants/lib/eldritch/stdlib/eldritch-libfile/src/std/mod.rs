@@ -19,18 +19,15 @@ pub mod list_recent_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
 pub mod parent_dir_impl;
-pub mod pwd_impl;
 pub mod read_binary_impl;
 pub mod read_impl;
 pub mod read_named_pipe_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
-pub mod temp_file_impl;
-pub mod template_impl;
-pub mod template_str_impl;
 pub mod timestomp_impl;
 pub mod tmp_dir_impl;
+pub mod tmp_impl;
 pub mod which_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
@@ -121,7 +118,8 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {
-        pwd_impl::pwd()
+        use eldritch_libprocess::ProcessLibrary;
+        eldritch_libprocess::std::StdProcessLibrary.cwd()
     }
 
     fn remove(&self, path: String) -> Result<(), String> {
@@ -137,7 +135,11 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
-        temp_file_impl::temp_file(name)
+        self.tmp(name)
+    }
+
+    fn tmp(&self, name: Option<String>) -> Result<String, String> {
+        tmp_impl::tmp(name)
     }
 
     fn tmp_dir(&self) -> Result<String, String> {
@@ -151,7 +153,13 @@ impl FileLibrary for StdFileLibrary {
         args: BTreeMap<String, Value>,
         autoescape: bool,
     ) -> Result<(), String> {
-        template_impl::template(template_path, dst, args, autoescape)
+        use eldritch_libtemplate::TemplateLibrary;
+        eldritch_libtemplate::std::StdTemplateLibrary.render_file(
+            template_path,
+            dst,
+            args,
+            autoescape,
+        )
     }
 
     fn template_str(
@@ -160,7 +168,8 @@ impl FileLibrary for StdFileLibrary {
         args: BTreeMap<String, Value>,
         autoescape: bool,
     ) -> Result<String, String> {
-        template_str_impl::template_str(template, args, autoescape).map_err(|e| e.to_string())
+        use eldritch_libtemplate::TemplateLibrary;
+        eldritch_libtemplate::std::StdTemplateLibrary.render(template, args, autoescape)
     }
 
     fn timestomp(

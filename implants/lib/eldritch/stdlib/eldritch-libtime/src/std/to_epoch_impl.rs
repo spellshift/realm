@@ -1,11 +1,11 @@
 use alloc::string::{String, ToString};
 use anyhow::Result as AnyhowResult;
 
-pub fn format_to_epoch(input: String, fmt: String) -> Result<i64, String> {
-    format_to_epoch_impl(input, fmt).map_err(|e| e.to_string())
+pub fn to_epoch(input: String, fmt: String) -> Result<i64, String> {
+    to_epoch_impl(input, fmt).map_err(|e| e.to_string())
 }
 
-fn format_to_epoch_impl(input: String, fmt: String) -> AnyhowResult<i64> {
+fn to_epoch_impl(input: String, fmt: String) -> AnyhowResult<i64> {
     // Try to parse as Timestamp with timezone first
     if let Ok(ts) = jiff::Timestamp::strptime(&fmt, &input) {
         return Ok(ts.as_second());
@@ -59,24 +59,22 @@ mod tests {
         let ts = 1609459200; // 2021-01-01 00:00:00 UTC
         let fmt = "%Y-%m-%d %H:%M:%S";
 
-        let readable = lib.format_to_readable(ts, fmt.to_string()).unwrap();
+        let readable = lib.format(ts, fmt.to_string()).unwrap();
         assert_eq!(readable, "2021-01-01 00:00:00");
 
-        let epoch = lib.format_to_epoch(readable, fmt.to_string()).unwrap();
+        let epoch = lib.to_epoch(readable, fmt.to_string()).unwrap();
         assert_eq!(epoch, ts);
     }
 
     #[test]
-    fn test_format_to_epoch_formats() {
+    fn test_to_epoch_formats() {
         let lib = StdTimeLibrary;
         // Test with different format
         let ts = 1609459200; // 2021-01-01 00:00:00 UTC
         let date_str = "2021/01/01 00:00:00";
         let fmt = "%Y/%m/%d %H:%M:%S";
 
-        let epoch = lib
-            .format_to_epoch(date_str.to_string(), fmt.to_string())
-            .unwrap();
+        let epoch = lib.to_epoch(date_str.to_string(), fmt.to_string()).unwrap();
         assert_eq!(epoch, ts);
     }
 
@@ -85,14 +83,14 @@ mod tests {
         let lib = StdTimeLibrary;
         let date_str = "2021/01/01";
         let fmt = "%Y/%m/%d";
-        let res = lib.format_to_epoch(date_str.to_string(), fmt.to_string());
+        let res = lib.to_epoch(date_str.to_string(), fmt.to_string());
         assert!(res.is_err());
     }
 
     #[test]
-    fn test_format_to_epoch_invalid() {
+    fn test_to_epoch_invalid() {
         let lib = StdTimeLibrary;
-        let res = lib.format_to_epoch("invalid".to_string(), "%Y".to_string());
+        let res = lib.to_epoch("invalid".to_string(), "%Y".to_string());
         assert!(res.is_err());
     }
 
@@ -104,9 +102,7 @@ mod tests {
         let fmt = "%Y-%m-%dT%H:%M:%S%z";
         let ts = 1609459200;
 
-        let epoch = lib
-            .format_to_epoch(input.to_string(), fmt.to_string())
-            .unwrap();
+        let epoch = lib.to_epoch(input.to_string(), fmt.to_string()).unwrap();
         assert_eq!(epoch, ts);
     }
 }

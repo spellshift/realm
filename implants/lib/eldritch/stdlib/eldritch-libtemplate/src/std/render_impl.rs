@@ -11,16 +11,16 @@ use eldritch_core::Value;
 use tera::{Context as TeraContext, Tera};
 
 #[cfg(feature = "stdlib")]
-pub fn template_str(
+pub fn render(
     template: String,
     args: BTreeMap<String, Value>,
     autoescape: bool,
 ) -> AnyhowResult<String> {
-    template_str_impl(template, args, autoescape)
+    render_impl(template, args, autoescape)
 }
 
 #[cfg(feature = "stdlib")]
-fn template_str_impl(
+fn render_impl(
     template: String,
     args: BTreeMap<String, Value>,
     autoescape: bool,
@@ -76,11 +76,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_template_str() {
+    fn test_render() {
         let mut args = BTreeMap::new();
         args.insert("name".to_string(), Value::String("World".to_string()));
 
-        let result = template_str("Hello {{ name }}".to_string(), args, true).unwrap();
+        let result = render("Hello {{ name }}".to_string(), args, true).unwrap();
 
         assert_eq!(result, "Hello World");
     }
@@ -94,18 +94,17 @@ mod tests {
             Value::String("awesome".to_string()),
         );
 
-        let result =
-            template_str("{{ name }} is {{ adjective }}!".to_string(), args, true).unwrap();
+        let result = render("{{ name }} is {{ adjective }}!".to_string(), args, true).unwrap();
 
         assert_eq!(result, "Realm is awesome!");
     }
 
     #[test]
-    fn test_broken_template_str() {
+    fn test_broken_render() {
         let mut args = BTreeMap::new();
         args.insert("name".to_string(), Value::String("World".to_string()));
 
-        let result = template_str("Hello {% if {{ name }}".to_string(), args, true);
+        let result = render("Hello {% if {{ name }}".to_string(), args, true);
 
         assert!(result.is_err());
     }

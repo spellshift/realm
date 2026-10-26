@@ -26,6 +26,7 @@ mod tests {
         interp.register_lib(eldritch::agent::fake::AgentLibraryFake);
         interp.register_lib(eldritch::assets::fake::FakeAssetsLibrary);
         interp.register_lib(eldritch::file::fake::FileLibraryFake::default());
+        interp.register_lib(eldritch::template::fake::TemplateLibraryFake);
         interp.register_lib(eldritch::gzip::fake::GzipLibraryFake);
         interp.register_lib(eldritch::http::fake::HttpLibraryFake);
         interp.register_lib(eldritch::linux::fake::LinuxLibraryFake);

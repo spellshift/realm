@@ -10,6 +10,10 @@ use eldritch_macros::eldritch_library_impl;
 pub struct ProcessLibraryFake;
 
 impl ProcessLibrary for ProcessLibraryFake {
+    fn cwd(&self) -> Result<Option<String>, String> {
+        Ok(Some("/home/user".into()))
+    }
+
     fn env(&self) -> Result<BTreeMap<String, String>, String> {
         let mut map = BTreeMap::new();
         map.insert("PATH".into(), "/usr/local/bin:/usr/bin:/bin".into());

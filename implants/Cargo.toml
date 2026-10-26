@@ -32,6 +32,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libscan",
     "lib/eldritch/stdlib/eldritch-libssh",
     "lib/eldritch/stdlib/eldritch-libsys",
+    "lib/eldritch/stdlib/eldritch-libtemplate",
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/stdlib/eldritch-libuser",
     "lib/eldritch/stdlib/eldritch-libutf8",
@@ -82,6 +83,7 @@ eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-fe
 eldritch-libscan = {path = "lib/eldritch/stdlib/eldritch-libscan", default-features = false }
 eldritch-libssh = {path = "lib/eldritch/stdlib/eldritch-libssh", default-features = false }
 eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features = false }
+eldritch-libtemplate = {path = "lib/eldritch/stdlib/eldritch-libtemplate",default-features = false }
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
 eldritch-libuser = {path = "lib/eldritch/stdlib/eldritch-libuser", default-features = false }
 eldritch-libutf8 = {path = "lib/eldritch/stdlib/eldritch-libutf8", default-features = false }

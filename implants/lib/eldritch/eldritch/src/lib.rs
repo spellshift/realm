@@ -29,6 +29,7 @@ pub use eldritch_libreport as report;
 pub use eldritch_libscan as scan;
 pub use eldritch_libssh as ssh;
 pub use eldritch_libsys as sys;
+pub use eldritch_libtemplate as template;
 pub use eldritch_libtime as time;
 pub use eldritch_libuser as user;
 pub use eldritch_libutf8 as utf8;
@@ -105,6 +106,8 @@ use crate::ssh::std::StdSshLibrary;
 #[cfg(feature = "stdlib")]
 use crate::sys::std::StdSysLibrary;
 #[cfg(feature = "stdlib")]
+use crate::template::std::StdTemplateLibrary;
+#[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
 #[cfg(feature = "stdlib")]
 use crate::user::std::StdUserLibrary;
@@ -161,6 +164,8 @@ use crate::scan::fake::ScanLibraryFake;
 use crate::ssh::fake::SshLibraryFake;
 #[cfg(feature = "fake_sys")]
 use crate::sys::fake::SysLibraryFake;
+#[cfg(feature = "fake_template")]
+use crate::template::fake::TemplateLibraryFake;
 #[cfg(feature = "fake_time")]
 use crate::time::fake::TimeLibraryFake;
 #[cfg(feature = "fake_user")]
@@ -216,6 +221,7 @@ impl Interpreter {
             self.inner.register_lib(StdScanLibrary);
             self.inner.register_lib(StdSshLibrary);
             self.inner.register_lib(StdSysLibrary);
+            self.inner.register_lib(StdTemplateLibrary);
             self.inner.register_lib(StdTimeLibrary);
             self.inner.register_lib(StdUserLibrary);
             self.inner.register_lib(StdUtf8Library);
@@ -260,6 +266,8 @@ impl Interpreter {
         self.inner.register_lib(SshLibraryFake);
         #[cfg(feature = "fake_sys")]
         self.inner.register_lib(SysLibraryFake);
+        #[cfg(feature = "fake_template")]
+        self.inner.register_lib(TemplateLibraryFake);
         #[cfg(feature = "fake_time")]
         self.inner.register_lib(TimeLibraryFake);
         #[cfg(feature = "fake_user")]
@@ -404,3 +412,6 @@ mod input_params_test;
 
 #[cfg(test)]
 mod process_report_test;
+
+#[cfg(all(test, feature = "stdlib"))]
+mod rename_test;

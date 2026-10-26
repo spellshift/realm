@@ -70,7 +70,7 @@ If there are OS or edge case specific behaviors make sure to document them here.
 Please add your function in alphabetical order this makes it easy to search by key words.
 
 ```markdown
-### agent.get_config
+### agent.config
 library.function(arg1: str) -> Dict<str, Value>
 
 The <b>library.function</b> describe your function and edge cases.

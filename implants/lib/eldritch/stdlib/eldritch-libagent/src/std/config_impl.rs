@@ -6,7 +6,7 @@ use eldritch_core::Value;
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
 
-pub fn get_config(agent: Arc<dyn Agent>) -> Result<BTreeMap<String, Value>, String> {
+pub fn config(agent: Arc<dyn Agent>) -> Result<BTreeMap<String, Value>, String> {
     let config = agent.get_config()?;
     let mut result = BTreeMap::new();
     for (k, v) in config {

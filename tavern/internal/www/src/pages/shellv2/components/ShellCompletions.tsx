@@ -9,11 +9,11 @@ const docs = docsData as Record<string, { signature: string; description: string
 const findDoc = (completion: string) => {
   // 1. Exact match (e.g. "agent")
   if (docs[completion]) return docs[completion];
-  // 2. Suffix match (e.g. "get_config" -> "agent.get_config")
+  // 2. Suffix match (e.g. "config" -> "agent.config")
   // This assumes no collisions or picks the first one.
   // Given eldritch DSL structure, collisions on method names are possible but likely context specific.
   // However, completions usually come with context.
-  // If we only have the completion text "get_config", we try to find a key ending in ".get_config".
+  // If we only have the completion text "config", we try to find a key ending in ".config".
   const suffix = "." + completion;
   const key = Object.keys(docs).find(k => k.endsWith(suffix));
   if (key) return docs[key];

@@ -71,7 +71,7 @@ def write_systemd_service():
                 "binary_path":"/bin/false",
             }
             assets.copy("systemd-template.j2", "/tmp/systemd-template.j2")
-            file.template("/tmp/systemd-template.j2","/lib/systemd/system/myservice.service",args,False)
+            template.render_file("/tmp/systemd-template.j2","/lib/systemd/system/myservice.service",args,False)
             file.remove("/tmp/systemd-template.j2")
 
 write_systemd_service()
@@ -331,6 +331,7 @@ The standard library is the default functionality that eldritch provides. It con
 - `scan` - Network scanning capabilities (`arp`, `port`).
 - `ssh` - Remote execution, file copy, and deployment over SSH.
 - `sys` - General system capabilities such as OS info and command execution.
+- `template` - Renders Jinja2 templates from strings and files.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
 - `user` - User account enumeration and current user inspection.
 - `utf8` - UTF-8 string and byte encoding/decoding.
@@ -404,17 +405,17 @@ The `agent` library provides functions for meta-style interactions with the agen
 
 **🚨 DANGER 🚨:** The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
 
-### agent.get_config
+### agent.config
 
-`agent.get_config() -> Dict<str, Value>`
+`agent.config() -> Dict<str, Value>`
 
-The **agent.get_config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
+The **agent.config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
 
-### agent.get_transport
+### agent.transport
 
-`agent.get_transport() -> str`
+`agent.transport() -> str`
 
-The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc", "dns").
+The **agent.transport** method returns the name of the currently active transport (e.g., "http", "grpc", "dns").
 
 ### agent.list_transports
 
@@ -422,11 +423,11 @@ The **agent.get_transport** method returns the name of the currently active tran
 
 The **agent.list_transports** method returns a list of available transport names supported by the agent.
 
-### agent.get_callback_interval
+### agent.callback_interval
 
-`agent.get_callback_interval() -> int`
+`agent.callback_interval() -> int`
 
-The **agent.get_callback_interval** method returns the current callback interval in seconds.
+The **agent.callback_interval** method returns the current callback interval in seconds.
 
 ### agent.list_tasks
 
@@ -788,12 +789,6 @@ The **file.move** method moves a file or directory from `src` to `dst`. If the `
 
 The **file.parent_dir** method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
 
-### file.pwd
-
-`file.pwd() -> Option<str>`
-
-The **file.pwd** method returns the current working directory of the process. If it could not be determined, `None` is returned.
-
 ### file.read
 
 `file.read(path: str) -> str`
@@ -867,39 +862,17 @@ The **file.replace** method finds the first string matching a regex pattern in t
 
 The **file.replace_all** method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
-### file.temp_file
+### file.tmp
 
-`file.temp_file(name: Option<str>) -> str`
+`file.tmp(name: Option<str>) -> str`
 
-The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The **file.tmp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.tmp_dir
 
 `file.tmp_dir() -> str`
 
 The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
-
-### file.template
-
-`file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
-
-The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
-If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
-The `args` dictionary currently supports values of: `int`, `str`, and `List`.
-`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
-
-### file.template_str
-
-`file.template_str(template_str: str, args: Dict<String, Value>, autoescape: bool) -> str`
-
-Rather than reading a Jinja2 template file from disk, **template_str** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
-
-`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
-
-```python
-template = "Hello, {{ name }}!\n"
-result = file.template_str(template, {"name": "world"}, True)
-```
 
 ### file.timestomp
 
@@ -1203,6 +1176,12 @@ The **portal.create** method opens a portal bi-directional stream.
 ## Process
 
 The `process` library is used to interact with running processes on the local system. It provides functionalities to list processes, gather detailed information, inspect process IDs and environment variables, or terminate specific processes.
+
+### process.cwd
+
+`process.cwd() -> Option<str>`
+
+The **process.cwd** method returns the current working directory of the process. If it could not be determined, `None` is returned.
 
 ### process.env
 
@@ -1664,15 +1643,43 @@ On Windows, if an impersonation token is active (from `windows.impersonate()`), 
 
 ---
 
+## Template
+
+The `template` library renders Jinja2 templates from strings or files using the supplied variables.
+
+### template.render_file
+
+`template.render_file(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
+
+The **template.render_file** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
+If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
+The `args` dictionary currently supports values of: `int`, `str`, and `List`.
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+### template.render
+
+`template.render(template: str, args: Dict<String, Value>, autoescape: bool) -> str`
+
+Rather than reading a Jinja2 template file from disk, **template.render** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
+
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+```python
+template_text = "Hello, {{ name }}!\n"
+result = template.render(template_text, {"name": "world"}, True)
+```
+
+---
+
 ## Time
 
 The `time` library contains general functions for obtaining and formatting the current system time. It allows you to convert between timestamps and readable strings, or introduce execution delays using sleep.
 
-### time.format_to_epoch
+### time.to_epoch
 
-`time.format_to_epoch(input: str, format: str) -> int`
+`time.to_epoch(input: str, format: str) -> int`
 
-The **time.format_to_epoch** method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
+The **time.to_epoch** method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
 
 Some common formatting methods are:
 
@@ -1681,11 +1688,11 @@ Some common formatting methods are:
 
 For reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>
 
-### time.format_to_readable
+### time.format
 
-`time.format_to_readable(input: int, format: str) -> str`
+`time.format(input: int, format: str) -> str`
 
-The **time.format_to_readable** method returns the timestamp in the provided format of the provided UTC timestamp.
+The **time.format** method returns the timestamp in the provided format of the provided UTC timestamp.
 
 Some common formatting methods are:
 

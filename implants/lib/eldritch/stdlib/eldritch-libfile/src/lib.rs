@@ -309,10 +309,10 @@ pub trait FileLibrary {
     fn read_named_pipe(&self, name: String, max_bytes: Option<i64>) -> Result<String, String>;
 
     #[eldritch_method]
-    /// Returns the current working directory of the process.
-    ///
-    /// **Returns**
-    /// - `Option<str>`: The current working directory path, or None if it cannot be determined.
+    #[eldritch_deprecated(
+        "file.pwd has been deprecated and will be removed in a future version of eldritch. Please use process.cwd instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `process.cwd` instead.
     fn pwd(&self) -> Result<Option<String>, String>;
 
     #[eldritch_method]
@@ -369,6 +369,13 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if creation fails.
+    fn tmp(&self, name: Option<String>) -> Result<String, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "file.temp_file has been deprecated and will be removed in a future version of eldritch. Please use file.tmp instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `file.tmp` instead.
     fn temp_file(&self, name: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
@@ -385,19 +392,10 @@ pub trait FileLibrary {
     fn tmp_dir(&self) -> Result<String, String>;
 
     #[eldritch_method]
-    /// Renders a Jinja2 template file to a destination path.
-    ///
-    /// **Parameters**
-    /// - `template_path` (`str`): Path to the source template file.
-    /// - `dst` (`str`): Destination path for the rendered file.
-    /// - `args` (`Dict<str, Value>`): Variables to substitute in the template.
-    /// - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the template cannot be read, parsed, or written.
+    #[eldritch_deprecated(
+        "file.template has been deprecated and will be removed in a future version of eldritch. Please use template.render_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `template.render_file` instead.
     fn template(
         &self,
         template_path: String,
@@ -407,18 +405,10 @@ pub trait FileLibrary {
     ) -> Result<(), String>;
 
     #[eldritch_method]
-    /// Renders a template string and writes it to a file.
-    ///
-    /// **Parameters**
-    /// - `template` (`str`): The template string to render.
-    /// - `args` (`Dict<str, Value>`): Variables to substitute in the template.
-    /// - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
-    ///
-    /// **Returns**
-    /// - Returns the template as a string
-    ///
-    /// **Errors**
-    /// - Returns an error string if the template cannot be parsed or written.
+    #[eldritch_deprecated(
+        "file.template_str has been deprecated and will be removed in a future version of eldritch. Please use template.render instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `template.render` instead.
     fn template_str(
         &self,
         template: String,
