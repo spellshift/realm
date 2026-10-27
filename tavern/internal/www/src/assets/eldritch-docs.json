@@ -25,7 +25,7 @@
   },
   "bytes": {
     "signature": "bytes(source) -> Bytes",
-    "description": "The **bytes** method creates a bytes object.\n- If source is an integer, the array will have that size and will be initialized with null bytes.\n- If source is a string, it will be converted using UTF-8 encoding.\n- If source is an iterable, it must be an iterable of integers in the range 0 <= x < 256."
+    "description": "The **bytes** method creates a bytes object.\n- If source is an integer, the array will have that size and will be initialized with null bytes.\n- If source is a string, it will be converted using UTF-8 encoding.\n- If source is already a bytes object, it is returned directly.\n- If source is an iterable, it must be an iterable of integers in the range 0 <= x < 256.\nBytes objects also support `.decode(encoding: Optional<str> = \"utf8\") -> str` for decoding `\"utf8\"` (default) or `\"utf16le\"` bytes into a string (e.g. `b\"data\".decode(\"utf16le\")`)."
   },
   "chr": {
     "signature": "chr(i) -> Str",
@@ -129,7 +129,7 @@
   },
   "str": {
     "signature": "str(object) -> Str",
-    "description": "The **str** method returns a string containing a nicely printable representation of an object."
+    "description": "The **str** method returns a string containing a nicely printable representation of an object. If `object` is a `Bytes` value, it is decoded using default UTF-8 encoding.\nStrings also support `.encode(encoding: Optional<str> = \"utf8\") -> Bytes` for encoding into `\"utf8\"` (default) or `\"utf16le\"` bytes (e.g. `\"data\".encode()` or `\"data\".encode(\"utf16le\")`)."
   },
   "tprint": {
     "signature": "tprint(list_of_dicts) -> None",
@@ -145,7 +145,7 @@
   },
   "zip": {
     "signature": "zip(*iterables) -> List<Tuple>",
-    "description": "The **zip** method returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.\n# Standard Library\nThe standard library is the default functionality that eldritch provides. It contains the following libraries:\n- `aes` - Used to encrypt and decrypt data and files with AES.\n- `agent` - Used for meta-style interactions with the agent itself.\n- `assets` - Used to interact with files stored natively in the agent.\n- `base64` - Used to encode and decode base64 data.\n- `chain` - Used for multi-agent C2 chaining.\n- `dns` - Used to perform DNS lookups.\n- `file` - Used to interact with files on the system.\n- `gzip` - Used to compress and decompress data and files using gzip.\n- `hash` - Used to calculate hashes of data and files.\n- `http` - Used to make http(s) requests from the agent.\n- `json` - Used to encode, decode, and validate JSON data.\n- `linux` - Linux-specific system operations (such as `uname`).\n- `net` - Network interface enumeration, socket listing, and TCP/UDP connections.\n- `portal` - Used to open bi-directional portal streams.\n- `process` - Used to interact with processes on the system.\n- `random` - Used to generate cryptographically secure random values.\n- `regex` - Regular expression capabilities for operating on strings.\n- `report` - Structured data reporting capabilities.\n- `scan` - Network scanning capabilities (`arp`, `port`).\n- `ssh` - Remote execution, file copy, and deployment over SSH.\n- `sys` - General system capabilities such as OS info and command execution.\n- `template` - Renders Jinja2 templates from strings and files.\n- `time` - General functions for obtaining and formatting time, also add delays into code.\n- `user` - User account enumeration and current user inspection.\n- `utf8` - UTF-8 string and byte encoding/decoding.\n- `utf16le` - UTF-16LE string and byte encoding/decoding.\n- `windows` - Windows-specific operations (DLL injection/reflection, registry, token manipulation).\n**\ud83d\udea8 DANGER \ud83d\udea8: Name shadowing**\nDo not use the standard library names as local variables as it will prevent you from accessing library functions.\nFor example, if you do:\n```rust\nfor file in file.list(\"/home/\"):\nprint(file[\"file_name\"])\n```\nThe file library will become inaccessible.\nIt may even raise an error: `error: Local variable 'file' referenced before assignment`\nInstead we recommend using more descriptive names like:\n```rust\nfor user_home_dir in file.list(\"/home/\"):\nprint(user_home_dir[\"file_name\"])\n```\n---"
+    "description": "The **zip** method returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.\n# Standard Library\nThe standard library is the default functionality that eldritch provides. It contains the following libraries:\n- `aes` - Used to encrypt and decrypt data and files with AES.\n- `agent` - Used for meta-style interactions with the agent itself.\n- `assets` - Used to interact with files stored natively in the agent.\n- `base64` - Used to encode and decode base64 data.\n- `chain` - Used for multi-agent C2 chaining.\n- `dns` - Used to perform DNS lookups.\n- `file` - Used to interact with files on the system.\n- `gzip` - Used to compress and decompress data and files using gzip.\n- `hash` - Used to calculate hashes of data and files.\n- `http` - Used to make http(s) requests from the agent.\n- `json` - Used to encode, decode, and validate JSON data.\n- `linux` - Linux-specific system operations (such as `uname`).\n- `net` - Network interface enumeration, connection listing, and TCP/UDP connections.\n- `portal` - Used to open bi-directional portal streams.\n- `process` - Used to interact with processes on the system.\n- `random` - Used to generate cryptographically secure random values.\n- `regex` - Regular expression capabilities for operating on strings.\n- `report` - Structured data reporting capabilities.\n- `scan` - Network scanning capabilities (`arp`, `port`).\n- `ssh` - Remote execution, file copy, and deployment over SSH.\n- `sys` - General system capabilities such as OS info and command execution.\n- `template` - Renders Jinja2 templates from strings and files.\n- `time` - General functions for obtaining and formatting time, also add delays into code.\n- `user` - User account enumeration and current user inspection.\n- `windows` - Windows-specific operations (DLL injection/reflection, registry, token manipulation).\n**🚨 DANGER 🚨: Name shadowing**\nDo not use the standard library names as local variables as it will prevent you from accessing library functions.\nFor example, if you do:\n```rust\nfor file in file.list(\"/home/\"):\nprint(file[\"file_name\"])\n```\nThe file library will become inaccessible.\nIt may even raise an error: `error: Local variable 'file' referenced before assignment`\nInstead we recommend using more descriptive names like:\n```rust\nfor user_home_dir in file.list(\"/home/\"):\nprint(user_home_dir[\"file_name\"])\n```\n---"
   },
   "aes": {
     "signature": "aes",
@@ -173,7 +173,7 @@
   },
   "agent._terminate_this_process_clowntown": {
     "signature": "agent._terminate_this_process_clowntown() -> None",
-    "description": "**\ud83d\udea8 DANGER \ud83d\udea8:** The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits."
+    "description": "**🚨 DANGER 🚨:** The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits."
   },
   "agent.config": {
     "signature": "agent.config() -> Dict<str, Value>",
@@ -221,7 +221,7 @@
   },
   "assets.read": {
     "signature": "assets.read(src: str) -> Bytes",
-    "description": "The **assets.read** method returns a `Bytes` object containing the raw bytes of the embedded asset file."
+    "description": "The **assets.read** method returns a `Bytes` object containing the raw bytes of the embedded asset file. Use `str(assets.read(src))` or `assets.read(src).decode()` to decode text assets as UTF-8.\n---"
   },
   "base64": {
     "signature": "base64",
@@ -305,7 +305,7 @@
   },
   "file.read": {
     "signature": "file.read(path: str) -> Bytes",
-    "description": "The **file.read** method will read the contents of a file, returning a `Bytes` object. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n\n```python\nfile.read(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
+    "description": "The **file.read** method will read the contents of a file, **returning a `Bytes` object**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
   },
   "file.read_named_pipe": {
     "signature": "file.read_named_pipe(name: str, max_bytes: Optional<int> = None) -> str",
@@ -341,7 +341,7 @@
   },
   "file.write": {
     "signature": "file.write(path: str, content: Bytes | str) -> None",
-    "description": "The **file.write** method writes `content` (`Bytes` or `str`) to a given file path.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error.\n\n```python\n# Write either strings or bytes (such as from file.read) to a file\nfile.write(\"/tmp/hello.txt\", \"hello world\")\ndata = file.read(\"/etc/passwd\")\nfile.write(\"/tmp/passwd_copy\", data)\n```"
+    "description": "The **file.write** method writes `content` (`Bytes` or `str`) to a given file path.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error.\n```python\n# Write either strings or bytes (such as from file.read) to a file\nfile.write(\"/tmp/hello.txt\", \"hello world\")\ndata = file.read(\"/etc/passwd\")\nfile.write(\"/tmp/passwd_copy\", data)\n```"
   },
   "file.find": {
     "signature": "file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>",
@@ -428,12 +428,16 @@
     "description": "The **linux.uname** method calls the Linux `uname` syscall and returns a dictionary of available kernel and machine metadata (`sysname`, `nodename`, `release`, `version`, `machine`, `domainname`).\n```json\n{\n\"domainname\": \"(none)\",\n\"machine\": \"x86_64\",\n\"nodename\": \"host01\",\n\"release\": \"6.1.0-18-amd64\",\n\"sysname\": \"Linux\",\n\"version\": \"#1 SMP PREEMPT_DYNAMIC Debian 6.1.76-1 (2024-02-01)\"\n}\n```\n---"
   },
   "net": {
-    "signature": "Library: net",
-    "description": "Network interface enumeration, connection listing, and TCP/UDP connections."
+    "signature": "net",
+    "description": "The `net` library provides network interface enumeration, listening socket inspection, and raw TCP/UDP client communication."
   },
   "net.interfaces": {
     "signature": "net.interfaces() -> List<Dict>",
     "description": "The **net.interfaces** method returns a list of network interfaces as dictionaries. An example is available below:\n```json\n[\n{\n\"name\": \"lo0\",\n\"ip\": \"127.0.0.1\"\n},\n{\n\"name\": \"lo0\",\n\"ip\": \"::1\"\n},\n{\n\"name\": \"en0\",\n\"ip\": \"fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15\"\n},\n{\n\"name\": \"en0\",\n\"ip\": \"10.0.124.42\"\n}\n]\n```"
+  },
+  "net.conns": {
+    "signature": "net.conns() -> List<Dict>",
+    "description": "The **net.conns** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.\n_Currently only shows LISTENING TCP connections_\n```json\n[\n{\n\"socket_type\": \"TCP\",\n\"local_address\": \"127.0.0.1\",\n\"local_port\": 46341,\n\"pid\": 2359037\n},\n...\n]\n```"
   },
   "net.tcp": {
     "signature": "net.tcp(address: str, port: int, data: str) -> str",
@@ -527,6 +531,18 @@
     "signature": "regex.replace(haystack: str, pattern: str, value: string) -> str",
     "description": "The **regex.replace** method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.\n---"
   },
+  "registry": {
+    "signature": "registry",
+    "description": "The `registry` library provides methods to read and write values in the Windows Registry."
+  },
+  "registry.read": {
+    "signature": "registry.read(path: str) -> Dict",
+    "description": "The **registry.read** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> registry.read(\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
+  },
+  "registry.write": {
+    "signature": "registry.write(path: str, regname: str, regtype: str, regvalue: any) -> Bool",
+    "description": "The **registry.write** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.\nAn example is below:\n```python\n$> registry.write(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> registry.write(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"deadbeef\")\nTrue\n$> registry.write(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",12345678)\nTrue\n$> registry.write(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> registry.write(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",12345678)\nTrue\n```\n---"
+  },
   "report": {
     "signature": "report",
     "description": "The `report` library is designed to enable reporting structured data to Tavern. You can use it to securely exfiltrate files, process lists, captured credentials, or screenshots from the host. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**."
@@ -577,7 +593,7 @@
   },
   "ssh.deploy": {
     "signature": "ssh.deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>",
-    "description": "The **ssh.deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.\n- `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `[\"10.0.0.1\", \"10.0.0.0/24\"]`). Each entry may include an optional SSH port using `host:port` syntax (e.g. `\"127.0.0.1:2222\"` or `\"10.0.0.1:2222/24\"` to apply port `2222` to every host in the range). IPv6 addresses with a port must be bracketed (e.g. `\"[::1]:2222\"`). When no port is supplied the default SSH port `22` is used. All entries must be valid.\n- `credentials` is a non-empty list of credential dictionaries of the form `{\"principal\": \"<user>\", \"password\": \"<password>\"}`, attempted in order on each host.\n- `cmd` is the command to run on the remote system (ideally as root).\n- `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.\n- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read(path)` or `assets.read(name)`.\n- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.\n- `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.\n- `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.\n`ssh.deploy` returns a list of per-attempt result dictionaries \u2014 one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.\n```json\n[\n{\n\"ip\": \"10.0.0.1\",\n\"status\": \"failed\",\n\"principal\": \"admin\",\n\"stdout\": \"\",\n\"stderr\": \"\",\n\"error\": \"authentication failed for 'admin' at 10.0.0.1:22: password authentication rejected for admin@10.0.0.1:22\"\n},\n{\n\"ip\": \"10.0.0.1\",\n\"status\": \"success\",\n\"principal\": \"root\",\n\"stdout\": \"uid=0(root) gid=0(root) groups=0(root)\\n\",\n\"stderr\": \"\",\n\"error\": \"\"\n}\n]\n```"
+    "description": "The **ssh.deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.\n- `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `[\"10.0.0.1\", \"10.0.0.0/24\"]`). Each entry may include an optional SSH port using `host:port` syntax (e.g. `\"127.0.0.1:2222\"` or `\"10.0.0.1:2222/24\"` to apply port `2222` to every host in the range). IPv6 addresses with a port must be bracketed (e.g. `\"[::1]:2222\"`). When no port is supplied the default SSH port `22` is used. All entries must be valid.\n- `credentials` is a non-empty list of credential dictionaries of the form `{\"principal\": \"<user>\", \"password\": \"<password>\"}`, attempted in order on each host.\n- `cmd` is the command to run on the remote system (ideally as root).\n- `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.\n- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read(path)` or `assets.read(name)`.\n- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.\n- `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.\n- `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.\n`ssh.deploy` returns a list of per-attempt result dictionaries — one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.\n```json\n[\n{\n\"ip\": \"10.0.0.1\",\n\"status\": \"failed\",\n\"principal\": \"admin\",\n\"stdout\": \"\",\n\"stderr\": \"\",\n\"error\": \"authentication failed for 'admin' at 10.0.0.1:22: password authentication rejected for admin@10.0.0.1:22\"\n},\n{\n\"ip\": \"10.0.0.1\",\n\"status\": \"success\",\n\"principal\": \"root\",\n\"stdout\": \"uid=0(root) gid=0(root) groups=0(root)\\n\",\n\"stderr\": \"\",\n\"error\": \"\"\n}\n]\n```"
   },
   "ssh.exec": {
     "signature": "ssh.exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> Dict",
@@ -665,7 +681,7 @@
   },
   "windows": {
     "signature": "windows",
-    "description": "The `windows` library provides Windows-specific capabilities including DLL injection and reflection, registry access, and token manipulation."
+    "description": "The `windows` library provides Windows-specific capabilities including DLL injection and reflection, and token manipulation."
   },
   "windows.dll_inject": {
     "signature": "windows.dll_inject(dll_path: str, pid: int) -> None",
@@ -679,10 +695,6 @@
     "signature": "windows.impersonate(pid: int) -> int",
     "description": "The **windows.impersonate** method steals a token from a target process by PID and impersonates it. Returns the token store ID and automatically activates the token.\nRequires `SeDebugPrivilege` to open other users' process tokens.\n```python\n$> windows.tokens()\n| active | id | process  | source        | user                 |\n| ------ | -- | -------- | ------------- | -------------------- |\n| True   | 0  | imix.exe | process_token | DOMAIN\\Administrator |\n# find SYSTEM process PID (ex. winlogon)\nfor p in process.list():\nif 'winlogon' in p['name'].lower():\nprint(p['pid'], p['name'])\n676 winlogon.exe\n# check if the current process has SeDebugPrivilege\n$> \"SeDebugPrivilege=enabled\" in windows.tokens(process.info()['pid'])[0]['privileges']\nTrue\n$> windows.impersonate(676)\n1\n$> windows.tokens()\n| active | id | process        | source              | user                 |\n| ------ | -- | -------------- | ------------------- | -------------------- |\n| False  | 0  | imix.exe       | process_token       | DOMAIN\\Administrator |\n| True   | 1  | winlogon.exe   | impersonate:pid:676 | NT AUTHORITY\\SYSTEM  |\n$> sys.shell('whoami')\nnt authority\\system\n```"
   },
-  "windows.read_reg": {
-    "signature": "windows.read_reg(path: str) -> Dict",
-    "description": "The **windows.read_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> windows.read_reg(\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
-  },
   "windows.tokens": {
     "signature": "windows.tokens(pid: Option<int>) -> List<Dict>",
     "description": "The **windows.tokens** method lists tokens. With no arguments, returns all tokens in the global store. With a PID, returns the process token info including user and privileges.\nThe first time **windows.tokens** is run, it enumerates all tokens and pulls the users and process names. Subsequent calls with no new tokens pulls the information from the store.\n**Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `process` (str), `source` (str), and `user` (str). The default process token has an ID of 0, source of `\"process_token\"`, displays the current user, and begins active.\n**Process tokens** (with pid): Each dict has `user` (str, e.g. `\"CORP\\\\admin\"`), `pid` (int), `privileges` (list of `\"PrivilegeName=enabled|disabled\"`).\n```python\n$> windows.tokens()\n| active | id | process  | source        | user                 |\n| ------ | -- | -------- | ------------- | -------------------- |\n| True   | 0  | imix.exe | process_token | DOMAIN\\Administrator |\n$> pprint(windows.tokens(pid=700)) # ex. winlogon.exe\n[\n{\n\"pid\": 700,\n\"privileges\": [\n\"SeAssignPrimaryTokenPrivilege=disabled\",\n\"SeIncreaseQuotaPrivilege=disabled\",\n\"SeTcbPrivilege=enabled\",\n\"SeSecurityPrivilege=disabled\",\n\"SeTakeOwnershipPrivilege=disabled\",\n\"SeLoadDriverPrivilege=disabled\",\n\"SeProfileSingleProcessPrivilege=enabled\",\n\"SeIncreaseBasePriorityPrivilege=enabled\",\n\"SeCreatePermanentPrivilege=enabled\",\n\"SeBackupPrivilege=disabled\",\n\"SeRestorePrivilege=disabled\",\n\"SeShutdownPrivilege=disabled\",\n\"SeDebugPrivilege=enabled\",\n\"SeAuditPrivilege=enabled\",\n\"SeSystemEnvironmentPrivilege=disabled\",\n\"SeChangeNotifyPrivilege=enabled\",\n\"SeUndockPrivilege=disabled\",\n\"SeManageVolumePrivilege=disabled\",\n\"SeImpersonatePrivilege=enabled\",\n\"SeCreateGlobalPrivilege=enabled\",\n\"SeTrustedCredManAccessPrivilege=disabled\"\n],\n\"user\": \"NT AUTHORITY\\\\SYSTEM\"\n}\n]\n```"
@@ -690,13 +702,5 @@
   "windows.use_token": {
     "signature": "windows.use_token(id: int) -> bool",
     "description": "The **windows.use_token** method activates a stored token by ID. Deactivates any currently active token and applies the specified one to the beacon.\nID `0` is the process token (original identity). `windows.use_token(0)` reverts to base permissions.\nFor this example, assume PID 6767 is running as SYSTEM and the base process token is running as Administrator.\n```python\n$> windows.tokens()\n| active | id | process        | source               | user                 |\n| ------ | -- | -------------- | -------------------- | -------------------- |\n| False  | 0  | imix.exe       | process_token        | DOMAIN\\Administrator |\n| True   | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\\SYSTEM  |\n$> sys.shell('whoami')['stdout']\nnt authority\\system\n$> windows.use_token(0)\nTrue\n$> windows.tokens()\n| active | id | process        | source               | user                 |\n| ------ | -- | -------------- | -------------------- | -------------------- |\n| True   | 0  | imix.exe       | process_token        | DOMAIN\\Administrator |\n| False  | 1  | winlogon.exe   | impersonate:pid:6767 | NT AUTHORITY\\SYSTEM  |\n$> sys.shell('whoami')['stdout']\ndomain\\administrator\n```"
-  },
-  "windows.write_reg": {
-    "signature": "windows.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool",
-    "description": "The **windows.write_reg** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.\nAn example is below:\n```python\n$> windows.write_reg(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> windows.write_reg(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"deadbeef\")\nTrue\n$> windows.write_reg(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",12345678)\nTrue\n$> windows.write_reg(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> windows.write_reg(\"HKCU\\\\SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",12345678)\nTrue\n```"
-  },
-  "net.conns": {
-    "signature": "net.conns() -> List<Dict>",
-    "description": "The **net.conns** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists."
   }
 }

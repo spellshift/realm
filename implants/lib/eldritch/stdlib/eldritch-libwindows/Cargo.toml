@@ -7,11 +7,9 @@ edition = "2024"
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 anyhow = { workspace = true, optional = true }
-hex = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(windows)'.dependencies]
-winreg = { workspace = true }
 object = { workspace = true }
 windows-sys = { workspace = true, features = [
     "Win32_Foundation",
@@ -30,7 +28,7 @@ windows-sys = { workspace = true, features = [
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:anyhow", "dep:hex"]
+stdlib = ["dep:anyhow"]
 fake_bindings = []
 
 [dev-dependencies]

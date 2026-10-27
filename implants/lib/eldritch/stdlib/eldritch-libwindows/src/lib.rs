@@ -15,7 +15,7 @@ pub mod fake;
 pub mod std;
 
 #[eldritch_library("windows")]
-/// The `windows` library provides Windows-specific capabilities including DLL injection/reflection, registry access, and token manipulation.
+/// The `windows` library provides Windows-specific capabilities including DLL injection/reflection and token manipulation.
 pub trait WindowsLibrary {
     #[eldritch_method]
     /// Injects a DLL from disk into a remote process.
@@ -56,16 +56,6 @@ pub trait WindowsLibrary {
     fn impersonate(&self, pid: i64) -> Result<i64, String>;
 
     #[eldritch_method]
-    /// Reads values from the Windows Registry.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
-    ///
-    /// **Returns**
-    /// - `Dict<str, str>`: A dictionary of registry keys and values.
-    fn read_reg(&self, path: String) -> Result<BTreeMap<String, String>, String>;
-
-    #[eldritch_method]
     /// Lists tokens in the global store, or enumerates a process token.
     ///
     /// **Parameters**
@@ -84,23 +74,4 @@ pub trait WindowsLibrary {
     /// **Returns**
     /// - `bool`: True if token was activated.
     fn use_token(&self, id: i64) -> Result<bool, String>;
-
-    #[eldritch_method]
-    /// Writes a value to the Windows Registry.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
-    /// - `regname` (`str`)
-    /// - `regtype` (`str`): e.g., "REG_SZ", "REG_DWORD", "REG_BINARY".
-    /// - `regvalue` (`any`): The value to write.
-    ///
-    /// **Returns**
-    /// - `bool`: True on success.
-    fn write_reg(
-        &self,
-        path: String,
-        regname: String,
-        regtype: String,
-        regvalue: Value,
-    ) -> Result<bool, String>;
 }

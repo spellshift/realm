@@ -208,6 +208,8 @@ fn test_fake_renames_delegate_and_warn() {
     interp.register_lib(crate::file::fake::FileLibraryFake::default());
     interp.register_lib(crate::net::fake::NetLibraryFake);
     interp.register_lib(crate::process::fake::ProcessLibraryFake);
+    interp.register_lib(crate::registry::fake::RegistryLibraryFake);
+    interp.register_lib(crate::sys::fake::SysLibraryFake);
     interp.register_lib(crate::time::fake::TimeLibraryFake);
     interp.register_lib(crate::template::fake::TemplateLibraryFake);
     interp.define_variable(
@@ -219,4 +221,28 @@ fn test_fake_renames_delegate_and_warn() {
         crate::Value::String("/tmp/output".into()),
     );
     check_aliases(&mut interp, &printer);
+
+    printer.clear();
+    let expected_read = interp
+        .interpret("registry.read('HKCU\\\\Software')")
+        .unwrap();
+    let actual_read = interp.interpret("sys.get_reg('HKCU\\\\Software')").unwrap();
+    assert_eq!(actual_read, expected_read);
+    assert_eq!(
+        printer.read_err(),
+        "sys.get_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.read instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    );
+
+    printer.clear();
+    let expected_write = interp
+        .interpret("registry.write('HKCU\\\\Software', 'Test', 'REG_SZ', 'val')")
+        .unwrap();
+    let actual_write = interp
+        .interpret("sys.write_reg('HKCU\\\\Software', 'Test', 'REG_SZ', 'val')")
+        .unwrap();
+    assert_eq!(actual_write, expected_write);
+    assert_eq!(
+        printer.read_err(),
+        "sys.write_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.write instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    );
 }

@@ -97,7 +97,7 @@ The `docs/_docs/` folder contains three guides:
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `crypto` and `pivot`):
+The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
 | Module    | Purpose                                                       |
 |-----------|---------------------------------------------------------------|
@@ -118,6 +118,7 @@ The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `cry
 | `process` | Process management, PID, and environment variables            |
 | `random`  | Cryptographically secure random                               |
 | `regex`   | Regular expression operations                                 |
+| `registry`| Windows Registry reading and writing (`read`, `write`)        |
 | `report`  | Structured reporting to Tavern                                |
 | `scan`    | Network discovery and port scanning (`arp`, `port`)           |
 | `ssh`     | SSH command execution, file copy, and deployment              |
@@ -125,7 +126,7 @@ The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `cry
 | `template` | Jinja2 template rendering from strings and files            |
 | `time`    | Time formatting and delays                                    |
 | `user`    | Current user info and user account enumeration                |
-| `windows` | Windows-specific DLL injection/reflection, registry, & tokens |
+| `windows` | Windows-specific DLL injection/reflection & tokens            |
 
 ## Testing Requirements
 

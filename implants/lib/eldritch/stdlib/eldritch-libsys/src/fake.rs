@@ -7,6 +7,7 @@ use eldritch_core::Value;
 use eldritch_libfile::{FileLibrary, fake::FileLibraryFake};
 use eldritch_libnet::{NetLibrary, fake::NetLibraryFake};
 use eldritch_libprocess::{ProcessLibrary, fake::ProcessLibraryFake};
+use eldritch_libregistry::{RegistryLibrary, fake::RegistryLibraryFake};
 use eldritch_libuser::{UserLibrary, fake::UserLibraryFake};
 use eldritch_libwindows::{WindowsLibrary, fake::WindowsLibraryFake};
 use eldritch_macros::eldritch_library_impl;
@@ -57,7 +58,7 @@ impl SysLibrary for SysLibraryFake {
     }
 
     fn get_reg(&self, path: String) -> Result<BTreeMap<String, String>, String> {
-        WindowsLibraryFake.read_reg(path)
+        RegistryLibraryFake.read(path)
     }
 
     fn get_user(&self) -> Result<BTreeMap<String, Value>, String> {
@@ -128,7 +129,7 @@ impl SysLibrary for SysLibraryFake {
         regtype: String,
         regvalue: Value,
     ) -> Result<bool, String> {
-        WindowsLibraryFake.write_reg(path, regname, regtype, regvalue)
+        RegistryLibraryFake.write(path, regname, regtype, regvalue)
     }
 }
 

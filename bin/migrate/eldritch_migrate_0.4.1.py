@@ -55,21 +55,23 @@ RENAMES: List[Tuple[str, str]] = [
     # process / net -> net.conns
     ("process.netstat", "net.conns"),
     ("net.sockets", "net.conns"),
-    # sys -> windows, process, net, sys, user, file
+    # sys / windows -> windows, process, net, sys, registry, user, file
     ("sys.dll_inject", "windows.dll_inject"),
     ("sys.dll_reflect", "windows.dll_reflect"),
     ("sys.get_env", "process.env"),
     ("sys.get_ip", "net.interfaces"),
     ("sys.get_os", "sys.info"),
     ("sys.get_pid", "process.pid"),
-    ("sys.get_reg", "windows.read_reg"),
+    ("sys.get_reg", "registry.read"),
+    ("windows.read_reg", "registry.read"),
     ("sys.get_user", "user.info"),
     ("sys.impersonate", "windows.impersonate"),
     ("sys.list_users", "user.list"),
     ("sys.tokens", "windows.tokens"),
     ("sys.use_token", "windows.use_token"),
     ("sys.whereis", "file.which"),
-    ("sys.write_reg", "windows.write_reg"),
+    ("sys.write_reg", "registry.write"),
+    ("windows.write_reg", "registry.write"),
 ]
 
 

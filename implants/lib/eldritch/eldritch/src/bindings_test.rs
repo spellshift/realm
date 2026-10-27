@@ -193,6 +193,11 @@ fn test_user_bindings() {
 }
 
 #[test]
+fn test_registry_bindings() {
+    check_bindings("registry", &["read", "write"]);
+}
+
+#[test]
 fn test_windows_bindings() {
     check_bindings(
         "windows",
@@ -200,10 +205,8 @@ fn test_windows_bindings() {
             "dll_inject",
             "dll_reflect",
             "impersonate",
-            "read_reg",
             "tokens",
             "use_token",
-            "write_reg",
         ],
     );
 }
@@ -358,6 +361,20 @@ fn test_deprecated_delegation_and_warning() {
     let err_out = printer.read_err();
     assert!(
         err_out.contains("sys.whereis has been deprecated and will be removed in a future version of eldritch. Please use file.which instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."),
+        "Unexpected err_out: {err_out}"
+    );
+
+    let _ = interp.interpret("sys.get_reg('HKCU\\\\Software')");
+    let err_out = printer.read_err();
+    assert!(
+        err_out.contains("sys.get_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.read instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."),
+        "Unexpected err_out: {err_out}"
+    );
+
+    let _ = interp.interpret("sys.write_reg('HKCU\\\\Software', 'Test', 'REG_SZ', 'val')");
+    let err_out = printer.read_err();
+    assert!(
+        err_out.contains("sys.write_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.write instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."),
         "Unexpected err_out: {err_out}"
     );
 

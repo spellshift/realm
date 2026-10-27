@@ -102,7 +102,7 @@ func doAThing(myparam *Thing):
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `crypto` and `pivot`):
+The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
 | Module    | Purpose                                                       |
 |-----------|---------------------------------------------------------------|
@@ -123,6 +123,7 @@ The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `cry
 | `process` | Process management, PID, and environment variables            |
 | `random`  | Cryptographically secure random                               |
 | `regex`   | Regular expression operations                                 |
+| `registry`| Windows Registry reading and writing (`read`, `write`)        |
 | `report`  | Structured reporting to Tavern                                |
 | `scan`    | Network discovery and port scanning (`arp`, `port`)           |
 | `ssh`     | SSH command execution, file copy, and deployment              |
@@ -130,7 +131,7 @@ The Eldritch DSL provides 25 modules (plus deprecated compatibility modules `cry
 | `template` | Jinja2 template rendering from strings and files            |
 | `time`    | Time formatting and delays                                    |
 | `user`    | Current user info and user account enumeration                |
-| `windows` | Windows-specific DLL injection/reflection, registry, & tokens |
+| `windows` | Windows-specific DLL injection/reflection & tokens            |
 
 # Eldritch Changelog
 
@@ -191,14 +192,14 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 - `sys.get_ip` → `net.interfaces`
 - `sys.get_os` → `sys.info`
 - `sys.get_pid` → `process.pid`
-- `sys.get_reg` → `windows.read_reg`
+- `sys.get_reg` → `registry.read`
 - `sys.get_user` → `user.info`
 - `sys.impersonate` → `windows.impersonate`
 - `sys.list_users` → `user.list`
 - `sys.tokens` → `windows.tokens`
 - `sys.use_token` → `windows.use_token`
 - `sys.whereis` → `file.which`
-- `sys.write_reg` → `windows.write_reg`
+- `sys.write_reg` → `registry.write`
 
 ### New Functions & Built-in Methods
 

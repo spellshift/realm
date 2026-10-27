@@ -25,9 +25,10 @@ use eldritch::{
     http::fake::HttpLibraryFake, json::fake::JsonLibraryFake, linux::fake::LinuxLibraryFake,
     net::fake::NetLibraryFake, pivot::fake::PivotLibraryFake, portal::fake::PortalLibraryFake,
     process::fake::ProcessLibraryFake, random::fake::RandomLibraryFake,
-    regex::fake::RegexLibraryFake, report::fake::ReportLibraryFake, scan::fake::ScanLibraryFake,
-    ssh::fake::SshLibraryFake, sys::fake::SysLibraryFake, template::fake::TemplateLibraryFake,
-    time::fake::TimeLibraryFake, user::fake::UserLibraryFake, windows::fake::WindowsLibraryFake,
+    regex::fake::RegexLibraryFake, registry::fake::RegistryLibraryFake,
+    report::fake::ReportLibraryFake, scan::fake::ScanLibraryFake, ssh::fake::SshLibraryFake,
+    sys::fake::SysLibraryFake, template::fake::TemplateLibraryFake, time::fake::TimeLibraryFake,
+    user::fake::UserLibraryFake, windows::fake::WindowsLibraryFake,
 };
 
 #[wasm_bindgen]
@@ -70,6 +71,7 @@ impl BrowserRepl {
             interp.register_lib(PivotLibraryFake::default());
             interp.register_lib(RandomLibraryFake::default());
             interp.register_lib(RegexLibraryFake::default());
+            interp.register_lib(RegistryLibraryFake::default());
             interp.register_lib(ReportLibraryFake::default());
             interp.register_lib(TimeLibraryFake::default());
             interp.register_lib(UserLibraryFake::default());

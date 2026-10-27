@@ -28,6 +28,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libprocess",
     "lib/eldritch/stdlib/eldritch-librandom",
     "lib/eldritch/stdlib/eldritch-libregex",
+    "lib/eldritch/stdlib/eldritch-libregistry",
     "lib/eldritch/stdlib/eldritch-libreport",
     "lib/eldritch/stdlib/eldritch-libscan",
     "lib/eldritch/stdlib/eldritch-libssh",
@@ -77,6 +78,7 @@ eldritch-libportal = {path = "lib/eldritch/stdlib/eldritch-libportal", default-f
 eldritch-libprocess = {path = "lib/eldritch/stdlib/eldritch-libprocess",default-features = false }
 eldritch-librandom = {path = "lib/eldritch/stdlib/eldritch-librandom", default-features = false }
 eldritch-libregex = {path = "lib/eldritch/stdlib/eldritch-libregex",default-features = false }
+eldritch-libregistry = {path = "lib/eldritch/stdlib/eldritch-libregistry", default-features = false }
 eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-features = false }
 eldritch-libscan = {path = "lib/eldritch/stdlib/eldritch-libscan", default-features = false }
 eldritch-libssh = {path = "lib/eldritch/stdlib/eldritch-libssh", default-features = false }

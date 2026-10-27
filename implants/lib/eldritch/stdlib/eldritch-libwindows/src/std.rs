@@ -8,11 +8,8 @@ use eldritch_macros::eldritch_library_impl;
 mod dll_inject_impl;
 mod dll_reflect_impl;
 mod impersonate_impl;
-mod read_reg_impl;
-mod reg_utils;
 pub mod tokens_impl;
 mod use_token_impl;
-mod write_reg_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(WindowsLibrary)]
@@ -37,25 +34,11 @@ impl WindowsLibrary for StdWindowsLibrary {
         impersonate_impl::impersonate(pid)
     }
 
-    fn read_reg(&self, path: String) -> Result<BTreeMap<String, String>, String> {
-        read_reg_impl::get_reg(path).map_err(|e| e.to_string())
-    }
-
     fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
         tokens_impl::tokens(pid)
     }
 
     fn use_token(&self, id: i64) -> Result<bool, String> {
         use_token_impl::use_token(id)
-    }
-
-    fn write_reg(
-        &self,
-        path: String,
-        regname: String,
-        regtype: String,
-        regvalue: Value,
-    ) -> Result<bool, String> {
-        write_reg_impl::write_reg(path, regname, regtype, regvalue).map_err(|e| e.to_string())
     }
 }

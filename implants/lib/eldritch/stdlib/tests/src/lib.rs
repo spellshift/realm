@@ -35,6 +35,7 @@ mod tests {
         interp.register_lib(eldritch::pivot::fake::PivotLibraryFake);
         interp.register_lib(eldritch::portal::fake::PortalLibraryFake);
         interp.register_lib(eldritch::process::fake::ProcessLibraryFake);
+        interp.register_lib(eldritch::registry::fake::RegistryLibraryFake);
         interp.register_lib(eldritch::report::fake::ReportLibraryFake);
         interp.register_lib(eldritch::scan::fake::ScanLibraryFake);
         interp.register_lib(eldritch::ssh::fake::SshLibraryFake);

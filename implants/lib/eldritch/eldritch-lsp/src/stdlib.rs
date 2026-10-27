@@ -55,7 +55,8 @@ impl StdlibIndex {
             let defaults = vec![
                 "aes", "agent", "assets", "base64", "chain", "crypto", "dns", "file", "gzip",
                 "hash", "http", "json", "linux", "net", "pivot", "portal", "process", "random",
-                "regex", "report", "scan", "ssh", "sys", "template", "time", "user", "windows",
+                "regex", "registry", "report", "scan", "ssh", "sys", "template", "time", "user",
+                "windows",
             ];
             for m in defaults {
                 self.modules.insert(m.to_string());

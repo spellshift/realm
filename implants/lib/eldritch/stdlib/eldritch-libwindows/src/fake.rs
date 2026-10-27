@@ -28,10 +28,6 @@ impl WindowsLibrary for WindowsLibraryFake {
         Ok(1)
     }
 
-    fn read_reg(&self, _path: String) -> Result<BTreeMap<String, String>, String> {
-        Ok(BTreeMap::new())
-    }
-
     fn tokens(&self, _pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> {
         let mut entry = BTreeMap::new();
         entry.insert("id".into(), Value::Int(1));
@@ -44,16 +40,6 @@ impl WindowsLibrary for WindowsLibraryFake {
     }
 
     fn use_token(&self, _id: i64) -> Result<bool, String> {
-        Ok(true)
-    }
-
-    fn write_reg(
-        &self,
-        _path: String,
-        _regname: String,
-        _regtype: String,
-        _regvalue: Value,
-    ) -> Result<bool, String> {
         Ok(true)
     }
 }

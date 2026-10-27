@@ -6,6 +6,7 @@ use eldritch_core::Value;
 use eldritch_libfile::{FileLibrary, std::StdFileLibrary};
 use eldritch_libnet::{NetLibrary, std::StdNetLibrary};
 use eldritch_libprocess::{ProcessLibrary, std::StdProcessLibrary};
+use eldritch_libregistry::{RegistryLibrary, std::StdRegistryLibrary};
 use eldritch_libuser::{UserLibrary, std::StdUserLibrary};
 use eldritch_libwindows::{WindowsLibrary, std::StdWindowsLibrary};
 use eldritch_macros::eldritch_library_impl;
@@ -66,7 +67,7 @@ impl SysLibrary for StdSysLibrary {
     }
 
     fn get_reg(&self, path: String) -> Result<BTreeMap<String, String>, String> {
-        StdWindowsLibrary.read_reg(path)
+        StdRegistryLibrary.read(path)
     }
 
     fn get_user(&self) -> Result<BTreeMap<String, Value>, String> {
@@ -128,6 +129,6 @@ impl SysLibrary for StdSysLibrary {
         regtype: String,
         regvalue: Value,
     ) -> Result<bool, String> {
-        StdWindowsLibrary.write_reg(path, regname, regtype, regvalue)
+        StdRegistryLibrary.write(path, regname, regtype, regvalue)
     }
 }

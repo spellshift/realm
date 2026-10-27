@@ -1328,6 +1328,56 @@ The **regex.replace** method returns the given haystack with the first capture g
 
 ---
 
+## Registry
+
+The `registry` library provides methods to read and write values in the Windows Registry.
+
+### registry.read
+
+`registry.read(path: str) -> Dict`
+
+The **registry.read** method returns the registry values at the requested registry path.
+An example is below:
+
+```python
+$> registry.read("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+{
+    "ProgramFilesDir": "C:\\Program Files",
+    "CommonFilesDir": "C:\\Program Files\\Common Files",
+    "ProgramFilesDir (x86)": "C:\\Program Files (x86)",
+    "CommonFilesDir (x86)": "C:\\Program Files (x86)\\Common Files",
+    "CommonW6432Dir": "C:\\Program Files\\Common Files",
+    "DevicePath": "%SystemRoot%\\inf",
+    "MediaPathUnexpanded": "%SystemRoot%\\Media",
+    "ProgramFilesPath": "%ProgramFiles%",
+    "ProgramW6432Dir": "C:\\Program Files",
+    "SM_ConfigureProgramsName": "Set Program Access and Defaults",
+    "SM_GamesName": "Games"
+}
+```
+
+### registry.write
+
+`registry.write(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
+
+The **registry.write** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.
+An example is below:
+
+```python
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_SZ","BAR1")
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_BINARY","deadbeef")
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_DWORD",12345678)
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3")
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_QWORD",12345678)
+True
+```
+
+---
+
 ## Report
 
 The `report` library is designed to enable reporting structured data to Tavern. You can use it to securely exfiltrate files, process lists, captured credentials, or screenshots from the host. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
@@ -1727,7 +1777,7 @@ The **user.list** method lists all user accounts on the system.
 
 ## Windows
 
-The `windows` library provides Windows-specific capabilities including DLL injection and reflection, registry access, and token manipulation.
+The `windows` library provides Windows-specific capabilities including DLL injection and reflection, and token manipulation.
 
 ### windows.dll_inject
 
@@ -1784,30 +1834,6 @@ $> windows.tokens()
 
 $> sys.shell('whoami')
 nt authority\system
-```
-
-### windows.read_reg
-
-`windows.read_reg(path: str) -> Dict`
-
-The **windows.read_reg** method returns the registry values at the requested registry path.
-An example is below:
-
-```python
-$> windows.read_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
-{
-    "ProgramFilesDir": "C:\\Program Files",
-    "CommonFilesDir": "C:\\Program Files\\Common Files",
-    "ProgramFilesDir (x86)": "C:\\Program Files (x86)",
-    "CommonFilesDir (x86)": "C:\\Program Files (x86)\\Common Files",
-    "CommonW6432Dir": "C:\\Program Files\\Common Files",
-    "DevicePath": "%SystemRoot%\\inf",
-    "MediaPathUnexpanded": "%SystemRoot%\\Media",
-    "ProgramFilesPath": "%ProgramFiles%",
-    "ProgramW6432Dir": "C:\\Program Files",
-    "SM_ConfigureProgramsName": "Set Program Access and Defaults",
-    "SM_GamesName": "Games"
-}
 ```
 
 ### windows.tokens
@@ -1895,25 +1921,5 @@ $> windows.tokens()
 
 $> sys.shell('whoami')['stdout']
 domain\administrator
-```
-
-### windows.write_reg
-
-`windows.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
-
-The **windows.write_reg** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.
-An example is below:
-
-```python
-$> windows.write_reg("HKCU\\SOFTWARE\\TEST1","FOO1","REG_SZ","BAR1")
-True
-$> windows.write_reg("HKCU\\SOFTWARE\\TEST1","FOO1","REG_BINARY","deadbeef")
-True
-$> windows.write_reg("HKCU\\SOFTWARE\\TEST1","FOO1","REG_DWORD",12345678)
-True
-$> windows.write_reg("HKCU\\SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3")
-True
-$> windows.write_reg("HKCU\\SOFTWARE\\TEST1","FOO1","REG_QWORD",12345678)
-True
 ```
 

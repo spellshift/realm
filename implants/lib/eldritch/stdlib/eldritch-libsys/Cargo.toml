@@ -9,6 +9,7 @@ eldritch-macros = { workspace = true }
 eldritch-libfile = { path = "../eldritch-libfile", default-features = false }
 eldritch-libnet = { path = "../eldritch-libnet", default-features = false }
 eldritch-libprocess = { path = "../eldritch-libprocess", default-features = false }
+eldritch-libregistry = { path = "../eldritch-libregistry", default-features = false }
 eldritch-libuser = { path = "../eldritch-libuser", default-features = false }
 eldritch-libwindows = { path = "../eldritch-libwindows", default-features = false }
 anyhow = { workspace = true }
@@ -37,6 +38,7 @@ stdlib = [
     "eldritch-libfile/stdlib",
     "eldritch-libnet/stdlib",
     "eldritch-libprocess/stdlib",
+    "eldritch-libregistry/stdlib",
     "eldritch-libuser/stdlib",
     "eldritch-libwindows/stdlib",
 ]
@@ -44,6 +46,7 @@ fake_bindings = [
     "eldritch-libfile/fake_bindings",
     "eldritch-libnet/fake_bindings",
     "eldritch-libprocess/fake_bindings",
+    "eldritch-libregistry/fake_bindings",
     "eldritch-libuser/fake_bindings",
     "eldritch-libwindows/fake_bindings",
 ]

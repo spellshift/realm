@@ -25,6 +25,7 @@ pub use eldritch_libportal as portal;
 pub use eldritch_libprocess as process;
 pub use eldritch_librandom as random;
 pub use eldritch_libregex as regex;
+pub use eldritch_libregistry as registry;
 pub use eldritch_libreport as report;
 pub use eldritch_libscan as scan;
 pub use eldritch_libssh as ssh;
@@ -96,6 +97,8 @@ use crate::random::std::StdRandomLibrary;
 #[cfg(feature = "stdlib")]
 use crate::regex::std::StdRegexLibrary;
 #[cfg(feature = "stdlib")]
+use crate::registry::std::StdRegistryLibrary;
+#[cfg(feature = "stdlib")]
 use crate::report::std::StdReportLibrary;
 #[cfg(feature = "stdlib")]
 use crate::scan::std::StdScanLibrary;
@@ -150,6 +153,8 @@ use crate::process::fake::ProcessLibraryFake;
 use crate::random::fake::RandomLibraryFake;
 #[cfg(feature = "fake_regex")]
 use crate::regex::fake::RegexLibraryFake;
+#[cfg(feature = "fake_registry")]
+use crate::registry::fake::RegistryLibraryFake;
 #[cfg(feature = "fake_report")]
 use crate::report::fake::ReportLibraryFake;
 #[cfg(feature = "fake_scan")]
@@ -208,6 +213,7 @@ impl Interpreter {
             self.inner.register_lib(StdProcessLibrary);
             self.inner.register_lib(StdRandomLibrary);
             self.inner.register_lib(StdRegexLibrary);
+            self.inner.register_lib(StdRegistryLibrary);
             self.inner.register_lib(StdScanLibrary);
             self.inner.register_lib(StdSshLibrary);
             self.inner.register_lib(StdSysLibrary);
@@ -248,6 +254,8 @@ impl Interpreter {
         self.inner.register_lib(RandomLibraryFake);
         #[cfg(feature = "fake_regex")]
         self.inner.register_lib(RegexLibraryFake);
+        #[cfg(feature = "fake_registry")]
+        self.inner.register_lib(RegistryLibraryFake);
         #[cfg(feature = "fake_scan")]
         self.inner.register_lib(ScanLibraryFake);
         #[cfg(feature = "fake_ssh")]

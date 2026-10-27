@@ -1,0 +1,22 @@
+[package]
+name = "eldritch-libregistry"
+version = "0.4.1"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+anyhow = { workspace = true, optional = true }
+hex = { workspace = true, optional = true }
+
+[target.'cfg(windows)'.dependencies]
+winreg = { workspace = true }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:anyhow", "dep:hex"]
+fake_bindings = []
+
+[dev-dependencies]
+anyhow = { workspace = true }
+uuid = { version = "1.0", features = ["v4"] }

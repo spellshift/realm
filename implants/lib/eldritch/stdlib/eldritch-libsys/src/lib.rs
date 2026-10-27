@@ -90,7 +90,7 @@ pub trait SysLibrary {
 
     #[eldritch_method]
     #[eldritch_deprecated(
-        "sys.get_reg has been deprecated and will be removed in a future version of eldritch. Please use windows.read_reg instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+        "sys.get_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.read instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
     /// Reads values from the Windows Registry.
     fn get_reg(&self, path: String) -> Result<BTreeMap<String, String>, String>;
@@ -191,7 +191,7 @@ pub trait SysLibrary {
 
     #[eldritch_method]
     #[eldritch_deprecated(
-        "sys.write_reg has been deprecated and will be removed in a future version of eldritch. Please use windows.write_reg instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+        "sys.write_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.write instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
     /// Writes a value to the Windows Registry.
     fn write_reg(

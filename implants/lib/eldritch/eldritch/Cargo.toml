@@ -28,6 +28,7 @@ eldritch-libportal = { workspace = true, default-features = false }
 eldritch-libprocess = { workspace = true, default-features = false }
 eldritch-librandom = { workspace = true, default-features = false }
 eldritch-libregex = { workspace = true, default-features = false }
+eldritch-libregistry = { workspace = true, default-features = false }
 eldritch-libreport = { workspace = true, default-features = false }
 eldritch-libscan = { workspace = true, default-features = false }
 eldritch-libssh = { workspace = true, default-features = false }
@@ -62,6 +63,7 @@ fake_bindings = [
     "fake_process",
     "fake_random",
     "fake_regex",
+    "fake_registry",
     "fake_report",
     "fake_scan",
     "fake_ssh",
@@ -90,6 +92,7 @@ fake_portal = ["eldritch-libportal/fake_bindings"]
 fake_process = ["eldritch-libprocess/fake_bindings"]
 fake_random = ["eldritch-librandom/fake_bindings"]
 fake_regex = ["eldritch-libregex/fake_bindings"]
+fake_registry = ["eldritch-libregistry/fake_bindings"]
 fake_report = ["eldritch-libreport/fake_bindings"]
 fake_scan = ["eldritch-libscan/fake_bindings"]
 fake_ssh = ["eldritch-libssh/fake_bindings"]
@@ -127,6 +130,7 @@ stdlib = [
     "eldritch-libprocess/stdlib",
     "eldritch-librandom/stdlib",
     "eldritch-libregex/stdlib",
+    "eldritch-libregistry/stdlib",
     "eldritch-libreport/stdlib",
     "eldritch-libscan/stdlib",
     "eldritch-libssh/stdlib",

@@ -52,6 +52,7 @@ Currently Eldritch has the following libraries your function can be bound to:
 * `process`: Is used to manage running processes on a system.
 * `random`: Used to generate cryptographically secure random values.
 * `regex`: Is used to perform regex operations on strings.
+* `registry`: Used to read and write Windows Registry keys and values.
 * `report`: Is used to report structured data to the caller of the eldritch environment (e.g. to the c2).
 * `scan`: Network scanning capabilities (`arp`, `port`).
 * `ssh`: Remote execution, file copy, and deployment over SSH.
@@ -59,7 +60,7 @@ Currently Eldritch has the following libraries your function can be bound to:
 * `template`: Renders Jinja2 templates from strings and files.
 * `time`: Is used for obtaining and formatting time or adding delays into code.
 * `user`: User account enumeration and current user inspection.
-* `windows`: Windows-specific operations (DLL injection/reflection, registry, token manipulation).
+* `windows`: Windows-specific operations (DLL injection/reflection, token manipulation).
 
 If your function does not fall under a specific standard library reach out to the core developers about adding a new library or finding the right fit.
 

@@ -4,7 +4,7 @@ def pad_key(key, max_len):
 
 
 def get_registry(path):
-    res = windows.read_reg(path)
+    res = registry.read(path)
     key_lengths = [len(i) for i in res.keys()]
     max_len = 0
     if len(key_lengths) != 0:

@@ -16,7 +16,7 @@ use eldritch::{
     dns::fake::DnsLibraryFake, file::fake::FileLibraryFake, gzip::fake::GzipLibraryFake,
     hash::fake::HashLibraryFake, http::fake::HttpLibraryFake, json::fake::JsonLibraryFake,
     process::fake::ProcessLibraryFake, regex::fake::RegexLibraryFake,
-    template::fake::TemplateLibraryFake,
+    registry::fake::RegistryLibraryFake, template::fake::TemplateLibraryFake,
 };
 
 fn main() -> io::Result<()> {
@@ -43,6 +43,9 @@ fn main() -> io::Result<()> {
         interpreter.inner.register_lib(JsonLibraryFake::default());
         interpreter.inner.register_lib(DnsLibraryFake::default());
         interpreter.inner.register_lib(RegexLibraryFake::default());
+        interpreter
+            .inner
+            .register_lib(RegistryLibraryFake::default());
         interpreter.inner.register_lib(CryptoLibraryFake::default());
     }
 

