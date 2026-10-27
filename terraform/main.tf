@@ -35,6 +35,7 @@ variable "redirectors" {
     transport = string
   }))
   description = "List of redirector domains and transports to configure."
+  default = []
 }
 # redirectors = [{
 #   transport = "grpc",
