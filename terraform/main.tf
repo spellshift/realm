@@ -35,6 +35,7 @@ variable "redirectors" {
     transport = string
   }))
   description = "List of redirector domains and transports to configure."
+  default = []
 }
 # redirectors = [{
 #   transport = "grpc",
@@ -59,7 +60,7 @@ variable "redirectors" {
 variable "tavern_container_image" {
   type = string
   description = "Docker container to deploy"
-  default = "spellshift/tavern:latest"
+  default = "ghcr.io/spellshift/realm/tavern:latest"
 }
 
 variable "redirector_boot_disk_image" {
