@@ -116,8 +116,10 @@ pub fn write_reg(path: String, regname: String, regtype: String, regvalue: Value
 fn get_string_val(val: Value, expected_type: &str) -> Result<String> {
     match val {
         Value::String(s) => Ok(s.to_string()),
+        Value::Bytes(b) => String::from_utf8(b)
+            .map_err(|e| anyhow::anyhow!("Invalid UTF-8 bytes for {}: {}", expected_type, e)),
         _ => Err(anyhow::anyhow!(
-            "Expected a string value for {}",
+            "Expected a string or bytes value for {}",
             expected_type
         )),
     }

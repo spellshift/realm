@@ -28,10 +28,17 @@ pub fn handle_bytes_methods(
             args.require_range(0, 1, "decode")?;
             let encoding = if args.is_empty() {
                 "utf8".into()
-            } else if let Value::String(enc) = &args[0] {
-                enc.to_lowercase().replace(['-', '_'], "")
             } else {
-                return Err("TypeError: decode() argument 'encoding' must be str".into());
+                match &args[0] {
+                    Value::String(enc) => enc.to_lowercase().replace(['-', '_'], ""),
+                    Value::Bytes(b) => core::str::from_utf8(b)
+                        .map_err(|_| {
+                            "TypeError: decode() argument 'encoding' must be str".to_string()
+                        })?
+                        .to_lowercase()
+                        .replace(['-', '_'], ""),
+                    _ => return Err("TypeError: decode() argument 'encoding' must be str".into()),
+                }
             };
 
             match encoding.as_str() {

@@ -295,116 +295,87 @@ def migrate_encoding_calls(content: str) -> str:
     return content
 
 
-BYTES_RETURNING_PREFIXES = (
-    "bytes(",
-    "file.read(",
-    "file.read_binary(",
-    "assets.read(",
-    "assets.read_binary(",
-    "gzip.compress(",
-    "gzip.decompress(",
-    "aes.encrypt(",
-    "aes.decrypt(",
-    "crypto.aes_encrypt(",
-    "crypto.aes_decrypt(",
-    "random.bytes(",
+STRING_METHODS_RE = re.compile(
+    r"^\s*\.\s*(?:split|splitlines|strip|lstrip|rstrip|lower|upper|capitalize|title|"
+    r"startswith|endswith|removeprefix|removesuffix|find|index|rfind|rindex|count|"
+    r"replace|join|format|partition|rpartition|rsplit|codepoints|elems|"
+    r"isalnum|isalpha|isdigit|islower|isspace|istitle|isupper)\s*\("
 )
 
 
-def is_bytes_expr(expr: str, known_bytes_vars: set) -> bool:
-    """Return True if `expr` is already guaranteed to evaluate to `bytes`."""
-    s = expr.strip()
-    if not s:
-        return False
-    # Bytes literal: b"...", b'...', rb"...", br"...", etc.
-    if re.match(r"^(?:b|rb|br)['\"]", s, re.IGNORECASE):
-        return True
-    for prefix in BYTES_RETURNING_PREFIXES:
-        if s.startswith(prefix) and find_matching_delim(s, len(prefix) - 1, "(", ")") == len(s) - 1:
-            return True
-    # Any expression ending with `.encode(...)`
-    m = re.search(r"\.encode\s*\([^()]*\)\s*$", s)
-    if m:
-        return True
-    if s in known_bytes_vars:
-        return True
-    return False
-
-
-def collect_known_bytes_vars(content: str) -> set:
-    """Find variable names assigned from known bytes expressions in the script."""
-    known: set = set()
-    assign_re = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", re.MULTILINE)
+def collect_vars_needing_str_cast(content: str) -> set:
+    """
+    Find variables assigned from `file.read(...)` or `assets.read(...)` (not `*_binary`)
+    that are subsequently used with string-only methods, `+` string concatenation,
+    `in` substring checks, or string equality comparisons.
+    """
+    candidates: set = set()
+    assign_re = re.compile(
+        r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:file|assets)\.read\s*\(",
+        re.MULTILINE,
+    )
     for m in assign_re.finditer(content):
-        var_name = m.group(1)
-        rhs = m.group(2).strip()
-        # Strip trailing comment if any
-        if "#" in rhs:
-            rhs = rhs.split("#", 1)[0].strip()
-        if (
-            re.match(r"^(?:b|rb|br)['\"]", rhs, re.IGNORECASE)
-            or rhs.startswith("bytes(")
-            or rhs.startswith("file.read_binary(")
-            or rhs.startswith("assets.read_binary(")
-            or rhs.startswith("gzip.compress(")
-            or rhs.startswith("gzip.decompress(")
-            or rhs.startswith("aes.encrypt(")
-            or rhs.startswith("aes.decrypt(")
-            or rhs.startswith("crypto.aes_encrypt(")
-            or rhs.startswith("crypto.aes_decrypt(")
-            or rhs.startswith("random.bytes(")
-            or re.search(r"\.encode\s*\([^()]*\)\s*$", rhs)
+        candidates.add(m.group(1))
+
+    needs_str: set = set()
+    for var in candidates:
+        esc = re.escape(var)
+        # Check for `var.<str_method>(`
+        if re.search(
+            rf"\b{esc}\s*\.\s*(?:split|splitlines|strip|lstrip|rstrip|lower|upper|capitalize|title|"
+            rf"startswith|endswith|removeprefix|removesuffix|find|index|rfind|rindex|count|"
+            rf"replace|join|format|partition|rpartition|rsplit|codepoints|elems|"
+            rf"isalnum|isalpha|isdigit|islower|isspace|istitle|isupper)\s*\(",
+            content,
         ):
-            known.add(var_name)
-    return known
+            needs_str.add(var)
+            continue
+        # Check for string concatenation or comparison or `in` with string literals
+        if (
+            re.search(rf"\b{esc}\s*(?:\+|==|!=)\s*(?:['\"]|f['\"]|r['\"])", content)
+            or re.search(rf"(?:['\"]|f['\"]|r['\"])\s*(?:\+|==|!=|\bin\b)\s*{esc}\b", content)
+        ):
+            needs_str.add(var)
+    return needs_str
 
 
-def is_inside_bytes_or_str_cast(prefix: str, suffix: str, bytes_return_Check: bool = False) -> bool:
-    """Check if the current call at the boundary of `prefix` and `suffix` needs no `str(...)` cast."""
-    stripped_suffix = suffix.lstrip()
-    # Followed immediately by `.decode(`
-    if re.match(r"^\.decode\s*\(", stripped_suffix):
+def needs_str_cast_at_callsite(prefix: str, suffix: str, str_vars: set) -> bool:
+    """
+    Return True only when a `file.read(...)` or `assets.read(...)` call requires `str(...)`
+    because it is used directly with a string-only method, operator, or variable.
+    """
+    # Already wrapped in `str(` or `bytes(` or followed by `.decode(`
+    if re.search(r"\b(?:str|bytes)\s*\(\s*$", prefix):
+        return False
+    if re.match(r"^\s*\.decode\s*\(", suffix):
+        return False
+    # Followed directly by a string method (e.g. `file.read(p).splitlines()`)
+    if STRING_METHODS_RE.match(suffix):
         return True
-    # Preceded immediately by `str(`, `bytes(`, `gzip.compress(`, `gzip.decompress(`, `hash.md5(`, `hash.sha1(`, `hash.sha256(`, `crypto.md5(`, `crypto.sha1(`, `crypto.sha256(`
-    if re.search(
-        r"\b(?:str|bytes|gzip\.compress|gzip\.decompress|hash\.md5|hash\.sha1|hash\.sha256|crypto\.md5|crypto\.sha1|crypto\.sha256)\s*\(\s*$",
-        prefix,
-    ):
+    # Used in string concatenation, comparison, or `in` with a string literal
+    if re.match(r"^\s*(?:\+|==|!=)\s*(?:['\"]|f['\"]|r['\"])", suffix):
         return True
-    # 2nd arg of aes.encrypt / aes.decrypt / file.write / file.append
-    if re.search(
-        r"\b(?:aes\.encrypt|aes\.decrypt|crypto\.aes_encrypt|crypto\.aes_decrypt|file\.write|file\.append|file\.write_binary|file\.append_binary)\s*\([^,()]+,\s*$",
-        prefix,
-    ):
+    if re.search(r"(?:['\"]|f['\"]|r['\"])\s*(?:\+|==|!=|\bin\b)\s*$", prefix):
         return True
-    if bytes_return_Check and re.search(r"\breturn\s+$", prefix):
+    # Assigned to a variable that later uses string-only methods/operators
+    m_assign = re.search(r"(?:^|\n)\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*$", prefix)
+    if m_assign and m_assign.group(1) in str_vars:
         return True
     return False
 
 
-def has_bytes_return_context(content: str) -> bool:
-    """Check if a function in `content` returns bytes for `ssh.deploy` or explicitly documents returning bytes."""
-    if "as bytes" in content or "into bytes" in content:
-        return True
-    return False
-
-
-def migrate_binary_and_io_calls(
-    content: str, known_bytes_vars: set = None, bytes_return_ctx: bool = None
-) -> str:
+def migrate_binary_and_io_calls(content: str, str_vars: set = None) -> str:
     """
-    Remove `*_binary` methods and update `file.read`, `assets.read`, `file.write`, `file.append`
-    to work with `bytes`, casting with `str(...)` or `bytes(...)` only when necessary.
+    Remove `*_binary` methods and update `file.read`, `assets.read`, `file.write`, `file.append`.
+    Since methods and builtins (such as `print`, `file.write`, `file.append`, etc.) accept
+    either `bytes` or `str`, `str(...)` casts are added around `file.read`/`assets.read`
+    only when string-specific methods or operators are used on the result.
     """
-    if known_bytes_vars is None:
-        known_bytes_vars = collect_known_bytes_vars(content)
-    if bytes_return_ctx is None:
-        bytes_return_ctx = has_bytes_return_context(content)
+    if str_vars is None:
+        str_vars = collect_vars_needing_str_cast(content)
 
-    # Simplify `file.read(x).encode()` / `assets.read(x).encode()` (default utf8) to `file.read(x)` / `assets.read(x)`
-    # before wrapping `file.read` / `assets.read` in `str(...)`.
     pattern = re.compile(
-        r"\b(file\.read_binary|assets\.read_binary|file\.write_binary|file\.append_binary|file\.read|assets\.read|file\.write|file\.append)\s*\("
+        r"\b(file\.read_binary|assets\.read_binary|file\.write_binary|file\.append_binary|file\.read|assets\.read)\s*\("
     )
 
     idx = 0
@@ -431,22 +402,22 @@ def migrate_binary_and_io_calls(
 
         if fn_name in ("file.read_binary", "assets.read_binary"):
             new_fn = "file.read" if fn_name == "file.read_binary" else "assets.read"
-            migrated_args = [migrate_binary_and_io_calls(a, known_bytes_vars) for a in args]
+            migrated_args = [migrate_binary_and_io_calls(a, str_vars) for a in args]
             out.append(f"{new_fn}({','.join(migrated_args)})")
             idx = close_paren_idx + 1
             continue
 
         if fn_name in ("file.write_binary", "file.append_binary"):
             new_fn = "file.write" if fn_name == "file.write_binary" else "file.append"
-            migrated_args = [migrate_binary_and_io_calls(a, known_bytes_vars) for a in args]
+            migrated_args = [migrate_binary_and_io_calls(a, str_vars) for a in args]
             out.append(f"{new_fn}({','.join(migrated_args)})")
             idx = close_paren_idx + 1
             continue
 
         if fn_name in ("file.read", "assets.read"):
-            migrated_args = [migrate_binary_and_io_calls(a, known_bytes_vars) for a in args]
+            migrated_args = [migrate_binary_and_io_calls(a, str_vars) for a in args]
             call_str = f"{fn_name}({','.join(migrated_args)})"
-            # Check if followed by `.encode()` or `.encode("utf8")` / `.encode("utf-8")`
+            # Simplify `file.read(x).encode()` (default utf8) -> `file.read(x)`
             enc_match = re.match(
                 r"^\s*\.encode\s*\(\s*(?:['\"]utf-?8['\"]\s*)?\)",
                 suffix_after,
@@ -456,44 +427,13 @@ def migrate_binary_and_io_calls(
                 out.append(call_str)
                 idx = close_paren_idx + 1 + enc_match.end()
                 continue
-            if is_inside_bytes_or_str_cast(prefix_so_far, suffix_after, bytes_return_ctx):
-                out.append(call_str)
-            else:
-                out.append(f"str({call_str})")
-            idx = close_paren_idx + 1
-            continue
-
-        if fn_name in ("file.write", "file.append"):
-            if len(args) >= 2:
-                arg0 = migrate_binary_and_io_calls(args[0], known_bytes_vars)
-                raw_arg1 = args[1]
-                # If raw_arg1 is a direct `file.read(...)` or `assets.read(...)`, it already returns bytes!
-                stripped_arg1 = raw_arg1.strip()
-                if re.match(r"^(?:file|assets)\.read(?:_binary)?\s*\(", stripped_arg1):
-                    open_p = stripped_arg1.find("(")
-                    if find_matching_delim(stripped_arg1, open_p, "(", ")") == len(stripped_arg1) - 1:
-                        inner_read = stripped_arg1[open_p + 1 : -1]
-                        inner_read_migrated = migrate_binary_and_io_calls(inner_read, known_bytes_vars)
-                        read_fn = "file.read" if stripped_arg1.startswith("file.") else "assets.read"
-                        leading_ws = raw_arg1[: len(raw_arg1) - len(raw_arg1.lstrip())]
-                        trailing_ws = raw_arg1[len(raw_arg1.rstrip()) :]
-                        arg1 = f"{leading_ws}{read_fn}({inner_read_migrated}){trailing_ws}"
-                    else:
-                        arg1 = migrate_binary_and_io_calls(raw_arg1, known_bytes_vars)
+            if needs_str_cast_at_callsite(prefix_so_far, suffix_after, str_vars):
+                if STRING_METHODS_RE.match(suffix_after):
+                    out.append(f"str({call_str})")
                 else:
-                    migrated_arg1 = migrate_binary_and_io_calls(raw_arg1, known_bytes_vars)
-                    if is_bytes_expr(raw_arg1, known_bytes_vars) or is_bytes_expr(migrated_arg1, known_bytes_vars):
-                        arg1 = migrated_arg1
-                    else:
-                        leading_ws = migrated_arg1[: len(migrated_arg1) - len(migrated_arg1.lstrip())]
-                        trailing_ws = migrated_arg1[len(migrated_arg1.rstrip()) :]
-                        arg1 = f"{leading_ws}bytes({migrated_arg1.strip()}){trailing_ws}"
-                rest_args = [migrate_binary_and_io_calls(a, known_bytes_vars) for a in args[2:]]
-                all_args = [arg0, arg1] + rest_args
-                out.append(f"{fn_name}({','.join(all_args)})")
+                    out.append(f"str({call_str})")
             else:
-                migrated_args = [migrate_binary_and_io_calls(a, known_bytes_vars) for a in args]
-                out.append(f"{fn_name}({','.join(migrated_args)})")
+                out.append(call_str)
             idx = close_paren_idx + 1
             continue
 

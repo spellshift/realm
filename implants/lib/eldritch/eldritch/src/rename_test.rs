@@ -101,6 +101,103 @@ fn test_std_renames_delegate_and_warn() {
     );
 }
 
+#[test]
+fn test_bytes_and_strings_interchangeable_in_methods() {
+    let printer = Arc::new(BufferPrinter::new());
+    let mut interp = Interpreter::new_with_printer(printer.clone())
+        .with_agent(Arc::new(eldritch_mockagent::MockAgent::new()));
+    interp.register_lib(crate::aes::std::StdAesLibrary);
+    interp.register_lib(crate::base64::std::StdBase64Library);
+    interp.register_lib(crate::file::std::StdFileLibrary);
+    interp.register_lib(crate::gzip::std::StdGzipLibrary);
+    interp.register_lib(crate::hash::std::StdHashLibrary);
+    interp.register_lib(crate::json::std::StdJsonLibrary);
+
+    // 1. print(b"stuff") and eprint(b"stuff")
+    printer.clear();
+    interp.interpret(r#"print(b"stuff")"#).unwrap();
+    assert_eq!(printer.read_out(), "stuff");
+    assert_eq!(printer.read_err(), "");
+
+    printer.clear();
+    interp.interpret(r#"eprint(b"stuff")"#).unwrap();
+    assert_eq!(printer.read_out(), "");
+    assert_eq!(printer.read_err(), "stuff");
+
+    // 2. file.write and file.append accept both strings and bytes
+    let directory = tempfile::tempdir().unwrap();
+    let dst = directory.path().join("dst.txt");
+    interp.define_variable(
+        "dst_path",
+        crate::Value::String(dst.to_string_lossy().into_owned()),
+    );
+    interp.define_variable(
+        "dst_path_bytes",
+        crate::Value::Bytes(dst.to_string_lossy().as_bytes().to_vec()),
+    );
+
+    // Write string, append bytes, append string
+    interp
+        .interpret(r#"file.write(dst_path, "my string")"#)
+        .unwrap();
+    assert_eq!(std::fs::read(&dst).unwrap(), b"my string");
+
+    interp
+        .interpret(r#"file.append(dst_path, " and more string")"#)
+        .unwrap();
+    assert_eq!(std::fs::read(&dst).unwrap(), b"my string and more string");
+
+    interp
+        .interpret(r#"file.append(dst_path, b" and bytes")"#)
+        .unwrap();
+    assert_eq!(
+        std::fs::read(&dst).unwrap(),
+        b"my string and more string and bytes"
+    );
+
+    // Write bytes using bytes path, read back using both str and bytes path
+    interp
+        .interpret(r#"file.write(dst_path_bytes, b"fresh bytes")"#)
+        .unwrap();
+    assert_eq!(
+        interp.interpret("file.read(dst_path)").unwrap(),
+        crate::Value::Bytes(b"fresh bytes".to_vec())
+    );
+    assert_eq!(
+        interp.interpret("file.read(dst_path_bytes)").unwrap(),
+        crate::Value::Bytes(b"fresh bytes".to_vec())
+    );
+
+    // Print file.read(dst_path) directly
+    printer.clear();
+    interp.interpret("print(file.read(dst_path))").unwrap();
+    assert_eq!(printer.read_out(), "fresh bytes");
+
+    // 3. Other stdlib methods accept both bytes and strings
+    assert_eq!(
+        interp.interpret(r#"hash.md5("hello")"#).unwrap(),
+        interp.interpret(r#"hash.md5(b"hello")"#).unwrap()
+    );
+    assert_eq!(
+        interp.interpret(r#"gzip.compress("hello")"#).unwrap(),
+        interp.interpret(r#"gzip.compress(b"hello")"#).unwrap()
+    );
+    assert_eq!(
+        interp.interpret(r#"json.decode('{"k": 1}')"#).unwrap(),
+        interp.interpret(r#"json.decode(b'{"k": 1}')"#).unwrap()
+    );
+    assert_eq!(
+        interp.interpret(r#"base64.encode("hello")"#).unwrap(),
+        interp.interpret(r#"base64.encode(b"hello")"#).unwrap()
+    );
+    assert_eq!(
+        interp
+            .interpret(r#"aes.decrypt("0123456789abcdef", "fedcba9876543210", aes.encrypt("0123456789abcdef", "fedcba9876543210", "secret message"))"#)
+            .unwrap(),
+        crate::Value::Bytes(b"secret message".to_vec())
+    );
+}
+
 #[cfg(feature = "fake_bindings")]
 #[test]
 fn test_fake_renames_delegate_and_warn() {

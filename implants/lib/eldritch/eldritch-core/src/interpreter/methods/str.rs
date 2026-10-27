@@ -193,6 +193,9 @@ pub fn handle_string_methods(
                         .iter()
                         .map(|v| match v {
                             Value::String(ss) => Ok(ss.clone()),
+                            Value::Bytes(b) => String::from_utf8(b.clone()).map_err(|_| {
+                                "TypeError: join() expects list of strings".to_string()
+                            }),
                             _ => Err("TypeError: join() expects list of strings".to_string()),
                         })
                         .collect();
@@ -284,10 +287,17 @@ pub fn handle_string_methods(
             args.require_range(0, 1, "encode")?;
             let encoding = if args.is_empty() {
                 "utf8".to_string()
-            } else if let Value::String(enc) = &args[0] {
-                enc.to_lowercase().replace(['-', '_'], "")
             } else {
-                return Err("TypeError: encode() argument 'encoding' must be str".into());
+                match &args[0] {
+                    Value::String(enc) => enc.to_lowercase().replace(['-', '_'], ""),
+                    Value::Bytes(b) => core::str::from_utf8(b)
+                        .map_err(|_| {
+                            "TypeError: encode() argument 'encoding' must be str".to_string()
+                        })?
+                        .to_lowercase()
+                        .replace(['-', '_'], ""),
+                    _ => return Err("TypeError: encode() argument 'encoding' must be str".into()),
+                }
             };
 
             match encoding.as_str() {

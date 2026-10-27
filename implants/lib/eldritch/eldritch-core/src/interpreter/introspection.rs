@@ -79,6 +79,7 @@ pub fn get_dir_attributes(value: &Value) -> Vec<String> {
             "update".to_string(),
         ],
         Value::String(s) => super::methods::get_native_methods(&Value::String(s.clone())),
+        Value::Bytes(b) => super::methods::get_native_methods(&Value::Bytes(b.clone())),
         Value::Foreign(f) => f.method_names(),
         _ => Vec::new(),
     };

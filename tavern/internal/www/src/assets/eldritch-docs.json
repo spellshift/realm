@@ -256,8 +256,8 @@
     "description": "The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, and copying files, as well as searching, locating binaries (`which`), and timestomping."
   },
   "file.append": {
-    "signature": "file.append(path: str, content: Bytes) -> None",
-    "description": "The **file.append** method appends binary `content` (`Bytes`) to the file at `path`. If no file exists at `path`, it will create the file with the content."
+    "signature": "file.append(path: str, content: Bytes | str) -> None",
+    "description": "The **file.append** method appends `content` (`Bytes` or `str`) to the file at `path`. If no file exists at `path`, it will create the file with the content."
   },
   "file.copy": {
     "signature": "file.copy(src: str, dst: str) -> None",
@@ -340,8 +340,8 @@
     "description": "The **file.which** method returns the resolved path of a binary in `PATH`. If this binary does not resolve to anything, an empty string is returned.\n```python\n$> file.which(\"sh\")\n\"/usr/bin/sh\"\n$> file.which(\"some_random_binary_that_doesnt_exist\")\n\"\"\n```"
   },
   "file.write": {
-    "signature": "file.write(path: str, content: Bytes) -> None",
-    "description": "The **file.write** method writes binary content (`Bytes`) to a given file path.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error.\n\n```python\n# Write bytes returned from file.read to another file\ndata = file.read(\"/etc/passwd\")\nfile.write(\"/tmp/passwd_copy\", data)\n```"
+    "signature": "file.write(path: str, content: Bytes | str) -> None",
+    "description": "The **file.write** method writes `content` (`Bytes` or `str`) to a given file path.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error.\n\n```python\n# Write either strings or bytes (such as from file.read) to a file\nfile.write(\"/tmp/hello.txt\", \"hello world\")\ndata = file.read(\"/etc/passwd\")\nfile.write(\"/tmp/passwd_copy\", data)\n```"
   },
   "file.find": {
     "signature": "file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>",

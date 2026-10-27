@@ -598,9 +598,9 @@ The `file` library gives you comprehensive control to interact with files and di
 
 ### file.append
 
-`file.append(path: str, content: Bytes) -> None`
+`file.append(path: str, content: Bytes | str) -> None`
 
-The **file.append** method appends binary `content` (`Bytes`) to the file at `path`. If no file exists at `path`, it will create the file with the content.
+The **file.append** method appends `content` (`Bytes` or `str`) to the file at `path`. If no file exists at `path`, it will create the file with the content.
 
 ### file.copy
 
@@ -874,14 +874,15 @@ $> file.which("some_random_binary_that_doesnt_exist")
 
 ### file.write
 
-`file.write(path: str, content: Bytes) -> None`
+`file.write(path: str, content: Bytes | str) -> None`
 
-The **file.write** method writes binary content (`Bytes`) to a given file path.
+The **file.write** method writes `content` (`Bytes` or `str`) to a given file path.
 If a file already exists at this path, the method will overwrite it. If a directory
 already exists at the path the method will error.
 
 ```python
-# Write bytes returned from file.read to another file
+# Write either strings or bytes (such as from file.read) to a file
+file.write("/tmp/hello.txt", "hello world")
 data = file.read("/etc/passwd")
 file.write("/tmp/passwd_copy", data)
 ```

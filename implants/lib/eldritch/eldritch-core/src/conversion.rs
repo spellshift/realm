@@ -38,7 +38,13 @@ impl FromValue for String {
     fn from_value(v: &Value) -> Result<Self, String> {
         match v {
             Value::String(s) => Ok(s.clone()),
-            _ => Err(format!("Expected String, got {}", get_type_name(v))),
+            Value::Bytes(b) => {
+                String::from_utf8(b.clone()).map_err(|e| format!("Invalid UTF-8 in bytes: {e}"))
+            }
+            _ => Err(format!(
+                "Expected String or Bytes, got {}",
+                get_type_name(v)
+            )),
         }
     }
 }
@@ -56,7 +62,11 @@ impl FromValue for Vec<u8> {
     fn from_value(v: &Value) -> Result<Self, String> {
         match v {
             Value::Bytes(b) => Ok(b.clone()),
-            _ => Err(format!("Expected Bytes, got {}", get_type_name(v))),
+            Value::String(s) => Ok(s.as_bytes().to_vec()),
+            _ => Err(format!(
+                "Expected Bytes or String, got {}",
+                get_type_name(v)
+            )),
         }
     }
 }

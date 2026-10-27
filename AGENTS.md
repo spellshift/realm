@@ -151,8 +151,8 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 - `file.template` → `template.render_file`
 - `file.template_str` → `template.render`
 - `file.read_binary` → `file.read` (`file.read` now returns `Bytes`)
-- `file.write_binary` → `file.write` (`file.write` now accepts `Bytes`)
-- `file.append_binary` → `file.append` (`file.append` now accepts `Bytes`)
+- `file.write_binary` → `file.write` (`file.write` now accepts either `Bytes` or `str`)
+- `file.append_binary` → `file.append` (`file.append` now accepts either `Bytes` or `str`)
 - `assets.read_binary` → `assets.read` (`assets.read` now returns `Bytes`)
 - `time.format_to_epoch` → `time.to_epoch`
 - `time.format_to_readable` → `time.format`
@@ -204,7 +204,7 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 
 - `str.encode(encoding: Optional<str> = "utf8") -> Bytes` (supports `"utf8"` and `"utf16le"`)
 - `bytes.decode(encoding: Optional<str> = "utf8") -> str` (supports `"utf8"` and `"utf16le"`)
-- `str(b"...")` and `bytes("...")` assume default UTF-8 encoding
+- `str(b"...")`, `bytes("...")`, `print(b"...")`, and standard library methods accept `Bytes` and `str` interchangeably (assuming UTF-8)
 - `gzip.compress(data: Bytes) -> Bytes`
 - `gzip.decompress(data: Bytes) -> Bytes`
 - `linux.uname() -> Dict`
