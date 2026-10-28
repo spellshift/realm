@@ -554,6 +554,9 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal builder config: %w", err)
 	}
+	if _, err := builder.ParseConfigBytes(configBytes); err != nil {
+		return nil, fmt.Errorf("invalid builder config: %w", err)
+	}
 	b, err := r.client.Builder.Create().SetInput(input).SetIdentifier(identifier).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create builder: %w", err)

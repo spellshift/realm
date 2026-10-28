@@ -58,6 +58,33 @@ func TestBuilderE2E(t *testing.T) {
 	count, err := graph.Builder.Query().Count(ctx)
 	require.NoError(t, err)
 	require.Zero(t, count)
+	csr, keyPath := testEnrollment(t)
+	for _, tc := range []struct {
+		name  string
+		input map[string]any
+		want  string
+	}{
+		{
+			name:  "empty targets",
+			input: map[string]any{"supportedTargets": []string{}},
+			want:  "at least one supported_target",
+		},
+		{
+			name:  "empty upstream",
+			input: map[string]any{"supportedTargets": []string{"PLATFORM_LINUX"}, "upstream": ""},
+			want:  "upstream server address",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := gqlClient.Post(`mutation($input: CreateBuilderInput!, $csr: String!) {
+				registerBuilder(input: $input, csr: $csr) { config }
+			}`, &rejected, client.Var("input", tc.input), client.Var("csr", csr))
+			require.ErrorContains(t, err, tc.want)
+			count, err := graph.Builder.Query().Count(ctx)
+			require.NoError(t, err)
+			require.Zero(t, count)
+		})
+	}
 
 	// 4. Register a builder via GraphQL mutation
 	var registerResp struct {
@@ -70,7 +97,6 @@ func TestBuilderE2E(t *testing.T) {
 		}
 	}
 
-	csr, keyPath := testEnrollment(t)
 	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
 		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
