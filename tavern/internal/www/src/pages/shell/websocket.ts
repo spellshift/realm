@@ -7,6 +7,7 @@ export const WebsocketMessageKind = {
     Error: "ERROR",
     ControlFlow: "CONTROL_FLOW",
     OutputFromOtherStream: "OUTPUT_FROM_OTHER_STREAM",
+    Status: "STATUS",
 } as const;
 
 export type WebsocketMessageKindType = typeof WebsocketMessageKind[keyof typeof WebsocketMessageKind];
@@ -58,10 +59,16 @@ export interface WebsocketTaskOutputFromOtherStreamMessage {
     stream_id: string;
 }
 
+export interface WebsocketStatusMessage {
+    kind: typeof WebsocketMessageKind.Status;
+    status: string;
+}
+
 export type WebsocketMessage =
     | WebsocketTaskInputMessage
     | WebsocketTaskOutputMessage
     | WebsocketTaskErrorMessage
     | WebsocketErrorMessage
     | WebsocketControlFlowMessage
-    | WebsocketTaskOutputFromOtherStreamMessage;
+    | WebsocketTaskOutputFromOtherStreamMessage
+    | WebsocketStatusMessage;

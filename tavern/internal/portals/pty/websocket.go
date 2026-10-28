@@ -119,10 +119,16 @@ func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
 	ps.FlushHistory(ctx, graph)
 	_ = graph.ShellPivot.UpdateOneID(ps.PivotID).SetClosedAt(time.Now()).Exec(ctx)
 
-	// Close all websockets and channels
+	// Notify and close all active socket channels so writer goroutines flush before closing
 	ps.mu.Lock()
-	for ws, ch := range ps.activeSockets {
-		ws.Close()
+	for _, ch := range ps.activeSockets {
+		select {
+		case ch <- shell.WebsocketStatusMessage{
+			Kind:   shell.WebsocketMessageKindStatus,
+			Status: "closed",
+		}:
+		default:
+		}
 		close(ch)
 	}
 	ps.activeSockets = make(map[*websocket.Conn]chan interface{})
@@ -182,7 +188,29 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cacheMu.Unlock()
 
 		if !ok {
+			if pivotEnt, err := h.graph.ShellPivot.Get(ctx, pivotID); err == nil {
+				if pivotEnt.Data != "" {
+					_ = wsConn.WriteJSON(shell.WebsocketTaskOutputMessage{
+						Kind:   shell.WebsocketMessageKindOutput,
+						Output: pivotEnt.Data,
+					})
+				}
+				if pivotEnt.ClosedAt.IsZero() {
+					_ = h.graph.ShellPivot.UpdateOneID(pivotID).SetClosedAt(time.Now()).Exec(ctx)
+				}
+				_ = wsConn.WriteJSON(shell.WebsocketStatusMessage{
+					Kind:   shell.WebsocketMessageKindStatus,
+					Status: "closed",
+				})
+			}
 			sendWsError("pivot session not found or expired")
+			_ = wsConn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+				time.Now().Add(time.Second),
+			)
+			_ = wsConn.SetReadDeadline(time.Now().Add(250 * time.Millisecond))
+			_, _, _ = wsConn.ReadMessage()
 			return
 		}
 		pivotSession = sess
@@ -351,7 +379,26 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					var inputMsg shell.WebsocketTaskInputMessage
-					if err := json.Unmarshal(msg, &inputMsg); err != nil || inputMsg.Kind != shell.WebsocketMessageKindInput {
+					if err := json.Unmarshal(msg, &inputMsg); err != nil {
+						continue
+					}
+					if inputMsg.Kind == "close" {
+						seqID++
+						closeMote := &portalpb.Mote{
+							StreamId: streamID,
+							SeqId:    seqID,
+							Payload: &portalpb.Mote_Bytes{
+								Bytes: &portalpb.BytesPayload{
+									Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+								},
+							},
+						}
+						_ = h.mux.Publish(sessionCtx, topicIn, closeMote)
+						closePivot()
+						errCh <- fmt.Errorf("closed")
+						return
+					}
+					if inputMsg.Kind != shell.WebsocketMessageKindInput {
 						continue
 					}
 					seqID++
@@ -388,6 +435,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+			errCh <- fmt.Errorf("closed")
 		}()
 
 		// Reader goroutine: websocket -> portal PTY input
@@ -413,6 +461,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		errCh <- fmt.Errorf("closed")
 	}()
 
 	// Reader goroutine - for reconnects we need the portal info
@@ -440,7 +489,26 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			var inputMsg shell.WebsocketTaskInputMessage
-			if err := json.Unmarshal(msg, &inputMsg); err != nil || inputMsg.Kind != shell.WebsocketMessageKindInput {
+			if err := json.Unmarshal(msg, &inputMsg); err != nil {
+				continue
+			}
+			if inputMsg.Kind == "close" {
+				seqID++
+				closeMote := &portalpb.Mote{
+					StreamId: pivotSession.StreamID,
+					SeqId:    seqID,
+					Payload: &portalpb.Mote_Bytes{
+						Bytes: &portalpb.BytesPayload{
+							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+						},
+					},
+				}
+				_ = h.mux.Publish(ctx, topicIn, closeMote)
+				pivotSession.Close(context.Background(), h.graph)
+				errCh <- fmt.Errorf("closed")
+				return
+			}
+			if inputMsg.Kind != shell.WebsocketMessageKindInput {
 				continue
 			}
 

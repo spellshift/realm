@@ -64,3 +64,12 @@ func (w *OrderedWriter) WriteUDP(data []byte, dstAddr string, dstPort uint32) er
 	mote := w.sequencer.NewUDPMote(data, dstAddr, dstPort)
 	return w.sender(mote)
 }
+
+// WriteSSH creates and writes an SSHMote.
+func (w *OrderedWriter) WriteSSH(sshPayload *portalpb.SSHPayload) error {
+	if err := w.checkDeadline(); err != nil {
+		return err
+	}
+	mote := w.sequencer.NewSSHMote(sshPayload)
+	return w.sender(mote)
+}

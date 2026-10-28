@@ -213,7 +213,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
-	time.Sleep(60 * time.Second) // TODO: Remove this, just for testing
 }
 
 // getShellForRequest using the shell_id query param.
@@ -262,6 +261,9 @@ func (h *Handler) pollForOpenPortals(ctx context.Context, sh *ent.Shell, portalC
 		}
 		portalCh <- portal
 	}
+
+	// Poll immediately on connection so existing portals upgrade without delay
+	poll()
 
 	// Periodically poll for open portals
 	timer := time.NewTicker(h.portalPollingInterval)
@@ -408,25 +410,29 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 				continue
 			}
 
+			// Check for Active Portal before creating task so interactive tasks are marked claimed
+			session.mu.Lock()
+			activePortal := session.activePortal
+			session.mu.Unlock()
+
 			// Create ShellTask
-			task, err := h.graph.ShellTask.Create().
+			taskCreate := h.graph.ShellTask.Create().
 				SetShell(sh).
 				SetInput(msg.Input).
 				SetCreator(creator).
 				SetStreamID(streamID).
-				SetSequenceID(sequenceID).
-				Save(ctx)
+				SetSequenceID(sequenceID)
+			if activePortal != nil {
+				now := time.Now()
+				taskCreate.SetClaimedAt(now).SetExecStartedAt(now)
+			}
+			task, err := taskCreate.Save(ctx)
 
 			if err != nil {
 				slog.ErrorContext(ctx, "failed to create shell task", "error", err)
 				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to create shell task: %w", err))
 				continue
 			}
-
-			// Check for Active Portal
-			session.mu.Lock()
-			activePortal := session.activePortal
-			session.mu.Unlock()
 
 			if activePortal != nil {
 				// Publish to Portal
@@ -483,13 +489,14 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 	// Cache of sent task IDs to avoid duplication
 	sentTasks := make(map[int]struct{})
 
-	// Polls the DB for any new tasks with output
+	// Polls the DB for any new tasks with output or finished execution
 	pollForShellTasks := func() {
 		tasks, err := sh.QueryShellTasks().
 			Where(
 				shelltask.Or(
 					shelltask.OutputNEQ(""),
 					shelltask.ErrorNEQ(""),
+					shelltask.ExecFinishedAtNotNil(),
 				),
 			).
 			Order(shelltask.ByCreatedAt(sql.OrderAsc())).
@@ -506,7 +513,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				continue
 			}
 
-			if task.Output != "" {
+			if task.Output != "" || (task.Error == "" && !task.ExecFinishedAt.IsZero()) {
 				if task.StreamID == streamID {
 					msg := NewWebsocketTaskOutputMessage(task)
 					msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
@@ -595,8 +602,8 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			// If stream_id matches, we send standard output
 			// We check for shell payload as it indicates output.
 			shellPayload := mote.GetShell()
-			if shellPayload != nil && (shellPayload.Output != "" || shellPayload.Error != "") {
-				// It's output.
+			if shellPayload != nil {
+				// It's output or completion for a shell task.
 				task, err := h.graph.ShellTask.Query().
 					Where(
 						shelltask.StreamID(mote.StreamId),
@@ -610,17 +617,31 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					continue
 				}
 
+				// Persist interactive output/error and execution finish timestamp to DB
+				update := task.Update().SetExecFinishedAt(time.Now())
+				if shellPayload.Output != "" {
+					update.SetOutput(task.Output + shellPayload.Output)
+				}
+				if shellPayload.Error != "" {
+					update.SetError(task.Error + shellPayload.Error)
+				}
+				if updatedTask, err := update.Save(ctx); err == nil {
+					updatedTask.Edges = task.Edges
+					task = updatedTask
+				}
+
 				if mote.StreamId == streamID {
 					// Local stream output
-					if shellPayload.Output != "" {
+					if shellPayload.Output != "" || shellPayload.Error == "" {
 						outputMsg := NewWebsocketTaskOutputMessage(task)
 						if _, sent := sentTasks[task.ID]; !sent {
 							outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), shellPayload.Output)
 							sentTasks[task.ID] = struct{}{}
-						} else {
+							taskOutputCh <- outputMsg
+						} else if shellPayload.Output != "" {
 							outputMsg.Output = shellPayload.Output // Use real-time chunk
+							taskOutputCh <- outputMsg
 						}
-						taskOutputCh <- outputMsg
 					}
 					if shellPayload.Error != "" {
 						errMsg := NewWebsocketTaskErrorMessage(task)
@@ -708,6 +729,17 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					portalOutCh = nil
 				}
 				continue
+			}
+
+			session.mu.Lock()
+			currentPortal := session.activePortal
+			session.mu.Unlock()
+			if currentPortal != nil && currentPortal.ID == p.ID {
+				continue
+			}
+			if cleanup != nil {
+				cleanup()
+				cleanup = nil
 			}
 
 			// Open Portal

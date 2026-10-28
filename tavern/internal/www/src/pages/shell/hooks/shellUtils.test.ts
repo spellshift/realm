@@ -3,6 +3,19 @@ import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHi
 
 describe('History Persistence', () => {
     beforeEach(() => {
+        if (typeof globalThis.localStorage === 'undefined' || typeof globalThis.localStorage?.clear !== 'function') {
+            const store = new Map<string, string>();
+            Object.defineProperty(globalThis, 'localStorage', {
+                configurable: true,
+                writable: true,
+                value: {
+                    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+                    setItem: (k: string, v: string) => store.set(k, String(v)),
+                    removeItem: (k: string) => store.delete(k),
+                    clear: () => store.clear(),
+                },
+            });
+        }
         // Clear localStorage before each test
         localStorage.clear();
         vi.restoreAllMocks();

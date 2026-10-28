@@ -11,15 +11,14 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"golang.org/x/crypto/ssh"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
-	"realm.pub/tavern/internal/portals/pnet"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -29,15 +28,22 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+// WebsocketResizeOrCloseMessage represents control messages (resize/close) from the client.
+type WebsocketControlMessage struct {
+	Kind  string `json:"kind"`
+	Input string `json:"input,omitempty"`
+	Rows  uint32 `json:"rows,omitempty"`
+	Cols  uint32 `json:"cols,omitempty"`
+}
+
 // PivotSession represents an active SSH session that can be shared among multiple websockets.
+// SSH protocol negotiation happens on the gRPC-receiving Tavern instance via SSHPayload motes.
 type PivotSession struct {
 	PivotID       int
+	PortalID      int
 	StreamID      string
-	Conn          net.Conn
-	SSHClient     *ssh.Client
-	Session       *ssh.Session
-	Stdin         io.WriteCloser
 	CancelContext context.CancelFunc
+	seqID         uint64
 
 	mu            sync.Mutex
 	history       []byte
@@ -50,6 +56,10 @@ var (
 	cacheMu      sync.Mutex
 	sessionCache = make(map[int]*PivotSession)
 )
+
+func (ps *PivotSession) nextSeqID() uint64 {
+	return atomic.AddUint64(&ps.seqID, 1)
+}
 
 func (ps *PivotSession) Broadcast(msg interface{}) {
 	ps.mu.Lock()
@@ -124,25 +134,20 @@ func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
 		ps.CancelContext()
 	}
 
-	// Close connections
-	if ps.Session != nil {
-		ps.Session.Close()
-	}
-	if ps.SSHClient != nil {
-		ps.SSHClient.Close()
-	}
-	if ps.Conn != nil {
-		ps.Conn.Close()
-	}
-
 	// Final flush & close
 	ps.FlushHistory(ctx, graph)
 	_ = graph.ShellPivot.UpdateOneID(ps.PivotID).SetClosedAt(time.Now()).Exec(ctx)
 
-	// Close all websockets and channels
+	// Notify and close all active socket channels so writer goroutines flush before closing
 	ps.mu.Lock()
-	for ws, ch := range ps.activeSockets {
-		ws.Close()
+	for _, ch := range ps.activeSockets {
+		select {
+		case ch <- shell.WebsocketStatusMessage{
+			Kind:   shell.WebsocketMessageKindStatus,
+			Status: "closed",
+		}:
+		default:
+		}
 		close(ch)
 	}
 	ps.activeSockets = make(map[*websocket.Conn]chan interface{})
@@ -203,7 +208,30 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cacheMu.Unlock()
 
 		if !ok {
+			// If session is no longer active in memory, serve any persisted history from DB and report closed status
+			if pivotEnt, err := h.graph.ShellPivot.Get(ctx, pivotID); err == nil {
+				if pivotEnt.Data != "" {
+					_ = wsConn.WriteJSON(shell.WebsocketTaskOutputMessage{
+						Kind:   shell.WebsocketMessageKindOutput,
+						Output: pivotEnt.Data,
+					})
+				}
+				if pivotEnt.ClosedAt.IsZero() {
+					_ = h.graph.ShellPivot.UpdateOneID(pivotID).SetClosedAt(time.Now()).Exec(ctx)
+				}
+				_ = wsConn.WriteJSON(shell.WebsocketStatusMessage{
+					Kind:   shell.WebsocketMessageKindStatus,
+					Status: "closed",
+				})
+			}
 			sendWsError("pivot session not found or expired")
+			_ = wsConn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+				time.Now().Add(time.Second),
+			)
+			_ = wsConn.SetReadDeadline(time.Now().Add(250 * time.Millisecond))
+			_, _, _ = wsConn.ReadMessage()
 			return
 		}
 		pivotSession = sess
@@ -246,7 +274,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		host, portStr, err := net.SplitHostPort(hostPortStr)
 		if err != nil {
 			if strings.Contains(err.Error(), "missing port in address") || strings.Contains(err.Error(), "too many colons in address") {
-				hostPortStr = net.JoinHostPort(hostPortStr, "22")
+				host = hostPortStr
+				portStr = "22"
+				hostPortStr = net.JoinHostPort(host, portStr)
 			} else {
 				sendWsError(fmt.Sprintf("invalid target host format: %v", err))
 				return
@@ -269,10 +299,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Open Portal Mux
 		cleanupPortal, err := h.mux.OpenPortal(ctx, portalID)
 		if err != nil {
-			wsConn.WriteJSON(shell.WebsocketErrorMessage{
-				Kind:  shell.WebsocketMessageKindError,
-				Error: fmt.Sprintf("Failed to open portal: %v", err),
-			})
+			sendWsError(fmt.Sprintf("Failed to open portal: %v", err))
 			return
 		}
 
@@ -283,8 +310,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		streamID := fmt.Sprintf("ssh-ws-%d", time.Now().UnixNano())
 
 		// Extract port as uint32
-		_, dstPortStr, _ := net.SplitHostPort(hostPortStr)
-		dstPort, _ := strconv.ParseUint(dstPortStr, 10, 32)
+		dstPort, _ := strconv.ParseUint(portStr, 10, 32)
+		if dstPort == 0 {
+			dstPort = 22
+		}
 
 		// Create ShellPivot Ent
 		createReq := h.graph.ShellPivot.Create().
@@ -301,152 +330,19 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		pivotEnt, err := createReq.Save(ctx)
-
 		if err != nil {
 			sendWsError(fmt.Sprintf("Failed to create shell pivot: %v", err))
 			cleanupPortal()
 			return
 		}
 
-		// pnet dial requirements
 		sessionCtx, cancelSession := context.WithCancel(context.Background())
-		sender := func(m *portalpb.Mote) error {
-			return h.mux.Publish(sessionCtx, topicIn, m)
-		}
-
 		recvCh, recvCleanup := h.mux.Subscribe(topicOut)
 
-		receiver := func() (*portalpb.Mote, error) {
-			for {
-				select {
-				case <-sessionCtx.Done():
-					return nil, io.EOF
-				case m, ok := <-recvCh:
-					if !ok {
-						return nil, io.EOF
-					}
-					// Only accept motes matching our streamID
-					if m.StreamId != streamID {
-						continue
-					}
-					if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
-						return nil, io.EOF
-					}
-					return m, nil
-				}
-			}
-		}
-
-		// Dial pnet
-		conn, err := pnet.Dial("tcp", hostPortStr, streamID, sender, receiver)
-		if err != nil {
-			sendWsError(fmt.Sprintf("Failed to dial portal network: %v", err))
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-
-		// Setup SSH Client Config
-		sshConfig := &ssh.ClientConfig{
-			User:            user,
-			Auth:            []ssh.AuthMethod{ssh.Password(password)},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-			Timeout:         15 * time.Second,
-		}
-
-		// Connect SSH over pnet connection
-		sshConnConn, chans, reqs, err := ssh.NewClientConn(conn, hostPortStr, sshConfig)
-		if err != nil {
-			sendWsError(fmt.Sprintf("Failed to establish SSH connection: %v", err))
-			conn.Close()
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-		sshClient := ssh.NewClient(sshConnConn, chans, reqs)
-
-		session, err := sshClient.NewSession()
-		if err != nil {
-			sendWsError(fmt.Sprintf("Failed to open SSH session: %v", err))
-			sshClient.Close()
-			conn.Close()
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-
-		// Request PTY
-		modes := ssh.TerminalModes{
-			ssh.ECHO:          1,
-			ssh.TTY_OP_ISPEED: 14400,
-			ssh.TTY_OP_OSPEED: 14400,
-		}
-		if err := session.RequestPty("xterm", 80, 40, modes); err != nil {
-			sendWsError(fmt.Sprintf("Failed to request PTY: %v", err))
-			session.Close()
-			sshClient.Close()
-			conn.Close()
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-
-		stdin, err := session.StdinPipe()
-		if err != nil {
-			sendWsError("Failed to open stdin pipe")
-			session.Close()
-			sshClient.Close()
-			conn.Close()
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-		stdout, err := session.StdoutPipe()
-		if err != nil {
-			sendWsError("Failed to open stdout pipe")
-			session.Close()
-			sshClient.Close()
-			conn.Close()
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-		stderr, err := session.StderrPipe()
-		if err != nil {
-			sendWsError("Failed to open stderr pipe")
-			session.Close()
-			sshClient.Close()
-			conn.Close()
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-
-		if err := session.Shell(); err != nil {
-			sendWsError(fmt.Sprintf("Failed to start shell: %v", err))
-			session.Close()
-			sshClient.Close()
-			conn.Close()
-			cancelSession()
-			recvCleanup()
-			cleanupPortal()
-			return
-		}
-
 		pivotSession = &PivotSession{
-			PivotID:   pivotEnt.ID,
-			StreamID:  streamID,
-			Conn:      conn,
-			SSHClient: sshClient,
-			Session:   session,
-			Stdin:     stdin,
+			PivotID:  pivotEnt.ID,
+			PortalID: portalID,
+			StreamID: streamID,
 			CancelContext: func() {
 				cancelSession()
 				recvCleanup()
@@ -459,8 +355,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		sessionCache[pivotEnt.ID] = pivotSession
 		cacheMu.Unlock()
 
-		// Background GoRoutines for SSH I/O and DB flushing
-		// We use sync.Once to ensure Close is only called once.
 		var closeOnce sync.Once
 		closePivot := func() {
 			closeOnce.Do(func() {
@@ -468,40 +362,50 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
+		// Background goroutine: read portal SSH output motes -> broadcast to websockets.
 		go func() {
-			buf := make([]byte, 1024)
 			for {
-				n, err := stdout.Read(buf)
-				if n > 0 {
-					pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
-						Kind:   shell.WebsocketMessageKindOutput,
-						Output: string(buf[:n]),
-					})
-				}
-				if err != nil {
-					closePivot()
+				select {
+				case <-sessionCtx.Done():
 					return
+				case m, ok := <-recvCh:
+					if !ok {
+						closePivot()
+						return
+					}
+					if m.StreamId != streamID {
+						continue
+					}
+					if sshPayload := m.GetSsh(); sshPayload != nil {
+						switch sshPayload.Kind {
+						case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA:
+							if len(sshPayload.Data) > 0 {
+								pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
+									Kind:   shell.WebsocketMessageKindOutput,
+									Output: string(sshPayload.Data),
+								})
+							}
+						case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE:
+							if len(sshPayload.Data) > 0 {
+								pivotSession.Broadcast(shell.WebsocketErrorMessage{
+									Kind:  shell.WebsocketMessageKindError,
+									Error: string(sshPayload.Data),
+								})
+							}
+							closePivot()
+							return
+						}
+						continue
+					}
+					if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+						closePivot()
+						return
+					}
 				}
 			}
 		}()
 
-		go func() {
-			buf := make([]byte, 1024)
-			for {
-				n, err := stderr.Read(buf)
-				if n > 0 {
-					pivotSession.Broadcast(shell.WebsocketTaskErrorMessage{
-						Kind:  shell.WebsocketMessageKindTaskError,
-						Error: string(buf[:n]),
-					})
-				}
-				if err != nil {
-					closePivot()
-					return
-				}
-			}
-		}()
-
+		// Periodic history flush
 		go func() {
 			ticker := time.NewTicker(5 * time.Second)
 			defer ticker.Stop()
@@ -514,14 +418,60 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}()
+
+		// Attach current WS to PivotSession BEFORE publishing CONNECT so fast responses aren't missed
+		outCh := make(chan interface{}, 64)
+		pivotSession.AddSocket(wsConn, outCh)
+		defer pivotSession.RemoveSocket(wsConn)
+
+		// Publish SSH_PAYLOAD_KIND_CONNECT mote to instruct the gRPC-receiving Tavern instance
+		// to initiate the SSH protocol over the portal stream.
+		connectMote := &portalpb.Mote{
+			StreamId: streamID,
+			SeqId:    0,
+			Payload: &portalpb.Mote_Ssh{
+				Ssh: &portalpb.SSHPayload{
+					Kind:     portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CONNECT,
+					DstAddr:  host,
+					DstPort:  uint32(dstPort),
+					Username: user,
+					Password: password,
+					Rows:     40,
+					Cols:     80,
+				},
+			},
+		}
+		if err := h.mux.Publish(sessionCtx, topicIn, connectMote); err != nil {
+			sendWsError(fmt.Sprintf("Failed to send SSH connect mote: %v", err))
+			closePivot()
+			return
+		}
+
+		h.serveSocketIO(ctx, wsConn, pivotSession, outCh, closePivot)
+		return
 	}
 
-	// Attach current WS to PivotSession
-	outCh := make(chan interface{}, 32)
+	// Attach current WS to existing PivotSession
+	outCh := make(chan interface{}, 64)
 	pivotSession.AddSocket(wsConn, outCh)
 	defer pivotSession.RemoveSocket(wsConn)
 
+	closePivot := func() {
+		pivotSession.Close(context.Background(), h.graph)
+	}
+
+	h.serveSocketIO(ctx, wsConn, pivotSession, outCh, closePivot)
+}
+
+func (h *Handler) serveSocketIO(
+	ctx context.Context,
+	wsConn *websocket.Conn,
+	pivotSession *PivotSession,
+	outCh chan interface{},
+	closePivot func(),
+) {
 	errCh := make(chan error, 2)
+	topicIn := h.mux.TopicIn(pivotSession.PortalID)
 
 	// Single writer goroutine for websocket
 	go func() {
@@ -531,9 +481,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		errCh <- io.EOF
 	}()
 
-	// WebSocket -> SSH Stdin
+	// WebSocket -> SSH portal motes
 	go func() {
 		for {
 			_, msg, err := wsConn.ReadMessage()
@@ -541,13 +492,59 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				errCh <- err
 				return
 			}
-			var inputMsg shell.WebsocketTaskInputMessage
-			if err := json.Unmarshal(msg, &inputMsg); err == nil && inputMsg.Kind == shell.WebsocketMessageKindInput {
-				pivotSession.Stdin.Write([]byte(inputMsg.Input))
+			var ctrlMsg WebsocketControlMessage
+			if err := json.Unmarshal(msg, &ctrlMsg); err != nil {
+				continue
+			}
+			switch ctrlMsg.Kind {
+			case shell.WebsocketMessageKindInput:
+				mote := &portalpb.Mote{
+					StreamId: pivotSession.StreamID,
+					SeqId:    pivotSession.nextSeqID(),
+					Payload: &portalpb.Mote_Ssh{
+						Ssh: &portalpb.SSHPayload{
+							Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA,
+							Data: []byte(ctrlMsg.Input),
+						},
+					},
+				}
+				if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
+					errCh <- err
+					return
+				}
+			case "resize":
+				if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+					mote := &portalpb.Mote{
+						StreamId: pivotSession.StreamID,
+						SeqId:    pivotSession.nextSeqID(),
+						Payload: &portalpb.Mote_Ssh{
+							Ssh: &portalpb.SSHPayload{
+								Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_RESIZE,
+								Rows: ctrlMsg.Rows,
+								Cols: ctrlMsg.Cols,
+							},
+						},
+					}
+					_ = h.mux.Publish(ctx, topicIn, mote)
+				}
+			case "close":
+				mote := &portalpb.Mote{
+					StreamId: pivotSession.StreamID,
+					SeqId:    pivotSession.nextSeqID(),
+					Payload: &portalpb.Mote_Ssh{
+						Ssh: &portalpb.SSHPayload{
+							Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE,
+						},
+					},
+				}
+				_ = h.mux.Publish(ctx, topicIn, mote)
+				closePivot()
+				errCh <- io.EOF
+				return
 			}
 		}
 	}()
 
-	// Wait for websocket to disconnect
+	// Wait for websocket to disconnect or session to close
 	<-errCh
 }

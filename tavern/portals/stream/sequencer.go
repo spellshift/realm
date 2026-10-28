@@ -67,3 +67,14 @@ func (s *payloadSequencer) NewUDPMote(data []byte, dstAddr string, dstPort uint3
 		},
 	}
 }
+
+// NewSSHMote creates a new Mote with an SSHPayload.
+func (s *payloadSequencer) NewSSHMote(sshPayload *portalpb.SSHPayload) *portalpb.Mote {
+	return &portalpb.Mote{
+		StreamId: s.streamID,
+		SeqId:    s.newSeqID(),
+		Payload: &portalpb.Mote_Ssh{
+			Ssh: sshPayload,
+		},
+	}
+}

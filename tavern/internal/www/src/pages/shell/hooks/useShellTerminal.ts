@@ -98,7 +98,8 @@ export const useShellTerminal = (
     shellData: any,
     setPortalId: (id: number | null) => void,
     isLateCheckin: boolean,
-    onOpenPortalTab?: (type: string, target: string) => void
+    onOpenPortalTab?: (type: string, target: string, pivotId?: string) => void,
+    onCommandSubmitted?: () => void
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -106,9 +107,17 @@ export const useShellTerminal = (
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
+    const [localHistory, setLocalHistory] = useState<string[]>(() => loadHistory());
 
     const portalIdRef = useRef<number | null>(null);
     const sessionInputs = useRef<string[]>([]);
+    const onCommandSubmittedRef = useRef(onCommandSubmitted);
+    const onOpenPortalTabRef = useRef(onOpenPortalTab);
+
+    useEffect(() => {
+        onCommandSubmittedRef.current = onCommandSubmitted;
+        onOpenPortalTabRef.current = onOpenPortalTab;
+    }, [onCommandSubmitted, onOpenPortalTab]);
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -163,7 +172,7 @@ export const useShellTerminal = (
         connectionStatusRef.current = connectionStatus;
         shellClosedAtRef.current = shellClosedAt;
         if (termInstance.current) {
-            const isDimmed = isLateCheckin || connectionStatus !== "connected" || !!shellClosedAt;
+            const isDimmed = connectionStatus !== "connected" || !!shellClosedAt;
             termInstance.current.options.theme = {
                 foreground: isDimmed ? "#777777" : "#d4d4d4",
                 background: "#1e1e1e",
@@ -404,10 +413,10 @@ export const useShellTerminal = (
             macOptionIsMeta: true,
             theme: {
                 background: "#1e1e1e",
-                foreground: (isLateCheckinRef.current || connectionStatusRef.current !== "connected") ? "#777777" : "#d4d4d4",
+                foreground: connectionStatusRef.current !== "connected" ? "#777777" : "#d4d4d4",
             },
             fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-            fontSize: 18,
+            fontSize: 16,
             scrollback: 500_000,
         });
 
@@ -543,7 +552,7 @@ export const useShellTerminal = (
         };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
+        const url = `${scheme}://${window.location.host}/shell/ws?shell_id=${shellId}`;
 
         adapter.current = new BrowserWasmAdapter(
             url,
@@ -577,14 +586,19 @@ export const useShellTerminal = (
                     case WebsocketMessageKind.ControlFlow:
                         if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
                             content = msg.message + "\n";
-                            color = "\x1b[38;5;178m"; // Purple
+                            color = "\x1b[38;5;178m"; // Gold
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                            const wasUpgraded = portalIdRef.current !== msg.portal_id;
                             portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
+                            if (wasUpgraded) {
+                                content = `[*] Interactive Portal (#${msg.portal_id}) active — low-latency execution & PTY/SSH pivots ready.\n`;
+                                color = "\x1b[38;5;42m"; // Green
+                            }
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalDowngrade) {
                             portalIdRef.current = null;
                             setPortalId(null);
-                            content = "Portal closed. Reverting to non-interactive mode.\n";
+                            content = "[*] Portal closed. Smoothly transitioned to Queued Mode (commands will run on beacon check-in).\n";
                             color = "\x1b[38;5;178m"; // Gold
                         }
                         break;
@@ -623,9 +637,8 @@ export const useShellTerminal = (
         adapter.current.init();
 
         const handleData = (data: string, isPaste: boolean = false) => {
-            // Check for late checkin, closed shell, and block input
-            if (isLateCheckinRef.current || shellClosedAtRef.current) return;
-            // Check for connection status and block input
+            // Check for closed shell or disconnected websocket and block input
+            if (shellClosedAtRef.current) return;
             if (connectionStatusRef.current !== "connected") return;
 
             const code = data.charCodeAt(0);
@@ -917,12 +930,14 @@ export const useShellTerminal = (
                         state.history.push(trimmed);
                         sessionInputs.current.push(trimmed);
                         saveHistory(state.history);
+                        setLocalHistory([...state.history]);
                     }
                     state.currentBlock = "";
                     state.historyIndex = -1;
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
+                    onCommandSubmittedRef.current?.();
                 } else if (res?.status === "meta") {
                     const metaCmd = res.meta_command;
                     if (metaCmd?.type === "help") {
@@ -946,9 +961,7 @@ export const useShellTerminal = (
                             term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
                         } else {
                             term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
-                            if (onOpenPortalTab) {
-                                onOpenPortalTab("ssh", target);
-                            }
+                            onOpenPortalTabRef.current?.("ssh", target);
                         }
                     } else if (metaCmd?.type === "pty") {
                         const pId = portalIdRef.current;
@@ -956,9 +969,7 @@ export const useShellTerminal = (
                             term.write(`\r\n\x1b[31mError: An active portal is required to initiate a PTY session.\x1b[0m\r\n`);
                         } else {
                             term.write(`\r\nOpening PTY session...\r\n`);
-                            if (onOpenPortalTab) {
-                                onOpenPortalTab("pty", "PTY");
-                            }
+                            onOpenPortalTabRef.current?.("pty", "PTY");
                         }
                     }
                     term.write(">>> ");
@@ -1023,7 +1034,7 @@ export const useShellTerminal = (
             // Check if this is a paste or multi-character sequence (not starting with ESC)
             if (data.length > 1 && data.charCodeAt(0) !== 27) {
                 // Check for connection status and block input
-                if (isLateCheckinRef.current || connectionStatusRef.current !== "connected" || shellClosedAtRef.current) return;
+                if (connectionStatusRef.current !== "connected" || shellClosedAtRef.current) return;
 
                 const hasNewlines = data.includes('\r') || data.includes('\n');
 
@@ -1053,6 +1064,7 @@ export const useShellTerminal = (
                             state.history.push(trimmed);
                             sessionInputs.current.push(trimmed);
                             saveHistory(state.history);
+                            setLocalHistory([...state.history]);
                         }
                         state.currentBlock = "";
                         state.historyIndex = -1;
@@ -1060,6 +1072,7 @@ export const useShellTerminal = (
                         state.cursorPos = 0;
                         state.prompt = ">>> ";
                         term.write(state.prompt);
+                        onCommandSubmittedRef.current?.();
                     } else if (res?.status === "meta") {
                         const metaCmd = res.meta_command;
                         if (metaCmd?.type === "help") {
@@ -1083,9 +1096,7 @@ export const useShellTerminal = (
                                 term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
                             } else {
                                 term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
-                                if (onOpenPortalTab) {
-                                    onOpenPortalTab("ssh", target);
-                                }
+                                onOpenPortalTabRef.current?.("ssh", target);
                             }
                         } else if (metaCmd?.type === "pty") {
                             const pId = portalIdRef.current;
@@ -1093,9 +1104,7 @@ export const useShellTerminal = (
                                 term.write(`\r\n\x1b[31mError: An active portal is required to initiate a PTY session.\x1b[0m\r\n`);
                             } else {
                                 term.write(`\r\nOpening PTY session...\r\n`);
-                                if (onOpenPortalTab) {
-                                    onOpenPortalTab("pty", "PTY");
-                                }
+                                onOpenPortalTabRef.current?.("pty", "PTY");
                             }
                         }
                         term.write(">>> ");
@@ -1150,6 +1159,110 @@ export const useShellTerminal = (
         term.focus();
     }, [redrawLine]);
 
+    const executeCode = useCallback((rawCode: string): boolean => {
+        const term = termInstance.current;
+        if (!term || !adapter.current) return false;
+        if (shellClosedAtRef.current || connectionStatusRef.current !== "connected") return false;
+
+        const trimmedCode = rawCode.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+        if (!trimmedCode) return false;
+
+        const state = shellState.current;
+
+        // Clear any current partial input line
+        const prevRows = lastBufferHeight.current;
+        if (prevRows > 0) {
+            term.write(`\x1b[${prevRows}A`);
+        }
+        term.write("\r\x1b[J");
+        adapter.current.reset();
+
+        // Render the executed code block with syntax highlighting
+        const lines = trimmedCode.split("\n");
+        lines.forEach((line, idx) => {
+            const linePrompt = idx === 0 ? ">>> " : ".. ";
+            term.write(`${linePrompt}${highlightPythonSyntax(line)}\r\n`);
+        });
+
+        const res = adapter.current.paste_input(trimmedCode + "\n");
+        if (res?.status === "complete") {
+            state.history.push(trimmedCode);
+            sessionInputs.current.push(trimmedCode);
+            saveHistory(state.history);
+            setLocalHistory([...state.history]);
+            state.currentBlock = "";
+            state.historyIndex = -1;
+            state.inputBuffer = "";
+            state.cursorPos = 0;
+            state.prompt = ">>> ";
+            term.write(state.prompt);
+            lastBufferHeight.current = 0;
+            onCommandSubmittedRef.current?.();
+            return true;
+        } else if (res?.status === "meta") {
+            const metaCmd = res.meta_command;
+            if (metaCmd?.type === "help") {
+                const target = metaCmd.target;
+                if (!target) {
+                    writeHelpMessage(term, adapter.current?.version || "");
+                } else {
+                    const doc = docs[target];
+                    if (doc) {
+                        const wrappedDesc = wrapText(doc.description, term.cols);
+                        term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
+                        term.write(`${wrappedDesc}\r\n`);
+                    } else {
+                        term.write(`No documentation found for: ${target}\r\n`);
+                    }
+                }
+            } else if (metaCmd?.type === "ssh") {
+                const target = metaCmd.target;
+                const pId = portalIdRef.current;
+                if (!pId) {
+                    term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
+                } else {
+                    term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
+                    onOpenPortalTabRef.current?.("ssh", target);
+                }
+            } else if (metaCmd?.type === "pty") {
+                const pId = portalIdRef.current;
+                if (!pId) {
+                    term.write(`\r\n\x1b[31mError: An active portal is required to initiate a PTY session.\x1b[0m\r\n`);
+                } else {
+                    term.write(`\r\nOpening PTY session...\r\n`);
+                    onOpenPortalTabRef.current?.("pty", "PTY");
+                }
+            }
+            state.currentBlock = "";
+            state.historyIndex = -1;
+            state.inputBuffer = "";
+            state.cursorPos = 0;
+            state.prompt = ">>> ";
+            term.write(state.prompt);
+            lastBufferHeight.current = 0;
+            return true;
+        } else {
+            // Incomplete or syntax error in multi-line block: reset and show message
+            adapter.current.reset();
+            const errMsg = res?.message || "Incomplete block (check indentation or unclosed brackets)";
+            term.write(`\x1b[31mError: ${errMsg}\x1b[0m\r\n>>> `);
+            state.currentBlock = "";
+            state.inputBuffer = "";
+            state.cursorPos = 0;
+            state.prompt = ">>> ";
+            lastBufferHeight.current = 0;
+            return false;
+        }
+    }, []);
+
+    const clearTerminal = useCallback(() => {
+        const term = termInstance.current;
+        if (!term) return;
+        term.write('\x1b[2J\x1b[H');
+        lastBufferHeight.current = 0;
+        redrawLine();
+    }, [redrawLine]);
+
     const focusTerminal = useCallback(() => {
         termInstance.current?.focus();
     }, []);
@@ -1194,6 +1307,9 @@ export const useShellTerminal = (
         handleTooltipMouseLeave: scheduleHideTooltip,
         getSessionInputs,
         setShellInput,
+        executeCode,
+        clearTerminal,
+        localHistory,
         focusTerminal,
         sendCtrlC,
         sendCtrlR

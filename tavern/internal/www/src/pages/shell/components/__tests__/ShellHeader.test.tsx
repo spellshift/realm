@@ -114,4 +114,39 @@ describe("ShellHeader", () => {
         fireEvent.click(exportButton);
         expect(onExport).toHaveBeenCalled();
     });
+
+    it("renders quick toolbar controls for Composer, Intel, History, and Guide when callbacks provided", () => {
+        const onToggleComposer = vi.fn();
+        const onToggleKnowledge = vi.fn();
+        const onToggleHistory = vi.fn();
+        const onToggleNux = vi.fn();
+
+        render(
+            <BrowserRouter>
+                <ShellHeader
+                    {...defaultProps}
+                    onToggleComposer={onToggleComposer}
+                    onToggleKnowledge={onToggleKnowledge}
+                    credentialCount={3}
+                    onToggleHistory={onToggleHistory}
+                    historyCount={12}
+                    onToggleNux={onToggleNux}
+                />
+            </BrowserRouter>
+        );
+
+        fireEvent.click(screen.getByLabelText("Toggle multi-line composer"));
+        expect(onToggleComposer).toHaveBeenCalled();
+
+        fireEvent.click(screen.getByLabelText("Toggle knowledge graph"));
+        expect(onToggleKnowledge).toHaveBeenCalled();
+        expect(screen.getByText("3")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByLabelText("Toggle command history"));
+        expect(onToggleHistory).toHaveBeenCalled();
+        expect(screen.getByText("12")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByLabelText("Toggle operator guide"));
+        expect(onToggleNux).toHaveBeenCalled();
+    });
 });
