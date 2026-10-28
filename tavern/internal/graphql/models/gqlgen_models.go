@@ -144,7 +144,7 @@ type QuestTimelineTacticBucket struct {
 type RegisterBuilderOutput struct {
 	// The created builder entity.
 	Builder *ent.Builder `json:"builder"`
-	// mTLS certificate PEM bundle for the builder to authenticate.
+	// mTLS certificate PEM for the builder to authenticate.
 	MtlsCert string `json:"mtlsCert"`
 	// YAML-formatted configuration for the builder.
 	Config string `json:"config"`

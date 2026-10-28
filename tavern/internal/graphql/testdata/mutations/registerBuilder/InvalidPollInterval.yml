@@ -4,12 +4,19 @@ state: |
 requestor:
   session_token: secretToken
 query: |
-  mutation RegisterBuilder($input: CreateBuilderInput!) {
-    registerBuilder(input: $input) {
+  mutation RegisterBuilder($input: CreateBuilderInput!, $csr: String!) {
+    registerBuilder(input: $input, csr: $csr) {
       builder { id }
     }
   }
 variables:
+  csr: |
+    -----BEGIN CERTIFICATE REQUEST-----
+    MIGOMEICAQAwDzENMAsGA1UEAwwEdGVzdDAqMAUGAytlcAMhAOnTZViCdL6wNFAb
+    WndDa8ZV8htCJyk7rYXqz9u8T6mNoAAwBQYDK2VwA0EAOKBS3ItSXkf57+nxT5lY
+    gIf1/YBiTay/H2xPAt3XtGCrfzwxn+p3HijJTdxj3MWaBZ3hNiPRwaylcdCwBg0/
+    Bg==
+    -----END CERTIFICATE REQUEST-----
   input:
     supportedTargets: [PLATFORM_LINUX]
     pollInterval: 0

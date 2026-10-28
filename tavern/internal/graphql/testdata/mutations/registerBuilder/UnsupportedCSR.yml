@@ -1,0 +1,29 @@
+state: |
+  INSERT INTO users (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+requestor:
+  session_token: secretToken
+query: |
+  mutation RegisterBuilder($input: CreateBuilderInput!, $csr: String!) {
+    registerBuilder(input: $input, csr: $csr) { builder { id } }
+  }
+variables:
+  input:
+    supportedTargets: [PLATFORM_LINUX]
+  csr: |
+    -----BEGIN CERTIFICATE REQUEST-----
+    MIICWTCCAUECAQAwFDESMBAGA1UEAwwJdW50cnVzdGVkMIIBIjANBgkqhkiG9w0B
+    AQEFAAOCAQ8AMIIBCgKCAQEAoKCibpyCihDbHKrOEw3NDLOWWpD3MtextdXDntng
+    zkmMzJL/JR1lLwxb5OncI3xU72KAC2oXcwWZ7bQoveg4YTNjmkcQNic+splS6aqT
+    An8hG+WGQ/ItXv6Rh4NkPGXTtF2Jdd3Mg55O2dgGdGmKNW//yMoM34HexwhgR2OS
+    iqUoyKQOrIxiTaoVVntXaN56gMAp4x2ZstIDSJ9y+dxAXNAZayLzVYlg0WJUgmqO
+    Rmw7jbfm0KFxruP/bUrgEPzuSrNDjVTYSbuxcPS5XqHuTQBiLyzDXVoLavx6MkbK
+    tNC8B3B2MWHgvEb05jBkVVvn9i4ZkUP06LGtkFW3kM8itQIDAQABoAAwDQYJKoZI
+    hvcNAQELBQADggEBACC10w79U86GeCF7FzoPmtUwdLU/pr3wSNnJ158cUg4taKjv
+    dLS+w0DS7oKWx7Onux6EotTywCBQNroUGCk4XZJUavJva0lR6b3/oWAvVJ0EGmEd
+    FJYAp7kG5fSct/GQEKGSh4XECsHuFgZAjhHY+hwi4MDdO1QgtFPMpZmHtdCXJK2h
+    VAZFYbX/qzozU1jXFbqpsMla6NM8gNvMTFu3DtVjW6UZlLygifKa9b9yxMd+sEVm
+    kXmgf+MMhjLUc1Q/pLpMOPd/+/HZJd65JTibhGCOji2hHoMP+tVqNgzJRPuXq4oz
+    a0JzvxBO6YKYwCzhplr3/ya9ugdG4AryjPEtTRk=
+    -----END CERTIFICATE REQUEST-----
+expected_error: "Ed25519"

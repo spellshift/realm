@@ -30,6 +30,7 @@ export const EnrollBuilderPage = () => {
     const [upstream, setUpstream] = useState(DEFAULT_UPSTREAM);
     const [pollInterval, setPollInterval] = useState(5);
     const [executor, setExecutor] = useState("docker");
+    const [csr, setCsr] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<{ identifier: string; config: string } | null>(null);
     const [registerBuilder, { loading }] = useMutation(REGISTER_BUILDER);
@@ -43,10 +44,10 @@ export const EnrollBuilderPage = () => {
     }, [step, result, registered, refetch]);
 
     const submit = async () => {
-        if (targets.length === 0 || !pollIntervalValid || loading) return;
+        if (targets.length === 0 || !pollIntervalValid || !csr.trim() || loading) return;
         setError(null);
         try {
-            const { data } = await registerBuilder({ variables: { input: {
+            const { data } = await registerBuilder({ variables: { csr: csr.trim(), input: {
                 supportedTargets: targets.map((target) => target.value),
                 upstream: upstream.trim() || undefined,
                 pollInterval,
@@ -66,7 +67,7 @@ export const EnrollBuilderPage = () => {
                 { label: "Admin", link: "/admin?tab=builders" },
                 { label: "Enroll builder", link: "/admin/builders/enroll" },
             ]} />
-            <PageHeader title="Enroll builder" description="Register a builder and start it with its one-time configuration." />
+            <PageHeader title="Enroll builder" description="Register a builder using its local certificate request." />
             {error && <AlertError label="Unable to enroll builder" details={error} />}
             <div className="flex flex-row gap-6">
                 <div className="flex-shrink-0 mt-2 lg:block hidden"><FormSteps steps={STEPS} currStep={step} /></div>
@@ -74,6 +75,14 @@ export const EnrollBuilderPage = () => {
                     {step === 0 && (
                         <form className="flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
                             <h2 className="text-xl font-semibold">Configure builder</h2>
+                            <p className="text-sm text-gray-700">On the builder machine, create an existing directory and run:</p>
+                            <CodeBlock code="go run ./tavern builder generate-csr --output-dir DIR" language="bash" showCopyButton />
+                            <p className="text-sm text-gray-700">Keep <code>builder.key</code> on that machine. Paste the contents of <code>builder.csr</code> below.</p>
+                            <div className="flex flex-col gap-1">
+                                <label htmlFor="builderCsr" className="text-sm font-medium text-gray-900">Certificate request (PEM)</label>
+                                <textarea id="builderCsr" className="rounded-md border border-gray-300 p-2 font-mono text-sm" rows={7}
+                                    value={csr} onChange={(event) => setCsr(event.target.value)} required />
+                            </div>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-gray-900">Supported platforms</label>
                                 <Select<PlatformOption, true> isMulti options={PLATFORM_OPTIONS} value={targets}
@@ -95,16 +104,16 @@ export const EnrollBuilderPage = () => {
                             <div className="flex gap-2">
                                 <Button buttonVariant="ghost" onClick={() => navigate("/admin?tab=builders")}>Cancel</Button>
                                 <Button type="submit" buttonStyle={{ color: "purple", size: "md" }} isLoading={loading}
-                                    disabled={targets.length === 0 || !pollIntervalValid}>Configure</Button>
+                                    disabled={targets.length === 0 || !pollIntervalValid || !csr.trim()}>Configure</Button>
                             </div>
                         </form>
                     )}
                     {step === 1 && result && (
                         <div className="flex flex-col gap-4">
                             <h2 className="text-xl font-semibold">Copy config</h2>
-                            <p className="text-sm text-amber-700">Save this configuration now. Its mTLS credentials are shown only once.</p>
+                            <p className="text-sm text-amber-700">Save this configuration beside <code>builder.key</code> on the builder machine. The certificate is shown only once.</p>
                             <CodeBlock code={result.config} language="yaml" showCopyButton />
-                            <p className="text-sm text-gray-700">Save as <code>builder-{result.identifier}.yaml</code>.</p>
+                            <p className="text-sm text-gray-700">Save as <code>builder-{result.identifier}.yaml</code> in the same directory as <code>builder.key</code>.</p>
                             <div className="flex gap-2">
                                 <Button onClick={() => downloadBuilderConfig(result.config, result.identifier)}>Download config</Button>
                                 <Button buttonStyle={{ color: "purple", size: "md" }} onClick={() => setStep(2)}>Next</Button>
@@ -114,8 +123,8 @@ export const EnrollBuilderPage = () => {
                     {step === 2 && result && (
                         <div className="flex flex-col gap-4">
                             <h2 className="text-xl font-semibold">Start builder</h2>
-                            <p className="text-sm text-gray-700">From the Realm project root, run the builder with the saved config:</p>
-                            <CodeBlock code={`go run ./tavern builder --config builder-${result.identifier}.yaml`} language="bash" showCopyButton />
+                            <p className="text-sm text-gray-700">From the Realm project root on the builder machine, point to the saved config in the key directory:</p>
+                            <CodeBlock code={`go run ./tavern builder --config DIR/builder-${result.identifier}.yaml`} language="bash" showCopyButton />
                             {registered && builder ? (
                                 <div className="rounded-md border border-gray-200 overflow-x-auto max-w-full">
                                     <div className="min-w-[720px] w-full">

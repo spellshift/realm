@@ -1,3 +1,4 @@
+import * as os from 'os';
 import { chromium, request as pwRequest } from 'playwright';
 import * as child_process from 'child_process';
 import * as fs from 'fs';
@@ -38,6 +39,7 @@ async function main() {
 
   let builderProcess = null;
   let configPath = null;
+  let enrollmentDir = null;
   const results = { screenshots: [] };
 
   try {
@@ -72,20 +74,23 @@ async function main() {
 
     // 1. Enroll builder & start local daemon
     console.log('[1] Enrolling builder...');
+    enrollmentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-builder-'));
+    child_process.execFileSync(process.env.TAVERN_BIN || '/tmp/tavern_bin', ['builder', 'generate-csr', '--output-dir', enrollmentDir], { cwd: repoRoot });
+    const csr = fs.readFileSync(path.join(enrollmentDir, 'builder.csr'), 'utf8');
     const registerData = await graphql(
       apiCtx,
-      `mutation registerNewBuilder($input: CreateBuilderInput!) {
-        registerBuilder(input: $input) {
+      `mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+        registerBuilder(input: $input, csr: $csr) {
           builder { id }
           config
         }
       }`,
-      { input: { supportedTargets: ['PLATFORM_LINUX'], upstream: baseURL } }
+      { csr, input: { supportedTargets: ['PLATFORM_LINUX'], upstream: baseURL } }
     );
     const builderId = registerData.registerBuilder.builder.id;
     const configYaml = registerData.registerBuilder.config;
 
-    configPath = `/tmp/builder-e2e-config-${Date.now()}.yaml`;
+    configPath = path.join(enrollmentDir, 'builder.yaml');
     fs.writeFileSync(configPath, configYaml);
 
     const tavernBin = process.env.TAVERN_BIN || '/tmp/tavern_bin';
@@ -278,9 +283,7 @@ async function main() {
       await sleep(1000);
       try { builderProcess.kill('SIGKILL'); } catch (_) {}
     }
-    if (configPath && fs.existsSync(configPath)) {
-      try { fs.unlinkSync(configPath); } catch (_) {}
-    }
+    if (enrollmentDir) fs.rmSync(enrollmentDir, { recursive: true, force: true });
     await apiCtx.dispose();
   }
 }

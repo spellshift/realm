@@ -42,7 +42,7 @@ type MutationResolver interface {
 	CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error)
 	UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error)
 	DisableLink(ctx context.Context, linkID int) (*ent.Link, error)
-	RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error)
+	RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput, csr string) (*models.RegisterBuilderOutput, error)
 	DeleteBuilder(ctx context.Context, builderID int) (int, error)
 	CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error)
 	UpdateBuildProfile(ctx context.Context, profileID int, input models.UpdateBuildProfileInput) (*ent.BuildProfile, error)
@@ -313,6 +313,11 @@ func (ec *executionContext) field_Mutation_registerBuilder_args(ctx context.Cont
 		return nil, err
 	}
 	args["input"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "csr", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["csr"] = arg1
 	return args, nil
 }
 
@@ -2431,7 +2436,7 @@ func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field
 		ec.fieldContext_Mutation_registerBuilder,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().RegisterBuilder(ctx, fc.Args["input"].(ent.CreateBuilderInput))
+			return ec.Resolvers.Mutation().RegisterBuilder(ctx, fc.Args["input"].(ent.CreateBuilderInput), fc.Args["csr"].(string))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next

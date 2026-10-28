@@ -55,12 +55,13 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 			Config  string
 		}
 	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
+	csr, keyPath := testEnrollment(t)
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
 			config
 		}
-	}`, &registerResp, client.Var("input", map[string]any{
+	}`, &registerResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX"},
 		"upstream":         "https://tavern.example.com:443",
 	}))
@@ -113,6 +114,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
 	require.NoError(t, err)
+	cfg.MTLSKeyFile = keyPath
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -207,12 +209,13 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 			Config  string
 		}
 	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
+	csr, keyPath := testEnrollment(t)
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
 			config
 		}
-	}`, &registerResp, client.Var("input", map[string]any{
+	}`, &registerResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX"},
 		"upstream":         "https://tavern.example.com:443",
 	}))
@@ -261,6 +264,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
 	require.NoError(t, err)
+	cfg.MTLSKeyFile = keyPath
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -361,12 +365,13 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 			Config  string
 		}
 	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
+	csr, keyPath := testEnrollment(t)
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
 			config
 		}
-	}`, &registerResp, client.Var("input", map[string]any{
+	}`, &registerResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX"},
 		"upstream":         "https://tavern.example.com:443",
 	}))
@@ -416,6 +421,7 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
 	require.NoError(t, err)
+	cfg.MTLSKeyFile = keyPath
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -496,12 +502,13 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 			Config  string
 		}
 	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
+	csr, keyPath := testEnrollment(t)
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
 			config
 		}
-	}`, &registerResp, client.Var("input", map[string]any{
+	}`, &registerResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX"},
 		"upstream":         "https://tavern.example.com:443",
 	}))
@@ -551,6 +558,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
 	require.NoError(t, err)
+	cfg.MTLSKeyFile = keyPath
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -628,12 +636,13 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 			Config  string
 		}
 	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
+	csr, keyPath := testEnrollment(t)
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
 			config
 		}
-	}`, &registerResp, client.Var("input", map[string]any{
+	}`, &registerResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX"},
 		"upstream":         "https://tavern.example.com:443",
 	}))
@@ -684,6 +693,7 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
 	require.NoError(t, err)
+	cfg.MTLSKeyFile = keyPath
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -773,12 +783,13 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 			Config  string
 		}
 	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
+	csr, keyPath := testEnrollment(t)
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
 			config
 		}
-	}`, &registerResp, client.Var("input", map[string]any{
+	}`, &registerResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX"},
 		"upstream":         "https://tavern.example.com:443",
 	}))
@@ -796,7 +807,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 			id
 			name
 		}
-	}`, &profileResp, client.Var("input", map[string]any{
+	}`, &profileResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"name":            "local-e2e-profile",
 		"description":     "Local executor test profile",
 		"setupscript":     "echo setup_done",
@@ -834,6 +845,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
 	require.NoError(t, err)
+	cfg.MTLSKeyFile = keyPath
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -863,7 +875,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 		createBuildTask(input: $input) {
 			id
 		}
-	}`, &taskResp, client.Var("input", map[string]any{
+	}`, &taskResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"targetOS":  "PLATFORM_LINUX",
 		"profileID": profileID,
 	}))

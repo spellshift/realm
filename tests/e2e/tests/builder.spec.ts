@@ -1,3 +1,4 @@
+import * as os from 'os';
 import { test, expect } from '@playwright/test';
 import * as child_process from 'child_process';
 import * as fs from 'fs';
@@ -6,14 +7,18 @@ import * as path from 'path';
 test.describe('Builder E2E Test', () => {
   let builderProcess: child_process.ChildProcess | null = null;
   let configPath: string | null = null;
+  let enrollmentDir: string | null = null;
   const repoRoot = path.resolve(__dirname, '../../../');
 
   test.beforeAll(async ({ request }) => {
     // 1. Register builder via GraphQL mutation
     console.log('Registering builder via GraphQL...');
+    enrollmentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-builder-'));
+    child_process.execFileSync('go', ['run', './tavern', 'builder', 'generate-csr', '--output-dir', enrollmentDir], { cwd: repoRoot });
+    const csr = fs.readFileSync(path.join(enrollmentDir, 'builder.csr'), 'utf8');
     const registerMutation = `
-      mutation registerNewBuilder($input: CreateBuilderInput!) {
-        registerBuilder(input: $input) {
+      mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+        registerBuilder(input: $input, csr: $csr) {
           builder {
             id
           }
@@ -26,6 +31,7 @@ test.describe('Builder E2E Test', () => {
       data: {
         query: registerMutation,
         variables: {
+          csr,
           input: {
             supportedTargets: ['PLATFORM_LINUX'],
             upstream: 'http://127.0.0.1:8000',
@@ -44,7 +50,7 @@ test.describe('Builder E2E Test', () => {
     console.log(`Registered builder with ID ${builderId}`);
 
     // 2. Write builder config to a temporary file
-    configPath = path.join('/tmp', `builder-e2e-config-${Date.now()}.yaml`);
+    configPath = path.join(enrollmentDir!, 'builder.yaml');
     fs.writeFileSync(configPath, configYaml);
 
     // 3. Spawn builder process with LocalExecutor
@@ -110,9 +116,9 @@ test.describe('Builder E2E Test', () => {
         } catch (_) {}
       }, 2000);
     }
-    if (configPath && fs.existsSync(configPath)) {
+    if (enrollmentDir && fs.existsSync(enrollmentDir)) {
       try {
-        fs.unlinkSync(configPath);
+        fs.rmSync(enrollmentDir, { recursive: true, force: true });
       } catch (_) {}
     }
   });
@@ -136,6 +142,7 @@ test.describe('Builder E2E Test', () => {
       data: {
         query: createProfileMutation,
         variables: {
+          csr,
           input: {
             name: profileName,
             description: 'Profile for builder e2e test',
@@ -169,6 +176,7 @@ test.describe('Builder E2E Test', () => {
       data: {
         query: createTaskMutation,
         variables: {
+          csr,
           input: {
             targetOS: 'PLATFORM_LINUX',
             profileID: profileId,

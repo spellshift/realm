@@ -50,6 +50,14 @@ func TestBuilderE2E(t *testing.T) {
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
 	gqlClient := client.New(srv, client.Path("/graphql"))
+	var rejected struct{ RegisterBuilder struct{ Config string } }
+	err = gqlClient.Post(`mutation($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) { config }
+	}`, &rejected, client.Var("input", map[string]any{"supportedTargets": []string{"PLATFORM_LINUX"}}), client.Var("csr", "invalid"))
+	require.ErrorContains(t, err, "invalid builder CSR")
+	count, err := graph.Builder.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, count)
 
 	// 4. Register a builder via GraphQL mutation
 	var registerResp struct {
@@ -62,13 +70,14 @@ func TestBuilderE2E(t *testing.T) {
 		}
 	}
 
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
+	csr, keyPath := testEnrollment(t)
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+		registerBuilder(input: $input, csr: $csr) {
 			builder { id }
 			mtlsCert
 			config
 		}
-	}`, &registerResp, client.Var("input", map[string]any{
+	}`, &registerResp, client.Var("csr", csr), client.Var("input", map[string]any{
 		"supportedTargets": []string{"PLATFORM_LINUX", "PLATFORM_MACOS"},
 		"upstream":         "https://tavern.example.com:443",
 		"pollInterval":     30,
@@ -77,6 +86,8 @@ func TestBuilderE2E(t *testing.T) {
 	require.NotEmpty(t, registerResp.RegisterBuilder.Builder.ID)
 	require.NotEmpty(t, registerResp.RegisterBuilder.MtlsCert)
 	require.NotEmpty(t, registerResp.RegisterBuilder.Config)
+	assert.NotContains(t, registerResp.RegisterBuilder.MtlsCert, "PRIVATE KEY")
+	assert.NotContains(t, registerResp.RegisterBuilder.Config, "PRIVATE KEY")
 
 	// 5. Parse the returned YAML config
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
@@ -84,7 +95,9 @@ func TestBuilderE2E(t *testing.T) {
 	assert.Contains(t, cfg.SupportedTargets, "linux")
 	assert.Contains(t, cfg.SupportedTargets, "macos")
 	assert.Equal(t, 30, cfg.PollInterval)
-	assert.NotEmpty(t, cfg.MTLS)
+	assert.NotEmpty(t, cfg.MTLSCert)
+	assert.Equal(t, "builder.key", cfg.MTLSKeyFile)
+	cfg.MTLSKeyFile = keyPath
 	assert.NotEmpty(t, cfg.ID)
 	assert.Equal(t, "https://tavern.example.com:443", cfg.Upstream)
 	assert.Equal(t, "docker", cfg.Executor)
@@ -366,12 +379,13 @@ func TestBuilderE2E(t *testing.T) {
 				Config string
 			}
 		}
-		err := gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-			registerBuilder(input: $input) {
+		csr, keyPath := testEnrollment(t)
+		err := gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+			registerBuilder(input: $input, csr: $csr) {
 				builder { id }
 				config
 			}
-		}`, &registerResp2, client.Var("input", map[string]any{
+		}`, &registerResp2, client.Var("csr", csr), client.Var("input", map[string]any{
 			"supportedTargets": []string{"PLATFORM_WINDOWS"},
 			"upstream":         "https://tavern.example.com:443",
 			"executor":         "local",
@@ -380,6 +394,7 @@ func TestBuilderE2E(t *testing.T) {
 
 		cfg2, err := builder.ParseConfigBytes([]byte(registerResp2.RegisterBuilder.Config))
 		require.NoError(t, err)
+		cfg2.MTLSKeyFile = keyPath
 		assert.Equal(t, 5, cfg2.PollInterval)
 		assert.Equal(t, "local", cfg2.Executor)
 

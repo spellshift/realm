@@ -67,8 +67,8 @@ export const CREATE_BUILD_TASK = gql`
     }
 `;
 export const REGISTER_BUILDER = gql`
-    mutation EnrollAgentBuilder($input: CreateBuilderInput!) {
-        registerBuilder(input: $input) { builder { id identifier } config }
+    mutation EnrollAgentBuilder($input: CreateBuilderInput!, $csr: String!) {
+        registerBuilder(input: $input, csr: $csr) { builder { id identifier } config }
     }
 `;
 

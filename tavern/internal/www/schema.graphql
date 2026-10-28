@@ -8083,7 +8083,7 @@ type RegisterBuilderOutput {
   """The created builder entity."""
   builder: Builder!
 
-  """mTLS certificate PEM bundle for the builder to authenticate."""
+  """mTLS certificate PEM for the builder to authenticate."""
   mtlsCert: String!
 
   """YAML-formatted configuration for the builder."""
@@ -8246,7 +8246,7 @@ type Mutation {
     ###
     # Builder
     ###
-    registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    registerBuilder(input: CreateBuilderInput!, csr: String!): RegisterBuilderOutput! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
