@@ -41,6 +41,10 @@ sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" vscode/eld
 sed -i -E "s/version_string = \"v[0-9].[0-9].[0-9]\"/version_string = \"v$VERSION\"/" implants/imix/src/main.rs
 sed -i -E "s/Version = \"[0-9].[0-9].[0-9]\"/Version = \"$VERSION\"/" tavern/version.go
 sed -i -E "s/Eldritch v[0-9].[0-9].[0-9]/Eldritch v$VERSION/" tavern/internal/www/src/pages/shellv2/hooks/useShellTerminal.ts
+sed -i -E "s/currentVersion = '[0-9]+\.[0-9]+\.[0-9]+'/currentVersion = '$VERSION'/" implants/lib/eldritch/eldritch-wasm/www/repl.js
+sed -i -E "s/v[0-9]+\.[0-9]+\.[0-9]+/v$VERSION/" implants/lib/eldritch/eldritch-wasm/www/index.html
+sed -i -E "s/v[0-9]+\.[0-9]+\.[0-9]+/v$VERSION/" docs/_docs/user-guide/eldritch-interactive.md
+bash ./implants/lib/eldritch/eldritch-wasm/build-wasm.sh
 
 ###
 ## Rust Setup
