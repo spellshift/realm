@@ -1,4 +1,8 @@
 out
+client/out
+bin
 node_modules
 .vscode-test
+*.tsbuildinfo
 *.vsix
+!eldritch-0.4.1.vsix

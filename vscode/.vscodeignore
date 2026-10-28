@@ -1,6 +1,12 @@
 .vscode/**
+.vscode-test/**
+eldritch-lang/**
+vscode-tome-builder/**
+node_modules/**
 **/*.ts
 **/*.map
+**/*.tsbuildinfo
+*.vsix
 .gitignore
 **/tsconfig.json
 **/tsconfig.base.json
@@ -10,3 +16,8 @@ client/node_modules/**
 !client/node_modules/vscode-languageserver-protocol/**
 !client/node_modules/vscode-languageserver-types/**
 !client/node_modules/semver/**
+!bin/**
+!client/out/**
+!syntaxes/**
+!snippets/**
+!images/**

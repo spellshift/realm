@@ -38,6 +38,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libuser",
     "lib/eldritch/stdlib/eldritch-libwindows",
     "lib/eldritch/eldritch",
+    "lib/eldritch/eldritch-lsp",
     "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
     "lib/eldritch/stdlib/eldritch-libchain",
@@ -128,7 +129,8 @@ itertools = "0.10"
 libc = "0.2"
 libm = "0.2.15"
 listeners = "0.2"
-lsp-types = "0.93.0"
+lsp-types = "0.94.0"
+tower-lsp = "0.20"
 log = "0.4.20"
 md5 = "0.7.0"
 mockall = "0.12.1"
