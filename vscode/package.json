@@ -1,8 +1,8 @@
 {
-    "name": "eldritch",
+    "name": "realm-eldritch",
     "displayName": "Eldritch Language Support",
     "description": "Syntax highlighting, linting, autocompletion, hover documentation, signature help, and navigation for the Realm Eldritch red team DSL.",
-    "author": "realm",
+    "author": "spellshift",
     "license": "GPL-3.0-only",
     "version": "0.4.1",
     "icon": "images/eldritch.png",
@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/spellshift/realm.git"
     },
-    "publisher": "realm",
+    "publisher": "spellshift",
     "categories": [
         "Programming Languages",
         "Linters",
