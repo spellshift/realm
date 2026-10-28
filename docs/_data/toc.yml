@@ -5,6 +5,9 @@
       url: "user-guide/getting-started"
     - title: "Eldritch"
       url: "user-guide/eldritch"
+      children:
+        - title: "Interactive"
+          url: "user-guide/eldritch-interactive"
     - title: "Tomes"
       url: "user-guide/tomes"
     - title: "Golem"

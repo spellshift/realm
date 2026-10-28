@@ -12,7 +12,7 @@ Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlar
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
 By embedding the interpreter into the agent conditional logic can be quickly evaluated without requiring multiple callbacks.
 
-**Trying to create a tome? Check out the guide in [Golem](/user-guide/golem).**
+**Trying to create a tome? Check out the guide in [Golem](/user-guide/golem), or test expressions directly in your browser with the [Interactive Eldritch REPL](/user-guide/eldritch-interactive).**
 
 ## Examples
 

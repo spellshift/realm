@@ -1,0 +1,379 @@
+/* Shared styles for the Eldritch WASM REPL (standalone and embedded in docs) */
+
+.eldritch-repl-standalone {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.repl-widget {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+}
+
+.repl-widget.repl-embedded {
+    border: 1px solid #3c3c3c;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    margin: 1rem 0 1.5rem 0;
+}
+
+.repl-widget.repl-fullscreen {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    z-index: 9999 !important;
+}
+
+.repl-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    background-color: #252526;
+    border-bottom: 1px solid #3c3c3c;
+    padding: 8px 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    user-select: none;
+}
+
+.repl-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.repl-window-dots {
+    display: inline-flex;
+    gap: 6px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.repl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.repl-dot-red { background-color: #ff5f56; }
+.repl-dot-yellow { background-color: #ffbd2e; }
+.repl-dot-green { background-color: #27c93f; }
+
+.repl-title {
+    color: #cccccc;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.repl-version-badge {
+    background-color: #30638e;
+    color: #ffffff;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#header-controls,
+.repl-topbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.repl-btn {
+    background-color: #333333;
+    color: #d4d4d4;
+    padding: 4px 10px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    border: 1px solid #454545;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.3;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.repl-btn:hover {
+    background-color: #444444;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.repl-btn:active {
+    background-color: #2a2d2e;
+}
+
+.repl-viewport {
+    padding: 14px 16px;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    cursor: text;
+    -webkit-overflow-scrolling: touch;
+}
+
+.repl-embedded .repl-viewport {
+    min-height: 360px;
+    max-height: 60vh;
+}
+
+.repl-fullscreen .repl-viewport,
+.eldritch-repl-standalone .repl-viewport {
+    min-height: calc(100vh - 110px);
+    min-height: calc(100dvh - 110px);
+    max-height: none;
+}
+
+#terminal {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.line {
+    min-height: 1.5em;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.prompt {
+    color: #569cd6;
+    font-weight: bold;
+    user-select: none;
+}
+
+.cursor {
+    background-color: #d4d4d4;
+    color: #1e1e1e;
+}
+
+.output {
+    color: #ce9178;
+}
+
+.error {
+    color: #f44747;
+}
+
+#current-line {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    position: relative;
+}
+
+#hidden-input {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    font-size: 16px;
+    border: none;
+    padding: 0;
+    margin: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Autocomplete Dropdown */
+#suggestions {
+    position: fixed;
+    background-color: #252526;
+    border: 1px solid #454545;
+    max-height: 200px;
+    max-width: calc(100vw - 24px);
+    overflow-y: auto;
+    z-index: 10000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+}
+
+.suggestion-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+    background-color: #094771;
+    color: #ffffff;
+}
+
+/* Touch / Mobile Quick-Key Toolbar */
+.repl-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background-color: #252526;
+    border-top: 1px solid #3c3c3c;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    user-select: none;
+}
+
+.repl-toolbar-label {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11px;
+    color: #888888;
+    margin-right: 2px;
+    white-space: nowrap;
+}
+
+.repl-key-btn {
+    background-color: #333333;
+    color: #e0e0e0;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    touch-action: manipulation;
+}
+
+.repl-key-btn:hover {
+    background-color: #444444;
+    color: #ffffff;
+}
+
+.repl-key-btn:active {
+    background-color: #094771;
+    border-color: #569cd6;
+}
+
+.repl-key-btn-primary {
+    background-color: #0e639c;
+    border-color: #1177bb;
+    color: #ffffff;
+}
+
+.repl-key-btn-primary:hover {
+    background-color: #1177bb;
+}
+
+/* Quick example snippet buttons on the docs page */
+.repl-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0.75rem 0;
+}
+
+.repl-example-chip {
+    background-color: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.repl-example-chip:hover {
+    background-color: #e2e8f0;
+    border-color: #30638e;
+    color: #0f172a;
+}
+
+.repl-example-chip::before {
+    content: "▶";
+    font-size: 10px;
+    color: #30638e;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 767.98px) {
+    .repl-widget {
+        font-size: 13px;
+    }
+
+    .repl-widget.repl-embedded {
+        margin: 0.75rem 0 1rem 0;
+        border-radius: 6px;
+    }
+
+    .repl-topbar {
+        padding: 6px 10px;
+    }
+
+    .repl-window-dots {
+        display: none;
+    }
+
+    .repl-viewport {
+        padding: 10px 10px;
+    }
+
+    .repl-embedded .repl-viewport {
+        min-height: 280px;
+        max-height: 52vh;
+    }
+
+    .repl-toolbar {
+        padding: 6px 8px;
+        gap: 5px;
+    }
+
+    .repl-key-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-height: 32px;
+    }
+
+    .repl-example-chip {
+        font-size: 12px;
+        padding: 6px 9px;
+    }
+}
