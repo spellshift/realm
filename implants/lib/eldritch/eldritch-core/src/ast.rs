@@ -639,6 +639,14 @@ pub enum ExprKind {
 }
 
 #[derive(Debug, Clone)]
+pub struct ExceptClause {
+    pub exception_type: Option<Expr>,
+    pub name: Option<String>,
+    pub body: Vec<Stmt>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone)]
 pub struct Stmt {
     pub kind: StmtKind,
     pub span: Span,
@@ -653,6 +661,13 @@ pub enum StmtKind {
     Return(Option<Expr>),
     Def(String, Vec<Param>, Option<Box<Expr>>, Vec<Stmt>),
     For(Vec<String>, Expr, Vec<Stmt>),
+    Try {
+        body: Vec<Stmt>,
+        handlers: Vec<ExceptClause>,
+        else_branch: Option<Vec<Stmt>>,
+        finally_branch: Option<Vec<Stmt>>,
+    },
+    Raise(Option<Expr>),
     Break,
     Continue,
     Pass,

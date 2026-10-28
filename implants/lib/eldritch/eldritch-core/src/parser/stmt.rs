@@ -1,4 +1,4 @@
-use super::super::ast::{ExprKind, Stmt, StmtKind};
+use super::super::ast::{ExceptClause, ExprKind, Stmt, StmtKind};
 use super::super::interpreter::error::EldritchError;
 use super::super::token::{Span, TokenKind};
 use super::Parser;
@@ -105,6 +105,10 @@ impl Parser {
         let start = self.peek().span;
         if self.match_token(&[TokenKind::If]) {
             self.if_statement(start)
+        } else if self.match_token(&[TokenKind::Try]) {
+            self.try_statement(start)
+        } else if self.match_token(&[TokenKind::Raise]) {
+            self.raise_statement(start)
         } else if self.match_token(&[TokenKind::Return]) {
             self.return_statement(start)
         } else if self.match_token(&[TokenKind::For]) {
@@ -232,6 +236,134 @@ impl Parser {
             )?;
         }
         Ok(self.make_stmt(StmtKind::Return(value), start, end))
+    }
+
+    fn raise_statement(&mut self, start: Span) -> Result<Stmt, EldritchError> {
+        let mut value = None;
+        let mut end = start;
+        if !self.check(&TokenKind::Newline)
+            && !self.check(&TokenKind::Eof)
+            && !self.check(&TokenKind::Dedent)
+        {
+            let expr = self.expression()?;
+            end = expr.span;
+            value = Some(expr);
+        }
+        if !self.is_at_end() && !matches!(self.peek().kind, TokenKind::Dedent) {
+            self.consume(
+                |t| matches!(t, TokenKind::Newline),
+                "Expected newline after raise.",
+            )?;
+        }
+        Ok(self.make_stmt(StmtKind::Raise(value), start, end))
+    }
+
+    fn skip_newlines_before(&mut self, kinds: &[TokenKind]) {
+        let saved = self.current;
+        while self.match_token(&[TokenKind::Newline]) {}
+        if !kinds.iter().any(|k| self.check(k)) {
+            self.current = saved;
+        }
+    }
+
+    fn try_statement(&mut self, start: Span) -> Result<Stmt, EldritchError> {
+        self.consume(
+            |t| matches!(t, TokenKind::Colon),
+            "Expected ':' after 'try'.",
+        )?;
+        let body = self.parse_block_or_statement()?;
+        let mut end = if let Some(last) = body.last() {
+            last.span
+        } else {
+            start
+        };
+
+        let mut handlers = Vec::new();
+        self.skip_newlines_before(&[TokenKind::Except]);
+        while self.match_token(&[TokenKind::Except]) {
+            let clause_start = self.tokens[self.current - 1].span;
+            let mut exception_type = None;
+            let mut name = None;
+
+            if !self.check(&TokenKind::Colon) && !self.check(&TokenKind::As) {
+                exception_type = Some(self.expression()?);
+            }
+
+            if self.match_token(&[TokenKind::As]) {
+                self.consume(
+                    |t| matches!(t, TokenKind::Identifier(_)),
+                    "Expected identifier after 'as'.",
+                )?;
+                name = match &self.tokens[self.current - 1].kind {
+                    TokenKind::Identifier(s) => Some(s.clone()),
+                    _ => unreachable!(),
+                };
+            }
+
+            self.consume(
+                |t| matches!(t, TokenKind::Colon),
+                "Expected ':' after 'except' clause.",
+            )?;
+            let handler_body = self.parse_block_or_statement()?;
+            let clause_end = if let Some(last) = handler_body.last() {
+                last.span
+            } else {
+                self.tokens[self.current - 1].span
+            };
+            end = clause_end;
+            handlers.push(ExceptClause {
+                exception_type,
+                name,
+                body: handler_body,
+                span: Span::new(clause_start.start, clause_end.end, clause_start.line),
+            });
+            self.skip_newlines_before(&[TokenKind::Except]);
+        }
+
+        let mut else_branch = None;
+        if !handlers.is_empty() {
+            self.skip_newlines_before(&[TokenKind::Else]);
+            if self.match_token(&[TokenKind::Else]) {
+                self.consume(
+                    |t| matches!(t, TokenKind::Colon),
+                    "Expected ':' after 'else'.",
+                )?;
+                let else_stmts = self.parse_block_or_statement()?;
+                if let Some(last) = else_stmts.last() {
+                    end = last.span;
+                }
+                else_branch = Some(else_stmts);
+            }
+        }
+
+        let mut finally_branch = None;
+        self.skip_newlines_before(&[TokenKind::Finally]);
+        if self.match_token(&[TokenKind::Finally]) {
+            self.consume(
+                |t| matches!(t, TokenKind::Colon),
+                "Expected ':' after 'finally'.",
+            )?;
+            let finally_stmts = self.parse_block_or_statement()?;
+            if let Some(last) = finally_stmts.last() {
+                end = last.span;
+            }
+            finally_branch = Some(finally_stmts);
+        }
+
+        if handlers.is_empty() && finally_branch.is_none() {
+            return self.error("Expected 'except' or 'finally' after 'try' block.");
+        }
+
+        Ok(self.make_stmt(
+            StmtKind::Try {
+                body,
+                handlers,
+                else_branch,
+                finally_branch,
+            },
+            start,
+            end,
+        ))
     }
 
     fn assignment_or_expression_statement(&mut self) -> Result<Stmt, EldritchError> {

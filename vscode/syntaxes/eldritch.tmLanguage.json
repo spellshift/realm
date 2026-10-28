@@ -165,11 +165,11 @@
                 },
                 {
                     "name": "keyword.control.flow.eldritch",
-                    "match": "\\b(?<!\\.)(break|continue|elif|else|for|if|pass|return|lambda)\\b"
+                    "match": "\\b(?<!\\.)(as|break|continue|elif|else|except|finally|for|if|pass|raise|return|try|lambda)\\b"
                 },
                 {
                     "name": "invalid.illegal.keyword.eldritch",
-                    "match": "\\b(?<!\\.)(as|class|del|except|finally|from|global|import|is|nonlocal|raise|try|while|with|yield)\\b"
+                    "match": "\\b(?<!\\.)(class|del|from|global|import|is|nonlocal|while|with|yield)\\b"
                 }
             ]
         },

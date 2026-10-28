@@ -58,6 +58,7 @@ pub(crate) fn builtin_eval_func(
         call_stack: interp.call_stack.clone(),
         current_func_name: "<eval>".to_string(),
         is_scope_owner: false,
+        active_exception: interp.active_exception.clone(),
     };
 
     match temp_interp.interpret(&code) {
