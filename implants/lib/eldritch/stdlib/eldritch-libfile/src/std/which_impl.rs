@@ -6,7 +6,7 @@ pub fn which(bin: String) -> Result<String, String> {
         return Ok(res.into_os_string().into_string().expect("Located path is not a valid string"));
     }
 
-    Ok("")
+    Ok("".to_string())
 }
 
 #[cfg(test)]
