@@ -1,4 +1,5 @@
-#![no_std]
+#![allow(clippy::mutable_key_type)]
+#![allow(unexpected_cfgs)]
 extern crate alloc;
 
 #[cfg(feature = "fake_bindings")]

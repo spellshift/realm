@@ -47,7 +47,7 @@ pub fn write_reg(path: String, regname: String, regtype: String, regvalue: Value
                     })?,
                     _ => regvalue.to_string(),
                 };
-                let mut bytes: Vec<u8> = s
+                let bytes: Vec<u8> = s
                     .encode_utf16()
                     .chain(core::iter::once(0))
                     .flat_map(|v| v.to_le_bytes())
