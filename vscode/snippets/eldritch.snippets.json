@@ -1,0 +1,92 @@
+{
+    "Function Definition": {
+        "prefix": "def",
+        "body": [
+            "def ${1:function_name}(${2:param}: ${3:str}) -> ${4:None}:",
+            "    ${0:pass}"
+        ],
+        "description": "Define an Eldritch function with type annotations"
+    },
+    "For Loop": {
+        "prefix": "for",
+        "body": [
+            "for ${1:item} in ${2:iterable}:",
+            "    ${0:pass}"
+        ],
+        "description": "Iterate over a sequence or dictionary"
+    },
+    "If Statement": {
+        "prefix": "if",
+        "body": [
+            "if ${1:condition}:",
+            "    ${0:pass}"
+        ],
+        "description": "Conditional if block"
+    },
+    "If / Else Statement": {
+        "prefix": "ifelse",
+        "body": [
+            "if ${1:condition}:",
+            "    ${2:pass}",
+            "else:",
+            "    ${0:pass}"
+        ],
+        "description": "Conditional if/else block"
+    },
+    "OS Platform Check": {
+        "prefix": "ifos",
+        "body": [
+            "os_platform = sys.info().get(\"platform\", \"\")",
+            "if os_platform == \"PLATFORM_LINUX\":",
+            "    ${1:pass}",
+            "elif os_platform == \"PLATFORM_WINDOWS\":",
+            "    ${2:pass}",
+            "elif os_platform == \"PLATFORM_MACOS\":",
+            "    ${0:pass}"
+        ],
+        "description": "Branch on target platform via sys.info()"
+    },
+    "Input Parameter Access": {
+        "prefix": "param",
+        "body": [
+            "${1:value} = input_params[\"${2:param_name}\"]"
+        ],
+        "description": "Read a tome parameter from input_params"
+    },
+    "Execute Shell Command": {
+        "prefix": "shell",
+        "body": [
+            "res = sys.shell(${1:\"whoami\"})",
+            "if res[\"status\"] == 0:",
+            "    print(res[\"stdout\"])",
+            "else:",
+            "    eprint(res[\"stderr\"])"
+        ],
+        "description": "Run a shell command with sys.shell() and handle output"
+    },
+    "Execute Binary": {
+        "prefix": "exec",
+        "body": [
+            "res = sys.exec(${1:\"/bin/sh\"}, [${2:\"-c\", \"id\"}])",
+            "print(res[\"stdout\"])"
+        ],
+        "description": "Execute a binary directly with sys.exec()"
+    },
+    "Deploy Embedded Asset": {
+        "prefix": "deploy_asset",
+        "body": [
+            "tmp_dest = file.tmp()",
+            "assets.copy(${1:\"embedded_file\"}, tmp_dest)",
+            "${0}"
+        ],
+        "description": "Copy an embedded tome asset to a temporary file"
+    },
+    "Report File to Tavern": {
+        "prefix": "report_file",
+        "body": [
+            "if file.is_file(${1:path}):",
+            "    report.file(${1:path})"
+        ],
+        "description": "Exfiltrate and report a file to Tavern"
+    }
+}

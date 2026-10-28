@@ -97,7 +97,8 @@ impl LintRule for NoForbiddenRunes {
                         self.name().to_string(),
                     )),
                     source: Some("eldritch-lint".to_string()),
-                    message: "The use of 'vecna' is forbidden. It summons unwanted attention.".to_string(),
+                    message: "The use of 'vecna' is forbidden. It summons unwanted attention."
+                        .to_string(),
                     ..Default::default()
                 });
             }

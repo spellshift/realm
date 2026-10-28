@@ -1,47 +1,59 @@
 {
-    "name": "eldritch",
-    "description": "An Eldritch language server",
-    "author": "realm",
-    "license": "GNU GPL v3.0",
-    "version": "0.0.3",
+    "name": "realm-eldritch",
+    "displayName": "Eldritch Language Support",
+    "description": "Syntax highlighting, linting, autocompletion, hover documentation, signature help, and navigation for the Realm Eldritch red team DSL.",
+    "author": "spellshift",
+    "license": "GPL-3.0-only",
+    "version": "0.4.1",
     "icon": "images/eldritch.png",
     "repository": {
         "type": "git",
-        "url": "https://realm.pub"
+        "url": "https://github.com/spellshift/realm.git"
     },
-    "publisher": "realm",
-    "categories": [],
+    "publisher": "spellshift",
+    "categories": [
+        "Programming Languages",
+        "Linters",
+        "Snippets"
+    ],
     "keywords": [
         "Eldritch",
         "eldritch",
+        "realm",
+        "tome",
+        "imix",
         "implant",
-        "red team"
+        "red team",
+        "starlark"
     ],
     "engines": {
-        "vscode": "^1.43.0"
+        "vscode": "^1.60.0"
     },
     "activationEvents": [
-        "workspaceContains:*.tome",
-        "workspaceContains:*/*.tome",
-        "workspaceContains:*/*/*.tome"
+        "onLanguage:eldritch",
+        "workspaceContains:**/*.eldritch",
+        "workspaceContains:**/*.tome"
     ],
-    "main": "./client/out/extension",
+    "main": "./client/out/extension.js",
     "contributes": {
         "languages": [
             {
                 "id": "eldritch",
                 "icon": {
-                    "light": "client/src/images/eldritch.png",
-                    "dark": "client/src/images/eldritch.png"
+                    "light": "./images/eldritch.png",
+                    "dark": "./images/eldritch.png"
                 },
                 "aliases": [
                     "Eldritch",
                     "eldritch"
                 ],
                 "extensions": [
+                    ".eldritch",
                     ".tome"
                 ],
-                "filenames": [],
+                "filenames": [
+                    "main.eldritch"
+                ],
                 "configuration": "./syntaxes/eldritch.configuration.json"
             }
         ],
@@ -52,6 +64,51 @@
                 "path": "./syntaxes/eldritch.tmLanguage.json"
             }
         ],
+        "snippets": [
+            {
+                "language": "eldritch",
+                "path": "./snippets/eldritch.snippets.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "eldritch.restartServer",
+                "title": "Eldritch: Restart Language Server"
+            },
+            {
+                "command": "eldritch.checkFile",
+                "title": "Eldritch: Lint Current File"
+            },
+            {
+                "command": "eldritch.showOutputChannel",
+                "title": "Eldritch: Show Language Server Output"
+            }
+        ],
+        "configuration": {
+            "title": "Eldritch",
+            "properties": {
+                "eldritch.server.path": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Optional custom path to the eldritch-lsp binary. When empty, the extension uses the bundled eldritch-lsp binary, workspace build, PATH, or built-in Node fallback server."
+                },
+                "eldritch.linting.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable real-time syntax and semantic linting for Eldritch files."
+                },
+                "eldritch.trace.server": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between VS Code and the Eldritch language server."
+                }
+            }
+        },
         "breakpoints": [
             {
                 "language": "eldritch"
@@ -62,17 +119,17 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
+        "test": "node ./client/out/test/verify.js",
+        "package": "npx --yes @vscode/vsce package --no-yarn -o eldritch-0.4.1.vsix",
         "postinstall": "cd client && npm install && cd .."
     },
     "devDependencies": {
         "@types/mocha": "^9.0.0",
-        "@types/node": "^16.10.2",
+        "@types/node": "^18.19.0",
         "@typescript-eslint/parser": "^4.32.0",
+        "@vscode/vsce": "^2.15.0",
         "eslint": "^7.32.0",
         "mocha": "^9.0.0",
-        "typescript": "^4.4.3"
-    },
-    "dependencies": {
-        "vsce": "^2.6.7"
+        "typescript": "^5.3.3"
     }
 }
