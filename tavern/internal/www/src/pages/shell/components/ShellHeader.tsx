@@ -1,8 +1,18 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Bug, Code2, Database, Globe, History, SquareTerminal, Terminal } from "lucide-react";
-import Badge from "../../../components/tavern-base-ui/badge/Badge";
-import Breadcrumbs from "../../../components/Breadcrumbs";
+import {
+  BookOpen,
+  Bug,
+  ChevronRight,
+  Code2,
+  Database,
+  Globe,
+  History,
+  Home,
+  Server,
+  SquareTerminal,
+  Terminal,
+} from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import { getEnumKey } from "../../../utils/utils";
@@ -88,59 +98,88 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   const tags = shellData?.node?.beacon?.host?.tags?.edges?.map((edge: any) => edge.node) || [];
 
   return (
-    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 pb-2.5 border-b border-[#2b303c]">
-      <Breadcrumbs pages={[{ label: "Shell", link: window.location.pathname }]} />
-      <h1 className="text-lg md:text-xl font-bold flex items-center gap-2 min-w-0">
-        <span className="truncate max-w-[200px] md:max-w-none">
-          <Tooltip
-            label={
-              <div className="flex flex-col">
-                <span>Principal: {principal}</span>
-                <span>Agent Identifier: {agentIdentifier}</span>
-                <span>Interval: {interval}</span>
-                <span>Transport: {getEnumKey(SupportedTransports, transport)}</span>
-              </div>
-            }
+    <div className="flex flex-wrap items-center gap-2 md:gap-2.5 mb-2.5 pb-2 border-b border-[#252a36]">
+      {/* Integrated Dark-Mode Breadcrumb & Target Identity */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 min-w-0">
+        <Link
+          to="/"
+          aria-label="Home"
+          className="p-1.5 rounded-md text-gray-400 hover:text-gray-100 hover:bg-[#1e2330] transition-colors flex-shrink-0"
+        >
+          <Home size={15} />
+        </Link>
+
+        <ChevronRight size={14} className="text-gray-600 flex-shrink-0" />
+
+        <Tooltip
+          hasArrow
+          label={
+            <div className="flex flex-col text-xs">
+              <span>Host: {hostName}</span>
+              <span>Primary IP: {primaryIP || "N/A"}</span>
+              {externalIP && <span>External IP: {externalIP}</span>}
+              <span>Platform: {getEnumKey(SupportedPlatforms, platform)}</span>
+              {tags.length > 0 && <span>Tags: {tags.map((t: any) => t.name).join(", ")}</span>}
+            </div>
+          }
+        >
+          <Link
+            to={`/hosts/${hostId}`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#181c27] hover:bg-[#212737] border border-[#293042] text-xs font-medium text-gray-100 hover:text-white transition-colors truncate max-w-[180px] sm:max-w-[240px]"
           >
-            <span className="cursor-help border-b border-dashed border-gray-500 hidden md:inline">
+            <Server size={13} className="text-blue-400 flex-shrink-0" />
+            <span className="truncate">{hostName}</span>
+            {primaryIP && (
+              <span className="hidden xl:inline text-[11px] font-mono text-gray-400">
+                ({primaryIP})
+              </span>
+            )}
+          </Link>
+        </Tooltip>
+
+        <ChevronRight size={14} className="text-gray-600 flex-shrink-0 hidden sm:inline" />
+
+        <Tooltip
+          hasArrow
+          label={
+            <div className="flex flex-col text-xs">
+              <span>Beacon: {beaconName}</span>
+              <span>Principal: {principal}</span>
+              <span>Agent Identifier: {agentIdentifier}</span>
+              <span>Interval: {interval}s</span>
+              <span>Transport: {getEnumKey(SupportedTransports, transport)}</span>
+            </div>
+          }
+        >
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#151822] border border-[#252b3b] text-xs text-gray-200 cursor-default">
+            <Terminal size={13} className="text-purple-400 flex-shrink-0" />
+            <span className="font-mono text-gray-200 truncate max-w-[160px] md:max-w-[220px]">
               {beaconName}
             </span>
-          </Tooltip>
-          <span className="hidden md:inline">{" @ "}</span>
-          <Tooltip
-            label={
-              <div className="flex flex-col">
-                <span>Primary IP: {primaryIP}</span>
-                <span>External IP: {externalIP}</span>
-                <span>Platform: {getEnumKey(SupportedPlatforms, platform)}</span>
-                {tags.length > 0 && <span>Tags: {tags.map((t: any) => t.name).join(", ")}</span>}
-              </div>
-            }
-          >
-            <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">
-              {hostName}
-            </Link>
-          </Tooltip>
-        </span>
-        {principal && (
-          <span className="hidden md:inline">
-            <Badge>{principal}</Badge>
-          </span>
-        )}
-      </h1>
+            {principal && (
+              <span className="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[11px] font-medium">
+                {principal}
+              </span>
+            )}
+          </div>
+        </Tooltip>
+      </nav>
 
       {/* Mode & Pivot Quick Toolbar */}
-      <div className="hidden lg:flex items-center gap-1.5 ml-2 pl-3 border-l border-[#2e3442]">
+      <div
+        data-tour="shell-portal"
+        className="hidden lg:flex items-center gap-1.5 ml-1 pl-2.5 border-l border-[#262b38]"
+      >
         {portalId ? (
           <>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Interactive Portal #{portalId}
+              Portal #{portalId}
             </span>
             <button
               type="button"
               onClick={onPtyOpen}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-[#222734] hover:bg-[#2c3344] text-gray-200 border border-[#343c4f] transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-[#1d222f] hover:bg-[#272e3f] text-gray-200 border border-[#2f364a] transition-colors"
               title="Open interactive OS PTY tab over this portal"
             >
               <SquareTerminal size={13} className="text-emerald-400" />
@@ -149,7 +188,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             <button
               type="button"
               onClick={() => setSshModalOpen(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-[#222734] hover:bg-[#2c3344] text-gray-200 border border-[#343c4f] transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-[#1d222f] hover:bg-[#272e3f] text-gray-200 border border-[#2f364a] transition-colors"
               title="Open SSH pivot session through this portal"
             >
               <Terminal size={13} className="text-purple-400" />
@@ -160,7 +199,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           <button
             type="button"
             onClick={onNewPortal}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors"
             title="Upgrade from Queued Mode to an interactive low-latency Portal"
           >
             <Globe size={13} />
@@ -169,8 +208,8 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
         )}
       </div>
 
-      {/* Active Users Display */}
-      <div className="ml-auto flex items-center gap-2 min-w-0">
+      {/* Active Users & Icon-Only Workspace Toolbar */}
+      <div className="ml-auto flex items-center gap-1.5 min-w-0">
         {activeUsers.length > 0 && (
           <div className="flex -space-x-2 mr-1">
             {activeUsers.map((user) => {
@@ -190,97 +229,105 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           </div>
         )}
 
-        {/* Workspace Tool Buttons: Composer, Intel, History, Guide */}
+        {/* Icon-Only Workspace Tool Buttons: Composer, Knowledge Graph, History, Guide */}
         {onToggleComposer && (
-          <button
-            type="button"
-            onClick={onToggleComposer}
-            aria-label="Toggle multi-line composer"
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
-              composerOpen
-                ? "bg-purple-600 text-white border-purple-500"
-                : "bg-[#222734] hover:bg-[#2c3344] text-gray-200 border-[#343c4f]"
-            }`}
-            title="Multi-Line Eldritch Composer"
-          >
-            <Code2 size={14} />
-            <span className="hidden sm:inline">Composer</span>
-          </button>
+          <Tooltip label="Composer (Multi-Line Script Editor & Snippets)" hasArrow>
+            <button
+              type="button"
+              data-tour="shell-composer"
+              onClick={onToggleComposer}
+              aria-label="Toggle multi-line composer"
+              className={`inline-flex items-center justify-center p-1.5 rounded-md text-xs font-medium border transition-colors ${
+                composerOpen
+                  ? "bg-purple-600 text-white border-purple-500"
+                  : "bg-[#1d222f] hover:bg-[#272e3f] text-gray-200 border-[#2f364a]"
+              }`}
+              title="Composer"
+            >
+              <Code2 size={15} />
+            </button>
+          </Tooltip>
         )}
 
         {onToggleKnowledge && (
-          <button
-            type="button"
-            onClick={onToggleKnowledge}
-            aria-label="Toggle knowledge graph"
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
-              knowledgeOpen
-                ? "bg-purple-600 text-white border-purple-500"
-                : "bg-[#222734] hover:bg-[#2c3344] text-gray-200 border-[#343c4f]"
-            }`}
-            title="Knowledge Graph Intel (Credentials, Hosts, Context)"
-          >
-            <Database size={14} className={knowledgeOpen ? "text-white" : "text-emerald-400"} />
-            <span className="hidden sm:inline">Intel</span>
-            {credentialCount > 0 && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                  knowledgeOpen
-                    ? "bg-purple-800 text-purple-100"
-                    : "bg-emerald-500/20 text-emerald-300"
-                }`}
-              >
-                {credentialCount}
-              </span>
-            )}
-          </button>
+          <Tooltip label="Knowledge Graph (Host & Network Credentials, Hosts, Reported Files)" hasArrow>
+            <button
+              type="button"
+              data-tour="shell-knowledge"
+              onClick={onToggleKnowledge}
+              aria-label="Toggle knowledge graph"
+              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                knowledgeOpen
+                  ? "bg-purple-600 text-white border-purple-500"
+                  : "bg-[#1d222f] hover:bg-[#272e3f] text-gray-200 border-[#2f364a]"
+              }`}
+              title="Knowledge Graph"
+            >
+              <Database size={15} className={knowledgeOpen ? "text-white" : "text-emerald-400"} />
+              {credentialCount > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    knowledgeOpen
+                      ? "bg-purple-800 text-purple-100"
+                      : "bg-emerald-500/20 text-emerald-300"
+                  }`}
+                >
+                  {credentialCount}
+                </span>
+              )}
+            </button>
+          </Tooltip>
         )}
 
         {onToggleHistory && (
-          <button
-            type="button"
-            onClick={onToggleHistory}
-            aria-label="Toggle command history"
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
-              historyOpen
-                ? "bg-purple-600 text-white border-purple-500"
-                : "bg-[#222734] hover:bg-[#2c3344] text-gray-200 border-[#343c4f]"
-            }`}
-            title="Command History & Task Queue"
-          >
-            <History size={14} />
-            <span className="hidden sm:inline">History</span>
-            {(historyCount > 0 || activeQueueCount > 0) && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                  activeQueueCount > 0
-                    ? "bg-amber-400 text-black font-bold"
-                    : historyOpen
-                    ? "bg-purple-800 text-purple-100"
-                    : "bg-[#31384a] text-gray-300"
-                }`}
-              >
-                {activeQueueCount > 0 ? `${activeQueueCount} queued` : historyCount}
-              </span>
-            )}
-          </button>
+          <Tooltip label="Command History & Task Queue" hasArrow>
+            <button
+              type="button"
+              data-tour="shell-history"
+              onClick={onToggleHistory}
+              aria-label="Toggle command history"
+              className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                historyOpen
+                  ? "bg-purple-600 text-white border-purple-500"
+                  : "bg-[#1d222f] hover:bg-[#272e3f] text-gray-200 border-[#2f364a]"
+              }`}
+              title="Command History & Task Queue"
+            >
+              <History size={15} />
+              {(historyCount > 0 || activeQueueCount > 0) && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    activeQueueCount > 0
+                      ? "bg-amber-400 text-black font-bold"
+                      : historyOpen
+                      ? "bg-purple-800 text-purple-100"
+                      : "bg-[#2c3345] text-gray-300"
+                  }`}
+                >
+                  {activeQueueCount > 0 ? activeQueueCount : historyCount}
+                </span>
+              )}
+            </button>
+          </Tooltip>
         )}
 
         {onToggleNux && (
-          <button
-            type="button"
-            onClick={onToggleNux}
-            aria-label="Toggle operator guide"
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
-              nuxOpen
-                ? "bg-purple-600 text-white border-purple-500"
-                : "bg-[#222734] hover:bg-[#2c3344] text-gray-200 border-[#343c4f]"
-            }`}
-            title="Operator Guide & Eldritch Reference"
-          >
-            <BookOpen size={14} />
-            <span className="hidden md:inline">Guide</span>
-          </button>
+          <Tooltip label="Operator Guide & Eldritch Stdlib Reference" hasArrow>
+            <button
+              type="button"
+              data-tour="shell-guide"
+              onClick={onToggleNux}
+              aria-label="Toggle operator guide"
+              className={`inline-flex items-center justify-center p-1.5 rounded-md text-xs font-medium border transition-colors ${
+                nuxOpen
+                  ? "bg-purple-600 text-white border-purple-500"
+                  : "bg-[#1d222f] hover:bg-[#272e3f] text-gray-200 border-[#2f364a]"
+              }`}
+              title="Operator Guide & Eldritch Reference"
+            >
+              <BookOpen size={15} />
+            </button>
+          </Tooltip>
         )}
 
         <a

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -29,11 +30,16 @@ type PivotSession struct {
 	PivotID       int
 	StreamID      string
 	CancelContext context.CancelFunc
+	seqID         uint64
 
 	mu            sync.Mutex
 	history       []byte
 	dirty         bool
 	activeSockets map[*websocket.Conn]chan interface{}
+}
+
+func (ps *PivotSession) nextSeqID() uint64 {
+	return atomic.AddUint64(&ps.seqID, 1)
 }
 
 // sessionCache maintains a map of active PivotSessions.
@@ -69,6 +75,16 @@ func (ps *PivotSession) AddSocket(wsConn *websocket.Conn, outCh chan interface{}
 	defer ps.mu.Unlock()
 
 	ps.activeSockets[wsConn] = outCh
+
+	// Notify socket of pivot ID and connected status
+	select {
+	case outCh <- shell.WebsocketStatusMessage{
+		Kind:    shell.WebsocketMessageKindStatus,
+		Status:  "connected",
+		PivotID: ps.PivotID,
+	}:
+	default:
+	}
 
 	// Send history to catch up
 	if len(ps.history) > 0 {
@@ -371,7 +387,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// needs access to topicIn and sessionCtx, so we wrap them in a closure
 		startInputForwarder := func(wsConn *websocket.Conn, errCh chan error) {
 			go func() {
-				var seqID uint64
 				for {
 					_, msg, err := wsConn.ReadMessage()
 					if err != nil {
@@ -383,10 +398,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						continue
 					}
 					if inputMsg.Kind == "close" {
-						seqID++
 						closeMote := &portalpb.Mote{
 							StreamId: streamID,
-							SeqId:    seqID,
+							SeqId:    pivotSession.nextSeqID(),
 							Payload: &portalpb.Mote_Bytes{
 								Bytes: &portalpb.BytesPayload{
 									Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
@@ -401,10 +415,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if inputMsg.Kind != shell.WebsocketMessageKindInput {
 						continue
 					}
-					seqID++
 					mote := &portalpb.Mote{
 						StreamId: streamID,
-						SeqId:    seqID,
+						SeqId:    pivotSession.nextSeqID(),
 						Payload: &portalpb.Mote_Bytes{
 							Bytes: &portalpb.BytesPayload{
 								Data: []byte(inputMsg.Input),
@@ -481,7 +494,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		topicIn := h.mux.TopicIn(portalEnt.ID)
 
-		var seqID uint64
 		for {
 			_, msg, err := wsConn.ReadMessage()
 			if err != nil {
@@ -493,10 +505,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			if inputMsg.Kind == "close" {
-				seqID++
 				closeMote := &portalpb.Mote{
 					StreamId: pivotSession.StreamID,
-					SeqId:    seqID,
+					SeqId:    pivotSession.nextSeqID(),
 					Payload: &portalpb.Mote_Bytes{
 						Bytes: &portalpb.BytesPayload{
 							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
@@ -512,10 +523,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			seqID++
 			mote := &portalpb.Mote{
 				StreamId: pivotSession.StreamID,
-				SeqId:    seqID,
+				SeqId:    pivotSession.nextSeqID(),
 				Payload: &portalpb.Mote_Bytes{
 					Bytes: &portalpb.BytesPayload{
 						Data: []byte(inputMsg.Input),

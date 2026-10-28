@@ -62,6 +62,7 @@ export interface WebsocketTaskOutputFromOtherStreamMessage {
 export interface WebsocketStatusMessage {
     kind: typeof WebsocketMessageKind.Status;
     status: string;
+    pivot_id?: number;
 }
 
 export type WebsocketMessage =

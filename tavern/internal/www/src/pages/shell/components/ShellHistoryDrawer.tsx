@@ -75,13 +75,40 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
     setTimeout(() => setCopiedId((curr) => (curr === id ? null : curr)), 1500);
   };
 
+  const isTaskFinished = (t: ShellTaskItem) =>
+    Boolean(t.execFinishedAt || t.output || t.error);
+
+  const filterCounts = useMemo(() => {
+    let active = 0;
+    let completed = 0;
+    let error = 0;
+    for (const t of shellTasks) {
+      const finished = isTaskFinished(t);
+      const hasErr = Boolean(t.error);
+      if (!finished) {
+        active++;
+      } else if (hasErr) {
+        error++;
+      } else {
+        completed++;
+      }
+    }
+    return {
+      all: shellTasks.length,
+      active,
+      completed,
+      error,
+    };
+  }, [shellTasks]);
+
   const filteredTasks = useMemo(() => {
     const reversed = [...shellTasks].reverse();
     return reversed.filter((t) => {
-      const isQueued = !t.claimedAt && !t.execFinishedAt;
-      const isRunning = !!t.claimedAt && !t.execFinishedAt;
+      const finished = isTaskFinished(t);
+      const isQueued = !t.claimedAt && !finished;
+      const isRunning = !!t.claimedAt && !finished;
       const hasError = !!t.error;
-      const isCompleted = !!t.execFinishedAt && !hasError;
+      const isCompleted = finished && !hasError;
 
       if (statusFilter === "active" && !isQueued && !isRunning) return false;
       if (statusFilter === "completed" && !isCompleted) return false;
@@ -100,11 +127,12 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
   }, [shellTasks, statusFilter, searchQuery]);
 
   const filteredLocalHistory = useMemo(() => {
+    if (statusFilter !== "all" || shellTasks.length > 0) return [];
     const unique = Array.from(new Set([...localHistory].reverse()));
     if (!searchQuery.trim()) return unique;
     const q = searchQuery.toLowerCase();
     return unique.filter((cmd) => cmd.toLowerCase().includes(q));
-  }, [localHistory, searchQuery]);
+  }, [localHistory, searchQuery, statusFilter, shellTasks.length]);
 
   if (!isOpen) return null;
 
@@ -174,37 +202,39 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
               />
             </div>
 
-            <div className="flex items-center gap-1 text-[11px]">
+            <div className="flex flex-wrap items-center gap-1 text-[11px]">
               {(
                 [
-                  { id: "all", label: "All" },
-                  { id: "active", label: "Queued / Running" },
-                  { id: "completed", label: "Completed" },
-                  { id: "error", label: "Errors" },
-                ] as { id: FilterStatus; label: string }[]
+                  { id: "all", label: "All", count: filterCounts.all },
+                  { id: "active", label: "Queued / Running", count: filterCounts.active },
+                  { id: "completed", label: "Completed", count: filterCounts.completed },
+                  { id: "error", label: "Errors", count: filterCounts.error },
+                ] as { id: FilterStatus; label: string; count: number }[]
               ).map((f) => (
                 <button
                   key={f.id}
                   type="button"
                   onClick={() => setStatusFilter(f.id)}
-                  className={`px-2 py-1 rounded font-medium transition-colors ${
+                  className={`px-2 py-1 rounded font-medium transition-colors inline-flex items-center gap-1 ${
                     statusFilter === f.id
                       ? "bg-purple-600 text-white"
                       : "bg-[#1e222d] text-gray-400 hover:text-gray-200"
                   }`}
                 >
-                  {f.label}
+                  <span>{f.label}</span>
+                  <span className="opacity-75 font-mono text-[10px]">({f.count})</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Task List */}
-          <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+          <div className="flex-1 overflow-y-auto shell-scrollbar p-2.5 space-y-2">
             {filteredTasks.length > 0 ? (
               filteredTasks.map((task) => {
-                const isQueued = !task.claimedAt && !task.execFinishedAt;
-                const isRunning = !!task.claimedAt && !task.execFinishedAt;
+                const finished = isTaskFinished(task);
+                const isQueued = !task.claimedAt && !finished;
+                const isRunning = !!task.claimedAt && !finished;
                 const hasError = !!task.error;
                 const hasOutput = !!(task.output || task.error);
                 const isExpanded = expandedTaskIds.has(task.id);
@@ -411,7 +441,13 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
               </div>
             ) : (
               <div className="text-center py-8 text-xs text-gray-500">
-                No matching commands in history yet.
+                {statusFilter === "active"
+                  ? "No queued or running commands right now."
+                  : statusFilter === "error"
+                  ? "No commands with errors."
+                  : statusFilter === "completed"
+                  ? "No completed commands matching filter."
+                  : "No matching commands in history yet."}
               </div>
             )}
           </div>

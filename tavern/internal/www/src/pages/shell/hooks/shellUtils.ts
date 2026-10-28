@@ -66,6 +66,10 @@ export const isInsideString = (buffer: string, cursor: number): boolean => {
             escape = false;
         } else if (char === '\\') {
             escape = true;
+        } else if (char === '\n') {
+            escape = false;
+            insideSingle = false;
+            insideDouble = false;
         } else if (char === "'") {
             if (!insideDouble) {
                 insideSingle = !insideSingle;
@@ -78,6 +82,300 @@ export const isInsideString = (buffer: string, cursor: number): boolean => {
     }
 
     return insideSingle || insideDouble;
+};
+
+export interface CursorLineInfo {
+    lines: string[];
+    lineIndex: number;
+    col: number;
+    lineStartOffset: number;
+    lineEndOffset: number;
+}
+
+export const getCursorLineInfo = (buffer: string, cursorPos: number): CursorLineInfo => {
+    const clampedCursor = Math.max(0, Math.min(cursorPos, buffer.length));
+    const lines = buffer.split("\n");
+    let offset = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+        const lineLen = lines[i].length;
+        const lineStart = offset;
+        const lineEnd = offset + lineLen;
+        if (clampedCursor <= lineEnd || i === lines.length - 1) {
+            return {
+                lines,
+                lineIndex: i,
+                col: clampedCursor - lineStart,
+                lineStartOffset: lineStart,
+                lineEndOffset: lineEnd,
+            };
+        }
+        offset = lineEnd + 1; // +1 for '\n'
+    }
+
+    return {
+        lines,
+        lineIndex: 0,
+        col: 0,
+        lineStartOffset: 0,
+        lineEndOffset: lines[0]?.length ?? 0,
+    };
+};
+
+export const moveCursorUpInBuffer = (buffer: string, cursorPos: number): number | null => {
+    const { lines, lineIndex, col } = getCursorLineInfo(buffer, cursorPos);
+    if (lineIndex <= 0) {
+        return null;
+    }
+    let targetLineStart = 0;
+    for (let i = 0; i < lineIndex - 1; i++) {
+        targetLineStart += lines[i].length + 1;
+    }
+    const targetCol = Math.min(col, lines[lineIndex - 1].length);
+    return targetLineStart + targetCol;
+};
+
+export const moveCursorDownInBuffer = (buffer: string, cursorPos: number): number | null => {
+    const { lines, lineIndex, col } = getCursorLineInfo(buffer, cursorPos);
+    if (lineIndex >= lines.length - 1) {
+        return null;
+    }
+    let targetLineStart = 0;
+    for (let i = 0; i <= lineIndex; i++) {
+        targetLineStart += lines[i].length + 1;
+    }
+    const targetCol = Math.min(col, lines[lineIndex + 1].length);
+    return targetLineStart + targetCol;
+};
+
+export const moveCursorToLineStart = (buffer: string, cursorPos: number): number => {
+    return getCursorLineInfo(buffer, cursorPos).lineStartOffset;
+};
+
+export const moveCursorToLineEnd = (buffer: string, cursorPos: number): number => {
+    return getCursorLineInfo(buffer, cursorPos).lineEndOffset;
+};
+
+export const stripTrailingCommentOutsideStrings = (line: string): string => {
+    let inSingle = false;
+    let inDouble = false;
+    let escape = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (escape) {
+            escape = false;
+            continue;
+        }
+        if (ch === "\\") {
+            escape = true;
+            continue;
+        }
+        if (ch === "'" && !inDouble) {
+            inSingle = !inSingle;
+        } else if (ch === '"' && !inSingle) {
+            inDouble = !inDouble;
+        } else if (ch === "#" && !inSingle && !inDouble) {
+            return line.slice(0, i);
+        }
+    }
+    return line;
+};
+
+export const hasUnclosedBracketsOrStrings = (buffer: string): boolean => {
+    let balance = 0;
+    let inSingle = false;
+    let inDouble = false;
+    let inTripleSingle = false;
+    let inTripleDouble = false;
+    let inComment = false;
+    let escape = false;
+
+    for (let i = 0; i < buffer.length; i++) {
+        const ch = buffer[i];
+        const nextTwo = buffer.slice(i, i + 3);
+
+        if (inComment) {
+            if (ch === "\n") {
+                inComment = false;
+            }
+            continue;
+        }
+
+        if (escape) {
+            escape = false;
+            continue;
+        }
+
+        if (ch === "\\") {
+            escape = true;
+            continue;
+        }
+
+        if (inTripleSingle) {
+            if (nextTwo === "'''") {
+                inTripleSingle = false;
+                i += 2;
+            }
+            continue;
+        }
+
+        if (inTripleDouble) {
+            if (nextTwo === '"""') {
+                inTripleDouble = false;
+                i += 2;
+            }
+            continue;
+        }
+
+        if (inSingle) {
+            if (ch === "\n") {
+                return true; // Unterminated single-quoted string on a line
+            }
+            if (ch === "'") {
+                inSingle = false;
+            }
+            continue;
+        }
+
+        if (inDouble) {
+            if (ch === "\n") {
+                return true; // Unterminated double-quoted string on a line
+            }
+            if (ch === '"') {
+                inDouble = false;
+            }
+            continue;
+        }
+
+        if (nextTwo === "'''") {
+            inTripleSingle = true;
+            i += 2;
+            continue;
+        }
+
+        if (nextTwo === '"""') {
+            inTripleDouble = true;
+            i += 2;
+            continue;
+        }
+
+        if (ch === "'") {
+            inSingle = true;
+            continue;
+        }
+
+        if (ch === '"') {
+            inDouble = true;
+            continue;
+        }
+
+        if (ch === "#") {
+            inComment = true;
+            continue;
+        }
+
+        if (ch === "(" || ch === "[" || ch === "{") {
+            balance++;
+        } else if (ch === ")" || ch === "]" || ch === "}") {
+            if (balance > 0) {
+                balance--;
+            }
+        }
+    }
+
+    if (escape || inSingle || inDouble || inTripleSingle || inTripleDouble || balance > 0) {
+        return true;
+    }
+
+    return false;
+};
+
+export const shouldContinueMultilineOnEnter = (buffer: string, cursorPos: number): boolean => {
+    const { lines, lineIndex } = getCursorLineInfo(buffer, cursorPos);
+
+    // If the cursor is on an earlier line of a multi-line buffer, Enter splits/adds a line in place
+    if (lineIndex < lines.length - 1) {
+        return true;
+    }
+
+    // If brackets or quotes are unclosed anywhere in the buffer, keep editing in the buffer
+    if (hasUnclosedBracketsOrStrings(buffer)) {
+        return true;
+    }
+
+    if (lines.length === 1) {
+        const stripped = stripTrailingCommentOutsideStrings(lines[0]).trimEnd();
+        return stripped.endsWith(":") || stripped.endsWith("\\");
+    }
+
+    // Multi-line buffer (lines.length > 1) where cursor is on the last line:
+    // Continue adding lines until the user presses Enter on an empty/whitespace-only trailing line.
+    const lastLine = lines[lines.length - 1];
+    if (lastLine.trim() !== "") {
+        return true;
+    }
+
+    // Last line is empty/whitespace-only; verify the previous non-empty line wasn't a bare block header ':'
+    for (let i = lines.length - 2; i >= 0; i--) {
+        if (lines[i].trim() !== "") {
+            const prevStripped = stripTrailingCommentOutsideStrings(lines[i]).trimEnd();
+            if (prevStripped.endsWith(":") || prevStripped.endsWith("\\")) {
+                return true;
+            }
+            break;
+        }
+    }
+
+    return false;
+};
+
+export const insertNewlineWithAutoIndent = (
+    buffer: string,
+    cursorPos: number
+): { buffer: string; cursorPos: number } => {
+    const { lines, lineIndex, col } = getCursorLineInfo(buffer, cursorPos);
+    const currentLine = lines[lineIndex] ?? "";
+    const beforeCursorOnLine = currentLine.slice(0, col);
+    const indentMatch = currentLine.match(/^(\s*)/);
+    let indent = indentMatch ? indentMatch[1] : "";
+
+    const strippedBefore = stripTrailingCommentOutsideStrings(beforeCursorOnLine).trimEnd();
+    if (strippedBefore.endsWith(":")) {
+        indent += "    ";
+    } else if (/^\s*(?:return|break|continue|pass|raise)\b/.test(beforeCursorOnLine)) {
+        indent = indent.length >= 4 ? indent.slice(0, indent.length - 4) : "";
+    }
+
+    const insertion = "\n" + indent;
+    const nextBuffer = buffer.slice(0, cursorPos) + insertion + buffer.slice(cursorPos);
+    return {
+        buffer: nextBuffer,
+        cursorPos: cursorPos + insertion.length,
+    };
+};
+
+export const formatMultilineTerminalBuffer = (
+    buffer: string,
+    cursorPos: number,
+    basePrompt = ">>> ",
+    contPrompt = "... "
+): { contentToWrite: string; contentToDisplay: string; cursorIndex: number } => {
+    const lines = buffer.split("\n");
+    const plainLines = lines.map((line, idx) => (idx === 0 ? basePrompt : contPrompt) + line);
+    const displayLines = lines.map(
+        (line, idx) =>
+            (idx === 0 ? basePrompt : `\x1b[90m${contPrompt}\x1b[0m`) + highlightPythonSyntax(line)
+    );
+
+    const clampedCursor = Math.max(0, Math.min(cursorPos, buffer.length));
+    const lineIndex = buffer.slice(0, clampedCursor).split("\n").length - 1;
+    const cursorIndex = clampedCursor + basePrompt.length + lineIndex * contPrompt.length;
+
+    return {
+        contentToWrite: plainLines.join("\n"),
+        contentToDisplay: displayLines.join("\n"),
+        cursorIndex,
+    };
 };
 
 const COLOR_STRING = "\x1b[38;2;197;148;124m";

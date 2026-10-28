@@ -36,9 +36,13 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
   onTooltipMouseLeave
 }) => {
   return (
-    <div className="flex-grow rounded overflow-hidden relative border border-[#333]">
+    <div
+      data-tour="shell-terminal"
+      className="flex-grow rounded-md overflow-hidden relative bg-[#11131a] border border-[#262b38] shadow-inner"
+    >
       <div
         ref={termRef}
+        className="p-1.5"
         style={{ height: "100%", width: "100%" }}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}

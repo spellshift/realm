@@ -1,5 +1,20 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, HISTORY_KEY, MAX_HISTORY } from './shellUtils';
+import {
+    moveWordLeft,
+    moveWordRight,
+    getCursorLineInfo,
+    moveCursorUpInBuffer,
+    moveCursorDownInBuffer,
+    moveCursorToLineStart,
+    moveCursorToLineEnd,
+    shouldContinueMultilineOnEnter,
+    insertNewlineWithAutoIndent,
+    highlightPythonSyntax,
+    loadHistory,
+    saveHistory,
+    HISTORY_KEY,
+    MAX_HISTORY,
+} from './shellUtils';
 
 describe('History Persistence', () => {
     beforeEach(() => {
@@ -123,6 +138,83 @@ describe('moveWordRight', () => {
     it('handles end of buffer', () => {
         const buffer = "hello";
         expect(moveWordRight(buffer, 5)).toBe(5);
+    });
+});
+
+describe('Multi-line terminal buffer editing', () => {
+    it('navigates up and down between lines in a multi-line buffer to fix typos', () => {
+        const line0 = 'def my_func():';
+        const line1 = '   print("oops a typo)';
+        const line2 = 'print("now i\'m here, but I need to go up to fix my input")';
+        const buffer = `${line0}\n${line1}\n${line2}`;
+
+        // Start at end of line 2
+        const endCursor = buffer.length;
+        const info2 = getCursorLineInfo(buffer, endCursor);
+        expect(info2.lineIndex).toBe(2);
+        expect(info2.lines.length).toBe(3);
+
+        // Move Up to line 1 (clamped to end of line 1)
+        const upToLine1 = moveCursorUpInBuffer(buffer, endCursor);
+        expect(upToLine1).not.toBeNull();
+        const info1 = getCursorLineInfo(buffer, upToLine1!);
+        expect(info1.lineIndex).toBe(1);
+        expect(info1.col).toBe(line1.length);
+
+        // Move Up to line 0 (clamped to end of line 0)
+        const upToLine0 = moveCursorUpInBuffer(buffer, upToLine1!);
+        expect(upToLine0).not.toBeNull();
+        const info0 = getCursorLineInfo(buffer, upToLine0!);
+        expect(info0.lineIndex).toBe(0);
+        expect(info0.col).toBe(line0.length);
+
+        // At top line (line 0), moveCursorUpInBuffer returns null so command history can take over
+        expect(moveCursorUpInBuffer(buffer, upToLine0!)).toBeNull();
+
+        // Move Down back to line 1 and line 2
+        const downToLine1 = moveCursorDownInBuffer(buffer, upToLine0!);
+        expect(downToLine1).not.toBeNull();
+        expect(getCursorLineInfo(buffer, downToLine1!).lineIndex).toBe(1);
+
+        const downToLine2 = moveCursorDownInBuffer(buffer, downToLine1!);
+        expect(downToLine2).not.toBeNull();
+        expect(getCursorLineInfo(buffer, downToLine2!).lineIndex).toBe(2);
+
+        // At bottom line (line 2), moveCursorDownInBuffer returns null
+        expect(moveCursorDownInBuffer(buffer, downToLine2!)).toBeNull();
+    });
+
+    it('moves cursor to start and end of current line only in a multi-line buffer', () => {
+        const buffer = 'def foo():\n    x = 1\n    return x';
+        // Cursor in middle of line 1 ("    x| = 1")
+        const cursor = 'def foo():\n    x'.length;
+        expect(moveCursorToLineStart(buffer, cursor)).toBe('def foo():\n'.length);
+        expect(moveCursorToLineEnd(buffer, cursor)).toBe('def foo():\n    x = 1'.length);
+    });
+
+    it('continues multi-line editing on Enter when block is open or cursor is on an earlier line, and submits on trailing blank line', () => {
+        // Colon at end of single line -> continue
+        expect(shouldContinueMultilineOnEnter('def my_func():', 14)).toBe(true);
+
+        // Inside multi-line block with non-empty last line -> continue
+        const block = 'def my_func():\n    print("hi")';
+        expect(shouldContinueMultilineOnEnter(block, block.length)).toBe(true);
+
+        // Editing an earlier line (line 0) when last line is blank -> still continue (don't submit mid-edit)
+        const blockWithBlankEnd = 'def my_func():\n    print("hi")\n';
+        expect(shouldContinueMultilineOnEnter(blockWithBlankEnd, 5)).toBe(true);
+
+        // Pressing Enter at the trailing blank line -> submit (returns false)
+        expect(shouldContinueMultilineOnEnter(blockWithBlankEnd, blockWithBlankEnd.length)).toBe(false);
+    });
+
+    it('auto-indents newlines after colons and preserves indentation', () => {
+        const res1 = insertNewlineWithAutoIndent('def my_func():', 14);
+        expect(res1.buffer).toBe('def my_func():\n    ');
+        expect(res1.cursorPos).toBe(res1.buffer.length);
+
+        const res2 = insertNewlineWithAutoIndent(res1.buffer + 'x = 1', res1.buffer.length + 5);
+        expect(res2.buffer).toBe('def my_func():\n    x = 1\n    ');
     });
 });
 

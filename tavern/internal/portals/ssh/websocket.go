@@ -46,6 +46,7 @@ type PivotSession struct {
 	seqID         uint64
 
 	mu            sync.Mutex
+	connected     bool
 	history       []byte
 	dirty         bool
 	activeSockets map[*websocket.Conn]chan interface{}
@@ -61,6 +62,16 @@ func (ps *PivotSession) nextSeqID() uint64 {
 	return atomic.AddUint64(&ps.seqID, 1)
 }
 
+func (ps *PivotSession) MarkConnected() bool {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	if ps.connected {
+		return false
+	}
+	ps.connected = true
+	return true
+}
+
 func (ps *PivotSession) Broadcast(msg interface{}) {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
@@ -71,6 +82,9 @@ func (ps *PivotSession) Broadcast(msg interface{}) {
 		ps.dirty = true
 	} else if errMsg, ok := msg.(shell.WebsocketTaskErrorMessage); ok {
 		ps.history = append(ps.history, []byte(errMsg.Error)...)
+		ps.dirty = true
+	} else if wsErr, ok := msg.(shell.WebsocketErrorMessage); ok {
+		ps.history = append(ps.history, []byte(fmt.Sprintf("\r\n\x1b[31m[-] %s\x1b[0m\r\n", wsErr.Error))...)
 		ps.dirty = true
 	}
 
@@ -88,6 +102,19 @@ func (ps *PivotSession) AddSocket(wsConn *websocket.Conn, outCh chan interface{}
 	defer ps.mu.Unlock()
 
 	ps.activeSockets[wsConn] = outCh
+
+	status := "connecting"
+	if ps.connected {
+		status = "connected"
+	}
+	select {
+	case outCh <- shell.WebsocketStatusMessage{
+		Kind:    shell.WebsocketMessageKindStatus,
+		Status:  status,
+		PivotID: ps.PivotID,
+	}:
+	default:
+	}
 
 	// Send history to catch up
 	if len(ps.history) > 0 {
@@ -379,6 +406,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if sshPayload := m.GetSsh(); sshPayload != nil {
 						switch sshPayload.Kind {
 						case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA:
+							if pivotSession.MarkConnected() {
+								pivotSession.Broadcast(shell.WebsocketStatusMessage{
+									Kind:    shell.WebsocketMessageKindStatus,
+									Status:  "connected",
+									PivotID: pivotSession.PivotID,
+								})
+							}
 							if len(sshPayload.Data) > 0 {
 								pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
 									Kind:   shell.WebsocketMessageKindOutput,

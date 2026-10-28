@@ -115,7 +115,7 @@ describe("ShellHeader", () => {
         expect(onExport).toHaveBeenCalled();
     });
 
-    it("renders quick toolbar controls for Composer, Intel, History, and Guide when callbacks provided", () => {
+    it("renders icon-only quick toolbar controls for Composer, Knowledge Graph, History, and Guide", () => {
         const onToggleComposer = vi.fn();
         const onToggleKnowledge = vi.fn();
         const onToggleHistory = vi.fn();

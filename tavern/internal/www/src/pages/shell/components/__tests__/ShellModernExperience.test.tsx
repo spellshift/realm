@@ -10,15 +10,17 @@ import MultiLineComposer from "../MultiLineComposer";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
 import ShellKnowledgeDrawer from "../ShellKnowledgeDrawer";
 import ShellNuxDrawer from "../ShellNuxDrawer";
+import ShellWalkthrough from "../ShellWalkthrough";
 import SshConnectionModal from "../SshConnectionModal";
 import {
     KnowledgeCredentialItem,
+    KnowledgeFileItem,
     KnowledgeHostItem,
     ShellPivotItem,
     ShellTaskItem,
 } from "../../hooks/useShellData";
 
-describe("InterpreterStatusBanner", () => {
+describe("ShellWalkthrough & InterpreterStatusBanner", () => {
     const baseProps = {
         closedAt: null as string | null,
         connectionStatus: "connected" as const,
@@ -30,37 +32,32 @@ describe("InterpreterStatusBanner", () => {
         onSpawnFreshShell: vi.fn(),
         isSpawningShell: false,
         onOpenHistoryDrawer: vi.fn(),
-        onOpenNuxDrawer: vi.fn(),
-        showNuxWelcome: false,
-        onDismissNuxWelcome: vi.fn(),
-        portalId: null as number | null,
-        onOpenPortal: vi.fn(),
     };
 
-    it("renders NUX welcome banner and triggers guide / portal / dismiss actions", () => {
-        const onOpenNuxDrawer = vi.fn();
-        const onOpenPortal = vi.fn();
-        const onDismissNuxWelcome = vi.fn();
+    it("renders 1-time interactive walkthrough popover with component steps and dismisses cleanly", () => {
+        const onDismiss = vi.fn();
+        const onOpenGuideDrawer = vi.fn();
 
         render(
-            <InterpreterStatusBanner
-                {...baseProps}
-                showNuxWelcome={true}
-                onOpenNuxDrawer={onOpenNuxDrawer}
-                onOpenPortal={onOpenPortal}
-                onDismissNuxWelcome={onDismissNuxWelcome}
+            <ShellWalkthrough
+                isOpen={true}
+                onDismiss={onDismiss}
+                onOpenGuideDrawer={onOpenGuideDrawer}
             />
         );
 
         expect(screen.getByTestId("shell-nux-banner")).toBeInTheDocument();
-        fireEvent.click(screen.getByText(/Operator Guide & Docs/i));
-        expect(onOpenNuxDrawer).toHaveBeenCalled();
+        expect(screen.getByText(/Eldritch REPL & Multi-Line Editing/i)).toBeInTheDocument();
 
-        fireEvent.click(screen.getByText(/Open Interactive Portal/i));
-        expect(onOpenPortal).toHaveBeenCalled();
+        // Advance through steps
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText(/Interactive Portals & Pivots/i)).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText(/Composer & Shell Aliases/i)).toBeInTheDocument();
 
         fireEvent.click(screen.getByLabelText("Dismiss welcome guide"));
-        expect(onDismissNuxWelcome).toHaveBeenCalled();
+        expect(onDismiss).toHaveBeenCalled();
     });
 
     it("renders queued task status without stuck warning when waiting on beacon check-in", () => {
@@ -77,7 +74,7 @@ describe("InterpreterStatusBanner", () => {
         expect(screen.queryByTestId("stuck-interpreter-banner")).not.toBeInTheDocument();
     });
 
-    it("renders stuck interpreter warning and triggers Spawn Fresh Shell", () => {
+    it("renders stuck interpreter warning and triggers Spawn new shell", () => {
         const onSpawnFreshShell = vi.fn();
         const stuckTaskItem: ShellTaskItem = {
             id: "t-stuck",
@@ -98,13 +95,13 @@ describe("InterpreterStatusBanner", () => {
         expect(screen.getByTestId("stuck-interpreter-banner")).toBeInTheDocument();
         expect(screen.getByText(/Interpreter Busy or Potentially Stuck/i)).toBeInTheDocument();
 
-        fireEvent.click(screen.getByText(/Spawn Fresh Shell \(New Interpreter\)/i));
+        fireEvent.click(screen.getByText(/Spawn new shell/i));
         expect(onSpawnFreshShell).toHaveBeenCalled();
     });
 });
 
-describe("MultiLineComposer", () => {
-    it("allows editing multi-line scripts and executing via button or Ctrl+Enter", () => {
+describe("MultiLineComposer (Composer)", () => {
+    it("allows editing multi-line scripts, inserting aliases snippet, and executing via Ctrl+Enter", () => {
         const onRunCode = vi.fn();
         const onStageToPrompt = vi.fn();
         const onChange = vi.fn();
@@ -120,11 +117,22 @@ describe("MultiLineComposer", () => {
             />
         );
 
+        expect(screen.getByText("Composer")).toBeInTheDocument();
         const textarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
         expect(textarea.value).toContain("process.list()");
 
         fireEvent.keyDown(textarea, { key: "Enter", ctrlKey: true });
         expect(onRunCode).toHaveBeenCalledWith('for p in process.list():\n    print(p["name"])');
+
+        // Selecting the aliases snippet (index 0) registers ls(), whoami(), ps(), netstat()
+        const snippetSelect = screen.getByLabelText("Insert Eldritch snippet");
+        fireEvent.change(snippetSelect, { target: { value: "0" } });
+        expect(onChange).toHaveBeenCalled();
+        const insertedCode = onChange.mock.calls[0][0] as string;
+        expect(insertedCode).toContain("def ls(");
+        expect(insertedCode).toContain("def whoami(");
+        expect(insertedCode).toContain("def ps(");
+        expect(insertedCode).toContain("def netstat(");
     });
 });
 
@@ -186,6 +194,37 @@ describe("ShellHistoryDrawer", () => {
         fireEvent.click(screen.getByText("View Saved Transcript"));
         expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.15:22", "42");
     });
+
+    it("strictly filters Queued / Running commands without falling back to completed local history", () => {
+        const activeTask: ShellTaskItem = {
+            id: "task-queued",
+            createdAt: "2025-01-01T12:05:00Z",
+            input: 'sys.shell("sleep 10")',
+        };
+
+        render(
+            <ShellHistoryDrawer
+                isOpen={true}
+                onClose={vi.fn()}
+                shellTasks={[...sampleTasks, activeTask]}
+                localHistory={['print("old local command")']}
+                pivots={[]}
+                onRunCode={vi.fn()}
+                onLoadIntoComposer={vi.fn()}
+                onOpenPivotTab={vi.fn()}
+            />
+        );
+
+        // Both tasks visible under All
+        expect(screen.getByText('report.user_password("admin", "hunter2")')).toBeInTheDocument();
+        expect(screen.getByText('sys.shell("sleep 10")')).toBeInTheDocument();
+
+        // Click "Queued / Running" filter -> only activeTask is shown
+        fireEvent.click(screen.getByText("Queued / Running"));
+        expect(screen.getByText('sys.shell("sleep 10")')).toBeInTheDocument();
+        expect(screen.queryByText('report.user_password("admin", "hunter2")')).not.toBeInTheDocument();
+        expect(screen.queryByText('print("old local command")')).not.toBeInTheDocument();
+    });
 });
 
 describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
@@ -219,7 +258,19 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         },
     ];
 
-    it("renders live Knowledge Graph Intel drawer and stages credentials into SSH Pivot and Composer", () => {
+    const sampleFiles: KnowledgeFileItem[] = [
+        {
+            id: "file-77",
+            path: "/etc/shadow.bak",
+            size: 1024,
+            hash: "abc123",
+            permissions: "-rw-------",
+            owner: "root",
+            createdAt: "2025-01-01T12:00:00Z",
+        },
+    ];
+
+    it("renders live Knowledge Graph drawer, stages credentials, and provides download links for reported files", () => {
         const onOpenSshWithTarget = vi.fn();
         const onLoadIntoComposer = vi.fn();
 
@@ -237,7 +288,7 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
                         hostCredentials={sampleCreds}
                         allCredentials={sampleCreds}
                         networkHosts={sampleHosts}
-                        hostFiles={[]}
+                        hostFiles={sampleFiles}
                         hostProcessCount={42}
                         hostShells={[]}
                         lastKnowledgeSyncAt={Date.now()}
@@ -250,7 +301,7 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             </MockedProvider>
         );
 
-        expect(screen.getByText("Knowledge Graph Intel")).toBeInTheDocument();
+        expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
         expect(screen.getByText("svc_backup")).toBeInTheDocument();
 
         // Reveal secret
@@ -264,6 +315,13 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         // Launch SSH Pivot
         fireEvent.click(screen.getByText("SSH Pivot"));
         expect(onOpenSshWithTarget).toHaveBeenCalledWith("svc_backup:Winter2025!@10.0.0.10:22");
+
+        // Switch to Host Context tab and verify reported file download link
+        fireEvent.click(screen.getByText(/Host Context/i));
+        const downloadLink = screen.getByLabelText("Download /etc/shadow.bak") as HTMLAnchorElement;
+        expect(downloadLink).toBeInTheDocument();
+        expect(downloadLink.getAttribute("href")).toBe("/cdn/hostfiles/file-77");
+        expect(downloadLink.hasAttribute("download")).toBe(true);
     });
 
     it("populates SshConnectionModal target from Knowledge Graph hosts and credentials", () => {

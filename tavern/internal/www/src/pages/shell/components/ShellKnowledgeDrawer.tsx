@@ -6,6 +6,7 @@ import {
   Code2,
   Copy,
   Database,
+  Download,
   ExternalLink,
   Eye,
   EyeOff,
@@ -181,7 +182,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
       <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#1b1f2a] border-b border-[#2e3440]">
         <div className="flex items-center gap-2 min-w-0">
           <Database size={16} className="text-emerald-400 flex-shrink-0" />
-          <h2 className="text-sm font-semibold text-white truncate">Knowledge Graph Intel</h2>
+          <h2 className="text-sm font-semibold text-white truncate">Knowledge Graph</h2>
           <span
             title={`Auto-syncing every 3s (Last sync: ${syncTimeStr})`}
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] text-emerald-300 font-medium"
@@ -765,15 +766,26 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                       <FileText size={12} className="text-blue-400 flex-shrink-0" />
                       {f.path}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onStageToPrompt(`print(file.read(${JSON.stringify(f.path)}))`)
-                      }
-                      className="px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 text-[11px] flex-shrink-0"
-                    >
-                      file.read
-                    </button>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <a
+                        href={`/cdn/hostfiles/${f.id}`}
+                        download
+                        title={`Download ${f.path}`}
+                        aria-label={`Download ${f.path}`}
+                        className="inline-flex items-center justify-center p-1 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 hover:text-white transition-colors"
+                      >
+                        <Download size={12} />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onStageToPrompt(`print(file.read(${JSON.stringify(f.path)}))`)
+                        }
+                        className="px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 text-[11px]"
+                      >
+                        file.read
+                      </button>
+                    </div>
                   </div>
                   <div className="text-[10px] text-gray-500 font-mono">
                     {f.permissions || ""} {f.owner ? `• ${f.owner}` : ""} • {f.size} bytes

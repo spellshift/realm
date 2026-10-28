@@ -5,7 +5,22 @@ import "@xterm/xterm/css/xterm.css";
 import { BrowserWasmAdapter, ConnectionStatus } from "../../../lib/browser-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
-import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, isInsideString } from "./shellUtils";
+import {
+    moveWordLeft,
+    moveWordRight,
+    highlightPythonSyntax,
+    loadHistory,
+    saveHistory,
+    isInsideString,
+    getCursorLineInfo,
+    moveCursorUpInBuffer,
+    moveCursorDownInBuffer,
+    moveCursorToLineStart,
+    moveCursorToLineEnd,
+    shouldContinueMultilineOnEnter,
+    insertNewlineWithAutoIndent,
+    formatMultilineTerminalBuffer,
+} from "./shellUtils";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
@@ -174,8 +189,10 @@ export const useShellTerminal = (
         if (termInstance.current) {
             const isDimmed = connectionStatus !== "connected" || !!shellClosedAt;
             termInstance.current.options.theme = {
-                foreground: isDimmed ? "#777777" : "#d4d4d4",
-                background: "#1e1e1e",
+                foreground: isDimmed ? "#7b849b" : "#e2e8f0",
+                background: "#11131a",
+                cursor: "#a855f7",
+                selectionBackground: "rgba(168, 85, 247, 0.25)",
             };
         }
     }, [isLateCheckin, connectionStatus, shellClosedAt]);
@@ -193,7 +210,6 @@ export const useShellTerminal = (
             const prompt = `(reverse-i-search)'${state.searchQuery}': `;
             let match = "";
             if (state.searchQuery) {
-                // Simple search backwards
                 for (let i = state.history.length - 1; i >= 0; i--) {
                     if (state.history[i].includes(state.searchQuery)) {
                         match = state.history[i];
@@ -203,48 +219,57 @@ export const useShellTerminal = (
             }
             contentToWrite = prompt + match;
             contentToDisplay = contentToWrite;
-            // In search mode, cursor is typically at the end of the match
             cursorIndex = contentToWrite.length;
         } else {
-            contentToWrite = state.prompt + state.inputBuffer;
-            contentToDisplay = state.prompt + highlightPythonSyntax(state.inputBuffer);
-            cursorIndex = state.prompt.length + state.cursorPos;
+            const formatted = formatMultilineTerminalBuffer(
+                state.inputBuffer,
+                state.cursorPos,
+                state.prompt,
+                "... "
+            );
+            contentToWrite = formatted.contentToWrite;
+            contentToDisplay = formatted.contentToDisplay;
+            cursorIndex = formatted.cursorIndex;
         }
 
-        // Calculate rows based on newlines
-        const rows = contentToWrite.split('\n').length - 1;
+        const termCols = Math.max(1, term.cols || 80);
+        const getVisualLineCount = (text: string, cols: number) => {
+            const lines = text.split("\n");
+            let count = 0;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (i > 0) count++;
+                if (line.length > 0) {
+                    count += Math.floor((line.length - 1) / cols);
+                }
+            }
+            return count;
+        };
 
-        // Move up to start of previous rendering (regardless of mode)
+        const rows = getVisualLineCount(contentToWrite, termCols);
+
         const prevRows = lastBufferHeight.current;
         if (prevRows > 0) {
             term.write(`\x1b[${prevRows}A`);
         }
 
-        // Clear everything below
         term.write("\r\x1b[J");
-
-        // Write new content, ensuring newlines are carriage-return + newline
         term.write(contentToDisplay.replace(/\n/g, "\r\n"));
 
-        // Update last height
         lastBufferHeight.current = rows;
 
-        // Move cursor to correct position
         if (!state.isSearching) {
-            // Calculate cursor position in terms of rows/cols relative to start
             const prefix = contentToWrite.slice(0, cursorIndex);
-            const cursorRow = prefix.split('\n').length - 1;
-            const cursorCol = prefix.split('\n').pop()?.length || 0;
+            const cursorRow = getVisualLineCount(prefix, termCols);
+            const lastLine = prefix.split("\n").pop() || "";
+            const cursorCol = lastLine.length % termCols;
 
-            // Current position after write is at end of content
-            const totalRows = rows;
-            // We need to move UP from end to cursorRow
-            const moveUp = totalRows - cursorRow;
+            const moveUp = rows - cursorRow;
             if (moveUp > 0) {
                 term.write(`\x1b[${moveUp}A`);
             }
 
-            term.write("\r"); // Go to start of line
+            term.write("\r");
             if (cursorCol > 0) {
                 term.write(`\x1b[${cursorCol}C`);
             }
@@ -407,16 +432,29 @@ export const useShellTerminal = (
             return;
         }
 
+        portalIdRef.current = null;
+        lastBufferHeight.current = 0;
+        shellState.current.inputBuffer = "";
+        shellState.current.currentBlock = "";
+        shellState.current.cursorPos = 0;
+        shellState.current.historyIndex = -1;
+        shellState.current.prompt = ">>> ";
+        shellState.current.isSearching = false;
+        shellState.current.searchQuery = "";
+
         // Initialize terminal
         termInstance.current = new Terminal({
             cursorBlink: true,
             macOptionIsMeta: true,
             theme: {
-                background: "#1e1e1e",
-                foreground: connectionStatusRef.current !== "connected" ? "#777777" : "#d4d4d4",
+                background: "#11131a",
+                foreground: connectionStatusRef.current !== "connected" ? "#7b849b" : "#e2e8f0",
+                cursor: "#a855f7",
+                selectionBackground: "rgba(168, 85, 247, 0.25)",
             },
-            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-            fontSize: 16,
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
+            fontSize: 13.5,
+            lineHeight: 1.35,
             scrollback: 500_000,
         });
 
@@ -438,117 +476,13 @@ export const useShellTerminal = (
 
         termInstance.current.write("Eldritch v0.4.1\r\n");
 
-        // Define redrawLine early so it can be used by adapter callback
-        const redrawLine = () => {
-            const term = termInstance.current;
-            if (!term) return;
-            const state = shellState.current;
-
-            let contentToWrite = "";
-            let contentToDisplay = "";
-            let cursorIndex = 0;
-
-            if (state.isSearching) {
-                const prompt = `(reverse-i-search)'${state.searchQuery}': `;
-                let match = "";
-                if (state.searchQuery) {
-                    // Simple search backwards
-                    for (let i = state.history.length - 1; i >= 0; i--) {
-                        if (state.history[i].includes(state.searchQuery)) {
-                            match = state.history[i];
-                            break;
-                        }
-                    }
-                }
-                contentToWrite = prompt + match;
-                contentToDisplay = contentToWrite;
-                // In search mode, cursor is typically at the end of the match
-                cursorIndex = contentToWrite.length;
-            } else {
-                contentToWrite = state.prompt + state.inputBuffer;
-                contentToDisplay = state.prompt + highlightPythonSyntax(state.inputBuffer);
-                cursorIndex = state.prompt.length + state.cursorPos;
-            }
-
-            // Calculate rows based on visual line wrapping
-            const termCols = term.cols;
-            const getVisualLineCount = (text: string, cols: number) => {
-                const lines = text.split('\n');
-                let count = 0;
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (i > 0) count++; // Newline character
-                    // Calculate wrapped lines for this segment
-                    // Even an empty line takes 1 row if explicitly split
-                    // But here, split('\n') gives empty string for consecutive newlines
-
-                    if (line.length > 0) {
-                        count += Math.floor((line.length - 1) / cols);
-                    }
-                    // If line is exactly cols length, it doesn't wrap to next line unless another char comes
-                    // But we are counting *visual* rows.
-                    // xterm wraps: if I write 80 chars on 80 col terminal, cursor is at (80, y)
-                    // if I write 81 chars, cursor is at (1, y+1)
-                }
-                return count;
-            };
-
-            const rows = getVisualLineCount(contentToWrite, termCols);
-
-            // Move up to start of previous rendering (regardless of mode)
-            const prevRows = lastBufferHeight.current;
-            if (prevRows > 0) {
-                term.write(`\x1b[${prevRows}A`);
-            }
-
-            // Clear everything below
-            term.write("\r\x1b[J");
-
-            // Write new content, ensuring newlines are carriage-return + newline
-            term.write(contentToDisplay.replace(/\n/g, "\r\n"));
-
-            // Update last height
-            lastBufferHeight.current = rows;
-
-            // Move cursor to correct position
-            if (!state.isSearching) {
-                // Calculate cursor position in terms of rows/cols relative to start
-                const prefix = contentToWrite.slice(0, cursorIndex);
-                // Calculate rows occupied by prefix
-                const cursorRow = getVisualLineCount(prefix, termCols);
-
-                // Calculate cursor column
-                const lastLine = prefix.split('\n').pop() || "";
-                let cursorCol = lastLine.length % termCols;
-                // If we are exactly at end of line (and not empty), it might be tricky
-                // But xterm handles cursor positioning
-                // If length is multiple of cols, cursor is effectively at index 0 of next line physically?
-                // Actually, if we write 80 chars, cursor is at 80. Writing next char moves it.
-                // We use relative movement.
-
-                // We moved up `prevRows`. We wrote `rows` lines.
-                // We are now at the end of the content.
-                // We want to be at `cursorRow`.
-
-                const moveUp = rows - cursorRow;
-                if (moveUp > 0) {
-                    term.write(`\x1b[${moveUp}A`);
-                }
-
-                term.write("\r"); // Go to start of line
-                if (cursorCol > 0) {
-                    term.write(`\x1b[${cursorCol}C`);
-                }
-            }
-        };
-
         const scheduleRedraw = () => {
             if (redrawTimeoutRef.current) {
                 clearTimeout(redrawTimeoutRef.current);
             }
             redrawTimeoutRef.current = setTimeout(() => {
                 redrawLine();
-            }, 50);
+            }, 35);
         };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
@@ -592,13 +526,13 @@ export const useShellTerminal = (
                             portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
                             if (wasUpgraded) {
-                                content = `[*] Interactive Portal (#${msg.portal_id}) active — low-latency execution & PTY/SSH pivots ready.\n`;
+                                content = `[*] Portal Active (#${msg.portal_id})\n`;
                                 color = "\x1b[38;5;42m"; // Green
                             }
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalDowngrade) {
                             portalIdRef.current = null;
                             setPortalId(null);
-                            content = "[*] Portal closed. Smoothly transitioned to Queued Mode (commands will run on beacon check-in).\n";
+                            content = "[*] Portal Closed (Queued Mode)\n";
                             color = "\x1b[38;5;178m"; // Gold
                         }
                         break;
@@ -757,26 +691,37 @@ export const useShellTerminal = (
             }
 
             if (data === "\x01" || data === "\x1b[H" || data === "\x1bOH" || data === "\x1b[1~" || data === "\x1b[7~") { // Ctrl+A / Home
-                state.cursorPos = 0;
+                state.cursorPos = moveCursorToLineStart(state.inputBuffer, state.cursorPos);
                 redrawLine();
                 return;
             }
 
             if (data === "\x05" || data === "\x1b[F" || data === "\x1bOF" || data === "\x1b[4~" || data === "\x1b[8~") { // Ctrl+E / End
-                state.cursorPos = state.inputBuffer.length;
+                state.cursorPos = moveCursorToLineEnd(state.inputBuffer, state.cursorPos);
                 redrawLine();
                 return;
             }
 
             if (data === "\x15") { // Ctrl+U
-                state.inputBuffer = "";
-                state.cursorPos = 0;
+                const { lineStartOffset } = getCursorLineInfo(state.inputBuffer, state.cursorPos);
+                state.inputBuffer = state.inputBuffer.slice(0, lineStartOffset) + state.inputBuffer.slice(state.cursorPos);
+                state.cursorPos = lineStartOffset;
                 redrawLine();
                 return;
             }
 
-            if (data === "\x0b") { // Ctrl+K (Kill to end)
-                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos);
+            if (data === "\x0b") { // Ctrl+K (Kill to end of current line)
+                const { lineEndOffset } = getCursorLineInfo(state.inputBuffer, state.cursorPos);
+                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + state.inputBuffer.slice(lineEndOffset);
+                redrawLine();
+                return;
+            }
+
+            // Explicit newline insertion: Alt+Enter or Shift+Enter (\n)
+            if (data === "\x1b\r" || data === "\n") {
+                const next = insertNewlineWithAutoIndent(state.inputBuffer, state.cursorPos);
+                state.inputBuffer = next.buffer;
+                state.cursorPos = next.cursorPos;
                 redrawLine();
                 return;
             }
@@ -824,7 +769,13 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x1b[A") { // Up
+            if (data === "\x1b[A") { // Up: navigate to previous line inside multi-line block first, then history
+                const upPos = moveCursorUpInBuffer(state.inputBuffer, state.cursorPos);
+                if (upPos !== null) {
+                    state.cursorPos = upPos;
+                    redrawLine();
+                    return;
+                }
                 if (state.history.length > 0) {
                     if (state.historyIndex === -1) state.historyIndex = state.history.length - 1;
                     else if (state.historyIndex > 0) state.historyIndex--;
@@ -835,7 +786,13 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x1b[B") { // Down
+            if (data === "\x1b[B") { // Down: navigate to next line inside multi-line block first, then history
+                const downPos = moveCursorDownInBuffer(state.inputBuffer, state.cursorPos);
+                if (downPos !== null) {
+                    state.cursorPos = downPos;
+                    redrawLine();
+                    return;
+                }
                 if (state.historyIndex !== -1) {
                     if (state.historyIndex < state.history.length - 1) {
                         state.historyIndex++;
@@ -852,16 +809,26 @@ export const useShellTerminal = (
 
             if (data === "\x1b[D") { // Left
                 if (state.cursorPos > 0) {
+                    const prevChar = state.inputBuffer[state.cursorPos - 1];
                     state.cursorPos--;
-                    term.write("\x1b[D");
+                    if (prevChar === "\n" || state.inputBuffer.includes("\n")) {
+                        redrawLine();
+                    } else {
+                        term.write("\x1b[D");
+                    }
                 }
                 return;
             }
 
             if (data === "\x1b[C") { // Right
                 if (state.cursorPos < state.inputBuffer.length) {
+                    const currChar = state.inputBuffer[state.cursorPos];
                     state.cursorPos++;
-                    term.write("\x1b[C");
+                    if (currChar === "\n" || state.inputBuffer.includes("\n")) {
+                        redrawLine();
+                    } else {
+                        term.write("\x1b[C");
+                    }
                 }
                 return;
             }
@@ -881,12 +848,14 @@ export const useShellTerminal = (
             }
 
             if (code === 9) { // Tab
-                // Indent if line is empty or whitespace or inside a string (or if we are pasting)
-                if (isPaste || !state.inputBuffer.trim() || isInsideString(state.inputBuffer, state.cursorPos)) {
+                const { lines, lineIndex, col } = getCursorLineInfo(state.inputBuffer, state.cursorPos);
+                const currentLineBeforeCursor = (lines[lineIndex] ?? "").slice(0, col);
+                // Indent if current line before cursor is empty/whitespace or inside a string (or if we are pasting)
+                if (isPaste || !currentLineBeforeCursor.trim() || isInsideString(state.inputBuffer, state.cursorPos)) {
                     const indent = "    ";
                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + indent + state.inputBuffer.slice(state.cursorPos);
                     state.cursorPos += 4;
-                    term.write(indent);
+                    redrawLine();
                     return;
                 }
 
@@ -894,12 +863,9 @@ export const useShellTerminal = (
                 const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
                 if (res && res.suggestions.length > 0) {
                     if (res.suggestions.length === 1) {
-                        // Auto complete
-                        // We must setup completionsRef.current first so applyCompletion has context
                         updateCompletionsUI(res.suggestions, res.start, true, 0);
                         applyCompletion(res.suggestions[0]);
                     } else {
-                        // Show dropdown
                         updateCompletionsUI(res.suggestions, res.start, true, 0);
                     }
                 }
@@ -907,8 +873,8 @@ export const useShellTerminal = (
             }
 
             if (code >= 32 && code !== 127) {
-                // Fast path for simple appending at the end of the line
-                if (data.length === 1 && state.cursorPos === state.inputBuffer.length) {
+                // Fast path for simple appending at the end of a single-line buffer
+                if (data.length === 1 && state.cursorPos === state.inputBuffer.length && !state.inputBuffer.includes("\n")) {
                     state.inputBuffer += data;
                     state.cursorPos++;
                     term.write(data);
@@ -919,14 +885,35 @@ export const useShellTerminal = (
                     redrawLine();
                 }
             } else if (code === 13) { // Enter
-                term.write("\r\n");
-                const res = adapter.current?.input(state.inputBuffer);
+                if (!isPaste && shouldContinueMultilineOnEnter(state.inputBuffer, state.cursorPos)) {
+                    const next = insertNewlineWithAutoIndent(state.inputBuffer, state.cursorPos);
+                    state.inputBuffer = next.buffer;
+                    state.cursorPos = next.cursorPos;
+                    redrawLine();
+                    return;
+                }
 
-                state.currentBlock += state.inputBuffer + "\n";
+                // Finalize the block for execution
+                const lines = state.inputBuffer.split("\n");
+                let finalizedCode = state.inputBuffer;
+                if (lines.length > 1 && lines[lines.length - 1].trim() === "") {
+                    finalizedCode = lines.slice(0, -1).join("\n");
+                }
+
+                state.inputBuffer = finalizedCode;
+                state.cursorPos = finalizedCode.length;
+                redrawLine();
+                term.write("\r\n");
+
+                adapter.current?.reset();
+                const isMultiline = finalizedCode.includes("\n");
+                const res = isMultiline
+                    ? adapter.current?.paste_input(finalizedCode + "\n")
+                    : adapter.current?.input(finalizedCode);
 
                 if (res?.status === "complete") {
-                    if (state.currentBlock.trim()) {
-                        const trimmed = state.currentBlock.trimEnd();
+                    if (finalizedCode.trim()) {
+                        const trimmed = finalizedCode.trimEnd();
                         state.history.push(trimmed);
                         sessionInputs.current.push(trimmed);
                         saveHistory(state.history);
@@ -979,12 +966,24 @@ export const useShellTerminal = (
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
                 } else if (res?.status === "incomplete") {
-                    state.prompt = res.prompt || ".. ";
-                    term.write(state.prompt);
-                    state.inputBuffer = "";
-                    state.cursorPos = 0;
+                    adapter.current?.reset();
+                    const next = insertNewlineWithAutoIndent(finalizedCode, finalizedCode.length);
+                    state.inputBuffer = next.buffer;
+                    state.cursorPos = next.cursorPos;
+                    lastBufferHeight.current = 0;
+                    redrawLine();
+                    return;
                 } else {
-                    term.write(`Error: ${res?.message}\r\n>>> `);
+                    term.write(`\x1b[31mError: ${res?.message}\x1b[0m\r\n`);
+                    if (isMultiline) {
+                        // Keep the multi-line buffer intact so the operator can arrow up and fix the typo
+                        state.inputBuffer = finalizedCode;
+                        state.cursorPos = finalizedCode.length;
+                        lastBufferHeight.current = 0;
+                        redrawLine();
+                        return;
+                    }
+                    term.write(">>> ");
                     state.currentBlock = "";
                     state.inputBuffer = "";
                     state.cursorPos = 0;
@@ -993,8 +992,14 @@ export const useShellTerminal = (
                 lastBufferHeight.current = 0;
             } else if (code === 127) { // Backspace
                 if (state.cursorPos > 0) {
-                    // Fast path for backspace at the end of the line
-                    if (state.cursorPos === state.inputBuffer.length) {
+                    const { lines, lineIndex, col } = getCursorLineInfo(state.inputBuffer, state.cursorPos);
+                    const currentLineBefore = (lines[lineIndex] ?? "").slice(0, col);
+                    // Smart dedent: if before cursor on this line is purely spaces aligned to 4 spaces, delete up to 4 spaces
+                    if (col >= 4 && /^\s+$/.test(currentLineBefore) && col % 4 === 0) {
+                        state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 4) + state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos -= 4;
+                        redrawLine();
+                    } else if (state.cursorPos === state.inputBuffer.length && !state.inputBuffer.includes("\n")) {
                         state.inputBuffer = state.inputBuffer.slice(0, -1);
                         state.cursorPos--;
                         term.write('\b \b');
@@ -1039,93 +1044,16 @@ export const useShellTerminal = (
                 const hasNewlines = data.includes('\r') || data.includes('\n');
 
                 if (hasNewlines) {
-                    // Normalize to \n for our adapter
-                    const normalized = data.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-
+                    // Normalize to \n and insert directly into the multi-line input buffer at the cursor
+                    // so the operator can inspect, arrow Up/Down to edit any line, and press Enter to execute.
+                    const normalized = data.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n+$/, "");
                     const state = shellState.current;
-                    const term = termInstance.current;
-                    if (!term) return;
-
-                    // Write the pasted text to the terminal, formatting newlines appropriately
-                    const displayFormatted = normalized.replace(/\n/g, "\r\n");
-                    term.write(displayFormatted);
-                    term.write("\r\n"); // Ensure we're on a new line after paste
-
-                    // We need to prepend any existing input buffer to the paste
-                    const fullText = state.inputBuffer + normalized;
-                    state.currentBlock += fullText + "\n";
-
-                    // Call our new paste method
-                    const res = adapter.current?.paste_input(fullText);
-
-                    if (res?.status === "complete") {
-                        if (state.currentBlock.trim()) {
-                            const trimmed = state.currentBlock.trimEnd();
-                            state.history.push(trimmed);
-                            sessionInputs.current.push(trimmed);
-                            saveHistory(state.history);
-                            setLocalHistory([...state.history]);
-                        }
-                        state.currentBlock = "";
-                        state.historyIndex = -1;
-                        state.inputBuffer = "";
-                        state.cursorPos = 0;
-                        state.prompt = ">>> ";
-                        term.write(state.prompt);
-                        onCommandSubmittedRef.current?.();
-                    } else if (res?.status === "meta") {
-                        const metaCmd = res.meta_command;
-                        if (metaCmd?.type === "help") {
-                            const target = metaCmd.target;
-                            if (!target) {
-                                writeHelpMessage(term, adapter.current?.version || "");
-                            } else {
-                                const doc = docs[target];
-                                if (doc) {
-                                    const wrappedDesc = wrapText(doc.description, term.cols);
-                                    term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
-                                    term.write(`${wrappedDesc}\r\n`);
-                                } else {
-                                    term.write(`No documentation found for: ${target}\r\n`);
-                                }
-                            }
-                        } else if (metaCmd?.type === "ssh") {
-                            const target = metaCmd.target;
-                            const pId = portalIdRef.current;
-                            if (!pId) {
-                                term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
-                            } else {
-                                term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
-                                onOpenPortalTabRef.current?.("ssh", target);
-                            }
-                        } else if (metaCmd?.type === "pty") {
-                            const pId = portalIdRef.current;
-                            if (!pId) {
-                                term.write(`\r\n\x1b[31mError: An active portal is required to initiate a PTY session.\x1b[0m\r\n`);
-                            } else {
-                                term.write(`\r\nOpening PTY session...\r\n`);
-                                onOpenPortalTabRef.current?.("pty", "PTY");
-                            }
-                        }
-                        term.write(">>> ");
-                        state.currentBlock = "";
-                        state.historyIndex = -1;
-                        state.inputBuffer = "";
-                        state.cursorPos = 0;
-                        state.prompt = ">>> ";
-                    } else if (res?.status === "incomplete") {
-                        state.prompt = res.prompt || ".. ";
-                        term.write(state.prompt);
-                        state.inputBuffer = "";
-                        state.cursorPos = 0;
-                    } else {
-                        term.write(`Error: ${res?.message}\r\n>>> `);
-                        state.currentBlock = "";
-                        state.inputBuffer = "";
-                        state.cursorPos = 0;
-                        state.prompt = ">>> ";
-                    }
-                    lastBufferHeight.current = 0;
+                    state.inputBuffer =
+                        state.inputBuffer.slice(0, state.cursorPos) +
+                        normalized +
+                        state.inputBuffer.slice(state.cursorPos);
+                    state.cursorPos += normalized.length;
+                    redrawLine();
                 } else {
                     for (const char of data) {
                         handleData(char, true);

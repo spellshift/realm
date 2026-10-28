@@ -114,7 +114,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                             leftIcon={<Database className="w-4 h-4" />}
                                             onClick={onToggleKnowledge}
                                         >
-                                            Knowledge Graph Intel
+                                            Knowledge Graph
                                         </Button>
                                     )}
                                 </Menu.Item>
@@ -146,7 +146,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                             leftIcon={<Code2 className="w-4 h-4" />}
                                             onClick={onToggleComposer}
                                         >
-                                            Multi-Line Composer
+                                            Composer
                                         </Button>
                                     )}
                                 </Menu.Item>
@@ -178,7 +178,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                             leftIcon={<RefreshCw className="w-4 h-4" />}
                                             onClick={onSpawnFreshShell}
                                         >
-                                            Spawn Fresh Shell
+                                            Spawn new shell
                                         </Button>
                                     )}
                                 </Menu.Item>

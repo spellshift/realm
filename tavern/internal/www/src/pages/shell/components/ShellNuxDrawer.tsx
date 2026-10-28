@@ -26,6 +26,7 @@ interface ShellNuxDrawerProps {
   onStageToPrompt: (code: string) => void;
   onLoadIntoComposer: (code: string) => void;
   onSpawnFreshShell: () => void;
+  onStartWalkthrough?: () => void;
 }
 
 const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
@@ -36,6 +37,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
   onStageToPrompt,
   onLoadIntoComposer,
   onSpawnFreshShell,
+  onStartWalkthrough,
 }) => {
   const [activeTab, setActiveTab] = useState<"guide" | "docs">("guide");
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,7 +123,20 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
       </div>
 
       {activeTab === "guide" ? (
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 text-xs text-gray-300">
+        <div className="flex-1 overflow-y-auto shell-scrollbar p-3.5 space-y-3.5 text-xs text-gray-300">
+          {onStartWalkthrough && (
+            <button
+              type="button"
+              onClick={onStartWalkthrough}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-md bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-200 font-medium transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Compass size={14} className="text-purple-400" />
+                Replay Interactive Walkthrough
+              </span>
+              <span className="text-[11px] text-purple-300">Start Tour →</span>
+            </button>
+          )}
           {/* Card 1: Queued vs Interactive Mode */}
           <div className="rounded-md bg-[#1c202b] border border-[#2d3446] p-3 space-y-2">
             <div className="flex items-center gap-2 text-white font-semibold">
@@ -182,7 +197,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
             </p>
             <p className="text-gray-400 leading-relaxed">
               <strong className="text-amber-200">Stuck Interpreter:</strong> Each shell connects to a persistent Eldritch interpreter on the agent. If a blocking command hangs that interpreter after check-in, use{" "}
-              <strong className="text-white">Spawn Fresh Shell</strong> to immediately start a clean interpreter without losing this shell&apos;s history.
+              <strong className="text-white">Spawn new shell</strong> to immediately start a clean interpreter without losing this shell&apos;s history.
             </p>
             <button
               type="button"
@@ -190,7 +205,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 font-medium transition-colors"
             >
               <Terminal size={12} />
-              Spawn Fresh Shell (New Interpreter)
+              Spawn new shell
             </button>
           </div>
 
@@ -286,7 +301,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+          <div className="flex-1 overflow-y-auto shell-scrollbar p-2.5 space-y-2">
             {filteredDocs.map(([fnName, info]) => {
               const callTemplate = `${fnName}()`;
               return (
@@ -309,7 +324,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
                       <button
                         type="button"
                         onClick={() => onLoadIntoComposer(callTemplate)}
-                        title="Open in Multi-Line Composer"
+                        title="Open in Composer"
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 text-[11px]"
                       >
                         <Code2 size={10} />

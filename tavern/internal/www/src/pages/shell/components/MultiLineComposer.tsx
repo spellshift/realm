@@ -9,6 +9,38 @@ export interface EldritchSnippet {
 
 export const ELDRITCH_SNIPPETS: EldritchSnippet[] = [
   {
+    label: "aliases (Common Shell Commands)",
+    description: "Register ls(), whoami(), ps(), netstat(), pwd(), cd(), cat(), ip(), and env() as Eldritch functions",
+    code: `def ls(path="."):
+    return file.list(path)
+
+def whoami():
+    return user.info()
+
+def ps():
+    return process.list()
+
+def netstat():
+    return net.conns()
+
+def pwd():
+    return process.cwd()
+
+def cd(path):
+    return file.moveto(path)
+
+def cat(path):
+    return file.read(path).decode()
+
+def ip():
+    return net.interfaces()
+
+def env():
+    return process.env()
+
+print("[+] Registered aliases: ls(), whoami(), ps(), netstat(), pwd(), cd(), cat(), ip(), env()")`,
+  },
+  {
     label: "System & Identity Recon",
     description: "Gather host OS info, current user, hostname, and network interfaces",
     code: `info = sys.info()
@@ -132,18 +164,18 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
 
   if (!isOpen) {
     return (
-      <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-md bg-[#181b22] border border-[#2e3440] text-xs text-gray-400">
+      <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-md bg-[#151821] border border-[#262b38] text-xs text-gray-400">
         <div className="flex items-center gap-2">
           <Code2 size={14} className="text-purple-400" />
-          <span>Need to write or paste a multi-line Eldritch script, loop, or function?</span>
+          <span>Write or paste a multi-line Eldritch script, or load helper snippets like <code className="font-mono text-purple-300">aliases</code></span>
         </div>
         <button
           type="button"
           onClick={onToggle}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#252a36] hover:bg-[#313848] text-gray-200 font-medium transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#222735] hover:bg-[#2c3345] text-gray-200 font-medium transition-colors"
         >
           <ChevronUp size={13} />
-          Open Multi-Line Composer
+          Composer
         </button>
       </div>
     );
@@ -152,13 +184,13 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
   return (
     <div
       data-testid="multiline-composer"
-      className="mt-2 flex flex-col rounded-md bg-[#161920] border border-[#343b4a] shadow-lg overflow-hidden"
+      className="mt-2 flex flex-col rounded-md bg-[#11131a] border border-[#2d3343] shadow-lg overflow-hidden"
     >
       {/* Composer Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-[#1d212b] border-b border-[#2e3440] text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-[#171b24] border-b border-[#262b38] text-xs">
         <div className="flex items-center gap-2">
           <Code2 size={14} className="text-purple-400" />
-          <span className="font-semibold text-gray-200">Multi-Line Eldritch Composer</span>
+          <span className="font-semibold text-gray-200">Composer</span>
           <span className="text-gray-500 hidden sm:inline">
             • <kbd className="px-1 py-0.5 rounded bg-black/40 text-gray-300 font-mono">Tab</kbd> indent •{" "}
             <kbd className="px-1 py-0.5 rounded bg-black/40 text-gray-300 font-mono">Ctrl+Enter</kbd> execute
@@ -172,7 +204,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
               aria-label="Insert Eldritch snippet"
               value={selectedSnippetIdx}
               onChange={handleSnippetSelect}
-              className="pl-6 pr-2 py-1 rounded bg-[#14161b] border border-[#343b4a] text-gray-200 text-xs focus:outline-none focus:border-purple-500"
+              className="pl-6 pr-2 py-1 rounded bg-[#11131a] border border-[#2d3343] text-gray-200 text-xs focus:outline-none focus:border-purple-500"
             >
               <option value="">Insert Snippet...</option>
               {ELDRITCH_SNIPPETS.map((s, idx) => (
@@ -197,7 +229,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
           <button
             type="button"
             onClick={onToggle}
-            aria-label="Collapse Multi-Line Composer"
+            aria-label="Collapse Composer"
             className="inline-flex items-center gap-1 px-2 py-1 rounded text-gray-400 hover:text-white hover:bg-[#2a2f3d] transition-colors"
           >
             <ChevronDown size={13} />
@@ -206,11 +238,11 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         </div>
       </div>
 
-      {/* Editor Body with Line Numbers */}
-      <div className="flex relative max-h-48 min-h-[108px] overflow-y-auto font-mono text-sm bg-[#12141a]">
+      {/* Editor Body with Single Scrollbar */}
+      <div className="flex relative max-h-48 min-h-[108px] overflow-y-auto shell-scrollbar font-mono text-sm bg-[#11131a]">
         <div
           aria-hidden="true"
-          className="select-none py-2.5 px-2.5 text-right bg-[#161922] text-gray-600 border-r border-[#262b36] min-w-[2.5rem] leading-5 text-xs"
+          className="select-none py-2 px-2.5 text-right bg-[#151822] text-gray-600 border-r border-[#232834] min-w-[2.5rem] leading-5 text-xs"
         >
           {Array.from({ length: lineCount }).map((_, idx) => (
             <div key={idx}>{idx + 1}</div>
@@ -223,15 +255,15 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          rows={Math.min(8, Math.max(4, lineCount))}
+          rows={Math.max(4, lineCount)}
           placeholder={`# Write multi-line Eldritch code here...\nfor f in file.list("/tmp"):\n    print(f["file_name"])`}
-          className="w-full py-2 px-3 bg-transparent text-gray-100 placeholder-gray-600 focus:outline-none resize-y leading-5 font-mono text-xs sm:text-sm"
+          className="w-full py-2 px-3 bg-transparent text-gray-100 placeholder-gray-600 focus:outline-none resize-none overflow-hidden leading-5 font-mono text-xs sm:text-sm"
           spellCheck={false}
         />
       </div>
 
       {/* Composer Footer Actions */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#191d26] border-t border-[#2e3440] text-xs">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#161923] border-t border-[#262b38] text-xs">
         <span className="text-gray-500">
           {lineCount} {lineCount === 1 ? "line" : "lines"} •{" "}
           {code.length} chars

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle, Clock, ExternalLink, ListOrdered, Loader2, Sparkles, Terminal, WifiOff, X } from "lucide-react";
+import { AlertTriangle, Clock, ExternalLink, ListOrdered, Loader2, Terminal, WifiOff } from "lucide-react";
 import { ShellTaskItem } from "../hooks/useShellData";
 import { ConnectionStatus } from "../../../lib/browser-adapter";
 
@@ -14,11 +14,6 @@ interface InterpreterStatusBannerProps {
   onSpawnFreshShell: () => void;
   isSpawningShell?: boolean;
   onOpenHistoryDrawer: () => void;
-  onOpenNuxDrawer: () => void;
-  showNuxWelcome: boolean;
-  onDismissNuxWelcome: () => void;
-  portalId: number | null;
-  onOpenPortal: () => void;
 }
 
 const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
@@ -32,67 +27,21 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
   onSpawnFreshShell,
   isSpawningShell = false,
   onOpenHistoryDrawer,
-  onOpenNuxDrawer,
-  showNuxWelcome,
-  onDismissNuxWelcome,
-  portalId,
-  onOpenPortal,
 }) => {
   const [dismissedStuckTaskId, setDismissedStuckTaskId] = useState<string | null>(null);
 
-  const showStuckAlert = stuckTask && stuckTask.task.id !== dismissedStuckTaskId;
+  const showStuckAlert = Boolean(stuckTask && stuckTask.task.id !== dismissedStuckTaskId);
+  const showDisconnected = !closedAt && connectionStatus !== "connected";
+  const showQueuedStrip =
+    !closedAt && !showStuckAlert && (queuedTasks.length > 0 || runningTasks.length > 0);
+
+  if (!closedAt && !showDisconnected && !showStuckAlert && !showQueuedStrip) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {/* 1. First-time Operator NUX Welcome Strip (non-blocking) */}
-      {showNuxWelcome && !closedAt && (
-        <div
-          data-testid="shell-nux-banner"
-          className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-md bg-gradient-to-r from-purple-950/80 via-[#1f2433] to-indigo-950/80 border border-purple-500/30 text-xs text-gray-200"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="p-1 rounded bg-purple-500/20 text-purple-300 flex-shrink-0">
-              <Sparkles size={14} />
-            </span>
-            <div className="truncate">
-              <span className="font-semibold text-white">Welcome to the Eldritch Shell.</span>{" "}
-              <span className="text-gray-300">
-                Run <code className="px-1 py-0.5 rounded bg-black/40 text-purple-300 font-mono">!cmd</code> for shell commands,{" "}
-                <code className="px-1 py-0.5 rounded bg-black/40 text-emerald-300 font-mono">portal.create()</code> for low-latency interactive mode &amp; PTY/SSH pivots, or use the{" "}
-                <strong className="text-white">Multi-Line Composer</strong> below.
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {!portalId && (
-              <button
-                type="button"
-                onClick={onOpenPortal}
-                className="px-2.5 py-1 rounded bg-emerald-600/80 hover:bg-emerald-600 text-white font-medium transition-colors"
-              >
-                Open Interactive Portal
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onOpenNuxDrawer}
-              className="px-2.5 py-1 rounded bg-purple-600/80 hover:bg-purple-600 text-white font-medium transition-colors"
-            >
-              Operator Guide &amp; Docs
-            </button>
-            <button
-              type="button"
-              onClick={onDismissNuxWelcome}
-              aria-label="Dismiss welcome guide"
-              className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Terminated Shell Banner */}
+      {/* 1. Terminated Shell Banner */}
       {closedAt && (
         <div
           role="alert"
@@ -122,14 +71,14 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold transition-colors"
             >
               {isSpawningShell ? <Loader2 size={13} className="animate-spin" /> : <Terminal size={13} />}
-              Spawn Fresh Shell
+              Spawn new shell
             </button>
           </div>
         </div>
       )}
 
-      {/* 3. WebSocket Disconnected Banner */}
-      {!closedAt && connectionStatus !== "connected" && (
+      {/* 2. WebSocket Disconnected Banner */}
+      {showDisconnected && (
         <div
           role="alert"
           className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-md bg-red-950/60 border border-red-500/40 text-xs text-red-200"
@@ -147,8 +96,8 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
         </div>
       )}
 
-      {/* 4. Stuck / Long-Running Interpreter Banner */}
-      {!closedAt && showStuckAlert && (
+      {/* 3. Stuck / Long-Running Interpreter Banner */}
+      {!closedAt && showStuckAlert && stuckTask && (
         <div
           role="alert"
           data-testid="stuck-interpreter-banner"
@@ -178,7 +127,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-gray-950 font-semibold transition-colors disabled:opacity-50"
             >
               {isSpawningShell ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
-              Spawn Fresh Shell (New Interpreter)
+              Spawn new shell
             </button>
             <button
               type="button"
@@ -191,8 +140,8 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
         </div>
       )}
 
-      {/* 5. Calm Queued Execution Strip (for slow beacons / queued tasks) */}
-      {!closedAt && !showStuckAlert && (queuedTasks.length > 0 || runningTasks.length > 0) && (
+      {/* 4. Calm Queued Execution Strip (for slow beacons / queued tasks) */}
+      {showQueuedStrip && (
         <div
           data-testid="queued-tasks-strip"
           className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-1.5 rounded-md bg-[#1b2234] border border-blue-500/30 text-xs text-blue-200"

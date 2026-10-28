@@ -13,6 +13,7 @@ import MultiLineComposer from "./components/MultiLineComposer";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
 import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
 import ShellNuxDrawer from "./components/ShellNuxDrawer";
+import ShellWalkthrough from "./components/ShellWalkthrough";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast, Tooltip } from "@chakra-ui/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMutation } from "@apollo/client";
@@ -112,19 +113,74 @@ const Shell = () => {
     knownPivotIdsRef.current = new Set();
   }, [shellId]);
 
+  const handleBindTabPivotId = useCallback((tabId: string, createdPivotId: string) => {
+    knownPivotIdsRef.current.add(createdPivotId);
+    setPortalTabs((prev) =>
+      prev.map((t) => {
+        if (t.id !== tabId) return t;
+        const updatedTarget =
+          t.type === "pty" && (t.target === "PTY" || !t.target)
+            ? `PTY #${createdPivotId}`
+            : t.target;
+        return {
+          ...t,
+          pivotId: createdPivotId,
+          target: updatedTarget,
+        };
+      })
+    );
+  }, []);
+
   const handleOpenPortalTab = useCallback(
     (type: string, target: string, pivotId?: string, focusNewTab = true) => {
       const normalizedType = type.toLowerCase();
-      const id = pivotId ? `pivot-${pivotId}` : `${normalizedType}-${target}-${Date.now()}`;
+      if (pivotId) {
+        knownPivotIdsRef.current.add(String(pivotId));
+      }
       setPortalTabs((prev) => {
-        const existingIdx = prev.findIndex((t) => t.id === id);
-        if (existingIdx !== -1) {
+        // 1. Check if a tab already exists for this exact pivotId or deterministic id
+        const deterministicId = pivotId ? `pivot-${pivotId}` : undefined;
+        const existingByPivotIdx = prev.findIndex(
+          (t) =>
+            (pivotId && String(t.pivotId) === String(pivotId)) ||
+            (deterministicId && t.id === deterministicId)
+        );
+        if (existingByPivotIdx !== -1) {
           if (focusNewTab) {
-            setTabIndex(existingIdx + 1);
+            setTabIndex(existingByPivotIdx + 1);
           }
           return prev;
         }
-        const newTabs = [...prev, { id, type: normalizedType, target, pivotId }];
+
+        // 2. If a pivotId arrived (e.g. from GraphQL poll) for an already-open tab that hasn't bound its pivotId yet,
+        // bind the pivotId in place without changing tab.id (preserving the mounted terminal & WebSocket).
+        if (pivotId) {
+          const pendingIdx = prev.findIndex(
+            (t) =>
+              !t.pivotId &&
+              t.type === normalizedType &&
+              (normalizedType === "pty" || t.target === target)
+          );
+          if (pendingIdx !== -1) {
+            const next = [...prev];
+            next[pendingIdx] = {
+              ...next[pendingIdx],
+              pivotId: String(pivotId),
+              target:
+                normalizedType === "pty" ? `PTY #${pivotId}` : next[pendingIdx].target || target,
+            };
+            if (focusNewTab) {
+              setTabIndex(pendingIdx + 1);
+            }
+            return next;
+          }
+        }
+
+        const id = deterministicId || `${normalizedType}-${target}-${Date.now()}`;
+        const newTabs = [
+          ...prev,
+          { id, type: normalizedType, target, pivotId: pivotId ? String(pivotId) : undefined },
+        ];
         if (focusNewTab) {
           setTabIndex(newTabs.length);
         }
@@ -223,16 +279,26 @@ const Shell = () => {
   const [createShellMutation, { loading: isSpawningShell }] = useMutation(CREATE_SHELL_MUTATION);
 
   const handleSpawnFreshShell = useCallback(async () => {
-    const beaconId = beaconData?.id;
-    if (!beaconId) return;
+    const beaconId =
+      shellData?.node?.beacon?.id || beaconData?.node?.id || beaconData?.id;
+    if (!beaconId) {
+      toast({
+        title: "Cannot spawn new shell",
+        description: "Beacon ID is not available for this shell session.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
     try {
       const response = await createShellMutation({
-        variables: { beaconId, data: "" },
+        variables: { beaconId },
       });
       const newShellId = response.data?.createShell?.id;
       if (newShellId) {
         toast({
-          title: "Fresh Shell Created",
+          title: "New shell created",
           description: `Switched to Shell #${newShellId} with a clean Eldritch interpreter.`,
           status: "success",
           duration: 4000,
@@ -242,14 +308,21 @@ const Shell = () => {
       }
     } catch (err: any) {
       toast({
-        title: "Failed to create fresh shell",
+        title: "Failed to spawn new shell",
         description: err?.message || "An error occurred while creating a new shell.",
         status: "error",
         duration: 5000,
         isClosable: true,
       });
     }
-  }, [beaconData?.id, createShellMutation, navigate, toast]);
+  }, [
+    shellData?.node?.beacon?.id,
+    beaconData?.node?.id,
+    beaconData?.id,
+    createShellMutation,
+    navigate,
+    toast,
+  ]);
 
   const handleExport = () => {
     const inputs = getSessionInputs();
@@ -349,7 +422,16 @@ const Shell = () => {
 
   return (
     <AccessGate>
-      <div className="flex flex-col h-screen p-3 md:p-4 bg-[#14161c] text-[#d4d4d4]">
+      <div className="flex flex-col h-screen p-3 md:p-4 bg-[#11131a] text-[#d4d4d4]">
+        <ShellWalkthrough
+          isOpen={showNuxBanner && !shellData?.node?.closedAt}
+          onDismiss={handleDismissNuxBanner}
+          onOpenGuideDrawer={() => {
+            setNuxOpen(true);
+            setHistoryOpen(false);
+            setKnowledgeOpen(false);
+          }}
+        />
         <ShellHeader
           shellData={shellData}
           activeUsers={activeUsers}
@@ -413,15 +495,6 @@ const Shell = () => {
             setKnowledgeOpen(false);
             setNuxOpen(false);
           }}
-          onOpenNuxDrawer={() => {
-            setNuxOpen(true);
-            setHistoryOpen(false);
-            setKnowledgeOpen(false);
-          }}
-          showNuxWelcome={showNuxBanner}
-          onDismissNuxWelcome={handleDismissNuxBanner}
-          portalId={portalId}
-          onOpenPortal={handleNewPortal}
         />
 
         {/* Main Workspace Row: Terminal/Pivots + Optional History or Guide Drawer */}
@@ -592,6 +665,9 @@ const Shell = () => {
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
                         }
+                        onPivotCreated={(createdPivotId) =>
+                          handleBindTabPivotId(tab.id, String(createdPivotId))
+                        }
                         onCloseTab={() => handleClosePortalTab(tab.id)}
                       />
                     )}
@@ -603,6 +679,9 @@ const Shell = () => {
                         isActive={tabIndex === idx + 1}
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
+                        }
+                        onPivotCreated={(createdPivotId) =>
+                          handleBindTabPivotId(tab.id, String(createdPivotId))
                         }
                         onCloseTab={() => handleClosePortalTab(tab.id)}
                       />
@@ -658,6 +737,10 @@ const Shell = () => {
             onStageToPrompt={handleStageToPrompt}
             onLoadIntoComposer={handleLoadIntoComposer}
             onSpawnFreshShell={handleSpawnFreshShell}
+            onStartWalkthrough={() => {
+              setNuxOpen(false);
+              setShowNuxBanner(true);
+            }}
           />
         </div>
 

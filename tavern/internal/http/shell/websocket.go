@@ -172,8 +172,9 @@ func NewWebsocketTaskOutputFromOtherStreamMessage(task *ent.ShellTask) *Websocke
 
 // WebsocketStatusMessage represents status updates (such as session closed) for a shell or pivot websocket.
 type WebsocketStatusMessage struct {
-	Kind   WebsocketMessageKind `json:"kind"`
-	Status string               `json:"status"`
+	Kind    WebsocketMessageKind `json:"kind"`
+	Status  string               `json:"status"`
+	PivotID int                  `json:"pivot_id,omitempty"`
 }
 
 // NewWebsocketPortalDowngradeMessage indicates that the connection has been closed.

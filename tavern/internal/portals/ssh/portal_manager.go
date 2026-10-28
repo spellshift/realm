@@ -140,10 +140,9 @@ func (m *PortalManager) startStream(ctx context.Context, streamID string, connec
 		m.mu.Unlock()
 		return
 	}
-	if existing, exists := m.streams[streamID]; exists {
+	if _, exists := m.streams[streamID]; exists {
 		m.mu.Unlock()
-		existing.Close("Replaced by new connection")
-		m.mu.Lock()
+		return
 	}
 
 	streamCtx, cancel := context.WithCancel(ctx)
@@ -167,6 +166,14 @@ func (m *PortalManager) startStream(ctx context.Context, streamID string, connec
 	m.mu.Unlock()
 
 	go s.run(connectPayload)
+}
+
+func (s *portalSSHStream) sendConnected() {
+	if err := s.outWriter.WriteSSH(&portalpb.SSHPayload{
+		Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA,
+	}); err != nil {
+		slog.Debug("failed to publish SSH connected mote", "stream_id", s.streamID, "err", err)
+	}
 }
 
 func (s *portalSSHStream) sendData(data []byte) {
@@ -205,7 +212,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 	port := int(connectPayload.DstPort)
 	user := connectPayload.Username
 	if host == "" || port <= 0 || user == "" {
-		s.sendData([]byte("\r\n\x1b[31m[-] Invalid SSH connection parameters.\x1b[0m\r\n"))
+		s.Close("Invalid SSH connection parameters")
 		return
 	}
 
@@ -213,7 +220,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 	if len(connectPayload.PrivateKey) > 0 {
 		signer, err := gossh.ParsePrivateKey(connectPayload.PrivateKey)
 		if err != nil {
-			s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Invalid SSH private key: %v\x1b[0m\r\n", err)))
+			s.Close(fmt.Sprintf("Invalid SSH private key: %v", err))
 			return
 		}
 		authMethods = append(authMethods, gossh.PublicKeys(signer))
@@ -244,14 +251,17 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 
 	conn, err := pnet.Dial("tcp", hostPortStr, s.streamID, s.manager.sendToAgent, receiver)
 	if err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Failed to initialize portal TCP stream: %v\x1b[0m\r\n", err)))
+		s.Close(fmt.Sprintf("Failed to initialize portal TCP stream: %v", err))
 		return
 	}
 	defer conn.Close()
 
+	// Enforce a strict deadline on the SSH handshake and session setup
+	_ = conn.SetDeadline(time.Now().Add(15 * time.Second))
+
 	c, chans, reqs, err := gossh.NewClientConn(conn, hostPortStr, sshConfig)
 	if err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] SSH handshake failed (%s@%s): %v\x1b[0m\r\n", user, hostPortStr, err)))
+		s.Close(fmt.Sprintf("SSH handshake failed (%s@%s): %v", user, hostPortStr, err))
 		return
 	}
 	sshClient := gossh.NewClient(c, chans, reqs)
@@ -259,7 +269,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Failed to open SSH session: %v\x1b[0m\r\n", err)))
+		s.Close(fmt.Sprintf("Failed to open SSH session: %v", err))
 		return
 	}
 	defer sshSession.Close()
@@ -279,30 +289,64 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 		gossh.TTY_OP_OSPEED: 14400,
 	}
 	if err := sshSession.RequestPty("xterm-256color", rows, cols, modes); err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Failed to request PTY: %v\x1b[0m\r\n", err)))
+		s.Close(fmt.Sprintf("Failed to request PTY: %v", err))
 		return
 	}
 
 	sshStdin, err := sshSession.StdinPipe()
 	if err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Failed to bind stdin pipe: %v\x1b[0m\r\n", err)))
+		s.Close(fmt.Sprintf("Failed to bind stdin pipe: %v", err))
 		return
 	}
 	sshStdout, err := sshSession.StdoutPipe()
 	if err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Failed to bind stdout pipe: %v\x1b[0m\r\n", err)))
+		s.Close(fmt.Sprintf("Failed to bind stdout pipe: %v", err))
 		return
 	}
 	sshStderr, err := sshSession.StderrPipe()
 	if err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Failed to bind stderr pipe: %v\x1b[0m\r\n", err)))
+		s.Close(fmt.Sprintf("Failed to bind stderr pipe: %v", err))
 		return
 	}
 
 	if err := sshSession.Shell(); err != nil {
-		s.sendData([]byte(fmt.Sprintf("\r\n\x1b[31m[-] Failed to start remote shell: %v\x1b[0m\r\n", err)))
+		s.Close(fmt.Sprintf("Failed to start remote shell: %v", err))
 		return
 	}
+
+	// Handshake and shell startup succeeded; clear the handshake deadline and notify connected
+	_ = conn.SetDeadline(time.Time{})
+	s.sendConnected()
+
+	// Periodic SSH keepalive to detect stalled or dropped target connections
+	go func() {
+		ticker := time.NewTicker(15 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-s.ctx.Done():
+				return
+			case <-ticker.C:
+				keepaliveDone := make(chan error, 1)
+				go func() {
+					_, _, err := sshClient.SendRequest("keepalive@openssh.com", true, nil)
+					keepaliveDone <- err
+				}()
+				select {
+				case <-s.ctx.Done():
+					return
+				case err := <-keepaliveDone:
+					if err != nil {
+						s.Close(fmt.Sprintf("SSH connection lost: %v", err))
+						return
+					}
+				case <-time.After(10 * time.Second):
+					s.Close("SSH connection timed out (keepalive unresponsive)")
+					return
+				}
+			}
+		}
+	}()
 
 	var wg sync.WaitGroup
 	wg.Add(2)

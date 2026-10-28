@@ -161,6 +161,11 @@ export const useShellData = (shellId: string | undefined) => {
         return () => clearInterval(timer);
     }, []);
 
+    // Reset portalId when switching shells
+    useEffect(() => {
+        setPortalId(null);
+    }, [shellId]);
+
     // Initialize portalId from shell data or history data
     useEffect(() => {
         const portals = historyData?.node?.portals || shellData?.node?.portals;
@@ -168,6 +173,8 @@ export const useShellData = (shellId: string | undefined) => {
             const activePortal = portals.find((p: any) => !p.closedAt);
             if (activePortal) {
                 setPortalId(parseInt(activePortal.id));
+            } else {
+                setPortalId(null);
             }
         }
     }, [shellData, historyData]);
@@ -206,12 +213,18 @@ export const useShellData = (shellId: string | undefined) => {
     }, [hostId, reportedArtifactSignature, refetchKnowledgeGraph]);
 
     const queuedTasks = useMemo(
-        () => shellTasks.filter((t) => !t.claimedAt && !t.execFinishedAt),
+        () =>
+            shellTasks.filter(
+                (t) => !t.claimedAt && !t.execFinishedAt && !t.output && !t.error
+            ),
         [shellTasks]
     );
 
     const runningTasks = useMemo(
-        () => shellTasks.filter((t) => !!t.claimedAt && !t.execFinishedAt),
+        () =>
+            shellTasks.filter(
+                (t) => !!t.claimedAt && !t.execFinishedAt && !t.output && !t.error
+            ),
         [shellTasks]
     );
 
