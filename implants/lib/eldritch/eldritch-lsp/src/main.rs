@@ -157,7 +157,8 @@ impl LanguageServer for Backend {
 
         // Add Keywords
         let keywords = vec![
-            "def", "if", "else", "for", "while", "return", "import", "true", "false", "none"
+            "def", "if", "elif", "else", "for", "while", "return", "try", "except", "finally",
+            "as", "raise", "import", "true", "false", "none",
         ];
         for kw in keywords {
             items.push(CompletionItem {

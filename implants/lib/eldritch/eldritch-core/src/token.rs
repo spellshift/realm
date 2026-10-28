@@ -97,6 +97,11 @@ pub enum TokenKind {
     Continue,
     Pass,
     Lambda,
+    Try,
+    Except,
+    As,
+    Finally,
+    Raise,
 
     // Structural
     Indent,
@@ -177,6 +182,11 @@ impl fmt::Display for TokenKind {
             TokenKind::Continue => write!(f, "continue"),
             TokenKind::Pass => write!(f, "pass"),
             TokenKind::Lambda => write!(f, "lambda"),
+            TokenKind::Try => write!(f, "try"),
+            TokenKind::Except => write!(f, "except"),
+            TokenKind::As => write!(f, "as"),
+            TokenKind::Finally => write!(f, "finally"),
+            TokenKind::Raise => write!(f, "raise"),
 
             TokenKind::Indent => write!(f, "indent"),
             TokenKind::Dedent => write!(f, "dedent"),
@@ -206,6 +216,11 @@ impl TokenKind {
             "continue" => Some(TokenKind::Continue),
             "pass" => Some(TokenKind::Pass),
             "lambda" => Some(TokenKind::Lambda),
+            "try" => Some(TokenKind::Try),
+            "except" => Some(TokenKind::Except),
+            "as" => Some(TokenKind::As),
+            "finally" => Some(TokenKind::Finally),
+            "raise" => Some(TokenKind::Raise),
             _ => None,
         }
     }

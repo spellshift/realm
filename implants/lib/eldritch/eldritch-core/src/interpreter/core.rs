@@ -34,6 +34,7 @@ pub struct Interpreter {
     pub call_stack: Vec<StackFrame>,
     pub current_func_name: String,
     pub is_scope_owner: bool,
+    pub active_exception: Option<EldritchError>,
 }
 
 impl Drop for Interpreter {
@@ -73,6 +74,7 @@ impl Interpreter {
             call_stack: Vec::new(),
             current_func_name: "<module>".to_string(),
             is_scope_owner: true,
+            active_exception: None,
         };
 
         interpreter.load_builtins();
@@ -201,6 +203,7 @@ impl Interpreter {
         // Reset state for fresh run
         self.call_stack.clear();
         self.current_func_name = "<module>".to_string();
+        self.active_exception = None;
 
         if let Err(e) = exec::hoist_functions(self, &stmts) {
             return Err(self.format_error(input, e));
@@ -496,7 +499,8 @@ impl Interpreter {
                 // 1. Keywords (filtered out as per request)
                 let keywords_to_filter = vec![
                     "def", "if", "elif", "else", "return", "for", "in", "True", "False", "None",
-                    "and", "or", "not", "break", "continue", "pass", "lambda",
+                    "and", "or", "not", "break", "continue", "pass", "lambda", "try", "except",
+                    "as", "finally", "raise",
                 ];
 
                 // 2. Builtins & Variables (walk up the environment chain)

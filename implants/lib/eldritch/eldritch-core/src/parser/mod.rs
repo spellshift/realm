@@ -87,6 +87,8 @@ impl Parser {
                 TokenKind::Def
                 | TokenKind::If
                 | TokenKind::For
+                | TokenKind::Try
+                | TokenKind::Raise
                 | TokenKind::Return
                 | TokenKind::Pass
                 | TokenKind::Break

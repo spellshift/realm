@@ -202,6 +202,32 @@ fn test_bytes_and_strings_interchangeable_in_methods() {
     );
 }
 
+#[test]
+fn test_try_except_stdlib_errors() {
+    let printer = Arc::new(BufferPrinter::new());
+    let mut interp = Interpreter::new_with_printer(printer);
+    interp.register_lib(crate::file::std::StdFileLibrary);
+    interp.register_lib(crate::json::std::StdJsonLibrary);
+
+    let code = r#"
+caught = []
+
+try:
+    file.read("/definitely/does/not/exist/eldritch_test_12345")
+except Exception as e:
+    caught.append(e)
+
+try:
+    json.decode("{not valid json")
+except Exception as e:
+    caught.append(e)
+
+len(caught)
+"#;
+    let res = interp.interpret(code).unwrap();
+    assert_eq!(res, crate::Value::Int(2));
+}
+
 #[cfg(feature = "fake_bindings")]
 #[test]
 fn test_fake_renames_delegate_and_warn() {

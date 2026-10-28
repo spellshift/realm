@@ -1,7 +1,7 @@
 use super::super::ast::{
     Environment, Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
-use super::super::token::TokenKind;
+use super::super::token::{Span, TokenKind};
 use super::core::{Flow, Interpreter};
 use super::error::{EldritchError, EldritchErrorKind};
 use super::eval::{apply_binary_op_pub, evaluate};
@@ -142,6 +142,116 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 }
             }
         }
+        StmtKind::Try {
+            body,
+            handlers,
+            else_branch,
+            finally_branch,
+        } => {
+            let mut pending_result = match execute_stmts(interp, body) {
+                Ok(()) => {
+                    if interp.flow == Flow::Next
+                        && let Some(else_stmts) = else_branch
+                    {
+                        execute_stmts(interp, else_stmts)
+                    } else {
+                        Ok(())
+                    }
+                }
+                Err(err) => {
+                    interp.flow = Flow::Next;
+                    let mut handled = false;
+                    let mut handler_result = Ok(());
+
+                    for handler in handlers {
+                        let is_match = match &handler.exception_type {
+                            None => Ok(true),
+                            Some(type_expr) => match evaluate(interp, type_expr) {
+                                Ok(target_type) => matches_exception_type(
+                                    interp,
+                                    &target_type,
+                                    &err,
+                                    type_expr.span,
+                                ),
+                                Err(eval_err) => Err(eval_err),
+                            },
+                        };
+
+                        match is_match {
+                            Ok(true) => {
+                                handled = true;
+                                if let Some(name) = &handler.name {
+                                    interp
+                                        .assign_variable(name, Value::String(err.message.clone()));
+                                }
+                                let prev_exception = interp.active_exception.replace(err.clone());
+                                handler_result = execute_stmts(interp, &handler.body);
+                                interp.active_exception = prev_exception;
+                                break;
+                            }
+                            Ok(false) => continue,
+                            Err(eval_err) => {
+                                handled = true;
+                                handler_result = Err(eval_err);
+                                break;
+                            }
+                        }
+                    }
+
+                    if handled { handler_result } else { Err(err) }
+                }
+            };
+
+            if let Some(finally_stmts) = finally_branch {
+                let saved_flow = core::mem::replace(&mut interp.flow, Flow::Next);
+                let finally_result = execute_stmts(interp, finally_stmts);
+                match finally_result {
+                    Err(finally_err) => {
+                        interp.flow = Flow::Next;
+                        pending_result = Err(finally_err);
+                    }
+                    Ok(()) => {
+                        if interp.flow != Flow::Next {
+                            pending_result = Ok(());
+                        } else {
+                            interp.flow = saved_flow;
+                        }
+                    }
+                }
+            }
+
+            pending_result?;
+        }
+        StmtKind::Raise(expr_opt) => match expr_opt {
+            None => {
+                if let Some(err) = interp.active_exception.clone() {
+                    return Err(err);
+                }
+                return interp.error(
+                    EldritchErrorKind::RuntimeError,
+                    "No active exception to reraise",
+                    stmt.span,
+                );
+            }
+            Some(expr) => {
+                let val = evaluate(interp, expr)?;
+                match val {
+                    Value::String(msg) => {
+                        return interp.error(EldritchErrorKind::RuntimeError, &msg, stmt.span);
+                    }
+                    Value::NativeFunction(name, _) if is_exception_type_name(&name) => {
+                        return interp.error(exception_kind_from_name(&name), "", stmt.span);
+                    }
+                    _ => {
+                        return interp.error(
+                            EldritchErrorKind::TypeError,
+                            "exceptions must derive from Exception",
+                            stmt.span,
+                        );
+                    }
+                }
+            }
+        },
         StmtKind::Break => interp.flow = Flow::Break,
         StmtKind::Continue => interp.flow = Flow::Continue,
         StmtKind::Pass => {} // Do nothing
@@ -491,5 +601,79 @@ fn try_inplace_add(left: &Value, right: &Value) -> bool {
             true
         }
         _ => false,
+    }
+}
+
+fn is_exception_type_name(name: &str) -> bool {
+    matches!(
+        name,
+        "Exception"
+            | "BaseException"
+            | "SyntaxError"
+            | "TypeError"
+            | "NameError"
+            | "IndexError"
+            | "KeyError"
+            | "AttributeError"
+            | "ValueError"
+            | "RuntimeError"
+            | "RecursionError"
+            | "ZeroDivisionError"
+            | "ImportError"
+            | "AssertionError"
+    )
+}
+
+fn exception_kind_from_name(name: &str) -> EldritchErrorKind {
+    match name {
+        "SyntaxError" => EldritchErrorKind::SyntaxError,
+        "TypeError" => EldritchErrorKind::TypeError,
+        "NameError" => EldritchErrorKind::NameError,
+        "IndexError" => EldritchErrorKind::IndexError,
+        "KeyError" => EldritchErrorKind::KeyError,
+        "AttributeError" => EldritchErrorKind::AttributeError,
+        "ValueError" => EldritchErrorKind::ValueError,
+        "RecursionError" => EldritchErrorKind::RecursionError,
+        "ZeroDivisionError" => EldritchErrorKind::ZeroDivisionError,
+        "ImportError" => EldritchErrorKind::ImportError,
+        "AssertionError" => EldritchErrorKind::AssertionError,
+        _ => EldritchErrorKind::RuntimeError,
+    }
+}
+
+fn matches_exception_type(
+    interp: &Interpreter,
+    target: &Value,
+    err: &EldritchError,
+    span: Span,
+) -> Result<bool, EldritchError> {
+    match target {
+        Value::NativeFunction(name, _) => {
+            if !is_exception_type_name(name) {
+                return interp.error(
+                    EldritchErrorKind::TypeError,
+                    "catching classes that do not inherit from Exception is not allowed",
+                    span,
+                );
+            }
+            if name == "Exception" || name == "BaseException" {
+                Ok(true)
+            } else {
+                Ok(name == &err.kind.to_string())
+            }
+        }
+        Value::Tuple(elements) => {
+            for elem in elements {
+                if matches_exception_type(interp, elem, err, span)? {
+                    return Ok(true);
+                }
+            }
+            Ok(false)
+        }
+        _ => interp.error(
+            EldritchErrorKind::TypeError,
+            "catching classes that do not inherit from Exception is not allowed",
+            span,
+        ),
     }
 }

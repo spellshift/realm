@@ -47,9 +47,17 @@ Eldritch currently only supports the [default starlark data types.](https://gith
 
 ## Error handling
 
-Eldritch doesn't implement any form of error handling. If a function fails it will stop the tome from completing execution. There is no way to recover after a function has errored.
+Eldritch supports Python-style `try`/`except` blocks (including optional `else` and `finally` clauses, as well as `raise`) to catch and handle runtime errors using the global `Exception` type (or a bare `except:` clause).
 
-If you're using a function that has a chance to error (functions that do file / network IO) test preemptively with function like `is_file`, `is_dir`, `is_windows`, etc.
+```python
+try:
+    content = str(file.read("/etc/shadow"))
+    print(content)
+except Exception as e:
+    eprint(f"Failed to read file: {e}")
+```
+
+When using functions that perform file or network I/O, you can also test preemptively with helper functions like `is_file`, `is_dir`, `is_windows`, etc., or combine them with `try`/`except`:
 
 For example:
 
@@ -157,6 +165,12 @@ The **enumerate** method returns a list of tuples containing (index, value) pair
 `eprint(*args) -> None`
 
 The **eprint** method prints objects to the standard error output, separated by spaces.
+
+### Exception
+
+`Exception([message, ...]) -> Str`
+
+The **Exception** built-in represents the global exception type for `try`/`except` blocks and can also be called to construct an error message (e.g. `raise Exception("error message")`).
 
 ### fail
 
