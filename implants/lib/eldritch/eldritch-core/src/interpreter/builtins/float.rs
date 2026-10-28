@@ -24,39 +24,39 @@ pub fn builtin_float(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
         Value::Float(f) => Ok(Value::Float(*f)),
         Value::Int(i) => Ok(Value::Float(*i as f64)),
         Value::Bool(b) => Ok(Value::Float(if *b { 1.0 } else { 0.0 })),
-        Value::String(s) => {
-            let s_trimmed = s.trim();
-            // Handle inf/nan
-            let lower = s_trimmed.to_lowercase();
-            if lower == "inf" || lower == "infinity" || lower == "+inf" || lower == "+infinity" {
-                return Ok(Value::Float(f64::INFINITY));
-            }
-            if lower == "-inf" || lower == "-infinity" {
-                return Ok(Value::Float(f64::NEG_INFINITY));
-            }
-            if lower == "nan" || lower == "+nan" || lower == "-nan" {
-                return Ok(Value::Float(f64::NAN));
-            }
-
-            match s_trimmed.parse::<f64>() {
-                Ok(f) => {
-                    if f.is_infinite() {
-                        // Check if literal denoted value too large (if standard parser returns inf for large value)
-                        // Prompt says: "The call fails if the literal denotes a value too large to represent as a finite float."
-                        // Rust's parse returns inf for overflow.
-                        // But for "inf" string it is valid.
-                        // Distinguishing overflow from explicit "inf" is handled by above checks.
-                        // So if we reach here and get infinity, it was overflow.
-                        return Err(format!("float() literal too large: {s}"));
-                    }
-                    Ok(Value::Float(f))
-                }
-                Err(_) => Err(format!("could not convert string to float: '{s}'")),
-            }
+        Value::String(s) => parse_float_str(s),
+        Value::Bytes(b) => {
+            let s = core::str::from_utf8(b)
+                .map_err(|e| format!("could not convert bytes to float: {e}"))?;
+            parse_float_str(s)
         }
         _ => Err(format!(
             "float() argument must be a string or a number, not '{}'",
             get_type_name(&args[0])
         )),
+    }
+}
+
+fn parse_float_str(s: &str) -> Result<Value, String> {
+    let s_trimmed = s.trim();
+    let lower = s_trimmed.to_lowercase();
+    if lower == "inf" || lower == "infinity" || lower == "+inf" || lower == "+infinity" {
+        return Ok(Value::Float(f64::INFINITY));
+    }
+    if lower == "-inf" || lower == "-infinity" {
+        return Ok(Value::Float(f64::NEG_INFINITY));
+    }
+    if lower == "nan" || lower == "+nan" || lower == "-nan" {
+        return Ok(Value::Float(f64::NAN));
+    }
+
+    match s_trimmed.parse::<f64>() {
+        Ok(f) => {
+            if f.is_infinite() {
+                return Err(format!("float() literal too large: {s}"));
+            }
+            Ok(Value::Float(f))
+        }
+        Err(_) => Err(format!("could not convert string to float: '{s}'")),
     }
 }

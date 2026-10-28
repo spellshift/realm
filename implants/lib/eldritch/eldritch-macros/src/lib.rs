@@ -26,3 +26,8 @@ pub fn eldritch_library_impl(attr: TokenStream, item: TokenStream) -> TokenStrea
 pub fn eldritch_method(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
+
+#[proc_macro_attribute]
+pub fn eldritch_deprecated(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}

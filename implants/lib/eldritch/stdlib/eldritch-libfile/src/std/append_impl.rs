@@ -2,15 +2,16 @@ use ::std::fs::OpenOptions;
 use ::std::io::Write;
 use alloc::format;
 use alloc::string::String;
+use alloc::vec::Vec;
 
-pub fn append(path: String, content: String) -> Result<(), String> {
+pub fn append(path: String, content: Vec<u8>) -> Result<(), String> {
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&path)
         .map_err(|e| format!("Failed to open file {path}: {e}"))?;
 
-    file.write_all(content.as_bytes())
+    file.write_all(&content)
         .map_err(|e| format!("Failed to write to file {path}: {e}"))?;
 
     Ok(())
@@ -29,7 +30,7 @@ mod tests {
         // Write initial
         ::std::fs::write(&path, "hello").unwrap();
 
-        append(path.clone(), " world".to_string()).unwrap();
+        append(path.clone(), b" world".to_vec()).unwrap();
 
         let content = ::std::fs::read_to_string(&path).unwrap();
         assert_eq!(content, "hello world");

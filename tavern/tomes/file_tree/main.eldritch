@@ -1,7 +1,7 @@
 block_list = ["/proc", "/sys", "/lib", "/libx32", "/lib32", "/lib64",
               "/boot", "/srv", "/usr", "/snap", "/run", "/dev", "/cores"]
 
-usernfo = sys.get_user()
+usernfo = user.info()
 windows = sys.is_windows()
 
 def can_read(f):

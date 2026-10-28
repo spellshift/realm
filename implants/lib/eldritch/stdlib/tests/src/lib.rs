@@ -26,17 +26,31 @@ mod tests {
         interp.register_lib(eldritch::agent::fake::AgentLibraryFake);
         interp.register_lib(eldritch::assets::fake::FakeAssetsLibrary);
         interp.register_lib(eldritch::file::fake::FileLibraryFake::default());
+        interp.register_lib(eldritch::template::fake::TemplateLibraryFake);
+        interp.register_lib(eldritch::gzip::fake::GzipLibraryFake);
         interp.register_lib(eldritch::http::fake::HttpLibraryFake);
+        interp.register_lib(eldritch::linux::fake::LinuxLibraryFake);
+        interp.register_lib(eldritch::net::fake::NetLibraryFake);
         interp.register_lib(eldritch::dns::fake::DnsLibraryFake::default());
         interp.register_lib(eldritch::pivot::fake::PivotLibraryFake);
+        interp.register_lib(eldritch::portal::fake::PortalLibraryFake);
         interp.register_lib(eldritch::process::fake::ProcessLibraryFake);
+        interp.register_lib(eldritch::registry::fake::RegistryLibraryFake);
         interp.register_lib(eldritch::report::fake::ReportLibraryFake);
+        interp.register_lib(eldritch::scan::fake::ScanLibraryFake);
+        interp.register_lib(eldritch::ssh::fake::SshLibraryFake);
         interp.register_lib(eldritch::sys::fake::SysLibraryFake);
+        interp.register_lib(eldritch::user::fake::UserLibraryFake);
+        interp.register_lib(eldritch::windows::fake::WindowsLibraryFake);
     }
 
     fn register_default_libs(interp: &mut Interpreter) {
         // Register non-fake libs that are safe to use
+        interp.register_lib(eldritch::aes::std::StdAesLibrary);
+        interp.register_lib(eldritch::base64::std::StdBase64Library);
         interp.register_lib(eldritch::crypto::std::StdCryptoLibrary);
+        interp.register_lib(eldritch::hash::std::StdHashLibrary);
+        interp.register_lib(eldritch::json::std::StdJsonLibrary);
         interp.register_lib(eldritch::random::std::StdRandomLibrary);
         interp.register_lib(eldritch::regex::std::StdRegexLibrary);
         interp.register_lib(eldritch::time::std::StdTimeLibrary);

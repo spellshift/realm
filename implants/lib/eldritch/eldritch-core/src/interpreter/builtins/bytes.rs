@@ -22,6 +22,7 @@ pub fn builtin_bytes(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
 
     match &args[0] {
         Value::String(s) => Ok(Value::Bytes(s.as_bytes().to_vec())),
+        Value::Bytes(b) => Ok(Value::Bytes(b.clone())),
         Value::List(l) => {
             let list = l.read();
             let mut bytes = Vec::with_capacity(list.len());

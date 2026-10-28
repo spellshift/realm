@@ -35,17 +35,32 @@ Add your function to the docs. Give your function a unique and descriptive name.
 
 Currently Eldritch has the following libraries your function can be bound to:
 
+* `aes`: Used to encrypt and decrypt data and files with AES.
+* `agent`: Used for meta-style interactions with the agent itself.
 * `assets`: Is used to interact with files stored natively in the agent.
-* `crypto` Is used to encrypt/decrypt or hash data.
+* `base64`: Used to encode and decode base64 data.
+* `chain`: Used for multi-agent C2 chaining.
+* `dns`: Used to perform DNS lookups.
 * `file`: Is used for any on disk file processing.
+* `gzip`: Used to compress and decompress data and files using gzip.
+* `hash`: Used to calculate hashes of data and files.
 * `http`: Is used for any web requests needed to be made.
-* `pivot`: Is used to migrate to identify, and migrate between systems. The pivot library is also responsible for facilitating connectivity within an environment.
+* `json`: Used to encode, decode, and validate JSON data.
+* `linux`: Linux-specific system operations.
+* `net`: Network interface enumeration, connection listing, and TCP/UDP connections.
+* `portal`: Used to open bi-directional portal streams.
 * `process`: Is used to manage running processes on a system.
-* `random` - Used to generate cryptographically secure random values.
+* `random`: Used to generate cryptographically secure random values.
 * `regex`: Is used to perform regex operations on strings.
+* `registry`: Used to read and write Windows Registry keys and values.
 * `report`: Is used to report structured data to the caller of the eldritch environment (e.g. to the c2).
+* `scan`: Network scanning capabilities (`arp`, `port`).
+* `ssh`: Remote execution, file copy, and deployment over SSH.
 * `sys`: Is used to check system specific configurations and start new processes.
+* `template`: Renders Jinja2 templates from strings and files.
 * `time`: Is used for obtaining and formatting time or adding delays into code.
+* `user`: User account enumeration and current user inspection.
+* `windows`: Windows-specific operations (DLL injection/reflection, token manipulation).
 
 If your function does not fall under a specific standard library reach out to the core developers about adding a new library or finding the right fit.
 
@@ -55,7 +70,7 @@ If there are OS or edge case specific behaviors make sure to document them here.
 Please add your function in alphabetical order this makes it easy to search by key words.
 
 ```markdown
-### agent.get_config
+### agent.config
 library.function(arg1: str) -> Dict<str, Value>
 
 The <b>library.function</b> describe your function and edge cases.
@@ -230,15 +245,15 @@ struct OsInfo {
     arch:           String,
 }
 
-fn handle_get_os() -> Result<OsInfo> {
+fn handle_info() -> Result<OsInfo> {
     return Ok(OsInfo {
         arch:           whoami::arch().to_string(),
     });
 }
 
-pub fn get_os() -> Result<Dict> {
+pub fn info() -> Result<Dict> {
 
-    let cmd_res = handle_get_os()?;
+    let cmd_res = handle_info()?;
 
     let mut res = BTreeMap::new();
     res.insert("arch", Value::String(cmd_res.arch))
@@ -256,7 +271,7 @@ When writing performant code bound by many I/O operations, it can be greatly ben
 You'll need to write tests for your synchronous and asynchronous code.
 Async tests will usually start two threads one for your function and one that mocks (or reimplements) the feature you're testing against.
 For example if testing a port scanner or netcat like function you'll want to run a test port listener for your feature to connect to.
-Network ports test servers have been implemented in `pivot.ncat` and `pivot.port_scan` an example SSH server has been implemented in `pivot.ssh_exec`.
+Network ports test servers have been implemented in `net.tcp` and `scan.ports` an example SSH server has been implemented in `ssh.exec`.
 
 Tests for async functions may look like this:
 

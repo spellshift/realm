@@ -6,7 +6,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -19,42 +19,20 @@ pub mod std;
 ///
 /// It supports:
 /// - Process execution (`exec`, `shell`).
-/// - System information (`get_os`, `get_ip`, `get_user`, `hostname`).
-/// - Registry operations (Windows).
-/// - DLL injection and reflection.
-/// - Environment variable access.
+/// - System information (`info`, `hostname`, `is_linux`, `is_windows`, `is_macos`, `is_bsd`).
 pub trait SysLibrary {
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.dll_inject has been deprecated and will be removed in a future version of eldritch. Please use windows.dll_inject instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Injects a DLL from disk into a remote process.
-    ///
-    /// **Parameters**
-    /// - `dll_path` (`str`): Path to the DLL on disk.
-    /// - `pid` (`int`): Target process ID.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if injection fails.
-    ///
-    /// **Note**
-    /// - For Imix reflective loading, use `dll_reflect` with `function_name = "lib_entry"` instead of
-    ///   loading from disk with `dll_inject`.
     fn dll_inject(&self, dll_path: String, pid: i64) -> Result<(), String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.dll_reflect has been deprecated and will be removed in a future version of eldritch. Please use windows.dll_reflect instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Reflectively injects a DLL from memory into a remote process.
-    ///
-    /// **Parameters**
-    /// - `dll_bytes` (`List<int>`): Content of the DLL.
-    /// - `pid` (`int`): Target process ID.
-    /// - `function_name` (`str`): Exported function to call (for Imix DLLs, use `"lib_entry"`).
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if injection fails.
     fn dll_reflect(
         &self,
         dll_bytes: Vec<u8>,
@@ -83,48 +61,45 @@ pub trait SysLibrary {
     ) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.get_env has been deprecated and will be removed in a future version of eldritch. Please use process.env instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Returns the current process's environment variables.
-    ///
-    /// **Returns**
-    /// - `Dict<str, str>`: Map of environment variables.
     fn get_env(&self) -> Result<BTreeMap<String, String>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.get_ip has been deprecated and will be removed in a future version of eldritch. Please use net.interfaces instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Returns network interface information.
-    ///
-    /// **Returns**
-    /// - `List<Dict>`: List of interfaces with `name` and `ip`.
     fn get_ip(&self) -> Result<Vec<BTreeMap<String, String>>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.get_os has been deprecated and will be removed in a future version of eldritch. Please use sys.info instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Returns information about the operating system.
-    ///
-    /// **Returns**
-    /// - `Dict`: Details like `arch`, `distro`, `platform`.
     fn get_os(&self) -> Result<BTreeMap<String, String>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.get_pid has been deprecated and will be removed in a future version of eldritch. Please use process.pid instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Returns the current process ID.
-    ///
-    /// **Returns**
-    /// - `int`: The PID.
     fn get_pid(&self) -> Result<i64, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.get_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.read instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Reads values from the Windows Registry.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
-    ///
-    /// **Returns**
-    /// - `Dict<str, str>`: A dictionary of registry keys and values.
     fn get_reg(&self, path: String) -> Result<BTreeMap<String, String>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.get_user has been deprecated and will be removed in a future version of eldritch. Please use user.info instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Returns information about the current user.
-    ///
-    /// **Returns**
-    /// - `Dict`: User details (uid, gid, name, groups).
     fn get_user(&self) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
@@ -135,14 +110,18 @@ pub trait SysLibrary {
     fn hostname(&self) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.impersonate has been deprecated and will be removed in a future version of eldritch. Please use windows.impersonate instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Impersonates another user by stealing a process token.
-    ///
-    /// **Parameters**
-    /// - `pid` (`int`): Target process ID.
+    fn impersonate(&self, pid: i64) -> Result<i64, String>;
+
+    #[eldritch_method]
+    /// Returns information about the operating system.
     ///
     /// **Returns**
-    /// - `int`: Token store ID for later use with `use_token()`.
-    fn impersonate(&self, pid: i64) -> Result<i64, String>;
+    /// - `Dict`: Details like `arch`, `desktop_env`, `distro`, `platform`.
+    fn info(&self) -> Result<BTreeMap<String, String>, String>;
 
     #[eldritch_method]
     /// Checks if the OS is BSD.
@@ -173,10 +152,10 @@ pub trait SysLibrary {
     fn is_windows(&self) -> Result<bool, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.list_users has been deprecated and will be removed in a future version of eldritch. Please use user.list instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Lists all user accounts on the system.
-    ///
-    /// **Returns**
-    /// - `List<Dict>`: List of user accounts.
     fn list_users(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
@@ -190,54 +169,31 @@ pub trait SysLibrary {
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.tokens has been deprecated and will be removed in a future version of eldritch. Please use windows.tokens instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Lists tokens in the global store, or enumerates a process token.
-    ///
-    /// With no arguments, returns all stored tokens from global token store calls.
-    /// With a PID, returns the process token info including user and privileges.
-    ///
-    /// **Parameters**
-    /// - `pid` (`Option<int>`): Process ID to query, or None for stored tokens.
-    ///
-    /// **Returns**
-    /// - `List<Dict>`: Token info. Stored: `{active, id, source}`.
-    ///   Process: `{user, pid, privileges}`.
     fn tokens(&self, pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.use_token has been deprecated and will be removed in a future version of eldritch. Please use windows.use_token instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Activates a stored token by ID.
-    ///
-    /// Deactivates any currently active token and applies the specified one
-    /// globally. Token must have been previously created by
-    /// other token functions.
-    ///
-    /// **Parameters**
-    /// - `id` (`int`): Token store ID (returned by `impersonate()` or other token functions).
-    ///
-    /// **Returns**
-    /// - `bool`: True if token was activated.
     fn use_token(&self, id: i64) -> Result<bool, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.whereis has been deprecated and will be removed in a future version of eldritch. Please use file.which instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Looks up the full path in PATH
-    ///
-    /// **Parameters**
-    /// - `bin` (`str`): The binary to lookup
-    ///
-    /// **Returns**
-    /// - `bool`: True on success.
     fn whereis(&self, bin: String) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "sys.write_reg has been deprecated and will be removed in a future version of eldritch. Please use registry.write instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Writes a value to the Windows Registry.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
-    /// - `regname` (`str`)
-    /// - `regtype` (`str`): e.g., "REG_SZ", "REG_DWORD", "REG_BINARY".
-    /// - `regvalue` (`any`): The value to write.
-    ///
-    /// **Returns**
-    /// - `bool`: True on success.
     fn write_reg(
         &self,
         path: String,

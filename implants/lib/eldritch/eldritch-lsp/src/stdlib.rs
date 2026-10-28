@@ -51,11 +51,16 @@ impl StdlibIndex {
 
         // Add hardcoded core modules if scanning fails or structure is different
         if self.modules.is_empty() {
-             log::warn!("Stdlib scan yielded no results. Using fallback core modules.");
-             let defaults = vec!["agent", "assets", "crypto", "file", "http", "pivot", "process", "random", "regex", "report", "sys", "time"];
-             for m in defaults {
-                 self.modules.insert(m.to_string());
-             }
+            log::warn!("Stdlib scan yielded no results. Using fallback core modules.");
+            let defaults = vec![
+                "aes", "agent", "assets", "base64", "chain", "crypto", "dns", "file", "gzip",
+                "hash", "http", "json", "linux", "net", "pivot", "portal", "process", "random",
+                "regex", "registry", "report", "scan", "ssh", "sys", "template", "time", "user",
+                "windows",
+            ];
+            for m in defaults {
+                self.modules.insert(m.to_string());
+            }
         }
     }
 

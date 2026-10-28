@@ -160,7 +160,7 @@ def systemd(service_name, service_desc, executable_path, executable_url):
         "SERVICE_DESC":service_desc,
         "SERVICE_START_CMD":executable_path
     }
-    file.template("/tmp/systemd.service.j2","/usr/lib/systemd/system/"+service_name+".service", args, False)
+    template.render_file("/tmp/systemd.service.j2","/usr/lib/systemd/system/"+service_name+".service", args, False)
     file.remove("/tmp/systemd.service.j2")
 
     # assets.copy("persist_service/files/payload.elf", executable_path)
@@ -179,7 +179,7 @@ def sysvinit(service_name, service_desc, executable_path, executable_url):
         "SERVICE_DESC":service_desc,
         "SERVICE_START_CMD":executable_path
     }
-    file.template("/tmp/svc.sh.j2","/etc/init.d/"+service_name, args, False)
+    template.render_file("/tmp/svc.sh.j2","/etc/init.d/"+service_name, args, False)
     file.remove("/tmp/svc.sh.j2")
     sys.shell("chmod +x "+"/etc/init.d/"+service_name)
 
@@ -197,7 +197,7 @@ def launch_daemon(service_name, executable_path, executable_url):
         "service_name":"com.testing."+service_name,
         "bin_path":executable_path
     }
-    file.template("/tmp/plist.j2","/Library/LaunchDaemons/"+service_name+".plist", args, False)
+    template.render_file("/tmp/plist.j2","/Library/LaunchDaemons/"+service_name+".plist", args, False)
     file.remove("/tmp/plist.j2")
 
     # assets.copy("persist_service/files/payload.macho", executable_path)

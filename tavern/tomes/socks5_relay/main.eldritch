@@ -1,2 +1,2 @@
-pivot.create_portal()
+portal.create()
 print("Portal created")

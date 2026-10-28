@@ -2,7 +2,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -20,6 +20,9 @@ pub mod std;
 /// - JSON serialization and deserialization.
 pub trait CryptoLibrary {
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.aes_decrypt has been deprecated and will be removed in a future version of eldritch. Please use aes.decrypt instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Decrypts data using AES (CBC mode).
     ///
     /// **Parameters**
@@ -35,6 +38,9 @@ pub trait CryptoLibrary {
     fn aes_decrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.aes_encrypt has been deprecated and will be removed in a future version of eldritch. Please use aes.encrypt instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Encrypts data using AES (CBC mode).
     ///
     /// **Parameters**
@@ -50,6 +56,9 @@ pub trait CryptoLibrary {
     fn aes_encrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.aes_decrypt_file has been deprecated and will be removed in a future version of eldritch. Please use aes.decrypt_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Decrypts a file using AES.
     ///
     /// **Parameters**
@@ -65,6 +74,9 @@ pub trait CryptoLibrary {
     fn aes_decrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.aes_encrypt_file has been deprecated and will be removed in a future version of eldritch. Please use aes.encrypt_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Encrypts a file using AES.
     ///
     /// **Parameters**
@@ -80,6 +92,9 @@ pub trait CryptoLibrary {
     fn aes_encrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.md5 has been deprecated and will be removed in a future version of eldritch. Please use hash.md5 instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Calculates the MD5 hash of the provided data.
     ///
     /// **Parameters**
@@ -93,6 +108,9 @@ pub trait CryptoLibrary {
     fn md5(&self, data: Vec<u8>) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.sha1 has been deprecated and will be removed in a future version of eldritch. Please use hash.sha1 instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Calculates the SHA1 hash of the provided data.
     ///
     /// **Parameters**
@@ -106,6 +124,9 @@ pub trait CryptoLibrary {
     fn sha1(&self, data: Vec<u8>) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.sha256 has been deprecated and will be removed in a future version of eldritch. Please use hash.sha256 instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Calculates the SHA256 hash of the provided data.
     ///
     /// **Parameters**
@@ -119,20 +140,26 @@ pub trait CryptoLibrary {
     fn sha256(&self, data: Vec<u8>) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.hash_file has been deprecated and will be removed in a future version of eldritch. Please use hash.file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Calculates the hash of a file on disk.
     ///
     /// **Parameters**
     /// - `file` (`str`): The path to the file.
-    /// - `algo` (`str`): The hashing algorithm to use ("MD5", "SHA1", "SHA256", "SHA512").
+    /// - `algo` (`Option<str>`): The hashing algorithm to use ("MD5", "SHA1", "SHA256" (default), "SHA512").
     ///
     /// **Returns**
     /// - `str`: The hexadecimal representation of the hash.
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read or the algorithm is not supported.
-    fn hash_file(&self, file: String, algo: String) -> Result<String, String>;
+    fn hash_file(&self, file: String, algo: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.encode_b64 has been deprecated and will be removed in a future version of eldritch. Please use base64.encode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Encodes a string to Base64.
     ///
     /// **Parameters**
@@ -147,6 +174,9 @@ pub trait CryptoLibrary {
     fn encode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.decode_b64 has been deprecated and will be removed in a future version of eldritch. Please use base64.decode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Decodes a Base64 encoded string.
     ///
     /// **Parameters**
@@ -161,6 +191,9 @@ pub trait CryptoLibrary {
     fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.is_json has been deprecated and will be removed in a future version of eldritch. Please use json.is_valid instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Checks if a string is valid JSON.
     ///
     /// **Parameters**
@@ -171,6 +204,9 @@ pub trait CryptoLibrary {
     fn is_json(&self, content: String) -> Result<bool, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.from_json has been deprecated and will be removed in a future version of eldritch. Please use json.decode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Parses a JSON string into an Eldritch value (Dict, List, etc.).
     ///
     /// **Parameters**
@@ -185,6 +221,9 @@ pub trait CryptoLibrary {
     fn from_json(&self, content: String) -> Result<Value, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.to_json has been deprecated and will be removed in a future version of eldritch. Please use json.encode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Serializes an Eldritch value into a JSON string.
     ///
     /// **Parameters**
@@ -198,6 +237,9 @@ pub trait CryptoLibrary {
     fn to_json(&self, content: Value) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.encode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use str.encode(\"utf16le\") instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Encodes a UTF-8 string into UTF-16LE bytes.
     ///
     /// **Parameters**
@@ -208,6 +250,9 @@ pub trait CryptoLibrary {
     fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "crypto.decode_utf16le has been deprecated and will be removed in a future version of eldritch. Please use bytes.decode(\"utf16le\") instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Decodes UTF-16LE bytes into a UTF-8 string.
     ///
     /// **Parameters**

@@ -68,14 +68,14 @@ const writeHelpMessage = (term: Terminal, version: string) => {
     term.write("\r\n");
     term.write("\x1b[1;33m## Process\x1b[0m\r\n");
     term.write("  \x1b[1m`process.list()`\x1b[0m                                             — List processes\r\n");
-    term.write("  \x1b[1m`process.netstat()`\x1b[0m                                          — List network connections\r\n");
-    term.write("  \x1b[1m`sys.get_user()`\x1b[0m                                             — Get user info and permissions\r\n");
+    term.write("  \x1b[1m`net.conns()`\x1b[0m                                                — List network connections\r\n");
+    term.write("  \x1b[1m`user.info()`\x1b[0m                                                — Get user info and permissions\r\n");
     term.write("\r\n");
     term.write("\x1b[1;33m## Execution\x1b[0m\r\n");
     term.write("  \x1b[1m`sys.exec(\"/bin/bash\", [\"-c\", \"sleep 10\"], disown=True)`\x1b[0m     — Run a new process in the background\r\n");
     term.write("  \x1b[1m`chain.tcp(\"127.0.0.1:8080\")`\x1b[0m                                — Link a TCP bind beacon\r\n");
     term.write("  \x1b[1m`agent.set_callback_interval(5)`\x1b[0m                             — Set callback sleep to five seconds\r\n");
-    term.write("  \x1b[1m`pivot.create_portal()`\x1b[0m                                      — Upgrade shell to interactive and enable socks5\r\n");
+    term.write("  \x1b[1m`portal.create()`\x1b[0m                                            — Upgrade shell to interactive and enable socks5\r\n");
     term.write("\r\n");
     term.write("Docs: \x1b[4mhttps://docs.realm.pub/user-guide/eldritch\x1b[0m\r\n");
 };
@@ -427,7 +427,7 @@ export const useShellTerminal = (
         });
         resizeObserver.observe(termRef.current);
 
-        termInstance.current.write("Eldritch v0.4.0\r\n");
+        termInstance.current.write("Eldritch v0.4.1\r\n");
 
         // Define redrawLine early so it can be used by adapter callback
         const redrawLine = () => {

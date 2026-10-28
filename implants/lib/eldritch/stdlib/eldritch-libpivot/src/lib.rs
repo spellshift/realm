@@ -3,7 +3,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -12,47 +12,21 @@ pub mod fake;
 pub mod std;
 
 #[eldritch_library("pivot")]
-/// The `pivot` library provides tools for lateral movement, scanning, and tunneling.
-///
-/// It supports:
-/// - SSH execution and file copy.
-/// - Network scanning (ARP, Port).
-/// - Traffic tunneling (Port forwarding, Bind proxy).
-/// - Simple network interaction (Ncat).
-/// - SMB execution (Stubbed/Proposed).
+/// The `pivot` library is deprecated; its functions have been moved to `scan`, `portal`, `net`, and `ssh`.
 pub trait PivotLibrary {
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "pivot.create_portal has been deprecated and will be removed in a future version of eldritch. Please use portal.create instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Opens a portal bi-directional stream.
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if failure occurs.
     fn create_portal(&self) -> Result<(), String>;
 
     #[allow(clippy::too_many_arguments)]
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "pivot.ssh_exec has been deprecated and will be removed in a future version of eldritch. Please use ssh.exec instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Executes a command on a remote host via SSH.
-    ///
-    /// **Parameters**
-    /// - `target` (`str`): The remote host IP or hostname.
-    /// - `port` (`int`): The SSH port (usually 22).
-    /// - `command` (`str`): The command to execute.
-    /// - `username` (`str`): SSH username.
-    /// - `password` (`Option<str>`): SSH password (optional).
-    /// - `key` (`Option<str>`): SSH private key (optional).
-    /// - `key_password` (`Option<str>`): Password for the private key (optional).
-    /// - `timeout` (`Option<int>`): Connection timeout in seconds (optional).
-    ///
-    /// **Returns**
-    /// - `Dict`: A dictionary containing command output:
-    ///   - `stdout` (`str`)
-    ///   - `stderr` (`str`)
-    ///   - `status` (`int`): Exit code.
-    ///
-    /// **Errors**
-    /// - Returns an error string if connection fails.
     fn ssh_exec(
         &self,
         target: String,
@@ -67,24 +41,10 @@ pub trait PivotLibrary {
 
     #[allow(clippy::too_many_arguments)]
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "pivot.ssh_copy has been deprecated and will be removed in a future version of eldritch. Please use ssh.copy instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Copies a file to a remote host via SSH (SCP/SFTP).
-    ///
-    /// **Parameters**
-    /// - `target` (`str`): The remote host IP or hostname.
-    /// - `port` (`int`): The SSH port.
-    /// - `src` (`str`): Local source file path.
-    /// - `dst` (`str`): Remote destination file path.
-    /// - `username` (`str`): SSH username.
-    /// - `password` (`Option<str>`): SSH password.
-    /// - `key` (`Option<str>`): SSH private key.
-    /// - `key_password` (`Option<str>`): Key password.
-    /// - `timeout` (`Option<int>`): Connection timeout.
-    ///
-    /// **Returns**
-    /// - `str`: "Success" message or error detail.
-    ///
-    /// **Errors**
-    /// - Returns an error string if copy fails.
     fn ssh_copy(
         &self,
         target: String,
@@ -99,17 +59,10 @@ pub trait PivotLibrary {
     ) -> Result<String, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "pivot.port_scan has been deprecated and will be removed in a future version of eldritch. Please use scan.ports instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Scans TCP/UDP ports on target hosts.
-    ///
-    /// **Parameters**
-    /// - `target_cidrs` (`List<str>`): List of CIDRs to scan (e.g., `["192.168.1.0/24"]`).
-    /// - `ports` (`List<int>`): List of ports to scan.
-    /// - `protocol` (`str`): "tcp" or "udp".
-    /// - `timeout` (`int`): Timeout per port in seconds.
-    /// - `fd_limit` (`Option<int>`): Maximum concurrent file descriptors/sockets (defaults to 64).
-    ///
-    /// **Returns**
-    /// - `List<Dict>`: List of open ports/results.
     fn port_scan(
         &self,
         target_cidrs: Vec<String>,
@@ -120,57 +73,18 @@ pub trait PivotLibrary {
     ) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "pivot.arp_scan has been deprecated and will be removed in a future version of eldritch. Please use scan.arp instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Performs an ARP scan to discover live hosts on the local network.
-    ///
-    /// **Parameters**
-    /// - `target_cidrs` (`List<str>`): List of CIDRs to scan.
-    ///
-    /// **Returns**
-    /// - `List<Dict>`: List of discovered hosts with IP, MAC, and Interface.
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[allow(clippy::too_many_arguments)]
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "pivot.ssh_deploy has been deprecated and will be removed in a future version of eldritch. Please use ssh.deploy instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Deploys a payload and/or command across a set of hosts via SSH.
-    ///
-    /// For each target (IP or CIDR range), this method attempts the provided
-    /// credentials in order until one succeeds. Once authenticated, an optional
-    /// payload is copied via SFTP to the destination path, and then `cmd` is
-    /// executed. If the effective user is not `root` and `privesc_cmd` is
-    /// provided, the privilege escalation command is executed before `cmd`.
-    ///
-    /// **Parameters**
-    /// - `ips` (`List<str>`): Non-empty list of IP addresses and/or CIDR ranges
-    ///   (e.g. `["10.0.0.1", "10.0.0.0/24"]`). All entries must be valid.
-    /// - `credentials` (`List<Dict>`): Non-empty list of credential dictionaries
-    ///   of the form `{"principal": "<user>", "password": "<password>"}`,
-    ///   attempted in order on each host.
-    /// - `cmd` (`str`): Command to run on the remote system (ideally as root).
-    /// - `privesc_cmd` (`Option<str>`): Optional privilege escalation command
-    ///   to run when the effective user is not root.
-    /// - `payload` (`Option<bytes>`): Optional raw payload bytes to copy to
-    ///   the remote system (for example the result of `file.read_binary(...)`
-    ///   or `assets.read_binary(...)`).
-    /// - `payload_dst` (`Option<str>`): Optional destination path on the remote
-    ///   system for the payload. Defaults to `/tmp/payload`.
-    /// - `timeout` (`Option<int>`): Optional per-connection timeout in seconds
-    ///   applied to each SSH authentication attempt. Defaults to `5`.
-    /// - `retries` (`Option<int>`): Optional number of additional retry passes
-    ///   over the full credential list on hosts that failed to connect.
-    ///   Defaults to `0` (i.e. each credential is tried once per host).
-    ///
-    /// **Returns**
-    /// - `List<Dict>`: One result dictionary per target IP with the keys:
-    ///   - `ip` (`str`)
-    ///   - `status` (`str`): `"success"` or `"failed"`
-    ///   - `principal` (`str`): Credential principal used on success (empty on failure).
-    ///   - `stdout` (`str`)
-    ///   - `stderr` (`str`)
-    ///   - `error` (`str`): Error detail on failure (empty on success).
-    ///
-    /// **Errors**
-    /// - Returns an error string if `ips` or `credentials` is empty, or if any
-    ///   entry in `ips` or `credentials` is malformed.
     fn ssh_deploy(
         &self,
         ips: Vec<String>,
@@ -184,16 +98,10 @@ pub trait PivotLibrary {
     ) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "pivot.ncat has been deprecated and will be removed in a future version of eldritch. Please use net.tcp & net.udp instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Sends arbitrary data to a host via TCP or UDP and waits for a response.
-    ///
-    /// **Parameters**
-    /// - `address` (`str`): Target address.
-    /// - `port` (`int`): Target port.
-    /// - `data` (`str`): Data to send.
-    /// - `protocol` (`str`): "tcp" or "udp".
-    ///
-    /// **Returns**
-    /// - `str`: The response data.
     fn ncat(
         &self,
         address: String,

@@ -1,0 +1,22 @@
+[package]
+name = "eldritch-libgzip"
+version = "0.4.1"
+edition = "2024"
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:anyhow",
+    "dep:flate2",
+    "dep:tar",
+    "dep:tempfile",
+]
+fake_bindings = []
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+anyhow = { workspace = true, optional = true }
+flate2 = { workspace = true, optional = true, features = ["rust_backend"] }
+tar = { workspace = true, optional = true }
+tempfile = { workspace = true, optional = true }

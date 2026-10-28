@@ -16,6 +16,10 @@ pub struct AgentLibraryFake;
 
 impl AgentLibrary for AgentLibraryFake {
     fn get_config(&self) -> Result<BTreeMap<String, Value>, String> {
+        self.config()
+    }
+
+    fn config(&self) -> Result<BTreeMap<String, Value>, String> {
         Ok(BTreeMap::new())
     }
 
@@ -55,6 +59,10 @@ impl AgentLibrary for AgentLibraryFake {
     }
 
     fn get_transport(&self) -> Result<String, String> {
+        self.transport()
+    }
+
+    fn transport(&self) -> Result<String, String> {
         Ok("http".into())
     }
 
@@ -67,6 +75,10 @@ impl AgentLibrary for AgentLibraryFake {
     }
 
     fn get_callback_interval(&self) -> Result<i64, String> {
+        self.callback_interval()
+    }
+
+    fn callback_interval(&self) -> Result<i64, String> {
         Ok(10)
     }
 

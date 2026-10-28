@@ -146,7 +146,7 @@ OPSEC considerations will tend towards avoiding calls to `shell` and `exec` inst
 
 In some situations you may also wish to avoid testing on target if that's the case you should test thoroughly off target before launching.
 
-If you test off target you can leverage native functions like [`sys.get_os`](/user-guide/eldritch#sysget_os) to ensure that your tome only runs against targets it's been tested on.
+If you test off target you can leverage native functions like [`sys.info`](/user-guide/eldritch#sysinfo) to ensure that your tome only runs against targets it's been tested on.
 
 ### Example
 
@@ -166,7 +166,7 @@ def pre_flight(dest_bin_path):
       print("[error] tome only supports linux")
       return False
 
-    cur_user = sys.get_user()
+    cur_user = user.info()
     if cur_user['euid']['uid'] != 0:
       print(f"[error] tome must be run as root / uid 0 not {cur_user}")
       return False
@@ -190,7 +190,7 @@ def pre_flight(dest_bin_path):
 
 def deploy_asset(asset_path, dest, asset_hash):
   if file.is_file(asset_path):
-    if crypto.hash_file(asset_path, "SHA1") != asset_hash:
+    if hash.file(asset_path, "SHA1") != asset_hash:
       print(f"{dest} file already exists and is good")
       return True
 

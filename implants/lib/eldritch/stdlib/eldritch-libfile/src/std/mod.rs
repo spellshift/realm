@@ -5,11 +5,8 @@ use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
-mod append_binary_impl;
 pub mod append_impl;
-pub mod compress_impl;
 pub mod copy_impl;
-pub mod decompress_impl;
 pub mod exists_impl;
 pub mod find_impl;
 pub mod follow_impl;
@@ -21,19 +18,15 @@ pub mod list_recent_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
 pub mod parent_dir_impl;
-pub mod pwd_impl;
-pub mod read_binary_impl;
 pub mod read_impl;
 pub mod read_named_pipe_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
-pub mod temp_file_impl;
-pub mod template_impl;
-pub mod template_str_impl;
 pub mod timestomp_impl;
 pub mod tmp_dir_impl;
-pub mod write_binary_impl;
+pub mod tmp_impl;
+pub mod which_impl;
 pub mod write_impl;
 
 #[derive(Debug, Default)]
@@ -41,16 +34,13 @@ pub mod write_impl;
 pub struct StdFileLibrary;
 
 impl FileLibrary for StdFileLibrary {
-    fn append(&self, path: String, content: String) -> Result<(), String> {
+    fn append(&self, path: String, content: Vec<u8>) -> Result<(), String> {
         append_impl::append(path, content)
     }
 
-    fn append_binary(&self, path: String, content: Value) -> Result<(), String> {
-        append_binary_impl::append_binary(path, content)
-    }
-
     fn compress(&self, src: String, dst: String) -> Result<(), String> {
-        compress_impl::compress(src, dst)
+        use eldritch_libgzip::GzipLibrary;
+        eldritch_libgzip::std::StdGzipLibrary.compress_file(src, dst)
     }
 
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
@@ -58,7 +48,8 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn decompress(&self, src: String, dst: String) -> Result<(), String> {
-        decompress_impl::decompress(src, dst)
+        use eldritch_libgzip::GzipLibrary;
+        eldritch_libgzip::std::StdGzipLibrary.decompress_file(src, dst)
     }
 
     fn exists(&self, path: String) -> Result<bool, String> {
@@ -107,12 +98,8 @@ impl FileLibrary for StdFileLibrary {
         parent_dir_impl::parent_dir(path)
     }
 
-    fn read(&self, path: String) -> Result<String, String> {
+    fn read(&self, path: String) -> Result<Vec<u8>, String> {
         read_impl::read(path)
-    }
-
-    fn read_binary(&self, path: String) -> Result<Value, String> {
-        read_binary_impl::read_binary(path).map(Value::Bytes)
     }
 
     fn read_named_pipe(&self, name: String, max_bytes: Option<i64>) -> Result<String, String> {
@@ -120,7 +107,8 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {
-        pwd_impl::pwd()
+        use eldritch_libprocess::ProcessLibrary;
+        eldritch_libprocess::std::StdProcessLibrary.cwd()
     }
 
     fn remove(&self, path: String) -> Result<(), String> {
@@ -136,7 +124,11 @@ impl FileLibrary for StdFileLibrary {
     }
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
-        temp_file_impl::temp_file(name)
+        self.tmp(name)
+    }
+
+    fn tmp(&self, name: Option<String>) -> Result<String, String> {
+        tmp_impl::tmp(name)
     }
 
     fn tmp_dir(&self) -> Result<String, String> {
@@ -150,7 +142,13 @@ impl FileLibrary for StdFileLibrary {
         args: BTreeMap<String, Value>,
         autoescape: bool,
     ) -> Result<(), String> {
-        template_impl::template(template_path, dst, args, autoescape)
+        use eldritch_libtemplate::TemplateLibrary;
+        eldritch_libtemplate::std::StdTemplateLibrary.render_file(
+            template_path,
+            dst,
+            args,
+            autoescape,
+        )
     }
 
     fn template_str(
@@ -159,7 +157,8 @@ impl FileLibrary for StdFileLibrary {
         args: BTreeMap<String, Value>,
         autoescape: bool,
     ) -> Result<String, String> {
-        template_str_impl::template_str(template, args, autoescape).map_err(|e| e.to_string())
+        use eldritch_libtemplate::TemplateLibrary;
+        eldritch_libtemplate::std::StdTemplateLibrary.render(template, args, autoescape)
     }
 
     fn timestomp(
@@ -173,12 +172,12 @@ impl FileLibrary for StdFileLibrary {
         timestomp_impl::timestomp(path, mtime, atime, ctime, ref_file)
     }
 
-    fn write(&self, path: String, content: String) -> Result<(), String> {
-        write_impl::write(path, content)
+    fn which(&self, bin: String) -> Result<String, String> {
+        which_impl::which(bin)
     }
 
-    fn write_binary(&self, path: String, content: Value) -> Result<(), String> {
-        write_binary_impl::write_binary(path, content)
+    fn write(&self, path: String, content: Vec<u8>) -> Result<(), String> {
+        write_impl::write(path, content)
     }
 
     fn find(

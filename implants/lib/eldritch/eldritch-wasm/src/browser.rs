@@ -19,11 +19,16 @@ pub enum MetaCommand {
 
 #[cfg(feature = "fake_bindings")]
 use eldritch::{
-    agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
-    crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake, file::fake::FileLibraryFake,
-    http::fake::HttpLibraryFake, pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,
-    random::fake::RandomLibraryFake, regex::fake::RegexLibraryFake,
-    report::fake::ReportLibraryFake, sys::fake::SysLibraryFake, time::fake::TimeLibraryFake,
+    aes::fake::AesLibraryFake, agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
+    base64::fake::Base64LibraryFake, crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake,
+    file::fake::FileLibraryFake, gzip::fake::GzipLibraryFake, hash::fake::HashLibraryFake,
+    http::fake::HttpLibraryFake, json::fake::JsonLibraryFake, linux::fake::LinuxLibraryFake,
+    net::fake::NetLibraryFake, pivot::fake::PivotLibraryFake, portal::fake::PortalLibraryFake,
+    process::fake::ProcessLibraryFake, random::fake::RandomLibraryFake,
+    regex::fake::RegexLibraryFake, registry::fake::RegistryLibraryFake,
+    report::fake::ReportLibraryFake, scan::fake::ScanLibraryFake, ssh::fake::SshLibraryFake,
+    sys::fake::SysLibraryFake, template::fake::TemplateLibraryFake, time::fake::TimeLibraryFake,
+    user::fake::UserLibraryFake, windows::fake::WindowsLibraryFake,
 };
 
 #[wasm_bindgen]
@@ -44,8 +49,19 @@ impl BrowserRepl {
 
         #[cfg(feature = "fake_bindings")]
         {
+            interp.register_lib(AesLibraryFake::default());
+            interp.register_lib(Base64LibraryFake::default());
             interp.register_lib(FileLibraryFake::default());
+            interp.register_lib(TemplateLibraryFake);
+            interp.register_lib(GzipLibraryFake::default());
+            interp.register_lib(HashLibraryFake::default());
+            interp.register_lib(JsonLibraryFake::default());
+            interp.register_lib(LinuxLibraryFake::default());
+            interp.register_lib(NetLibraryFake::default());
+            interp.register_lib(PortalLibraryFake::default());
             interp.register_lib(ProcessLibraryFake::default());
+            interp.register_lib(ScanLibraryFake::default());
+            interp.register_lib(SshLibraryFake::default());
             interp.register_lib(SysLibraryFake::default());
             interp.register_lib(HttpLibraryFake::default());
             interp.register_lib(DnsLibraryFake::default());
@@ -55,8 +71,11 @@ impl BrowserRepl {
             interp.register_lib(PivotLibraryFake::default());
             interp.register_lib(RandomLibraryFake::default());
             interp.register_lib(RegexLibraryFake::default());
+            interp.register_lib(RegistryLibraryFake::default());
             interp.register_lib(ReportLibraryFake::default());
             interp.register_lib(TimeLibraryFake::default());
+            interp.register_lib(UserLibraryFake::default());
+            interp.register_lib(WindowsLibraryFake::default());
         }
 
         BrowserRepl {

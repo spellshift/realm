@@ -60,6 +60,8 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
     interp.register_lib(report_lib);
     let pivot_lib = eldritch::pivot::std::StdPivotLibrary::new(agent.clone(), context.clone());
     interp.register_lib(pivot_lib);
+    let portal_lib = eldritch::portal::std::StdPortalLibrary::new(agent.clone(), context.clone());
+    interp.register_lib(portal_lib);
     interp.register_lib(assetlib);
     interp
 }
@@ -134,6 +136,7 @@ fn main() -> anyhow::Result<()> {
                 .or_else(|_| {
                     locker
                         .read(tome_path.clone())
+                        .and_then(|bytes| String::from_utf8(bytes).map_err(|e| e.to_string()))
                         .map_err(|_| anyhow::anyhow!("Error: No such file or asset"))
                 })?;
 
@@ -150,7 +153,7 @@ fn main() -> anyhow::Result<()> {
                 for asset in assets {
                     if asset.ends_with("main.eldritch") {
                         let eldr_str = match locker.read(asset.clone()) {
-                            Ok(val) => val,
+                            Ok(val) => String::from_utf8(val).map_err(|e| anyhow::anyhow!(e))?,
                             Err(e) => return Err(anyhow::anyhow!(e)),
                         };
                         parsed_tomes.push(ParsedTome {

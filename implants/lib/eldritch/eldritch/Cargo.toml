@@ -1,6 +1,6 @@
 [package]
 name = "eldritch"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 
 [dependencies]
@@ -11,18 +11,32 @@ eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
 
 # Libs
+eldritch-libaes = { workspace = true, default-features = false }
 eldritch-libagent = { workspace = true, default-features = false }
 eldritch-libassets = { workspace = true, default-features = false }
+eldritch-libbase64 = { workspace = true, default-features = false }
 eldritch-libcrypto = { workspace = true, default-features = false }
 eldritch-libfile = { workspace = true, default-features = false }
+eldritch-libgzip = { workspace = true, default-features = false }
+eldritch-libhash = { workspace = true, default-features = false }
 eldritch-libhttp = { workspace = true, default-features = false }
+eldritch-libjson = { workspace = true, default-features = false }
+eldritch-liblinux = { workspace = true, default-features = false }
+eldritch-libnet = { workspace = true, default-features = false }
 eldritch-libpivot = { workspace = true, default-features = false }
+eldritch-libportal = { workspace = true, default-features = false }
 eldritch-libprocess = { workspace = true, default-features = false }
 eldritch-librandom = { workspace = true, default-features = false }
 eldritch-libregex = { workspace = true, default-features = false }
+eldritch-libregistry = { workspace = true, default-features = false }
 eldritch-libreport = { workspace = true, default-features = false }
+eldritch-libscan = { workspace = true, default-features = false }
+eldritch-libssh = { workspace = true, default-features = false }
 eldritch-libsys = { workspace = true, default-features = false }
+eldritch-libtemplate = { workspace = true, default-features = false }
 eldritch-libtime = { workspace = true, default-features = false }
+eldritch-libuser = { workspace = true, default-features = false }
+eldritch-libwindows = { workspace = true, default-features = false }
 eldritch-libchain = { workspace = true, default-features = false }
 eldritch-libdns = { workspace = true, default-features = false }
 pb = { workspace = true, optional = true }
@@ -32,60 +46,105 @@ eldritch-repl = { workspace = true, default-features = false }
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
 fake_bindings = [
+    "fake_aes",
     "fake_agent",
     "fake_assets",
+    "fake_base64",
     "fake_crypto",
     "fake_file",
+    "fake_gzip",
+    "fake_hash",
     "fake_http",
+    "fake_json",
+    "fake_linux",
+    "fake_net",
     "fake_pivot",
+    "fake_portal",
     "fake_process",
     "fake_random",
     "fake_regex",
+    "fake_registry",
     "fake_report",
+    "fake_scan",
+    "fake_ssh",
     "fake_sys",
+    "fake_template",
     "fake_time",
+    "fake_user",
+    "fake_windows",
     "fake_chain",
     "fake_dns",
 ]
+fake_aes = ["eldritch-libaes/fake_bindings"]
 fake_agent = ["eldritch-libagent/fake_bindings"]
 fake_assets = ["eldritch-libassets/fake_bindings"]
+fake_base64 = ["eldritch-libbase64/fake_bindings"]
 fake_crypto = ["eldritch-libcrypto/fake_bindings"]
 fake_file = ["eldritch-libfile/fake_bindings"]
+fake_gzip = ["eldritch-libgzip/fake_bindings"]
+fake_hash = ["eldritch-libhash/fake_bindings"]
 fake_http = ["eldritch-libhttp/fake_bindings"]
+fake_json = ["eldritch-libjson/fake_bindings"]
+fake_linux = ["eldritch-liblinux/fake_bindings"]
+fake_net = ["eldritch-libnet/fake_bindings"]
 fake_pivot = ["eldritch-libpivot/fake_bindings"]
+fake_portal = ["eldritch-libportal/fake_bindings"]
 fake_process = ["eldritch-libprocess/fake_bindings"]
 fake_random = ["eldritch-librandom/fake_bindings"]
 fake_regex = ["eldritch-libregex/fake_bindings"]
+fake_registry = ["eldritch-libregistry/fake_bindings"]
 fake_report = ["eldritch-libreport/fake_bindings"]
+fake_scan = ["eldritch-libscan/fake_bindings"]
+fake_ssh = ["eldritch-libssh/fake_bindings"]
 fake_sys = ["eldritch-libsys/fake_bindings"]
+fake_template = ["eldritch-libtemplate/fake_bindings"]
 fake_time = ["eldritch-libtime/fake_bindings"]
+fake_user = ["eldritch-libuser/fake_bindings"]
+fake_windows = ["eldritch-libwindows/fake_bindings"]
 fake_chain = ["eldritch-libchain/fake_bindings"]
 fake_dns = ["eldritch-libdns/fake_bindings"]
 print_debug = [
     "eldritch-repl/print_debug",
     "eldritch-libpivot/print_debug",
+    "eldritch-libportal/print_debug",
+    "eldritch-libssh/print_debug",
     "eldritch-libchain/print_debug",
 ]
 stdlib = [
     "dep:pb",
     "dep:eldritch-agent",
+    "eldritch-libaes/stdlib",
     "eldritch-libagent/stdlib",
     "eldritch-libassets/stdlib",
+    "eldritch-libbase64/stdlib",
     "eldritch-libcrypto/stdlib",
     "eldritch-libfile/stdlib",
+    "eldritch-libgzip/stdlib",
+    "eldritch-libhash/stdlib",
     "eldritch-libhttp/stdlib",
+    "eldritch-libjson/stdlib",
+    "eldritch-liblinux/stdlib",
+    "eldritch-libnet/stdlib",
     "eldritch-libpivot/stdlib",
+    "eldritch-libportal/stdlib",
     "eldritch-libprocess/stdlib",
     "eldritch-librandom/stdlib",
     "eldritch-libregex/stdlib",
+    "eldritch-libregistry/stdlib",
     "eldritch-libreport/stdlib",
+    "eldritch-libscan/stdlib",
+    "eldritch-libssh/stdlib",
     "eldritch-libsys/stdlib",
+    "eldritch-libtemplate/stdlib",
     "eldritch-libtime/stdlib",
+    "eldritch-libuser/stdlib",
+    "eldritch-libwindows/stdlib",
     "eldritch-libchain/stdlib",
     "eldritch-libdns/stdlib",
 ]
 
 [dev-dependencies]
+tempfile = { workspace = true }
 eldritch-mockagent = { path = "../testutils/eldritch-mockagent" }
 httptest = "0.16"
 

@@ -1,0 +1,20 @@
+[package]
+name = "eldritch-libjson"
+version = "0.4.1"
+edition = "2024"
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:serde",
+    "dep:serde_json",
+]
+fake_bindings = []
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+spin = { version = "0.10.0", features = ["rwlock"] }
+
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }

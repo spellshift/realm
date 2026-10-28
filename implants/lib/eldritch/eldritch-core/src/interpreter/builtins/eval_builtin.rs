@@ -22,6 +22,16 @@ pub(crate) fn builtin_eval_func(
     let code_val = evaluate_arg(interp, &args[0])?;
     let code = match code_val {
         Value::String(s) => s,
+        Value::Bytes(b) => match alloc::string::String::from_utf8(b) {
+            Ok(s) => s,
+            Err(_) => {
+                return interp.error(
+                    EldritchErrorKind::TypeError,
+                    "eval() bytes argument must be valid UTF-8",
+                    span,
+                );
+            }
+        },
         _ => {
             return interp.error(
                 EldritchErrorKind::TypeError,

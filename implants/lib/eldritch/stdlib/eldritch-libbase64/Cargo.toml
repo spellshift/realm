@@ -1,0 +1,16 @@
+[package]
+name = "eldritch-libbase64"
+version = "0.4.1"
+edition = "2024"
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:base64",
+]
+fake_bindings = []
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+base64 = { workspace = true, optional = true }

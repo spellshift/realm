@@ -1,0 +1,28 @@
+[package]
+name = "eldritch-libnet"
+version = "0.4.1"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+
+anyhow = { workspace = true, optional = true }
+local-ip-address = { workspace = true, optional = true }
+netstat = { workspace = true, optional = true }
+tokio = { workspace = true, features = [
+    "macros",
+    "rt-multi-thread",
+    "net",
+    "io-util",
+], optional = true }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:anyhow",
+    "dep:local-ip-address",
+    "dep:netstat",
+    "dep:tokio",
+]
+fake_bindings = []

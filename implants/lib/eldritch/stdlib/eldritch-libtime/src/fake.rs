@@ -7,11 +7,19 @@ use eldritch_macros::eldritch_library_impl;
 pub struct TimeLibraryFake;
 
 impl TimeLibrary for TimeLibraryFake {
-    fn format_to_epoch(&self, _input: String, _format: String) -> Result<i64, String> {
+    fn format_to_epoch(&self, input: String, format: String) -> Result<i64, String> {
+        self.to_epoch(input, format)
+    }
+
+    fn to_epoch(&self, _input: String, _format: String) -> Result<i64, String> {
         Ok(0)
     }
 
-    fn format_to_readable(&self, _input: i64, _format: String) -> Result<String, String> {
+    fn format_to_readable(&self, input: i64, format: String) -> Result<String, String> {
+        self.format(input, format)
+    }
+
+    fn format(&self, _input: i64, _format: String) -> Result<String, String> {
         Ok(String::from("1970-01-01 00:00:00"))
     }
 
@@ -32,9 +40,9 @@ mod tests {
     fn test_time_fake() {
         let time = TimeLibraryFake;
         assert_eq!(time.now().unwrap(), 1600000000);
-        assert_eq!(time.format_to_epoch("any".into(), "any".into()).unwrap(), 0);
+        assert_eq!(time.to_epoch("any".into(), "any".into()).unwrap(), 0);
         assert_eq!(
-            time.format_to_readable(123, "any".into()).unwrap(),
+            time.format(123, "any".into()).unwrap(),
             "1970-01-01 00:00:00"
         );
         assert!(time.sleep(10.0).is_ok());

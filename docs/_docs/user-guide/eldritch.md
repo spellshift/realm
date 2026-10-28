@@ -36,8 +36,8 @@ file.remove(cur_bin_path)
 _Parse a JSON file_
 
 ```python
-json_str = file.read("/tmp/config.json")
-config_data = crypto.from_json(json_str)
+json_str = str(file.read("/tmp/config.json"))
+config_data = json.decode(json_str)
 print(config_data['key1'])
 ```
 
@@ -57,7 +57,7 @@ For example:
 def read_passwd():
     if sys.is_linux():
         if file.is_file("/etc/passwd"):
-            print(file.read("/etc/passwd"))
+            print(str(file.read("/etc/passwd")))
 read_passwd()
 ```
 
@@ -71,7 +71,7 @@ def write_systemd_service():
                 "binary_path":"/bin/false",
             }
             assets.copy("systemd-template.j2", "/tmp/systemd-template.j2")
-            file.template("/tmp/systemd-template.j2","/lib/systemd/system/myservice.service",args,False)
+            template.render_file("/tmp/systemd-template.j2","/lib/systemd/system/myservice.service",args,False)
             file.remove("/tmp/systemd-template.j2")
 
 write_systemd_service()
@@ -122,7 +122,10 @@ The **bool** method converts a value to a Boolean. Returns True when the argumen
 The **bytes** method creates a bytes object.
 - If source is an integer, the array will have that size and will be initialized with null bytes.
 - If source is a string, it will be converted using UTF-8 encoding.
+- If source is already a bytes object, it is returned directly.
 - If source is an iterable, it must be an iterable of integers in the range 0 <= x < 256.
+
+Bytes objects also support `.decode(encoding: Optional<str> = "utf8") -> str` for decoding `"utf8"` (default) or `"utf16le"` bytes into a string (e.g. `b"data".decode("utf16le")`).
 
 ### chr
 
@@ -280,7 +283,9 @@ The **sorted** method returns a new sorted list from the items in iterable.
 
 `str(object) -> Str`
 
-The **str** method returns a string containing a nicely printable representation of an object.
+The **str** method returns a string containing a nicely printable representation of an object. If `object` is a `Bytes` value, it is decoded using default UTF-8 encoding.
+
+Strings also support `.encode(encoding: Optional<str> = "utf8") -> Bytes` for encoding into `"utf8"` (default) or `"utf16le"` bytes (e.g. `"data".encode()` or `"data".encode("utf16le")`).
 
 ### tprint
 
@@ -310,18 +315,31 @@ The **zip** method returns a list of tuples, where the i-th tuple contains the i
 
 The standard library is the default functionality that eldritch provides. It contains the following libraries:
 
+- `aes` - Used to encrypt and decrypt data and files with AES.
 - `agent` - Used for meta-style interactions with the agent itself.
 - `assets` - Used to interact with files stored natively in the agent.
-- `crypto` - Used to encrypt/decrypt or hash data.
+- `base64` - Used to encode and decode base64 data.
+- `chain` - Used for multi-agent C2 chaining.
+- `dns` - Used to perform DNS lookups.
 - `file` - Used to interact with files on the system.
+- `gzip` - Used to compress and decompress data and files using gzip.
+- `hash` - Used to calculate hashes of data and files.
 - `http` - Used to make http(s) requests from the agent.
-- `pivot` - Used to identify and move between systems.
+- `json` - Used to encode, decode, and validate JSON data.
+- `linux` - Linux-specific system operations (such as `uname`).
+- `net` - Network interface enumeration, connection listing, and TCP/UDP connections.
+- `portal` - Used to open bi-directional portal streams.
 - `process` - Used to interact with processes on the system.
 - `random` - Used to generate cryptographically secure random values.
 - `regex` - Regular expression capabilities for operating on strings.
 - `report` - Structured data reporting capabilities.
-- `sys` - General system capabilities can include loading libraries, or information about the current context.
+- `scan` - Network scanning capabilities (`arp`, `ports`).
+- `ssh` - Remote execution, file copy, and deployment over SSH.
+- `sys` - General system capabilities such as OS info and command execution.
+- `template` - Renders Jinja2 templates from strings and files.
 - `time` - General functions for obtaining and formatting time, also add delays into code.
+- `user` - User account enumeration and current user inspection.
+- `windows` - Windows-specific operations (DLL injection/reflection, registry, token manipulation).
 
 **🚨 DANGER 🚨: Name shadowing**
 
@@ -346,6 +364,40 @@ for user_home_dir in file.list("/home/"):
 
 ---
 
+## AES
+
+The `aes` library provides AES encryption and decryption functions for raw bytes and files.
+
+### aes.decrypt
+
+`aes.decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
+
+The **aes.decrypt** method decrypts the given data using the given key and IV (AES CBC).
+
+### aes.decrypt_file
+
+`aes.decrypt_file(src: str, dst: str, key: str) -> None`
+
+The **aes.decrypt_file** method decrypts the given src file using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+### aes.encrypt
+
+`aes.encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
+
+The **aes.encrypt** method encrypts the given data using the given key and IV (AES CBC).
+
+### aes.encrypt_file
+
+`aes.encrypt_file(src: str, dst: str, key: str) -> None`
+
+The **aes.encrypt_file** method encrypts the given src file using the given key and writes it to disk at the dst location.
+
+Key must be 16 Bytes (Characters)
+
+---
+
 ## Agent
 
 The `agent` library provides functions for meta-style interactions with the agent itself. It allows you to inspect its configuration, check transport details, or list and manage background tasks.
@@ -356,17 +408,17 @@ The `agent` library provides functions for meta-style interactions with the agen
 
 **🚨 DANGER 🚨:** The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
 
-### agent.get_config
+### agent.config
 
-`agent.get_config() -> Dict<str, Value>`
+`agent.config() -> Dict<str, Value>`
 
-The **agent.get_config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
+The **agent.config** method returns the current configuration of the agent as a dictionary containing configuration keys and values. This method will error if the configuration cannot be retrieved.
 
-### agent.get_transport
+### agent.transport
 
-`agent.get_transport() -> str`
+`agent.transport() -> str`
 
-The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc", "dns").
+The **agent.transport** method returns the name of the currently active transport (e.g., "http", "grpc", "dns").
 
 ### agent.list_transports
 
@@ -374,11 +426,11 @@ The **agent.get_transport** method returns the name of the currently active tran
 
 The **agent.list_transports** method returns a list of available transport names supported by the agent.
 
-### agent.get_callback_interval
+### agent.callback_interval
 
-`agent.get_callback_interval() -> int`
+`agent.callback_interval() -> int`
 
-The **agent.get_callback_interval** method returns the current callback interval in seconds.
+The **agent.callback_interval** method returns the current callback interval in seconds.
 
 ### agent.list_tasks
 
@@ -445,17 +497,39 @@ deploy_agent()
 
 The **assets.list** method returns a list of asset names that the agent is aware of.
 
-### assets.read_binary
-
-`assets.read_binary(src: str) -> Bytes`
-
-The **assets.read_binary** method returns a list of bytes representing the asset files bytes.
-
 ### assets.read
 
-`assets.read(src: str) -> str`
+`assets.read(src: str) -> Bytes`
 
-The **assets.read** method returns a UTF-8 string representation of the asset file.
+The **assets.read** method returns a `Bytes` object containing the raw bytes of the embedded asset file. Use `str(assets.read(src))` or `assets.read(src).decode()` to decode text assets as UTF-8.
+
+---
+
+## Base64
+
+The `base64` library provides base64 encoding and decoding operations.
+
+### base64.decode
+
+`base64.decode(content: str, decode_type: Optional<str>) -> Bytes`
+
+The **base64.decode** method decodes the given base64 text into bytes using the given base64 decoding method. Valid methods include:
+
+- STANDARD (default)
+- STANDARD_NO_PAD
+- URL_SAFE
+- URL_SAFE_NO_PAD
+
+### base64.encode
+
+`base64.encode(content: str, encode_type: Optional<str>) -> str`
+
+The **base64.encode** method encodes the given text using the given base64 encoding method. Valid methods include:
+
+- STANDARD (default)
+- STANDARD_NO_PAD
+- URL_SAFE
+- URL_SAFE_NO_PAD
 
 ---
 
@@ -490,143 +564,6 @@ Agent A must have one of the standard transports (grpc, http1, dns) configured f
 
 ---
 
-## Crypto
-
-The `crypto` library offers functionalities to encrypt, decrypt, and hash data. It includes support for algorithms like AES, MD5, SHA1, and SHA256, as well as helpers for base64 encoding and JSON parsing.
-
-### crypto.aes_decrypt
-
-`crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
-
-The **crypto.aes_decrypt** method decrypts the given data using the given key and IV (AES CBC).
-
-### crypto.aes_encrypt
-
-`crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
-
-The **crypto.aes_encrypt** method encrypts the given data using the given key and IV (AES CBC).
-
-### crypto.aes_decrypt_file
-
-`crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
-
-The **crypto.aes_decrypt_file** method decrypts the given src file using the given key and writes it to disk at the dst location.
-
-Key must be 16 Bytes (Characters)
-
-### crypto.aes_encrypt_file
-
-`crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
-
-The **crypto.aes_encrypt_file** method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
-
-Key must be 16 Bytes (Characters)
-
-### crypto.encode_b64
-
-`crypto.encode_b64(content: str, encode_type: Optional<str>) -> str`
-
-The **crypto.encode_b64** method encodes the given text using the given base64 encoding method. Valid methods include:
-
-- STANDARD (default)
-- STANDARD_NO_PAD
-- URL_SAFE
-- URL_SAFE_NO_PAD
-
-### crypto.decode_b64
-
-`crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
-
-The **crypto.decode_b64** method encodes the given text using the given base64 decoding method. Valid methods include:
-
-- STANDARD (default)
-- STANDARD_NO_PAD
-- URL_SAFE
-- URL_SAFE_NO_PAD
-
-### crypto.encode_utf16le
-
-`crypto.encode_utf16le(content: str) -> Bytes`
-
-The **crypto.encode_utf16le** method encodes a UTF-8 string into UTF-16LE bytes, which are commonly used in Windows environments.
-
-### crypto.decode_utf16le
-
-`crypto.decode_utf16le(content: Bytes) -> str`
-
-The **crypto.decode_utf16le** method decodes UTF-16LE bytes into a standard UTF-8 string. Errors if the bytes are not valid UTF-16.
-
-### crypto.from_json
-
-`crypto.from_json(content: str) -> Value`
-
-The **crypto.from_json** method converts JSON text to an object of correct type.
-
-```python
-crypto.from_json("{\"foo\":\"bar\"}")
-{
-    "foo": "bar"
-}
-```
-
-### crypto.is_json
-
-`crypto.is_json(content: str) -> bool`
-
-The **crypto.is_json** tests if JSON is valid.
-
-```python
-crypto.is_json("{\"foo\":\"bar\"}")
-True
-```
-
-```python
-crypto.is_json("foobar")
-False
-```
-
-### crypto.to_json
-
-`crypto.to_json(content: Value) -> str`
-
-The **crypto.to_json** method converts given type to JSON text.
-
-```python
-crypto.to_json({"foo": "bar"})
-"{\"foo\":\"bar\"}"
-```
-
-### crypto.hash_file
-
-`crypto.hash_file(file: str, algo: str) -> str`
-
-The **crypto.hash_file** method will produce the hash of the given file's contents. Valid algorithms include:
-
-- MD5
-- SHA1
-- SHA256
-- SHA512
-
-### crypto.md5
-
-`crypto.md5(data: Bytes) -> str`
-
-The **crypto.md5** method calculates the MD5 hash of the provided data.
-
-### crypto.sha1
-
-`crypto.sha1(data: Bytes) -> str`
-
-The **crypto.sha1** method calculates the SHA1 hash of the provided data.
-
-### crypto.sha256
-
-`crypto.sha256(data: Bytes) -> str`
-
-The **crypto.sha256** method calculates the SHA256 hash of the provided data.
-
----
-
 ## DNS
 
 The `dns` library enables DNS lookups within Eldritch scripts.
@@ -657,43 +594,19 @@ print(cloudflare_ips)
 
 ## File
 
-The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, copying, and compressing files, as well as searching and timestomping.
+The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, and copying files, as well as searching, locating binaries (`which`), and timestomping.
 
 ### file.append
 
-`file.append(path: str, content: str) -> None`
+`file.append(path: str, content: Bytes | str) -> None`
 
-The **file.append** method appends the `content` to file at `path`. If no file exists at path, it will create the file with the content.
-
-### file.append_binary
-
-`file.append_binary(path: str, content: Bytes) -> None`
-
-The **file.append_binary** method appends binary data to `path`. If no file exists at the path, it will create the file with the content.
-
-### file.compress
-
-`file.compress(src: str, dst: str) -> None`
-
-The **file.compress** method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
+The **file.append** method appends `content` (`Bytes` or `str`) to the file at `path`. If no file exists at `path`, it will create the file with the content.
 
 ### file.copy
 
 `file.copy(src: str, dst: str) -> None`
 
 The **file.copy** method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
-
-### file.decompress
-
-`file.decompress(src: str, dst: str) -> None`
-
-The **file.decompress** method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
-
-```python
-file.compress('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')
-file.decompress('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')
-# Files will exist in /tmp/bob_ssh_output/.ssh/*
-```
 
 ### file.exists
 
@@ -867,36 +780,17 @@ The **file.move** method moves a file or directory from `src` to `dst`. If the `
 
 The **file.parent_dir** method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
 
-### file.pwd
-
-`file.pwd() -> Option<str>`
-
-The **file.pwd** method returns the current working directory of the process. If it could not be determined, `None` is returned.
-
 ### file.read
 
-`file.read(path: str) -> str`
+`file.read(path: str) -> Bytes`
 
-The **file.read** method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+The **file.read** method will read the contents of a file, **returning a `Bytes` object**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 This function supports globbing with `*` for example:
 
 ```python
 file.read("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
 file.read("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
 file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
-```
-
-### file.read_binary
-
-`file.read_binary(path: str) -> Bytes`
-
-The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
-This function supports globbing with `*` for example:
-
-```python
-file.read_binary("/home/*/.bash_history") # Read all files called .bash_history in sub dirs of `/home/`
-file.read_binary("/etc/*ssh*") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.
-file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Windows UNC
 ```
 
 ### file.read_named_pipe
@@ -946,39 +840,17 @@ The **file.replace** method finds the first string matching a regex pattern in t
 
 The **file.replace_all** method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
-### file.temp_file
+### file.tmp
 
-`file.temp_file(name: Option<str>) -> str`
+`file.tmp(name: Option<str>) -> str`
 
-The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The **file.tmp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.tmp_dir
 
 `file.tmp_dir() -> str`
 
 The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
-
-### file.template
-
-`file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
-
-The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
-If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
-The `args` dictionary currently supports values of: `int`, `str`, and `List`.
-`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
-
-### file.template_str
-
-`file.template_str(template_str: str, args: Dict<String, Value>, autoescape: bool) -> str`
-
-Rather than reading a Jinja2 template file from disk, **template_str** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
-
-`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
-
-```python
-template = "Hello, {{ name }}!\n"
-result = file.template_str(template, {"name": "world"}, True)
-```
 
 ### file.timestomp
 
@@ -987,26 +859,32 @@ result = file.template_str(template, {"name": "world"}, True)
 The **file.timestomp** method modifies the timestamps of a file.
 It can use specific timestamps (epoch seconds or string format) or copy timestamps from a reference file.
 
+### file.which
+
+`file.which(bin: str) -> str`
+
+The **file.which** method returns the resolved path of a binary in `PATH`. If this binary does not resolve to anything, an empty string is returned.
+
+```python
+$> file.which("sh")
+"/usr/bin/sh"
+$> file.which("some_random_binary_that_doesnt_exist")
+""
+```
+
 ### file.write
 
-`file.write(path: str, content: str) -> None`
+`file.write(path: str, content: Bytes | str) -> None`
 
-The **file.write** method writes to a given file path with the given content.
-If a file already exists at this path, the method will overwite it. If a directory
-already exists at the path the method will error.
-
-### file.write_binary
-
-`file.write_binary(path: str, content: Bytes) -> None`
-
-The **file.write_binary** method writes binary content to a given file path.
+The **file.write** method writes `content` (`Bytes` or `str`) to a given file path.
 If a file already exists at this path, the method will overwrite it. If a directory
 already exists at the path the method will error.
 
 ```python
-# Write bytes returned from file.read_binary to another file
-data = file.read_binary("/etc/passwd")
-file.write_binary("/tmp/passwd_copy", data)
+# Write either strings or bytes (such as from file.read) to a file
+file.write("/tmp/hello.txt", "hello world")
+data = file.read("/etc/passwd")
+file.write("/tmp/passwd_copy", data)
 ```
 
 ### file.find
@@ -1020,6 +898,77 @@ The **file.find** method finds all files matching the used parameters. Returns f
 - permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.
 - modified_time: Checks if last modified time matches input specified in time since EPOCH
 - create_time: Checks if last modified time matches input specified in time since EPOCH
+
+---
+
+## Gzip
+
+The `gzip` library provides gzip compression and decompression for both raw byte arrays and files/directories.
+
+### gzip.compress
+
+`gzip.compress(data: Bytes) -> Bytes`
+
+The **gzip.compress** method compresses raw bytes using the gzip algorithm and returns the compressed bytes.
+
+### gzip.compress_file
+
+`gzip.compress_file(src: str, dst: str) -> None`
+
+The **gzip.compress_file** method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
+
+### gzip.decompress
+
+`gzip.decompress(data: Bytes) -> Bytes`
+
+The **gzip.decompress** method decompresses gzip-compressed bytes and returns the decompressed bytes.
+
+### gzip.decompress_file
+
+`gzip.decompress_file(src: str, dst: str) -> None`
+
+The **gzip.decompress_file** method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
+
+```python
+gzip.compress_file('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')
+gzip.decompress_file('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')
+# Files will exist in /tmp/bob_ssh_output/.ssh/*
+```
+
+---
+
+## Hash
+
+The `hash` library provides cryptographic hashing functions for raw bytes and files.
+
+### hash.file
+
+`hash.file(file: str, algo: Optional<str>) -> str`
+
+The **hash.file** method will produce the hash of the given file's contents. Valid algorithms include:
+
+- MD5
+- SHA1
+- SHA256 (default)
+- SHA512
+
+### hash.md5
+
+`hash.md5(data: Bytes) -> str`
+
+The **hash.md5** method calculates the MD5 hash of the provided data.
+
+### hash.sha1
+
+`hash.sha1(data: Bytes) -> str`
+
+The **hash.sha1** method calculates the SHA1 hash of the provided data.
+
+### hash.sha256
+
+`hash.sha256(data: Bytes) -> str`
+
+The **hash.sha256** method calculates the SHA256 hash of the provided data.
 
 ---
 
@@ -1049,180 +998,175 @@ The **http.post** method sends an HTTP POST request to the URI specified in `uri
 
 ---
 
-## Pivot
+## JSON
 
-The `pivot` library provides tools to identify and move laterally between systems on a network. It includes functionalities like port scanning, reverse shells, port forwarding, and executing commands remotely over SMB or SSH.
+The `json` library provides JSON serialization, deserialization, and validation.
 
-### pivot.arp_scan
+### json.decode
 
-`pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
+`json.decode(content: str) -> Value`
 
-The **pivot.arp_scan** method is for enumerating hosts on the agent network without using TCP connect or ping.
-
-- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
-- Must be running as `root` to use.
-- Not supported on Windows
-
-Results will be in the format:
+The **json.decode** method converts JSON text to an object of the corresponding Eldritch type.
 
 ```python
-$> pivot.arp_scan(["192.168.1.1/32"])
+json.decode("{\"foo\":\"bar\"}")
+{
+    "foo": "bar"
+}
 ```
 
-**Success**
+### json.encode
 
-```json
-[
-    { "ip": "192.168.1.1", "mac": "ab:cd:ef:01:23:45", "interface": "eno0" }
-]
+`json.encode(content: Value) -> str`
+
+The **json.encode** method converts the given value to JSON text.
+
+```python
+json.encode({"foo": "bar"})
+"{\"foo\":\"bar\"}"
 ```
 
-**Failure**
+### json.is_valid
 
-```json
-[]
+`json.is_valid(content: str) -> bool`
+
+The **json.is_valid** method tests if a string is valid JSON.
+
+```python
+json.is_valid("{\"foo\":\"bar\"}")
+True
 ```
 
-### pivot.bind_proxy
-
-`pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
-
-The **pivot.bind_proxy** method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided).
-
-### pivot.ncat
-
-`pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
-
-The **pivot.ncat** method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
-
-`protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
-
-### pivot.port_forward
-
-`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
-
-The **pivot.port_forward** method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
-
-### pivot.port_scan
-
-`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<str>`
-
-The **pivot.port_scan** method allows users to scan TCP/UDP ports within the eldritch language.
-Inputs:
-
-- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
-- `ports` can be a list of any number of integers between 1 and 65535.
-- `protocol` must be: `tcp` or `udp`. These are the only supported options.
-- `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`
-- `fd_limit` is the maximum concurrent file descriptors/sockets (defaults to 64).
-
-Results will be in the format:
-
-```json
-[
-    { "ip": "127.0.0.1", "port": 22, "protocol": "tcp", "status": "open"},
-    { "ip": "127.0.0.1", "port": 21, "protocol": "tcp", "status": "closed"},
-    { "ip": "127.0.0.1", "port": 80, "protocol": "tcp", "status": "timeout"},
-]
+```python
+json.is_valid("foobar")
+False
 ```
 
-A port's status can be open, closed, or timeout:
+---
 
-|**State**|**Protocol**| **Meaning**                                          |
-|---------|------------|------------------------------------------------------|
-| open    | tcp        | Connection successful.                               |
-| close   | tcp        | Connection refused.                                  |
-| timeout | tcp        | Connection dropped or didn't respond.                |
-| open    | udp        | Connection returned some data.                       |
-| timeout | udp        | Connection was refused, dropped, or didn't respond.  |
+## Linux
 
-Each IP in the specified CIDR will be returned regardless of if it returns any open ports.
-Be mindful of this when scanning large CIDRs as it may create large return objects.
+The `linux` library provides Linux-specific system operations.
 
-NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
+### linux.uname
 
-### pivot.create_portal
+`linux.uname() -> Dict`
 
-`pivot.create_portal() -> None`
-
-The **pivot.create_portal** method opens a portal bi-directional stream.
-
-### pivot.smb_exec
-
-`pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
-
-The **pivot.smb_exec** method is being proposed to allow users a way to move between hosts running smb.
-
-### pivot.ssh_copy
-
-`pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
-
-The **pivot.ssh_copy** method copies a local file to a remote system.
-ssh_copy will return `"Success"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
-If the connection is successful but the copy writes a file error will be returned.
-ssh_copy will overwrite the remote file if it exists.
-The file directory the `dst` file exists in must exist in order for ssh_copy to work.
-
-### pivot.ssh_deploy
-
-`pivot.ssh_deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
-
-The **pivot.ssh_deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
-
-- `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `["10.0.0.1", "10.0.0.0/24"]`). Each entry may include an optional SSH port using `host:port` syntax (e.g. `"127.0.0.1:2222"` or `"10.0.0.1:2222/24"` to apply port `2222` to every host in the range). IPv6 addresses with a port must be bracketed (e.g. `"[::1]:2222"`). When no port is supplied the default SSH port `22` is used. All entries must be valid.
-- `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
-- `cmd` is the command to run on the remote system (ideally as root).
-- `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
-- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read_binary(path)` or `assets.read_binary(name)`.
-- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.
-- `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
-- `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
-
-`ssh_deploy` returns a list of per-attempt result dictionaries — one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.
-
-```json
-[
-    {
-        "ip": "10.0.0.1",
-        "status": "failed",
-        "principal": "admin",
-        "stdout": "",
-        "stderr": "",
-        "error": "authentication failed for 'admin' at 10.0.0.1:22: password authentication rejected for admin@10.0.0.1:22"
-    },
-    {
-        "ip": "10.0.0.1",
-        "status": "success",
-        "principal": "root",
-        "stdout": "uid=0(root) gid=0(root) groups=0(root)\n",
-        "stderr": "",
-        "error": ""
-    }
-]
-```
-
-### pivot.ssh_exec
-
-`pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
-
-The **pivot.ssh_exec** method executes a command string on the remote host using the default shell.
-Stdout returns the string result from the command output.
-Stderr will return any errors from the SSH connection but not the command being executed.
-Status will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.
+The **linux.uname** method calls the Linux `uname` syscall and returns a dictionary of available kernel and machine metadata (`sysname`, `nodename`, `release`, `version`, `machine`, `domainname`).
 
 ```json
 {
-    "stdout": "uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\n",
-    "stderr":"",
-    "status": 0
+    "domainname": "(none)",
+    "machine": "x86_64",
+    "nodename": "host01",
+    "release": "6.1.0-18-amd64",
+    "sysname": "Linux",
+    "version": "#1 SMP PREEMPT_DYNAMIC Debian 6.1.76-1 (2024-02-01)"
 }
 ```
 
 ---
 
+## Net
+
+The `net` library provides network interface enumeration, listening socket inspection, and raw TCP/UDP client communication.
+
+### net.interfaces
+
+`net.interfaces() -> List<Dict>`
+
+The **net.interfaces** method returns a list of network interfaces as dictionaries. An example is available below:
+
+```json
+[
+  {
+    "name": "lo0",
+    "ip": "127.0.0.1"
+  },
+  {
+    "name": "lo0",
+    "ip": "::1"
+  },
+  {
+    "name": "en0",
+    "ip": "fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15"
+  },
+  {
+    "name": "en0",
+    "ip": "10.0.124.42"
+  }
+]
+```
+
+### net.conns
+
+`net.conns() -> List<Dict>`
+
+The **net.conns** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
+
+_Currently only shows LISTENING TCP connections_
+
+```json
+[
+    {
+        "socket_type": "TCP",
+        "local_address": "127.0.0.1",
+        "local_port": 46341,
+        "pid": 2359037
+    },
+    ...
+]
+```
+
+### net.tcp
+
+`net.tcp(address: str, port: int, data: str) -> str`
+
+The **net.tcp** method allows a user to send arbitrary data over TCP to a host. If the server responds, that response will be returned.
+
+### net.udp
+
+`net.udp(address: str, port: int, data: str) -> str`
+
+The **net.udp** method allows a user to send arbitrary data over UDP to a host. If the server responds, that response will be returned.
+
+---
+
+## Portal
+
+The `portal` library provides bi-directional portal streams for proxying traffic through an agent.
+
+### portal.create
+
+`portal.create() -> None`
+
+The **portal.create** method opens a portal bi-directional stream.
+
+---
+
 ## Process
 
-The `process` library is used to interact with running processes on the local system. It provides functionalities to list processes, gather detailed information, enumerate network sockets, or terminate specific processes.
+The `process` library is used to interact with running processes on the local system. It provides functionalities to list processes, gather detailed information, inspect process IDs and environment variables, or terminate specific processes.
+
+### process.cwd
+
+`process.cwd() -> Option<str>`
+
+The **process.cwd** method returns the current working directory of the process. If it could not be determined, `None` is returned.
+
+### process.env
+
+`process.env() -> Dict`
+
+The **process.env** method returns a dictionary that describes the current process's environment variables.
+An example is below:
+
+```json
+{
+    "FOO": "BAR",
+    "CWD": "/"
+}
+```
 
 ### process.info
 
@@ -1304,24 +1248,16 @@ The `include_env` parameter is an optional boolean (default `False`). When `True
 
 The **process.name** method returns the name of the process from its given process ID.
 
-### process.netstat
+### process.pid
 
-`process.netstat() -> List<Dict>`
+`process.pid() -> int`
 
-The **process.netstat** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
+The **process.pid** method returns the process ID of the current process.
+An example is below:
 
-_Currently only shows LISTENING TCP connections_
-
-```json
-[
-    {
-        "socket_type": "TCP",
-        "local_address": "127.0.0.1",
-        "local_port": 46341,
-        "pid": 2359037
-    },
-    ...
-]
+```python
+$> process.pid()
+123456
 ```
 
 ---
@@ -1392,6 +1328,56 @@ The **regex.replace** method returns the given haystack with the first capture g
 
 ---
 
+## Registry
+
+The `registry` library provides methods to read and write values in the Windows Registry.
+
+### registry.read
+
+`registry.read(path: str) -> Dict`
+
+The **registry.read** method returns the registry values at the requested registry path.
+An example is below:
+
+```python
+$> registry.read("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+{
+    "ProgramFilesDir": "C:\\Program Files",
+    "CommonFilesDir": "C:\\Program Files\\Common Files",
+    "ProgramFilesDir (x86)": "C:\\Program Files (x86)",
+    "CommonFilesDir (x86)": "C:\\Program Files (x86)\\Common Files",
+    "CommonW6432Dir": "C:\\Program Files\\Common Files",
+    "DevicePath": "%SystemRoot%\\inf",
+    "MediaPathUnexpanded": "%SystemRoot%\\Media",
+    "ProgramFilesPath": "%ProgramFiles%",
+    "ProgramW6432Dir": "C:\\Program Files",
+    "SM_ConfigureProgramsName": "Set Program Access and Defaults",
+    "SM_GamesName": "Games"
+}
+```
+
+### registry.write
+
+`registry.write(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
+
+The **registry.write** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.
+An example is below:
+
+```python
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_SZ","BAR1")
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_BINARY","deadbeef")
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_DWORD",12345678)
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3")
+True
+$> registry.write("HKCU\\SOFTWARE\\TEST1","FOO1","REG_QWORD",12345678)
+True
+```
+
+---
+
 ## Report
 
 The `report` library is designed to enable reporting structured data to Tavern. You can use it to securely exfiltrate files, process lists, captured credentials, or screenshots from the host. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
@@ -1434,28 +1420,154 @@ Reports a screenshot of all screens to Tavern.
 
 ---
 
+## Scan
+
+The `scan` library provides network discovery and port scanning tools.
+
+### scan.arp
+
+`scan.arp(target_cidrs: List<str>) -> List<Dict>`
+
+The **scan.arp** method is for enumerating hosts on the agent network without using TCP connect or ping.
+
+- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
+- Must be running as `root` to use.
+- Not supported on Windows
+
+Results will be in the format:
+
+```python
+$> scan.arp(["192.168.1.1/32"])
+```
+
+**Success**
+
+```json
+[
+    { "ip": "192.168.1.1", "mac": "ab:cd:ef:01:23:45", "interface": "eno0" }
+]
+```
+
+**Failure**
+
+```json
+[]
+```
+
+### scan.ports
+
+`scan.ports(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<Dict>`
+
+The **scan.ports** method allows users to scan TCP/UDP ports within the eldritch language.
+Inputs:
+
+- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
+- `ports` can be a list of any number of integers between 1 and 65535.
+- `protocol` must be: `tcp` or `udp`. These are the only supported options.
+- `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`
+- `fd_limit` is the maximum concurrent file descriptors/sockets (defaults to 64).
+
+Results will be in the format:
+
+```json
+[
+    { "ip": "127.0.0.1", "port": 22, "protocol": "tcp", "status": "open"},
+    { "ip": "127.0.0.1", "port": 21, "protocol": "tcp", "status": "closed"},
+    { "ip": "127.0.0.1", "port": 80, "protocol": "tcp", "status": "timeout"},
+]
+```
+
+A port's status can be open, closed, or timeout:
+
+|**State**|**Protocol**| **Meaning**                                          |
+|---------|------------|------------------------------------------------------|
+| open    | tcp        | Connection successful.                               |
+| close   | tcp        | Connection refused.                                  |
+| timeout | tcp        | Connection dropped or didn't respond.                |
+| open    | udp        | Connection returned some data.                       |
+| timeout | udp        | Connection was refused, dropped, or didn't respond.  |
+
+Each IP in the specified CIDR will be returned regardless of if it returns any open ports.
+Be mindful of this when scanning large CIDRs as it may create large return objects.
+
+NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
+
+---
+
+## SSH
+
+The `ssh` library provides remote command execution, file copying, and credential spray/deployment over SSH.
+
+### ssh.copy
+
+`ssh.copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
+
+The **ssh.copy** method copies a local file to a remote system.
+`ssh.copy` will return `"Success"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
+If the connection is successful but the copy writes a file error will be returned.
+`ssh.copy` will overwrite the remote file if it exists.
+The file directory the `dst` file exists in must exist in order for `ssh.copy` to work.
+
+### ssh.deploy
+
+`ssh.deploy(ips: List<str>, credentials: List<Dict>, cmd: str, privesc_cmd: Optional<str>, payload: Optional<bytes>, payload_dst: Optional<str>, timeout: Optional<int>, retries: Optional<int>) -> List<Dict>`
+
+The **ssh.deploy** method deploys a payload and/or command across a set of hosts via SSH. For each target (IP address or CIDR range) the provided credentials are tried in order until one succeeds. Once authenticated, the optional payload is copied via SFTP and `cmd` is executed. If the effective user is not root and `privesc_cmd` is provided, the privilege escalation command is run before `cmd`.
+
+- `ips` is a non-empty list of IP addresses and/or CIDR ranges (e.g. `["10.0.0.1", "10.0.0.0/24"]`). Each entry may include an optional SSH port using `host:port` syntax (e.g. `"127.0.0.1:2222"` or `"10.0.0.1:2222/24"` to apply port `2222` to every host in the range). IPv6 addresses with a port must be bracketed (e.g. `"[::1]:2222"`). When no port is supplied the default SSH port `22` is used. All entries must be valid.
+- `credentials` is a non-empty list of credential dictionaries of the form `{"principal": "<user>", "password": "<password>"}`, attempted in order on each host.
+- `cmd` is the command to run on the remote system (ideally as root).
+- `privesc_cmd` is an optional privilege escalation command to run when the effective user is not root.
+- `payload` is an optional `bytes` value containing the raw payload to copy to the remote system. It is intended to be used with readers such as `file.read(path)` or `assets.read(name)`.
+- `payload_dst` is an optional remote destination path for the payload. When omitted it defaults to `/tmp/payload`.
+- `timeout` is the per-connection timeout in seconds applied to each SSH authentication attempt. Defaults to `5` and must be positive.
+- `retries` is the number of additional retry passes over the full credential list on hosts that failed to connect. Defaults to `0` and must be non-negative.
+
+`ssh.deploy` returns a list of per-attempt result dictionaries — one row for every `(ip, principal)` combination actually tried. Each failed credential is recorded with the principal that was attempted and a descriptive `error` (including, when relevant, the server's advertised algorithms for negotiation failures), so operators can tell exactly which credentials were rejected. Credential iteration stops on the first success per host; credentials that were not attempted (because an earlier one succeeded) are not included.
+
+```json
+[
+    {
+        "ip": "10.0.0.1",
+        "status": "failed",
+        "principal": "admin",
+        "stdout": "",
+        "stderr": "",
+        "error": "authentication failed for 'admin' at 10.0.0.1:22: password authentication rejected for admin@10.0.0.1:22"
+    },
+    {
+        "ip": "10.0.0.1",
+        "status": "success",
+        "principal": "root",
+        "stdout": "uid=0(root) gid=0(root) groups=0(root)\n",
+        "stderr": "",
+        "error": ""
+    }
+]
+```
+
+### ssh.exec
+
+`ssh.exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> Dict`
+
+The **ssh.exec** method executes a command string on the remote host using the default shell.
+Stdout returns the string result from the command output.
+Stderr will return any errors from the SSH connection but not the command being executed.
+Status will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.
+
+```json
+{
+    "stdout": "uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\n",
+    "stderr":"",
+    "status": 0
+}
+```
+
+---
+
 ## Sys
 
-The `sys` library offers general system capabilities to retrieve context about the host environment. It provides functionalities to check the operating system, retrieve environment variables, query the registry, and run native shell commands.
-
-### sys.dll_inject
-
-`sys.dll_inject(dll_path: str, pid: int) -> None`
-
-The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
-
-For Imix DLLs, set `function_name` to `lib_entry`.
-
-### sys.dll_reflect
-
-`sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
-
-The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
-
-For Imix DLLs, set `function_name` to `lib_entry`.
-
-The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
-If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
+The `sys` library offers general system capabilities to retrieve context about the host environment. It provides functionalities to check the operating system, retrieve the hostname, and run native commands.
 
 ### sys.exec
 
@@ -1481,52 +1593,17 @@ sys.exec("/bin/bash",["-c", "ls /nofile"])
 }
 ```
 
-### sys.get_env
+### sys.hostname
 
-`sys.get_env() -> Dict`
+`sys.hostname() -> String`
 
-The **sys.get_env** method returns a dictionary that describes the current process's environment variables.
-An example is below:
+The **sys.hostname** method returns a String containing the host's hostname.
 
-```json
-{
-    "FOO": "BAR",
-    "CWD": "/"
-}
-```
+### sys.info
 
-### sys.get_ip
+`sys.info() -> Dict`
 
-`sys.get_ip() -> List<Dict>`
-
-The **sys.get_ip** method returns a list of network interfaces as a dictionary. An example is available below:
-
-```json
-[
-  {
-    "name": "lo0",
-    "ip": "127.0.0.1"
-  },
-  {
-    "name": "lo0",
-    "ip": "::1"
-  },
-  {
-    "name": "en0",
-    "ip": "fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15"
-  },
-  {
-    "name": "en0",
-    "ip": "10.0.124.42"
-  }
-]
-```
-
-### sys.get_os
-
-`sys.get_os() -> Dict`
-
-The **sys.get_os** method returns a dictionary that describes the current system's OS.
+The **sys.info** method returns a dictionary that describes the current system's OS.
 An example is below:
 
 ```json
@@ -1536,115 +1613,6 @@ An example is below:
     "distro": "Debian GNU/Linux 10 (buster)",
     "platform": "PLATFORM_LINUX"
 }
-```
-
-### sys.get_pid
-
-`sys.get_pid() -> int`
-
-The **sys.get_pid** method returns the process ID of the current process.
-An example is below:
-
-```python
-$> sys.get_pid()
-123456
-```
-
-### sys.get_reg
-
-`sys.get_reg(path: str) -> Dict`
-
-The **sys.get_reg** method returns the registry values at the requested registry path.
-An example is below:
-
-```python
-$> sys.get_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
-{
-    "ProgramFilesDir": "C:\\Program Files",
-    "CommonFilesDir": "C:\\Program Files\\Common Files",
-    "ProgramFilesDir (x86)": "C:\\Program Files (x86)",
-    "CommonFilesDir (x86)": "C:\\Program Files (x86)\\Common Files",
-    "CommonW6432Dir": "C:\\Program Files\\Common Files",
-    "DevicePath": "%SystemRoot%\\inf",
-    "MediaPathUnexpanded": "%SystemRoot%\\Media",
-    "ProgramFilesPath": "%ProgramFiles%",
-    "ProgramW6432Dir": "C:\\Program Files",
-    "SM_ConfigureProgramsName": "Set Program Access and Defaults",
-    "SM_GamesName": "Games"
-}
-```
-
-### sys.get_user
-
-`sys.get_user() -> Dict`
-
-The **sys.get_user** method returns a dictionary that describes the current process's running user.
-On *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.
-For users, will return name and groups of user.
-
-```json
-{
-    "uid": {
-        "uid": 0,
-        "name": "root",
-        "gid": 0,
-        "groups": ["root"]
-    },
-    "euid": {
-        "uid": 0,
-        "name": "root",
-        "gid": 0,
-        "groups": ["root"]
-    },
-    "gid": 0,
-    "egid": 0
-}
-```
-
-### sys.hostname
-
-`sys.hostname() -> String`
-
-The **sys.hostname** method returns a String containing the host's hostname.
-
-### sys.impersonate
-
-`sys.impersonate(pid: int) -> int`
-
-The **sys.impersonate** method steals a token from a target process by PID and impersonates it. Returns the token store ID and automatically activates the token.
-
-Requires `SeDebugPrivilege` to open other users' process tokens.
-
-```python
-$> sys.tokens()
-
-| active | id | process  | source        | user                 |
-| ------ | -- | -------- | ------------- | -------------------- |
-| True   | 0  | imix.exe | process_token | DOMAIN\Administrator |
-
-# find SYSTEM process PID (ex. winlogon)
-for p in process.list():
-    if 'winlogon' in p['name'].lower():
-        print(p['pid'], p['name'])
-
-676 winlogon.exe
-
-# check if the current process has SeDebugPrivilege
-$> "SeDebugPrivilege=enabled" in sys.tokens(process.info()['pid'])[0]['privileges']
-True
-
-$> sys.impersonate(676)
-1
-
-$> sys.tokens()
-
-| active | id | process        | source              | user                 |
-| ------ | -- | -------------- | ------------------- | -------------------- |
-| False  | 0  | imix.exe       | process_token       | DOMAIN\Administrator |
-| True   | 1  | winlogon.exe   | impersonate:pid:676 | NT AUTHORITY\SYSTEM  |
-
-$> sys.shell('whoami')
-nt authority\system
 ```
 
 ### sys.is_bsd
@@ -1671,12 +1639,6 @@ The **sys.is_macos** method returns `True` if on a mac os system and `False` on 
 
 The **sys.is_windows** method returns `True` if on a windows system and `False` on everything else.
 
-### sys.list_users
-
-`sys.list_users() -> List<Dict>`
-
-The **sys.list_users** method lists all user accounts on the system.
-
 ### sys.shell
 
 `sys.shell(cmd: str) -> Dict`
@@ -1698,28 +1660,202 @@ sys.shell("ls /nofile")
 }
 ```
 
-On Windows, if an impersonation token is active (from `sys.impersonate()` or `sys.make_token()`), sys.shell automatically spawns `cmd.exe` via `CreateProcessWithTokenW` so the child process runs as the impersonated user. This ensures `whoami` and network operations reflect the active token. Without an active token, it falls back to normal operation.
+On Windows, if an impersonation token is active (from `windows.impersonate()`), `sys.shell` automatically spawns `cmd.exe` via `CreateProcessWithTokenW` so the child process runs as the impersonated user. This ensures `whoami` and network operations reflect the active token. Without an active token, it falls back to normal operation.
 
-### sys.tokens
+---
 
-`sys.tokens(pid: Option<int>) -> List<Dict>`
+## Template
 
-The **sys.tokens** method lists tokens. With no arguments, returns all tokens in the global store. With a PID, returns the process token info including user and privileges.
+The `template` library renders Jinja2 templates from strings or files using the supplied variables.
 
-The first time **sys.tokens** is run, it enumerates all tokens and pulls the users and process names. Subsequent calls with no new tokens pulls the information from the store.
+### template.render_file
+
+`template.render_file(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
+
+The **template.render_file** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
+If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
+The `args` dictionary currently supports values of: `int`, `str`, and `List`.
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+### template.render
+
+`template.render(template: str, args: Dict<String, Value>, autoescape: bool) -> str`
+
+Rather than reading a Jinja2 template file from disk, **template.render** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
+
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+```python
+template_text = "Hello, {{ name }}!\n"
+result = template.render(template_text, {"name": "world"}, True)
+```
+
+---
+
+## Time
+
+The `time` library contains general functions for obtaining and formatting the current system time. It allows you to convert between timestamps and readable strings, or introduce execution delays using sleep.
+
+### time.to_epoch
+
+`time.to_epoch(input: str, format: str) -> int`
+
+The **time.to_epoch** method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
+
+Some common formatting methods are:
+
+- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
+- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
+
+For reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>
+
+### time.format
+
+`time.format(input: int, format: str) -> str`
+
+The **time.format** method returns the timestamp in the provided format of the provided UTC timestamp.
+
+Some common formatting methods are:
+
+- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
+- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
+
+For reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>
+
+### time.now
+
+`time.now() -> int`
+
+The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
+
+### time.sleep
+
+`time.sleep(secs: float)`
+
+The **time.sleep** method sleeps the task for the given number of seconds.
+
+---
+
+## User
+
+The `user` library provides methods to inspect the current user and enumerate user accounts on the system.
+
+### user.info
+
+`user.info() -> Dict`
+
+The **user.info** method returns a dictionary that describes the current process's running user.
+On *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.
+For users, will return name and groups of user.
+
+```json
+{
+    "uid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "euid": {
+        "uid": 0,
+        "name": "root",
+        "gid": 0,
+        "groups": ["root"]
+    },
+    "gid": 0,
+    "egid": 0
+}
+```
+
+### user.list
+
+`user.list() -> List<Dict>`
+
+The **user.list** method lists all user accounts on the system.
+
+---
+
+## Windows
+
+The `windows` library provides Windows-specific capabilities including DLL injection and reflection, and token manipulation.
+
+### windows.dll_inject
+
+`windows.dll_inject(dll_path: str, pid: int) -> None`
+
+The **windows.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
+
+### windows.dll_reflect
+
+`windows.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
+
+The **windows.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
+
+For Imix DLLs, set `function_name` to `lib_entry`.
+
+The ints in `dll_bytes` will be cast down from int u32 ---> u8 in rust.
+If your `dll_bytes` array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
+
+### windows.impersonate
+
+`windows.impersonate(pid: int) -> int`
+
+The **windows.impersonate** method steals a token from a target process by PID and impersonates it. Returns the token store ID and automatically activates the token.
+
+Requires `SeDebugPrivilege` to open other users' process tokens.
+
+```python
+$> windows.tokens()
+
+| active | id | process  | source        | user                 |
+| ------ | -- | -------- | ------------- | -------------------- |
+| True   | 0  | imix.exe | process_token | DOMAIN\Administrator |
+
+# find SYSTEM process PID (ex. winlogon)
+for p in process.list():
+    if 'winlogon' in p['name'].lower():
+        print(p['pid'], p['name'])
+
+676 winlogon.exe
+
+# check if the current process has SeDebugPrivilege
+$> "SeDebugPrivilege=enabled" in windows.tokens(process.info()['pid'])[0]['privileges']
+True
+
+$> windows.impersonate(676)
+1
+
+$> windows.tokens()
+
+| active | id | process        | source              | user                 |
+| ------ | -- | -------------- | ------------------- | -------------------- |
+| False  | 0  | imix.exe       | process_token       | DOMAIN\Administrator |
+| True   | 1  | winlogon.exe   | impersonate:pid:676 | NT AUTHORITY\SYSTEM  |
+
+$> sys.shell('whoami')
+nt authority\system
+```
+
+### windows.tokens
+
+`windows.tokens(pid: Option<int>) -> List<Dict>`
+
+The **windows.tokens** method lists tokens. With no arguments, returns all tokens in the global store. With a PID, returns the process token info including user and privileges.
+
+The first time **windows.tokens** is run, it enumerates all tokens and pulls the users and process names. Subsequent calls with no new tokens pulls the information from the store.
 
 **Stored tokens** (no args): Each dict has `active` (bool), `id` (int), `process` (str), `source` (str), and `user` (str). The default process token has an ID of 0, source of `"process_token"`, displays the current user, and begins active.
 
 **Process tokens** (with pid): Each dict has `user` (str, e.g. `"CORP\\admin"`), `pid` (int), `privileges` (list of `"PrivilegeName=enabled|disabled"`).
 
 ```python
-$> sys.tokens()
+$> windows.tokens()
 
 | active | id | process  | source        | user                 |
 | ------ | -- | -------- | ------------- | -------------------- |
 | True   | 0  | imix.exe | process_token | DOMAIN\Administrator |
 
-$> pprint(sys.tokens(pid=700)) # ex. winlogon.exe
+$> pprint(windows.tokens(pid=700)) # ex. winlogon.exe
 
 [
   {
@@ -1752,18 +1888,18 @@ $> pprint(sys.tokens(pid=700)) # ex. winlogon.exe
 ]
 ```
 
-### sys.use_token
+### windows.use_token
 
-`sys.use_token(id: int) -> bool`
+`windows.use_token(id: int) -> bool`
 
-The **sys.use_token** method activates a stored token by ID. Deactivates any currently active token and applies the specified one to the beacon.
+The **windows.use_token** method activates a stored token by ID. Deactivates any currently active token and applies the specified one to the beacon.
 
-ID `0` is the process token (original identity). `sys.use_token(0)` reverts to base permissions.
+ID `0` is the process token (original identity). `windows.use_token(0)` reverts to base permissions.
 
 For this example, assume PID 6767 is running as SYSTEM and the base process token is running as Administrator.
 
 ```python
-$> sys.tokens()
+$> windows.tokens()
 
 | active | id | process        | source               | user                 |
 | ------ | -- | -------------- | -------------------- | -------------------- |
@@ -1773,10 +1909,10 @@ $> sys.tokens()
 $> sys.shell('whoami')['stdout']
 nt authority\system
 
-$> sys.use_token(0)
+$> windows.use_token(0)
 True
 
-$> sys.tokens()
+$> windows.tokens()
 
 | active | id | process        | source               | user                 |
 | ------ | -- | -------------- | -------------------- | -------------------- |
@@ -1787,79 +1923,3 @@ $> sys.shell('whoami')['stdout']
 domain\administrator
 ```
 
-### sys.whereis
-
-`sys.whereis(bin: str) -> str`
-
-The **sys.whereis** method returns the resolved path of a binary. If this binary does not resolve to anything, an empty string is returned.
-
-Example:
-
-```python
-$> sys.whereis("sh")
-"/usr/bin/sh"
-$> sys.whereis("some_random_binary_that_doesnt_exist")
-""
-```
-
-### sys.write_reg
-
-`sys.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
-
-The **sys.write_reg** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.
-An example is below:
-
-```python
-$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_SZ","BAR1")
-True
-$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_BINARY","deadbeef")
-True
-$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_DWORD",12345678)
-True
-$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3")
-True
-$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_QWORD",12345678)
-True
-```
-
-## Time
-
-The `time` library contains general functions for obtaining and formatting the current system time. It allows you to convert between timestamps and readable strings, or introduce execution delays using sleep.
-
-### time.format_to_epoch
-
-`time.format_to_epoch(input: str, format: str) -> int`
-
-The **time.format_to_epoch** method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
-
-Some common formatting methods are:
-
-- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
-- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
-
-For reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>
-
-### time.format_to_readable
-
-`time.format_to_readable(input: int, format: str) -> str`
-
-The **time.format_to_readable** method returns the timestamp in the provided format of the provided UTC timestamp.
-
-Some common formatting methods are:
-
-- "%Y-%m-%d %H:%M:%S" (24 Hour Time)
-- "%Y-%m-%d %I:%M:%S %P" (AM/PM)
-
-For reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>
-
-### time.now
-
-`time.now() -> int`
-
-The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
-
-### time.sleep
-
-`time.sleep(secs: float)`
-
-The **time.sleep** method sleeps the task for the given number of seconds.

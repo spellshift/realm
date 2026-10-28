@@ -102,22 +102,117 @@ func doAThing(myparam *Thing):
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 12 modules:
+The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `crypto` and `pivot`):
 
-| Module    | Purpose                              |
-|-----------|--------------------------------------|
-| `agent`   | Agent metadata and control           |
-| `assets`  | Embedded file access                 |
-| `crypto`  | Encryption, decryption, hashing      |
-| `file`    | File system operations               |
-| `http`    | HTTP/HTTPS requests                  |
-| `pivot`   | Network enumeration, lateral movement|
-| `process` | Process management                   |
-| `random`  | Cryptographically secure random      |
-| `regex`   | Regular expression operations        |
-| `report`  | Structured reporting to Tavern       |
-| `sys`     | System info and execution            |
-| `time`    | Time formatting and delays           |
+| Module    | Purpose                                                       |
+|-----------|---------------------------------------------------------------|
+| `aes`     | AES encryption and decryption for bytes and files             |
+| `agent`   | Agent metadata and control                                    |
+| `assets`  | Embedded file access                                          |
+| `base64`  | Base64 encoding and decoding                                  |
+| `chain`   | Multi-agent C2 chaining                                       |
+| `dns`     | DNS lookups                                                   |
+| `file`    | File system operations                                        |
+| `gzip`    | Gzip compression and decompression for bytes and files        |
+| `hash`    | Cryptographic hashing (`md5`, `sha1`, `sha256`, `file`)       |
+| `http`    | HTTP/HTTPS requests                                           |
+| `json`    | JSON encoding, decoding, and validation                       |
+| `linux`   | Linux-specific operations (`uname`)                           |
+| `net`     | Network interfaces, listening connections, and TCP/UDP clients |
+| `portal`  | Bi-directional portal streams                                 |
+| `process` | Process management, PID, and environment variables            |
+| `random`  | Cryptographically secure random                               |
+| `regex`   | Regular expression operations                                 |
+| `registry`| Windows Registry reading and writing (`read`, `write`)        |
+| `report`  | Structured reporting to Tavern                                |
+| `scan`    | Network discovery and port scanning (`arp`, `ports`)          |
+| `ssh`     | SSH command execution, file copy, and deployment              |
+| `sys`     | System OS info, hostname, and command execution               |
+| `template` | Jinja2 template rendering from strings and files            |
+| `time`    | Time formatting and delays                                    |
+| `user`    | Current user info and user account enumeration                |
+| `windows` | Windows-specific DLL injection/reflection & tokens            |
+
+# Eldritch Changelog
+
+## v0.4.1
+
+In Eldritch `0.4.1`, the standard library API was reorganized into more granular, purpose-specific libraries. Old function names remain available temporarily, emit a deprecation warning to `stderr` via the `#[eldritch_deprecated("...")]` macro, and delegate to the new implementations.
+
+To automatically migrate existing `.eldritch` tomes to the `0.4.1` API, run:
+
+```bash
+python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
+```
+
+### Renamed Functions & Type Conversions
+
+- `file.temp_file` → `file.tmp`
+- `file.pwd` → `process.cwd`
+- `file.template` → `template.render_file`
+- `file.template_str` → `template.render`
+- `file.read_binary` → `file.read` (`file.read` now returns `Bytes`)
+- `file.write_binary` → `file.write` (`file.write` now accepts either `Bytes` or `str`)
+- `file.append_binary` → `file.append` (`file.append` now accepts either `Bytes` or `str`)
+- `assets.read_binary` → `assets.read` (`assets.read` now returns `Bytes`)
+- `time.format_to_epoch` → `time.to_epoch`
+- `time.format_to_readable` → `time.format`
+- `agent.get_config` → `agent.config`
+- `agent.get_transport` → `agent.transport`
+- `agent.get_callback_interval` → `agent.callback_interval`
+- `crypto.aes_decrypt` → `aes.decrypt`
+- `crypto.aes_decrypt_file` → `aes.decrypt_file`
+- `crypto.aes_encrypt` → `aes.encrypt`
+- `crypto.aes_encrypt_file` → `aes.encrypt_file`
+- `crypto.decode_b64` → `base64.decode`
+- `crypto.decode_utf16le` → `bytes.decode("utf16le")`
+- `crypto.encode_b64` → `base64.encode`
+- `crypto.encode_utf16le` → `str.encode("utf16le")`
+- `crypto.from_json` → `json.decode`
+- `crypto.hash_file` → `hash.file` (`algo` is now optional and defaults to `"sha256"`)
+- `crypto.is_json` → `json.is_valid`
+- `crypto.md5` → `hash.md5`
+- `crypto.sha1` → `hash.sha1`
+- `crypto.sha256` → `hash.sha256`
+- `crypto.to_json` → `json.encode`
+- `file.compress` → `gzip.compress_file`
+- `file.decompress` → `gzip.decompress_file`
+- `pivot.arp_scan` → `scan.arp`
+- `pivot.create_portal` → `portal.create`
+- `pivot.ncat` → `net.tcp` & `net.udp` (split TCP and UDP into dedicated functions without the `protocol` parameter)
+- `pivot.port_scan` → `scan.ports`
+- `pivot.smb_exec` → `smb.exec` (removed unimplemented proposal from docs; supported in migration script)
+- `pivot.ssh_copy` → `ssh.copy`
+- `pivot.ssh_deploy` → `ssh.deploy`
+- `pivot.ssh_exec` → `ssh.exec`
+- `process.netstat` → `net.conns`
+- `sys.dll_inject` → `windows.dll_inject`
+- `sys.dll_reflect` → `windows.dll_reflect`
+- `sys.get_env` → `process.env`
+- `sys.get_ip` → `net.interfaces`
+- `sys.get_os` → `sys.info`
+- `sys.get_pid` → `process.pid`
+- `sys.get_reg` → `registry.read`
+- `sys.get_user` → `user.info`
+- `sys.impersonate` → `windows.impersonate`
+- `sys.list_users` → `user.list`
+- `sys.tokens` → `windows.tokens`
+- `sys.use_token` → `windows.use_token`
+- `sys.whereis` → `file.which`
+- `sys.write_reg` → `registry.write`
+
+### New Functions & Built-in Methods
+
+- `str.encode(encoding: Optional<str> = "utf8") -> Bytes` (supports `"utf8"` and `"utf16le"`)
+- `bytes.decode(encoding: Optional<str> = "utf8") -> str` (supports `"utf8"` and `"utf16le"`)
+- `str(b"...")`, `bytes("...")`, `print(b"...")`, and standard library methods accept `Bytes` and `str` interchangeably (assuming UTF-8)
+- `gzip.compress(data: Bytes) -> Bytes`
+- `gzip.decompress(data: Bytes) -> Bytes`
+- `linux.uname() -> Dict`
+
+### Removed Documentation Proposals
+
+- `pivot.bind_proxy` and `pivot.port_forward` (unimplemented proposals removed from documentation).
 
 ## Testing Requirements
 

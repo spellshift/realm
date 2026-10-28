@@ -6,20 +6,34 @@ extern crate alloc;
 extern crate std;
 
 // Re-exports from eldritch-stdlib
+pub use eldritch_libaes as aes;
 pub use eldritch_libagent as agent;
 pub use eldritch_libassets as assets;
+pub use eldritch_libbase64 as base64;
 pub use eldritch_libchain as chain;
 pub use eldritch_libcrypto as crypto;
 pub use eldritch_libdns as dns;
 pub use eldritch_libfile as file;
+pub use eldritch_libgzip as gzip;
+pub use eldritch_libhash as hash;
 pub use eldritch_libhttp as http;
+pub use eldritch_libjson as json;
+pub use eldritch_liblinux as linux;
+pub use eldritch_libnet as net;
 pub use eldritch_libpivot as pivot;
+pub use eldritch_libportal as portal;
 pub use eldritch_libprocess as process;
 pub use eldritch_librandom as random;
 pub use eldritch_libregex as regex;
+pub use eldritch_libregistry as registry;
 pub use eldritch_libreport as report;
+pub use eldritch_libscan as scan;
+pub use eldritch_libssh as ssh;
 pub use eldritch_libsys as sys;
+pub use eldritch_libtemplate as template;
 pub use eldritch_libtime as time;
+pub use eldritch_libuser as user;
+pub use eldritch_libwindows as windows;
 pub use eldritch_repl as repl;
 
 // Re-export core types
@@ -37,6 +51,8 @@ use alloc::vec::Vec;
 use eldritch_agent::Context;
 
 #[cfg(feature = "stdlib")]
+use crate::aes::std::StdAesLibrary;
+#[cfg(feature = "stdlib")]
 pub use crate::agent::{agent::Agent, std::StdAgentLibrary};
 #[cfg(feature = "stdlib")]
 pub use crate::assets::std::AgentAssets;
@@ -49,6 +65,8 @@ pub use crate::assets::std::EmptyAssets;
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
 #[cfg(feature = "stdlib")]
+use crate::base64::std::StdBase64Library;
+#[cfg(feature = "stdlib")]
 use crate::chain::std::StdChainLibrary;
 #[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
@@ -57,9 +75,21 @@ use crate::dns::std::StdDnsLibrary;
 #[cfg(feature = "stdlib")]
 use crate::file::std::StdFileLibrary;
 #[cfg(feature = "stdlib")]
+use crate::gzip::std::StdGzipLibrary;
+#[cfg(feature = "stdlib")]
+use crate::hash::std::StdHashLibrary;
+#[cfg(feature = "stdlib")]
 use crate::http::std::StdHttpLibrary;
 #[cfg(feature = "stdlib")]
+use crate::json::std::StdJsonLibrary;
+#[cfg(feature = "stdlib")]
+use crate::linux::std::StdLinuxLibrary;
+#[cfg(feature = "stdlib")]
+use crate::net::std::StdNetLibrary;
+#[cfg(feature = "stdlib")]
 use crate::pivot::std::StdPivotLibrary;
+#[cfg(feature = "stdlib")]
+use crate::portal::std::StdPortalLibrary;
 #[cfg(feature = "stdlib")]
 use crate::process::std::StdProcessLibrary;
 #[cfg(feature = "stdlib")]
@@ -67,16 +97,32 @@ use crate::random::std::StdRandomLibrary;
 #[cfg(feature = "stdlib")]
 use crate::regex::std::StdRegexLibrary;
 #[cfg(feature = "stdlib")]
+use crate::registry::std::StdRegistryLibrary;
+#[cfg(feature = "stdlib")]
 use crate::report::std::StdReportLibrary;
+#[cfg(feature = "stdlib")]
+use crate::scan::std::StdScanLibrary;
+#[cfg(feature = "stdlib")]
+use crate::ssh::std::StdSshLibrary;
 #[cfg(feature = "stdlib")]
 use crate::sys::std::StdSysLibrary;
 #[cfg(feature = "stdlib")]
+use crate::template::std::StdTemplateLibrary;
+#[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
+#[cfg(feature = "stdlib")]
+use crate::user::std::StdUserLibrary;
+#[cfg(feature = "stdlib")]
+use crate::windows::std::StdWindowsLibrary;
 
+#[cfg(feature = "fake_aes")]
+use crate::aes::fake::AesLibraryFake;
 #[cfg(feature = "fake_agent")]
 use crate::agent::fake::AgentLibraryFake;
 #[cfg(feature = "fake_assets")]
 use crate::assets::fake::FakeAssetsLibrary;
+#[cfg(feature = "fake_base64")]
+use crate::base64::fake::Base64LibraryFake;
 #[cfg(feature = "fake_chain")]
 use crate::chain::fake::FakeChainLibrary;
 #[cfg(feature = "fake_crypto")]
@@ -85,22 +131,46 @@ use crate::crypto::fake::CryptoLibraryFake;
 use crate::dns::fake::DnsLibraryFake;
 #[cfg(feature = "fake_file")]
 use crate::file::fake::FileLibraryFake;
+#[cfg(feature = "fake_gzip")]
+use crate::gzip::fake::GzipLibraryFake;
+#[cfg(feature = "fake_hash")]
+use crate::hash::fake::HashLibraryFake;
 #[cfg(feature = "fake_http")]
 use crate::http::fake::HttpLibraryFake;
+#[cfg(feature = "fake_json")]
+use crate::json::fake::JsonLibraryFake;
+#[cfg(feature = "fake_linux")]
+use crate::linux::fake::LinuxLibraryFake;
+#[cfg(feature = "fake_net")]
+use crate::net::fake::NetLibraryFake;
 #[cfg(feature = "fake_pivot")]
 use crate::pivot::fake::PivotLibraryFake;
+#[cfg(feature = "fake_portal")]
+use crate::portal::fake::PortalLibraryFake;
 #[cfg(feature = "fake_process")]
 use crate::process::fake::ProcessLibraryFake;
 #[cfg(feature = "fake_random")]
 use crate::random::fake::RandomLibraryFake;
 #[cfg(feature = "fake_regex")]
 use crate::regex::fake::RegexLibraryFake;
+#[cfg(feature = "fake_registry")]
+use crate::registry::fake::RegistryLibraryFake;
 #[cfg(feature = "fake_report")]
 use crate::report::fake::ReportLibraryFake;
+#[cfg(feature = "fake_scan")]
+use crate::scan::fake::ScanLibraryFake;
+#[cfg(feature = "fake_ssh")]
+use crate::ssh::fake::SshLibraryFake;
 #[cfg(feature = "fake_sys")]
 use crate::sys::fake::SysLibraryFake;
+#[cfg(feature = "fake_template")]
+use crate::template::fake::TemplateLibraryFake;
 #[cfg(feature = "fake_time")]
 use crate::time::fake::TimeLibraryFake;
+#[cfg(feature = "fake_user")]
+use crate::user::fake::UserLibraryFake;
+#[cfg(feature = "fake_windows")]
+use crate::windows::fake::WindowsLibraryFake;
 
 pub struct Interpreter {
     inner: CoreInterpreter,
@@ -128,36 +198,78 @@ impl Interpreter {
     #[cfg(feature = "stdlib")]
     pub fn with_default_libs(mut self) -> Self {
         {
+            self.inner.register_lib(StdAesLibrary);
+            self.inner.register_lib(StdBase64Library);
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
+            self.inner.register_lib(StdGzipLibrary);
+            self.inner.register_lib(StdHashLibrary);
             self.inner.register_lib(StdHttpLibrary);
+            self.inner.register_lib(StdJsonLibrary);
+            self.inner.register_lib(StdLinuxLibrary);
+            self.inner.register_lib(StdNetLibrary);
             self.inner.register_lib(StdPivotLibrary::default());
+            self.inner.register_lib(StdPortalLibrary::default());
             self.inner.register_lib(StdProcessLibrary);
             self.inner.register_lib(StdRandomLibrary);
             self.inner.register_lib(StdRegexLibrary);
+            self.inner.register_lib(StdRegistryLibrary);
+            self.inner.register_lib(StdScanLibrary);
+            self.inner.register_lib(StdSshLibrary);
             self.inner.register_lib(StdSysLibrary);
+            self.inner.register_lib(StdTemplateLibrary);
             self.inner.register_lib(StdTimeLibrary);
+            self.inner.register_lib(StdUserLibrary);
+            self.inner.register_lib(StdWindowsLibrary);
             self.inner.register_lib(StdDnsLibrary);
         }
 
+        #[cfg(feature = "fake_aes")]
+        self.inner.register_lib(AesLibraryFake);
+        #[cfg(feature = "fake_base64")]
+        self.inner.register_lib(Base64LibraryFake);
         #[cfg(feature = "fake_crypto")]
         self.inner.register_lib(CryptoLibraryFake);
         #[cfg(feature = "fake_file")]
         self.inner.register_lib(FileLibraryFake::default());
+        #[cfg(feature = "fake_gzip")]
+        self.inner.register_lib(GzipLibraryFake);
+        #[cfg(feature = "fake_hash")]
+        self.inner.register_lib(HashLibraryFake);
         #[cfg(feature = "fake_http")]
         self.inner.register_lib(HttpLibraryFake);
+        #[cfg(feature = "fake_json")]
+        self.inner.register_lib(JsonLibraryFake);
+        #[cfg(feature = "fake_linux")]
+        self.inner.register_lib(LinuxLibraryFake);
+        #[cfg(feature = "fake_net")]
+        self.inner.register_lib(NetLibraryFake);
         #[cfg(feature = "fake_pivot")]
         self.inner.register_lib(PivotLibraryFake);
+        #[cfg(feature = "fake_portal")]
+        self.inner.register_lib(PortalLibraryFake);
         #[cfg(feature = "fake_process")]
         self.inner.register_lib(ProcessLibraryFake);
         #[cfg(feature = "fake_random")]
         self.inner.register_lib(RandomLibraryFake);
         #[cfg(feature = "fake_regex")]
         self.inner.register_lib(RegexLibraryFake);
+        #[cfg(feature = "fake_registry")]
+        self.inner.register_lib(RegistryLibraryFake);
+        #[cfg(feature = "fake_scan")]
+        self.inner.register_lib(ScanLibraryFake);
+        #[cfg(feature = "fake_ssh")]
+        self.inner.register_lib(SshLibraryFake);
         #[cfg(feature = "fake_sys")]
         self.inner.register_lib(SysLibraryFake);
+        #[cfg(feature = "fake_template")]
+        self.inner.register_lib(TemplateLibraryFake);
         #[cfg(feature = "fake_time")]
         self.inner.register_lib(TimeLibraryFake);
+        #[cfg(feature = "fake_user")]
+        self.inner.register_lib(UserLibraryFake);
+        #[cfg(feature = "fake_windows")]
+        self.inner.register_lib(WindowsLibraryFake);
         #[cfg(feature = "fake_dns")]
         self.inner.register_lib(DnsLibraryFake::default());
 
@@ -185,6 +297,9 @@ impl Interpreter {
         let pivot_lib = StdPivotLibrary::new(agent.clone(), context.clone());
         self.inner.register_lib(pivot_lib);
 
+        let portal_lib = StdPortalLibrary::new(agent.clone(), context.clone());
+        self.inner.register_lib(portal_lib);
+
         self.inner.register_lib(StdChainLibrary::new(agent.clone()));
 
         // Assets library
@@ -200,6 +315,7 @@ impl Interpreter {
         self
     }
 
+    #[allow(unused_mut)]
     pub fn with_fake_agent(mut self) -> Self {
         #[cfg(feature = "fake_agent")]
         self.inner.register_lib(AgentLibraryFake);
@@ -207,6 +323,8 @@ impl Interpreter {
         self.inner.register_lib(ReportLibraryFake);
         #[cfg(feature = "fake_pivot")]
         self.inner.register_lib(PivotLibraryFake);
+        #[cfg(feature = "fake_portal")]
+        self.inner.register_lib(PortalLibraryFake);
         #[cfg(feature = "fake_assets")]
         self.inner.register_lib(FakeAssetsLibrary);
         #[cfg(feature = "fake_chain")]
@@ -230,6 +348,9 @@ impl Interpreter {
 
         let pivot_lib = StdPivotLibrary::new(agent.clone(), context.clone());
         self.inner.register_lib(pivot_lib);
+
+        let portal_lib = StdPortalLibrary::new(agent.clone(), context.clone());
+        self.inner.register_lib(portal_lib);
 
         self.inner.register_lib(StdChainLibrary::new(agent.clone()));
 
@@ -283,3 +404,6 @@ mod input_params_test;
 
 #[cfg(test)]
 mod process_report_test;
+
+#[cfg(all(test, feature = "stdlib"))]
+mod rename_test;
