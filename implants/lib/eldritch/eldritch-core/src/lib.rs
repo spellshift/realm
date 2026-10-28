@@ -15,7 +15,8 @@ mod token;
 // Re-export core types
 pub use analysis::find_node_at_offset;
 pub use ast::{
-    Argument, Environment, ExprKind, FStringSegment, ForeignValue, Param, Stmt, StmtKind, Value,
+    Argument, Environment, Expr, ExprKind, FStringSegment, ForeignValue, Param, Stmt, StmtKind,
+    Value,
 };
 pub use interpreter::builtins::pprint::pretty_format;
 pub use interpreter::builtins::tprint::format_tprint;
@@ -23,7 +24,7 @@ pub use interpreter::{
     BufferPrinter, Interpreter, NoopPrinter, Printer, StdoutPrinter, call_bound_method,
 };
 pub use lexer::Lexer;
-pub use token::{Span, TokenKind};
+pub use token::{Span, Token, TokenKind};
 
 // Public API exports
 pub mod conversion;
