@@ -125,7 +125,7 @@ The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `cry
 | `regex`   | Regular expression operations                                 |
 | `registry`| Windows Registry reading and writing (`read`, `write`)        |
 | `report`  | Structured reporting to Tavern                                |
-| `scan`    | Network discovery and port scanning (`arp`, `port`)           |
+| `scan`    | Network discovery and port scanning (`arp`, `ports`)          |
 | `ssh`     | SSH command execution, file copy, and deployment              |
 | `sys`     | System OS info, hostname, and command execution               |
 | `template` | Jinja2 template rendering from strings and files            |
@@ -169,7 +169,7 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 - `crypto.encode_b64` → `base64.encode`
 - `crypto.encode_utf16le` → `str.encode("utf16le")`
 - `crypto.from_json` → `json.decode`
-- `crypto.hash_file` → `hash.file`
+- `crypto.hash_file` → `hash.file` (`algo` is now optional and defaults to `"sha256"`)
 - `crypto.is_json` → `json.is_valid`
 - `crypto.md5` → `hash.md5`
 - `crypto.sha1` → `hash.sha1`
@@ -180,7 +180,7 @@ python3 bin/migrate/eldritch_migrate_0.4.1.py <path-to-tomes-or-file>
 - `pivot.arp_scan` → `scan.arp`
 - `pivot.create_portal` → `portal.create`
 - `pivot.ncat` → `net.tcp` & `net.udp` (split TCP and UDP into dedicated functions without the `protocol` parameter)
-- `pivot.port_scan` → `scan.port`
+- `pivot.port_scan` → `scan.ports`
 - `pivot.smb_exec` → `smb.exec` (removed unimplemented proposal from docs; supported in migration script)
 - `pivot.ssh_copy` → `ssh.copy`
 - `pivot.ssh_deploy` → `ssh.deploy`

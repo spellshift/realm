@@ -41,7 +41,7 @@ impl CryptoLibrary for CryptoLibraryFake {
         HashLibraryFake.sha256(data)
     }
 
-    fn hash_file(&self, file: String, algo: String) -> Result<String, String> {
+    fn hash_file(&self, file: String, algo: Option<String>) -> Result<String, String> {
         HashLibraryFake.file(file, algo)
     }
 

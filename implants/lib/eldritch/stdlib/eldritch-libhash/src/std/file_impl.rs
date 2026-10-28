@@ -5,7 +5,8 @@ use sha1::Sha1;
 use sha2::{Digest, Sha256, Sha512};
 use std::io::Read;
 
-pub fn hash_file(file: String, algo: String) -> Result<String, String> {
+pub fn hash_file(file: String, algo: Option<String>) -> Result<String, String> {
+    let algo = algo.unwrap_or_else(|| "sha256".to_string());
     let file = std::fs::File::open(file).map_err(|e| e.to_string())?;
     let mut reader = std::io::BufReader::new(file);
     let mut buffer = [0; 8192];
@@ -65,20 +66,21 @@ mod tests {
         write!(tmp_file, "{lorem}").expect("failed to write to temp file");
         let path = String::from(tmp_file.path().to_str().unwrap());
 
+        assert_eq!(hash_file(path.clone(), None).unwrap(), lorem_hash_sha256);
         assert_eq!(
-            hash_file(path.clone(), "md5".to_string()).unwrap(),
+            hash_file(path.clone(), Some("md5".to_string())).unwrap(),
             lorem_hash_md5
         );
         assert_eq!(
-            hash_file(path.clone(), "sha1".to_string()).unwrap(),
+            hash_file(path.clone(), Some("sha1".to_string())).unwrap(),
             lorem_hash_sha1
         );
         assert_eq!(
-            hash_file(path.clone(), "sha256".to_string()).unwrap(),
+            hash_file(path.clone(), Some("sha256".to_string())).unwrap(),
             lorem_hash_sha256
         );
         assert_eq!(
-            hash_file(path.clone(), "sha512".to_string()).unwrap(),
+            hash_file(path.clone(), Some("sha512".to_string())).unwrap(),
             lorem_hash_sha512
         );
     }
@@ -92,11 +94,11 @@ mod tests {
         write!(tmp_file, "test").expect("failed to write to temp file");
         let path = String::from(tmp_file.path().to_str().unwrap());
 
-        assert!(hash_file(path, "invalid".to_string()).is_err());
+        assert!(hash_file(path, Some("invalid".to_string())).is_err());
     }
 
     #[test]
     fn test_hash_file_not_found() {
-        assert!(hash_file("/non/existent/file".to_string(), "md5".to_string()).is_err());
+        assert!(hash_file("/non/existent/file".to_string(), Some("md5".to_string())).is_err());
     }
 }

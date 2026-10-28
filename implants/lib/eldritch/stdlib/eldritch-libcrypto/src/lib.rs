@@ -147,14 +147,14 @@ pub trait CryptoLibrary {
     ///
     /// **Parameters**
     /// - `file` (`str`): The path to the file.
-    /// - `algo` (`str`): The hashing algorithm to use ("MD5", "SHA1", "SHA256", "SHA512").
+    /// - `algo` (`Option<str>`): The hashing algorithm to use ("MD5", "SHA1", "SHA256" (default), "SHA512").
     ///
     /// **Returns**
     /// - `str`: The hexadecimal representation of the hash.
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read or the algorithm is not supported.
-    fn hash_file(&self, file: String, algo: String) -> Result<String, String>;
+    fn hash_file(&self, file: String, algo: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
     #[eldritch_deprecated(

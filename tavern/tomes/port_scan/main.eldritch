@@ -13,7 +13,7 @@ def sort_by_ip_then_port(test_dict):
     return "{}{}".format(".".join(ips), lpad(str(test_dict['port']), 5, "0"))
 
 def port_scan(target_cidrs, ports, protocol, timeout):
-    scan_res = scan.port(target_cidrs, ports, protocol, timeout)
+    scan_res = scan.ports(target_cidrs, ports, protocol, timeout)
     print("IPADDR          PORT      STATUS")
     for p in sorted(scan_res, key=sort_by_ip_then_port):
         print("{}{}{}".format(

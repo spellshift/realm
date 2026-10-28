@@ -25,6 +25,8 @@ class AdditionalRenamesTest(unittest.TestCase):
         "file.template_str": "template.render",
         "process.netstat": "net.conns",
         "net.sockets": "net.conns",
+        "pivot.port_scan": "scan.ports",
+        "scan.port": "scan.ports",
     }
 
     def test_calls_and_references(self):
@@ -62,9 +64,11 @@ class AdditionalRenamesTest(unittest.TestCase):
             ('assets.read_binary("pkg/bin")', 'assets.read("pkg/bin")'),
             ('file.write_binary("/tmp/a", data)', 'file.write("/tmp/a", data)'),
             ('file.append_binary("/tmp/a", data)', 'file.append("/tmp/a", data)'),
-            # Regular read cast to str() only when needed
-            ('res = file.read(path)', 'res = str(file.read(path))'),
-            ('print(assets.read("a.sh"))', 'print(str(assets.read("a.sh")))'),
+            # Regular read only cast to str() when string methods/operators are used
+            ('res = file.read(path)', 'res = file.read(path)'),
+            ('res = file.read(path)\nlines = res.splitlines()', 'res = str(file.read(path))\nlines = res.splitlines()'),
+            ('file.read(path).split("\\n")', 'str(file.read(path)).split("\\n")'),
+            ('print(assets.read("a.sh"))', 'print(assets.read("a.sh"))'),
             # Already decoded or cast -> no extra cast
             ('file.read(path).decode()', 'file.read(path).decode()'),
             ('file.read(path).decode("utf16le")', 'file.read(path).decode("utf16le")'),
@@ -76,10 +80,9 @@ class AdditionalRenamesTest(unittest.TestCase):
             ('gzip.compress(file.read(path))', 'gzip.compress(file.read(path))'),
             ('hash.sha256(file.read(path))', 'hash.sha256(file.read(path))'),
             ('file.write(dst, file.read(src))', 'file.write(dst, file.read(src))'),
-            # Regular write/append cast to bytes() only when needed
-            ('file.write(path, content)', 'file.write(path, bytes(content))'),
-            ('file.append(path, "line\\n")', 'file.append(path, bytes("line\\n"))'),
-            # Already bytes -> no extra cast
+            # Regular write/append accept str and Bytes interchangeably -> no extra cast
+            ('file.write(path, content)', 'file.write(path, content)'),
+            ('file.append(path, "line\\n")', 'file.append(path, "line\\n")'),
             ('file.write(path, b"raw")', 'file.write(path, b"raw")'),
             ('file.write(path, bytes(content))', 'file.write(path, bytes(content))'),
             ('file.write(path, content.encode())', 'file.write(path, content.encode())'),

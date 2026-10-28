@@ -47,7 +47,8 @@ RENAMES: List[Tuple[str, str]] = [
     # pivot -> scan, portal, smb, ssh
     ("pivot.arp_scan", "scan.arp"),
     ("pivot.create_portal", "portal.create"),
-    ("pivot.port_scan", "scan.port"),
+    ("pivot.port_scan", "scan.ports"),
+    ("scan.port", "scan.ports"),
     ("pivot.smb_exec", "smb.exec"),
     ("pivot.ssh_copy", "ssh.copy"),
     ("pivot.ssh_deploy", "ssh.deploy"),

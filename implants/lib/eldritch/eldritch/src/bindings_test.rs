@@ -179,7 +179,7 @@ fn test_portal_bindings() {
 
 #[test]
 fn test_scan_bindings() {
-    check_bindings("scan", &["arp", "port"]);
+    check_bindings("scan", &["arp", "ports"]);
 }
 
 #[test]

@@ -8,7 +8,8 @@ use eldritch_macros::eldritch_library_impl;
 pub struct HashLibraryFake;
 
 impl HashLibrary for HashLibraryFake {
-    fn file(&self, _file: String, algo: String) -> Result<String, String> {
+    fn file(&self, _file: String, algo: Option<String>) -> Result<String, String> {
+        let algo = algo.unwrap_or_else(|| "SHA256".into());
         match algo.to_uppercase().as_str() {
             "MD5" => Ok("5d41402abc4b2a76b9719d911017c592".into()),
             "SHA1" => Ok("aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d".into()),
@@ -46,14 +47,15 @@ mod tests {
         assert_eq!(hash.md5(vec![]).unwrap().len(), 32);
         assert_eq!(hash.sha1(vec![]).unwrap().len(), 40);
         assert_eq!(hash.sha256(vec![]).unwrap().len(), 64);
+        assert_eq!(hash.file("test".to_string(), None).unwrap().len(), 64);
         assert_eq!(
-            hash.file("test".to_string(), "MD5".to_string())
+            hash.file("test".to_string(), Some("MD5".to_string()))
                 .unwrap()
                 .len(),
             32
         );
         assert!(
-            hash.file("test".to_string(), "INVALID".to_string())
+            hash.file("test".to_string(), Some("INVALID".to_string()))
                 .is_err()
         );
     }

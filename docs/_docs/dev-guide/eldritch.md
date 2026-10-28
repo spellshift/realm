@@ -271,7 +271,7 @@ When writing performant code bound by many I/O operations, it can be greatly ben
 You'll need to write tests for your synchronous and asynchronous code.
 Async tests will usually start two threads one for your function and one that mocks (or reimplements) the feature you're testing against.
 For example if testing a port scanner or netcat like function you'll want to run a test port listener for your feature to connect to.
-Network ports test servers have been implemented in `net.tcp` and `scan.port` an example SSH server has been implemented in `ssh.exec`.
+Network ports test servers have been implemented in `net.tcp` and `scan.ports` an example SSH server has been implemented in `ssh.exec`.
 
 Tests for async functions may look like this:
 

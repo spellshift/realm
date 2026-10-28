@@ -120,7 +120,7 @@ The Eldritch DSL provides 26 modules (plus deprecated compatibility modules `cry
 | `regex`   | Regular expression operations                                 |
 | `registry`| Windows Registry reading and writing (`read`, `write`)        |
 | `report`  | Structured reporting to Tavern                                |
-| `scan`    | Network discovery and port scanning (`arp`, `port`)           |
+| `scan`    | Network discovery and port scanning (`arp`, `ports`)          |
 | `ssh`     | SSH command execution, file copy, and deployment              |
 | `sys`     | System OS info, hostname, and command execution               |
 | `template` | Jinja2 template rendering from strings and files            |

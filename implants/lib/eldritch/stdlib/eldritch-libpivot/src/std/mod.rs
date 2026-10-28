@@ -100,7 +100,7 @@ impl PivotLibrary for StdPivotLibrary {
         timeout: i64,
         fd_limit: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        StdScanLibrary.port(target_cidrs, ports, protocol, timeout, fd_limit)
+        StdScanLibrary.ports(target_cidrs, ports, protocol, timeout, fd_limit)
     }
 
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {

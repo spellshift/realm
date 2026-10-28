@@ -333,7 +333,7 @@ The standard library is the default functionality that eldritch provides. It con
 - `random` - Used to generate cryptographically secure random values.
 - `regex` - Regular expression capabilities for operating on strings.
 - `report` - Structured data reporting capabilities.
-- `scan` - Network scanning capabilities (`arp`, `port`).
+- `scan` - Network scanning capabilities (`arp`, `ports`).
 - `ssh` - Remote execution, file copy, and deployment over SSH.
 - `sys` - General system capabilities such as OS info and command execution.
 - `template` - Renders Jinja2 templates from strings and files.
@@ -943,13 +943,13 @@ The `hash` library provides cryptographic hashing functions for raw bytes and fi
 
 ### hash.file
 
-`hash.file(file: str, algo: str) -> str`
+`hash.file(file: str, algo: Optional<str>) -> str`
 
 The **hash.file** method will produce the hash of the given file's contents. Valid algorithms include:
 
 - MD5
 - SHA1
-- SHA256
+- SHA256 (default)
 - SHA512
 
 ### hash.md5
@@ -1454,11 +1454,11 @@ $> scan.arp(["192.168.1.1/32"])
 []
 ```
 
-### scan.port
+### scan.ports
 
-`scan.port(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<Dict>`
+`scan.ports(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<Dict>`
 
-The **scan.port** method allows users to scan TCP/UDP ports within the eldritch language.
+The **scan.ports** method allows users to scan TCP/UDP ports within the eldritch language.
 Inputs:
 
 - `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.

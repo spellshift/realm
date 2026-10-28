@@ -36,7 +36,7 @@ pub trait ScanLibrary {
     ///
     /// **Returns**
     /// - `List<Dict>`: List of open ports/results.
-    fn port(
+    fn ports(
         &self,
         target_cidrs: Vec<String>,
         ports: Vec<i64>,

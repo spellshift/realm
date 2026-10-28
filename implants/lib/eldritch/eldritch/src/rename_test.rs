@@ -175,6 +175,10 @@ fn test_bytes_and_strings_interchangeable_in_methods() {
 
     // 3. Other stdlib methods accept both bytes and strings
     assert_eq!(
+        interp.interpret("hash.file(dst_path)").unwrap(),
+        interp.interpret("hash.file(dst_path, 'sha256')").unwrap()
+    );
+    assert_eq!(
         interp.interpret(r#"hash.md5("hello")"#).unwrap(),
         interp.interpret(r#"hash.md5(b"hello")"#).unwrap()
     );

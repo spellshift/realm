@@ -19,7 +19,7 @@ impl ScanLibrary for ScanLibraryFake {
         Ok(vec![map])
     }
 
-    fn port(
+    fn ports(
         &self,
         _target_cidrs: Vec<String>,
         _ports: Vec<i64>,

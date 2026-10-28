@@ -17,7 +17,7 @@ impl ScanLibrary for StdScanLibrary {
         arp_impl::arp_scan(target_cidrs).map_err(|e| e.to_string())
     }
 
-    fn port(
+    fn ports(
         &self,
         target_cidrs: Vec<String>,
         ports: Vec<i64>,

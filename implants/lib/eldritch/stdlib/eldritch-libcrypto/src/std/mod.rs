@@ -41,7 +41,7 @@ impl CryptoLibrary for StdCryptoLibrary {
         StdHashLibrary.sha256(data)
     }
 
-    fn hash_file(&self, file: String, algo: String) -> Result<String, String> {
+    fn hash_file(&self, file: String, algo: Option<String>) -> Result<String, String> {
         StdHashLibrary.file(file, algo)
     }
 

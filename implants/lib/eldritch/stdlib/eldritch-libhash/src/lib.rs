@@ -13,8 +13,8 @@ pub mod std;
 /// The `hash` library provides cryptographic hashing functions for byte buffers and files.
 pub trait HashLibrary {
     #[eldritch_method]
-    /// Computes the cryptographic hash of a file using the specified algorithm ("md5", "sha1", "sha256", "sha512").
-    fn file(&self, file: String, algo: String) -> Result<String, String>;
+    /// Computes the cryptographic hash of a file using the specified algorithm ("md5", "sha1", "sha256", "sha512"). Defaults to "sha256".
+    fn file(&self, file: String, algo: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
     /// Computes the MD5 hash of the given bytes.

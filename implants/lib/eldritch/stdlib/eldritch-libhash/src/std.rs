@@ -13,7 +13,7 @@ pub mod sha256_impl;
 pub struct StdHashLibrary;
 
 impl HashLibrary for StdHashLibrary {
-    fn file(&self, file: String, algo: String) -> Result<String, String> {
+    fn file(&self, file: String, algo: Option<String>) -> Result<String, String> {
         file_impl::hash_file(file, algo)
     }
 

@@ -74,7 +74,7 @@ impl PivotLibrary for PivotLibraryFake {
         timeout: i64,
         fd_limit: Option<i64>,
     ) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        ScanLibraryFake.port(target_cidrs, ports, protocol, timeout, fd_limit)
+        ScanLibraryFake.ports(target_cidrs, ports, protocol, timeout, fd_limit)
     }
 
     fn arp_scan(&self, target_cidrs: Vec<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {

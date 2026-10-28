@@ -60,7 +60,7 @@ pub trait PivotLibrary {
 
     #[eldritch_method]
     #[eldritch_deprecated(
-        "pivot.port_scan has been deprecated and will be removed in a future version of eldritch. Please use scan.port instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+        "pivot.port_scan has been deprecated and will be removed in a future version of eldritch. Please use scan.ports instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
     /// Scans TCP/UDP ports on target hosts.
     fn port_scan(
