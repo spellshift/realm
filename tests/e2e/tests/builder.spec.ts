@@ -142,7 +142,6 @@ test.describe('Builder E2E Test', () => {
       data: {
         query: createProfileMutation,
         variables: {
-          csr,
           input: {
             name: profileName,
             description: 'Profile for builder e2e test',
@@ -176,7 +175,6 @@ test.describe('Builder E2E Test', () => {
       data: {
         query: createTaskMutation,
         variables: {
-          csr,
           input: {
             targetOS: 'PLATFORM_LINUX',
             profileID: profileId,

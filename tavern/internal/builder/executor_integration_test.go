@@ -807,7 +807,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 			id
 			name
 		}
-	}`, &profileResp, client.Var("csr", csr), client.Var("input", map[string]any{
+	}`, &profileResp, client.Var("input", map[string]any{
 		"name":            "local-e2e-profile",
 		"description":     "Local executor test profile",
 		"setupscript":     "echo setup_done",
@@ -875,7 +875,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 		createBuildTask(input: $input) {
 			id
 		}
-	}`, &taskResp, client.Var("csr", csr), client.Var("input", map[string]any{
+	}`, &taskResp, client.Var("input", map[string]any{
 		"targetOS":  "PLATFORM_LINUX",
 		"profileID": profileID,
 	}))
