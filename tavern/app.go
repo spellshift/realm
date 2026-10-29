@@ -488,7 +488,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler},
+		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler, AllowUnactivated: true},
 		"/auth/builder/enroll": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewBuilderEnrollHandler(client, builderCACert, builderCAKey),
 			AllowUnauthenticated: true,

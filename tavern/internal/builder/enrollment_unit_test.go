@@ -58,6 +58,7 @@ func TestSignBuilderCertificate(t *testing.T) {
 
 	_, err = builder.SignBuilderCertificate(nil, nil, "example", csr)
 	require.ErrorContains(t, err, "builder CA is not configured")
+	require.NotErrorIs(t, err, builder.ErrInvalidBuilderCSR)
 
 	certPEM, err := builder.SignBuilderCertificate(ca, caKey, "example", csr)
 	require.NoError(t, err)
@@ -71,6 +72,7 @@ func TestSignBuilderCertificate(t *testing.T) {
 
 	_, err = builder.SignBuilderCertificate(ca, caKey, "example", "bad")
 	require.ErrorContains(t, err, "invalid builder CSR")
+	require.ErrorIs(t, err, builder.ErrInvalidBuilderCSR)
 
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
@@ -78,6 +80,7 @@ func TestSignBuilderCertificate(t *testing.T) {
 	require.NoError(t, err)
 	_, err = builder.SignBuilderCertificate(ca, caKey, "example", string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: rsaCSR})))
 	require.ErrorContains(t, err, "Ed25519")
+	require.ErrorIs(t, err, builder.ErrInvalidBuilderCSR)
 
 	// A valid request with a damaged signature must also be refused.
 	csrBlock, _ := pem.Decode([]byte(csr))
@@ -85,6 +88,7 @@ func TestSignBuilderCertificate(t *testing.T) {
 	_, err = builder.SignBuilderCertificate(ca, caKey, "example", string(pem.EncodeToMemory(csrBlock)))
 	require.Error(t, err)
 	require.True(t, strings.Contains(err.Error(), "CSR"))
+	require.ErrorIs(t, err, builder.ErrInvalidBuilderCSR)
 }
 
 func TestLoadSaveIdentity(t *testing.T) {

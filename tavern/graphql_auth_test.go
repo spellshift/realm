@@ -33,12 +33,13 @@ func newGraphQLAuthTestServer(t *testing.T) *httptest.Server {
 	require.NoError(t, err)
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(tavernhttp.RouteMap{
-		"/graphql":             tavernhttp.Endpoint{Handler: newGraphQLHandler(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey))},
+		"/graphql":             tavernhttp.Endpoint{Handler: newGraphQLHandler(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey)), AllowUnactivated: true},
 		"/auth/builder/enroll": tavernhttp.Endpoint{Handler: tavernhttp.NewBuilderEnrollHandler(graph, caCert, caKey), AllowUnauthenticated: true, AllowUnactivated: true},
 	}, tavernhttp.WithAuthentication(graph))
 	httpSrv := httptest.NewServer(srv)
 	t.Cleanup(httpSrv.Close)
 	graph.User.Create().SetOauthID("test_oauth_id").SetPhotoURL("https://photos.com").SetName("test").SetSessionToken("admin-session-token").SetAccessToken("access-token").SetIsActivated(true).SetIsAdmin(true).SaveX(t.Context())
+	graph.User.Create().SetOauthID("unactivated_oauth_id").SetPhotoURL("https://photos.com").SetName("unactivated").SetSessionToken("unactivated-session-token").SetAccessToken("unactivated-access-token").SetIsActivated(false).SetIsAdmin(false).SaveX(t.Context())
 	return httpSrv
 }
 
@@ -87,7 +88,10 @@ func TestBuilderEnrollmentAuthRoutes(t *testing.T) {
 		status, _ := doGraphQLRequest(t, srv, query, "")
 		assert.Equal(t, http.StatusUnauthorized, status)
 	}
-	status, body := doGraphQLRequest(t, srv, `mutation { createBuilderEnrollmentToken }`, "admin-session-token")
+	status, body := doGraphQLRequest(t, srv, `query { __typename }`, "unactivated-session-token")
+	require.Equal(t, http.StatusOK, status, body)
+	assert.Contains(t, body, `"__typename":"Query"`)
+	status, body = doGraphQLRequest(t, srv, `mutation { createBuilderEnrollmentToken }`, "admin-session-token")
 	require.Equal(t, http.StatusOK, status)
 	var created struct {
 		Data struct {
@@ -96,7 +100,8 @@ func TestBuilderEnrollmentAuthRoutes(t *testing.T) {
 	}
 	require.NoError(t, json.Unmarshal([]byte(body), &created))
 	require.NotEmpty(t, created.Data.Token)
-	req := tavernhttp.BuilderEnrollRequest{Token: created.Data.Token, CSR: newTestCSR(t), SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com", PollInterval: 5, Executor: "local"}
+	pollInterval := 5
+	req := tavernhttp.BuilderEnrollRequest{Token: created.Data.Token, CSR: newTestCSR(t), SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com", PollInterval: &pollInterval, Executor: "local"}
 	status, body = postEnrollment(t, srv, req)
 	require.Equal(t, http.StatusOK, status, body)
 	var enrolled tavernhttp.BuilderEnrollResponse
