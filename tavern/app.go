@@ -648,7 +648,6 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 		// Operation Context
 		oc := gqlgraphql.GetOperationContext(ctx)
-		loggedVariables, loggedRawQuery := oc.Variables, oc.RawQuery
 
 		// Determine if Raw Query should be logged
 		args := []any{
@@ -659,10 +658,10 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 			"is_activated", isActivated,
 			"is_authenticated", isAuthenticated,
 			"operation", oc.OperationName,
-			"variables", loggedVariables,
+			"variables", oc.Variables,
 		}
 		if logRawQuery {
-			args = append(args, "raw_query", loggedRawQuery)
+			args = append(args, "raw_query", oc.RawQuery)
 		}
 
 		// Log Request
