@@ -23,7 +23,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/cli"
-	"github.com/vektah/gqlparser/v2/ast"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -489,8 +488,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/graphql": tavernhttp.Endpoint{
-			Handler:              gqlHandler,
+		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler},
+		"/auth/builder/enroll": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewBuilderEnrollHandler(client, builderCACert, builderCAKey),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -625,17 +625,6 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 	// GraphQL Logging
 	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
-		if !auth.IsAuthenticatedContext(ctx) {
-			oc := gqlgraphql.GetOperationContext(ctx)
-			allowed := oc.Operation != nil && oc.Operation.Operation == "mutation" && len(oc.Operation.SelectionSet) == 1
-			if allowed {
-				field, ok := oc.Operation.SelectionSet[0].(*ast.Field)
-				allowed = ok && field.Name == "exchangeBuilderEnrollmentToken"
-			}
-			if !allowed {
-				return gqlgraphql.OneShot(gqlgraphql.ErrorResponse(ctx, "permission denied: unauthenticated"))
-			}
-		}
 		// Authentication Information
 		var (
 			authID          = "unknown"
@@ -659,7 +648,7 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 		// Operation Context
 		oc := gqlgraphql.GetOperationContext(ctx)
-		loggedVariables, loggedRawQuery := redactOperationSecrets(oc)
+		loggedVariables, loggedRawQuery := oc.Variables, oc.RawQuery
 
 		// Determine if Raw Query should be logged
 		args := []any{
@@ -935,18 +924,4 @@ func ensureDefaultBuildProfile(ctx context.Context, client *ent.Client) error {
 		return fmt.Errorf("failed to create default build profile: %w", err)
 	}
 	return nil
-}
-
-const redactedValue = "[REDACTED]"
-
-// redactOperationSecrets returns the operation variables and raw query that
-// are safe to log. If the query mentions exchangeBuilderEnrollmentToken
-// anywhere (top level, fragment, alias target), both are withheld entirely:
-// the token and CSR can appear as variables, variable defaults, or inlined
-// literals, and a plain substring check cannot be bypassed by query structure.
-func redactOperationSecrets(oc *gqlgraphql.OperationContext) (any, string) {
-	if strings.Contains(oc.RawQuery, "exchangeBuilderEnrollmentToken") {
-		return redactedValue, redactedValue
-	}
-	return oc.Variables, oc.RawQuery
 }

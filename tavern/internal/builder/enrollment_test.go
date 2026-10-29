@@ -36,7 +36,8 @@ func newTestBuilderServer(t *testing.T, graph *ent.Client, caCert *x509.Certific
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey))),
+			"/graphql":             handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey))),
+			"/auth/builder/enroll": tavernhttp.NewBuilderEnrollHandler(graph, caCert, caKey),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
@@ -70,7 +71,7 @@ func enrollTestBuilder(t *testing.T, ctx context.Context, gqlClient *client.Clie
 }
 
 // createTestEnrollmentToken issues a one-time enrollment token via GraphQL,
-// for tests that need to drive exchangeBuilderEnrollmentToken directly.
+// for tests that need to drive the REST enrollment endpoint directly.
 func createTestEnrollmentToken(t *testing.T, gqlClient *client.Client) string {
 	t.Helper()
 	var resp struct{ CreateBuilderEnrollmentToken string }
@@ -80,7 +81,7 @@ func createTestEnrollmentToken(t *testing.T, gqlClient *client.Client) string {
 }
 
 // saveIdentityAndConfig persists an Identity assembled from the pieces
-// returned by a raw exchangeBuilderEnrollmentToken call (builder ID,
+// returned by a raw REST enrollment call (builder ID,
 // certificate, and the private key matching the CSR that was submitted),
 // returning a Config ready for NewCredentialsFromConfig.
 func saveIdentityAndConfig(t *testing.T, builderID, certPEM, keyPEM, upstream string, supportedTargets ...string) *builder.Config {
@@ -97,7 +98,7 @@ func saveIdentityAndConfig(t *testing.T, builderID, certPEM, keyPEM, upstream st
 }
 
 // generateTestCSR creates a fresh Ed25519 key and PEM-encoded CSR for tests
-// driving exchangeBuilderEnrollmentToken directly at the GraphQL layer.
+// driving the REST enrollment endpoint directly at the REST layer.
 func generateTestCSR(t *testing.T) (csrPEM string, keyPEM string) {
 	t.Helper()
 	_, key, err := ed25519.GenerateKey(rand.Reader)
@@ -135,7 +136,8 @@ func TestEnsureIdentity_HTTPSUpstream(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey))),
+			"/graphql":             handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey))),
+			"/auth/builder/enroll": tavernhttp.NewBuilderEnrollHandler(graph, caCert, caKey),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)

@@ -48962,11 +48962,6 @@ func (ec *executionContext) unmarshalNBuilderWhereInput2ᚖrealmᚗpubᚋtavern�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreateBuilderInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateBuilderInput(ctx context.Context, v any) (ent.CreateBuilderInput, error) {
-	res, err := ec.unmarshalInputCreateBuilderInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNCreateHostCredentialInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateHostCredentialInput(ctx context.Context, v any) (ent.CreateHostCredentialInput, error) {
 	res, err := ec.unmarshalInputCreateHostCredentialInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)

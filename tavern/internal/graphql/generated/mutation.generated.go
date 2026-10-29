@@ -43,7 +43,6 @@ type MutationResolver interface {
 	UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error)
 	DisableLink(ctx context.Context, linkID int) (*ent.Link, error)
 	CreateBuilderEnrollmentToken(ctx context.Context) (string, error)
-	ExchangeBuilderEnrollmentToken(ctx context.Context, token string, input ent.CreateBuilderInput, csr string) (*models.ExchangeBuilderEnrollmentTokenOutput, error)
 	DeleteBuilder(ctx context.Context, builderID int) (int, error)
 	CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error)
 	UpdateBuildProfile(ctx context.Context, profileID int, input models.UpdateBuildProfileInput) (*ent.BuildProfile, error)
@@ -254,27 +253,6 @@ func (ec *executionContext) field_Mutation_disableScheduledTask_args(ctx context
 		return nil, err
 	}
 	args["scheduledTaskID"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_exchangeBuilderEnrollmentToken_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "token", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["token"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateBuilderInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateBuilderInput)
-	if err != nil {
-		return nil, err
-	}
-	args["input"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "csr", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["csr"] = arg2
 	return args, nil
 }
 
@@ -2481,53 +2459,6 @@ func (ec *executionContext) fieldContext_Mutation_createBuilderEnrollmentToken(_
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_exchangeBuilderEnrollmentToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_exchangeBuilderEnrollmentToken,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().ExchangeBuilderEnrollmentToken(ctx, fc.Args["token"].(string), fc.Args["input"].(ent.CreateBuilderInput), fc.Args["csr"].(string))
-		},
-		nil,
-		ec.marshalNExchangeBuilderEnrollmentTokenOutput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐExchangeBuilderEnrollmentTokenOutput,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_exchangeBuilderEnrollmentToken(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "builderID":
-				return ec.fieldContext_ExchangeBuilderEnrollmentTokenOutput_builderID(ctx, field)
-			case "mtlsCert":
-				return ec.fieldContext_ExchangeBuilderEnrollmentTokenOutput_mtlsCert(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ExchangeBuilderEnrollmentTokenOutput", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_exchangeBuilderEnrollmentToken_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_deleteBuilder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3496,13 +3427,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createBuilderEnrollmentToken":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createBuilderEnrollmentToken(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "exchangeBuilderEnrollmentToken":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_exchangeBuilderEnrollmentToken(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
