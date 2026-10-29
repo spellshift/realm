@@ -158,9 +158,11 @@ func TestEnsureIdentity_UsesExistingIdentity(t *testing.T) {
 
 func TestEnsureIdentity_RequiresTokenWhenAbsent(t *testing.T) {
 	cfg := &builder.Config{IdentityFile: filepath.Join(t.TempDir(), "builder.identity"), SupportedTargets: []string{"linux"}, Upstream: "http://127.0.0.1:1"}
-	t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", "")
-	_, err := builder.EnsureIdentity(t.Context(), cfg)
-	require.ErrorContains(t, err, "REALM_BUILDER_ENROLLMENT_TOKEN")
+	for _, token := range []string{"", " \t "} {
+		t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", token)
+		_, err := builder.EnsureIdentity(t.Context(), cfg)
+		require.ErrorContains(t, err, "REALM_BUILDER_ENROLLMENT_TOKEN")
+	}
 }
 
 func TestEnsureIdentity_FailsWithoutExchangeOnMalformedIdentity(t *testing.T) {

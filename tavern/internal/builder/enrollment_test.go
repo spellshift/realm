@@ -128,6 +128,27 @@ func newTestCA(t *testing.T) (*x509.Certificate, ed25519.PrivateKey) {
 	return caCert, caKey
 }
 
+func TestEnsureIdentity_TrimsEnrollmentToken(t *testing.T) {
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	caCert, caKey := newTestCA(t)
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caKey)
+	token := createTestEnrollmentToken(t, gqlClient)
+	t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", " \t"+token+"\n ")
+
+	cfg := &builder.Config{
+		PollInterval:     builder.DefaultPollInterval,
+		SupportedTargets: []string{"linux"},
+		IdentityFile:     filepath.Join(t.TempDir(), "builder.identity"),
+		Upstream:         upstream,
+		Executor:         "local",
+	}
+	identity, err := builder.EnsureIdentity(t.Context(), cfg)
+	require.NoError(t, err)
+	require.NotEmpty(t, identity.ID)
+	require.FileExists(t, cfg.IdentityFile)
+}
+
 func TestEnsureIdentity_HTTPSUpstream(t *testing.T) {
 	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
