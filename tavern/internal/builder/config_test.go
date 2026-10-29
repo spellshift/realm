@@ -35,15 +35,31 @@ func TestParseConfig_AbsoluteIdentityFileUnchanged(t *testing.T) {
 	require.Equal(t, abs, cfg.IdentityFile)
 }
 
-func TestParseConfigBytes_RequiresFields(t *testing.T) {
+func TestParseConfigBytes_DefaultsAndPartialOverrides(t *testing.T) {
+	cfg, err := builder.ParseConfigBytes(nil)
+	require.NoError(t, err)
+	require.Equal(t, &builder.Config{
+		PollInterval: 5, SupportedTargets: []string{"linux", "windows"},
+		IdentityFile: "builder.identity", Upstream: "http://127.0.0.1:8000", Executor: "docker",
+	}, cfg)
+
+	cfg, err = builder.ParseConfigBytes([]byte("upstream: https://tavern.example.com\npoll_interval: 10\n"))
+	require.NoError(t, err)
+	require.Equal(t, "https://tavern.example.com", cfg.Upstream)
+	require.Equal(t, 10, cfg.PollInterval)
+	require.Equal(t, []string{"linux", "windows"}, cfg.SupportedTargets)
+}
+
+func TestParseConfigBytes_RejectsExplicitInvalidFields(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
 		want string
 	}{
-		{"identity file", "supported_targets: [linux]\nupstream: http://127.0.0.1:8000\n", "identity_file"},
-		{"supported targets", "identity_file: builder.identity\nupstream: http://127.0.0.1:8000\n", "supported_target"},
-		{"upstream", "supported_targets: [linux]\nidentity_file: builder.identity\n", "upstream"},
+		{"identity file", "identity_file: ''\n", "identity_file"},
+		{"supported targets", "supported_targets: []\n", "supported_target"},
+		{"upstream", "upstream: ''\n", "upstream"},
+		{"executor", "executor: ''\n", "executor"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
