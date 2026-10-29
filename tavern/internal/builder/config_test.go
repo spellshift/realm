@@ -35,24 +35,27 @@ func TestParseConfig_AbsoluteIdentityFileUnchanged(t *testing.T) {
 	require.Equal(t, abs, cfg.IdentityFile)
 }
 
-func TestParseConfigBytes_RequiresIdentityFile(t *testing.T) {
-	_, err := builder.ParseConfigBytes([]byte("supported_targets: [linux]\nupstream: http://127.0.0.1:8000\n"))
-	require.ErrorContains(t, err, "identity_file")
-}
-
-func TestParseConfigBytes_RequiresSupportedTargets(t *testing.T) {
-	_, err := builder.ParseConfigBytes([]byte("identity_file: builder.identity\nupstream: http://127.0.0.1:8000\n"))
-	require.ErrorContains(t, err, "supported_target")
+func TestParseConfigBytes_RequiresFields(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want string
+	}{
+		{"identity file", "supported_targets: [linux]\nupstream: http://127.0.0.1:8000\n", "identity_file"},
+		{"supported targets", "identity_file: builder.identity\nupstream: http://127.0.0.1:8000\n", "supported_target"},
+		{"upstream", "supported_targets: [linux]\nidentity_file: builder.identity\n", "upstream"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := builder.ParseConfigBytes([]byte(tt.body))
+			require.ErrorContains(t, err, tt.want)
+		})
+	}
 }
 
 func TestParseConfigBytes_RejectsUnsupportedTarget(t *testing.T) {
 	_, err := builder.ParseConfigBytes([]byte("supported_targets: [plan9]\nidentity_file: builder.identity\nupstream: http://127.0.0.1:8000\n"))
 	require.ErrorContains(t, err, "unsupported target")
-}
-
-func TestParseConfigBytes_RequiresUpstream(t *testing.T) {
-	_, err := builder.ParseConfigBytes([]byte("supported_targets: [linux]\nidentity_file: builder.identity\n"))
-	require.ErrorContains(t, err, "upstream")
 }
 
 func TestParseConfigBytes_RejectsPollIntervalOutOfRange(t *testing.T) {
