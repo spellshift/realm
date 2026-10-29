@@ -3,7 +3,6 @@ import {
   BookOpen,
   Code2,
   Compass,
-  CornerDownLeft,
   ExternalLink,
   Keyboard,
   Layers,
@@ -23,7 +22,7 @@ interface ShellNuxDrawerProps {
   onClose: () => void;
   portalId: number | null;
   onRunCode: (code: string) => void;
-  onStageToPrompt: (code: string) => void;
+  onStageToPrompt?: (code: string) => void;
   onLoadIntoComposer: (code: string) => void;
   onSpawnFreshShell: () => void;
   onStartWalkthrough?: () => void;
@@ -34,7 +33,6 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
   onClose,
   portalId,
   onRunCode,
-  onStageToPrompt,
   onLoadIntoComposer,
   onSpawnFreshShell,
   onStartWalkthrough,
@@ -312,15 +310,6 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono font-semibold text-purple-300">{fnName}</span>
                     <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => onStageToPrompt(callTemplate)}
-                        title="Stage into terminal prompt"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 text-[11px]"
-                      >
-                        <CornerDownLeft size={10} />
-                        Prompt
-                      </button>
                       <button
                         type="button"
                         onClick={() => onLoadIntoComposer(callTemplate)}

@@ -8,10 +8,13 @@ import "@testing-library/jest-dom";
 import InterpreterStatusBanner from "../InterpreterStatusBanner";
 import MultiLineComposer from "../MultiLineComposer";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
+import ShellPivotsDrawer from "../ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "../ShellKnowledgeDrawer";
 import ShellNuxDrawer from "../ShellNuxDrawer";
 import ShellWalkthrough from "../ShellWalkthrough";
 import SshConnectionModal from "../SshConnectionModal";
+import { analyzeEldritchCode, completeEldritchCode } from "../../utils/eldritchLsp";
+import { normalizeMultilineScript } from "../../../../lib/browser-adapter";
 import {
     KnowledgeCredentialItem,
     KnowledgeFileItem,
@@ -60,18 +63,32 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(onDismiss).toHaveBeenCalled();
     });
 
-    it("renders queued task status without stuck warning when waiting on beacon check-in", () => {
+    it("avoids redundant executing spinners in banner when tasks are queued or running, and supports manual reconnect", () => {
         const queuedTask: ShellTaskItem = {
             id: "t1",
             createdAt: new Date().toISOString(),
             input: 'print("queued cmd")',
         };
+        const onReconnect = vi.fn();
 
-        render(<InterpreterStatusBanner {...baseProps} queuedTasks={[queuedTask]} />);
+        const { rerender } = render(
+            <InterpreterStatusBanner {...baseProps} queuedTasks={[queuedTask]} />
+        );
 
-        expect(screen.getByTestId("queued-tasks-strip")).toBeInTheDocument();
-        expect(screen.getByText(/1 command queued in sequence/i)).toBeInTheDocument();
+        expect(screen.queryByTestId("queued-tasks-strip")).not.toBeInTheDocument();
         expect(screen.queryByTestId("stuck-interpreter-banner")).not.toBeInTheDocument();
+
+        rerender(
+            <InterpreterStatusBanner
+                {...baseProps}
+                connectionStatus="disconnected"
+                onReconnect={onReconnect}
+            />
+        );
+        const reconnectBtn = screen.getByText(/Reconnect Now/i);
+        expect(reconnectBtn).toBeInTheDocument();
+        fireEvent.click(reconnectBtn);
+        expect(onReconnect).toHaveBeenCalled();
     });
 
     it("renders stuck interpreter warning and triggers Spawn new shell", () => {
@@ -100,10 +117,9 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
     });
 });
 
-describe("MultiLineComposer (Composer)", () => {
-    it("allows editing multi-line scripts, inserting aliases snippet, and executing via Ctrl+Enter", () => {
+describe("MultiLineComposer (Composer) & eldritch-lsp", () => {
+    it("allows editing multi-line scripts, inserting valid aliases snippet, syntax highlighting, and executing via Ctrl+Enter", () => {
         const onRunCode = vi.fn();
-        const onStageToPrompt = vi.fn();
         const onChange = vi.fn();
 
         render(
@@ -113,18 +129,21 @@ describe("MultiLineComposer (Composer)", () => {
                 code={'for p in process.list():\n    print(p["name"])'}
                 onChange={onChange}
                 onRunCode={onRunCode}
-                onStageToPrompt={onStageToPrompt}
             />
         );
 
         expect(screen.getByText("Composer")).toBeInTheDocument();
+        expect(screen.getByTestId("composer-syntax-highlight")).toBeInTheDocument();
+        expect(screen.getByTestId("eldritch-lsp-status")).toHaveTextContent(/eldritch-lsp/i);
+        expect(screen.getByTestId("composer-resize-handle")).toBeInTheDocument();
+
         const textarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
         expect(textarea.value).toContain("process.list()");
 
         fireEvent.keyDown(textarea, { key: "Enter", ctrlKey: true });
         expect(onRunCode).toHaveBeenCalledWith('for p in process.list():\n    print(p["name"])');
 
-        // Selecting the aliases snippet (index 0) registers ls(), whoami(), ps(), netstat()
+        // Selecting the aliases snippet (index 0) registers ls(), pwd(), cat(), whoami(), ps(), netstat() with 0 LSP diagnostics
         const snippetSelect = screen.getByLabelText("Insert Eldritch snippet");
         fireEvent.change(snippetSelect, { target: { value: "0" } });
         expect(onChange).toHaveBeenCalled();
@@ -133,10 +152,92 @@ describe("MultiLineComposer (Composer)", () => {
         expect(insertedCode).toContain("def whoami(");
         expect(insertedCode).toContain("def ps(");
         expect(insertedCode).toContain("def netstat(");
+        expect(insertedCode).not.toContain("file.moveto");
+
+        const diagnostics = analyzeEldritchCode(normalizeMultilineScript(insertedCode));
+        expect(diagnostics).toHaveLength(0);
+    });
+
+    it("supports Undo/Redo shortcuts (Ctrl+Z, Cmd+Z, Ctrl+Shift+Z, Ctrl+Y) and eldritch-lsp quick fixes", () => {
+        const StatefulComposer = () => {
+            const [code, setCode] = React.useState("os_info = sys.get_os()");
+            return (
+                <MultiLineComposer
+                    isOpen={true}
+                    onToggle={vi.fn()}
+                    code={code}
+                    onChange={setCode}
+                    onRunCode={vi.fn()}
+                />
+            );
+        };
+
+        render(<StatefulComposer />);
+
+        // Should flag deprecated sys.get_os() via eldritch-lsp and offer 1-click replacement
+        expect(screen.getByTestId("composer-diagnostics-list")).toBeInTheDocument();
+        const quickFixBtn = screen.getByText("Replace with sys.info");
+        fireEvent.click(quickFixBtn);
+
+        const textarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
+        expect(textarea.value).toBe("os_info = sys.info()");
+
+        // Undo via Ctrl+Z (Linux/Windows) or Cmd+Z (macOS)
+        fireEvent.keyDown(textarea, { key: "z", metaKey: true });
+        expect(textarea.value).toBe("os_info = sys.get_os()");
+
+        // Redo via Ctrl+Shift+Z / Cmd+Shift+Z
+        fireEvent.keyDown(textarea, { key: "z", metaKey: true, shiftKey: true });
+        expect(textarea.value).toBe("os_info = sys.info()");
+    });
+
+    it("provides context-aware autocomplete (Tab / Left / Right cycle, Enter accept) and indentation linting via eldritch-lsp", () => {
+        const completions = completeEldritchCode("file.", 5);
+        expect(completions).not.toBeNull();
+        expect(completions!.items.some((c) => c.label === "file.list")).toBe(true);
+
+        const badIndentDiagnostics = analyzeEldritchCode("def foo():\nprint(1)");
+        expect(badIndentDiagnostics.some((d) => d.message.includes("Expected an indented block"))).toBe(true);
+
+        const StatefulAutocompleteComposer = () => {
+            const [code, setCode] = React.useState("");
+            return (
+                <MultiLineComposer
+                    isOpen={true}
+                    onToggle={vi.fn()}
+                    code={code}
+                    onChange={setCode}
+                    onRunCode={vi.fn()}
+                />
+            );
+        };
+
+        render(<StatefulAutocompleteComposer />);
+        const textarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
+
+        // Type "file." at cursor offset 5
+        fireEvent.change(textarea, {
+            target: { value: "file.", selectionStart: 5, selectionEnd: 5 },
+        });
+        expect(screen.getByTestId("composer-autocomplete-list")).toBeInTheDocument();
+
+        const firstOption = completions!.items[0];
+        const secondOption = completions!.items[1];
+
+        // Tab cycles to second option
+        fireEvent.keyDown(textarea, { key: "Tab" });
+        // ArrowRight cycles to third option, ArrowLeft cycles back to second option
+        fireEvent.keyDown(textarea, { key: "ArrowRight" });
+        fireEvent.keyDown(textarea, { key: "ArrowLeft" });
+        // Enter accepts the selected (second) option
+        fireEvent.keyDown(textarea, { key: "Enter" });
+
+        expect(textarea.value).toBe(`file.${secondOption.insertText}`);
+        expect(firstOption.insertText).not.toBe(secondOption.insertText);
     });
 });
 
-describe("ShellHistoryDrawer", () => {
+describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
     const sampleTasks: ShellTaskItem[] = [
         {
             id: "task-1",
@@ -160,24 +261,36 @@ describe("ShellHistoryDrawer", () => {
         },
     ];
 
-    it("displays task history, Knowledge Graph reported badges, output inspection, and closed pivot transcripts", () => {
+    it("displays History drawer titled 'History' and renders pivots in dedicated ShellPivotsDrawer", () => {
         const onRunCode = vi.fn();
         const onLoadIntoComposer = vi.fn();
         const onOpenPivotTab = vi.fn();
 
         render(
-            <ShellHistoryDrawer
-                isOpen={true}
-                onClose={vi.fn()}
-                shellTasks={sampleTasks}
-                localHistory={[]}
-                pivots={samplePivots}
-                onRunCode={onRunCode}
-                onLoadIntoComposer={onLoadIntoComposer}
-                onOpenPivotTab={onOpenPivotTab}
-            />
+            <>
+                <ShellHistoryDrawer
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    shellTasks={sampleTasks}
+                    localHistory={[]}
+                    onRunCode={onRunCode}
+                    onLoadIntoComposer={onLoadIntoComposer}
+                />
+                <ShellPivotsDrawer
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    portalId={99}
+                    pivots={samplePivots}
+                    onNewPortal={vi.fn()}
+                    onClosePortal={vi.fn()}
+                    onOpenPty={vi.fn()}
+                    onOpenSshModal={vi.fn()}
+                    onOpenPivotTab={onOpenPivotTab}
+                />
+            </>
         );
 
+        expect(screen.getByText("History")).toBeInTheDocument();
         expect(screen.getByText(/1 Cred Reported/i)).toBeInTheDocument();
 
         // View output
@@ -188,30 +301,29 @@ describe("ShellHistoryDrawer", () => {
         fireEvent.click(screen.getByText("Re-run"));
         expect(onRunCode).toHaveBeenCalledWith('report.user_password("admin", "hunter2")');
 
-        // Switch to Pivot Sessions tab and open closed transcript
-        fireEvent.click(screen.getByText(/Pivot Sessions/i));
+        // Dedicated Pivots drawer displays pivot sessions and opens saved transcript
+        expect(screen.getByTestId("shell-pivots-drawer")).toBeInTheDocument();
         expect(screen.getByText(/SSH • root@10.0.0.15:22/i)).toBeInTheDocument();
         fireEvent.click(screen.getByText("View Saved Transcript"));
         expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.15:22", "42");
     });
 
-    it("strictly filters Queued / Running commands without falling back to completed local history", () => {
+    it("strictly filters Queued / Running commands and responds to focusQueueTrigger", () => {
         const activeTask: ShellTaskItem = {
             id: "task-queued",
             createdAt: "2025-01-01T12:05:00Z",
             input: 'sys.shell("sleep 10")',
         };
 
-        render(
+        const { rerender } = render(
             <ShellHistoryDrawer
                 isOpen={true}
                 onClose={vi.fn()}
                 shellTasks={[...sampleTasks, activeTask]}
                 localHistory={['print("old local command")']}
-                pivots={[]}
                 onRunCode={vi.fn()}
                 onLoadIntoComposer={vi.fn()}
-                onOpenPivotTab={vi.fn()}
+                focusQueueTrigger={0}
             />
         );
 
@@ -219,8 +331,18 @@ describe("ShellHistoryDrawer", () => {
         expect(screen.getByText('report.user_password("admin", "hunter2")')).toBeInTheDocument();
         expect(screen.getByText('sys.shell("sleep 10")')).toBeInTheDocument();
 
-        // Click "Queued / Running" filter -> only activeTask is shown
-        fireEvent.click(screen.getByText("Queued / Running"));
+        // Increment focusQueueTrigger (simulating clicking the bottom status bar spinner) -> switches to Queued / Running
+        rerender(
+            <ShellHistoryDrawer
+                isOpen={true}
+                onClose={vi.fn()}
+                shellTasks={[...sampleTasks, activeTask]}
+                localHistory={['print("old local command")']}
+                onRunCode={vi.fn()}
+                onLoadIntoComposer={vi.fn()}
+                focusQueueTrigger={1}
+            />
+        );
         expect(screen.getByText('sys.shell("sleep 10")')).toBeInTheDocument();
         expect(screen.queryByText('report.user_password("admin", "hunter2")')).not.toBeInTheDocument();
         expect(screen.queryByText('print("old local command")')).not.toBeInTheDocument();
@@ -263,7 +385,6 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             id: "file-77",
             path: "/etc/shadow.bak",
             size: 1024,
-            hash: "abc123",
             permissions: "-rw-------",
             owner: "root",
             createdAt: "2025-01-01T12:00:00Z",

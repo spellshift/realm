@@ -39,11 +39,11 @@ const (
 	defaultMaxErrorsBuffered             = 1024
 	defaultMaxControlFlowsBuffered       = 1024
 	defaultMaxMessageSize          int64 = 1024 * 1024
-	defaultPortalPollingInterval         = 5 * time.Second
+	defaultPortalPollingInterval         = 1 * time.Second
 	defaultOutputPollingInterval         = 1 * time.Second
 	defaultKeepAliveInterval             = 1 * time.Second
-	defaultWriteWaitTimeout              = 10 * time.Second
-	defaultReadWaitTimeout               = 10 * time.Second
+	defaultWriteWaitTimeout              = 30 * time.Second
+	defaultReadWaitTimeout               = 60 * time.Second
 )
 
 // A Handler for browser to server shell communication using websockets.
@@ -141,6 +141,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to upgrade to websocket", http.StatusFailedDependency)
 		return
 	}
+	defer wsConn.Close()
 	defer slog.InfoContext(r.Context(), "websocket shell connection closed", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
 
 	// Configure Websocket Connection
@@ -741,6 +742,9 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				cleanup()
 				cleanup = nil
 			}
+
+			// Flush any shell tasks that finished right before or during portal creation
+			pollForShellTasks()
 
 			// Open Portal
 			portalCleanup, err := h.mux.OpenPortal(ctx, p.ID)

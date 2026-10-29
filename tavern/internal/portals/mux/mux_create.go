@@ -16,6 +16,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 	// 1. DB: Create ent.Portal record (State: Open)
 	var creator *ent.User
 	var beacon *ent.Beacon
+	var parentShell *ent.Shell
 
 	pCreate := client.Portal.Create()
 
@@ -51,7 +52,10 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 			return 0, nil, fmt.Errorf("failed to query shell task %d: %w", shellTaskID, err)
 		}
 		creator = st.Edges.Creator
-		beacon = st.Edges.Shell.Edges.Beacon
+		parentShell = st.Edges.Shell
+		if parentShell != nil {
+			beacon = parentShell.Edges.Beacon
+		}
 		pCreate.SetShellTaskID(shellTaskID)
 	} else {
 		return 0, nil, fmt.Errorf("either taskID or shellTaskID must be provided")
@@ -67,6 +71,13 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 	p, err := pCreate.Save(ctx)
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to create portal record: %w", err)
+	}
+
+	// Link newly created portal to its parent shell so GraphQL shell queries reflect it immediately
+	if parentShell != nil {
+		if err := parentShell.Update().AddPortals(p).Exec(ctx); err != nil {
+			slog.WarnContext(ctx, "failed to associate portal with parent shell", "portal_id", p.ID, "shell_id", parentShell.ID, "error", err)
+		}
 	}
 
 	// Log portal creation with beacon and host info

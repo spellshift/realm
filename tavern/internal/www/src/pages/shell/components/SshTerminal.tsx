@@ -97,8 +97,9 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
       theme: {
         background: "#11131a",
         foreground: "#e2e8f0",
-        cursor: "#a855f7",
-        selectionBackground: "rgba(168, 85, 247, 0.25)",
+        cursor: "#e2e8f0",
+        cursorAccent: "#11131a",
+        selectionBackground: "rgba(148, 163, 184, 0.28)",
       },
       fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
       fontSize: 13.5,
@@ -134,9 +135,11 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
     resizeObserver.observe(termRef.current);
 
     let cancelled = false;
-    // Defer WebSocket creation so React.StrictMode's synchronous mount/unmount cycle
-    // does not open a duplicate ghost ShellPivot on the backend.
-    const connectTimer = setTimeout(() => {
+    let autoReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let endedRemotely = false;
+    let hadFatalError = false;
+
+    const openSocket = (isAutoRetry = false) => {
       if (cancelled) return;
       const scheme = window.location.protocol === "https:" ? "wss" : "ws";
       const targetPivotId = connectPivotIdRef.current;
@@ -148,22 +151,28 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
       wsRef.current = ws;
 
       ws.onopen = () => {
+        if (cancelled) return;
         setConnectionStatus("connecting");
         onConnectionStatusChangeRef.current?.("connecting");
-        term.write(`\x1b[90m[*] Connecting to ${displayTarget} via portal #${portalId}...\x1b[0m\r\n`);
+        if (!isAutoRetry) {
+          term.write(`\x1b[90m[*] Connecting to ${displayTarget} via portal #${portalId}...\x1b[0m\r\n`);
+        }
         sendResize(ws);
       };
 
       ws.onmessage = (event) => {
+        if (cancelled) return;
         try {
           const msg = JSON.parse(event.data);
           if (msg.kind === WebsocketMessageKind.Output) {
             setConnectionStatus("connected");
             onConnectionStatusChangeRef.current?.("connected");
+            term.options.cursorBlink = true;
             term.write(msg.output);
           } else if (msg.kind === WebsocketMessageKind.TaskError) {
             term.write(`\x1b[31m${msg.error}\x1b[0m`);
           } else if (msg.kind === WebsocketMessageKind.Error) {
+            hadFatalError = true;
             setErrorMessage(msg.error);
             setConnectionStatus("disconnected");
             onConnectionStatusChangeRef.current?.("disconnected");
@@ -181,9 +190,11 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
             } else if (msg.status === "connected") {
               setConnectionStatus("connected");
               onConnectionStatusChangeRef.current?.("connected");
+              term.options.cursorBlink = true;
               sendResize(ws);
               term.focus();
             } else if (msg.status === "closed") {
+              endedRemotely = true;
               setSessionEndedByRemote(true);
               setConnectionStatus("disconnected");
               onConnectionStatusChangeRef.current?.("disconnected");
@@ -198,6 +209,14 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
 
       ws.onclose = () => {
         if (cancelled) return;
+        if (!endedRemotely && !hadFatalError && connectPivotIdRef.current) {
+          setConnectionStatus("connecting");
+          onConnectionStatusChangeRef.current?.("connecting");
+          autoReconnectTimer = setTimeout(() => {
+            openSocket(true);
+          }, 2000);
+          return;
+        }
         setConnectionStatus("disconnected");
         onConnectionStatusChangeRef.current?.("disconnected");
         term.options.cursorBlink = false;
@@ -206,9 +225,13 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
       ws.onerror = (e) => {
         if (cancelled) return;
         console.error("SSH WebSocket error:", e);
-        setConnectionStatus("disconnected");
-        onConnectionStatusChangeRef.current?.("disconnected");
       };
+    };
+
+    // Defer WebSocket creation so React.StrictMode's synchronous mount/unmount cycle
+    // does not open a duplicate ghost ShellPivot on the backend.
+    const connectTimer = setTimeout(() => {
+      openSocket(false);
     }, 0);
 
     // User input to WebSocket
@@ -221,6 +244,7 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
     return () => {
       cancelled = true;
       clearTimeout(connectTimer);
+      if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
       resizeObserver.disconnect();
       if (wsRef.current) {
         wsRef.current.close();

@@ -82,8 +82,9 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
       theme: {
         background: "#11131a",
         foreground: "#e2e8f0",
-        cursor: "#10b981",
-        selectionBackground: "rgba(16, 185, 129, 0.25)",
+        cursor: "#e2e8f0",
+        cursorAccent: "#11131a",
+        selectionBackground: "rgba(148, 163, 184, 0.28)",
       },
       fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
       fontSize: 13.5,
@@ -119,9 +120,11 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
     resizeObserver.observe(termRef.current);
 
     let cancelled = false;
-    // Defer WebSocket creation so React.StrictMode's synchronous mount/unmount cycle
-    // does not open a duplicate ghost ShellPivot on the backend.
-    const connectTimer = setTimeout(() => {
+    let autoReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let endedRemotely = false;
+    let hadFatalError = false;
+
+    const openSocket = (isAutoRetry = false) => {
       if (cancelled) return;
       const scheme = window.location.protocol === "https:" ? "wss" : "ws";
       const targetPivotId = connectPivotIdRef.current;
@@ -133,14 +136,19 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
       wsRef.current = ws;
 
       ws.onopen = () => {
+        if (cancelled) return;
         setConnectionStatus("connected");
         onConnectionStatusChangeRef.current?.("connected");
-        term.write(`\x1b[90m[*] PTY Active (Portal #${portalId})\x1b[0m\r\n`);
+        term.options.cursorBlink = true;
+        if (!isAutoRetry) {
+          term.write(`\x1b[90m[*] PTY Active (Portal #${portalId})\x1b[0m\r\n`);
+        }
         sendResize(ws);
         term.focus();
       };
 
       ws.onmessage = (event) => {
+        if (cancelled) return;
         try {
           const msg = JSON.parse(event.data);
           if (msg.kind === WebsocketMessageKind.Output) {
@@ -150,6 +158,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
           } else if (msg.kind === WebsocketMessageKind.TaskError) {
             term.write(`\x1b[31m${msg.error}\x1b[0m`);
           } else if (msg.kind === WebsocketMessageKind.Error) {
+            hadFatalError = true;
             setErrorMessage(msg.error);
             setConnectionStatus("disconnected");
             onConnectionStatusChangeRef.current?.("disconnected");
@@ -164,7 +173,9 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
             if (msg.status === "connected") {
               setConnectionStatus("connected");
               onConnectionStatusChangeRef.current?.("connected");
+              term.options.cursorBlink = true;
             } else if (msg.status === "closed") {
+              endedRemotely = true;
               setSessionEndedByRemote(true);
               setConnectionStatus("disconnected");
               onConnectionStatusChangeRef.current?.("disconnected");
@@ -179,6 +190,14 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
 
       ws.onclose = () => {
         if (cancelled) return;
+        if (!endedRemotely && !hadFatalError && connectPivotIdRef.current) {
+          setConnectionStatus("connecting");
+          onConnectionStatusChangeRef.current?.("connecting");
+          autoReconnectTimer = setTimeout(() => {
+            openSocket(true);
+          }, 2000);
+          return;
+        }
         setConnectionStatus("disconnected");
         onConnectionStatusChangeRef.current?.("disconnected");
         term.options.cursorBlink = false;
@@ -187,9 +206,13 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
       ws.onerror = (e) => {
         if (cancelled) return;
         console.error("PTY WebSocket error:", e);
-        setConnectionStatus("disconnected");
-        onConnectionStatusChangeRef.current?.("disconnected");
       };
+    };
+
+    // Defer WebSocket creation so React.StrictMode's synchronous mount/unmount cycle
+    // does not open a duplicate ghost ShellPivot on the backend.
+    const connectTimer = setTimeout(() => {
+      openSocket(false);
     }, 0);
 
     // User input to WebSocket
@@ -202,6 +225,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
     return () => {
       cancelled = true;
       clearTimeout(connectTimer);
+      if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
       resizeObserver.disconnect();
       if (wsRef.current) {
         wsRef.current.close();

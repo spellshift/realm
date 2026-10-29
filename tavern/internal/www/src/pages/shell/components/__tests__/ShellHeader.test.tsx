@@ -100,53 +100,102 @@ describe("ShellHeader", () => {
         expect(screen.queryByText("root")).not.toBeInTheDocument();
     });
 
-    it("calls onExport when export menu item is clicked", () => {
+    it("calls onExport when export menu item is clicked and omits redundant toolbar entries from actions menu", () => {
         const onExport = vi.fn();
         render(
             <BrowserRouter>
-                <ShellHeader {...defaultProps} onExport={onExport} />
+                <ShellHeader
+                    {...defaultProps}
+                    onExport={onExport}
+                    onToggleComposer={vi.fn()}
+                    onToggleKnowledge={vi.fn()}
+                    onTogglePivots={vi.fn()}
+                    onToggleHistory={vi.fn()}
+                    onToggleNux={vi.fn()}
+                />
             </BrowserRouter>
         );
         // Open the actions menu first
         const actionsButton = screen.getByLabelText("Shell actions");
         fireEvent.click(actionsButton);
+
+        // Redundant toolbar items should not appear in the ... menu
+        expect(screen.queryByText("Knowledge Graph")).not.toBeInTheDocument();
+        expect(screen.queryByText("Pivots")).not.toBeInTheDocument();
+        expect(screen.queryByText("History")).not.toBeInTheDocument();
+        expect(screen.queryByText("Composer")).not.toBeInTheDocument();
+        expect(screen.queryByText("Operator Guide & Docs")).not.toBeInTheDocument();
+
         const exportButton = screen.getByText("Export");
         fireEvent.click(exportButton);
         expect(onExport).toHaveBeenCalled();
     });
 
-    it("renders icon-only quick toolbar controls for Composer, Knowledge Graph, History, and Guide", () => {
+    it("renders unified toolbar background, active button highlight, and badges only for active pivots and active queue", () => {
         const onToggleComposer = vi.fn();
         const onToggleKnowledge = vi.fn();
+        const onTogglePivots = vi.fn();
         const onToggleHistory = vi.fn();
         const onToggleNux = vi.fn();
 
-        render(
+        const { rerender } = render(
             <BrowserRouter>
                 <ShellHeader
                     {...defaultProps}
+                    composerOpen={true}
                     onToggleComposer={onToggleComposer}
                     onToggleKnowledge={onToggleKnowledge}
                     credentialCount={3}
+                    onTogglePivots={onTogglePivots}
+                    pivotCount={2}
                     onToggleHistory={onToggleHistory}
                     historyCount={12}
+                    activeQueueCount={0}
                     onToggleNux={onToggleNux}
                 />
             </BrowserRouter>
         );
 
-        fireEvent.click(screen.getByLabelText("Toggle multi-line composer"));
+        const toolbar = screen.getByTestId("shell-header-toolbar");
+        expect(toolbar).toHaveClass("bg-[#1d222f]", "border", "border-[#2f364a]");
+
+        const composerBtn = screen.getByLabelText("Toggle multi-line composer");
+        expect(composerBtn).toHaveClass("bg-purple-600", "text-white");
+        fireEvent.click(composerBtn);
         expect(onToggleComposer).toHaveBeenCalled();
 
-        fireEvent.click(screen.getByLabelText("Toggle knowledge graph"));
+        const knowledgeBtn = screen.getByLabelText("Toggle knowledge graph");
+        expect(knowledgeBtn).toHaveClass("bg-transparent");
+        fireEvent.click(knowledgeBtn);
         expect(onToggleKnowledge).toHaveBeenCalled();
         expect(screen.getByText("3")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByLabelText("Toggle command history"));
-        expect(onToggleHistory).toHaveBeenCalled();
-        expect(screen.getByText("12")).toBeInTheDocument();
+        const pivotsBtn = screen.getByLabelText("Toggle pivots");
+        fireEvent.click(pivotsBtn);
+        expect(onTogglePivots).toHaveBeenCalled();
+        expect(screen.getByText("2")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByLabelText("Toggle operator guide"));
+        const historyBtn = screen.getByLabelText("Toggle command history");
+        fireEvent.click(historyBtn);
+        expect(onToggleHistory).toHaveBeenCalled();
+        // Completed history count (12) should NOT display when activeQueueCount is 0
+        expect(screen.queryByText("12")).not.toBeInTheDocument();
+
+        const guideBtn = screen.getByLabelText("Toggle operator guide");
+        fireEvent.click(guideBtn);
         expect(onToggleNux).toHaveBeenCalled();
+
+        // When activeQueueCount > 0, History button displays the active queue badge
+        rerender(
+            <BrowserRouter>
+                <ShellHeader
+                    {...defaultProps}
+                    onToggleHistory={onToggleHistory}
+                    historyCount={12}
+                    activeQueueCount={4}
+                />
+            </BrowserRouter>
+        );
+        expect(screen.getByText("4")).toBeInTheDocument();
     });
 });

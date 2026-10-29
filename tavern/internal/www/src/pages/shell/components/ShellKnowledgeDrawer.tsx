@@ -47,7 +47,7 @@ interface ShellKnowledgeDrawerProps {
   onRefetchKnowledgeGraph: () => void;
   onOpenSshWithTarget: (initialTarget: string) => void;
   onLoadIntoComposer: (code: string) => void;
-  onStageToPrompt: (code: string) => void;
+  onStageToPrompt?: (code: string) => void;
 }
 
 const formatCredKind = (kind?: string) => {
@@ -779,7 +779,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                       <button
                         type="button"
                         onClick={() =>
-                          onStageToPrompt(`print(file.read(${JSON.stringify(f.path)}))`)
+                          onLoadIntoComposer(`print(file.read(${JSON.stringify(f.path)}))`)
                         }
                         className="px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 text-[11px]"
                       >

@@ -166,16 +166,31 @@ export const useShellData = (shellId: string | undefined) => {
         setPortalId(null);
     }, [shellId]);
 
-    // Initialize portalId from shell data or history data
+    // Initialize portalId from shell data or history data without clobbering
+    // a live WebSocket PORTAL_UPGRADE when shell.portals is empty or not yet synced
     useEffect(() => {
-        const portals = historyData?.node?.portals || shellData?.node?.portals;
-        if (portals) {
-            const activePortal = portals.find((p: any) => !p.closedAt);
-            if (activePortal) {
-                setPortalId(parseInt(activePortal.id));
-            } else {
-                setPortalId(null);
+        const shellPortals = shellData?.node?.portals || [];
+        const historyPortals = historyData?.node?.portals || [];
+        const portals = historyPortals.length > 0 ? historyPortals : shellPortals;
+        if (!Array.isArray(portals) || portals.length === 0) {
+            return;
+        }
+        const activePortal = portals.find((p: any) => !p.closedAt);
+        if (activePortal) {
+            const parsedId = parseInt(activePortal.id, 10);
+            if (!Number.isNaN(parsedId)) {
+                setPortalId(parsedId);
             }
+        } else {
+            setPortalId((prev) => {
+                if (
+                    prev !== null &&
+                    portals.some((p: any) => parseInt(p.id, 10) === prev && Boolean(p.closedAt))
+                ) {
+                    return null;
+                }
+                return prev;
+            });
         }
     }, [shellData, historyData]);
 

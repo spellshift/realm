@@ -11,6 +11,7 @@ import ShellStatusBar from "./components/ShellStatusBar";
 import InterpreterStatusBanner from "./components/InterpreterStatusBanner";
 import MultiLineComposer from "./components/MultiLineComposer";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
+import ShellPivotsDrawer from "./components/ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
 import ShellNuxDrawer from "./components/ShellNuxDrawer";
 import ShellWalkthrough from "./components/ShellWalkthrough";
@@ -71,8 +72,10 @@ const Shell = () => {
 
   // Workspace drawers & composer state
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [pivotsOpen, setPivotsOpen] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [nuxOpen, setNuxOpen] = useState(false);
+  const [focusQueueTrigger, setFocusQueueTrigger] = useState(0);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerCode, setComposerCode] = useState<string>("");
   const [sshModalOpenExternal, setSshModalOpenExternal] = useState(false);
@@ -248,11 +251,11 @@ const Shell = () => {
     handleTooltipMouseLeave,
     getSessionInputs,
     localHistory,
-    setShellInput,
     executeCode: submitShellCode,
     focusTerminal,
     sendCtrlC,
     sendCtrlR,
+    reconnect,
   } = useShellTerminal(
     shellId,
     loading,
@@ -397,14 +400,13 @@ const Shell = () => {
     [submitShellCode]
   );
 
-  const handleStageToPrompt = useCallback(
-    (code: string) => {
-      setTabIndex(0);
-      setShellInput(code);
-      setTimeout(() => focusTerminal(), 0);
-    },
-    [setShellInput, focusTerminal]
-  );
+  const handleOpenQueue = useCallback(() => {
+    setHistoryOpen(true);
+    setPivotsOpen(false);
+    setKnowledgeOpen(false);
+    setNuxOpen(false);
+    setFocusQueueTrigger((c) => c + 1);
+  }, []);
 
   if (connectionError) {
     return (
@@ -429,6 +431,7 @@ const Shell = () => {
           onOpenGuideDrawer={() => {
             setNuxOpen(true);
             setHistoryOpen(false);
+            setPivotsOpen(false);
             setKnowledgeOpen(false);
           }}
         />
@@ -446,15 +449,25 @@ const Shell = () => {
           historyOpen={historyOpen}
           onToggleHistory={() => {
             setHistoryOpen((prev) => !prev);
+            setPivotsOpen(false);
             setKnowledgeOpen(false);
             setNuxOpen(false);
           }}
           historyCount={shellTasks.length}
           activeQueueCount={queuedTasks.length + runningTasks.length}
+          pivotsOpen={pivotsOpen}
+          onTogglePivots={() => {
+            setPivotsOpen((prev) => !prev);
+            setHistoryOpen(false);
+            setKnowledgeOpen(false);
+            setNuxOpen(false);
+          }}
+          pivotCount={pivots.filter((p) => !p.closedAt).length}
           knowledgeOpen={knowledgeOpen}
           onToggleKnowledge={() => {
             setKnowledgeOpen((prev) => !prev);
             setHistoryOpen(false);
+            setPivotsOpen(false);
             setNuxOpen(false);
           }}
           credentialCount={hostCredentials.length || allCredentials.length}
@@ -473,6 +486,7 @@ const Shell = () => {
           onToggleNux={() => {
             setNuxOpen((prev) => !prev);
             setHistoryOpen(false);
+            setPivotsOpen(false);
             setKnowledgeOpen(false);
           }}
           onSpawnFreshShell={handleSpawnFreshShell}
@@ -490,11 +504,8 @@ const Shell = () => {
           timeUntilCallback={timeUntilCallback}
           onSpawnFreshShell={handleSpawnFreshShell}
           isSpawningShell={isSpawningShell}
-          onOpenHistoryDrawer={() => {
-            setHistoryOpen(true);
-            setKnowledgeOpen(false);
-            setNuxOpen(false);
-          }}
+          onOpenHistoryDrawer={handleOpenQueue}
+          onReconnect={reconnect}
         />
 
         {/* Main Workspace Row: Terminal/Pivots + Optional History or Guide Drawer */}
@@ -637,11 +648,6 @@ const Shell = () => {
                     code={composerCode}
                     onChange={setComposerCode}
                     onRunCode={(code) => submitShellCode(code)}
-                    onStageToPrompt={(code) => {
-                      setShellInput(code);
-                      setComposerOpen(false);
-                      setTimeout(() => focusTerminal(), 0);
-                    }}
                     disabled={!!shellData?.node?.closedAt}
                   />
                 </TabPanel>
@@ -713,7 +719,23 @@ const Shell = () => {
               setSshModalOpenExternal(true);
             }}
             onLoadIntoComposer={handleLoadIntoComposer}
-            onStageToPrompt={handleStageToPrompt}
+          />
+
+          <ShellPivotsDrawer
+            isOpen={pivotsOpen}
+            onClose={() => setPivotsOpen(false)}
+            portalId={portalId}
+            pivots={pivots}
+            onNewPortal={handleNewPortal}
+            onClosePortal={handleClosePortal}
+            onOpenPty={handlePtyOpen}
+            onOpenSshModal={() => {
+              setSshModalInitialTarget("");
+              setSshModalOpenExternal(true);
+            }}
+            onOpenPivotTab={(type, target, pivotId) =>
+              handleOpenPortalTab(type, target, pivotId, true)
+            }
           />
 
           <ShellHistoryDrawer
@@ -727,6 +749,7 @@ const Shell = () => {
             onOpenPivotTab={(type, target, pivotId) =>
               handleOpenPortalTab(type, target, pivotId, true)
             }
+            focusQueueTrigger={focusQueueTrigger}
           />
 
           <ShellNuxDrawer
@@ -734,7 +757,6 @@ const Shell = () => {
             onClose={() => setNuxOpen(false)}
             portalId={portalId}
             onRunCode={handleRunCodeFromDrawer}
-            onStageToPrompt={handleStageToPrompt}
             onLoadIntoComposer={handleLoadIntoComposer}
             onSpawnFreshShell={handleSpawnFreshShell}
             onStartWalkthrough={() => {
@@ -753,10 +775,8 @@ const Shell = () => {
           closedAt={shellData?.node?.closedAt}
           queuedCount={queuedTasks.length}
           runningCount={runningTasks.length}
-          onOpenHistory={() => {
-            setHistoryOpen(true);
-            setNuxOpen(false);
-          }}
+          onOpenQueue={handleOpenQueue}
+          onReconnect={reconnect}
         />
       </div>
     </AccessGate>

@@ -1,7 +1,6 @@
-import React from "react";
-import { Clock, Info, Loader2, RefreshCw, Wifi, WifiOff } from "lucide-react";
-import { Tooltip } from "@chakra-ui/react";
+import React, { useState } from "react";
 import { ConnectionStatus } from "../../../lib/browser-adapter";
+import { Wifi, WifiOff, RefreshCw, Clock, Loader2 } from "lucide-react";
 
 interface ShellStatusBarProps {
   portalId: number | null;
@@ -9,11 +8,40 @@ interface ShellStatusBarProps {
   isMissedCallback: boolean;
   connectionStatus: ConnectionStatus;
   connectionMessage?: string;
-  closedAt?: string;
+  closedAt?: string | null;
   queuedCount?: number;
   runningCount?: number;
-  onOpenHistory?: () => void;
+  onOpenQueue?: () => void;
+  onReconnect?: () => void;
 }
+
+const StatusIconWithPopover = ({
+  icon,
+  message,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  message?: string;
+  onClick?: () => void;
+}) => {
+  const [showPopover, setShowPopover] = useState(false);
+
+  return (
+    <div
+      className={`relative flex items-center ${onClick ? "cursor-pointer" : ""}`}
+      onMouseEnter={() => setShowPopover(true)}
+      onMouseLeave={() => setShowPopover(false)}
+      onClick={onClick}
+    >
+      {icon}
+      {showPopover && message && (
+        <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-[#1e222d] border border-[#2f364a] rounded shadow-lg text-xs text-gray-200 z-50 break-words pointer-events-none">
+          {message}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
   portalId,
@@ -24,132 +52,96 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
   closedAt,
   queuedCount = 0,
   runningCount = 0,
-  onOpenHistory,
+  onOpenQueue,
+  onReconnect,
 }) => {
-  const getConnectionIcon = () => {
+  const getConnectionStatusIcon = () => {
     switch (connectionStatus) {
       case "connected":
+        return <Wifi className="w-3.5 h-3.5 text-green-500" />;
+      case "disconnected":
         return (
-          <Tooltip label="Connected to Tavern">
-            <span className="text-green-500 flex items-center gap-1.5">
-              <Wifi size={16} />
-              <span className="hidden sm:inline text-xs font-medium text-green-400">WS Connected</span>
-            </span>
-          </Tooltip>
+          <StatusIconWithPopover
+            icon={<WifiOff className="w-3.5 h-3.5 text-red-500" />}
+            message={connectionMessage || "Disconnected (click to reconnect)"}
+            onClick={onReconnect}
+          />
         );
-      case "disconnected": {
-        const label = connectionMessage
-          ? `Disconnected from Tavern: ${connectionMessage}`
-          : "Disconnected from Tavern";
-        return (
-          <Tooltip label={label}>
-            <span className="text-red-500 flex items-center gap-1.5">
-              <WifiOff size={16} />
-              <span className="hidden sm:inline text-xs font-medium text-red-400">
-                WS Disconnected
-              </span>
-            </span>
-          </Tooltip>
-        );
-      }
       case "reconnecting":
         return (
-          <Tooltip label="Reconnecting to Tavern">
-            <span className="text-yellow-500 animate-spin">
-              <RefreshCw size={16} />
-            </span>
-          </Tooltip>
+          <StatusIconWithPopover
+            icon={<RefreshCw className="w-3.5 h-3.5 text-yellow-500 animate-spin" />}
+            message={connectionMessage || "Reconnecting... (click to retry now)"}
+            onClick={onReconnect}
+          />
         );
     }
   };
 
   return (
-    <div className="flex justify-between items-center mt-2 pt-1.5 border-t border-[#262b36] text-xs text-gray-400 min-h-[26px]">
-      <div className="flex items-center gap-3 md:gap-4 flex-wrap">
-        <div className="flex items-center">{getConnectionIcon()}</div>
-
-        {closedAt && (
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/60 border border-red-500/40">
-            <span className="font-bold text-red-500 uppercase">Terminated</span>
-            <Tooltip
-              label={`This shell session was closed at ${new Date(closedAt).toLocaleString()}. Input is disabled.`}
-            >
-              <span>
-                <Info size={13} className="text-red-500" />
-              </span>
-            </Tooltip>
+    <div className="bg-[#161922] px-3 py-1 border border-[#262b38] rounded-md text-xs text-gray-400 flex justify-between items-center font-mono select-none">
+      <div className="flex items-center gap-4">
+        {closedAt ? (
+          <span className="flex items-center gap-2 text-red-400 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+            <span>
+              Terminated:{" "}
+              {new Date(closedAt).toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </span>
+          </span>
+        ) : portalId ? (
+          <span className="flex items-center gap-2 text-green-400 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            <span>Portal Active</span>
+            <span className="text-xs text-gray-500 font-normal">(ID: {portalId})</span>
+          </span>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+            <span className="text-yellow-500">non-interactive</span>
+            {timeUntilCallback && (
+              <>
+                <span className="text-gray-600">|</span>
+                <span>Next callback:</span>
+                <span className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-300"}>
+                  {timeUntilCallback}
+                </span>
+              </>
+            )}
           </div>
         )}
+      </div>
 
-        <div className="flex items-center gap-2">
-          {portalId ? (
-            <div className="flex items-center gap-1 group relative cursor-help">
-              <span
-                className={`font-semibold ${
-                  connectionStatus === "connected"
-                    ? "text-green-500"
-                    : connectionStatus === "reconnecting"
-                    ? "text-yellow-500"
-                    : "text-gray-500"
-                }`}
-              >
-                Portal Active
-                <span className="hidden md:inline"> (ID: {portalId})</span>
-              </span>
-              <Tooltip label="This shell is currently using an established portal connection for low-latency i/o. You may utilize this portal for SOCKS5 proxying or pivoting (e.g. with SSH)">
-                <span>
-                  <Info
-                    size={13}
-                    className={
-                      connectionStatus === "connected"
-                        ? "text-green-500"
-                        : connectionStatus === "reconnecting"
-                        ? "text-yellow-500"
-                        : "text-gray-500"
-                    }
-                  />
-                </span>
-              </Tooltip>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 group relative cursor-help">
-              <span>non-interactive</span>
-              <Tooltip label="This shell is currently in non-interactive mode. Input will be asynchronously queued for the beacon and output will be submitted through beacon callbacks. To upgrade to an interactive low-latency shell, you may open a 'Portal' on the beacon, which leverages an established connection to provide low-latency interactivity.">
-                <span>
-                  <Info size={13} />
-                </span>
-              </Tooltip>
-            </div>
-          )}
-        </div>
-
-        {(queuedCount > 0 || runningCount > 0) && (
+      {/* Right side: Queue Indicator & WebSocket Status */}
+      <div className="flex items-center gap-3">
+        {(runningCount > 0 || queuedCount > 0) && (
           <button
             type="button"
-            onClick={onOpenHistory}
-            className="inline-flex items-center gap-2 px-2 py-0.5 rounded bg-[#1d222e] hover:bg-[#262d3d] border border-[#323a4f] text-gray-200 transition-colors"
+            data-testid="status-bar-queue-button"
+            aria-label="Open task queue"
+            onClick={onOpenQueue}
+            title="Click to view active task queue in History"
+            className="flex items-center gap-2 px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
           >
             {runningCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-amber-300">
-                <Loader2 size={11} className="animate-spin" />
+              <span className="inline-flex items-center gap-1 text-blue-300">
+                <Loader2 className="w-3 h-3 animate-spin" />
                 {runningCount} executing
               </span>
             )}
             {queuedCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-blue-300">
-                <Clock size={11} />
+              <span className="inline-flex items-center gap-1 text-amber-300">
+                <Clock className="w-3 h-3" />
                 {queuedCount} queued
               </span>
             )}
           </button>
         )}
+        <div className="flex items-center gap-2">{getConnectionStatusIcon()}</div>
       </div>
-
-      {timeUntilCallback && (
-        <div className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-400"}>
-          {timeUntilCallback}
-        </div>
-      )}
     </div>
   );
 };

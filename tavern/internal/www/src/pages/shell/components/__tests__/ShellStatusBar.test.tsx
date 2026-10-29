@@ -59,4 +59,23 @@ describe("ShellStatusBar", () => {
         render(<ShellStatusBar {...defaultProps} closedAt="2024-01-01T00:00:00Z" />);
         expect(screen.getByText(/Terminated/i)).toBeInTheDocument();
     });
+
+    it("renders clickable executing/queued spinner at bottom of screen that opens the queue", () => {
+        let openedQueue = false;
+        render(
+            <ShellStatusBar
+                {...defaultProps}
+                runningCount={1}
+                queuedCount={2}
+                onOpenQueue={() => {
+                    openedQueue = true;
+                }}
+            />
+        );
+        const queueBtn = screen.getByTestId("status-bar-queue-button");
+        expect(queueBtn).toHaveTextContent(/1 executing/i);
+        expect(queueBtn).toHaveTextContent(/2 queued/i);
+        fireEvent.click(queueBtn);
+        expect(openedQueue).toBe(true);
+    });
 });

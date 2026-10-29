@@ -1,6 +1,6 @@
 import React, { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X, StopCircle, Search, RefreshCw, History, BookOpen, Code2, Database } from "lucide-react";
+import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X, StopCircle, Search, RefreshCw } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
@@ -16,16 +16,13 @@ interface ShellActionsMenuProps {
     onSendCtrlC: () => void;
     onSendCtrlR: () => void;
     onSpawnFreshShell?: () => void;
-    onToggleHistory?: () => void;
-    onToggleKnowledge?: () => void;
-    onToggleNux?: () => void;
-    onToggleComposer?: () => void;
     sshModalOpenExternal?: boolean;
     sshModalInitialTarget?: string;
     onCloseSshModalExternal?: () => void;
     credentials?: KnowledgeCredentialItem[];
     hosts?: KnowledgeHostItem[];
     onLoadIntoComposer?: (code: string) => void;
+    buttonClassName?: string;
 }
 
 const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using portal.create().";
@@ -40,16 +37,13 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     onSendCtrlC,
     onSendCtrlR,
     onSpawnFreshShell,
-    onToggleHistory,
-    onToggleKnowledge,
-    onToggleNux,
-    onToggleComposer,
     sshModalOpenExternal,
     sshModalInitialTarget,
     onCloseSshModalExternal,
     credentials,
     hosts,
     onLoadIntoComposer,
+    buttonClassName,
 }) => {
     const [sshModalOpenInternal, setSshModalOpenInternal] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -74,10 +68,13 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
         <>
             <Menu as="div" className="relative">
                 <Menu.Button
-                    className="p-1.5 rounded text-gray-200 hover:text-white hover:bg-[#2a2f3d] border border-transparent hover:border-[#3a4154] transition-colors focus:outline-none"
+                    className={
+                        buttonClassName ||
+                        "relative inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors bg-transparent hover:bg-[#282f42] text-gray-300 hover:text-white focus:outline-none"
+                    }
                     aria-label="Shell actions"
                 >
-                    <Ellipsis className="w-5 h-5" />
+                    <Ellipsis className="w-[15px] h-[15px]" />
                 </Menu.Button>
                 <Transition
                     as={Fragment}
@@ -103,70 +100,6 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                     </Button>
                                 )}
                             </Menu.Item>
-
-                            {onToggleKnowledge && (
-                                <Menu.Item>
-                                    {() => (
-                                        <Button
-                                            buttonVariant="ghost"
-                                            buttonStyle={{ color: "gray", size: "sm" }}
-                                            className="w-full justify-start text-gray-200 hover:bg-[#2b3242]"
-                                            leftIcon={<Database className="w-4 h-4" />}
-                                            onClick={onToggleKnowledge}
-                                        >
-                                            Knowledge Graph
-                                        </Button>
-                                    )}
-                                </Menu.Item>
-                            )}
-
-                            {onToggleHistory && (
-                                <Menu.Item>
-                                    {() => (
-                                        <Button
-                                            buttonVariant="ghost"
-                                            buttonStyle={{ color: "gray", size: "sm" }}
-                                            className="w-full justify-start text-gray-200 hover:bg-[#2b3242]"
-                                            leftIcon={<History className="w-4 h-4" />}
-                                            onClick={onToggleHistory}
-                                        >
-                                            History &amp; Task Queue
-                                        </Button>
-                                    )}
-                                </Menu.Item>
-                            )}
-
-                            {onToggleComposer && (
-                                <Menu.Item>
-                                    {() => (
-                                        <Button
-                                            buttonVariant="ghost"
-                                            buttonStyle={{ color: "gray", size: "sm" }}
-                                            className="w-full justify-start text-gray-200 hover:bg-[#2b3242]"
-                                            leftIcon={<Code2 className="w-4 h-4" />}
-                                            onClick={onToggleComposer}
-                                        >
-                                            Composer
-                                        </Button>
-                                    )}
-                                </Menu.Item>
-                            )}
-
-                            {onToggleNux && (
-                                <Menu.Item>
-                                    {() => (
-                                        <Button
-                                            buttonVariant="ghost"
-                                            buttonStyle={{ color: "gray", size: "sm" }}
-                                            className="w-full justify-start text-gray-200 hover:bg-[#2b3242]"
-                                            leftIcon={<BookOpen className="w-4 h-4" />}
-                                            onClick={onToggleNux}
-                                        >
-                                            Operator Guide &amp; Docs
-                                        </Button>
-                                    )}
-                                </Menu.Item>
-                            )}
 
                             {onSpawnFreshShell && (
                                 <Menu.Item>

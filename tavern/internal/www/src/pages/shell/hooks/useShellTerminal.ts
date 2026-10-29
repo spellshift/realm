@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { BrowserWasmAdapter, ConnectionStatus } from "../../../lib/browser-adapter";
+import { BrowserWasmAdapter, ConnectionStatus, normalizeMultilineScript } from "../../../lib/browser-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
 import {
@@ -126,6 +126,9 @@ export const useShellTerminal = (
 
     const portalIdRef = useRef<number | null>(null);
     const sessionInputs = useRef<string[]>([]);
+    const seenTaskIdsRef = useRef<Set<number>>(new Set());
+    const seenBeforeReconnectRef = useRef<Set<number>>(new Set());
+    const hasConnectedOnceRef = useRef<boolean>(false);
     const onCommandSubmittedRef = useRef(onCommandSubmitted);
     const onOpenPortalTabRef = useRef(onOpenPortalTab);
 
@@ -191,8 +194,9 @@ export const useShellTerminal = (
             termInstance.current.options.theme = {
                 foreground: isDimmed ? "#7b849b" : "#e2e8f0",
                 background: "#11131a",
-                cursor: "#a855f7",
-                selectionBackground: "rgba(168, 85, 247, 0.25)",
+                cursor: "#e2e8f0",
+                cursorAccent: "#11131a",
+                selectionBackground: "rgba(148, 163, 184, 0.28)",
             };
         }
     }, [isLateCheckin, connectionStatus, shellClosedAt]);
@@ -415,24 +419,29 @@ export const useShellTerminal = (
     }, [tooltipState.visible, scheduleHideTooltip, cancelHideTooltip]);
 
     useEffect(() => {
-        if (!termRef.current || loading) return;
-
+        if (loading) return;
         if (!shellId) {
             setConnectionError("No Shell ID provided in URL.");
             return;
         }
-
-        if (error) {
+        if (error && !shellNodeId) {
             setConnectionError(`Failed to load shell: ${error.message}`);
             return;
         }
-
         if (!shellNodeId) {
             setConnectionError("Shell not found.");
             return;
         }
+        setConnectionError(null);
+    }, [shellId, loading, error, shellNodeId]);
+
+    useEffect(() => {
+        if (!termRef.current || !shellId || !shellNodeId) return;
 
         portalIdRef.current = null;
+        seenTaskIdsRef.current.clear();
+        seenBeforeReconnectRef.current.clear();
+        hasConnectedOnceRef.current = false;
         lastBufferHeight.current = 0;
         shellState.current.inputBuffer = "";
         shellState.current.currentBlock = "";
@@ -449,8 +458,9 @@ export const useShellTerminal = (
             theme: {
                 background: "#11131a",
                 foreground: connectionStatusRef.current !== "connected" ? "#7b849b" : "#e2e8f0",
-                cursor: "#a855f7",
-                selectionBackground: "rgba(168, 85, 247, 0.25)",
+                cursor: "#e2e8f0",
+                cursorAccent: "#11131a",
+                selectionBackground: "rgba(148, 163, 184, 0.28)",
             },
             fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
             fontSize: 13.5,
@@ -494,6 +504,21 @@ export const useShellTerminal = (
                 const term = termInstance.current;
                 if (!term) return;
 
+                // Deduplicate historical task output re-sent by the server after a WebSocket reconnect
+                const maybeTaskId = (msg as any).shell_task_id;
+                if (
+                    typeof maybeTaskId === "number" &&
+                    maybeTaskId > 0 &&
+                    (msg.kind === WebsocketMessageKind.Output ||
+                        msg.kind === WebsocketMessageKind.TaskError ||
+                        msg.kind === WebsocketMessageKind.OutputFromOtherStream)
+                ) {
+                    if (seenBeforeReconnectRef.current.has(maybeTaskId)) {
+                        return;
+                    }
+                    seenTaskIdsRef.current.add(maybeTaskId);
+                }
+
                 // Clear current input line(s) before printing output
                 const prevRows = lastBufferHeight.current;
                 if (prevRows > 0) {
@@ -525,6 +550,7 @@ export const useShellTerminal = (
                             const wasUpgraded = portalIdRef.current !== msg.portal_id;
                             portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
+                            onCommandSubmittedRef.current?.();
                             if (wasUpgraded) {
                                 content = `[*] Portal Active (#${msg.portal_id})\n`;
                                 color = "\x1b[38;5;42m"; // Green
@@ -532,6 +558,7 @@ export const useShellTerminal = (
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalDowngrade) {
                             portalIdRef.current = null;
                             setPortalId(null);
+                            onCommandSubmittedRef.current?.();
                             content = "[*] Portal Closed (Queued Mode)\n";
                             color = "\x1b[38;5;178m"; // Gold
                         }
@@ -563,8 +590,18 @@ export const useShellTerminal = (
                 termInstance.current?.write("Connected to Tavern.\r\n>>> ");
             },
             (status: ConnectionStatus, message?: string) => {
+                const prevStatus = connectionStatusRef.current;
+                connectionStatusRef.current = status;
                 setConnectionStatus(status);
                 setConnectionMessage(message || "");
+                if (status === "disconnected" || status === "reconnecting") {
+                    seenBeforeReconnectRef.current = new Set(seenTaskIdsRef.current);
+                } else if (status === "connected") {
+                    if (hasConnectedOnceRef.current && prevStatus !== "connected") {
+                        redrawLine();
+                    }
+                    hasConnectedOnceRef.current = true;
+                }
             }
         );
 
@@ -1071,7 +1108,7 @@ export const useShellTerminal = (
             termInstance.current?.dispose();
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
-    }, [shellId, loading, error, shellNodeId, shellClosedAt, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
+    }, [shellId, shellNodeId, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
     const getSessionInputs = useCallback(() => {
         return sessionInputs.current.join("\n");
@@ -1092,7 +1129,7 @@ export const useShellTerminal = (
         if (!term || !adapter.current) return false;
         if (shellClosedAtRef.current || connectionStatusRef.current !== "connected") return false;
 
-        const trimmedCode = rawCode.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+        const trimmedCode = normalizeMultilineScript(rawCode);
         if (!trimmedCode) return false;
 
         const state = shellState.current;
@@ -1112,7 +1149,7 @@ export const useShellTerminal = (
             term.write(`${linePrompt}${highlightPythonSyntax(line)}\r\n`);
         });
 
-        const res = adapter.current.paste_input(trimmedCode + "\n");
+        const res = adapter.current.paste_input(trimmedCode);
         if (res?.status === "complete") {
             state.history.push(trimmedCode);
             sessionInputs.current.push(trimmedCode);
@@ -1219,6 +1256,10 @@ export const useShellTerminal = (
         redrawLine();
     }, [redrawLine]);
 
+    const reconnect = useCallback(() => {
+        adapter.current?.reconnect();
+    }, []);
+
     return {
         termRef,
         connectionError,
@@ -1240,6 +1281,7 @@ export const useShellTerminal = (
         localHistory,
         focusTerminal,
         sendCtrlC,
-        sendCtrlR
+        sendCtrlR,
+        reconnect
     };
 };
