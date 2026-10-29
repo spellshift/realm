@@ -107,13 +107,42 @@ func TestParseConfigWithExecutor_ValidatesEffectiveConfig(t *testing.T) {
 	require.ErrorContains(t, err, "unsupported executor")
 }
 
+func TestParseConfig_RejectsUnknownFields(t *testing.T) {
+	path := writeTestConfig(t, t.TempDir(), "upsteam: https://tavern.example.com\nexecutor: unsupported\n")
+	_, err := builder.ParseConfig(path)
+	require.ErrorContains(t, err, `unknown builder config field "upsteam"`)
+	_, err = builder.ParseConfigWithExecutor(path, "docker")
+	require.ErrorContains(t, err, `unknown builder config field "upsteam"`)
+
+	_, err = builder.ParseConfigBytes([]byte("upsteam: https://tavern.example.com\n"))
+	require.ErrorContains(t, err, `unknown builder config field "upsteam"`)
+}
+
 func TestParseConfigBytes_ValidatesUpstreamURL(t *testing.T) {
 	for _, upstream := range []string{"tavern:8000", "ftp://tavern.example.com", "http://", "https:///path", "127.0.0.1:8000"} {
 		_, err := builder.ParseConfigBytes([]byte("supported_targets: [linux]\nidentity_file: id\nupstream: " + upstream + "\n"))
 		require.Error(t, err, upstream)
 	}
-	for _, upstream := range []string{"http://127.0.0.1:8000", "https://tavern.example.com"} {
+	for _, upstream := range []string{"http://127.0.0.1:8000", "https://tavern.example.com", "https://tavern.example.com/realm"} {
 		_, err := builder.ParseConfigBytes([]byte("supported_targets: [linux]\nidentity_file: id\nupstream: " + upstream + "\n"))
 		require.NoError(t, err, upstream)
+	}
+}
+
+func TestParseConfigBytes_RejectsUpstreamQueryAndFragment(t *testing.T) {
+	tests := []struct {
+		upstream string
+		want     string
+	}{
+		{"https://tavern.example.com/realm?token=abc", "query"},
+		{"https://tavern.example.com/realm?", "query"},
+		{"https://tavern.example.com/realm#section", "fragment"},
+		{"https://tavern.example.com/realm#", "fragment"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.upstream, func(t *testing.T) {
+			_, err := builder.ParseConfigBytes([]byte("upstream: '" + tt.upstream + "'\n"))
+			require.ErrorContains(t, err, tt.want)
+		})
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -86,6 +87,13 @@ func parseConfigBytes(data []byte, executor *string) (*Config, error) {
 	if err := yaml.Unmarshal(data, &fields); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
+	for name := range fields {
+		switch name {
+		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval":
+		default:
+			return nil, fmt.Errorf("unknown builder config field %q", name)
+		}
+	}
 	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval"} {
 		if value, present := fields[name]; present && value == nil {
 			return nil, fmt.Errorf("%s must not be null", name)
@@ -166,6 +174,12 @@ func validateUpstream(upstream string) error {
 	}
 	if u.Host == "" {
 		return fmt.Errorf("upstream server address %q must include a host", upstream)
+	}
+	if u.RawQuery != "" || u.ForceQuery {
+		return fmt.Errorf("upstream server address %q must not include a query", upstream)
+	}
+	if strings.Contains(upstream, "#") {
+		return fmt.Errorf("upstream server address %q must not include a fragment", upstream)
 	}
 	return nil
 }
