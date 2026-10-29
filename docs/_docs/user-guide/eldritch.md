@@ -1796,6 +1796,45 @@ For Imix DLLs, set `function_name` to `lib_entry`.
 The ints in `dll_bytes` will be cast down from int u32 ---> u8 in rust.
 If your `dll_bytes` array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
 
+### windows.enable_privilege
+
+`windows.enable_privilege(privilege: str) -> bool`
+
+The **windows.enable_privilege** method enables a privilege on the current process token
+
+```python
+$> pprint(windows.tokens(process.info()['pid']))
+
+[
+  {
+    "pid": 3236,
+    "privileges": [
+      ...
+      "SeBackupPrivilege=disabled",
+      ...
+    ],
+    "user": "NT AUTHORITY\\SYSTEM"
+  }
+]
+
+$> windows.enable_privilege('SeBackupPrivilege')
+True
+
+$> pprint(windows.tokens(process.info()['pid']))
+
+[
+  {
+    "pid": 3236,
+    "privileges": [
+      ...
+      "SeBackupPrivilege=enabled",
+      ...
+    ],
+    "user": "NT AUTHORITY\\SYSTEM"
+  }
+]
+```
+
 ### windows.impersonate
 
 `windows.impersonate(pid: int) -> int`
@@ -1922,4 +1961,3 @@ $> windows.tokens()
 $> sys.shell('whoami')['stdout']
 domain\administrator
 ```
-
