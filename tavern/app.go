@@ -168,7 +168,12 @@ func newApp(ctx context.Context) (app *cli.App) {
 			},
 			Action: func(c *cli.Context) error {
 				configPath := c.String("config")
-				cfg, err := loadBuilderConfig(configPath, c.String("executor"))
+				var cliExec *string
+				if c.IsSet("executor") {
+					value := c.String("executor")
+					cliExec = &value
+				}
+				cfg, err := loadBuilderConfig(configPath, cliExec)
 				if err != nil {
 					return err
 				}
@@ -200,20 +205,24 @@ func newApp(ctx context.Context) (app *cli.App) {
 	return
 }
 
-func loadBuilderConfig(configPath, cliExec string) (*builder.Config, error) {
+func loadBuilderConfig(configPath string, cliExec *string) (*builder.Config, error) {
+	if cliExec != nil && *cliExec != "docker" && *cliExec != "local" {
+		return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", *cliExec)
+	}
 	cfg := builder.DefaultConfig()
 	if configPath != "" {
 		var err error
-		cfg, err = builder.ParseConfig(configPath)
+		if cliExec == nil {
+			cfg, err = builder.ParseConfig(configPath)
+		} else {
+			cfg, err = builder.ParseConfigWithExecutor(configPath, *cliExec)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse builder config: %w", err)
 		}
 	}
-	if cliExec != "" {
-		cfg.Executor = cliExec
-		if err := cfg.Validate(); err != nil {
-			return nil, err
-		}
+	if configPath == "" && cliExec != nil {
+		cfg.Executor = *cliExec
 	}
 	return cfg, nil
 }
