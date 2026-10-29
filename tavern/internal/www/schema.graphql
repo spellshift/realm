@@ -9055,15 +9055,6 @@ input UpdateBuildProfileInput {
   unique: String
 }
 
-"""Output returned when exchanging a builder enrollment token."""
-type ExchangeBuilderEnrollmentTokenOutput {
-  """Identifier of the newly created builder, embedded in its mTLS certificate CN."""
-  builderID: String!
-
-  """CA-signed mTLS certificate PEM for the builder to authenticate with."""
-  mtlsCert: String!
-}
-
 """The immutable build recipe captured at task creation."""
 type BuildProfileSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileSnapshot") {
   name: String!
@@ -9221,7 +9212,6 @@ type Mutation {
     # Builder
     ###
     createBuilderEnrollmentToken: String! @requireRole(role: ADMIN)
-    exchangeBuilderEnrollmentToken(token: String!, input: CreateBuilderInput!, csr: String!): ExchangeBuilderEnrollmentTokenOutput!
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###

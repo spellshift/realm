@@ -1,17 +1,20 @@
 package builder_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
+	"io"
 	"net"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"testing"
 
-	"github.com/99designs/gqlgen/client"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
+	tavernhttp "realm.pub/tavern/internal/http"
 )
 
 func TestBuilderE2E(t *testing.T) {
@@ -44,84 +48,58 @@ func TestBuilderE2E(t *testing.T) {
 	// 3. Setup GraphQL server with authentication bypass and Builder CA
 	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 
-	// An invalid CSR must be rejected before any builder is created, and
-	// must not consume the token.
+	// Invalid CSR and settings leave the token available for redemption.
 	token := createTestEnrollmentToken(t, gqlClient)
-	var rejected struct {
-		ExchangeBuilderEnrollmentToken struct{ BuilderID string }
-	}
-	err = gqlClient.Post(`mutation($token: String!, $input: CreateBuilderInput!, $csr: String!) {
-		exchangeBuilderEnrollmentToken(token: $token, input: $input, csr: $csr) { builderID }
-	}`, &rejected, client.Var("token", token), client.Var("input", map[string]any{"supportedTargets": []string{"PLATFORM_LINUX"}}), client.Var("csr", "invalid"))
-	require.ErrorContains(t, err, "invalid builder CSR")
+	request := tavernhttp.BuilderEnrollRequest{Token: token, CSR: "invalid", SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com:443", PollInterval: 30, Executor: "local"}
+	statusCode, _ := postBuilderEnrollment(t, upstream, request)
+	require.Equal(t, http.StatusBadRequest, statusCode)
 	count, err := graph.Builder.Query().Count(ctx)
 	require.NoError(t, err)
 	require.Zero(t, count)
-
 	csr, keyPEM := generateTestCSR(t)
+	request.CSR = csr
 	for _, tc := range []struct {
-		name  string
-		input map[string]any
-		want  string
+		name     string
+		targets  []string
+		upstream string
 	}{
-		{
-			name:  "empty targets",
-			input: map[string]any{"supportedTargets": []string{}},
-			want:  "at least one supported_target",
-		},
-		{
-			name:  "empty upstream",
-			input: map[string]any{"supportedTargets": []string{"PLATFORM_LINUX"}, "upstream": ""},
-			want:  "upstream server address",
-		},
+		{"empty targets", nil, request.Upstream},
+		{"empty upstream", []string{"linux"}, ""},
+		{"invalid target", []string{"LINUX"}, request.Upstream},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			err := gqlClient.Post(`mutation($token: String!, $input: CreateBuilderInput!, $csr: String!) {
-				exchangeBuilderEnrollmentToken(token: $token, input: $input, csr: $csr) { builderID }
-			}`, &rejected, client.Var("token", token), client.Var("input", tc.input), client.Var("csr", csr))
-			require.ErrorContains(t, err, tc.want)
-			count, err := graph.Builder.Query().Count(ctx)
-			require.NoError(t, err)
-			require.Zero(t, count)
+			invalid := request
+			invalid.SupportedTargets = tc.targets
+			invalid.Upstream = tc.upstream
+			status, _ := postBuilderEnrollment(t, upstream, invalid)
+			require.Equal(t, http.StatusBadRequest, status)
 		})
 	}
-
-	// The token must still be usable: every exchange above failed validation
-	// before consuming it.
-	var exchangeResp struct {
-		ExchangeBuilderEnrollmentToken struct {
-			BuilderID string
-			MtlsCert  string
-		}
-	}
-	err = gqlClient.Post(`mutation exchange($token: String!, $input: CreateBuilderInput!, $csr: String!) {
-		exchangeBuilderEnrollmentToken(token: $token, input: $input, csr: $csr) {
-			builderID
-			mtlsCert
-		}
-	}`, &exchangeResp, client.Var("csr", csr), client.Var("token", token), client.Var("input", map[string]any{
-		"supportedTargets": []string{"PLATFORM_LINUX", "PLATFORM_MACOS"},
-		"upstream":         "https://tavern.example.com:443",
-		"pollInterval":     30,
-	}))
-	require.NoError(t, err)
-	require.NotEmpty(t, exchangeResp.ExchangeBuilderEnrollmentToken.BuilderID)
-	require.NotEmpty(t, exchangeResp.ExchangeBuilderEnrollmentToken.MtlsCert)
-	assert.NotContains(t, exchangeResp.ExchangeBuilderEnrollmentToken.MtlsCert, "PRIVATE KEY")
-
-	// Replaying the same token (even with the same CSR) must now fail, and
-	// must not create a second builder.
-	err = gqlClient.Post(`mutation($token: String!, $input: CreateBuilderInput!, $csr: String!) {
-		exchangeBuilderEnrollmentToken(token: $token, input: $input, csr: $csr) { builderID }
-	}`, &rejected, client.Var("token", token), client.Var("csr", csr), client.Var("input", map[string]any{"supportedTargets": []string{"PLATFORM_LINUX"}}))
-	require.ErrorContains(t, err, "invalid or used")
+	invalidPoll := request
+	invalidPoll.PollInterval = builder.MaxPollInterval + 1
+	statusCode, _ = postBuilderEnrollment(t, upstream, invalidPoll)
+	require.Equal(t, http.StatusBadRequest, statusCode)
+	invalidExecutor := request
+	invalidExecutor.Executor = "unsupported"
+	statusCode, _ = postBuilderEnrollment(t, upstream, invalidExecutor)
+	require.Equal(t, http.StatusBadRequest, statusCode)
+	request.SupportedTargets = []string{"linux", "macos"}
+	statusCode, body := postBuilderEnrollment(t, upstream, request)
+	require.Equal(t, http.StatusOK, statusCode, body)
+	var exchangeResp tavernhttp.BuilderEnrollResponse
+	require.NoError(t, json.Unmarshal([]byte(body), &exchangeResp))
+	require.NotEmpty(t, exchangeResp.BuilderID)
+	require.NotEmpty(t, exchangeResp.MTLSCert)
+	assert.NotContains(t, exchangeResp.MTLSCert, "PRIVATE KEY")
+	statusCode, _ = postBuilderEnrollment(t, upstream, request)
+	require.Equal(t, http.StatusUnauthorized, statusCode)
 	count, err = graph.Builder.Query().Count(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 
 	// 5. Build a usable Config/credentials from the exchange response.
-	builderID := exchangeResp.ExchangeBuilderEnrollmentToken.BuilderID
-	cfg := saveIdentityAndConfig(t, builderID, exchangeResp.ExchangeBuilderEnrollmentToken.MtlsCert, keyPEM, upstream, "linux", "macos")
+	builderID := exchangeResp.BuilderID
+	cfg := saveIdentityAndConfig(t, builderID, exchangeResp.MTLSCert, keyPEM, upstream, "linux", "macos")
 	assert.Contains(t, cfg.SupportedTargets, "linux")
 
 	// 6. Verify builder exists in DB
@@ -451,11 +429,11 @@ func TestBuilderE2E(t *testing.T) {
 	})
 }
 
-// TestExchangeBuilderEnrollmentToken_ConcurrentRedemption verifies that when
+// TestBuilderEnrollmentREST_ConcurrentRedemption verifies that when
 // many requests race to redeem the same one-time token, exactly one succeeds
 // and exactly one builder is created, regardless of how the requests
 // interleave.
-func TestExchangeBuilderEnrollmentToken_ConcurrentRedemption(t *testing.T) {
+func TestBuilderEnrollmentREST_ConcurrentRedemption(t *testing.T) {
 	ctx := context.Background()
 
 	graph := enttest.OpenTempDB(t)
@@ -466,7 +444,7 @@ func TestExchangeBuilderEnrollmentToken_ConcurrentRedemption(t *testing.T) {
 	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 
-	gqlClient, _ := newTestBuilderServer(t, graph, caCert, caPrivKey)
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 	token := createTestEnrollmentToken(t, gqlClient)
 
 	// Each goroutine needs its own CSR/key; testify's require must only run
@@ -498,18 +476,16 @@ func TestExchangeBuilderEnrollmentToken_ConcurrentRedemption(t *testing.T) {
 			if !assert.NoError(t, err) {
 				return
 			}
-			var resp struct {
-				ExchangeBuilderEnrollmentToken struct{ BuilderID string }
-			}
-			err = gqlClient.Post(`mutation($token: String!, $input: CreateBuilderInput!, $csr: String!) {
-				exchangeBuilderEnrollmentToken(token: $token, input: $input, csr: $csr) { builderID }
-			}`, &resp, client.Var("token", token), client.Var("csr", csr), client.Var("input", map[string]any{"supportedTargets": []string{"PLATFORM_LINUX"}}))
-			if err == nil {
-				assert.NotEmpty(t, resp.ExchangeBuilderEnrollmentToken.BuilderID)
+			statusCode, body := postBuilderEnrollment(t, upstream, tavernhttp.BuilderEnrollRequest{Token: token, CSR: csr, SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com", PollInterval: 5, Executor: "local"})
+			if statusCode == http.StatusOK {
+				var resp tavernhttp.BuilderEnrollResponse
+				if assert.NoError(t, json.Unmarshal([]byte(body), &resp)) {
+					assert.NotEmpty(t, resp.BuilderID)
+				}
 				successes.Add(1)
 				return
 			}
-			if assert.ErrorContains(t, err, "invalid or used") {
+			if assert.Equal(t, http.StatusUnauthorized, statusCode, body) {
 				failures.Add(1)
 			}
 		}()
@@ -521,4 +497,16 @@ func TestExchangeBuilderEnrollmentToken_ConcurrentRedemption(t *testing.T) {
 	count, err := graph.Builder.Query().Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, count)
+}
+
+func postBuilderEnrollment(t *testing.T, upstream string, req tavernhttp.BuilderEnrollRequest) (int, string) {
+	t.Helper()
+	payload, err := json.Marshal(req)
+	require.NoError(t, err)
+	resp, err := http.Post(upstream+"/auth/builder/enroll", "application/json", bytes.NewReader(payload))
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	return resp.StatusCode, string(body)
 }

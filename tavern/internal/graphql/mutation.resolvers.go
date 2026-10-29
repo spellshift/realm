@@ -27,7 +27,6 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/operatornote"
@@ -530,70 +529,6 @@ func (r *mutationResolver) CreateBuilderEnrollmentToken(ctx context.Context) (st
 	hash := sha256.Sum256([]byte(token))
 	_, err := r.client.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
 	return token, err
-}
-
-// ExchangeBuilderEnrollmentToken is the resolver for the exchangeBuilderEnrollmentToken field.
-func (r *mutationResolver) ExchangeBuilderEnrollmentToken(ctx context.Context, token string, input ent.CreateBuilderInput, csr string) (*models.ExchangeBuilderEnrollmentTokenOutput, error) {
-	tokenHashBytes := sha256.Sum256([]byte(token))
-	tokenHash := hex.EncodeToString(tokenHashBytes[:])
-
-	// Fail fast on an obviously invalid/used token before doing any CSR/CA
-	// work. The actual consumption guard is the atomic update below.
-	validToken, err := r.client.BuilderEnrollmentToken.Query().
-		Where(builderenrollmenttoken.TokenHash(tokenHash), builderenrollmenttoken.Used(false)).
-		Exist(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !validToken {
-		return nil, fmt.Errorf("invalid or used builder enrollment token")
-	}
-
-	if input.PollInterval != nil && (*input.PollInterval < 1 || *input.PollInterval > builder.MaxPollInterval) {
-		return nil, fmt.Errorf("poll_interval value out of range")
-	}
-	identifier := uuid.NewString()
-	certPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, identifier, csr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
-	}
-	targetNames := make([]string, len(input.SupportedTargets))
-	for i, t := range input.SupportedTargets {
-		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
-	}
-	cfg := builder.Config{PollInterval: builder.DefaultPollInterval, SupportedTargets: targetNames, IdentityFile: "builder.identity", Upstream: "http://127.0.0.1:8000", Executor: "docker"}
-	if input.PollInterval != nil {
-		cfg.PollInterval = *input.PollInterval
-	}
-	if input.Upstream != nil {
-		cfg.Upstream = *input.Upstream
-	}
-	if input.Executor != nil {
-		cfg.Executor = string(*input.Executor)
-	}
-	if err := cfg.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid builder config: %w", err)
-	}
-
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-	n, err := tx.BuilderEnrollmentToken.Update().Where(builderenrollmenttoken.TokenHash(tokenHash), builderenrollmenttoken.Used(false)).SetUsed(true).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if n != 1 {
-		return nil, fmt.Errorf("invalid or used builder enrollment token")
-	}
-	if _, err := tx.Builder.Create().SetInput(input).SetIdentifier(identifier).Save(ctx); err != nil {
-		return nil, fmt.Errorf("failed to create builder: %w", err)
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-	return &models.ExchangeBuilderEnrollmentTokenOutput{BuilderID: identifier, MtlsCert: string(certPEM)}, nil
 }
 
 // DeleteBuilder is the resolver for the deleteBuilder field.

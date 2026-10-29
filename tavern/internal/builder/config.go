@@ -107,7 +107,7 @@ func (cfg *Config) validate() error {
 }
 
 // Validate exposes validate for callers outside this package, such as the
-// GraphQL resolver that validates builder-supplied settings before
+// enrollment handler that validates builder-supplied settings before
 // consuming an enrollment token.
 func (cfg *Config) Validate() error { return cfg.validate() }
 

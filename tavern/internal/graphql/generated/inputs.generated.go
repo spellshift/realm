@@ -598,64 +598,6 @@ func (ec *executionContext) fieldContext_BuildTomeSnapshot_params(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _ExchangeBuilderEnrollmentTokenOutput_builderID(ctx context.Context, field graphql.CollectedField, obj *models.ExchangeBuilderEnrollmentTokenOutput) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ExchangeBuilderEnrollmentTokenOutput_builderID,
-		func(ctx context.Context) (any, error) {
-			return obj.BuilderID, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ExchangeBuilderEnrollmentTokenOutput_builderID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ExchangeBuilderEnrollmentTokenOutput",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ExchangeBuilderEnrollmentTokenOutput_mtlsCert(ctx context.Context, field graphql.CollectedField, obj *models.ExchangeBuilderEnrollmentTokenOutput) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ExchangeBuilderEnrollmentTokenOutput_mtlsCert,
-		func(ctx context.Context) (any, error) {
-			return obj.MtlsCert, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ExchangeBuilderEnrollmentTokenOutput_mtlsCert(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ExchangeBuilderEnrollmentTokenOutput",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -1448,50 +1390,6 @@ func (ec *executionContext) _BuildTomeSnapshot(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var exchangeBuilderEnrollmentTokenOutputImplementors = []string{"ExchangeBuilderEnrollmentTokenOutput"}
-
-func (ec *executionContext) _ExchangeBuilderEnrollmentTokenOutput(ctx context.Context, sel ast.SelectionSet, obj *models.ExchangeBuilderEnrollmentTokenOutput) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, exchangeBuilderEnrollmentTokenOutputImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ExchangeBuilderEnrollmentTokenOutput")
-		case "builderID":
-			out.Values[i] = ec._ExchangeBuilderEnrollmentTokenOutput_builderID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "mtlsCert":
-			out.Values[i] = ec._ExchangeBuilderEnrollmentTokenOutput_mtlsCert(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
@@ -1558,20 +1456,6 @@ func (ec *executionContext) unmarshalNCreateBuildProfileInput2realmᚗpubᚋtave
 func (ec *executionContext) unmarshalNCreateBuildTaskInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildTaskInput(ctx context.Context, v any) (models.CreateBuildTaskInput, error) {
 	res, err := ec.unmarshalInputCreateBuildTaskInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNExchangeBuilderEnrollmentTokenOutput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐExchangeBuilderEnrollmentTokenOutput(ctx context.Context, sel ast.SelectionSet, v models.ExchangeBuilderEnrollmentTokenOutput) graphql.Marshaler {
-	return ec._ExchangeBuilderEnrollmentTokenOutput(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNExchangeBuilderEnrollmentTokenOutput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐExchangeBuilderEnrollmentTokenOutput(ctx context.Context, sel ast.SelectionSet, v *models.ExchangeBuilderEnrollmentTokenOutput) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ExchangeBuilderEnrollmentTokenOutput(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUpdateBuildProfileInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐUpdateBuildProfileInput(ctx context.Context, v any) (models.UpdateBuildProfileInput, error) {

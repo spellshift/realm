@@ -120,7 +120,7 @@ func SaveIdentity(path string, identity *Identity) error {
 
 // EnsureIdentity returns the builder's identity, loading it from disk if
 // present. If absent, it generates a local key/CSR, exchanges a one-time
-// enrollment token for a CA-signed certificate via GraphQL, persists the
+// enrollment token for a CA-signed certificate via REST, persists the
 // resulting identity, and returns it.
 func EnsureIdentity(ctx context.Context, cfg *Config) (*Identity, error) {
 	identity, err := LoadIdentity(cfg.IdentityFile)
@@ -193,106 +193,53 @@ func ensureIdentityDirWritable(path string) error {
 	return nil
 }
 
-// enrollmentExchangeRequest is the GraphQL request body sent to exchange a
-// one-time enrollment token for a signed builder certificate.
+// enrollmentExchangeRequest is the REST request body for one-time enrollment.
 type enrollmentExchangeRequest struct {
-	Query     string                        `json:"query"`
-	Variables enrollmentExchangeRequestVars `json:"variables"`
-}
-
-type enrollmentExchangeRequestVars struct {
-	Token string                     `json:"token"`
-	CSR   string                     `json:"csr"`
-	Input enrollmentExchangeInputVar `json:"input"`
-}
-
-type enrollmentExchangeInputVar struct {
-	SupportedTargets []string `json:"supportedTargets"`
+	Token            string   `json:"token"`
+	CSR              string   `json:"csr"`
+	SupportedTargets []string `json:"supported_targets"`
 	Upstream         string   `json:"upstream"`
-	PollInterval     int      `json:"pollInterval"`
+	PollInterval     int      `json:"poll_interval"`
 	Executor         string   `json:"executor"`
 }
 
 type enrollmentExchangeResponse struct {
-	Data struct {
-		Exchange struct {
-			BuilderID string `json:"builderID"`
-			MtlsCert  string `json:"mtlsCert"`
-		} `json:"exchangeBuilderEnrollmentToken"`
-	} `json:"data"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors"`
+	BuilderID string `json:"builder_id"`
+	MtlsCert  string `json:"mtls_cert"`
 }
 
-const enrollmentExchangeMutation = `mutation($token: String!, $input: CreateBuilderInput!, $csr: String!) {
-	exchangeBuilderEnrollmentToken(token: $token, input: $input, csr: $csr) { builderID mtlsCert }
-}`
-
-// exchangeEnrollmentToken calls the exchangeBuilderEnrollmentToken GraphQL
-// mutation at cfg.Upstream, redeeming the one-time token for a builder ID and
-// CA-signed certificate.
+// exchangeEnrollmentToken redeems the one-time token through Tavern's REST API.
 func exchangeEnrollmentToken(ctx context.Context, cfg *Config, token, csrPEM string) (builderID, certPEM string, err error) {
-	targets := make([]string, len(cfg.SupportedTargets))
-	for i, target := range cfg.SupportedTargets {
-		targets[i] = "PLATFORM_" + strings.ToUpper(target)
-	}
-
 	body, err := json.Marshal(enrollmentExchangeRequest{
-		Query: enrollmentExchangeMutation,
-		Variables: enrollmentExchangeRequestVars{
-			Token: token,
-			CSR:   csrPEM,
-			Input: enrollmentExchangeInputVar{
-				SupportedTargets: targets,
-				Upstream:         cfg.Upstream,
-				PollInterval:     cfg.PollInterval,
-				Executor:         cfg.Executor,
-			},
-		},
+		Token: token, CSR: csrPEM, SupportedTargets: cfg.SupportedTargets,
+		Upstream: cfg.Upstream, PollInterval: cfg.PollInterval, Executor: cfg.Executor,
 	})
 	if err != nil {
 		return "", "", err
 	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(cfg.Upstream, "/")+"/graphql", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(cfg.Upstream, "/")+"/auth/builder/enroll", bytes.NewReader(body))
 	if err != nil {
 		return "", "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-
 	resp, err := HTTPClient.Do(req)
 	if err != nil {
 		return "", "", fmt.Errorf("builder enrollment exchange failed before a response was received, the token may or may not have been consumed: %w", err)
 	}
 	defer resp.Body.Close()
-
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to read enrollment response, the token may or may not have been consumed: %w", err)
 	}
-
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("builder enrollment exchange failed with HTTP status %d", resp.StatusCode)
 	}
-
 	var result enrollmentExchangeResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return "", "", fmt.Errorf("invalid enrollment response, the token may or may not have been consumed: %w", err)
 	}
-	if len(result.Errors) > 0 {
-		return "", "", fmt.Errorf("builder enrollment exchange rejected: %s", truncate(result.Errors[0].Message, 200))
-	}
-	if result.Data.Exchange.BuilderID == "" || result.Data.Exchange.MtlsCert == "" {
+	if result.BuilderID == "" || result.MtlsCert == "" {
 		return "", "", fmt.Errorf("builder enrollment exchange returned an incomplete response, the token may or may not have been consumed")
 	}
-
-	return result.Data.Exchange.BuilderID, result.Data.Exchange.MtlsCert, nil
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "..."
+	return result.BuilderID, result.MtlsCert, nil
 }

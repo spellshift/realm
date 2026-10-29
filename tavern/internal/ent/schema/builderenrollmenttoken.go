@@ -19,7 +19,7 @@ func (BuilderEnrollmentToken) Fields() []ent.Field {
 
 // Annotations describes additional information for the ent. The entire type
 // is skipped from the GraphQL schema: tokens are redeemed through the
-// dedicated exchangeBuilderEnrollmentToken mutation, not through node/nodes.
+// dedicated builder enrollment REST endpoint, not through node/nodes.
 func (BuilderEnrollmentToken) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.Skip(entgql.SkipType),
