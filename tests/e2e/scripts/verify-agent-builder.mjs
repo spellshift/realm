@@ -67,28 +67,21 @@ async function main() {
     }
 
     // ---------- Step 1: Enroll Builder ----------
-    console.log('[1] Registering builder via GraphQL...');
+    console.log('[1] Issuing a builder enrollment token via GraphQL...');
     enrollmentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-builder-'));
-    const tavernCli = process.env.TAVERN_BIN || '/tmp/tavern_bin';
-    child_process.execFileSync(tavernCli, ['builder', 'generate-csr', '--output-dir', enrollmentDir], { cwd: repoRoot });
-    const csr = fs.readFileSync(path.join(enrollmentDir, 'builder.csr'), 'utf8');
+    const tokenData = await graphql(apiCtx, `mutation { createBuilderEnrollmentToken }`);
+    const enrollmentToken = tokenData.createBuilderEnrollmentToken;
 
-    const registerData = await graphql(
-      apiCtx,
-      `mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
-        registerBuilder(input: $input, csr: $csr) {
-          builder { id }
-          config
-        }
-      }`,
-      { csr, input: { supportedTargets: ['PLATFORM_LINUX'], upstream: baseURL } }
-    );
-    const builderId = registerData.registerBuilder.builder.id;
-    const configYaml = registerData.registerBuilder.config;
-    console.log(`    Registered builder ${builderId}`);
-
+    // The builder generates its own key/CSR and self-enrolls on startup; we
+    // only need to give it a config and the one-time token.
     configPath = path.join(enrollmentDir, 'builder.yaml');
-    fs.writeFileSync(configPath, configYaml);
+    fs.writeFileSync(configPath, [
+      'supported_targets: [linux]',
+      'identity_file: builder.identity',
+      `upstream: ${baseURL}`,
+      'executor: local',
+      '',
+    ].join('\n'));
 
     console.log('    Starting local builder daemon...');
     // Use the prebuilt binary (not `go run`) so the spawned process IS the
@@ -98,10 +91,26 @@ async function main() {
     builderProcess = child_process.spawn(
       tavernBin,
       ['builder', '--config', configPath, '--executor', 'local'],
-      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MYSQL_ADDR: '' } }
+      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MYSQL_ADDR: '', REALM_BUILDER_ENROLLMENT_TOKEN: enrollmentToken } }
     );
     builderProcess.stdout.on('data', (d) => console.log(`[builder] ${d.toString().trim()}`));
     builderProcess.stderr.on('data', (d) => console.log(`[builder] ${d.toString().trim()}`));
+
+    console.log('    Waiting for builder to self-enroll...');
+    const identityPath = path.join(enrollmentDir, 'builder.identity');
+    let builderId = null;
+    for (let i = 0; i < 60; i++) {
+      if (fs.existsSync(identityPath)) {
+        const match = fs.readFileSync(identityPath, 'utf8').match(/^id:\s*(.+)$/m);
+        if (match) {
+          builderId = match[1].trim();
+          break;
+        }
+      }
+      await sleep(1000);
+    }
+    if (!builderId) throw new Error('Builder never enrolled (no identity file written)');
+    console.log(`    Builder enrolled with ID ${builderId}`);
 
     console.log('    Waiting for builder to check in...');
     let checkedIn = false;

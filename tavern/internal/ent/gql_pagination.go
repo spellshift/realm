@@ -20,6 +20,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
@@ -2808,6 +2809,255 @@ func (b *Builder) ToEdge(order *BuilderOrder) *BuilderEdge {
 	return &BuilderEdge{
 		Node:   b,
 		Cursor: order.Field.toCursor(b),
+	}
+}
+
+// BuilderEnrollmentTokenEdge is the edge representation of BuilderEnrollmentToken.
+type BuilderEnrollmentTokenEdge struct {
+	Node   *BuilderEnrollmentToken `json:"node"`
+	Cursor Cursor                  `json:"cursor"`
+}
+
+// BuilderEnrollmentTokenConnection is the connection containing edges to BuilderEnrollmentToken.
+type BuilderEnrollmentTokenConnection struct {
+	Edges      []*BuilderEnrollmentTokenEdge `json:"edges"`
+	PageInfo   PageInfo                      `json:"pageInfo"`
+	TotalCount int                           `json:"totalCount"`
+}
+
+func (c *BuilderEnrollmentTokenConnection) build(nodes []*BuilderEnrollmentToken, pager *builderenrollmenttokenPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *BuilderEnrollmentToken
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *BuilderEnrollmentToken {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *BuilderEnrollmentToken {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*BuilderEnrollmentTokenEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &BuilderEnrollmentTokenEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// BuilderEnrollmentTokenPaginateOption enables pagination customization.
+type BuilderEnrollmentTokenPaginateOption func(*builderenrollmenttokenPager) error
+
+// WithBuilderEnrollmentTokenOrder configures pagination ordering.
+func WithBuilderEnrollmentTokenOrder(order *BuilderEnrollmentTokenOrder) BuilderEnrollmentTokenPaginateOption {
+	if order == nil {
+		order = DefaultBuilderEnrollmentTokenOrder
+	}
+	o := *order
+	return func(pager *builderenrollmenttokenPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultBuilderEnrollmentTokenOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithBuilderEnrollmentTokenFilter configures pagination filter.
+func WithBuilderEnrollmentTokenFilter(filter func(*BuilderEnrollmentTokenQuery) (*BuilderEnrollmentTokenQuery, error)) BuilderEnrollmentTokenPaginateOption {
+	return func(pager *builderenrollmenttokenPager) error {
+		if filter == nil {
+			return errors.New("BuilderEnrollmentTokenQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type builderenrollmenttokenPager struct {
+	reverse bool
+	order   *BuilderEnrollmentTokenOrder
+	filter  func(*BuilderEnrollmentTokenQuery) (*BuilderEnrollmentTokenQuery, error)
+}
+
+func newBuilderEnrollmentTokenPager(opts []BuilderEnrollmentTokenPaginateOption, reverse bool) (*builderenrollmenttokenPager, error) {
+	pager := &builderenrollmenttokenPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultBuilderEnrollmentTokenOrder
+	}
+	return pager, nil
+}
+
+func (p *builderenrollmenttokenPager) applyFilter(query *BuilderEnrollmentTokenQuery) (*BuilderEnrollmentTokenQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *builderenrollmenttokenPager) toCursor(bet *BuilderEnrollmentToken) Cursor {
+	return p.order.Field.toCursor(bet)
+}
+
+func (p *builderenrollmenttokenPager) applyCursors(query *BuilderEnrollmentTokenQuery, after, before *Cursor) (*BuilderEnrollmentTokenQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultBuilderEnrollmentTokenOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *builderenrollmenttokenPager) applyOrder(query *BuilderEnrollmentTokenQuery) *BuilderEnrollmentTokenQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultBuilderEnrollmentTokenOrder.Field {
+		query = query.Order(DefaultBuilderEnrollmentTokenOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *builderenrollmenttokenPager) orderExpr(query *BuilderEnrollmentTokenQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultBuilderEnrollmentTokenOrder.Field {
+			b.Comma().Ident(DefaultBuilderEnrollmentTokenOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to BuilderEnrollmentToken.
+func (bet *BuilderEnrollmentTokenQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...BuilderEnrollmentTokenPaginateOption,
+) (*BuilderEnrollmentTokenConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newBuilderEnrollmentTokenPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if bet, err = pager.applyFilter(bet); err != nil {
+		return nil, err
+	}
+	conn := &BuilderEnrollmentTokenConnection{Edges: []*BuilderEnrollmentTokenEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := bet.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if bet, err = pager.applyCursors(bet, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		bet.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := bet.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	bet = pager.applyOrder(bet)
+	nodes, err := bet.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// BuilderEnrollmentTokenOrderField defines the ordering field of BuilderEnrollmentToken.
+type BuilderEnrollmentTokenOrderField struct {
+	// Value extracts the ordering value from the given BuilderEnrollmentToken.
+	Value    func(*BuilderEnrollmentToken) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) builderenrollmenttoken.OrderOption
+	toCursor func(*BuilderEnrollmentToken) Cursor
+}
+
+// BuilderEnrollmentTokenOrder defines the ordering of BuilderEnrollmentToken.
+type BuilderEnrollmentTokenOrder struct {
+	Direction OrderDirection                    `json:"direction"`
+	Field     *BuilderEnrollmentTokenOrderField `json:"field"`
+}
+
+// DefaultBuilderEnrollmentTokenOrder is the default ordering of BuilderEnrollmentToken.
+var DefaultBuilderEnrollmentTokenOrder = &BuilderEnrollmentTokenOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &BuilderEnrollmentTokenOrderField{
+		Value: func(bet *BuilderEnrollmentToken) (ent.Value, error) {
+			return bet.ID, nil
+		},
+		column: builderenrollmenttoken.FieldID,
+		toTerm: builderenrollmenttoken.ByID,
+		toCursor: func(bet *BuilderEnrollmentToken) Cursor {
+			return Cursor{ID: bet.ID}
+		},
+	},
+}
+
+// ToEdge converts BuilderEnrollmentToken into BuilderEnrollmentTokenEdge.
+func (bet *BuilderEnrollmentToken) ToEdge(order *BuilderEnrollmentTokenOrder) *BuilderEnrollmentTokenEdge {
+	if order == nil {
+		order = DefaultBuilderEnrollmentTokenOrder
+	}
+	return &BuilderEnrollmentTokenEdge{
+		Node:   bet,
+		Cursor: order.Field.toCursor(bet),
 	}
 }
 

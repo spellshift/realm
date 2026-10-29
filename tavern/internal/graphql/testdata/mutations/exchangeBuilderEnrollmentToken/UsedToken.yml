@@ -1,0 +1,19 @@
+state: |
+  INSERT INTO `builder_enrollment_tokens` (id, token_hash, used)
+    VALUES (1, "25b38324b52c8698ab1bb604df111ba9f9818e18d44eaab899176c2b336cdad4", true);
+query: |
+  mutation Exchange($token: String!, $input: CreateBuilderInput!, $csr: String!) {
+    exchangeBuilderEnrollmentToken(token: $token, input: $input, csr: $csr) { builderID }
+  }
+variables:
+  token: test-exchange-token-used
+  csr: |
+    -----BEGIN CERTIFICATE REQUEST-----
+    MIGOMEICAQAwDzENMAsGA1UEAwwEdGVzdDAqMAUGAytlcAMhAOnTZViCdL6wNFAb
+    WndDa8ZV8htCJyk7rYXqz9u8T6mNoAAwBQYDK2VwA0EAOKBS3ItSXkf57+nxT5lY
+    gIf1/YBiTay/H2xPAt3XtGCrfzwxn+p3HijJTdxj3MWaBZ3hNiPRwaylcdCwBg0/
+    Bg==
+    -----END CERTIFICATE REQUEST-----
+  input:
+    supportedTargets: [PLATFORM_LINUX]
+expected_error: "invalid or used"

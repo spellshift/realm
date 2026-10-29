@@ -23,6 +23,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/cli"
+	"github.com/vektah/gqlparser/v2/ast"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -156,17 +157,6 @@ func newApp(ctx context.Context) (app *cli.App) {
 		{
 			Name:  "builder",
 			Usage: "Run a builder that compiles agents for target platforms",
-			Subcommands: []cli.Command{{
-				Name:  "generate-csr",
-				Usage: "Generate a builder key and CSR locally",
-				Flags: []cli.Flag{cli.StringFlag{Name: "output-dir", Usage: "Existing directory for builder.key and builder.csr"}},
-				Action: func(c *cli.Context) error {
-					if c.String("output-dir") == "" {
-						return fmt.Errorf("--output-dir flag is required")
-					}
-					return builder.GenerateCSR(c.String("output-dir"))
-				},
-			}},
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "config",
@@ -500,8 +490,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          gqlHandler,
-			AllowUnactivated: true,
+			Handler:              gqlHandler,
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
 			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
@@ -634,6 +625,17 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 	// GraphQL Logging
 	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
+		if !auth.IsAuthenticatedContext(ctx) {
+			oc := gqlgraphql.GetOperationContext(ctx)
+			allowed := oc.Operation != nil && oc.Operation.Operation == "mutation" && len(oc.Operation.SelectionSet) == 1
+			if allowed {
+				field, ok := oc.Operation.SelectionSet[0].(*ast.Field)
+				allowed = ok && field.Name == "exchangeBuilderEnrollmentToken"
+			}
+			if !allowed {
+				return gqlgraphql.OneShot(gqlgraphql.ErrorResponse(ctx, "permission denied: unauthenticated"))
+			}
+		}
 		// Authentication Information
 		var (
 			authID          = "unknown"

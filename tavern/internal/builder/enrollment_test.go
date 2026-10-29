@@ -1,19 +1,106 @@
 package builder_test
 
 import (
-	"os"
+	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
+	"github.com/99designs/gqlgen/client"
+	"github.com/99designs/gqlgen/graphql/handler"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
+
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/graphql"
+	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/tomes"
 )
 
-func testEnrollment(t *testing.T) (string, string) {
+// newTestBuilderServer boots a Tavern GraphQL server (authentication bypassed,
+// so the caller is treated as an admin) with the given Builder CA, listening
+// on a real loopback address so builders can perform a genuine HTTP token
+// exchange against it.
+func newTestBuilderServer(t *testing.T, graph *ent.Client, caCert *x509.Certificate, caKey ed25519.PrivateKey) (*client.Client, string) {
 	t.Helper()
-	dir := t.TempDir()
-	require.NoError(t, builder.GenerateCSR(dir))
-	csr, err := os.ReadFile(filepath.Join(dir, "builder.csr"))
+	git := tomes.NewGitImporter(graph)
+	srv := tavernhttp.NewServer(
+		tavernhttp.RouteMap{
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey))),
+		},
+		tavernhttp.WithAuthenticationBypass(graph),
+	)
+	httpSrv := httptest.NewServer(srv)
+	t.Cleanup(httpSrv.Close)
+	return client.New(srv, client.Path("/graphql")), httpSrv.URL
+}
+
+// enrollTestBuilder issues a one-time enrollment token via GraphQL as an
+// admin, then exchanges it for a builder identity exactly as a real builder
+// would (REALM_BUILDER_ENROLLMENT_TOKEN + EnsureIdentity), returning a ready
+// to use Config pointed at upstream.
+func enrollTestBuilder(t *testing.T, ctx context.Context, gqlClient *client.Client, upstream string, supportedTargets ...string) *builder.Config {
+	t.Helper()
+
+	var tokenResp struct{ CreateBuilderEnrollmentToken string }
+	require.NoError(t, gqlClient.Post(`mutation { createBuilderEnrollmentToken }`, &tokenResp))
+	require.NotEmpty(t, tokenResp.CreateBuilderEnrollmentToken)
+
+	cfg := &builder.Config{
+		PollInterval:     builder.DefaultPollInterval,
+		SupportedTargets: supportedTargets,
+		IdentityFile:     filepath.Join(t.TempDir(), "builder.identity"),
+		Upstream:         upstream,
+		Executor:         "local",
+	}
+	t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", tokenResp.CreateBuilderEnrollmentToken)
+	_, err := builder.EnsureIdentity(ctx, cfg)
 	require.NoError(t, err)
-	return string(csr), filepath.Join(dir, "builder.key")
+	return cfg
+}
+
+// createTestEnrollmentToken issues a one-time enrollment token via GraphQL,
+// for tests that need to drive exchangeBuilderEnrollmentToken directly.
+func createTestEnrollmentToken(t *testing.T, gqlClient *client.Client) string {
+	t.Helper()
+	var resp struct{ CreateBuilderEnrollmentToken string }
+	require.NoError(t, gqlClient.Post(`mutation { createBuilderEnrollmentToken }`, &resp))
+	require.NotEmpty(t, resp.CreateBuilderEnrollmentToken)
+	return resp.CreateBuilderEnrollmentToken
+}
+
+// saveIdentityAndConfig persists an Identity assembled from the pieces
+// returned by a raw exchangeBuilderEnrollmentToken call (builder ID,
+// certificate, and the private key matching the CSR that was submitted),
+// returning a Config ready for NewCredentialsFromConfig.
+func saveIdentityAndConfig(t *testing.T, builderID, certPEM, keyPEM, upstream string, supportedTargets ...string) *builder.Config {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "builder.identity")
+	require.NoError(t, builder.SaveIdentity(path, &builder.Identity{ID: builderID, Certificate: certPEM, PrivateKey: keyPEM}))
+	return &builder.Config{
+		PollInterval:     builder.DefaultPollInterval,
+		SupportedTargets: supportedTargets,
+		IdentityFile:     path,
+		Upstream:         upstream,
+		Executor:         "local",
+	}
+}
+
+// generateTestCSR creates a fresh Ed25519 key and PEM-encoded CSR for tests
+// driving exchangeBuilderEnrollmentToken directly at the GraphQL layer.
+func generateTestCSR(t *testing.T) (csrPEM string, keyPEM string) {
+	t.Helper()
+	_, key, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	csrDER, err := x509.CreateCertificateRequest(rand.Reader, &x509.CertificateRequest{}, key)
+	require.NoError(t, err)
+	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
+	require.NoError(t, err)
+	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDER})),
+		string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER}))
 }

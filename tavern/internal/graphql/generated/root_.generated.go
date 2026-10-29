@@ -261,6 +261,12 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BuilderEnrollmentToken struct {
+		ID        func(childComplexity int) int
+		TokenHash func(childComplexity int) int
+		Used      func(childComplexity int) int
+	}
+
 	DeviceAuth struct {
 		CreatedAt      func(childComplexity int) int
 		ExpiresAt      func(childComplexity int) int
@@ -304,6 +310,11 @@ type ComplexityRoot struct {
 	EventEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	ExchangeBuilderEnrollmentTokenOutput struct {
+		BuilderID func(childComplexity int) int
+		MtlsCert  func(childComplexity int) int
 	}
 
 	Host struct {
@@ -452,50 +463,51 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ClosePortal                 func(childComplexity int, portalID int) int
-		CreateBuildProfile          func(childComplexity int, input models.CreateBuildProfileInput) int
-		CreateBuildTask             func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateCredential            func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink                  func(childComplexity int, input ent.CreateLinkInput) int
-		CreateNetwork               func(childComplexity int, input ent.CreateNetworkInput) int
-		CreateNetworkHost           func(childComplexity int, input ent.CreateNetworkHostInput) int
-		CreateOperatorNote          func(childComplexity int, input ent.CreateOperatorNoteInput) int
-		CreateQuest                 func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
-		CreateRepository            func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateScheduledTask         func(childComplexity int, input ent.CreateScheduledTaskInput) int
-		CreateShell                 func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag                   func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome                  func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteAllNotifications      func(childComplexity int) int
-		DeleteAsset                 func(childComplexity int, assetID int) int
-		DeleteBuildProfile          func(childComplexity int, profileID int) int
-		DeleteBuilder               func(childComplexity int, builderID int) int
-		DeleteNetwork               func(childComplexity int, networkID int) int
-		DeleteNetworkHost           func(childComplexity int, networkHostID int) int
-		DeleteOperatorNote          func(childComplexity int, operatorNoteID int) int
-		DeleteTome                  func(childComplexity int, tomeID int) int
-		DisableLink                 func(childComplexity int, linkID int) int
-		DisableScheduledTask        func(childComplexity int, scheduledTaskID int) int
-		DropAllData                 func(childComplexity int) int
-		FavoriteHost                func(childComplexity int, hostID int) int
-		ImportRepository            func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		MarkNotificationsAsArchived func(childComplexity int, notificationIDs []int) int
-		MarkNotificationsAsRead     func(childComplexity int, notificationIDs []int) int
-		RegisterBuilder             func(childComplexity int, input ent.CreateBuilderInput, csr string) int
-		ResetUserAPIKey             func(childComplexity int) int
-		SubscribeToHost             func(childComplexity int, hostID int) int
-		UnfavoriteHost              func(childComplexity int, hostID int) int
-		UnsubscribeFromHost         func(childComplexity int, hostID int) int
-		UpdateBeacon                func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateBuildProfile          func(childComplexity int, profileID int, input models.UpdateBuildProfileInput) int
-		UpdateHost                  func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink                  func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateNetwork               func(childComplexity int, networkID int, input ent.UpdateNetworkInput) int
-		UpdateNetworkHost           func(childComplexity int, networkHostID int, input ent.UpdateNetworkHostInput) int
-		UpdateOperatorNote          func(childComplexity int, operatorNoteID int, input ent.UpdateOperatorNoteInput) int
-		UpdateTag                   func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome                  func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser                  func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		ClosePortal                    func(childComplexity int, portalID int) int
+		CreateBuildProfile             func(childComplexity int, input models.CreateBuildProfileInput) int
+		CreateBuildTask                func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateBuilderEnrollmentToken   func(childComplexity int) int
+		CreateCredential               func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink                     func(childComplexity int, input ent.CreateLinkInput) int
+		CreateNetwork                  func(childComplexity int, input ent.CreateNetworkInput) int
+		CreateNetworkHost              func(childComplexity int, input ent.CreateNetworkHostInput) int
+		CreateOperatorNote             func(childComplexity int, input ent.CreateOperatorNoteInput) int
+		CreateQuest                    func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
+		CreateRepository               func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateScheduledTask            func(childComplexity int, input ent.CreateScheduledTaskInput) int
+		CreateShell                    func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag                      func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome                     func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteAllNotifications         func(childComplexity int) int
+		DeleteAsset                    func(childComplexity int, assetID int) int
+		DeleteBuildProfile             func(childComplexity int, profileID int) int
+		DeleteBuilder                  func(childComplexity int, builderID int) int
+		DeleteNetwork                  func(childComplexity int, networkID int) int
+		DeleteNetworkHost              func(childComplexity int, networkHostID int) int
+		DeleteOperatorNote             func(childComplexity int, operatorNoteID int) int
+		DeleteTome                     func(childComplexity int, tomeID int) int
+		DisableLink                    func(childComplexity int, linkID int) int
+		DisableScheduledTask           func(childComplexity int, scheduledTaskID int) int
+		DropAllData                    func(childComplexity int) int
+		ExchangeBuilderEnrollmentToken func(childComplexity int, token string, input ent.CreateBuilderInput, csr string) int
+		FavoriteHost                   func(childComplexity int, hostID int) int
+		ImportRepository               func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		MarkNotificationsAsArchived    func(childComplexity int, notificationIDs []int) int
+		MarkNotificationsAsRead        func(childComplexity int, notificationIDs []int) int
+		ResetUserAPIKey                func(childComplexity int) int
+		SubscribeToHost                func(childComplexity int, hostID int) int
+		UnfavoriteHost                 func(childComplexity int, hostID int) int
+		UnsubscribeFromHost            func(childComplexity int, hostID int) int
+		UpdateBeacon                   func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateBuildProfile             func(childComplexity int, profileID int, input models.UpdateBuildProfileInput) int
+		UpdateHost                     func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink                     func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateNetwork                  func(childComplexity int, networkID int, input ent.UpdateNetworkInput) int
+		UpdateNetworkHost              func(childComplexity int, networkHostID int, input ent.UpdateNetworkHostInput) int
+		UpdateOperatorNote             func(childComplexity int, operatorNoteID int, input ent.UpdateOperatorNoteInput) int
+		UpdateTag                      func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome                     func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser                     func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	Network struct {
@@ -683,12 +695,6 @@ type ComplexityRoot struct {
 	QuestTimelineTacticBucket struct {
 		Count  func(childComplexity int) int
 		Tactic func(childComplexity int) int
-	}
-
-	RegisterBuilderOutput struct {
-		Builder  func(childComplexity int) int
-		Config   func(childComplexity int) int
-		MtlsCert func(childComplexity int) int
 	}
 
 	Repository struct {
@@ -2009,6 +2015,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.BuilderEdge.Node(childComplexity), true
 
+	case "BuilderEnrollmentToken.id":
+		if e.ComplexityRoot.BuilderEnrollmentToken.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuilderEnrollmentToken.ID(childComplexity), true
+
+	case "BuilderEnrollmentToken.tokenHash":
+		if e.ComplexityRoot.BuilderEnrollmentToken.TokenHash == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuilderEnrollmentToken.TokenHash(childComplexity), true
+
+	case "BuilderEnrollmentToken.used":
+		if e.ComplexityRoot.BuilderEnrollmentToken.Used == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuilderEnrollmentToken.Used(childComplexity), true
+
 	case "DeviceAuth.createdAt":
 		if e.ComplexityRoot.DeviceAuth.CreatedAt == nil {
 			break
@@ -2202,6 +2229,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.EventEdge.Node(childComplexity), true
+
+	case "ExchangeBuilderEnrollmentTokenOutput.builderID":
+		if e.ComplexityRoot.ExchangeBuilderEnrollmentTokenOutput.BuilderID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ExchangeBuilderEnrollmentTokenOutput.BuilderID(childComplexity), true
+
+	case "ExchangeBuilderEnrollmentTokenOutput.mtlsCert":
+		if e.ComplexityRoot.ExchangeBuilderEnrollmentTokenOutput.MtlsCert == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ExchangeBuilderEnrollmentTokenOutput.MtlsCert(childComplexity), true
 
 	case "Host.beacons":
 		if e.ComplexityRoot.Host.Beacons == nil {
@@ -2983,6 +3024,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.CreateBuildTask(childComplexity, args["input"].(models.CreateBuildTaskInput)), true
 
+	case "Mutation.createBuilderEnrollmentToken":
+		if e.ComplexityRoot.Mutation.CreateBuilderEnrollmentToken == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.CreateBuilderEnrollmentToken(childComplexity), true
+
 	case "Mutation.createCredential":
 		if e.ComplexityRoot.Mutation.CreateCredential == nil {
 			break
@@ -3237,6 +3285,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.DropAllData(childComplexity), true
 
+	case "Mutation.exchangeBuilderEnrollmentToken":
+		if e.ComplexityRoot.Mutation.ExchangeBuilderEnrollmentToken == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_exchangeBuilderEnrollmentToken_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ExchangeBuilderEnrollmentToken(childComplexity, args["token"].(string), args["input"].(ent.CreateBuilderInput), args["csr"].(string)), true
+
 	case "Mutation.favoriteHost":
 		if e.ComplexityRoot.Mutation.FavoriteHost == nil {
 			break
@@ -3284,18 +3344,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.MarkNotificationsAsRead(childComplexity, args["notificationIDs"].([]int)), true
-
-	case "Mutation.registerBuilder":
-		if e.ComplexityRoot.Mutation.RegisterBuilder == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_registerBuilder_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.RegisterBuilder(childComplexity, args["input"].(ent.CreateBuilderInput), args["csr"].(string)), true
 
 	case "Mutation.resetUserAPIKey":
 		if e.ComplexityRoot.Mutation.ResetUserAPIKey == nil {
@@ -4456,27 +4504,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.QuestTimelineTacticBucket.Tactic(childComplexity), true
-
-	case "RegisterBuilderOutput.builder":
-		if e.ComplexityRoot.RegisterBuilderOutput.Builder == nil {
-			break
-		}
-
-		return e.ComplexityRoot.RegisterBuilderOutput.Builder(childComplexity), true
-
-	case "RegisterBuilderOutput.config":
-		if e.ComplexityRoot.RegisterBuilderOutput.Config == nil {
-			break
-		}
-
-		return e.ComplexityRoot.RegisterBuilderOutput.Config(childComplexity), true
-
-	case "RegisterBuilderOutput.mtlsCert":
-		if e.ComplexityRoot.RegisterBuilderOutput.MtlsCert == nil {
-			break
-		}
-
-		return e.ComplexityRoot.RegisterBuilderOutput.MtlsCert(childComplexity), true
 
 	case "Repository.createdAt":
 		if e.ComplexityRoot.Repository.CreatedAt == nil {
@@ -5870,6 +5897,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBuildProfileWhereInput,
 		ec.unmarshalInputBuildTaskOrder,
 		ec.unmarshalInputBuildTaskWhereInput,
+		ec.unmarshalInputBuilderEnrollmentTokenWhereInput,
 		ec.unmarshalInputBuilderOrder,
 		ec.unmarshalInputBuilderWhereInput,
 		ec.unmarshalInputClaimTasksInput,
@@ -7756,6 +7784,52 @@ type BuilderEdge {
   A cursor for use in pagination.
   """
   cursor: Cursor!
+}
+type BuilderEnrollmentToken implements Node {
+  id: ID!
+  tokenHash: String!
+  used: Boolean!
+}
+"""
+BuilderEnrollmentTokenWhereInput is used for filtering BuilderEnrollmentToken objects.
+Input was generated by ent.
+"""
+input BuilderEnrollmentTokenWhereInput {
+  not: BuilderEnrollmentTokenWhereInput
+  and: [BuilderEnrollmentTokenWhereInput!]
+  or: [BuilderEnrollmentTokenWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  token_hash field predicates
+  """
+  tokenHash: String
+  tokenHashNEQ: String
+  tokenHashIn: [String!]
+  tokenHashNotIn: [String!]
+  tokenHashGT: String
+  tokenHashGTE: String
+  tokenHashLT: String
+  tokenHashLTE: String
+  tokenHashContains: String
+  tokenHashHasPrefix: String
+  tokenHashHasSuffix: String
+  tokenHashEqualFold: String
+  tokenHashContainsFold: String
+  """
+  used field predicates
+  """
+  used: Boolean
+  usedNEQ: Boolean
 }
 """
 BuilderExecutor is enum for the field executor
@@ -15303,7 +15377,8 @@ scalar Uint64
     ###
     # Builder
     ###
-    registerBuilder(input: CreateBuilderInput!, csr: String!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    createBuilderEnrollmentToken: String! @requireRole(role: ADMIN)
+    exchangeBuilderEnrollmentToken(token: String!, input: CreateBuilderInput!, csr: String!): ExchangeBuilderEnrollmentTokenOutput!
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
@@ -15561,16 +15636,13 @@ input UpdateBuildProfileInput {
   unique: String
 }
 
-"""Output returned when registering a new builder."""
-type RegisterBuilderOutput {
-  """The created builder entity."""
-  builder: Builder!
+"""Output returned when exchanging a builder enrollment token."""
+type ExchangeBuilderEnrollmentTokenOutput {
+  """Identifier of the newly created builder, embedded in its mTLS certificate CN."""
+  builderID: String!
 
-  """mTLS certificate PEM for the builder to authenticate."""
+  """CA-signed mTLS certificate PEM for the builder to authenticate with."""
   mtlsCert: String!
-
-  """YAML-formatted configuration for the builder."""
-  config: String!
 }
 
 """The immutable build recipe captured at task creation."""

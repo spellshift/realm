@@ -194,6 +194,18 @@ var (
 		Columns:    BuildersColumns,
 		PrimaryKey: []*schema.Column{BuildersColumns[0]},
 	}
+	// BuilderEnrollmentTokensColumns holds the columns for the "builder_enrollment_tokens" table.
+	BuilderEnrollmentTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "token_hash", Type: field.TypeString, Unique: true},
+		{Name: "used", Type: field.TypeBool, Default: false},
+	}
+	// BuilderEnrollmentTokensTable holds the schema information for the "builder_enrollment_tokens" table.
+	BuilderEnrollmentTokensTable = &schema.Table{
+		Name:       "builder_enrollment_tokens",
+		Columns:    BuilderEnrollmentTokensColumns,
+		PrimaryKey: []*schema.Column{BuilderEnrollmentTokensColumns[0]},
+	}
 	// DeviceAuthsColumns holds the columns for the "device_auths" table.
 	DeviceAuthsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -1191,6 +1203,7 @@ var (
 		BuildProfilesTable,
 		BuildTasksTable,
 		BuildersTable,
+		BuilderEnrollmentTokensTable,
 		DeviceAuthsTable,
 		EventsTable,
 		HostsTable,

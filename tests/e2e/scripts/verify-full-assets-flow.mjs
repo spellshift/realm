@@ -92,31 +92,40 @@ async function main() {
     // 1. Enroll builder & start local daemon
     console.log('[1] Enrolling builder...');
     enrollmentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-builder-'));
-    child_process.execFileSync(process.env.TAVERN_BIN || '/tmp/tavern_bin', ['builder', 'generate-csr', '--output-dir', enrollmentDir], { cwd: repoRoot });
-    const csr = fs.readFileSync(path.join(enrollmentDir, 'builder.csr'), 'utf8');
-    const registerData = await graphql(
-      apiCtx,
-      `mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
-        registerBuilder(input: $input, csr: $csr) {
-          builder { id }
-          config
-        }
-      }`,
-      { csr, input: { supportedTargets: ['PLATFORM_LINUX'], upstream: baseURL } }
-    );
-    const builderId = registerData.registerBuilder.builder.id;
-    const configYaml = registerData.registerBuilder.config;
+    const tokenData = await graphql(apiCtx, `mutation { createBuilderEnrollmentToken }`);
+    const enrollmentToken = tokenData.createBuilderEnrollmentToken;
 
     configPath = path.join(enrollmentDir, 'builder.yaml');
-    fs.writeFileSync(configPath, configYaml);
+    fs.writeFileSync(configPath, [
+      'supported_targets: [linux]',
+      'identity_file: builder.identity',
+      `upstream: ${baseURL}`,
+      'executor: local',
+      '',
+    ].join('\n'));
 
     builderProcess = child_process.spawn(
       tavernBin,
       ['builder', '--config', configPath, '--executor', 'local'],
-      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MYSQL_ADDR: '' } }
+      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MYSQL_ADDR: '', REALM_BUILDER_ENROLLMENT_TOKEN: enrollmentToken } }
     );
     builderProcess.stdout.on('data', (d) => console.log(`[builder] ${d.toString().trim()}`));
     builderProcess.stderr.on('data', (d) => console.log(`[builder] ${d.toString().trim()}`));
+
+    console.log('    Waiting for builder to self-enroll...');
+    const identityPath = path.join(enrollmentDir, 'builder.identity');
+    let builderId = null;
+    for (let i = 0; i < 60; i++) {
+      if (fs.existsSync(identityPath)) {
+        const match = fs.readFileSync(identityPath, 'utf8').match(/^id:\s*(.+)$/m);
+        if (match) {
+          builderId = match[1].trim();
+          break;
+        }
+      }
+      await sleep(1000);
+    }
+    if (!builderId) throw new Error('Builder never enrolled (no identity file written)');
 
     console.log('    Waiting for builder to check in...');
     for (let i = 0; i < 60; i++) {

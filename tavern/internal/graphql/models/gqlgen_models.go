@@ -117,6 +117,14 @@ type CreateBuildTaskInput struct {
 	Unique *string `json:"unique,omitempty"`
 }
 
+// Output returned when exchanging a builder enrollment token.
+type ExchangeBuilderEnrollmentTokenOutput struct {
+	// Identifier of the newly created builder, embedded in its mTLS certificate CN.
+	BuilderID string `json:"builderID"`
+	// CA-signed mTLS certificate PEM for the builder to authenticate with.
+	MtlsCert string `json:"mtlsCert"`
+}
+
 type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
@@ -138,16 +146,6 @@ type QuestTimelineBucket struct {
 type QuestTimelineTacticBucket struct {
 	Tactic tome.Tactic `json:"tactic"`
 	Count  int         `json:"count"`
-}
-
-// Output returned when registering a new builder.
-type RegisterBuilderOutput struct {
-	// The created builder entity.
-	Builder *ent.Builder `json:"builder"`
-	// mTLS certificate PEM for the builder to authenticate.
-	MtlsCert string `json:"mtlsCert"`
-	// YAML-formatted configuration for the builder.
-	Config string `json:"config"`
 }
 
 type SubmitTaskResultInput struct {
