@@ -165,7 +165,7 @@ func TestEnsureIdentity_FailsWithoutExchangeOnMalformedIdentity(t *testing.T) {
 	// unreachable upstream would surface a network error instead.
 	t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", "should-not-be-used")
 	_, err := builder.EnsureIdentity(t.Context(), cfg)
-	require.ErrorContains(t, err, "existing builder identity is unusable")
+	require.ErrorContains(t, err, "existing builder identity is invalid")
 }
 
 // marshalIdentityForTest writes an Identity the same way SaveIdentity would,
@@ -178,4 +178,20 @@ func marshalIdentityForTest(t *testing.T, identity *builder.Identity) []byte {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	return data
+}
+
+func TestSaveIdentity_DoesNotClobberExisting(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "builder.identity")
+	require.NoError(t, os.WriteFile(path, []byte("existing"), 0600))
+
+	err := builder.SaveIdentity(path, signedTestIdentity(t, "abc"))
+	require.ErrorContains(t, err, "already exists")
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, "existing", string(data))
+
+	entries, err := os.ReadDir(filepath.Dir(path))
+	require.NoError(t, err)
+	require.Len(t, entries, 1, "temporary files must be cleaned up")
 }

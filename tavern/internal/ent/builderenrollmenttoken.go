@@ -17,7 +17,7 @@ type BuilderEnrollmentToken struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// TokenHash holds the value of the "token_hash" field.
-	TokenHash string `json:"token_hash,omitempty"`
+	TokenHash string `json:"-"`
 	// Used holds the value of the "used" field.
 	Used         bool `json:"used,omitempty"`
 	selectValues sql.SelectValues
@@ -103,8 +103,7 @@ func (bet *BuilderEnrollmentToken) String() string {
 	var builder strings.Builder
 	builder.WriteString("BuilderEnrollmentToken(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", bet.ID))
-	builder.WriteString("token_hash=")
-	builder.WriteString(bet.TokenHash)
+	builder.WriteString("token_hash=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("used=")
 	builder.WriteString(fmt.Sprintf("%v", bet.Used))

@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -90,6 +91,9 @@ func (cfg *Config) validate() error {
 	if cfg.Upstream == "" {
 		return fmt.Errorf("config must specify an upstream server address")
 	}
+	if err := validateUpstream(cfg.Upstream); err != nil {
+		return err
+	}
 	if cfg.Executor == "" {
 		cfg.Executor = "docker"
 	}
@@ -102,4 +106,22 @@ func (cfg *Config) validate() error {
 	return nil
 }
 
+// Validate exposes validate for callers outside this package, such as the
+// GraphQL resolver that validates builder-supplied settings before
+// consuming an enrollment token.
 func (cfg *Config) Validate() error { return cfg.validate() }
+
+// validateUpstream checks that upstream is an http or https URL with a host.
+func validateUpstream(upstream string) error {
+	u, err := url.Parse(upstream)
+	if err != nil {
+		return fmt.Errorf("invalid upstream server address %q: %w", upstream, err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("upstream server address %q must use http or https", upstream)
+	}
+	if u.Host == "" {
+		return fmt.Errorf("upstream server address %q must include a host", upstream)
+	}
+	return nil
+}
