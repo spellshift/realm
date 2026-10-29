@@ -45,7 +45,19 @@ type Identity struct {
 // LoadIdentity reads and validates a builder identity file. The certificate
 // and private key are verified to belong together and to the identifier.
 func LoadIdentity(path string) (*Identity, error) {
-	data, err := os.ReadFile(path)
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if info.Mode().Perm()&0077 != 0 {
+		return nil, fmt.Errorf("builder identity file permissions are too broad: %v", info.Mode().Perm())
+	}
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
