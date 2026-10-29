@@ -119,8 +119,10 @@ type CreateBuildTaskInput struct {
 
 // Output returned when exchanging a builder enrollment token.
 type ExchangeBuilderEnrollmentTokenOutput struct {
+	// Identifier of the newly created builder, embedded in its mTLS certificate CN.
 	BuilderID string `json:"builderID"`
-	MtlsCert  string `json:"mtlsCert"`
+	// CA-signed mTLS certificate PEM for the builder to authenticate with.
+	MtlsCert string `json:"mtlsCert"`
 }
 
 type ImportRepositoryInput struct {

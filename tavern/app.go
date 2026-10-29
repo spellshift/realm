@@ -659,6 +659,7 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 		// Operation Context
 		oc := gqlgraphql.GetOperationContext(ctx)
+		loggedVariables, loggedRawQuery := redactOperationSecrets(oc)
 
 		// Determine if Raw Query should be logged
 		args := []any{
@@ -669,10 +670,10 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 			"is_activated", isActivated,
 			"is_authenticated", isAuthenticated,
 			"operation", oc.OperationName,
-			"variables", oc.Variables,
+			"variables", loggedVariables,
 		}
 		if logRawQuery {
-			args = append(args, "raw_query", oc.RawQuery)
+			args = append(args, "raw_query", loggedRawQuery)
 		}
 
 		// Log Request
@@ -934,4 +935,18 @@ func ensureDefaultBuildProfile(ctx context.Context, client *ent.Client) error {
 		return fmt.Errorf("failed to create default build profile: %w", err)
 	}
 	return nil
+}
+
+const redactedValue = "[REDACTED]"
+
+// redactOperationSecrets returns the operation variables and raw query that
+// are safe to log. If the query mentions exchangeBuilderEnrollmentToken
+// anywhere (top level, fragment, alias target), both are withheld entirely:
+// the token and CSR can appear as variables, variable defaults, or inlined
+// literals, and a plain substring check cannot be bypassed by query structure.
+func redactOperationSecrets(oc *gqlgraphql.OperationContext) (any, string) {
+	if strings.Contains(oc.RawQuery, "exchangeBuilderEnrollmentToken") {
+		return redactedValue, redactedValue
+	}
+	return oc.Variables, oc.RawQuery
 }

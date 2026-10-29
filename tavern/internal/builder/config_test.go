@@ -72,3 +72,14 @@ func TestParseConfigBytes_DefaultsAndRejectsUnsupportedExecutor(t *testing.T) {
 	_, err = builder.ParseConfigBytes([]byte("supported_targets: [linux]\nidentity_file: builder.identity\nupstream: http://127.0.0.1:8000\nexecutor: unsupported\n"))
 	require.ErrorContains(t, err, "unsupported executor")
 }
+
+func TestParseConfigBytes_ValidatesUpstreamURL(t *testing.T) {
+	for _, upstream := range []string{"tavern:8000", "ftp://tavern.example.com", "http://", "https:///path", "127.0.0.1:8000"} {
+		_, err := builder.ParseConfigBytes([]byte("supported_targets: [linux]\nidentity_file: id\nupstream: " + upstream + "\n"))
+		require.Error(t, err, upstream)
+	}
+	for _, upstream := range []string{"http://127.0.0.1:8000", "https://tavern.example.com"} {
+		_, err := builder.ParseConfigBytes([]byte("supported_targets: [linux]\nidentity_file: id\nupstream: " + upstream + "\n"))
+		require.NoError(t, err, upstream)
+	}
+}

@@ -6,8 +6,12 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
+	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/99designs/gqlgen/client"
@@ -17,6 +21,7 @@ import (
 
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/tomes"
@@ -103,4 +108,118 @@ func generateTestCSR(t *testing.T) (csrPEM string, keyPEM string) {
 	require.NoError(t, err)
 	return string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDER})),
 		string(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER}))
+}
+
+// useHTTPClient swaps the enrollment HTTP client for the duration of a test.
+func useHTTPClient(t *testing.T, c *http.Client) {
+	t.Helper()
+	prev := builder.HTTPClient
+	builder.HTTPClient = c
+	t.Cleanup(func() { builder.HTTPClient = prev })
+}
+
+func newTestCA(t *testing.T) (*x509.Certificate, ed25519.PrivateKey) {
+	t.Helper()
+	_, caKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	caCert, err := builder.CreateCA(caKey)
+	require.NoError(t, err)
+	return caCert, caKey
+}
+
+func TestEnsureIdentity_HTTPSUpstream(t *testing.T) {
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	caCert, caKey := newTestCA(t)
+
+	git := tomes.NewGitImporter(graph)
+	srv := tavernhttp.NewServer(
+		tavernhttp.RouteMap{
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caKey))),
+		},
+		tavernhttp.WithAuthenticationBypass(graph),
+	)
+	tlsSrv := httptest.NewTLSServer(srv)
+	defer tlsSrv.Close()
+	require.True(t, strings.HasPrefix(tlsSrv.URL, "https://"))
+
+	// Without trusting the test certificate the exchange must fail and leave
+	// the token untouched.
+	gqlClient := client.New(srv, client.Path("/graphql"))
+	token := createTestEnrollmentToken(t, gqlClient)
+	t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", token)
+	cfg := &builder.Config{
+		PollInterval:     builder.DefaultPollInterval,
+		SupportedTargets: []string{"linux"},
+		IdentityFile:     filepath.Join(t.TempDir(), "builder.identity"),
+		Upstream:         tlsSrv.URL,
+		Executor:         "local",
+	}
+	_, err := builder.EnsureIdentity(context.Background(), cfg)
+	require.Error(t, err)
+	require.NoFileExists(t, cfg.IdentityFile)
+
+	useHTTPClient(t, tlsSrv.Client())
+	identity, err := builder.EnsureIdentity(context.Background(), cfg)
+	require.NoError(t, err)
+	require.NotEmpty(t, identity.ID)
+
+	info, err := os.Stat(cfg.IdentityFile)
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0600), info.Mode().Perm())
+
+	count, err := graph.Builder.Query().Count(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+}
+
+func TestEnsureIdentity_PreflightDoesNotConsumeToken(t *testing.T) {
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	caCert, caKey := newTestCA(t)
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caKey)
+
+	token := createTestEnrollmentToken(t, gqlClient)
+	t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", token)
+
+	// A regular file in place of the parent directory makes it unusable.
+	blocker := filepath.Join(t.TempDir(), "blocker")
+	require.NoError(t, os.WriteFile(blocker, nil, 0600))
+	cfg := &builder.Config{
+		PollInterval:     builder.DefaultPollInterval,
+		SupportedTargets: []string{"linux"},
+		IdentityFile:     filepath.Join(blocker, "builder.identity"),
+		Upstream:         upstream,
+		Executor:         "local",
+	}
+	_, err := builder.EnsureIdentity(context.Background(), cfg)
+	require.ErrorContains(t, err, "cannot be saved")
+
+	// The token is still redeemable once the destination is fixed.
+	cfg.IdentityFile = filepath.Join(t.TempDir(), "nested", "builder.identity")
+	_, err = builder.EnsureIdentity(context.Background(), cfg)
+	require.NoError(t, err)
+}
+
+func TestEnsureIdentity_DoesNotFollowRedirects(t *testing.T) {
+	var targetHits atomic.Int32
+	target := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { targetHits.Add(1) }))
+	defer target.Close()
+	redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL+"/graphql", http.StatusTemporaryRedirect)
+	}))
+	defer redirector.Close()
+
+	t.Setenv("REALM_BUILDER_ENROLLMENT_TOKEN", "some-token")
+	cfg := &builder.Config{
+		PollInterval:     builder.DefaultPollInterval,
+		SupportedTargets: []string{"linux"},
+		IdentityFile:     filepath.Join(t.TempDir(), "builder.identity"),
+		Upstream:         redirector.URL,
+		Executor:         "local",
+	}
+	_, err := builder.EnsureIdentity(context.Background(), cfg)
+	require.ErrorContains(t, err, "HTTP status 307")
+	require.Zero(t, targetHits.Load())
+	require.NoFileExists(t, cfg.IdentityFile)
 }

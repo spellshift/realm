@@ -8,15 +8,29 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
+
+// HTTPClient performs the enrollment token exchange request. It is exported
+// so tests can substitute a client that trusts a test CA; callers should not
+// normally need to change it. Redirects are not followed, since the request
+// carries the one-time token and a 307/308 would replay it to another host.
+var HTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+	CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
 
 // Identity holds the builder's persisted enrollment materials: the identifier
 // assigned by Tavern, the CA-signed certificate, and the builder's own
@@ -54,14 +68,10 @@ func LoadIdentity(path string) (*Identity, error) {
 }
 
 // SaveIdentity writes an identity file atomically with mode 0600, refusing to
-// overwrite an existing file.
+// overwrite an existing file. The no-clobber guarantee is enforced with
+// os.Link rather than a stat-then-rename check, since the latter leaves a
+// window where a concurrently written file could be overwritten.
 func SaveIdentity(path string, identity *Identity) error {
-	if _, err := os.Lstat(path); err == nil {
-		return fmt.Errorf("identity file already exists")
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-
 	data, err := yaml.Marshal(identity)
 	if err != nil {
 		return err
@@ -70,7 +80,8 @@ func SaveIdentity(path string, identity *Identity) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(file.Name())
+	tmpPath := file.Name()
+	defer os.Remove(tmpPath)
 	if err := file.Chmod(0600); err != nil {
 		file.Close()
 		return err
@@ -86,7 +97,13 @@ func SaveIdentity(path string, identity *Identity) error {
 	if err := file.Close(); err != nil {
 		return err
 	}
-	return os.Rename(file.Name(), path)
+	if err := os.Link(tmpPath, path); err != nil {
+		if os.IsExist(err) {
+			return fmt.Errorf("identity file already exists")
+		}
+		return err
+	}
+	return nil
 }
 
 // EnsureIdentity returns the builder's identity, loading it from disk if
@@ -98,13 +115,23 @@ func EnsureIdentity(ctx context.Context, cfg *Config) (*Identity, error) {
 	if err == nil {
 		return identity, nil
 	}
-	if !os.IsNotExist(err) {
-		return nil, fmt.Errorf("existing builder identity is unusable, a fresh token is needed: %w", err)
+	if !os.IsNotExist(err) && !errors.Is(err, syscall.ENOTDIR) {
+		// No exchange has happened yet, so the existing token (if any) is
+		// untouched; the operator needs to fix or remove the identity file,
+		// not obtain a fresh token.
+		return nil, fmt.Errorf("existing builder identity is invalid, remove or repair %q: %w", cfg.IdentityFile, err)
 	}
 
 	token := os.Getenv("REALM_BUILDER_ENROLLMENT_TOKEN")
 	if token == "" {
 		return nil, fmt.Errorf("REALM_BUILDER_ENROLLMENT_TOKEN is required when identity_file is absent")
+	}
+
+	// Preflight the identity destination before spending the one-time
+	// token: an unwritable directory would otherwise consume the token and
+	// then fail to persist the resulting identity.
+	if err := ensureIdentityDirWritable(cfg.IdentityFile); err != nil {
+		return nil, fmt.Errorf("builder identity cannot be saved: %w", err)
 	}
 
 	_, key, err := ed25519.GenerateKey(rand.Reader)
@@ -135,6 +162,23 @@ func EnsureIdentity(ctx context.Context, cfg *Config) (*Identity, error) {
 		return nil, fmt.Errorf("builder enrollment succeeded but identity could not be saved, a fresh token is needed: %w", err)
 	}
 	return identity, nil
+}
+
+// ensureIdentityDirWritable verifies that path's parent directory exists
+// (creating it if needed) and is writable, without leaving any trace behind.
+func ensureIdentityDirWritable(path string) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("directory %q is not usable: %w", dir, err)
+	}
+	probe, err := os.CreateTemp(dir, ".builder-identity-probe-*")
+	if err != nil {
+		return fmt.Errorf("directory %q is not writable: %w", dir, err)
+	}
+	probePath := probe.Name()
+	probe.Close()
+	os.Remove(probePath)
+	return nil
 }
 
 // enrollmentExchangeRequest is the GraphQL request body sent to exchange a
@@ -205,24 +249,38 @@ func exchangeEnrollmentToken(ctx context.Context, cfg *Config, token, csrPEM str
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := HTTPClient.Do(req)
 	if err != nil {
-		return "", "", fmt.Errorf("builder enrollment exchange failed, a fresh token may be needed: %w", err)
+		return "", "", fmt.Errorf("builder enrollment exchange failed before a response was received, the token may or may not have been consumed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to read enrollment response, a fresh token may be needed: %w", err)
+		return "", "", fmt.Errorf("failed to read enrollment response, the token may or may not have been consumed: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("builder enrollment exchange failed with HTTP status %d", resp.StatusCode)
 	}
 
 	var result enrollmentExchangeResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
-		return "", "", fmt.Errorf("invalid enrollment response, a fresh token may be needed: %w", err)
+		return "", "", fmt.Errorf("invalid enrollment response, the token may or may not have been consumed: %w", err)
 	}
-	if resp.StatusCode != http.StatusOK || len(result.Errors) > 0 || result.Data.Exchange.BuilderID == "" {
-		return "", "", fmt.Errorf("builder enrollment exchange rejected, a fresh token is needed: %s", string(respBody))
+	if len(result.Errors) > 0 {
+		return "", "", fmt.Errorf("builder enrollment exchange rejected: %s", truncate(result.Errors[0].Message, 200))
+	}
+	if result.Data.Exchange.BuilderID == "" || result.Data.Exchange.MtlsCert == "" {
+		return "", "", fmt.Errorf("builder enrollment exchange returned an incomplete response, the token may or may not have been consumed")
 	}
 
 	return result.Data.Exchange.BuilderID, result.Data.Exchange.MtlsCert, nil
+}
+
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "..."
 }
