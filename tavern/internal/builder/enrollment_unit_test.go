@@ -101,6 +101,10 @@ func TestLoadSaveIdentity(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, identity.ID, loaded.ID)
 	require.Equal(t, identity.Certificate, loaded.Certificate)
+	require.NoError(t, os.Chmod(path, 0644))
+	_, err = builder.LoadIdentity(path)
+	require.ErrorContains(t, err, "permissions are too broad")
+	require.NoError(t, os.Chmod(path, 0600))
 
 	// Refuses to overwrite an existing identity file.
 	require.ErrorContains(t, builder.SaveIdentity(path, signedTestIdentity(t, "other")), "already exists")
