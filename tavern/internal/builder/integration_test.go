@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -50,7 +51,8 @@ func TestBuilderE2E(t *testing.T) {
 
 	// Invalid CSR and settings leave the token available for redemption.
 	token := createTestEnrollmentToken(t, gqlClient)
-	request := tavernhttp.BuilderEnrollRequest{Token: token, CSR: "invalid", SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com:443", PollInterval: 30, Executor: "local"}
+	pollInterval := 30
+	request := tavernhttp.BuilderEnrollRequest{Token: token, CSR: "invalid", SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com:443", PollInterval: &pollInterval, Executor: "local"}
 	statusCode, _ := postBuilderEnrollment(t, upstream, request)
 	require.Equal(t, http.StatusBadRequest, statusCode)
 	count, err := graph.Builder.Query().Count(ctx)
@@ -58,6 +60,10 @@ func TestBuilderE2E(t *testing.T) {
 	require.Zero(t, count)
 	csr, keyPEM := generateTestCSR(t)
 	request.CSR = csr
+	badCAServer := httptest.NewServer(tavernhttp.NewBuilderEnrollHandler(graph, nil, nil))
+	statusCode, _ = postBuilderEnrollment(t, badCAServer.URL, request)
+	badCAServer.Close()
+	require.Equal(t, http.StatusInternalServerError, statusCode)
 	for _, tc := range []struct {
 		name     string
 		targets  []string
@@ -76,7 +82,12 @@ func TestBuilderE2E(t *testing.T) {
 		})
 	}
 	invalidPoll := request
-	invalidPoll.PollInterval = builder.MaxPollInterval + 1
+	zero := 0
+	invalidPoll.PollInterval = &zero
+	statusCode, _ = postBuilderEnrollment(t, upstream, invalidPoll)
+	require.Equal(t, http.StatusBadRequest, statusCode)
+	tooLarge := builder.MaxPollInterval + 1
+	invalidPoll.PollInterval = &tooLarge
 	statusCode, _ = postBuilderEnrollment(t, upstream, invalidPoll)
 	require.Equal(t, http.StatusBadRequest, statusCode)
 	invalidExecutor := request
@@ -476,7 +487,7 @@ func TestBuilderEnrollmentREST_ConcurrentRedemption(t *testing.T) {
 			if !assert.NoError(t, err) {
 				return
 			}
-			statusCode, body := postBuilderEnrollment(t, upstream, tavernhttp.BuilderEnrollRequest{Token: token, CSR: csr, SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com", PollInterval: 5, Executor: "local"})
+			statusCode, body := postBuilderEnrollment(t, upstream, tavernhttp.BuilderEnrollRequest{Token: token, CSR: csr, SupportedTargets: []string{"linux"}, Upstream: "https://tavern.example.com", Executor: "local"})
 			if statusCode == http.StatusOK {
 				var resp tavernhttp.BuilderEnrollResponse
 				if assert.NoError(t, json.Unmarshal([]byte(body), &resp)) {

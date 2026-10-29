@@ -25,7 +25,7 @@ type BuilderEnrollRequest struct {
 	CSR              string   `json:"csr"`
 	SupportedTargets []string `json:"supported_targets"`
 	Upstream         string   `json:"upstream"`
-	PollInterval     int      `json:"poll_interval"`
+	PollInterval     *int     `json:"poll_interval"`
 	Executor         string   `json:"executor"`
 }
 
@@ -81,7 +81,11 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 				return
 			}
 		}
-		cfg := builder.Config{SupportedTargets: req.SupportedTargets, Upstream: req.Upstream, PollInterval: req.PollInterval, Executor: req.Executor, IdentityFile: "builder.identity"}
+		pollInterval := builder.DefaultPollInterval
+		if req.PollInterval != nil {
+			pollInterval = *req.PollInterval
+		}
+		cfg := builder.Config{SupportedTargets: req.SupportedTargets, Upstream: req.Upstream, PollInterval: pollInterval, Executor: req.Executor, IdentityFile: "builder.identity"}
 		if err := cfg.Validate(); err != nil {
 			http.Error(w, "invalid builder settings", http.StatusBadRequest)
 			return
@@ -89,11 +93,11 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 		identifier := uuid.NewString()
 		cert, err := builder.SignBuilderCertificate(ca, caKey, identifier, req.CSR)
 		if err != nil {
-			if ca == nil || len(caKey) != ed25519.PrivateKeySize {
-				http.Error(w, "internal server error", http.StatusInternalServerError)
+			if errors.Is(err, builder.ErrInvalidBuilderCSR) {
+				http.Error(w, "invalid builder CSR", http.StatusBadRequest)
 				return
 			}
-			http.Error(w, "invalid builder CSR", http.StatusBadRequest)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 		tx, err := client.Tx(r.Context())
@@ -111,7 +115,7 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 			http.Error(w, "invalid or used builder enrollment token", http.StatusUnauthorized)
 			return
 		}
-		_, err = tx.Builder.Create().SetIdentifier(identifier).SetSupportedTargets(targets).SetUpstream(req.Upstream).SetPollInterval(req.PollInterval).SetExecutor(entbuilder.Executor(cfg.Executor)).Save(r.Context())
+		_, err = tx.Builder.Create().SetIdentifier(identifier).SetSupportedTargets(targets).SetUpstream(req.Upstream).SetPollInterval(pollInterval).SetExecutor(entbuilder.Executor(cfg.Executor)).Save(r.Context())
 		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return

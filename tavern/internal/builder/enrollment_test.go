@@ -225,3 +225,30 @@ func TestEnsureIdentity_DoesNotFollowRedirects(t *testing.T) {
 	require.Zero(t, targetHits.Load())
 	require.NoFileExists(t, cfg.IdentityFile)
 }
+
+func TestBuilderEnrollmentPollIntervalDefault(t *testing.T) {
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	caCert, caKey := newTestCA(t)
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caKey)
+	csr, _ := generateTestCSR(t)
+	req := tavernhttp.BuilderEnrollRequest{
+		Token:            createTestEnrollmentToken(t, gqlClient),
+		CSR:              csr,
+		SupportedTargets: []string{"linux"},
+		Upstream:         upstream,
+		Executor:         "local",
+	}
+	zero := 0
+	req.PollInterval = &zero
+	status, _ := postBuilderEnrollment(t, upstream, req)
+	require.Equal(t, http.StatusBadRequest, status)
+
+	req.PollInterval = nil
+	status, body := postBuilderEnrollment(t, upstream, req)
+	require.Equal(t, http.StatusOK, status, body)
+	builders, err := graph.Builder.Query().All(context.Background())
+	require.NoError(t, err)
+	require.Len(t, builders, 1)
+	require.Equal(t, builder.DefaultPollInterval, builders[0].PollInterval)
+}

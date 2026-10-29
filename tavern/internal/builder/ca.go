@@ -7,10 +7,14 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
 )
+
+// ErrInvalidBuilderCSR identifies client-supplied certificate requests that cannot be signed.
+var ErrInvalidBuilderCSR = errors.New("invalid builder CSR")
 
 // CreateCA creates a self-signed CA certificate from the provided ED25519 private key.
 // The certificate is generated in-memory each time — only the private key needs to be persisted.
@@ -54,18 +58,18 @@ func CreateCA(privKey ed25519.PrivateKey) (*x509.Certificate, error) {
 func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, builderIdentifier string, csrPEM string) ([]byte, error) {
 	block, rest := pem.Decode([]byte(csrPEM))
 	if block == nil || block.Type != "CERTIFICATE REQUEST" || len(bytes.TrimSpace(rest)) != 0 {
-		return nil, fmt.Errorf("invalid builder CSR PEM")
+		return nil, fmt.Errorf("%w PEM", ErrInvalidBuilderCSR)
 	}
 	csr, err := x509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("invalid builder CSR: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidBuilderCSR, err)
 	}
 	if err := csr.CheckSignature(); err != nil {
-		return nil, fmt.Errorf("invalid builder CSR signature: %w", err)
+		return nil, fmt.Errorf("%w signature: %w", ErrInvalidBuilderCSR, err)
 	}
 	builderPub, ok := csr.PublicKey.(ed25519.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("builder CSR must use an Ed25519 public key")
+		return nil, fmt.Errorf("%w: must use an Ed25519 public key", ErrInvalidBuilderCSR)
 	}
 	if ca == nil || len(caKey) != ed25519.PrivateKeySize {
 		return nil, fmt.Errorf("builder CA is not configured")
