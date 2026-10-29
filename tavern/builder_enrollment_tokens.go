@@ -13,7 +13,7 @@ import (
 
 // parseBuilderEnrollmentTokens validates the full list before any token is saved.
 func parseBuilderEnrollmentTokens(value string) ([]string, error) {
-	if strings.TrimSpace(value) == "" {
+	if value == "" {
 		return nil, nil
 	}
 	items := strings.Split(value, ",")

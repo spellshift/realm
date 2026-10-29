@@ -28,16 +28,14 @@ func tokenHash(token string) string {
 }
 
 func TestParseBuilderEnrollmentTokens(t *testing.T) {
-	for _, value := range []string{"", "  "} {
-		tokens, err := parseBuilderEnrollmentTokens(value)
-		require.NoError(t, err)
-		require.Empty(t, tokens)
-	}
-	tokens, err := parseBuilderEnrollmentTokens(" first ,second, first ")
+	tokens, err := parseBuilderEnrollmentTokens("")
+	require.NoError(t, err)
+	require.Empty(t, tokens)
+	tokens, err = parseBuilderEnrollmentTokens(" first ,second, first ")
 	require.NoError(t, err)
 	require.Equal(t, []string{"first", "second", "first"}, tokens)
 
-	for _, value := range []string{",first", "first,", "first,,second", "first, \t,second"} {
+	for _, value := range []string{" ", "\t\n", ",first", "first,", "first,,second", "first, \t,second"} {
 		tokens, err := parseBuilderEnrollmentTokens(value)
 		require.ErrorContains(t, err, EnvBuilderEnrollmentTokens.Key)
 		require.NotContains(t, err.Error(), "first")
@@ -46,11 +44,15 @@ func TestParseBuilderEnrollmentTokens(t *testing.T) {
 }
 
 func TestNewServerRejectsMalformedBuilderTokensBeforeDatabaseWork(t *testing.T) {
-	t.Setenv(EnvBuilderEnrollmentTokens.Key, "valid, ,invalid")
-	server, err := NewServer(context.Background())
-	require.Nil(t, server)
-	require.ErrorContains(t, err, EnvBuilderEnrollmentTokens.Key)
-	require.NotContains(t, err.Error(), "valid")
+	for _, value := range []string{" \t ", "valid, ,invalid"} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv(EnvBuilderEnrollmentTokens.Key, value)
+			server, err := NewServer(context.Background())
+			require.Nil(t, server)
+			require.ErrorContains(t, err, EnvBuilderEnrollmentTokens.Key)
+			require.NotContains(t, err.Error(), "valid")
+		})
+	}
 }
 
 func TestSeedBuilderEnrollmentTokens(t *testing.T) {
