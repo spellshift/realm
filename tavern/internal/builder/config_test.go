@@ -92,6 +92,21 @@ func TestParseConfigBytes_DefaultsAndRejectsUnsupportedExecutor(t *testing.T) {
 	require.ErrorContains(t, err, "unsupported executor")
 }
 
+func TestParseConfigWithExecutor_ValidatesEffectiveConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := writeTestConfig(t, dir, "executor: unsupported\nidentity_file: custom.identity\n")
+	_, err := builder.ParseConfig(path)
+	require.ErrorContains(t, err, "unsupported executor")
+
+	cfg, err := builder.ParseConfigWithExecutor(path, "docker")
+	require.NoError(t, err)
+	require.Equal(t, "docker", cfg.Executor)
+	require.Equal(t, filepath.Join(dir, "custom.identity"), cfg.IdentityFile)
+
+	_, err = builder.ParseConfigWithExecutor(path, "")
+	require.ErrorContains(t, err, "unsupported executor")
+}
+
 func TestParseConfigBytes_ValidatesUpstreamURL(t *testing.T) {
 	for _, upstream := range []string{"tavern:8000", "ftp://tavern.example.com", "http://", "https:///path", "127.0.0.1:8000"} {
 		_, err := builder.ParseConfigBytes([]byte("supported_targets: [linux]\nidentity_file: id\nupstream: " + upstream + "\n"))

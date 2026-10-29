@@ -50,11 +50,20 @@ func DefaultConfig() *Config {
 
 // ParseConfig reads and parses a builder YAML configuration file.
 func ParseConfig(path string) (*Config, error) {
+	return parseConfig(path, nil)
+}
+
+// ParseConfigWithExecutor reads a builder YAML file with a CLI executor override.
+func ParseConfigWithExecutor(path, executor string) (*Config, error) {
+	return parseConfig(path, &executor)
+}
+
+func parseConfig(path string, executor *string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %q: %w", path, err)
 	}
-	cfg, err := ParseConfigBytes(data)
+	cfg, err := parseConfigBytes(data, executor)
 	if err != nil {
 		return nil, err
 	}
@@ -66,21 +75,36 @@ func ParseConfig(path string) (*Config, error) {
 
 // ParseConfigBytes parses builder YAML configuration from bytes.
 func ParseConfigBytes(data []byte) (*Config, error) {
+	return parseConfigBytes(data, nil)
+}
+
+func parseConfigBytes(data []byte, executor *string) (*Config, error) {
+	if executor != nil && *executor != "docker" && *executor != "local" {
+		return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", *executor)
+	}
 	var fields map[string]interface{}
 	if err := yaml.Unmarshal(data, &fields); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
-	for _, name := range []string{"identity_file", "supported_targets", "upstream", "executor", "poll_interval"} {
+	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval"} {
 		if value, present := fields[name]; present && value == nil {
 			return nil, fmt.Errorf("%s must not be null", name)
 		}
 	}
-	if fields["executor"] == "" {
-		return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", "")
+	if executor == nil {
+		if value, present := fields["executor"]; present && value == nil {
+			return nil, fmt.Errorf("executor must not be null")
+		}
+		if fields["executor"] == "" {
+			return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", "")
+		}
 	}
 	cfg := DefaultConfig()
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+	if executor != nil {
+		cfg.Executor = *executor
 	}
 
 	if err := cfg.validate(); err != nil {
