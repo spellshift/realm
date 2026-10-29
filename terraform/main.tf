@@ -25,9 +25,9 @@ resource "random_password" "builder_enrollment" {
   special = false
 }
 
-output "builder_enrollment_tokens" {
-  description = "One-time builder enrollment tokens to hand to builders. Rotate explicitly after use."
-  value       = [random_password.builder_enrollment.result]
+output "builder_enrollment_token" {
+  description = "One-time builder enrollment token to hand to a builder. Rotate explicitly after use."
+  value       = random_password.builder_enrollment.result
   sensitive   = true
 }
 

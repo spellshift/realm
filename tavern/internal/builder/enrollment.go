@@ -134,7 +134,7 @@ func EnsureIdentity(ctx context.Context, cfg *Config) (*Identity, error) {
 		return nil, fmt.Errorf("existing builder identity is invalid, remove or repair %q: %w", cfg.IdentityFile, err)
 	}
 
-	token := os.Getenv("REALM_BUILDER_ENROLLMENT_TOKEN")
+	token := strings.TrimSpace(os.Getenv("REALM_BUILDER_ENROLLMENT_TOKEN"))
 	if token == "" {
 		return nil, fmt.Errorf("REALM_BUILDER_ENROLLMENT_TOKEN is required when identity_file is absent")
 	}
