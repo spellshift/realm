@@ -11,47 +11,24 @@ test.describe('Builder E2E Test', () => {
   const repoRoot = path.resolve(__dirname, '../../../');
 
   test.beforeAll(async ({ request }) => {
-    // 1. Register builder via GraphQL mutation
-    console.log('Registering builder via GraphQL...');
+    // 1. Issue a one-time builder enrollment token via GraphQL
+    console.log('Issuing a builder enrollment token via GraphQL...');
     enrollmentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-builder-'));
-    child_process.execFileSync('go', ['run', './tavern', 'builder', 'generate-csr', '--output-dir', enrollmentDir], { cwd: repoRoot });
-    const csr = fs.readFileSync(path.join(enrollmentDir, 'builder.csr'), 'utf8');
-    const registerMutation = `
-      mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
-        registerBuilder(input: $input, csr: $csr) {
-          builder {
-            id
-          }
-          config
-        }
-      }
-    `;
-
-    const registerResp = await request.post('/graphql', {
-      data: {
-        query: registerMutation,
-        variables: {
-          csr,
-          input: {
-            supportedTargets: ['PLATFORM_LINUX'],
-            upstream: 'http://127.0.0.1:8000',
-          },
-        },
-      },
+    const tokenResp = await request.post('/graphql', {
+      data: { query: `mutation { createBuilderEnrollmentToken }` },
     });
+    expect(tokenResp.ok()).toBeTruthy();
+    const tokenJson = await tokenResp.json();
+    expect(tokenJson.errors).toBeUndefined();
+    const enrollmentToken = tokenJson.data.createBuilderEnrollmentToken;
 
-    expect(registerResp.ok()).toBeTruthy();
-    const registerJson = await registerResp.json();
-    expect(registerJson.errors).toBeUndefined();
-
-    const builderData = registerJson.data.registerBuilder;
-    const builderId = builderData.builder.id;
-    const configYaml = builderData.config;
-    console.log(`Registered builder with ID ${builderId}`);
-
-    // 2. Write builder config to a temporary file
+    // 2. Write builder config; the builder generates its own key/CSR and
+    // self-enrolls on startup using the one-time token.
     configPath = path.join(enrollmentDir!, 'builder.yaml');
-    fs.writeFileSync(configPath, configYaml);
+    fs.writeFileSync(
+      configPath,
+      ['supported_targets: [linux]', 'identity_file: builder.identity', 'upstream: http://127.0.0.1:8000', 'executor: local', ''].join('\n')
+    );
 
     // 3. Spawn builder process with LocalExecutor
     console.log(`Starting local builder daemon with config ${configPath}...`);
@@ -61,6 +38,7 @@ test.describe('Builder E2E Test', () => {
       {
         cwd: repoRoot,
         stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, REALM_BUILDER_ENROLLMENT_TOKEN: enrollmentToken },
       }
     );
 
@@ -71,7 +49,24 @@ test.describe('Builder E2E Test', () => {
       console.log(`[builder stderr] ${data.toString().trim()}`);
     });
 
-    // 4. Poll until the builder has checked in (lastSeenAt is set)
+    // 4. Poll until the builder has written its identity file, giving us its ID
+    console.log('Waiting for builder to self-enroll...');
+    const identityPath = path.join(enrollmentDir!, 'builder.identity');
+    let builderId: string | null = null;
+    for (let i = 0; i < 30; i++) {
+      if (fs.existsSync(identityPath)) {
+        const match = fs.readFileSync(identityPath, 'utf8').match(/^id:\s*(.+)$/m);
+        if (match) {
+          builderId = match[1].trim();
+          break;
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+    expect(builderId).not.toBeNull();
+    console.log(`Builder enrolled with ID ${builderId}`);
+
+    // 5. Poll until the builder has checked in (lastSeenAt is set)
     console.log(`Waiting for builder ${builderId} to check in...`);
     const checkQuery = `
       query checkBuilder($id: ID!) {

@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
@@ -1756,6 +1757,78 @@ func newBuilderPaginateArgs(rv map[string]any) *builderPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*BuilderWhereInput); ok {
 		args.opts = append(args.opts, WithBuilderFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (bet *BuilderEnrollmentTokenQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuilderEnrollmentTokenQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return bet, nil
+	}
+	if err := bet.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return bet, nil
+}
+
+func (bet *BuilderEnrollmentTokenQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(builderenrollmenttoken.Columns))
+		selectedFields = []string{builderenrollmenttoken.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "tokenHash":
+			if _, ok := fieldSeen[builderenrollmenttoken.FieldTokenHash]; !ok {
+				selectedFields = append(selectedFields, builderenrollmenttoken.FieldTokenHash)
+				fieldSeen[builderenrollmenttoken.FieldTokenHash] = struct{}{}
+			}
+		case "used":
+			if _, ok := fieldSeen[builderenrollmenttoken.FieldUsed]; !ok {
+				selectedFields = append(selectedFields, builderenrollmenttoken.FieldUsed)
+				fieldSeen[builderenrollmenttoken.FieldUsed] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		bet.Select(selectedFields...)
+	}
+	return nil
+}
+
+type builderenrollmenttokenPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []BuilderEnrollmentTokenPaginateOption
+}
+
+func newBuilderEnrollmentTokenPaginateArgs(rv map[string]any) *builderenrollmenttokenPaginateArgs {
+	args := &builderenrollmenttokenPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*BuilderEnrollmentTokenWhereInput); ok {
+		args.opts = append(args.opts, WithBuilderEnrollmentTokenFilter(v.Filter))
 	}
 	return args
 }

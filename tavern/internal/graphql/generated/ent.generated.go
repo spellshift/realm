@@ -6277,6 +6277,93 @@ func (ec *executionContext) fieldContext_BuilderEdge_cursor(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _BuilderEnrollmentToken_id(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderEnrollmentToken) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderEnrollmentToken_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderEnrollmentToken_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderEnrollmentToken",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuilderEnrollmentToken_tokenHash(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderEnrollmentToken) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderEnrollmentToken_tokenHash,
+		func(ctx context.Context) (any, error) {
+			return obj.TokenHash, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderEnrollmentToken_tokenHash(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderEnrollmentToken",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuilderEnrollmentToken_used(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderEnrollmentToken) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderEnrollmentToken_used,
+		func(ctx context.Context) (any, error) {
+			return obj.Used, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderEnrollmentToken_used(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderEnrollmentToken",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DeviceAuth_id(ctx context.Context, field graphql.CollectedField, obj *ent.DeviceAuth) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -25058,6 +25145,211 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBuilderEnrollmentTokenWhereInput(ctx context.Context, obj any) (ent.BuilderEnrollmentTokenWhereInput, error) {
+	var it ent.BuilderEnrollmentTokenWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "tokenHash", "tokenHashNEQ", "tokenHashIn", "tokenHashNotIn", "tokenHashGT", "tokenHashGTE", "tokenHashLT", "tokenHashLTE", "tokenHashContains", "tokenHashHasPrefix", "tokenHashHasSuffix", "tokenHashEqualFold", "tokenHashContainsFold", "used", "usedNEQ"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOBuilderEnrollmentTokenWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEnrollmentTokenWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOBuilderEnrollmentTokenWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEnrollmentTokenWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOBuilderEnrollmentTokenWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEnrollmentTokenWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "tokenHash":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHash"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHash = data
+		case "tokenHashNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashNEQ = data
+		case "tokenHashIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashIn = data
+		case "tokenHashNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashNotIn = data
+		case "tokenHashGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashGT = data
+		case "tokenHashGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashGTE = data
+		case "tokenHashLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashLT = data
+		case "tokenHashLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashLTE = data
+		case "tokenHashContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashContains = data
+		case "tokenHashHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashHasPrefix = data
+		case "tokenHashHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashHasSuffix = data
+		case "tokenHashEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashEqualFold = data
+		case "tokenHashContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TokenHashContainsFold = data
+		case "used":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("used"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Used = data
+		case "usedNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("usedNEQ"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UsedNEQ = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputBuilderOrder(ctx context.Context, obj any) (ent.BuilderOrder, error) {
 	var it ent.BuilderOrder
 	if obj == nil {
@@ -40087,6 +40379,11 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._DeviceAuth(ctx, sel, obj)
+	case *ent.BuilderEnrollmentToken:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._BuilderEnrollmentToken(ctx, sel, obj)
 	case *ent.Builder:
 		if obj == nil {
 			return graphql.Null
@@ -41786,6 +42083,55 @@ func (ec *executionContext) _BuilderEdge(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._BuilderEdge_node(ctx, field, obj)
 		case "cursor":
 			out.Values[i] = ec._BuilderEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var builderEnrollmentTokenImplementors = []string{"BuilderEnrollmentToken", "Node"}
+
+func (ec *executionContext) _BuilderEnrollmentToken(ctx context.Context, sel ast.SelectionSet, obj *ent.BuilderEnrollmentToken) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, builderEnrollmentTokenImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BuilderEnrollmentToken")
+		case "id":
+			out.Values[i] = ec._BuilderEnrollmentToken_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tokenHash":
+			out.Values[i] = ec._BuilderEnrollmentToken_tokenHash(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "used":
+			out.Values[i] = ec._BuilderEnrollmentToken_used(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -48807,6 +49153,11 @@ func (ec *executionContext) marshalNBuilderConnection2ᚖrealmᚗpubᚋtavernᚋ
 	return ec._BuilderConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBuilderEnrollmentTokenWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEnrollmentTokenWhereInput(ctx context.Context, v any) (*ent.BuilderEnrollmentTokenWhereInput, error) {
+	res, err := ec.unmarshalInputBuilderEnrollmentTokenWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNBuilderExecutor2realmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutor(ctx context.Context, v any) (builder.Executor, error) {
 	var res builder.Executor
 	err := res.UnmarshalGQL(v)
@@ -50645,6 +50996,32 @@ func (ec *executionContext) marshalOBuilderEdge2ᚖrealmᚗpubᚋtavernᚋintern
 		return graphql.Null
 	}
 	return ec._BuilderEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBuilderEnrollmentTokenWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEnrollmentTokenWhereInputᚄ(ctx context.Context, v any) ([]*ent.BuilderEnrollmentTokenWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.BuilderEnrollmentTokenWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBuilderEnrollmentTokenWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEnrollmentTokenWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOBuilderEnrollmentTokenWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEnrollmentTokenWhereInput(ctx context.Context, v any) (*ent.BuilderEnrollmentTokenWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputBuilderEnrollmentTokenWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOBuilderExecutor2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋbuilderᚐExecutorᚄ(ctx context.Context, v any) ([]builder.Executor, error) {

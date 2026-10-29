@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
@@ -99,33 +100,34 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			adventure.Table:      adventure.ValidColumn,
-			asset.Table:          asset.ValidColumn,
-			beacon.Table:         beacon.ValidColumn,
-			beaconhistory.Table:  beaconhistory.ValidColumn,
-			buildprofile.Table:   buildprofile.ValidColumn,
-			buildtask.Table:      buildtask.ValidColumn,
-			builder.Table:        builder.ValidColumn,
-			deviceauth.Table:     deviceauth.ValidColumn,
-			event.Table:          event.ValidColumn,
-			host.Table:           host.ValidColumn,
-			hostcredential.Table: hostcredential.ValidColumn,
-			hostfile.Table:       hostfile.ValidColumn,
-			hostprocess.Table:    hostprocess.ValidColumn,
-			link.Table:           link.ValidColumn,
-			notification.Table:   notification.ValidColumn,
-			portal.Table:         portal.ValidColumn,
-			quest.Table:          quest.ValidColumn,
-			repository.Table:     repository.ValidColumn,
-			scheduledtask.Table:  scheduledtask.ValidColumn,
-			screenshot.Table:     screenshot.ValidColumn,
-			shell.Table:          shell.ValidColumn,
-			shellpivot.Table:     shellpivot.ValidColumn,
-			shelltask.Table:      shelltask.ValidColumn,
-			tag.Table:            tag.ValidColumn,
-			task.Table:           task.ValidColumn,
-			tome.Table:           tome.ValidColumn,
-			user.Table:           user.ValidColumn,
+			adventure.Table:              adventure.ValidColumn,
+			asset.Table:                  asset.ValidColumn,
+			beacon.Table:                 beacon.ValidColumn,
+			beaconhistory.Table:          beaconhistory.ValidColumn,
+			buildprofile.Table:           buildprofile.ValidColumn,
+			buildtask.Table:              buildtask.ValidColumn,
+			builder.Table:                builder.ValidColumn,
+			builderenrollmenttoken.Table: builderenrollmenttoken.ValidColumn,
+			deviceauth.Table:             deviceauth.ValidColumn,
+			event.Table:                  event.ValidColumn,
+			host.Table:                   host.ValidColumn,
+			hostcredential.Table:         hostcredential.ValidColumn,
+			hostfile.Table:               hostfile.ValidColumn,
+			hostprocess.Table:            hostprocess.ValidColumn,
+			link.Table:                   link.ValidColumn,
+			notification.Table:           notification.ValidColumn,
+			portal.Table:                 portal.ValidColumn,
+			quest.Table:                  quest.ValidColumn,
+			repository.Table:             repository.ValidColumn,
+			scheduledtask.Table:          scheduledtask.ValidColumn,
+			screenshot.Table:             screenshot.ValidColumn,
+			shell.Table:                  shell.ValidColumn,
+			shellpivot.Table:             shellpivot.ValidColumn,
+			shelltask.Table:              shelltask.ValidColumn,
+			tag.Table:                    tag.ValidColumn,
+			task.Table:                   task.ValidColumn,
+			tome.Table:                   tome.ValidColumn,
+			user.Table:                   user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

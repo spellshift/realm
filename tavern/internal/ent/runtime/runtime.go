@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
@@ -284,6 +285,12 @@ func init() {
 			return nil
 		}
 	}()
+	builderenrollmenttokenFields := schema.BuilderEnrollmentToken{}.Fields()
+	_ = builderenrollmenttokenFields
+	// builderenrollmenttokenDescUsed is the schema descriptor for used field.
+	builderenrollmenttokenDescUsed := builderenrollmenttokenFields[1].Descriptor()
+	// builderenrollmenttoken.DefaultUsed holds the default value on creation for the used field.
+	builderenrollmenttoken.DefaultUsed = builderenrollmenttokenDescUsed.Default.(bool)
 	deviceauthMixin := schema.DeviceAuth{}.Mixin()
 	deviceauthMixinFields0 := deviceauthMixin[0].Fields()
 	_ = deviceauthMixinFields0

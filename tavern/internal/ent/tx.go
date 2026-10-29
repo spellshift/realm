@@ -26,6 +26,8 @@ type Tx struct {
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
 	Builder *BuilderClient
+	// BuilderEnrollmentToken is the client for interacting with the BuilderEnrollmentToken builders.
+	BuilderEnrollmentToken *BuilderEnrollmentTokenClient
 	// DeviceAuth is the client for interacting with the DeviceAuth builders.
 	DeviceAuth *DeviceAuthClient
 	// Event is the client for interacting with the Event builders.
@@ -204,6 +206,7 @@ func (tx *Tx) init() {
 	tx.BuildProfile = NewBuildProfileClient(tx.config)
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)
+	tx.BuilderEnrollmentToken = NewBuilderEnrollmentTokenClient(tx.config)
 	tx.DeviceAuth = NewDeviceAuthClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
