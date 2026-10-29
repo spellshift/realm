@@ -15,9 +15,6 @@ pub fn enable_privilege(privilege: String) -> Result<bool, String> {
 }
 
 #[cfg(target_os = "windows")]
-const ERROR_NOT_ALL_ASSIGNED: i32 = 1300;
-
-#[cfg(target_os = "windows")]
 fn enable_privilege_windows(privilege: &str) -> Result<bool, String> {
     use windows_sys::Win32::Foundation::{CloseHandle, ERROR_NOT_ALL_ASSIGNED};
     use windows_sys::Win32::Security::{
