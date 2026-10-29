@@ -218,8 +218,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					Kind:   shell.WebsocketMessageKindStatus,
 					Status: "closed",
 				})
+			} else {
+				sendWsError("pivot session not found or expired")
 			}
-			sendWsError("pivot session not found or expired")
 			_ = wsConn.WriteControl(
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),

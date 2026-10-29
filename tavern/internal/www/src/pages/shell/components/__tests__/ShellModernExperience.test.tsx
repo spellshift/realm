@@ -320,6 +320,8 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         const onRunCode = vi.fn();
         const onLoadIntoComposer = vi.fn();
         const onOpenPivotTab = vi.fn();
+        const onOpenPty = vi.fn();
+        const onOpenSshModal = vi.fn();
 
         render(
             <>
@@ -338,8 +340,8 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
                     pivots={samplePivots}
                     onNewPortal={vi.fn()}
                     onClosePortal={vi.fn()}
-                    onOpenPty={vi.fn()}
-                    onOpenSshModal={vi.fn()}
+                    onOpenPty={onOpenPty}
+                    onOpenSshModal={onOpenSshModal}
                     onOpenPivotTab={onOpenPivotTab}
                 />
             </>
@@ -356,8 +358,12 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         fireEvent.click(screen.getByText("Re-run"));
         expect(onRunCode).toHaveBeenCalledWith('report.user_password("admin", "hunter2")');
 
-        // Dedicated Pivots drawer displays pivot sessions and opens saved transcript
+        // Dedicated Pivots drawer displays PTY and SSH buttons and opens saved transcript
         expect(screen.getByTestId("shell-pivots-drawer")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "PTY" }));
+        expect(onOpenPty).toHaveBeenCalledTimes(1);
+        fireEvent.click(screen.getByRole("button", { name: "SSH" }));
+        expect(onOpenSshModal).toHaveBeenCalledTimes(1);
         expect(screen.getByText(/SSH • root@10.0.0.15:22/i)).toBeInTheDocument();
         fireEvent.click(screen.getByText("View Saved Transcript"));
         expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.15:22", "42");

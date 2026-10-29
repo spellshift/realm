@@ -3,7 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { WebsocketMessageKind } from "../websocket";
-import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, SquareTerminal, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, RefreshCw, SquareTerminal, XCircle } from "lucide-react";
 
 interface PtyTerminalProps {
   portalId: number;
@@ -41,7 +41,6 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
 
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sessionEndedByRemote, setSessionEndedByRemote] = useState<boolean>(false);
   const [reconnectCount, setReconnectCount] = useState<number>(0);
   const [displayPivotId, setDisplayPivotId] = useState<number | undefined>(pivotId);
   const [dimensions, setDimensions] = useState<{ cols: number; rows: number }>({ cols: 80, rows: 24 });
@@ -57,7 +56,6 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
     connectPivotIdRef.current = undefined;
     setDisplayPivotId(undefined);
     setErrorMessage(null);
-    setSessionEndedByRemote(false);
     setConnectionStatus("connecting");
     onConnectionStatusChangeRef.current?.("connecting");
     setReconnectCount((c) => c + 1);
@@ -137,11 +135,13 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
 
       ws.onopen = () => {
         if (cancelled) return;
-        setConnectionStatus("connected");
-        onConnectionStatusChangeRef.current?.("connected");
-        term.options.cursorBlink = true;
-        if (!isAutoRetry) {
-          term.write(`\x1b[90m[*] PTY Active (Portal #${portalId})\x1b[0m\r\n`);
+        if (!targetPivotId) {
+          setConnectionStatus("connected");
+          onConnectionStatusChangeRef.current?.("connected");
+          term.options.cursorBlink = true;
+          if (!isAutoRetry) {
+            term.write(`\x1b[90m[*] PTY Active (Portal #${portalId})\x1b[0m\r\n`);
+          }
         }
         sendResize(ws);
         term.focus();
@@ -152,8 +152,10 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
         try {
           const msg = JSON.parse(event.data);
           if (msg.kind === WebsocketMessageKind.Output) {
-            setConnectionStatus("connected");
-            onConnectionStatusChangeRef.current?.("connected");
+            if (!endedRemotely) {
+              setConnectionStatus("connected");
+              onConnectionStatusChangeRef.current?.("connected");
+            }
             term.write(msg.output);
           } else if (msg.kind === WebsocketMessageKind.TaskError) {
             term.write(`\x1b[31m${msg.error}\x1b[0m`);
@@ -176,7 +178,6 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
               term.options.cursorBlink = true;
             } else if (msg.status === "closed") {
               endedRemotely = true;
-              setSessionEndedByRemote(true);
               setConnectionStatus("disconnected");
               onConnectionStatusChangeRef.current?.("disconnected");
               term.options.cursorBlink = false;
@@ -246,7 +247,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
       {/* PTY Session Header Bar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[#161922] border-b border-[#262b38] text-xs">
         <div className="flex items-center gap-2 min-w-0">
-          <SquareTerminal size={14} className="text-emerald-400 flex-shrink-0" />
+          <SquareTerminal size={14} className="text-gray-400 flex-shrink-0" />
           <span className="font-mono font-semibold text-gray-200 truncate">
             PTY Session{displayPivotId ? ` #${displayPivotId}` : ""}
           </span>
@@ -265,8 +266,11 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
           {connectionStatus === "disconnected" && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 font-semibold">
               <XCircle size={11} />
-              PTY Closed
+              PTY Closed (Read-Only)
             </span>
+          )}
+          {connectionStatus === "disconnected" && errorMessage && (
+            <span className="text-red-300 truncate">{errorMessage}</span>
           )}
         </div>
 
@@ -278,7 +282,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
             <button
               type="button"
               onClick={handleReconnect}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-600/80 hover:bg-emerald-600 text-white font-medium transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#2a2f3a] hover:bg-[#343b4d] text-gray-200 hover:text-white font-medium transition-colors"
             >
               <RefreshCw size={12} />
               Spawn New PTY
@@ -296,52 +300,6 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
           )}
         </div>
       </div>
-
-      {/* Prominent Disconnected / Dead Terminal Banner */}
-      {connectionStatus === "disconnected" && (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-red-950/70 border-b border-red-500/40 text-xs text-red-200"
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={15} className="text-red-400 flex-shrink-0" />
-            <div>
-              <span className="font-semibold text-red-100">
-                {sessionEndedByRemote
-                  ? "This PTY process has exited or was closed."
-                  : "PTY terminal session is disconnected."}
-              </span>{" "}
-              {errorMessage && <span className="text-red-300">Reason: {errorMessage}. </span>}
-              <span className="text-red-300/80">
-                Terminal is read-only; scrollback history is preserved below.
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {portalId > 0 ? (
-              <button
-                type="button"
-                onClick={handleReconnect}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-500/30 hover:bg-red-500/50 border border-red-400/40 text-red-100 font-medium transition-colors"
-              >
-                <RefreshCw size={12} />
-                Spawn New PTY
-              </button>
-            ) : (
-              <span className="text-red-300/90 italic">Re-open a portal on the shell tab to start a new PTY</span>
-            )}
-            {onCloseTab && (
-              <button
-                type="button"
-                onClick={handleTerminateAndClose}
-                className="px-2.5 py-1 rounded bg-black/30 hover:bg-black/50 text-gray-200 transition-colors"
-              >
-                Dismiss Tab
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       <div ref={termRef} className="flex-grow w-full h-full p-1" style={{ height: "100%" }} />
     </div>
