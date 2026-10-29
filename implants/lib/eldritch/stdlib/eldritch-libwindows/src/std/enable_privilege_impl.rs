@@ -15,11 +15,8 @@ pub fn enable_privilege(privilege: String) -> Result<bool, String> {
 }
 
 #[cfg(target_os = "windows")]
-const ERROR_NOT_ALL_ASSIGNED: i32 = 1300;
-
-#[cfg(target_os = "windows")]
 fn enable_privilege_windows(privilege: &str) -> Result<bool, String> {
-    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::Foundation::{CloseHandle, ERROR_NOT_ALL_ASSIGNED};
     use windows_sys::Win32::Security::{
         AdjustTokenPrivileges, LookupPrivilegeValueW, SE_PRIVILEGE_ENABLED,
         TOKEN_ADJUST_PRIVILEGES, TOKEN_PRIVILEGES, TOKEN_QUERY,
@@ -85,7 +82,7 @@ fn enable_privilege_windows(privilege: &str) -> Result<bool, String> {
         return Err(format!("AdjustTokenPrivileges failed: {}", last_err));
     }
 
-    if last_err.raw_os_error() == Some(ERROR_NOT_ALL_ASSIGNED) {
+    if last_err.raw_os_error() == Some(ERROR_NOT_ALL_ASSIGNED as i32) {
         return Err(format!(
             "Token does not hold privilege '{}' - cannot enable",
             privilege
