@@ -266,6 +266,10 @@ func (srv *Server) Close() error {
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
 func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
+	tokens, err := parseBuilderEnrollmentTokens(EnvBuilderEnrollmentTokens.String())
+	if err != nil {
+		return nil, err
+	}
 	// Get server key pair from secrets manager (for OAuth)
 	pubKey, privKey, err := getKeyPairEd25519()
 	if err != nil {
@@ -290,6 +294,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	); err != nil {
 		client.Close()
 		return nil, fmt.Errorf("failed to initialize graph schema: %w", err)
+	}
+	if err := seedBuilderEnrollmentTokens(ctx, client, tokens); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to seed builder enrollment tokens: %w", err)
 	}
 
 	// Load Default Tomes
