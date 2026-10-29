@@ -3,7 +3,10 @@ use anyhow::{Context, Result};
 
 pub fn which(bin: String) -> Result<String, String> {
     if let Ok(res) = which::which(bin) {
-        return Ok(res.into_os_string().into_string().expect("Located path is not a valid string"));
+        return Ok(res
+            .into_os_string()
+            .into_string()
+            .expect("Located path is not a valid string"));
     }
 
     Ok("".to_string())
