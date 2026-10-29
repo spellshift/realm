@@ -131,6 +131,40 @@ describe("ShellHeader", () => {
         expect(onExport).toHaveBeenCalled();
     });
 
+    it("renders New Interpreter and New Portal options in white in the actions menu while Close Portal remains red", () => {
+        const onSpawnFreshShell = vi.fn();
+        const onNewPortal = vi.fn();
+        const { rerender } = render(
+            <BrowserRouter>
+                <ShellHeader
+                    {...defaultProps}
+                    onSpawnFreshShell={onSpawnFreshShell}
+                    onNewPortal={onNewPortal}
+                    actionsMenuTourOpen={true}
+                />
+            </BrowserRouter>
+        );
+
+        const newInterpreterBtn = screen.getByText("New Interpreter").closest("button")!;
+        const newPortalBtn = screen.getByText("New Portal").closest("button")!;
+        expect(newInterpreterBtn).toHaveClass("text-white");
+        expect(newPortalBtn).toHaveClass("text-white");
+
+        rerender(
+            <BrowserRouter>
+                <ShellHeader
+                    {...defaultProps}
+                    portalId={7}
+                    onSpawnFreshShell={onSpawnFreshShell}
+                    actionsMenuTourOpen={true}
+                />
+            </BrowserRouter>
+        );
+
+        const closePortalBtn = screen.getByText("Close Portal").closest("button")!;
+        expect(closePortalBtn).toHaveClass("text-red-400");
+    });
+
     it("renders unified toolbar background, active button highlight, and badges only for active pivots and active queue", () => {
         const onToggleComposer = vi.fn();
         const onToggleKnowledge = vi.fn();

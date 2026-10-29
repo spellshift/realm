@@ -37,27 +37,82 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         onOpenHistoryDrawer: vi.fn(),
     };
 
-    it("renders 1-time interactive walkthrough popover with component steps and dismisses cleanly", () => {
+    it("renders 1-time interactive walkthrough popover with component steps, opens composer on step 2, and dismisses cleanly", () => {
         const onDismiss = vi.fn();
         const onOpenGuideDrawer = vi.fn();
+        const onOpenComposer = vi.fn();
+        const onPortalStepChange = vi.fn();
 
         render(
             <ShellWalkthrough
                 isOpen={true}
                 onDismiss={onDismiss}
                 onOpenGuideDrawer={onOpenGuideDrawer}
+                onOpenComposer={onOpenComposer}
+                onPortalStepChange={onPortalStepChange}
             />
         );
 
         expect(screen.getByTestId("shell-nux-banner")).toBeInTheDocument();
-        expect(screen.getByText(/Eldritch REPL & Multi-Line Editing/i)).toBeInTheDocument();
+        expect(screen.getByText("Welcome to the Eldritch REPL")).toBeInTheDocument();
+        expect(screen.getByText(/You can use the ! macro to quickly run shell commands, such as !ls/i)).toBeInTheDocument();
+        expect(onOpenComposer).not.toHaveBeenCalled();
 
-        // Advance through steps
+        // Step 2: Eldritch Composer (opens composer if closed)
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText(/Interactive Portals & Pivots/i)).toBeInTheDocument();
+        expect(screen.getByText("Eldritch Composer")).toBeInTheDocument();
+        expect(onOpenComposer).toHaveBeenCalledTimes(1);
+
+        // Step 3: Non-Interactive (positioned above bottom status bar element without overlapping)
+        const nonInteractiveEl = document.createElement("span");
+        nonInteractiveEl.setAttribute("data-tour", "shell-non-interactive");
+        nonInteractiveEl.getBoundingClientRect = () =>
+            ({
+                top: 760,
+                left: 24,
+                width: 110,
+                height: 20,
+                bottom: 780,
+                right: 134,
+                x: 24,
+                y: 760,
+                toJSON: () => {},
+            } as DOMRect);
+        document.body.appendChild(nonInteractiveEl);
 
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText(/Composer & Shell Aliases/i)).toBeInTheDocument();
+        const dialog = screen.getByRole("dialog", { name: "Non-Interactive" });
+        expect(dialog).toBeInTheDocument();
+        expect(dialog.style.bottom).toBe(`${window.innerHeight - 760 + 14}px`);
+        expect(dialog.style.top).toBe("");
+        document.body.removeChild(nonInteractiveEl);
+
+        // Step 4: Agent Callback
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Agent Callback")).toBeInTheDocument();
+
+        // Step 5: Going Interactive (opens New Portal menu option)
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Going Interactive")).toBeInTheDocument();
+        expect(onPortalStepChange).toHaveBeenLastCalledWith(true);
+
+        // Step 6: Knowledge Graph
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
+        expect(onPortalStepChange).toHaveBeenLastCalledWith(false);
+
+        // Step 7: Command Queue & History
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Command Queue & History")).toBeInTheDocument();
+
+        // Step 8: Operator Guide & Stdlib Reference
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Operator Guide & Stdlib Reference")).toBeInTheDocument();
+
+        // Step 9: Feedback & Bug Reports
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Feedback & Bug Reports")).toBeInTheDocument();
+        expect(screen.getByText(/Thank you for helping make Realm better!/i)).toBeInTheDocument();
 
         fireEvent.click(screen.getByLabelText("Dismiss welcome guide"));
         expect(onDismiss).toHaveBeenCalled();
@@ -91,7 +146,7 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(onReconnect).toHaveBeenCalled();
     });
 
-    it("renders stuck interpreter warning and triggers Spawn new shell", () => {
+    it("renders stuck interpreter warning and triggers New Interpreter", () => {
         const onSpawnFreshShell = vi.fn();
         const stuckTaskItem: ShellTaskItem = {
             id: "t-stuck",
@@ -112,7 +167,7 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(screen.getByTestId("stuck-interpreter-banner")).toBeInTheDocument();
         expect(screen.getByText(/Interpreter Busy or Potentially Stuck/i)).toBeInTheDocument();
 
-        fireEvent.click(screen.getByText(/Spawn new shell/i));
+        fireEvent.click(screen.getByText(/New Interpreter/i));
         expect(onSpawnFreshShell).toHaveBeenCalled();
     });
 });
@@ -470,7 +525,7 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
 });
 
 describe("ShellNuxDrawer", () => {
-    it("renders Quick Start Guide and searchable Eldritch v0.4.1 Stdlib reference", () => {
+    it("renders Quick Start Guide with top documentation link and searchable Eldritch v0.4.1 reference", () => {
         const onRunCode = vi.fn();
         const onStageToPrompt = vi.fn();
 
@@ -486,12 +541,13 @@ describe("ShellNuxDrawer", () => {
             />
         );
 
-        expect(screen.getByText(/1. Queued Mode vs. Interactive Portal Mode/i)).toBeInTheDocument();
+        expect(screen.getByText("Read Full Documentation")).toBeInTheDocument();
+        expect(screen.getByText(/Interactive Portals/i)).toBeInTheDocument();
         fireEvent.click(screen.getByText(/Run portal.create\(\)/i));
         expect(onRunCode).toHaveBeenCalledWith("portal.create()");
 
-        // Switch to Eldritch Stdlib tab
-        fireEvent.click(screen.getByText(/Eldritch v0.4.1 Stdlib/i));
+        // Switch to Eldritch v0.4.1 tab
+        fireEvent.click(screen.getByText("Eldritch v0.4.1"));
         const searchInput = screen.getByPlaceholderText(/Search Eldritch functions/i);
         fireEvent.change(searchInput, { target: { value: "file.list" } });
         expect(screen.getByText("file.list")).toBeInTheDocument();

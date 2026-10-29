@@ -59,6 +59,7 @@ interface ShellHeaderProps {
   credentials?: KnowledgeCredentialItem[];
   hosts?: KnowledgeHostItem[];
   onLoadIntoComposer?: (code: string) => void;
+  actionsMenuTourOpen?: boolean;
 }
 
 const ShellHeader: React.FC<ShellHeaderProps> = ({
@@ -92,6 +93,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   credentials,
   hosts,
   onLoadIntoComposer,
+  actionsMenuTourOpen = false,
 }) => {
   return (
     <div className="relative z-30 bg-[#181b24] px-3 py-1.5 rounded-md border border-[#262b38] flex flex-wrap justify-between items-center gap-2 text-xs font-mono text-gray-200 shadow-sm">
@@ -208,6 +210,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             >
               <button
                 type="button"
+                data-tour="shell-composer-toggle"
                 onClick={onToggleComposer}
                 aria-label="Toggle multi-line composer"
                 className={`${TOOLBAR_BUTTON_BASE} ${
@@ -231,6 +234,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             >
               <button
                 type="button"
+                data-tour="shell-knowledge"
                 onClick={onToggleKnowledge}
                 aria-label="Toggle knowledge graph"
                 className={`${TOOLBAR_BUTTON_BASE} ${
@@ -259,6 +263,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             >
               <button
                 type="button"
+                data-tour="shell-pivots"
                 onClick={onTogglePivots}
                 aria-label="Toggle pivots"
                 className={`${TOOLBAR_BUTTON_BASE} ${
@@ -287,6 +292,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             >
               <button
                 type="button"
+                data-tour="shell-history"
                 onClick={onToggleHistory}
                 aria-label="Toggle command history"
                 className={`${TOOLBAR_BUTTON_BASE} ${
@@ -315,6 +321,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             >
               <button
                 type="button"
+                data-tour="shell-guide"
                 onClick={onToggleNux}
                 aria-label="Toggle operator guide"
                 className={`${TOOLBAR_BUTTON_BASE} ${
@@ -336,6 +343,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             hasArrow
           >
             <a
+              data-tour="shell-bug-report"
               href="https://github.com/spellshift/realm/issues/new?template=bug_report.md"
               target="_blank"
               rel="noopener noreferrer"
@@ -370,6 +378,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             hosts={hosts}
             onLoadIntoComposer={onLoadIntoComposer}
             buttonClassName={`${TOOLBAR_BUTTON_BASE} ${TOOLBAR_BUTTON_INACTIVE}`}
+            forceOpen={actionsMenuTourOpen}
           />
         </div>
       </div>

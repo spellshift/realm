@@ -4,10 +4,10 @@ import {
     Plus,
     PowerOff,
     Search,
+    Shell,
     SquareTerminal,
     Terminal,
     X,
-    Zap,
 } from "lucide-react";
 import { ShellPivotItem } from "../hooks/useShellData";
 
@@ -136,7 +136,7 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                             onClick={handleCreatePortal}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shrink-0 transition-colors"
                         >
-                            <Zap className="w-3.5 h-3.5" />
+                            <Shell className="w-3.5 h-3.5" />
                             Open Portal
                         </button>
                     </div>

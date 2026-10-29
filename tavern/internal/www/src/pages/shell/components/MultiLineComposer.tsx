@@ -561,6 +561,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
     return (
         <div
             data-testid="multiline-composer"
+            data-tour="shell-composer"
             className="flex flex-col rounded-md border border-[#262b38] bg-[#141822] shadow-lg overflow-hidden relative"
         >
             {/* Top Vertical Resize Drag Handle */}

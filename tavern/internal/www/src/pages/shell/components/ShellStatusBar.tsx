@@ -93,21 +93,34 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
             </span>
           </span>
         ) : portalId ? (
-          <span className="flex items-center gap-2 text-green-400 font-semibold">
+          <span
+            data-tour="shell-non-interactive"
+            className="flex items-center gap-2 text-green-400 font-semibold"
+          >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
             <span>Portal Active</span>
             <span className="text-xs text-gray-500 font-normal">(ID: {portalId})</span>
           </span>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-            <span className="text-yellow-500">non-interactive</span>
+            <span
+              data-tour="shell-non-interactive"
+              className="inline-flex items-center gap-2"
+            >
+              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+              <span className="text-yellow-500">non-interactive</span>
+            </span>
             {timeUntilCallback && (
               <>
                 <span className="text-gray-600">|</span>
-                <span>Next callback:</span>
-                <span className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-300"}>
-                  {timeUntilCallback}
+                <span
+                  data-tour="shell-next-callback"
+                  className="inline-flex items-center gap-2"
+                >
+                  <span>Next callback:</span>
+                  <span className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-300"}>
+                    {timeUntilCallback}
+                  </span>
                 </span>
               </>
             )}

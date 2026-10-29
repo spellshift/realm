@@ -8,10 +8,10 @@ import {
   Layers,
   Play,
   Search,
+  Shell,
   ShieldAlert,
   Terminal,
   X,
-  Zap,
 } from "lucide-react";
 import docsData from "../../../assets/eldritch-docs.json";
 
@@ -82,7 +82,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
       <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#1b1f2a] border-b border-[#2e3440]">
         <div className="flex items-center gap-2">
           <Compass size={16} className="text-purple-400" />
-          <h2 className="text-sm font-semibold text-white">Operator Guide &amp; Eldritch Reference</h2>
+          <h2 className="text-sm font-semibold text-white">Documentation</h2>
         </div>
         <button
           type="button"
@@ -116,12 +116,26 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
               : "border-transparent text-gray-400 hover:text-gray-200"
           }`}
         >
-          Eldritch v0.4.1 Stdlib ({modules.length} Modules)
+          Eldritch v0.4.1
         </button>
       </div>
 
       {activeTab === "guide" ? (
-        <div className="flex-1 overflow-y-auto shell-scrollbar p-3.5 space-y-3.5 text-xs text-gray-300">
+        <div className="flex-1 overflow-y-auto shell-scrollbar p-3.5 space-y-3 text-xs text-gray-300">
+          {/* External Documentation Link at the top */}
+          <a
+            href="https://docs.realm.pub/user-guide/eldritch"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between px-3 py-2 rounded-md bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-200 font-medium transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <BookOpen size={14} />
+              Read Full Documentation
+            </span>
+            <ExternalLink size={13} />
+          </a>
+
           {onStartWalkthrough && (
             <button
               type="button"
@@ -135,17 +149,15 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
               <span className="text-[11px] text-purple-300">Start Tour →</span>
             </button>
           )}
-          {/* Card 1: Queued vs Interactive Mode */}
+
+          {/* Card 1: Portals */}
           <div className="rounded-md bg-[#1c202b] border border-[#2d3446] p-3 space-y-2">
             <div className="flex items-center gap-2 text-white font-semibold">
-              <Zap size={15} className="text-emerald-400" />
-              <span>1. Queued Mode vs. Interactive Portal Mode</span>
+              <Shell size={15} className="text-emerald-400" />
+              <span>Interactive Portals</span>
             </div>
             <p className="text-gray-400 leading-relaxed">
-              By default, shells start in <strong className="text-gray-200">Queued Mode</strong>: commands you enter are queued and executed in sequence on the beacon&apos;s next callback check-in.
-            </p>
-            <p className="text-gray-400 leading-relaxed">
-              To switch to real-time <strong className="text-emerald-300">Interactive Mode</strong> (sub-second output + PTY &amp; SSH pivoting), open a Portal stream:
+              Commands queue for the next callback by default. Open a portal for real-time execution and pivoting:
             </p>
             <div className="flex items-center justify-between bg-[#12151c] px-2.5 py-1.5 rounded border border-[#282e3d]">
               <code className="font-mono text-emerald-300">portal.create()</code>
@@ -161,41 +173,37 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
             </div>
           </div>
 
-          {/* Card 2: Macros & Pivoting */}
+          {/* Card 2: Macros */}
           <div className="rounded-md bg-[#1c202b] border border-[#2d3446] p-3 space-y-2">
             <div className="flex items-center gap-2 text-white font-semibold">
               <Layers size={15} className="text-purple-400" />
-              <span>2. Shell Macros &amp; Lateral Pivots (PTY / SSH)</span>
+              <span>Shell Macros</span>
             </div>
-            <ul className="space-y-1.5 text-gray-400">
+            <ul className="space-y-1 text-gray-400">
               <li>
-                • <code className="font-mono text-purple-300">!whoami</code> — Shorthand macro for{" "}
-                <code className="font-mono text-gray-200">sys.shell(&quot;whoami&quot;)</code>
+                • <code className="font-mono text-purple-300">!cmd</code> — Run a shell command via{" "}
+                <code className="font-mono text-gray-200">sys.shell()</code>
               </li>
               <li>
-                • <code className="font-mono text-purple-300">pty()</code> — Opens a full interactive OS terminal tab over an active portal
+                • <code className="font-mono text-purple-300">pty()</code> — Open an interactive PTY tab
               </li>
               <li>
-                • <code className="font-mono text-purple-300">ssh(&quot;user:pass@10.0.0.5:22&quot;)</code> — Negotiates an SSH session through the agent&apos;s portal in a dedicated tab
+                • <code className="font-mono text-purple-300">ssh(&quot;user:pass@host:22&quot;)</code> — Open an SSH pivot tab
               </li>
               <li>
-                • <code className="font-mono text-purple-300">help(file)</code> — Prints inline documentation for any Eldritch module
+                • <code className="font-mono text-purple-300">help(module)</code> — View inline module docs
               </li>
             </ul>
           </div>
 
-          {/* Card 3: Slow Beacons vs Stuck Interpreters */}
+          {/* Card 3: Interpreter Recovery */}
           <div className="rounded-md bg-[#1c202b] border border-[#2d3446] p-3 space-y-2">
             <div className="flex items-center gap-2 text-white font-semibold">
               <ShieldAlert size={15} className="text-amber-400" />
-              <span>3. Long Callback Intervals &amp; Stuck Interpreters</span>
+              <span>Stuck Interpreter</span>
             </div>
             <p className="text-gray-400 leading-relaxed">
-              <strong className="text-gray-200">Slow Beacons (&gt;10m callback):</strong> You can queue multiple commands back-to-back at any time. They will wait in the queue and execute in exact order when the beacon checks in.
-            </p>
-            <p className="text-gray-400 leading-relaxed">
-              <strong className="text-amber-200">Stuck Interpreter:</strong> Each shell connects to a persistent Eldritch interpreter on the agent. If a blocking command hangs that interpreter after check-in, use{" "}
-              <strong className="text-white">Spawn new shell</strong> to immediately start a clean interpreter without losing this shell&apos;s history.
+              If a blocking command hangs this session, start a clean interpreter without losing history.
             </p>
             <button
               type="button"
@@ -203,7 +211,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 font-medium transition-colors"
             >
               <Terminal size={12} />
-              Spawn new shell
+              New Interpreter
             </button>
           </div>
 
@@ -211,7 +219,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
           <div className="rounded-md bg-[#1c202b] border border-[#2d3446] p-3 space-y-2">
             <div className="flex items-center gap-2 text-white font-semibold">
               <Keyboard size={15} className="text-blue-400" />
-              <span>4. Keyboard Shortcuts</span>
+              <span>Keyboard Shortcuts</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5 text-[11px]">
               <div className="flex justify-between bg-[#14171f] px-2 py-1 rounded">
@@ -240,20 +248,6 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
               </div>
             </div>
           </div>
-
-          {/* External Documentation Link */}
-          <a
-            href="https://docs.realm.pub/user-guide/eldritch"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between px-3 py-2 rounded-md bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-200 font-medium transition-colors"
-          >
-            <span className="flex items-center gap-2">
-              <BookOpen size={14} />
-              Read Full Eldritch Documentation
-            </span>
-            <ExternalLink size={13} />
-          </a>
         </div>
       ) : (
         /* Eldritch Standard Library Explorer Tab */

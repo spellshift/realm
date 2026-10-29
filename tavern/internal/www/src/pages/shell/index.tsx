@@ -78,6 +78,7 @@ const Shell = () => {
   const [focusQueueTrigger, setFocusQueueTrigger] = useState(0);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerCode, setComposerCode] = useState<string>("");
+  const [actionsMenuTourOpen, setActionsMenuTourOpen] = useState(false);
   const [sshModalOpenExternal, setSshModalOpenExternal] = useState(false);
   const [sshModalInitialTarget, setSshModalInitialTarget] = useState("");
   const [showNuxBanner, setShowNuxBanner] = useState<boolean>(() => {
@@ -428,6 +429,8 @@ const Shell = () => {
         <ShellWalkthrough
           isOpen={showNuxBanner && !shellData?.node?.closedAt}
           onDismiss={handleDismissNuxBanner}
+          onOpenComposer={() => setComposerOpen(true)}
+          onPortalStepChange={setActionsMenuTourOpen}
           onOpenGuideDrawer={() => {
             setNuxOpen(true);
             setHistoryOpen(false);
@@ -490,6 +493,7 @@ const Shell = () => {
             setKnowledgeOpen(false);
           }}
           onSpawnFreshShell={handleSpawnFreshShell}
+          actionsMenuTourOpen={actionsMenuTourOpen}
         />
 
         <InterpreterStatusBanner

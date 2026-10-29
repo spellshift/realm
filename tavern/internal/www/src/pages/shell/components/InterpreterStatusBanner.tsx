@@ -64,7 +64,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
                     ) : (
                         <PlusCircle className="w-3.5 h-3.5" />
                     )}
-                    Spawn New Shell on Beacon
+                    New Interpreter
                 </button>
             </div>
         );
@@ -139,7 +139,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
                         ) : (
                             <PlusCircle className="w-3.5 h-3.5" />
                         )}
-                        Spawn new shell
+                        New Interpreter
                     </button>
                 </div>
             </div>

@@ -1,61 +1,83 @@
 import React, { useEffect, useState } from "react";
 import {
+  Bug,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Code2,
   Compass,
   Database,
   History,
+  Shell,
   Sparkles,
   Terminal,
   X,
-  Zap,
 } from "lucide-react";
 
 export interface WalkthroughStep {
   id: string;
   selector: string;
+  fallbackSelector?: string;
   title: string;
   description: string;
-  tip: string;
+  tip?: string;
   icon: React.ReactNode;
 }
 
-const WALKTHROUGH_STEPS: WalkthroughStep[] = [
+export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   {
     id: "terminal",
     selector: '[data-tour="shell-terminal"]',
-    title: "Eldritch REPL & Multi-Line Editing",
+    title: "Welcome to the Eldritch REPL",
     description:
-      "Type single commands or multi-line blocks (def, for, if). Use Up & Down arrows to move between lines inside an active block and fix typos before pressing Enter on a trailing blank line.",
-    tip: "Prefix OS commands with ! (e.g. !whoami) or press Shift+Enter for a manual newline.",
+      "Write Eldritch directly into the terminal for it to be executed on the agent.",
+    tip: "You can use the ! macro to quickly run shell commands, such as !ls",
     icon: <Terminal size={16} className="text-purple-400" />,
-  },
-  {
-    id: "portal",
-    selector: '[data-tour="shell-portal"]',
-    title: "Interactive Portals & Pivots",
-    description:
-      "Shells start in Queued Mode (commands run on next beacon check-in). Run portal.create() to switch to real-time Portal Active mode and unlock + PTY and + SSH pivot tabs.",
-    tip: "SSH pivots negotiate directly from the gRPC-receiving Tavern instance over the beacon's portal.",
-    icon: <Zap size={16} className="text-emerald-400" />,
   },
   {
     id: "composer",
     selector: '[data-tour="shell-composer"]',
-    title: "Composer & Shell Aliases",
+    fallbackSelector: '[data-tour="shell-composer-toggle"]',
+    title: "Eldritch Composer",
     description:
-      "Toggle the bottom Composer to draft larger Eldritch scripts or insert 1-click templates—including the aliases snippet that registers ls(), whoami(), ps(), and netstat().",
-    tip: "Press Ctrl+Enter inside the Composer to execute immediately.",
+      "For more complex scripts, it may be easier to write them in the Composer view. Please also feel free to browse the helpful snippets that may save you some time.",
+    tip: 'You can load the "Aliases" snippet for a more native shell experience.',
     icon: <Code2 size={16} className="text-purple-400" />,
+  },
+  {
+    id: "non-interactive",
+    selector: '[data-tour="shell-non-interactive"]',
+    title: "Non-Interactive",
+    description:
+      "All code runs on the agent, but in non-interactive mode we queue it for the agent to retrieve during its next callback. This means you'll need to wait for agent callbacks before you'll see any output from your Eldritch, but it's typically more stealthy to operate in this mode.",
+    icon: <Clock size={16} className="text-yellow-400" />,
+  },
+  {
+    id: "callback",
+    selector: '[data-tour="shell-next-callback"]',
+    fallbackSelector: '[data-tour="shell-non-interactive"]',
+    title: "Agent Callback",
+    description:
+      "This timer shows when the next agent callback is expected and will alert you if an agent misses its check-in window.",
+    icon: <Clock size={16} className="text-blue-400" />,
+  },
+  {
+    id: "portal",
+    selector: '[data-tour="shell-new-portal"]',
+    fallbackSelector: '[data-tour="shell-actions-button"]',
+    title: "Going Interactive",
+    description:
+      'For real-time interaction with the agent, you can open a "Portal" on it. This creates an established connection which can be used for low-latency operations and to establish pivots (e.g. SSH).',
+    tip: "You can always close a portal when you're finished and open one later. But be warned, doing so will terminate your active pivots.",
+    icon: <Shell size={16} className="text-emerald-400" />,
   },
   {
     id: "knowledge",
     selector: '[data-tour="shell-knowledge"]',
     title: "Knowledge Graph",
     description:
-      "Access real-time host credentials, network topology, and reported files. Download discovered host files locally in one click or use captured credentials to launch SSH pivots.",
-    tip: "Polled live every 5 seconds so newly reported credentials and files appear automatically.",
+      "View credentials, hosts, and files reported across your engagement, and quickly use them to stage commands or launch pivots.",
+    tip: "Items reported via the Eldritch report module appear here automatically.",
     icon: <Database size={16} className="text-emerald-400" />,
   },
   {
@@ -63,8 +85,8 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     selector: '[data-tour="shell-history"]',
     title: "Command Queue & History",
     description:
-      "Inspect queued, running, and completed commands alongside all active or closed PTY/SSH pivot sessions. Filter by status or re-stage any historical command.",
-    tip: "On slow-callback beacons, queue multiple commands in sequence and track their execution here.",
+      "Review queued, running, and completed commands for this session, inspect their output, or re-run previous scripts.",
+    tip: "You can queue multiple commands back-to-back and they will execute in order on the next callback.",
     icon: <History size={16} className="text-blue-400" />,
   },
   {
@@ -72,9 +94,17 @@ const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     selector: '[data-tour="shell-guide"]',
     title: "Operator Guide & Stdlib Reference",
     description:
-      "Browse the searchable Eldritch standard library documentation, keyboard shortcuts, or replay this walkthrough anytime.",
-    tip: "Click Prompt or Composer on any stdlib function to stage it directly.",
+      "Search the Eldritch standard library documentation, review keyboard shortcuts, or replay this walkthrough anytime.",
+    tip: "Load any standard library function directly into the Composer from the reference tab.",
     icon: <Compass size={16} className="text-amber-400" />,
+  },
+  {
+    id: "feedback",
+    selector: '[data-tour="shell-bug-report"]',
+    title: "Feedback & Bug Reports",
+    description:
+      "Run into an issue or have an idea to improve the shell? Click here anytime to report a bug or share your feedback. Thank you for helping make Realm better!",
+    icon: <Bug size={16} className="text-pink-400" />,
   },
 ];
 
@@ -82,6 +112,8 @@ interface ShellWalkthroughProps {
   isOpen: boolean;
   onDismiss: () => void;
   onOpenGuideDrawer?: () => void;
+  onOpenComposer?: () => void;
+  onPortalStepChange?: (isActive: boolean) => void;
 }
 
 interface TargetRect {
@@ -95,6 +127,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   isOpen,
   onDismiss,
   onOpenGuideDrawer,
+  onOpenComposer,
+  onPortalStepChange,
 }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
@@ -104,11 +138,29 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setStepIndex(0);
+      onPortalStepChange?.(false);
       return;
     }
 
+    if (currentStep.id === "composer") {
+      if (onOpenComposer) {
+        onOpenComposer();
+      } else if (!document.querySelector('[data-tour="shell-composer"]')) {
+        const toggleBtn = document.querySelector<HTMLElement>(
+          '[data-tour="shell-composer-toggle"]'
+        );
+        toggleBtn?.click();
+      }
+    }
+
+    onPortalStepChange?.(currentStep.id === "portal");
+
     const updateRect = () => {
-      const el = document.querySelector(currentStep.selector);
+      const el =
+        document.querySelector(currentStep.selector) ||
+        (currentStep.fallbackSelector
+          ? document.querySelector(currentStep.fallbackSelector)
+          : null);
       if (!el) {
         setTargetRect(null);
         return;
@@ -127,13 +179,29 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     };
 
     updateRect();
+    const timer = setTimeout(updateRect, 30);
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect, true);
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect, true);
     };
-  }, [isOpen, stepIndex, currentStep.selector]);
+  }, [
+    isOpen,
+    stepIndex,
+    currentStep.id,
+    currentStep.selector,
+    currentStep.fallbackSelector,
+    onOpenComposer,
+    onPortalStepChange,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      onPortalStepChange?.(false);
+    };
+  }, [onPortalStepChange]);
 
   if (!isOpen) return null;
 
@@ -151,6 +219,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     const viewportW = typeof window !== "undefined" ? window.innerWidth : 1280;
     const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
     const popoverW = 360;
+    const popoverEstH = currentStep.tip ? 260 : 230;
 
     // If highlighting the large terminal area, dock the popover cleanly in the top-right of the terminal
     if (currentStep.id === "terminal") {
@@ -160,17 +229,32 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       };
     }
 
-    const belowTop = targetRect.top + targetRect.height + 12;
-    const top =
-      belowTop + 230 < viewportH
-        ? belowTop
-        : Math.max(16, targetRect.top - 220);
+    // If highlighting "New Portal" inside the right-aligned actions menu, position popover to the left of the menu
+    if (currentStep.id === "portal" && targetRect.left > popoverW + 32) {
+      return {
+        top: `${Math.max(56, Math.min(targetRect.top - 12, viewportH - popoverEstH - 16))}px`,
+        left: `${Math.max(16, targetRect.left - popoverW - 20)}px`,
+      };
+    }
 
-    const idealLeft = targetRect.left + targetRect.width / 2 - popoverW / 2;
-    const clampedLeft = Math.max(16, Math.min(idealLeft, viewportW - popoverW - 16));
+    const belowTop = targetRect.top + targetRect.height + 14;
+    const clampedLeft = Math.max(
+      16,
+      Math.min(
+        targetRect.left + targetRect.width / 2 - popoverW / 2,
+        viewportW - popoverW - 16
+      )
+    );
+
+    if (belowTop + popoverEstH < viewportH) {
+      return {
+        top: `${belowTop}px`,
+        left: `${clampedLeft}px`,
+      };
+    }
 
     return {
-      top: `${top}px`,
+      bottom: `${Math.max(16, viewportH - targetRect.top + 14)}px`,
       left: `${clampedLeft}px`,
     };
   };
@@ -242,10 +326,12 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         </p>
 
         {/* Tip Box */}
-        <div className="px-2.5 py-1.5 rounded-md bg-[#10131a] border border-[#262b38] text-[11px] text-gray-400 mb-3">
-          <span className="text-purple-300 font-medium">Tip: </span>
-          {currentStep.tip}
-        </div>
+        {currentStep.tip && (
+          <div className="px-2.5 py-1.5 rounded-md bg-[#10131a] border border-[#262b38] text-[11px] text-gray-400 mb-3">
+            <span className="text-purple-300 font-medium">Tip: </span>
+            {currentStep.tip}
+          </div>
+        )}
 
         {/* Footer Controls */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#262b38]">
