@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { WebsocketMessageKind } from "../websocket";
+import { getViewportNonEmptyLineCount, transformClearAnsiForScrollback } from "../hooks/shellUtils";
 import { CheckCircle2, Loader2, RefreshCw, SquareTerminal, XCircle } from "lucide-react";
 
 interface PtyTerminalProps {
@@ -87,7 +88,11 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
       fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
       fontSize: 13.5,
       lineHeight: 1.35,
-      scrollback: 500000,
+      scrollback: 10000000,
+    });
+
+    term.parser?.registerCsiHandler({ final: "J" }, (params) => {
+      return params[0] === 3;
     });
 
     const fitAddon = new FitAddon();
@@ -156,7 +161,13 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
               setConnectionStatus("connected");
               onConnectionStatusChangeRef.current?.("connected");
             }
-            term.write(msg.output);
+            term.write(
+              transformClearAnsiForScrollback(
+                msg.output,
+                term.rows,
+                getViewportNonEmptyLineCount(term)
+              )
+            );
           } else if (msg.kind === WebsocketMessageKind.TaskError) {
             term.write(`\x1b[31m${msg.error}\x1b[0m`);
           } else if (msg.kind === WebsocketMessageKind.Error) {
@@ -243,7 +254,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
   }, [isActive]);
 
   return (
-    <div className="flex-grow flex flex-col rounded-md border border-[#262b38] bg-[#11131a] h-full overflow-hidden">
+    <div className="flex-grow flex flex-col bg-[#11131a] h-full overflow-hidden">
       {/* PTY Session Header Bar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[#161922] border-b border-[#262b38] text-xs">
         <div className="flex items-center gap-2 min-w-0">

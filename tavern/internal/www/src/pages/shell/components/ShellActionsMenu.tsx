@@ -1,6 +1,6 @@
 import React, { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Share, Terminal, Shell, SquareTerminal, Ellipsis, X, StopCircle, Search, RefreshCw } from "lucide-react";
+import { Share, Terminal, Shell, SquareTerminal, Ellipsis, X, StopCircle, Search, RefreshCw, Bug } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
@@ -235,6 +235,30 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                         </Button>
                                                     </div>
                                                 </Tooltip>
+                                            )}
+                                        </Menu.Item>
+
+                                        <div className="border-t border-[#343b4d] my-1" />
+
+                                        <Menu.Item>
+                                            {() => (
+                                                <a
+                                                    data-tour="shell-bug-report"
+                                                    href="https://github.com/spellshift/realm/issues/new?template=bug_report.md"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    aria-label="Report a bug"
+                                                    className="block w-full"
+                                                >
+                                                    <Button
+                                                        buttonVariant="ghost"
+                                                        buttonStyle={{ color: "gray", size: "sm" }}
+                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                        leftIcon={<Bug className="w-4 h-4" />}
+                                                    >
+                                                        Report a Bug
+                                                    </Button>
+                                                </a>
                                             )}
                                         </Menu.Item>
                                     </div>

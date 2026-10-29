@@ -38,7 +38,7 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
   return (
     <div
       data-tour="shell-terminal"
-      className="flex-grow rounded-md overflow-hidden relative bg-[#11131a] border border-[#262b38] shadow-inner"
+      className="flex-grow overflow-hidden relative bg-[#11131a]"
     >
       <div
         ref={termRef}

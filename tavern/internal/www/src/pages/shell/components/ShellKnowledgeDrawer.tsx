@@ -176,10 +176,10 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
     <aside
       aria-label="Knowledge Graph Context"
       data-testid="shell-knowledge-drawer"
-      className="w-full md:w-96 lg:w-[440px] flex-shrink-0 flex flex-col rounded-md bg-[#161920] border border-[#2e3440] h-full overflow-hidden shadow-xl"
+      className="w-full md:w-96 lg:w-[440px] flex-shrink-0 flex flex-col bg-[#161920] border-l border-[#262b38] h-full overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#1b1f2a] border-b border-[#2e3440]">
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#181c27] border-b border-[#262b38]">
         <div className="flex items-center gap-2 min-w-0">
           <Database size={16} className="text-emerald-400 flex-shrink-0" />
           <h2 className="text-sm font-semibold text-white truncate">Knowledge Graph</h2>
@@ -268,15 +268,15 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
           </div>
 
           {activeTab === "credentials" && (
-            <div className="flex items-center justify-between gap-2 text-[11px]">
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setCredScope("host")}
-                  className={`px-2 py-1 rounded font-medium transition-colors ${
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
                     credScope === "host"
-                      ? "bg-purple-600 text-white"
-                      : "bg-[#1e222d] text-gray-400 hover:text-gray-200"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "bg-[#1e222d] text-gray-400 hover:text-gray-200 border border-[#2f364a]"
                   }`}
                 >
                   This Host ({hostCredentials.length})
@@ -284,10 +284,10 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => setCredScope("all")}
-                  className={`px-2 py-1 rounded font-medium transition-colors ${
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
                     credScope === "all"
-                      ? "bg-purple-600 text-white"
-                      : "bg-[#1e222d] text-gray-400 hover:text-gray-200"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "bg-[#1e222d] text-gray-400 hover:text-gray-200 border border-[#2f364a]"
                   }`}
                 >
                   All Realm Hosts ({allCredentials.length})
@@ -298,7 +298,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddCred((prev) => !prev)}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 font-medium transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 font-semibold shadow-sm transition-colors"
                 >
                   <Plus size={12} />
                   Record Cred
@@ -478,7 +478,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                             : `res = ssh.exec(\n    "${targetIp}",\n    "${cred.principal}",\n    "id && hostname",\n    password=${JSON.stringify(cred.secret)}\n)\nprint(res)`;
                         onLoadIntoComposer(snippet);
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-xs font-semibold text-gray-200 shadow-sm transition-colors"
                       title="Open an ssh.exec() snippet with this credential in the Multi-Line Composer"
                     >
                       <Code2 size={11} />
@@ -495,7 +495,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                         )}}]\nres = ssh.deploy(["${targetIp}"], creds, "id && hostname")\nprint(res)`;
                         onLoadIntoComposer(snippet);
                       }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-xs font-semibold text-gray-200 shadow-sm transition-colors"
                       title="Stage ssh.deploy() with this credential in the Multi-Line Composer"
                     >
                       <Network size={11} />
@@ -512,7 +512,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                             ? `Open interactive SSH Pivot tab as ${cred.principal}@${targetIp}`
                             : "Open a Portal first (portal.create()) to launch interactive SSH pivot tabs"
                         }
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-600/80 hover:bg-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white shadow-sm transition-colors"
                       >
                         <Terminal size={11} />
                         SSH Pivot
@@ -644,7 +644,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                             `res = scan.ports(["${host.primaryIP}"], [22, 80, 443, 445, 3389, 8080])\nprint(res)`
                           )
                         }
-                        className="px-2 py-0.5 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 transition-colors"
+                        className="px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-xs font-semibold text-gray-200 shadow-sm transition-colors"
                       >
                         Scan
                       </button>
@@ -658,7 +658,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                           ? `SSH Pivot to ${ip}`
                           : "Requires an active portal (portal.create())"
                       }
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-600/80 hover:bg-purple-600 disabled:opacity-40 text-white font-medium transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-xs font-semibold text-white shadow-sm transition-colors"
                     >
                       <Terminal size={11} />
                       SSH
@@ -730,7 +730,7 @@ const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                       <button
                         type="button"
                         onClick={() => navigate(`/shells/${s.id}`)}
-                        className="px-2.5 py-1 rounded bg-[#262c3a] hover:bg-[#32394a] text-gray-200 font-medium flex-shrink-0"
+                        className="px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-xs font-semibold text-gray-200 flex-shrink-0 shadow-sm transition-colors"
                       >
                         Switch
                       </button>

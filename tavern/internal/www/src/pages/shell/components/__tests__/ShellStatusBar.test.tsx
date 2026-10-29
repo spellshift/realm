@@ -39,9 +39,9 @@ describe("ShellStatusBar", () => {
         expect(screen.getByText("(ID: 123)")).toBeInTheDocument();
     });
 
-    it("displays non-interactive message when portalId is null", () => {
+    it("displays async message when portalId is null", () => {
         render(<ShellStatusBar {...defaultProps} portalId={null} />);
-        expect(screen.getByText("non-interactive")).toBeInTheDocument();
+        expect(screen.getByText("async")).toBeInTheDocument();
     });
 
     it("displays callback timer", () => {
@@ -60,22 +60,44 @@ describe("ShellStatusBar", () => {
         expect(screen.getByText(/Terminated/i)).toBeInTheDocument();
     });
 
-    it("renders clickable executing/queued spinner at bottom of screen that opens the queue", () => {
-        let openedQueue = false;
+    it("renders executing/queued spinner at bottom of screen with popover displaying currently running and queued commands", () => {
         render(
             <ShellStatusBar
                 {...defaultProps}
                 runningCount={1}
                 queuedCount={2}
-                onOpenQueue={() => {
-                    openedQueue = true;
-                }}
+                runningTasks={[
+                    {
+                        id: "t-run",
+                        createdAt: "2025-01-01T12:00:00Z",
+                        claimedAt: "2025-01-01T12:00:02Z",
+                        input: 'sys.shell("uname -a")',
+                    },
+                ]}
+                queuedTasks={[
+                    {
+                        id: "t-q1",
+                        createdAt: "2025-01-01T12:01:00Z",
+                        input: 'file.list("/etc")',
+                    },
+                    {
+                        id: "t-q2",
+                        createdAt: "2025-01-01T12:02:00Z",
+                        input: "process.list()",
+                    },
+                ]}
             />
         );
         const queueBtn = screen.getByTestId("status-bar-queue-button");
         expect(queueBtn).toHaveTextContent(/1 executing/i);
         expect(queueBtn).toHaveTextContent(/2 queued/i);
+        expect(screen.queryByTestId("status-bar-queue-popover")).not.toBeInTheDocument();
+
         fireEvent.click(queueBtn);
-        expect(openedQueue).toBe(true);
+        const popover = screen.getByTestId("status-bar-queue-popover");
+        expect(popover).toBeInTheDocument();
+        expect(popover).toHaveTextContent('sys.shell("uname -a")');
+        expect(popover).toHaveTextContent('file.list("/etc")');
+        expect(popover).toHaveTextContent("process.list()");
     });
 });

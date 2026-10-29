@@ -53,6 +53,10 @@ code {
 }
 
 /* Smooth font rendering & thin, auto-hiding dark-mode scrollbars for the Shell workspace */
+.shell-font-onest {
+  font-family: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 .xterm,
 .xterm-viewport,
 .xterm-screen {

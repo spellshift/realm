@@ -6,7 +6,11 @@ import { MockedProvider } from "@apollo/client/testing";
 import "@testing-library/jest-dom";
 
 import InterpreterStatusBanner from "../InterpreterStatusBanner";
-import MultiLineComposer from "../MultiLineComposer";
+import MultiLineComposer, {
+    DEFAULT_RC_ALIASES_SCRIPT,
+    loadRcEnabled,
+    loadRcScript,
+} from "../MultiLineComposer";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
 import ShellPivotsDrawer from "../ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "../ShellKnowledgeDrawer";
@@ -21,6 +25,7 @@ import {
     KnowledgeHostItem,
     ShellPivotItem,
     ShellTaskItem,
+    ShellTomeItem,
 } from "../../hooks/useShellData";
 
 describe("ShellWalkthrough & InterpreterStatusBanner", () => {
@@ -34,7 +39,6 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         timeUntilCallback: "in 8 minutes",
         onSpawnFreshShell: vi.fn(),
         isSpawningShell: false,
-        onOpenHistoryDrawer: vi.fn(),
     };
 
     it("renders 1-time interactive walkthrough popover with component steps, opens composer on step 2, and dismisses cleanly", () => {
@@ -42,6 +46,7 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         const onOpenGuideDrawer = vi.fn();
         const onOpenComposer = vi.fn();
         const onPortalStepChange = vi.fn();
+        const onQueueStepChange = vi.fn();
 
         render(
             <ShellWalkthrough
@@ -50,6 +55,7 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
                 onOpenGuideDrawer={onOpenGuideDrawer}
                 onOpenComposer={onOpenComposer}
                 onPortalStepChange={onPortalStepChange}
+                onQueueStepChange={onQueueStepChange}
             />
         );
 
@@ -63,7 +69,15 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(screen.getByText("Eldritch Composer")).toBeInTheDocument();
         expect(onOpenComposer).toHaveBeenCalledTimes(1);
 
-        // Step 3: Non-Interactive (positioned above bottom status bar element without overlapping)
+        // Step 3: Load Tomes (right after composer step)
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Load Tomes")).toBeInTheDocument();
+
+        // Step 4: RC Script (right after load tomes step)
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("RC Script")).toBeInTheDocument();
+
+        // Step 5: Async Mode (positioned above bottom status bar element without overlapping)
         const nonInteractiveEl = document.createElement("span");
         nonInteractiveEl.setAttribute("data-tour", "shell-non-interactive");
         nonInteractiveEl.getBoundingClientRect = () =>
@@ -81,37 +95,47 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         document.body.appendChild(nonInteractiveEl);
 
         fireEvent.click(screen.getByText("Next"));
-        const dialog = screen.getByRole("dialog", { name: "Non-Interactive" });
+        const dialog = screen.getByRole("dialog", { name: "Async Mode" });
         expect(dialog).toBeInTheDocument();
         expect(dialog.style.bottom).toBe(`${window.innerHeight - 760 + 14}px`);
         expect(dialog.style.top).toBe("");
         document.body.removeChild(nonInteractiveEl);
 
-        // Step 4: Agent Callback
+        // Step 6: Agent Callback
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Agent Callback")).toBeInTheDocument();
 
-        // Step 5: Going Interactive (opens New Portal menu option)
+        // Step 7: Queued & Executing Tasks (after Agent Callback)
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Queued & Executing Tasks")).toBeInTheDocument();
+        expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
+
+        // Step 8: Knowledge Graph
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
+        expect(onQueueStepChange).toHaveBeenLastCalledWith(false);
+
+        // Step 9: Pivots
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Pivots")).toBeInTheDocument();
+
+        // Step 10: Command Queue & History
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Command Queue & History")).toBeInTheDocument();
+
+        // Step 11: Operator Guide & Stdlib Reference
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Operator Guide & Stdlib Reference")).toBeInTheDocument();
+
+        // Step 12: Going Interactive (opens New Portal menu option)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Going Interactive")).toBeInTheDocument();
         expect(onPortalStepChange).toHaveBeenLastCalledWith(true);
 
-        // Step 6: Knowledge Graph
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
-        expect(onPortalStepChange).toHaveBeenLastCalledWith(false);
-
-        // Step 7: Command Queue & History
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Command Queue & History")).toBeInTheDocument();
-
-        // Step 8: Operator Guide & Stdlib Reference
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Operator Guide & Stdlib Reference")).toBeInTheDocument();
-
-        // Step 9: Feedback & Bug Reports
+        // Step 13: Feedback & Bug Reports (last two are portal and report a bug)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Feedback & Bug Reports")).toBeInTheDocument();
+        expect(onPortalStepChange).toHaveBeenLastCalledWith(true);
         expect(screen.getByText(/Thank you for helping make Realm better!/i)).toBeInTheDocument();
 
         fireEvent.click(screen.getByLabelText("Dismiss welcome guide"));
@@ -172,25 +196,72 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
     });
 });
 
-describe("MultiLineComposer (Composer) & eldritch-lsp", () => {
-    it("allows editing multi-line scripts, inserting valid aliases snippet, syntax highlighting, and executing via Ctrl+Enter", () => {
+describe("MultiLineComposer (Composer, Searchable Tomes, RC Script) & eldritch-lsp", () => {
+    const sampleTomes: ShellTomeItem[] = [
+        {
+            id: "tome-1",
+            name: "File List",
+            description: "List files and directories with metadata.",
+            tactic: "DISCOVERY",
+            supportModel: "FIRST_PARTY",
+            paramDefs: JSON.stringify([
+                { name: "path", type: "string", default: "/tmp" },
+            ]),
+            eldritch: 'for f in file.list(input_params["path"]):\n    print(f["file_name"])',
+        },
+        {
+            id: "tome-2",
+            name: "Process Tree",
+            description: "Display running processes.",
+            tactic: "DISCOVERY",
+            supportModel: "FIRST_PARTY",
+            paramDefs: "[]",
+            eldritch: 'for p in process.list():\n    print(p["pid"], p["name"])',
+        },
+    ];
+
+    it("allows searching and loading Eldritch Tomes (always switching to Script view and replacing contents), and toggling the shared RC aliases script with a purple button toggle", () => {
+        window.localStorage.clear();
         const onRunCode = vi.fn();
-        const onChange = vi.fn();
 
-        render(
-            <MultiLineComposer
-                isOpen={true}
-                onToggle={vi.fn()}
-                code={'for p in process.list():\n    print(p["name"])'}
-                onChange={onChange}
-                onRunCode={onRunCode}
-            />
-        );
+        expect(loadRcEnabled()).toBe(false);
+        expect(loadRcScript()).toContain("def ls(");
 
-        expect(screen.getByText("Composer")).toBeInTheDocument();
+        const StatefulComposerWithRcAndTomes = () => {
+            const [code, setCode] = React.useState('for p in process.list():\n    print(p["name"])');
+            const [rcEnabled, setRcEnabled] = React.useState(false);
+            return (
+                <MultiLineComposer
+                    isOpen={true}
+                    onToggle={vi.fn()}
+                    code={code}
+                    onChange={setCode}
+                    onRunCode={onRunCode}
+                    tomes={sampleTomes}
+                    rcCode={DEFAULT_RC_ALIASES_SCRIPT}
+                    rcEnabled={rcEnabled}
+                    onRcEnabledChange={setRcEnabled}
+                />
+            );
+        };
+
+        render(<StatefulComposerWithRcAndTomes />);
+
+        expect(screen.getByTestId("composer-script-tab")).toBeInTheDocument();
+        expect(screen.getByTestId("composer-rc-tab")).toBeInTheDocument();
         expect(screen.getByTestId("composer-syntax-highlight")).toBeInTheDocument();
-        expect(screen.getByTestId("eldritch-lsp-status")).toHaveTextContent(/eldritch-lsp/i);
+        expect(screen.getByTestId("eldritch-lsp-status")).toBeInTheDocument();
+        expect(screen.getByTestId("eldritch-lsp-status")).not.toHaveTextContent("eldritch-lsp");
         expect(screen.getByTestId("composer-resize-handle")).toBeInTheDocument();
+
+        // RC toggle is off by default and turns purple when toggled on (without verbose "RC: On"/"RC: Off" text)
+        const rcToggle = screen.getByTestId("composer-rc-toggle");
+        expect(rcToggle).toHaveAttribute("aria-checked", "false");
+        expect(rcToggle).not.toHaveClass("bg-purple-600");
+
+        fireEvent.click(rcToggle);
+        expect(rcToggle).toHaveAttribute("aria-checked", "true");
+        expect(rcToggle).toHaveClass("bg-purple-600");
 
         const textarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
         expect(textarea.value).toContain("process.list()");
@@ -198,19 +269,38 @@ describe("MultiLineComposer (Composer) & eldritch-lsp", () => {
         fireEvent.keyDown(textarea, { key: "Enter", ctrlKey: true });
         expect(onRunCode).toHaveBeenCalledWith('for p in process.list():\n    print(p["name"])');
 
-        // Selecting the aliases snippet (index 0) registers ls(), pwd(), cat(), whoami(), ps(), netstat() with 0 LSP diagnostics
-        const snippetSelect = screen.getByLabelText("Insert Eldritch snippet");
-        fireEvent.change(snippetSelect, { target: { value: "0" } });
-        expect(onChange).toHaveBeenCalled();
-        const insertedCode = onChange.mock.calls[0][0] as string;
-        expect(insertedCode).toContain("def ls(");
-        expect(insertedCode).toContain("def whoami(");
-        expect(insertedCode).toContain("def ps(");
-        expect(insertedCode).toContain("def netstat(");
-        expect(insertedCode).not.toContain("file.moveto");
+        // Switch to RC tab and verify the aliases script is in the RC component with 0 LSP diagnostics
+        fireEvent.click(screen.getByTestId("composer-rc-tab"));
+        const rcTextarea = screen.getByLabelText("Shared Eldritch RC script editor") as HTMLTextAreaElement;
+        expect(rcTextarea.value).toContain("def ls(");
+        expect(rcTextarea.value).toContain("def whoami(");
+        expect(rcTextarea.value).toContain("def ps(");
+        expect(rcTextarea.value).toContain("def netstat(");
 
-        const diagnostics = analyzeEldritchCode(normalizeMultilineScript(insertedCode));
+        const diagnostics = analyzeEldritchCode(normalizeMultilineScript(rcTextarea.value));
         expect(diagnostics).toHaveLength(0);
+
+        // While in RC view, open searchable Eldritch Tome picker (icon-only button) and load a tome ->
+        // should switch back to Script view and fully replace the Script view contents
+        const tomePickerBtn = screen.getByTestId("composer-tome-picker-button");
+        expect(tomePickerBtn).not.toHaveTextContent("Load Tome...");
+        expect(tomePickerBtn).not.toHaveClass("border");
+        expect(screen.queryByText("Clear")).not.toBeInTheDocument();
+        fireEvent.click(tomePickerBtn);
+        expect(screen.getByTestId("composer-tome-picker-popover")).toBeInTheDocument();
+
+        const searchInput = screen.getByLabelText("Search Eldritch tomes");
+        fireEvent.change(searchInput, { target: { value: "File List" } });
+
+        const tomeOptions = screen.getAllByTestId("composer-tome-option");
+        expect(tomeOptions).toHaveLength(1);
+        fireEvent.click(tomeOptions[0]);
+
+        const scriptTextarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
+        expect(scriptTextarea.value).toContain("# Tome: File List");
+        expect(scriptTextarea.value).toContain('"path": "/tmp"');
+        expect(scriptTextarea.value).toContain('file.list(input_params["path"])');
+        expect(scriptTextarea.value).not.toContain("process.list()");
     });
 
     it("supports Undo/Redo shortcuts (Ctrl+Z, Cmd+Z, Ctrl+Shift+Z, Ctrl+Y) and eldritch-lsp quick fixes", () => {
@@ -229,12 +319,21 @@ describe("MultiLineComposer (Composer) & eldritch-lsp", () => {
 
         render(<StatefulComposer />);
 
-        // Should flag deprecated sys.get_os() via eldritch-lsp and offer 1-click replacement
+        // Should flag deprecated sys.get_os() via eldritch-lsp on the bottom bar (not top bar) with colorless button
         expect(screen.getByTestId("composer-diagnostics-list")).toBeInTheDocument();
         const quickFixBtn = screen.getByText("Replace with sys.info");
-        fireEvent.click(quickFixBtn);
+        expect(quickFixBtn).not.toHaveClass("bg-amber-500/20");
 
         const textarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
+
+        // Hovering over the errored code displays the lint popover
+        expect(screen.queryByTestId("composer-lint-popover")).not.toBeInTheDocument();
+        fireEvent.mouseMove(textarea);
+        const lintPopover = screen.getByTestId("composer-lint-popover");
+        expect(lintPopover).toBeInTheDocument();
+        expect(lintPopover).toHaveTextContent("sys.get_os");
+
+        fireEvent.click(quickFixBtn);
         expect(textarea.value).toBe("os_info = sys.info()");
 
         // Undo via Ctrl+Z (Linux/Windows) or Cmd+Z (macOS)
@@ -246,7 +345,7 @@ describe("MultiLineComposer (Composer) & eldritch-lsp", () => {
         expect(textarea.value).toBe("os_info = sys.info()");
     });
 
-    it("provides context-aware autocomplete (Tab / Left / Right cycle, Enter accept) and indentation linting via eldritch-lsp", () => {
+    it("provides VSCode-style inline ghost autocomplete (Tab accepts immediately, ArrowDown/Up cycles) and indentation linting via eldritch-lsp", () => {
         const completions = completeEldritchCode("file.", 5);
         expect(completions).not.toBeNull();
         expect(completions!.items.some((c) => c.label === "file.list")).toBe(true);
@@ -274,18 +373,16 @@ describe("MultiLineComposer (Composer) & eldritch-lsp", () => {
         fireEvent.change(textarea, {
             target: { value: "file.", selectionStart: 5, selectionEnd: 5 },
         });
-        expect(screen.getByTestId("composer-autocomplete-list")).toBeInTheDocument();
+        // Renders inline ghost completion inside the syntax highlight overlay (no redundant bottom bar)
+        expect(screen.getByTestId("composer-inline-completion")).toBeInTheDocument();
+        expect(screen.queryByTestId("composer-autocomplete-list")).not.toBeInTheDocument();
 
         const firstOption = completions!.items[0];
         const secondOption = completions!.items[1];
 
-        // Tab cycles to second option
+        // ArrowDown cycles to second option, Tab immediately accepts the inline completion (like VSCode)
+        fireEvent.keyDown(textarea, { key: "ArrowDown" });
         fireEvent.keyDown(textarea, { key: "Tab" });
-        // ArrowRight cycles to third option, ArrowLeft cycles back to second option
-        fireEvent.keyDown(textarea, { key: "ArrowRight" });
-        fireEvent.keyDown(textarea, { key: "ArrowLeft" });
-        // Enter accepts the selected (second) option
-        fireEvent.keyDown(textarea, { key: "Enter" });
 
         expect(textarea.value).toBe(`file.${secondOption.insertText}`);
         expect(firstOption.insertText).not.toBe(secondOption.insertText);
@@ -316,7 +413,7 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         },
     ];
 
-    it("displays History drawer titled 'History' and renders pivots in dedicated ShellPivotsDrawer", () => {
+    it("displays History drawer titled 'History' and renders pivots in dedicated ShellPivotsDrawer with PTY and SSH buttons", () => {
         const onRunCode = vi.fn();
         const onLoadIntoComposer = vi.fn();
         const onOpenPivotTab = vi.fn();
@@ -392,7 +489,7 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         expect(screen.getByText('report.user_password("admin", "hunter2")')).toBeInTheDocument();
         expect(screen.getByText('sys.shell("sleep 10")')).toBeInTheDocument();
 
-        // Increment focusQueueTrigger (simulating clicking the bottom status bar spinner) -> switches to Queued / Running
+        // Increment focusQueueTrigger -> switches to Queued / Running
         rerender(
             <ShellHistoryDrawer
                 isOpen={true}
@@ -407,6 +504,73 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         expect(screen.getByText('sys.shell("sleep 10")')).toBeInTheDocument();
         expect(screen.queryByText('report.user_password("admin", "hunter2")')).not.toBeInTheDocument();
         expect(screen.queryByText('print("old local command")')).not.toBeInTheDocument();
+    });
+
+    it("supports cross-session history toggle, aggregates similar outputs, and truncates long output with a Show full toggle", () => {
+        const longOutput = ["line 1", "line 2", "line 3", "line 4", "line 5"].join("\n");
+        const currentSessionTasks: ShellTaskItem[] = [
+            {
+                id: "t-curr-1",
+                shellId: "10",
+                createdAt: "2025-01-01T12:00:00Z",
+                execFinishedAt: "2025-01-01T12:00:01Z",
+                input: "whoami()",
+                output: "root",
+            },
+            {
+                id: "t-curr-2",
+                shellId: "10",
+                createdAt: "2025-01-01T12:01:00Z",
+                execFinishedAt: "2025-01-01T12:01:01Z",
+                input: "whoami()",
+                output: "root",
+            },
+        ];
+        const crossSessionTasks: ShellTaskItem[] = [
+            ...currentSessionTasks,
+            {
+                id: "t-other-1",
+                shellId: "99",
+                createdAt: "2025-01-01T12:02:00Z",
+                execFinishedAt: "2025-01-01T12:02:01Z",
+                input: "file.list('/etc')",
+                output: longOutput,
+            },
+        ];
+
+        render(
+            <ShellHistoryDrawer
+                isOpen={true}
+                onClose={vi.fn()}
+                shellTasks={currentSessionTasks}
+                allShellTasks={crossSessionTasks}
+                currentShellId="10"
+                onRunCode={vi.fn()}
+                onLoadIntoComposer={vi.fn()}
+            />
+        );
+
+        // Two identical whoami() runs are aggregated with a ×2 badge
+        expect(screen.getByTestId("history-aggregated-count")).toHaveTextContent("×2");
+        // Cross-session task from Shell #99 is visible by default under "All Sessions"
+        expect(screen.getByText("Shell #99")).toBeInTheDocument();
+
+        // Switch to Output tab on the long-output task and verify truncation + Show full toggle
+        const viewOutputButtons = screen.getAllByText("View Output");
+        fireEvent.click(viewOutputButtons[0]);
+        expect(screen.queryByText(/line 5/)).not.toBeInTheDocument();
+
+        const toggleFullBtn = screen.getByTestId("history-toggle-full");
+        expect(toggleFullBtn).toHaveTextContent(/Show full/i);
+        fireEvent.click(toggleFullBtn);
+        expect(screen.getByText(/line 5/)).toBeInTheDocument();
+
+        // Toggle scope to Current Session only -> Shell #99 task is hidden
+        const scopeToggle = screen.getByTestId("history-session-scope-toggle");
+        expect(scopeToggle).toHaveTextContent("All Sessions");
+        fireEvent.click(scopeToggle);
+        expect(scopeToggle).toHaveTextContent("Current Session");
+        expect(screen.queryByText("Shell #99")).not.toBeInTheDocument();
     });
 });
 

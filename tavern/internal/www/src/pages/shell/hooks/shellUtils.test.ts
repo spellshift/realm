@@ -12,6 +12,9 @@ import {
     highlightPythonSyntax,
     loadHistory,
     saveHistory,
+    buildScrollbackPreservingClearSequence,
+    transformClearAnsiForScrollback,
+    getViewportNonEmptyLineCount,
     HISTORY_KEY,
     MAX_HISTORY,
 } from './shellUtils';
@@ -349,5 +352,51 @@ describe('highlightPythonSyntax', () => {
         const output = highlightPythonSyntax(input);
         expect(output).toContain(`${COLOR_STRING}f"{{escaped}}"${RESET}`);
         expect(output).not.toContain(`${COLOR_PUNCTUATION_1}{`);
+    });
+});
+
+describe('Scrollback-Preserving Terminal Clear', () => {
+    it('pushes existing viewport lines above the prompt into scrollback on Ctrl+L instead of erasing with CSI 2 J', () => {
+        const seq = buildScrollbackPreservingClearSequence(24, 5, 0);
+        // Should never emit \x1b[2J or \x1b[3J
+        expect(seq).not.toContain('\x1b[2J');
+        expect(seq).not.toContain('\x1b[3J');
+        // Should erase current prompt (\r\x1b[J), move to row 24, emit 5 linefeeds, and home cursor (\x1b[H)
+        expect(seq).toBe('\r\x1b[J\x1b[24;1H' + '\n'.repeat(5) + '\x1b[H');
+    });
+
+    it('accounts for multi-line prompt height when clearing at the top or middle of the viewport', () => {
+        // Multi-line prompt spanning 2 extra rows ending at cursorY=4 -> promptStartRow=2
+        const seq = buildScrollbackPreservingClearSequence(20, 4, 2);
+        expect(seq).toBe('\x1b[2A\r\x1b[J\x1b[20;1H\n\n\x1b[H');
+
+        // Already at row 0 -> no extra blank lines pushed into scrollback
+        const topSeq = buildScrollbackPreservingClearSequence(20, 0, 0);
+        expect(topSeq).toBe('\r\x1b[J\x1b[H');
+    });
+
+    it('transforms ANSI clear-screen and clear-scrollback sequences in output to preserve scrollback', () => {
+        const raw = '\x1b[3J\x1b[H\x1b[2Jroot@host:~# ';
+        const transformed = transformClearAnsiForScrollback(raw, 24, 6);
+        expect(transformed).not.toContain('\x1b[3J');
+        expect(transformed).not.toContain('\x1b[2J');
+        expect(transformed).toBe('\x1b[24;1H' + '\n'.repeat(6) + '\x1b[H\x1b[Jroot@host:~# ');
+    });
+
+    it('counts non-empty viewport lines from the active terminal buffer', () => {
+        const lines = ['Eldritch v0.4.1', 'Connected to Tavern.', '>>> !whoami', 'root', '', ''];
+        const mockTerm = {
+            rows: 6,
+            buffer: {
+                active: {
+                    baseY: 10,
+                    cursorY: 4,
+                    getLine: (idx: number) => ({
+                        translateToString: () => lines[idx - 10] ?? '',
+                    }),
+                },
+            },
+        };
+        expect(getViewportNonEmptyLineCount(mockTerm)).toBe(4);
     });
 });

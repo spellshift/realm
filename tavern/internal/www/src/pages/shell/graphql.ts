@@ -80,7 +80,14 @@ export const GET_SHELL_HISTORY = gql`
         }
         shellTasks(last: 100) {
           totalCount
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
           edges {
+            cursor
             node {
               id
               createdAt
@@ -107,6 +114,53 @@ export const GET_SHELL_HISTORY = gql`
               }
               reportedProcesses {
                 id
+              }
+            }
+          }
+        }
+      }
+    }
+    crossSessionShells: shells(last: 20, where: { hasShellTasks: true }) {
+      edges {
+        node {
+          id
+          beacon {
+            id
+            name
+            host {
+              id
+              name
+            }
+          }
+          shellTasks(last: 40) {
+            edges {
+              node {
+                id
+                createdAt
+                claimedAt
+                execStartedAt
+                execFinishedAt
+                input
+                output
+                error
+                creator {
+                  id
+                  name
+                  photoURL
+                }
+                reportedCredentials {
+                  id
+                  principal
+                  kind
+                }
+                reportedFiles {
+                  id
+                  path
+                  size
+                }
+                reportedProcesses {
+                  id
+                }
               }
             }
           }
@@ -283,6 +337,24 @@ export const GET_SHELL_ACTIVE_USERS = gql`
               photoURL
             }
           }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_SHELL_TOMES = gql`
+  query GetShellTomes {
+    tomes {
+      edges {
+        node {
+          id
+          name
+          description
+          tactic
+          eldritch
+          paramDefs
+          supportModel
         }
       }
     }

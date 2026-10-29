@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
+import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import {
-  BookOpen,
   Code2,
   Compass,
   ExternalLink,
@@ -76,12 +76,12 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
     <aside
       aria-label="Operator Guide & Eldritch Reference"
       data-testid="shell-nux-drawer"
-      className="w-full md:w-96 lg:w-[440px] flex-shrink-0 flex flex-col rounded-md bg-[#161920] border border-[#2e3440] h-full overflow-hidden shadow-xl"
+      className="w-full md:w-96 lg:w-[440px] flex-shrink-0 flex flex-col bg-[#161920] border-l border-[#262b38] h-full overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#1b1f2a] border-b border-[#2e3440]">
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#181c27] border-b border-[#262b38]">
         <div className="flex items-center gap-2">
-          <Compass size={16} className="text-purple-400" />
+          <DocumentDuplicateIcon className="w-4 h-4 text-purple-400" />
           <h2 className="text-sm font-semibold text-white">Documentation</h2>
         </div>
         <button
@@ -130,7 +130,7 @@ const ShellNuxDrawer: React.FC<ShellNuxDrawerProps> = ({
             className="flex items-center justify-between px-3 py-2 rounded-md bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/30 text-purple-200 font-medium transition-colors"
           >
             <span className="flex items-center gap-2">
-              <BookOpen size={14} />
+              <DocumentDuplicateIcon className="w-3.5 h-3.5" />
               Read Full Documentation
             </span>
             <ExternalLink size={13} />

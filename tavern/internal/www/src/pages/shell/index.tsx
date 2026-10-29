@@ -9,7 +9,12 @@ import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
 import InterpreterStatusBanner from "./components/InterpreterStatusBanner";
-import MultiLineComposer from "./components/MultiLineComposer";
+import MultiLineComposer, {
+  hasShellExecutedRc,
+  loadRcEnabled,
+  loadRcScript,
+  markShellExecutedRc,
+} from "./components/MultiLineComposer";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
 import ShellPivotsDrawer from "./components/ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
@@ -46,11 +51,13 @@ const Shell = () => {
     setPortalId,
     activeUsers,
     shellTasks,
+    allShellTasks,
     queuedTasks,
     runningTasks,
     stuckTask,
     stuckElapsedSeconds,
     pivots,
+    tomes,
     hostCredentials,
     allCredentials,
     networkHosts,
@@ -75,10 +82,12 @@ const Shell = () => {
   const [pivotsOpen, setPivotsOpen] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [nuxOpen, setNuxOpen] = useState(false);
-  const [focusQueueTrigger, setFocusQueueTrigger] = useState(0);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerCode, setComposerCode] = useState<string>("");
+  const [rcCode, setRcCode] = useState<string>(() => loadRcScript());
+  const [rcEnabled, setRcEnabled] = useState<boolean>(() => loadRcEnabled());
   const [actionsMenuTourOpen, setActionsMenuTourOpen] = useState(false);
+  const [queueTourOpen, setQueueTourOpen] = useState(false);
   const [sshModalOpenExternal, setSshModalOpenExternal] = useState(false);
   const [sshModalInitialTarget, setSshModalInitialTarget] = useState("");
   const [showNuxBanner, setShowNuxBanner] = useState<boolean>(() => {
@@ -248,10 +257,10 @@ const Shell = () => {
     handleCompletionSelect,
     connectionStatus,
     connectionMessage,
+    isReplReady,
     handleTooltipMouseEnter,
     handleTooltipMouseLeave,
     getSessionInputs,
-    localHistory,
     executeCode: submitShellCode,
     focusTerminal,
     sendCtrlC,
@@ -267,8 +276,35 @@ const Shell = () => {
     (type, target, pivotId) => handleOpenPortalTab(type, target, pivotId, true),
     () => {
       refetchHistory();
-    }
+    },
+    allShellTasks.length > 0 ? allShellTasks : shellTasks
   );
+
+  // Automatically execute the shared RC script the first time a user connects to a shell when RC is toggled on
+  useEffect(() => {
+    if (
+      !shellId ||
+      !rcEnabled ||
+      !rcCode.trim() ||
+      !isReplReady ||
+      connectionStatus !== "connected" ||
+      shellData?.node?.closedAt ||
+      hasShellExecutedRc(shellId)
+    ) {
+      return;
+    }
+    if (submitShellCode(rcCode)) {
+      markShellExecutedRc(shellId);
+    }
+  }, [
+    shellId,
+    rcEnabled,
+    rcCode,
+    isReplReady,
+    connectionStatus,
+    shellData?.node?.closedAt,
+    submitShellCode,
+  ]);
 
   const totalTabs = 1 + portalTabs.length;
   useTabHotkeys(totalTabs, setTabIndex);
@@ -401,14 +437,6 @@ const Shell = () => {
     [submitShellCode]
   );
 
-  const handleOpenQueue = useCallback(() => {
-    setHistoryOpen(true);
-    setPivotsOpen(false);
-    setKnowledgeOpen(false);
-    setNuxOpen(false);
-    setFocusQueueTrigger((c) => c + 1);
-  }, []);
-
   if (connectionError) {
     return (
       <div style={{ padding: "20px" }}>
@@ -425,12 +453,17 @@ const Shell = () => {
 
   return (
     <AccessGate>
-      <div className="flex flex-col h-screen p-3 md:p-4 bg-[#11131a] text-[#d4d4d4]">
+      <div className="shell-font-onest flex flex-col h-screen w-full overflow-hidden bg-[#11131a] text-[#d4d4d4]">
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap"
+        />
         <ShellWalkthrough
           isOpen={showNuxBanner && !shellData?.node?.closedAt}
           onDismiss={handleDismissNuxBanner}
           onOpenComposer={() => setComposerOpen(true)}
           onPortalStepChange={setActionsMenuTourOpen}
+          onQueueStepChange={setQueueTourOpen}
           onOpenGuideDrawer={() => {
             setNuxOpen(true);
             setHistoryOpen(false);
@@ -508,12 +541,11 @@ const Shell = () => {
           timeUntilCallback={timeUntilCallback}
           onSpawnFreshShell={handleSpawnFreshShell}
           isSpawningShell={isSpawningShell}
-          onOpenHistoryDrawer={handleOpenQueue}
           onReconnect={reconnect}
         />
 
         {/* Main Workspace Row: Terminal/Pivots + Optional History or Guide Drawer */}
-        <div className="flex-1 flex gap-3 min-h-0 overflow-hidden">
+        <div className="flex-1 flex min-h-0 overflow-hidden">
           <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
             <Tabs
               index={tabIndex}
@@ -653,6 +685,11 @@ const Shell = () => {
                     onChange={setComposerCode}
                     onRunCode={(code) => submitShellCode(code)}
                     disabled={!!shellData?.node?.closedAt}
+                    tomes={tomes}
+                    rcCode={rcCode}
+                    onRcCodeChange={setRcCode}
+                    rcEnabled={rcEnabled}
+                    onRcEnabledChange={setRcEnabled}
                   />
                 </TabPanel>
 
@@ -746,14 +783,10 @@ const Shell = () => {
             isOpen={historyOpen}
             onClose={() => setHistoryOpen(false)}
             shellTasks={shellTasks}
-            localHistory={localHistory}
-            pivots={pivots}
+            allShellTasks={allShellTasks}
+            currentShellId={shellId}
             onRunCode={handleRunCodeFromDrawer}
             onLoadIntoComposer={handleLoadIntoComposer}
-            onOpenPivotTab={(type, target, pivotId) =>
-              handleOpenPortalTab(type, target, pivotId, true)
-            }
-            focusQueueTrigger={focusQueueTrigger}
           />
 
           <ShellNuxDrawer
@@ -765,6 +798,9 @@ const Shell = () => {
             onSpawnFreshShell={handleSpawnFreshShell}
             onStartWalkthrough={() => {
               setNuxOpen(false);
+              setHistoryOpen(false);
+              setPivotsOpen(false);
+              setKnowledgeOpen(false);
               setShowNuxBanner(true);
             }}
           />
@@ -779,7 +815,9 @@ const Shell = () => {
           closedAt={shellData?.node?.closedAt}
           queuedCount={queuedTasks.length}
           runningCount={runningTasks.length}
-          onOpenQueue={handleOpenQueue}
+          queuedTasks={queuedTasks}
+          runningTasks={runningTasks}
+          queueTourOpen={queueTourOpen}
           onReconnect={reconnect}
         />
       </div>

@@ -11,6 +11,10 @@ import {
     highlightPythonSyntax,
     loadHistory,
     saveHistory,
+    stripInternalMacro,
+    getViewportNonEmptyLineCount,
+    buildScrollbackPreservingClearSequence,
+    transformClearAnsiForScrollback,
     isInsideString,
     getCursorLineInfo,
     moveCursorUpInBuffer,
@@ -21,6 +25,7 @@ import {
     insertNewlineWithAutoIndent,
     formatMultilineTerminalBuffer,
 } from "./shellUtils";
+import { ShellTaskItem } from "./useShellData";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
@@ -114,7 +119,8 @@ export const useShellTerminal = (
     setPortalId: (id: number | null) => void,
     isLateCheckin: boolean,
     onOpenPortalTab?: (type: string, target: string, pivotId?: string) => void,
-    onCommandSubmitted?: () => void
+    onCommandSubmitted?: () => void,
+    shellTasks: ShellTaskItem[] = []
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -122,10 +128,13 @@ export const useShellTerminal = (
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
+    const [isReplReady, setIsReplReady] = useState<boolean>(false);
     const [localHistory, setLocalHistory] = useState<string[]>(() => loadHistory());
 
     const portalIdRef = useRef<number | null>(null);
+    const isReplReadyRef = useRef<boolean>(false);
     const sessionInputs = useRef<string[]>([]);
+    const shellTasksRef = useRef<ShellTaskItem[]>(shellTasks);
     const seenTaskIdsRef = useRef<Set<number>>(new Set());
     const seenBeforeReconnectRef = useRef<Set<number>>(new Set());
     const hasConnectedOnceRef = useRef<boolean>(false);
@@ -148,6 +157,28 @@ export const useShellTerminal = (
         searchQuery: "",
         currentBlock: ""
     });
+
+    // Hydrate terminal history from GraphQL shellTasks when loaded
+    useEffect(() => {
+        shellTasksRef.current = shellTasks;
+        if (!shellTasks || shellTasks.length === 0) return;
+
+        const gqlInputs = shellTasks
+            .map((t) => stripInternalMacro(t.input || ""))
+            .filter(Boolean);
+        if (gqlInputs.length === 0) return;
+
+        const existing = shellState.current.history;
+        const merged = [...existing];
+        for (const cmd of gqlInputs) {
+            if (merged[merged.length - 1] !== cmd && !merged.includes(cmd)) {
+                merged.push(cmd);
+            }
+        }
+        shellState.current.history = merged;
+        saveHistory(merged);
+        setLocalHistory(merged);
+    }, [shellTasks]);
 
     // UI state for completions
     const [completions, setCompletions] = useState<string[]>([]);
@@ -439,6 +470,8 @@ export const useShellTerminal = (
         if (!termRef.current || !shellId || !shellNodeId) return;
 
         portalIdRef.current = null;
+        isReplReadyRef.current = false;
+        setIsReplReady(false);
         seenTaskIdsRef.current.clear();
         seenBeforeReconnectRef.current.clear();
         hasConnectedOnceRef.current = false;
@@ -465,7 +498,12 @@ export const useShellTerminal = (
             fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
             fontSize: 13.5,
             lineHeight: 1.35,
-            scrollback: 500_000,
+            scrollback: 10_000_000,
+        });
+
+        // Prevent CSI 3 J (\x1b[3J) from ever wiping the scrollback buffer
+        termInstance.current.parser?.registerCsiHandler({ final: "J" }, (params) => {
+            return params[0] === 3;
         });
 
         const fitAddon = new FitAddon();
@@ -559,7 +597,7 @@ export const useShellTerminal = (
                             portalIdRef.current = null;
                             setPortalId(null);
                             onCommandSubmittedRef.current?.();
-                            content = "[*] Portal Closed (Queued Mode)\n";
+                            content = "[*] Portal Closed (Async Mode)\n";
                             color = "\x1b[38;5;178m"; // Gold
                         }
                         break;
@@ -569,7 +607,11 @@ export const useShellTerminal = (
                 }
 
                 if (content) {
-                    const formatted = content.replace(/\n/g, "\r\n");
+                    const formatted = transformClearAnsiForScrollback(
+                        content.replace(/\n/g, "\r\n"),
+                        term.rows,
+                        getViewportNonEmptyLineCount(term)
+                    );
                     if (color) {
                         term.write(color + formatted + "\x1b[0m");
                     } else {
@@ -588,6 +630,8 @@ export const useShellTerminal = (
             },
             () => {
                 termInstance.current?.write("Connected to Tavern.\r\n>>> ");
+                isReplReadyRef.current = true;
+                setIsReplReady(true);
             },
             (status: ConnectionStatus, message?: string) => {
                 const prevStatus = connectionStatusRef.current;
@@ -721,9 +765,15 @@ export const useShellTerminal = (
             }
 
             if (data === "\x0c") { // Ctrl+L
-                term.write('\x1b[2J\x1b[H');
+                const clearSeq = buildScrollbackPreservingClearSequence(
+                    term.rows,
+                    term.buffer?.active?.cursorY ?? 0,
+                    lastBufferHeight.current
+                );
+                term.write(clearSeq);
                 lastBufferHeight.current = 0;
                 redrawLine();
+                term.scrollToBottom?.();
                 return;
             }
 
@@ -942,6 +992,28 @@ export const useShellTerminal = (
                 redrawLine();
                 term.write("\r\n");
 
+                if (finalizedCode.trim() === "clear" || finalizedCode.trim() === "clear()") {
+                    const rowsAfterEnter = Math.min(
+                        Math.max(1, (term.rows || 24) - 1),
+                        (term.buffer?.active?.cursorY ?? 0) + 1
+                    );
+                    const clearSeq = buildScrollbackPreservingClearSequence(
+                        term.rows,
+                        rowsAfterEnter,
+                        0
+                    );
+                    term.write(clearSeq);
+                    state.currentBlock = "";
+                    state.historyIndex = -1;
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    state.prompt = ">>> ";
+                    lastBufferHeight.current = 0;
+                    redrawLine();
+                    term.scrollToBottom?.();
+                    return;
+                }
+
                 adapter.current?.reset();
                 const isMultiline = finalizedCode.includes("\n");
                 const res = isMultiline
@@ -1102,6 +1174,8 @@ export const useShellTerminal = (
         });
 
         return () => {
+            isReplReadyRef.current = false;
+            setIsReplReady(false);
             window.removeEventListener("resize", handleResize);
             resizeObserver.disconnect();
             adapter.current?.close();
@@ -1111,6 +1185,12 @@ export const useShellTerminal = (
     }, [shellId, shellNodeId, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
     const getSessionInputs = useCallback(() => {
+        if (shellTasksRef.current.length > 0) {
+            return shellTasksRef.current
+                .map((t) => stripInternalMacro(t.input || ""))
+                .filter(Boolean)
+                .join("\n");
+        }
         return sessionInputs.current.join("\n");
     }, []);
 
@@ -1126,7 +1206,9 @@ export const useShellTerminal = (
 
     const executeCode = useCallback((rawCode: string): boolean => {
         const term = termInstance.current;
-        if (!term || !adapter.current) return false;
+        if (!term || !adapter.current || !isReplReadyRef.current || !adapter.current.isReady()) {
+            return false;
+        }
         if (shellClosedAtRef.current || connectionStatusRef.current !== "connected") return false;
 
         const trimmedCode = normalizeMultilineScript(rawCode);
@@ -1223,9 +1305,15 @@ export const useShellTerminal = (
     const clearTerminal = useCallback(() => {
         const term = termInstance.current;
         if (!term) return;
-        term.write('\x1b[2J\x1b[H');
+        const clearSeq = buildScrollbackPreservingClearSequence(
+            term.rows,
+            term.buffer?.active?.cursorY ?? 0,
+            lastBufferHeight.current
+        );
+        term.write(clearSeq);
         lastBufferHeight.current = 0;
         redrawLine();
+        term.scrollToBottom?.();
     }, [redrawLine]);
 
     const focusTerminal = useCallback(() => {
@@ -1272,6 +1360,7 @@ export const useShellTerminal = (
         handleCompletionSelect: applyCompletion,
         connectionStatus,
         connectionMessage,
+        isReplReady,
         handleTooltipMouseEnter: cancelHideTooltip,
         handleTooltipMouseLeave: scheduleHideTooltip,
         getSessionInputs,

@@ -27,6 +27,107 @@ export const saveHistory = (history: string[]) => {
     }
 };
 
+export const stripInternalMacro = (input: string): string => {
+    const prefix = "for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = ";
+    const suffix = "print(_nonomacroclowntown['stdout']);print(_nonomacroclowntown['stderr'])\n";
+    let cleaned = input;
+    if (cleaned.startsWith(prefix)) {
+        cleaned = cleaned.slice(prefix.length);
+    }
+    if (cleaned.endsWith(suffix)) {
+        cleaned = cleaned.slice(0, -suffix.length);
+    }
+    return cleaned.trim();
+};
+
+/**
+ * Counts how many rows from the top of the current viewport contain non-empty text.
+ */
+export const getViewportNonEmptyLineCount = (term: {
+    rows?: number;
+    buffer?: {
+        active?: {
+            baseY: number;
+            cursorY: number;
+            getLine: (y: number) => { translateToString: (trimRight?: boolean) => string } | undefined;
+        };
+    };
+}): number => {
+    const rows = Math.max(1, term.rows || 24);
+    const active = term.buffer?.active;
+    if (!active) return 0;
+
+    for (let r = rows - 1; r >= 0; r--) {
+        const line = active.getLine(active.baseY + r);
+        if (line && line.translateToString(true).length > 0) {
+            return r + 1;
+        }
+    }
+    return Math.max(0, active.cursorY || 0);
+};
+
+/**
+ * Builds an ANSI escape sequence that clears the visible viewport while pushing
+ * all lines above the current prompt into the terminal's scrollback buffer,
+ * so scrolling up preserves the complete session input/output history.
+ */
+export const buildScrollbackPreservingClearSequence = (
+    rows: number,
+    cursorY: number,
+    prevPromptRows: number = 0
+): string => {
+    const safeRows = Math.max(1, rows || 24);
+    const safePrevRows = Math.max(0, prevPromptRows);
+    const promptStartRow = Math.max(0, (cursorY || 0) - safePrevRows);
+
+    let seq = "";
+    if (safePrevRows > 0) {
+        seq += `\x1b[${safePrevRows}A`;
+    }
+    // Erase the current unsubmitted prompt line(s) so they aren't duplicated in scrollback
+    seq += "\r\x1b[J";
+
+    if (promptStartRow > 0) {
+        // Move to the bottom row of the viewport and emit `promptStartRow` linefeeds
+        // so rows 0 .. promptStartRow - 1 scroll up into the scrollback buffer.
+        seq += `\x1b[${safeRows};1H` + "\n".repeat(promptStartRow);
+    }
+
+    // Home cursor to top-left of the clean viewport
+    seq += "\x1b[H";
+    return seq;
+};
+
+/**
+ * Transforms ANSI clear-screen / clear-scrollback sequences (\x1b[2J, \x1b[3J)
+ * in terminal output so existing viewport lines are scrolled into scrollback
+ * instead of being erased in-place.
+ */
+export const transformClearAnsiForScrollback = (
+    data: string,
+    rows: number,
+    viewportNonEmptyLines: number
+): string => {
+    if (!data || !data.includes("\x1b[")) return data;
+
+    // Never allow CSI 3 J to wipe the scrollback buffer
+    let result = data.replace(/\x1b\[3J/g, "");
+
+    if (!/\x1b\[2J/.test(result)) {
+        return result;
+    }
+
+    const safeRows = Math.max(1, rows || 24);
+    const linesToScroll = Math.max(0, Math.min(safeRows, viewportNonEmptyLines));
+    const scrollSeq =
+        linesToScroll > 0
+            ? `\x1b[${safeRows};1H` + "\n".repeat(linesToScroll) + "\x1b[H\x1b[J"
+            : "\x1b[H\x1b[J";
+
+    result = result.replace(/\x1b\[(?:H|\d*;\d*H)?\x1b\[2J(?:\x1b\[(?:H|\d*;\d*H))?/g, scrollSeq);
+    return result;
+};
+
 export const moveWordLeft = (buffer: string, cursor: number): number => {
     const beforeCursor = buffer.slice(0, cursor);
     const trimmed = beforeCursor.trimEnd();

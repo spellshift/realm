@@ -1,8 +1,7 @@
 import React from "react";
 import { Tooltip } from "@chakra-ui/react";
+import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import {
-  BookOpen,
-  Bug,
   Code2,
   Database,
   History,
@@ -96,12 +95,12 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   actionsMenuTourOpen = false,
 }) => {
   return (
-    <div className="relative z-30 bg-[#181b24] px-3 py-1.5 rounded-md border border-[#262b38] flex flex-wrap justify-between items-center gap-2 text-xs font-mono text-gray-200 shadow-sm">
+    <div className="relative z-30 bg-[#181b24] px-3 py-1.5 border-b border-[#262b38] flex flex-wrap justify-between items-center gap-2 text-xs text-gray-200">
       {/* Left: Breadcrumbs & Context */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <Link
           to="/"
-          className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[#1d222f] hover:bg-[#272e3f] text-gray-200 border border-[#2f364a] transition-colors"
+          className="inline-flex items-center justify-center p-1.5 rounded-md hover:bg-[#272e3f] text-gray-300 hover:text-white transition-colors"
           title="Return Home"
         >
           <Home size={15} />
@@ -129,7 +128,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           >
             <Link
               to={`/hosts/${shellData.node.beacon.host.id}`}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1d222f] hover:bg-[#272e3f] border border-[#2f364a] text-purple-300 font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-[#272e3f] text-purple-300 font-semibold transition-colors"
             >
               <Server size={13} />
               <span>{shellData.node.beacon.host.name}</span>
@@ -156,7 +155,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
               border="1px solid #374151"
               hasArrow
             >
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1d222f] border border-[#2f364a] text-gray-200 cursor-default">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-200 cursor-default">
                 <Terminal size={13} className="text-gray-400" />
                 <span>{shellData.node.beacon.name}</span>
               </div>
@@ -165,7 +164,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             {shellData.node.beacon.principal && (
               <>
                 <span className="text-gray-600">/</span>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1d222f] border border-[#2f364a] text-gray-200 cursor-default">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-200 cursor-default">
                   <User size={13} className="text-gray-400" />
                   <span>{shellData.node.beacon.principal}</span>
                 </div>
@@ -196,12 +195,12 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
 
         <div
           data-testid="shell-header-toolbar"
-          className="flex items-center gap-0.5 p-1 rounded-lg bg-[#1d222f] border border-[#2f364a]"
+          className="flex items-center gap-1"
         >
           {/* Composer Toggle */}
           {onToggleComposer && (
             <Tooltip
-              label="Multi-line Script Composer (Alt+M)"
+              label="Eldritch Composer"
               bg="#1f2430"
               color="white"
               borderRadius="md"
@@ -225,7 +224,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           {/* Knowledge Graph Drawer Toggle */}
           {onToggleKnowledge && (
             <Tooltip
-              label="Knowledge Graph: Credentials, Hosts & Files"
+              label="Knowledge Graph"
               bg="#1f2430"
               color="white"
               borderRadius="md"
@@ -254,7 +253,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           {/* Pivots Drawer Toggle (badge only for active sessions) */}
           {onTogglePivots && (
             <Tooltip
-              label="Pivots (PTY & SSH Sessions)"
+              label="Pivots"
               bg="#1f2430"
               color="white"
               borderRadius="md"
@@ -280,7 +279,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             </Tooltip>
           )}
 
-          {/* History Drawer Toggle (badge only when tasks are actively queued or running) */}
+          {/* History Drawer Toggle (badge only for active queued/executing tasks) */}
           {onToggleHistory && (
             <Tooltip
               label="History"
@@ -301,8 +300,8 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
               >
                 <History size={15} />
                 {activeQueueCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-amber-400 text-black text-[9px] font-bold flex items-center justify-center leading-none">
-                    {activeQueueCount > 99 ? "99+" : activeQueueCount}
+                  <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-amber-500 text-gray-950 text-[9px] font-bold flex items-center justify-center leading-none">
+                    {activeQueueCount}
                   </span>
                 )}
               </button>
@@ -312,7 +311,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           {/* Operator Guide & Eldritch Docs Toggle */}
           {onToggleNux && (
             <Tooltip
-              label="Operator Guide & Eldritch v0.4.1 Reference"
+              label="Operator Guide"
               bg="#1f2430"
               color="white"
               borderRadius="md"
@@ -328,31 +327,10 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   nuxOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
                 }`}
               >
-                <BookOpen size={15} />
+                <DocumentDuplicateIcon className="w-[15px] h-[15px]" />
               </button>
             </Tooltip>
           )}
-
-          {/* Report a Bug */}
-          <Tooltip
-            label="Report a Bug"
-            bg="#1f2430"
-            color="white"
-            borderRadius="md"
-            border="1px solid #374151"
-            hasArrow
-          >
-            <a
-              data-tour="shell-bug-report"
-              href="https://github.com/spellshift/realm/issues/new?template=bug_report.md"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Report a bug"
-              className={`${TOOLBAR_BUTTON_BASE} ${TOOLBAR_BUTTON_INACTIVE}`}
-            >
-              <Bug size={15} />
-            </a>
-          </Tooltip>
 
           {/* Notifications */}
           <NotificationBell

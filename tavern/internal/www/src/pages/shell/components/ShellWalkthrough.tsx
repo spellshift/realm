@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  BookMarked,
   Bug,
   ChevronLeft,
   ChevronRight,
@@ -8,6 +9,9 @@ import {
   Compass,
   Database,
   History,
+  Loader2,
+  Network,
+  Power,
   Shell,
   Sparkles,
   Terminal,
@@ -40,16 +44,33 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     fallbackSelector: '[data-tour="shell-composer-toggle"]',
     title: "Eldritch Composer",
     description:
-      "For more complex scripts, it may be easier to write them in the Composer view. Please also feel free to browse the helpful snippets that may save you some time.",
-    tip: 'You can load the "Aliases" snippet for a more native shell experience.',
+      "For more complex scripts, it may be easier to write them in the Composer view.",
     icon: <Code2 size={16} className="text-purple-400" />,
+  },
+  {
+    id: "composer-tomes",
+    selector: '[data-tour="shell-composer-tomes"]',
+    fallbackSelector: '[data-tour="shell-composer"]',
+    title: "Load Tomes",
+    description:
+      "Search and load pre-built Eldritch tomes directly into the script view to save time.",
+    icon: <BookMarked size={16} className="text-purple-400" />,
+  },
+  {
+    id: "composer-rc",
+    selector: '[data-tour="shell-composer-rc"]',
+    fallbackSelector: '[data-tour="shell-composer"]',
+    title: "RC Script",
+    description:
+      "Edit your shared RC script (pre-loaded with shell aliases) and toggle it on to automatically run the first time you connect to a shell.",
+    icon: <Power size={16} className="text-purple-400" />,
   },
   {
     id: "non-interactive",
     selector: '[data-tour="shell-non-interactive"]',
-    title: "Non-Interactive",
+    title: "Async Mode",
     description:
-      "All code runs on the agent, but in non-interactive mode we queue it for the agent to retrieve during its next callback. This means you'll need to wait for agent callbacks before you'll see any output from your Eldritch, but it's typically more stealthy to operate in this mode.",
+      "All code runs on the agent, but in async mode we queue it for the agent to retrieve during its next callback. This means you'll need to wait for agent callbacks before you'll see any output from your Eldritch, but it's typically more stealthy to operate in this mode.",
     icon: <Clock size={16} className="text-yellow-400" />,
   },
   {
@@ -62,14 +83,13 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <Clock size={16} className="text-blue-400" />,
   },
   {
-    id: "portal",
-    selector: '[data-tour="shell-new-portal"]',
-    fallbackSelector: '[data-tour="shell-actions-button"]',
-    title: "Going Interactive",
+    id: "queue-status",
+    selector: '[data-tour="shell-queue-indicator"]',
+    fallbackSelector: '[data-tour="shell-status-bar"]',
+    title: "Queued & Executing Tasks",
     description:
-      'For real-time interaction with the agent, you can open a "Portal" on it. This creates an established connection which can be used for low-latency operations and to establish pivots (e.g. SSH).',
-    tip: "You can always close a portal when you're finished and open one later. But be warned, doing so will terminate your active pivots.",
-    icon: <Shell size={16} className="text-emerald-400" />,
+      "When tasks are queued or executing on the agent, hover or click this indicator to see what's currently in the queue.",
+    icon: <Loader2 size={16} className="text-amber-400" />,
   },
   {
     id: "knowledge",
@@ -81,12 +101,20 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <Database size={16} className="text-emerald-400" />,
   },
   {
+    id: "pivots",
+    selector: '[data-tour="shell-pivots"]',
+    title: "Pivots",
+    description:
+      "Launch interactive PTY or SSH sessions through an active portal and review saved transcripts from past pivots.",
+    icon: <Network size={16} className="text-purple-400" />,
+  },
+  {
     id: "history",
     selector: '[data-tour="shell-history"]',
     title: "Command Queue & History",
     description:
-      "Review queued, running, and completed commands for this session, inspect their output, or re-run previous scripts.",
-    tip: "You can queue multiple commands back-to-back and they will execute in order on the next callback.",
+      "Inspect queued, running, and completed commands. View full output, re-run previous commands, or load them into the Composer.",
+    tip: "Filter by Queued / Running to see tasks waiting for the next beacon callback.",
     icon: <History size={16} className="text-blue-400" />,
   },
   {
@@ -99,8 +127,19 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <Compass size={16} className="text-amber-400" />,
   },
   {
+    id: "portal",
+    selector: '[data-tour="shell-new-portal"]',
+    fallbackSelector: '[data-tour="shell-actions-button"]',
+    title: "Going Interactive",
+    description:
+      'For real-time interaction with the agent, you can open a "Portal" on it. This creates an established connection which can be used for low-latency operations and to establish pivots (e.g. SSH).',
+    tip: "You can always close a portal when you're finished and open one later. But be warned, doing so will terminate your active pivots.",
+    icon: <Shell size={16} className="text-emerald-400" />,
+  },
+  {
     id: "feedback",
     selector: '[data-tour="shell-bug-report"]',
+    fallbackSelector: '[data-tour="shell-actions-button"]',
     title: "Feedback & Bug Reports",
     description:
       "Run into an issue or have an idea to improve the shell? Click here anytime to report a bug or share your feedback. Thank you for helping make Realm better!",
@@ -114,6 +153,7 @@ interface ShellWalkthroughProps {
   onOpenGuideDrawer?: () => void;
   onOpenComposer?: () => void;
   onPortalStepChange?: (isActive: boolean) => void;
+  onQueueStepChange?: (isActive: boolean) => void;
 }
 
 interface TargetRect {
@@ -129,6 +169,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   onOpenGuideDrawer,
   onOpenComposer,
   onPortalStepChange,
+  onQueueStepChange,
 }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
@@ -139,10 +180,15 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     if (!isOpen) {
       setStepIndex(0);
       onPortalStepChange?.(false);
+      onQueueStepChange?.(false);
       return;
     }
 
-    if (currentStep.id === "composer") {
+    if (
+      currentStep.id === "composer" ||
+      currentStep.id === "composer-tomes" ||
+      currentStep.id === "composer-rc"
+    ) {
       if (onOpenComposer) {
         onOpenComposer();
       } else if (!document.querySelector('[data-tour="shell-composer"]')) {
@@ -153,7 +199,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       }
     }
 
-    onPortalStepChange?.(currentStep.id === "portal");
+    onPortalStepChange?.(currentStep.id === "portal" || currentStep.id === "feedback");
+    onQueueStepChange?.(currentStep.id === "queue-status");
 
     const updateRect = () => {
       const el =
@@ -195,13 +242,15 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     currentStep.fallbackSelector,
     onOpenComposer,
     onPortalStepChange,
+    onQueueStepChange,
   ]);
 
   useEffect(() => {
     return () => {
       onPortalStepChange?.(false);
+      onQueueStepChange?.(false);
     };
-  }, [onPortalStepChange]);
+  }, [onPortalStepChange, onQueueStepChange]);
 
   if (!isOpen) return null;
 
@@ -263,7 +312,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     <div
       data-testid="shell-nux-banner"
       aria-label="Shell interactive walkthrough"
-      className="fixed inset-0 z-50 pointer-events-none"
+      className="fixed inset-0 z-50 pointer-events-none shell-font-onest"
     >
       {/* Spotlight Cutout Ring around the highlighted component */}
       {targetRect ? (

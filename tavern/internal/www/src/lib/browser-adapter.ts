@@ -167,8 +167,8 @@ export class BrowserWasmAdapter {
             this.clearTimers();
             this.isWsOpen = true;
             this.reconnectAttempts = 0;
-            this.onStatusChangeCallback?.("connected");
             this.checkReady();
+            this.onStatusChangeCallback?.("connected");
         };
 
         ws.onmessage = (event) => {
@@ -259,6 +259,10 @@ export class BrowserWasmAdapter {
 
     private isSocketReady(): boolean {
         return Boolean(this.isWsOpen && this.ws && this.ws.readyState === WebSocket.OPEN);
+    }
+
+    public isReady(): boolean {
+        return Boolean(this.repl && this.isSocketReady());
     }
 
     input(line: string): ExecutionResult {

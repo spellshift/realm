@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { BookOpenIcon } from "@heroicons/react/24/outline";
 import {
     AlertCircle,
     AlertTriangle,
@@ -6,10 +7,9 @@ import {
     Code2,
     GripHorizontal,
     Play,
-    Redo2,
-    Sparkles,
-    Trash2,
-    Undo2,
+    Power,
+    RotateCcw,
+    Search,
     Wand2,
     X,
 } from "lucide-react";
@@ -18,62 +18,182 @@ import {
     completeEldritchCode,
     EldritchCompletionItem,
     EldritchDiagnostic,
-    getEldritchSignatureHelp,
     HighlightTokenType,
     tokenizeEldritchLine,
 } from "../utils/eldritchLsp";
+import { ShellTomeItem } from "../hooks/useShellData";
 
-export interface ComposerSnippet {
-    label: string;
-    description: string;
-    code: string;
+export const RC_SCRIPT_STORAGE_KEY = "tavern_shell_rc_script_v1";
+export const RC_ENABLED_STORAGE_KEY = "tavern_shell_rc_enabled_v1";
+export const RC_EXECUTED_SHELLS_STORAGE_KEY = "tavern_shell_rc_executed_shells_v1";
+
+export const DEFAULT_RC_ALIASES_SCRIPT = [
+    'def ls(path="."):',
+    "    return file.list(path)",
+    "def whoami():",
+    "    return user.info()",
+    "def ps():",
+    "    return process.list()",
+    "def pwd():",
+    "    return process.cwd()",
+    "def cat(path):",
+    "    return str(file.read(path))",
+    "def netstat():",
+    "    return net.conns()",
+].join("\n");
+
+export function loadRcScript(): string {
+    try {
+        const stored = localStorage.getItem(RC_SCRIPT_STORAGE_KEY);
+        if (stored !== null) {
+            return stored;
+        }
+    } catch {
+        // Ignore storage error
+    }
+    return DEFAULT_RC_ALIASES_SCRIPT;
 }
 
-export const ELDRITCH_SNIPPETS: ComposerSnippet[] = [
+export function saveRcScript(script: string): void {
+    try {
+        localStorage.setItem(RC_SCRIPT_STORAGE_KEY, script);
+    } catch {
+        // Ignore storage error
+    }
+}
+
+export function loadRcEnabled(): boolean {
+    try {
+        return localStorage.getItem(RC_ENABLED_STORAGE_KEY) === "true";
+    } catch {
+        return false;
+    }
+}
+
+export function saveRcEnabled(enabled: boolean): void {
+    try {
+        localStorage.setItem(RC_ENABLED_STORAGE_KEY, enabled ? "true" : "false");
+    } catch {
+        // Ignore storage error
+    }
+}
+
+export function hasShellExecutedRc(shellId: string): boolean {
+    if (!shellId) return false;
+    try {
+        const raw = localStorage.getItem(RC_EXECUTED_SHELLS_STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) && parsed.includes(String(shellId));
+    } catch {
+        return false;
+    }
+}
+
+export function markShellExecutedRc(shellId: string): void {
+    if (!shellId) return;
+    try {
+        const raw = localStorage.getItem(RC_EXECUTED_SHELLS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        const list = Array.isArray(parsed) ? parsed : [];
+        if (!list.includes(String(shellId))) {
+            list.push(String(shellId));
+            localStorage.setItem(
+                RC_EXECUTED_SHELLS_STORAGE_KEY,
+                JSON.stringify(list.slice(-200))
+            );
+        }
+    } catch {
+        // Ignore storage error
+    }
+}
+
+export const FALLBACK_ELDRITCH_TOMES: ShellTomeItem[] = [
     {
-        label: "Define Shell Aliases (ls, whoami, ps, pwd, cat, netstat)",
-        description: "Register common shell helper functions in this Eldritch interpreter session",
-        code: [
-            'def ls(path="."):',
-            "    return file.list(path)",
-            "def whoami():",
-            "    return user.info()",
-            "def ps():",
-            "    return process.list()",
-            "def pwd():",
-            "    return process.cwd()",
-            "def cat(path):",
-            "    return str(file.read(path))",
-            "def netstat():",
-            "    return net.conns()",
+        id: "tome-file-list",
+        name: "List files",
+        description: "List the files and directories found at the path.",
+        tactic: "RECON",
+        paramDefs: JSON.stringify([
+            { name: "path", type: "string", label: "File path", placeholder: "/etc/open*" },
+        ]),
+        eldritch: [
+            "def file_list(path):",
+            "    res = file.list(path)",
+            "    for f in res:",
+            '        print(f"{f[\'permissions\']}\\t{f[\'owner\']}\\t{f[\'size\']}\\t{f[\'absolute_path\']}")',
+            "",
+            'file_list(input_params["path"])',
         ].join("\n"),
     },
     {
-        label: "Open Interactive Portal",
-        description: "Upgrade from queued callback mode to low-latency interactive mode",
-        code: "portal.create()",
+        id: "tome-process-list",
+        name: "Process list",
+        description: "List running processes on the target system.",
+        tactic: "RECON",
+        eldritch: [
+            "for p in process.list():",
+            '    print(f"{p[\'pid\']}\\t{p[\'username\']}\\t{p[\'name\']}\\t{p[\'command\']}")',
+        ].join("\n"),
     },
     {
-        label: "Host Situational Awareness",
-        description: "Inspect OS, identity, network interfaces, and environment",
-        code: `pprint(sys.info())\npprint(user.info())\ntprint(net.interfaces())`,
+        id: "tome-sys-info",
+        name: "System info",
+        description: "Gather host OS, user identity, and network interface details.",
+        tactic: "RECON",
+        eldritch: [
+            "pprint(sys.info())",
+            "pprint(user.info())",
+            "tprint(net.interfaces())",
+        ].join("\n"),
     },
     {
-        label: "Filter Running Processes",
-        description: "Loop over processes and print matching entries",
-        code: `for p in process.list():\n    name = p["name"]\n    if "ssh" in name or "bash" in name:\n        print(f"{p['pid']}  {p['username']}  {name}")`,
+        id: "tome-cat-file",
+        name: "Cat file",
+        description: "Read and print the contents of a file.",
+        tactic: "COLLECTION",
+        paramDefs: JSON.stringify([
+            { name: "path", type: "string", label: "File path", placeholder: "/etc/passwd" },
+        ]),
+        eldritch: 'print(str(file.read(input_params["path"])))',
     },
     {
-        label: "Report Discovered Credential",
-        description: "Save a discovered password directly into Tavern's Knowledge Graph",
-        code: `report.user_password(username="admin", password="changeme")`,
-    },
-    {
-        label: "Report SSH Private Key",
-        description: "Read and report an SSH key into Tavern's Knowledge Graph",
-        code: `key_data = str(file.read("/root/.ssh/id_rsa"))\nreport.ssh_key(username="root", key=key_data)`,
+        id: "tome-arp-scan",
+        name: "ARP scan",
+        description: "Discover active hosts on the local subnet via ARP.",
+        tactic: "DISCOVERY",
+        paramDefs: JSON.stringify([
+            { name: "target_cidrs", type: "string", label: "Target CIDR", placeholder: "192.168.1.0/24" },
+        ]),
+        eldritch: 'tprint(scan.arp([input_params["target_cidrs"]]))',
     },
 ];
+
+export function formatTomeForComposer(tome: ShellTomeItem): string {
+    const headerLines = [`# Tome: ${tome.name}`];
+    if (tome.description) {
+        headerLines.push(`# ${tome.description.replace(/\r?\n/g, " ").trim()}`);
+    }
+
+    let paramsBlock = "";
+    if (tome.paramDefs && tome.eldritch.includes("input_params")) {
+        try {
+            const defs = JSON.parse(tome.paramDefs);
+            if (Array.isArray(defs) && defs.length > 0) {
+                const entries = defs.map((d: any) => {
+                    const defaultVal = d.default ?? d.placeholder ?? "";
+                    const comment = d.label || d.description ? `  # ${d.label || d.description}` : "";
+                    return `    ${JSON.stringify(d.name)}: ${JSON.stringify(String(defaultVal))},${comment}`;
+                });
+                paramsBlock = `input_params = {\n${entries.join("\n")}\n}\n\n`;
+            }
+        } catch {
+            // Ignore malformed paramDefs JSON
+        }
+    }
+
+    return `${headerLines.join("\n")}\n${paramsBlock}${tome.eldritch.trim()}`;
+}
 
 const TOKEN_COLOR_CLASSES: Record<HighlightTokenType, string> = {
     plain: "text-gray-100",
@@ -103,6 +223,11 @@ interface MultiLineComposerProps {
     onRunCode: (code: string) => void;
     onStageToPrompt?: (code: string) => void;
     disabled?: boolean;
+    tomes?: ShellTomeItem[];
+    rcCode?: string;
+    onRcCodeChange?: (nextRcCode: string) => void;
+    rcEnabled?: boolean;
+    onRcEnabledChange?: (enabled: boolean) => void;
 }
 
 const MIN_EDITOR_HEIGHT = 96;
@@ -116,10 +241,106 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
     onChange,
     onRunCode,
     disabled = false,
+    tomes,
+    rcCode: controlledRcCode,
+    onRcCodeChange,
+    rcEnabled: controlledRcEnabled,
+    onRcEnabledChange,
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const highlightPreRef = useRef<HTMLPreElement>(null);
     const gutterRef = useRef<HTMLDivElement>(null);
+    const tomePickerRef = useRef<HTMLDivElement>(null);
+    const tomeSearchInputRef = useRef<HTMLInputElement>(null);
+
+    // Editor mode: "script" (scratch pad) vs "rc" (shared RC script across shells)
+    const [activeMode, setActiveMode] = useState<"script" | "rc">("script");
+
+    // Shared RC state (supports controlled, semi-controlled, and uncontrolled usage)
+    const [internalRcCode, setInternalRcCode] = useState<string>(
+        () => controlledRcCode ?? loadRcScript()
+    );
+    const [internalRcEnabled, setInternalRcEnabled] = useState<boolean>(
+        () => controlledRcEnabled ?? loadRcEnabled()
+    );
+
+    useEffect(() => {
+        if (controlledRcCode !== undefined) {
+            setInternalRcCode(controlledRcCode);
+        }
+    }, [controlledRcCode]);
+
+    useEffect(() => {
+        if (controlledRcEnabled !== undefined) {
+            setInternalRcEnabled(controlledRcEnabled);
+        }
+    }, [controlledRcEnabled]);
+
+    const effectiveRcCode = internalRcCode;
+    const effectiveRcEnabled = internalRcEnabled;
+
+    const activeCode = activeMode === "rc" ? effectiveRcCode : code;
+
+    const handleActiveCodeChange = useCallback(
+        (nextCode: string) => {
+            if (activeMode === "rc") {
+                setInternalRcCode(nextCode);
+                saveRcScript(nextCode);
+                onRcCodeChange?.(nextCode);
+            } else {
+                onChange(nextCode);
+            }
+        },
+        [activeMode, onChange, onRcCodeChange]
+    );
+
+    const handleToggleRcEnabled = useCallback(() => {
+        const next = !effectiveRcEnabled;
+        setInternalRcEnabled(next);
+        saveRcEnabled(next);
+        onRcEnabledChange?.(next);
+    }, [effectiveRcEnabled, onRcEnabledChange]);
+
+    // Searchable Tome Picker state
+    const [tomePickerOpen, setTomePickerOpen] = useState<boolean>(false);
+    const [tomeSearchQuery, setTomeSearchQuery] = useState<string>("");
+
+    const availableTomes = useMemo(
+        () => (tomes && tomes.length > 0 ? tomes : FALLBACK_ELDRITCH_TOMES),
+        [tomes]
+    );
+
+    const filteredTomes = useMemo(() => {
+        const q = tomeSearchQuery.trim().toLowerCase();
+        if (!q) return availableTomes;
+        return availableTomes.filter(
+            (t) =>
+                t.name.toLowerCase().includes(q) ||
+                (t.description && t.description.toLowerCase().includes(q)) ||
+                (t.tactic && t.tactic.toLowerCase().includes(q)) ||
+                t.eldritch.toLowerCase().includes(q)
+        );
+    }, [availableTomes, tomeSearchQuery]);
+
+    // Close tome picker on outside click
+    useEffect(() => {
+        if (!tomePickerOpen) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (tomePickerRef.current && !tomePickerRef.current.contains(e.target as Node)) {
+                setTomePickerOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [tomePickerOpen]);
+
+    useEffect(() => {
+        if (tomePickerOpen) {
+            setTimeout(() => tomeSearchInputRef.current?.focus(), 10);
+        } else {
+            setTomeSearchQuery("");
+        }
+    }, [tomePickerOpen]);
 
     // Resizable height state
     const [editorHeight, setEditorHeight] = useState<number>(DEFAULT_EDITOR_HEIGHT);
@@ -129,27 +350,48 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
 
     // Cross-platform Undo / Redo history stack
     const historyRef = useRef<HistoryEntry[]>([
-        { code, selectionStart: code.length, selectionEnd: code.length },
+        { code: activeCode, selectionStart: activeCode.length, selectionEnd: activeCode.length },
     ]);
     const historyIndexRef = useRef<number>(0);
     const pendingSelectionRef = useRef<{ start: number; end: number } | null>(null);
     const [, setHistoryVersion] = useState<number>(0);
 
     // Autocomplete & cursor state
-    const [cursorOffset, setCursorOffset] = useState<number>(code.length);
+    const [cursorOffset, setCursorOffset] = useState<number>(activeCode.length);
     const [selectedCompletionIdx, setSelectedCompletionIdx] = useState<number>(0);
     const [dismissedCompletionAt, setDismissedCompletionAt] = useState<number | null>(null);
-    const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState<boolean>(false);
+    const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState<boolean>(true);
+    const [hoveredDiagLine, setHoveredDiagLine] = useState<number | null>(null);
+    const [editorScrollTop, setEditorScrollTop] = useState<number>(0);
 
-    // Keep undo stack synced when parent updates `code` externally (e.g. "Load in Composer")
+    // Switch between Script and RC tabs and reset the undo stack for the selected buffer
+    const handleSwitchMode = useCallback(
+        (nextMode: "script" | "rc") => {
+            const nextBuffer = nextMode === "rc" ? effectiveRcCode : code;
+            setActiveMode(nextMode);
+            historyRef.current = [
+                {
+                    code: nextBuffer,
+                    selectionStart: nextBuffer.length,
+                    selectionEnd: nextBuffer.length,
+                },
+            ];
+            historyIndexRef.current = 0;
+            setCursorOffset(nextBuffer.length);
+            setHistoryVersion((v) => v + 1);
+        },
+        [code, effectiveRcCode]
+    );
+
+    // Keep undo stack synced when parent updates `activeCode` externally
     useEffect(() => {
         const currentEntry = historyRef.current[historyIndexRef.current];
-        if (!currentEntry || currentEntry.code !== code) {
+        if (!currentEntry || currentEntry.code !== activeCode) {
             const nextEntries = historyRef.current.slice(0, historyIndexRef.current + 1);
             nextEntries.push({
-                code,
-                selectionStart: code.length,
-                selectionEnd: code.length,
+                code: activeCode,
+                selectionStart: activeCode.length,
+                selectionEnd: activeCode.length,
             });
             if (nextEntries.length > 150) {
                 nextEntries.shift();
@@ -158,7 +400,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             historyIndexRef.current = nextEntries.length - 1;
             setHistoryVersion((v) => v + 1);
         }
-    }, [code]);
+    }, [activeCode]);
 
     // Apply pending cursor selection after programmatic edits / undo / redo
     useEffect(() => {
@@ -169,7 +411,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             textareaRef.current.selectionEnd = end;
             setCursorOffset(end);
         }
-    }, [code]);
+    }, [activeCode]);
 
     useEffect(() => {
         if (isOpen) {
@@ -181,7 +423,6 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isResizingRef.current) return;
-            // Dragging the top handle upwards increases composer height
             const deltaY = resizeStartYRef.current - e.clientY;
             const nextHeight = Math.max(
                 MIN_EDITOR_HEIGHT,
@@ -241,9 +482,9 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             pendingSelectionRef.current = { start: selectionStart, end: selectionEnd };
             setDismissedCompletionAt(null);
             setHistoryVersion((v) => v + 1);
-            onChange(nextCode);
+            handleActiveCodeChange(nextCode);
         },
-        [onChange]
+        [handleActiveCodeChange]
     );
 
     const handleUndo = useCallback(() => {
@@ -255,8 +496,8 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             end: entry.selectionEnd,
         };
         setHistoryVersion((v) => v + 1);
-        onChange(entry.code);
-    }, [onChange]);
+        handleActiveCodeChange(entry.code);
+    }, [handleActiveCodeChange]);
 
     const handleRedo = useCallback(() => {
         if (historyIndexRef.current >= historyRef.current.length - 1) return;
@@ -267,11 +508,11 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             end: entry.selectionEnd,
         };
         setHistoryVersion((v) => v + 1);
-        onChange(entry.code);
-    }, [onChange]);
+        handleActiveCodeChange(entry.code);
+    }, [handleActiveCodeChange]);
 
-    // Live eldritch-lsp diagnostics, completions, and signature help
-    const diagnostics = useMemo(() => analyzeEldritchCode(code), [code]);
+    // Live eldritch-lsp diagnostics & inline completions
+    const diagnostics = useMemo(() => analyzeEldritchCode(activeCode), [activeCode]);
     const errorCount = useMemo(
         () => diagnostics.filter((d) => d.severity === "error").length,
         [diagnostics]
@@ -293,8 +534,8 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
 
     const completionResult = useMemo(() => {
         if (dismissedCompletionAt === cursorOffset) return null;
-        return completeEldritchCode(code, cursorOffset);
-    }, [code, cursorOffset, dismissedCompletionAt]);
+        return completeEldritchCode(activeCode, cursorOffset);
+    }, [activeCode, cursorOffset, dismissedCompletionAt]);
 
     const activeCompletions = completionResult?.items || [];
 
@@ -302,29 +543,61 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         setSelectedCompletionIdx(0);
     }, [completionResult?.replacePrefix, completionResult?.startOffset]);
 
-    const signatureHelp = useMemo(
-        () => getEldritchSignatureHelp(code, cursorOffset),
-        [code, cursorOffset]
-    );
+    const selectedCompletionItem: EldritchCompletionItem | null =
+        activeCompletions.length > 0
+            ? activeCompletions[selectedCompletionIdx] || activeCompletions[0]
+            : null;
+
+    // Compute inline ghost completion suffix and cursor line/column for VSCode-style inline ghost text
+    const inlineGhostInfo = useMemo(() => {
+        if (!selectedCompletionItem || !completionResult) return null;
+        const prefix = completionResult.replacePrefix || "";
+        const insertText = selectedCompletionItem.insertText;
+        const suffix = insertText.toLowerCase().startsWith(prefix.toLowerCase())
+            ? insertText.slice(prefix.length)
+            : insertText;
+        if (!suffix) return null;
+
+        const beforeCursor = activeCode.slice(0, cursorOffset);
+        const beforeLines = beforeCursor.split("\n");
+        const lineIdx = beforeLines.length - 1;
+        const colIdx = beforeLines[lineIdx].length;
+
+        return {
+            suffix,
+            lineIdx,
+            colIdx,
+            item: selectedCompletionItem,
+            totalCount: activeCompletions.length,
+            selectedIndex: selectedCompletionIdx,
+        };
+    }, [
+        selectedCompletionItem,
+        completionResult,
+        activeCode,
+        cursorOffset,
+        activeCompletions.length,
+        selectedCompletionIdx,
+    ]);
 
     const applyCompletionItem = useCallback(
         (item: EldritchCompletionItem) => {
             if (!completionResult) return;
-            const before = code.slice(0, completionResult.startOffset);
-            const after = code.slice(completionResult.endOffset);
+            const before = activeCode.slice(0, completionResult.startOffset);
+            const after = activeCode.slice(completionResult.endOffset);
             const nextCode = before + item.insertText + after;
             const nextCursor = completionResult.startOffset + item.insertText.length;
             commitCodeChange(nextCode, nextCursor, nextCursor);
             setDismissedCompletionAt(nextCursor);
             textareaRef.current?.focus();
         },
-        [code, completionResult, commitCodeChange]
+        [activeCode, completionResult, commitCodeChange]
     );
 
     const applyQuickFix = useCallback(
         (diag: EldritchDiagnostic) => {
             if (!diag.replacement) return;
-            const lines = code.split("\n");
+            const lines = activeCode.split("\n");
             const targetLine = lines[diag.replacement.line];
             if (targetLine === undefined) return;
             lines[diag.replacement.line] =
@@ -334,15 +607,15 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             const nextCode = lines.join("\n");
             commitCodeChange(nextCode, nextCode.length, nextCode.length);
         },
-        [code, commitCodeChange]
+        [activeCode, commitCodeChange]
     );
 
     const toggleCommentSelection = useCallback(
         (start: number, end: number) => {
-            const lineStart = code.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
-            const lineEndIdx = code.indexOf("\n", end);
-            const lineEnd = lineEndIdx === -1 ? code.length : lineEndIdx;
-            const block = code.slice(lineStart, lineEnd);
+            const lineStart = activeCode.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+            const lineEndIdx = activeCode.indexOf("\n", end);
+            const lineEnd = lineEndIdx === -1 ? activeCode.length : lineEndIdx;
+            const block = activeCode.slice(lineStart, lineEnd);
             const blockLines = block.split("\n");
             const allCommented = blockLines
                 .filter((l) => l.trim().length > 0)
@@ -359,33 +632,75 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             });
 
             const newBlock = transformed.join("\n");
-            const nextCode = code.slice(0, lineStart) + newBlock + code.slice(lineEnd);
+            const nextCode =
+                activeCode.slice(0, lineStart) + newBlock + activeCode.slice(lineEnd);
             const delta = newBlock.length - block.length;
-            commitCodeChange(
-                nextCode,
-                start,
-                Math.max(start, end + delta)
-            );
+            commitCodeChange(nextCode, start, Math.max(start, end + delta));
         },
-        [code, commitCodeChange]
+        [activeCode, commitCodeChange]
     );
+
+    // Main toolbar "Load Tome..." -> always switches back to Script view and replaces contents
+    const handleSelectTome = (tome: ShellTomeItem) => {
+        const formatted = formatTomeForComposer(tome);
+        setActiveMode("script");
+        const nextEntries = historyRef.current.slice(0, historyIndexRef.current + 1);
+        nextEntries.push({
+            code: formatted,
+            selectionStart: formatted.length,
+            selectionEnd: formatted.length,
+        });
+        if (nextEntries.length > 150) {
+            nextEntries.shift();
+        }
+        historyRef.current = nextEntries;
+        historyIndexRef.current = nextEntries.length - 1;
+        pendingSelectionRef.current = { start: formatted.length, end: formatted.length };
+        setDismissedCompletionAt(null);
+        setHistoryVersion((v) => v + 1);
+        onChange(formatted);
+        setTomePickerOpen(false);
+        setTimeout(() => textareaRef.current?.focus(), 20);
+    };
 
     if (!isOpen) {
         return null;
     }
 
-    const lines = code.split("\n");
+    const lines = activeCode.split("\n");
     const lineCount = Math.max(1, lines.length);
 
     const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
         const top = e.currentTarget.scrollTop;
         const left = e.currentTarget.scrollLeft;
+        setEditorScrollTop(top);
         if (highlightPreRef.current) {
             highlightPreRef.current.scrollTop = top;
             highlightPreRef.current.scrollLeft = left;
         }
         if (gutterRef.current) {
             gutterRef.current.scrollTop = top;
+        }
+    };
+
+    const handleTextareaMouseMove = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+        if (diagnostics.length === 0) {
+            if (hoveredDiagLine !== null) {
+                setHoveredDiagLine(null);
+            }
+            return;
+        }
+        const rect = e.currentTarget.getBoundingClientRect();
+        if (rect.height === 0 && e.clientY === 0) {
+            setHoveredDiagLine(diagnostics[0].line);
+            return;
+        }
+        const offsetY = e.clientY - rect.top + e.currentTarget.scrollTop - 8;
+        const lineIdx = Math.max(0, Math.floor(offsetY / 20));
+        if (diagnosticsByLine.has(lineIdx)) {
+            setHoveredDiagLine(lineIdx);
+        } else {
+            setHoveredDiagLine(null);
         }
     };
 
@@ -398,8 +713,8 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         // 1. Ctrl+Enter / Cmd+Enter -> Run script
         if (e.key === "Enter" && isMod) {
             e.preventDefault();
-            if (code.trim() && !disabled) {
-                onRunCode(code);
+            if (activeCode.trim() && !disabled) {
+                onRunCode(activeCode);
             }
             return;
         }
@@ -435,29 +750,28 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             return;
         }
 
-        // 5. Autocomplete keyboard navigation when completions are available:
-        // Tab / Shift+Tab and Left / Right (or Up / Down) arrow keys cycle options; Enter accepts
+        // 5. VSCode-style inline autocomplete keyboard handling when completions are available:
         if (activeCompletions.length > 0 && start === end) {
             const visibleCount = Math.min(8, activeCompletions.length);
-            if (
-                (e.key === "Tab" && !e.shiftKey) ||
-                (!isMod && !e.altKey && !e.shiftKey && (e.key === "ArrowRight" || e.key === "ArrowDown"))
-            ) {
+            // Tab or Enter immediately accepts the inline ghost completion (like VSCode)
+            if ((e.key === "Tab" && !e.shiftKey) || (e.key === "Enter" && !isMod && !e.shiftKey)) {
+                e.preventDefault();
+                applyCompletionItem(activeCompletions[selectedCompletionIdx] || activeCompletions[0]);
+                return;
+            }
+            // ArrowDown / ArrowRight cycles to next inline completion candidate
+            if (!isMod && !e.altKey && !e.shiftKey && (e.key === "ArrowRight" || e.key === "ArrowDown")) {
                 e.preventDefault();
                 setSelectedCompletionIdx((idx) => (idx + 1) % visibleCount);
                 return;
             }
+            // ArrowUp / ArrowLeft / Shift+Tab cycles to previous inline completion candidate
             if (
                 (e.key === "Tab" && e.shiftKey) ||
                 (!isMod && !e.altKey && !e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowUp"))
             ) {
                 e.preventDefault();
                 setSelectedCompletionIdx((idx) => (idx - 1 + visibleCount) % visibleCount);
-                return;
-            }
-            if (e.key === "Enter" && !isMod && !e.shiftKey) {
-                e.preventDefault();
-                applyCompletionItem(activeCompletions[selectedCompletionIdx] || activeCompletions[0]);
                 return;
             }
             if (e.key === "Escape") {
@@ -467,15 +781,15 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             }
         }
 
-        // 6. Tab / Shift+Tab -> Indent / Unindent by 4 spaces (single-line or multi-line selection)
+        // 6. Tab / Shift+Tab -> Indent / Unindent by 4 spaces
         if (e.key === "Tab") {
             e.preventDefault();
 
             if (start !== end || e.shiftKey) {
-                const lineStart = code.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
-                const lineEndIdx = code.indexOf("\n", end);
-                const lineEnd = lineEndIdx === -1 ? code.length : lineEndIdx;
-                const block = code.slice(lineStart, lineEnd);
+                const lineStart = activeCode.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+                const lineEndIdx = activeCode.indexOf("\n", end);
+                const lineEnd = lineEndIdx === -1 ? activeCode.length : lineEndIdx;
+                const block = activeCode.slice(lineStart, lineEnd);
                 const blockLines = block.split("\n");
 
                 if (e.shiftKey) {
@@ -489,7 +803,9 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         return line.slice(removeLen);
                     });
                     const nextCode =
-                        code.slice(0, lineStart) + updatedLines.join("\n") + code.slice(lineEnd);
+                        activeCode.slice(0, lineStart) +
+                        updatedLines.join("\n") +
+                        activeCode.slice(lineEnd);
                     commitCodeChange(
                         nextCode,
                         Math.max(lineStart, start - removedFirst),
@@ -498,17 +814,15 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                 } else {
                     const updatedLines = blockLines.map((line) => `    ${line}`);
                     const nextCode =
-                        code.slice(0, lineStart) + updatedLines.join("\n") + code.slice(lineEnd);
-                    commitCodeChange(
-                        nextCode,
-                        start + 4,
-                        end + 4 * blockLines.length
-                    );
+                        activeCode.slice(0, lineStart) +
+                        updatedLines.join("\n") +
+                        activeCode.slice(lineEnd);
+                    commitCodeChange(nextCode, start + 4, end + 4 * blockLines.length);
                 }
                 return;
             }
 
-            const nextCode = code.slice(0, start) + "    " + code.slice(end);
+            const nextCode = activeCode.slice(0, start) + "    " + activeCode.slice(end);
             commitCodeChange(nextCode, start + 4, start + 4);
             return;
         }
@@ -516,14 +830,14 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         // 7. Smart auto-indent on Enter
         if (e.key === "Enter" && !isMod && !e.shiftKey) {
             e.preventDefault();
-            const lineStart = code.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
-            const currentLineBeforeCursor = code.slice(lineStart, start);
+            const lineStart = activeCode.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+            const currentLineBeforeCursor = activeCode.slice(lineStart, start);
             const indentMatch = currentLineBeforeCursor.match(/^(\s*)/);
             const baseIndent = indentMatch ? indentMatch[1] : "";
             const trimmedBefore = currentLineBeforeCursor.replace(/#.*$/, "").trimEnd();
             const extraIndent = trimmedBefore.endsWith(":") ? "    " : "";
             const insertion = `\n${baseIndent}${extraIndent}`;
-            const nextCode = code.slice(0, start) + insertion + code.slice(end);
+            const nextCode = activeCode.slice(0, start) + insertion + activeCode.slice(end);
             const nextPos = start + insertion.length;
             commitCodeChange(nextCode, nextPos, nextPos);
             return;
@@ -531,38 +845,29 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
 
         // 8. Smart 4-space dedent on Backspace
         if (e.key === "Backspace" && start === end && start > 0) {
-            const lineStart = code.lastIndexOf("\n", start - 1) + 1;
-            const beforeOnLine = code.slice(lineStart, start);
-            if (beforeOnLine.length >= 4 && /^ +$/.test(beforeOnLine) && beforeOnLine.length % 4 === 0) {
+            const lineStart = activeCode.lastIndexOf("\n", start - 1) + 1;
+            const beforeOnLine = activeCode.slice(lineStart, start);
+            if (
+                beforeOnLine.length >= 4 &&
+                /^ +$/.test(beforeOnLine) &&
+                beforeOnLine.length % 4 === 0
+            ) {
                 e.preventDefault();
-                const nextCode = code.slice(0, start - 4) + code.slice(start);
+                const nextCode = activeCode.slice(0, start - 4) + activeCode.slice(start);
                 commitCodeChange(nextCode, start - 4, start - 4);
                 return;
             }
         }
     };
 
-    const handleSnippetSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const idx = parseInt(e.target.value, 10);
-        if (isNaN(idx) || !ELDRITCH_SNIPPETS[idx]) return;
-        const snippet = ELDRITCH_SNIPPETS[idx];
-        const existingTrimmed = code.replace(/\s+$/, "");
-        const nextCode = existingTrimmed
-            ? `${existingTrimmed}\n\n${snippet.code}`
-            : snippet.code;
-        commitCodeChange(nextCode, nextCode.length, nextCode.length);
-        e.target.value = "";
-        setTimeout(() => textareaRef.current?.focus(), 20);
-    };
-
-    const canUndo = historyIndexRef.current > 0;
-    const canRedo = historyIndexRef.current < historyRef.current.length - 1;
+    const hoveredLineDiags =
+        hoveredDiagLine !== null ? diagnosticsByLine.get(hoveredDiagLine) || null : null;
 
     return (
         <div
             data-testid="multiline-composer"
             data-tour="shell-composer"
-            className="flex flex-col rounded-md border border-[#262b38] bg-[#141822] shadow-lg overflow-hidden relative"
+            className="flex flex-col border-t border-[#262b38] bg-[#141822] overflow-hidden relative"
         >
             {/* Top Vertical Resize Drag Handle */}
             <div
@@ -574,60 +879,92 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                 onMouseDown={handleResizeMouseDown}
                 onKeyDown={handleResizeKeyDown}
                 title="Drag to resize composer height"
-                className="h-2 w-full bg-[#181c28] hover:bg-purple-500/30 border-b border-[#262b38] cursor-ns-resize flex items-center justify-center transition-colors group"
+                className="h-1.5 w-full bg-[#181c28] hover:bg-purple-500/30 cursor-ns-resize flex items-center justify-center transition-colors group"
             >
-                <GripHorizontal className="w-3.5 h-3.5 text-gray-600 group-hover:text-purple-300" />
+                <GripHorizontal className="w-3 h-3 text-gray-600 group-hover:text-purple-300" />
             </div>
 
             {/* Composer Toolbar Header */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-[#181c28] border-b border-[#262b38]">
-                <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-200">
-                        <Code2 className="w-3.5 h-3.5 text-purple-400" />
-                        Composer
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-1.5 pt-0.5 bg-[#181c28] border-b border-[#262b38]">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                        className="inline-flex items-center justify-center p-1 text-purple-400"
+                        title="Eldritch Composer"
+                    >
+                        <Code2 className="w-3.5 h-3.5" />
                     </span>
 
-                    {/* Undo / Redo Controls */}
-                    <div className="inline-flex items-center rounded border border-[#2f364a] bg-[#11131a]">
+                    {/* Script vs RC Mode Switcher + Compact Purple RC Button Toggle */}
+                    <div className="inline-flex items-center rounded-md border border-[#2f364a] bg-[#11131a] p-0.5 text-xs">
                         <button
                             type="button"
-                            onClick={handleUndo}
-                            disabled={!canUndo || disabled}
-                            aria-label="Undo"
-                            title="Undo (Ctrl+Z / Cmd+Z)"
-                            className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+                            data-testid="composer-script-tab"
+                            onClick={() => handleSwitchMode("script")}
+                            className={`px-2.5 py-0.5 rounded font-semibold transition-colors ${
+                                activeMode === "script"
+                                    ? "bg-[#262c3d] text-white"
+                                    : "text-gray-400 hover:text-gray-200"
+                            }`}
                         >
-                            <Undo2 className="w-3.5 h-3.5" />
+                            Script
                         </button>
-                        <button
-                            type="button"
-                            onClick={handleRedo}
-                            disabled={!canRedo || disabled}
-                            aria-label="Redo"
-                            title="Redo (Ctrl+Shift+Z / Cmd+Shift+Z / Ctrl+Y)"
-                            className="p-1 text-gray-400 hover:text-gray-200 border-l border-[#2f364a] disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+                        <div
+                            data-tour="shell-composer-rc"
+                            className="inline-flex items-center gap-0.5"
                         >
-                            <Redo2 className="w-3.5 h-3.5" />
-                        </button>
+                            <button
+                                type="button"
+                                data-testid="composer-rc-tab"
+                                onClick={() => handleSwitchMode("rc")}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded font-semibold transition-colors ${
+                                    activeMode === "rc"
+                                        ? "bg-[#262c3d] text-white"
+                                        : "text-gray-400 hover:text-gray-200"
+                                }`}
+                                title="Shared RC script across all shells"
+                            >
+                                <span>RC</span>
+                            </button>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={effectiveRcEnabled}
+                                aria-label="Auto-run RC script on new shells"
+                                data-testid="composer-rc-toggle"
+                                onClick={handleToggleRcEnabled}
+                                title={
+                                    effectiveRcEnabled
+                                        ? "RC auto-run enabled (click to disable)"
+                                        : "Enable RC auto-run on new shells"
+                                }
+                                className={`inline-flex items-center justify-center p-1 rounded transition-colors ${
+                                    effectiveRcEnabled
+                                        ? "bg-purple-600 hover:bg-purple-500 text-white shadow-sm"
+                                        : "text-gray-400 hover:text-gray-200 hover:bg-[#1e2330]"
+                                }`}
+                            >
+                                <Power className="w-3 h-3" />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Live eldritch-lsp Status Pill */}
+                    {/* Live eldritch-lsp Status Button (icon-only without border when all checks pass) */}
                     <button
                         type="button"
                         data-testid="eldritch-lsp-status"
                         onClick={() => setShowDiagnosticsPanel((prev) => !prev)}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border transition-colors ${
+                        className={`inline-flex items-center gap-1 rounded-md text-[11px] font-mono transition-colors ${
                             errorCount > 0
-                                ? "bg-red-500/15 border-red-500/40 text-red-300 hover:bg-red-500/25"
+                                ? "px-2 py-0.5 bg-red-500/15 text-red-300 hover:bg-red-500/25"
                                 : warningCount > 0
-                                  ? "bg-amber-500/15 border-amber-500/40 text-amber-200 hover:bg-amber-500/25"
-                                  : "bg-emerald-500/10 border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20"
+                                  ? "px-2 py-0.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
+                                  : "p-1.5 text-emerald-400 hover:bg-[#272e3f]"
                         }`}
-                        title="eldritch-lsp live diagnostics (click to toggle details)"
+                        title="eldritch-lsp live diagnostics"
                     >
                         {errorCount > 0 ? (
                             <>
-                                <AlertCircle className="w-3 h-3 text-red-400" />
+                                <AlertCircle className="w-3.5 h-3.5 text-red-400" />
                                 <span>
                                     {errorCount} {errorCount === 1 ? "error" : "errors"}
                                     {warningCount > 0 ? `, ${warningCount} warn` : ""}
@@ -635,58 +972,114 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                             </>
                         ) : warningCount > 0 ? (
                             <>
-                                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
                                 <span>
                                     {warningCount} {warningCount === 1 ? "warning" : "warnings"}
                                 </span>
                             </>
                         ) : (
-                            <>
-                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                                <span>eldritch-lsp</span>
-                            </>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         )}
                     </button>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                    {/* Snippets Selector */}
-                    <div className="relative flex items-center">
-                        <Sparkles className="w-3 h-3 text-purple-400 absolute left-2 pointer-events-none" />
-                        <select
-                            aria-label="Insert Eldritch snippet"
-                            defaultValue=""
-                            onChange={handleSnippetSelect}
-                            className="pl-6 pr-6 py-1 rounded bg-[#11131a] border border-[#2f364a] hover:border-purple-500/50 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
-                        >
-                            <option value="" disabled>
-                                Insert snippet...
-                            </option>
-                            {ELDRITCH_SNIPPETS.map((snippet, idx) => (
-                                <option key={snippet.label} value={idx}>
-                                    {snippet.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {code.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Searchable Eldritch Tome Picker */}
+                    <div ref={tomePickerRef} className="relative">
                         <button
                             type="button"
-                            onClick={() => commitCodeChange("", 0, 0)}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-400 hover:text-red-300 hover:bg-red-950/30 transition-colors"
-                            title="Clear composer"
+                            data-tour="shell-composer-tomes"
+                            data-testid="composer-tome-picker-button"
+                            aria-label="Load Eldritch tome"
+                            aria-expanded={tomePickerOpen}
+                            title="Load Tome"
+                            onClick={() => setTomePickerOpen((prev) => !prev)}
+                            className="inline-flex items-center justify-center p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#272e3f] transition-colors"
                         >
-                            <Trash2 className="w-3 h-3" />
-                            Clear
+                            <BookOpenIcon className="w-3.5 h-3.5" />
+                        </button>
+
+                        {tomePickerOpen && (
+                            <div
+                                data-testid="composer-tome-picker-popover"
+                                role="dialog"
+                                aria-label="Search and load Eldritch tome"
+                                className="absolute right-0 top-full mt-1.5 w-80 max-w-[calc(100vw-32px)] rounded-lg bg-[#161a26] border border-[#2f364a] shadow-2xl z-30 overflow-hidden"
+                            >
+                                <div className="p-2 border-b border-[#262b38]">
+                                    <div className="relative">
+                                        <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                        <input
+                                            ref={tomeSearchInputRef}
+                                            type="text"
+                                            aria-label="Search Eldritch tomes"
+                                            value={tomeSearchQuery}
+                                            onChange={(e) => setTomeSearchQuery(e.target.value)}
+                                            placeholder="Search tomes by name, tactic, or description..."
+                                            className="w-full pl-8 pr-3 py-1.5 rounded-md bg-[#0f1117] border border-[#2a3040] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="max-h-56 overflow-y-auto shell-scrollbar divide-y divide-[#222736]">
+                                    {filteredTomes.length === 0 ? (
+                                        <div className="p-3 text-center text-xs text-gray-500">
+                                            No matching Eldritch tomes found.
+                                        </div>
+                                    ) : (
+                                        filteredTomes.map((tome) => (
+                                            <button
+                                                key={tome.id || tome.name}
+                                                type="button"
+                                                data-testid="composer-tome-option"
+                                                onClick={() => handleSelectTome(tome)}
+                                                className="w-full text-left px-3 py-2 hover:bg-[#202637] transition-colors space-y-0.5"
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-xs font-semibold text-gray-200 truncate">
+                                                        {tome.name}
+                                                    </span>
+                                                    {tome.tactic && (
+                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-gray-400 shrink-0">
+                                                            {tome.tactic}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {tome.description && (
+                                                    <p className="text-[11px] text-gray-400 line-clamp-1">
+                                                        {tome.description}
+                                                    </p>
+                                                )}
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {activeMode === "rc" && effectiveRcCode !== DEFAULT_RC_ALIASES_SCRIPT && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                commitCodeChange(
+                                    DEFAULT_RC_ALIASES_SCRIPT,
+                                    DEFAULT_RC_ALIASES_SCRIPT.length,
+                                    DEFAULT_RC_ALIASES_SCRIPT.length
+                                )
+                            }
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-xs font-semibold text-gray-200 shadow-sm transition-colors"
+                        >
+                            <RotateCcw className="w-3 h-3" />
+                            Reset Aliases
                         </button>
                     )}
 
                     <button
                         type="button"
-                        disabled={!code.trim() || disabled}
-                        onClick={() => onRunCode(code)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors shadow-sm"
+                        disabled={!activeCode.trim() || disabled}
+                        onClick={() => onRunCode(activeCode)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors shadow-sm"
                         title="Execute script in shell (Ctrl+Enter / Cmd+Enter)"
                     >
                         <Play className="w-3 h-3 fill-current" />
@@ -698,15 +1091,16 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         onClick={onToggle}
                         aria-label="Close composer"
                         title="Hide composer (Alt+M)"
-                        className="p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors"
+                        className="p-1.5 rounded-md text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors"
                     >
                         <X className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </div>
 
-            {/* Editor Area with Gutter + Syntax Highlighting Layer + Transparent Textarea */}
+            {/* Editor Area with Gutter + Syntax Highlighting + Inline VSCode Ghost Completion */}
             <div
+                onMouseLeave={() => setHoveredDiagLine(null)}
                 className="relative flex bg-[#0f1118] font-mono text-xs overflow-hidden"
                 style={{ height: `${editorHeight}px` }}
             >
@@ -723,6 +1117,11 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         return (
                             <div
                                 key={idx}
+                                onMouseEnter={() => {
+                                    if (lineDiags && lineDiags.length > 0) {
+                                        setHoveredDiagLine(idx);
+                                    }
+                                }}
                                 className="flex items-center justify-end gap-1 h-5"
                                 title={lineDiags?.map((d) => d.message).join("\n")}
                             >
@@ -731,7 +1130,15 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                                 ) : hasWarn ? (
                                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
                                 ) : null}
-                                <span className={hasErr ? "text-red-400 font-semibold" : hasWarn ? "text-amber-300" : ""}>
+                                <span
+                                    className={
+                                        hasErr
+                                            ? "text-red-400 font-semibold"
+                                            : hasWarn
+                                              ? "text-amber-300"
+                                              : ""
+                                    }
+                                >
                                     {idx + 1}
                                 </span>
                             </div>
@@ -739,7 +1146,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                     })}
                 </div>
 
-                {/* Synchronized Syntax Highlighting Overlay + Textarea */}
+                {/* Synchronized Syntax Highlighting Overlay + Inline Ghost Completion + Textarea */}
                 <div className="relative flex-1 h-full overflow-hidden">
                     <pre
                         ref={highlightPreRef}
@@ -748,13 +1155,30 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         className="pointer-events-none absolute inset-0 m-0 py-2 px-3 font-mono text-xs leading-5 whitespace-pre overflow-hidden"
                     >
                         {lines.map((line, lineIdx) => {
-                            const tokens = tokenizeEldritchLine(line);
                             const lineDiags = diagnosticsByLine.get(lineIdx);
                             const hasErr = lineDiags?.some((d) => d.severity === "error");
                             const hasWarn = lineDiags?.some((d) => d.severity === "warning");
+                            const showGhostOnLine =
+                                inlineGhostInfo && inlineGhostInfo.lineIdx === lineIdx;
+
+                            const beforeGhostText = showGhostOnLine
+                                ? line.slice(0, inlineGhostInfo.colIdx)
+                                : line;
+                            const afterGhostText = showGhostOnLine
+                                ? line.slice(inlineGhostInfo.colIdx)
+                                : "";
+
+                            const beforeTokens = tokenizeEldritchLine(beforeGhostText);
+                            const afterTokens = afterGhostText
+                                ? tokenizeEldritchLine(afterGhostText)
+                                : [];
+
                             return (
                                 <div
                                     key={lineIdx}
+                                    data-testid={
+                                        hasErr || hasWarn ? "composer-errored-line" : undefined
+                                    }
                                     className={`min-h-[1.25rem] ${
                                         hasErr
                                             ? "bg-red-500/10 decoration-red-400 decoration-wavy underline"
@@ -763,17 +1187,39 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                                               : ""
                                     }`}
                                 >
-                                    {tokens.length === 0 ? (
+                                    {activeCode.length === 0 && lineIdx === 0 ? (
+                                        <span className="text-gray-500 italic">
+                                            # Write or paste Eldritch code...
+                                        </span>
+                                    ) : beforeTokens.length === 0 && !showGhostOnLine ? (
                                         "\u200B"
                                     ) : (
-                                        tokens.map((tok, tokIdx) => (
-                                            <span
-                                                key={tokIdx}
-                                                className={TOKEN_COLOR_CLASSES[tok.type]}
-                                            >
-                                                {tok.text}
-                                            </span>
-                                        ))
+                                        <>
+                                            {beforeTokens.map((tok, tokIdx) => (
+                                                <span
+                                                    key={`b-${tokIdx}`}
+                                                    className={TOKEN_COLOR_CLASSES[tok.type]}
+                                                >
+                                                    {tok.text}
+                                                </span>
+                                            ))}
+                                            {showGhostOnLine && (
+                                                <span
+                                                    data-testid="composer-inline-completion"
+                                                    className="text-gray-500/80 italic"
+                                                >
+                                                    {inlineGhostInfo.suffix}
+                                                </span>
+                                            )}
+                                            {afterTokens.map((tok, tokIdx) => (
+                                                <span
+                                                    key={`a-${tokIdx}`}
+                                                    className={TOKEN_COLOR_CLASSES[tok.type]}
+                                                >
+                                                    {tok.text}
+                                                </span>
+                                            ))}
+                                        </>
                                     )}
                                 </div>
                             );
@@ -782,10 +1228,16 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
 
                     <textarea
                         ref={textareaRef}
-                        aria-label="Multi-line Eldritch script editor"
-                        value={code}
+                        aria-label={
+                            activeMode === "rc"
+                                ? "Shared Eldritch RC script editor"
+                                : "Multi-line Eldritch script editor"
+                        }
+                        value={activeCode}
                         disabled={disabled}
                         onScroll={handleScroll}
+                        onMouseMove={handleTextareaMouseMove}
+                        onMouseEnter={handleTextareaMouseMove}
                         onChange={(e) => {
                             const nextVal = e.target.value;
                             const selStart = e.target.selectionStart;
@@ -796,19 +1248,76 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         onKeyUp={(e) => setCursorOffset(e.currentTarget.selectionEnd)}
                         onClick={(e) => setCursorOffset(e.currentTarget.selectionEnd)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Write or paste multi-line Eldritch code... (Tab / ← → cycle completions, Enter accept, Ctrl/Cmd+Z undo, Ctrl/Cmd+Enter run)"
+                        placeholder="# Write or paste Eldritch code..."
                         spellCheck={false}
                         autoCapitalize="off"
                         autoComplete="off"
                         autoCorrect="off"
                         wrap="off"
-                        className="relative z-10 w-full h-full bg-transparent text-transparent caret-slate-200 selection:bg-slate-400/25 py-2 px-3 leading-5 resize-none focus:outline-none font-mono text-xs overflow-auto"
+                        className="relative z-10 w-full h-full bg-transparent text-transparent placeholder:text-transparent caret-slate-200 selection:bg-slate-400/25 py-2 px-3 leading-5 resize-none focus:outline-none font-mono text-xs overflow-auto"
                     />
+
+                    {/* Hover Lint Popover on Errored Code */}
+                    {hoveredDiagLine !== null && hoveredLineDiags && hoveredLineDiags.length > 0 && (
+                        <div
+                            data-testid="composer-lint-popover"
+                            role="tooltip"
+                            style={{
+                                top: `${Math.min(
+                                    Math.max(4, (hoveredDiagLine + 1) * 20 + 6 - editorScrollTop),
+                                    Math.max(4, editorHeight - 56)
+                                )}px`,
+                                left: "12px",
+                            }}
+                            className="absolute z-30 max-w-lg rounded-md bg-[#161a26] border border-[#2f364a] px-3 py-2 text-xs shadow-xl space-y-1.5"
+                        >
+                            {hoveredLineDiags.map((diag, idx) => (
+                                <div
+                                    key={`${diag.line}-${diag.startCol}-${diag.code}-${idx}`}
+                                    className="flex items-start justify-between gap-3"
+                                >
+                                    <div className="flex items-start gap-2 min-w-0">
+                                        {diag.severity === "error" ? (
+                                            <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                                        ) : (
+                                            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                        )}
+                                        <div className="space-y-0.5 min-w-0">
+                                            <p className="text-gray-200 break-words leading-snug">
+                                                {diag.message}
+                                            </p>
+                                            <span className="block font-mono text-[10px] text-gray-500">
+                                                eldritch-lsp({diag.code}) • Ln {diag.line + 1}, Col{" "}
+                                                {diag.startCol + 1}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {diag.replacement && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                applyQuickFix(diag);
+                                                setHoveredDiagLine(null);
+                                            }}
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-gray-200 text-[11px] font-mono shrink-0 transition-colors"
+                                        >
+                                            <Wand2 className="w-3 h-3 text-gray-400" />
+                                            {diag.replacement.label}
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                {/* Floating Diagnostics Overlay when user explicitly expands multiple diagnostics */}
+                {/* Bottom Diagnostics Bar (with colorless neutral suggested fix button) */}
                 {showDiagnosticsPanel && diagnostics.length > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 z-20 max-h-28 overflow-y-auto divide-y divide-[#222736] bg-[#131722]/95 backdrop-blur-sm border-t border-[#262b38] text-xs shadow-lg">
+                    <div
+                        data-testid="composer-diagnostics-list"
+                        className="absolute bottom-0 left-0 right-0 z-20 max-h-28 overflow-y-auto divide-y divide-[#222736] bg-[#131722]/95 backdrop-blur-sm border-t border-[#262b38] text-xs shadow-lg"
+                    >
                         {diagnostics.map((diag, idx) => (
                             <div
                                 key={`${diag.line}-${diag.startCol}-${diag.code}-${idx}`}
@@ -825,7 +1334,9 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                                     </span>
                                     <span
                                         className={`truncate ${
-                                            diag.severity === "error" ? "text-red-200" : "text-amber-200"
+                                            diag.severity === "error"
+                                                ? "text-red-200"
+                                                : "text-amber-200"
                                         }`}
                                     >
                                         {diag.message}
@@ -836,127 +1347,14 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                                     <button
                                         type="button"
                                         onClick={() => applyQuickFix(diag)}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-mono shrink-0 transition-colors"
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-gray-200 text-[11px] font-mono shrink-0 transition-colors"
                                     >
-                                        <Wand2 className="w-3 h-3" />
+                                        <Wand2 className="w-3 h-3 text-gray-400" />
                                         {diag.replacement.label}
                                     </button>
                                 )}
                             </div>
                         ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Constant Fixed-Height (h-8) Assist Bar — prevents any vertical layout shift when autocomplete or diagnostics appear/disappear */}
-            <div className="h-8 flex items-center px-3 bg-[#161b28] border-t border-[#262b38] overflow-hidden text-xs shrink-0">
-                {activeCompletions.length > 0 ? (
-                    <div
-                        data-testid="composer-autocomplete-list"
-                        className="flex items-center gap-1.5 w-full overflow-x-auto no-scrollbar"
-                    >
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-purple-300 shrink-0 mr-1">
-                            Tab / ← → cycle • Enter accept:
-                        </span>
-                        {activeCompletions.slice(0, 8).map((item, idx) => {
-                            const isSelected = idx === selectedCompletionIdx;
-                            return (
-                                <button
-                                    key={item.label}
-                                    type="button"
-                                    onMouseDown={(e) => {
-                                        e.preventDefault();
-                                        applyCompletionItem(item);
-                                    }}
-                                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-xs shrink-0 transition-colors ${
-                                        isSelected
-                                            ? "bg-purple-600 text-white font-semibold"
-                                            : "bg-[#1e2436] text-gray-300 hover:bg-[#272f46]"
-                                    }`}
-                                    title={item.documentation || item.detail}
-                                >
-                                    <span>{item.label}</span>
-                                    <span
-                                        className={`text-[10px] px-1 rounded ${
-                                            isSelected
-                                                ? "bg-purple-800/80 text-purple-100"
-                                                : "bg-black/30 text-gray-400"
-                                        }`}
-                                    >
-                                        {item.kind}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                ) : signatureHelp ? (
-                    <div
-                        data-testid="composer-signature-help"
-                        className="flex items-center justify-between gap-2 w-full text-[11px] font-mono text-gray-300 truncate"
-                    >
-                        <div className="truncate">
-                            <span className="text-teal-300 font-semibold">
-                                {signatureHelp.functionName}
-                            </span>
-                            <span className="text-gray-500">(</span>
-                            {signatureHelp.params.map((param, idx) => (
-                                <React.Fragment key={param}>
-                                    {idx > 0 && <span className="text-gray-500">, </span>}
-                                    <span
-                                        className={
-                                            idx === signatureHelp.activeParam
-                                                ? "text-amber-300 font-semibold underline underline-offset-2"
-                                                : "text-gray-400"
-                                        }
-                                    >
-                                        {param}
-                                    </span>
-                                </React.Fragment>
-                            ))}
-                            <span className="text-gray-500">)</span>
-                        </div>
-                        <span className="text-gray-400 font-sans truncate max-w-md hidden sm:inline">
-                            {signatureHelp.description}
-                        </span>
-                    </div>
-                ) : diagnostics.length > 0 ? (
-                    <div
-                        data-testid="composer-diagnostics-list"
-                        className="flex items-center justify-between gap-2 w-full truncate"
-                    >
-                        <div className="flex items-center gap-2 min-w-0 truncate">
-                            {diagnostics[0].severity === "error" ? (
-                                <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                            ) : (
-                                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            )}
-                            <span className="font-mono text-[11px] text-gray-400 shrink-0">
-                                L{diagnostics[0].line + 1}:
-                            </span>
-                            <span
-                                className={`truncate ${
-                                    diagnostics[0].severity === "error" ? "text-red-200" : "text-amber-200"
-                                }`}
-                            >
-                                {diagnostics[0].message}
-                            </span>
-                        </div>
-
-                        {diagnostics[0].replacement && (
-                            <button
-                                type="button"
-                                onClick={() => applyQuickFix(diagnostics[0])}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-mono shrink-0 transition-colors"
-                            >
-                                <Wand2 className="w-3 h-3" />
-                                {diagnostics[0].replacement.label}
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-between w-full text-[11px] text-gray-500 font-mono truncate">
-                        <span>Tab / ← → cycle completions • Enter accept • Ctrl/Cmd+Z undo • Ctrl/Cmd+/ comment</span>
-                        <span className="hidden sm:inline">Ctrl/Cmd+Enter to run</span>
                     </div>
                 )}
             </div>

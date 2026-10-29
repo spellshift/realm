@@ -7,10 +7,14 @@ import {
     GET_SHELL_ACTIVE_USERS,
     GET_SHELL_HISTORY,
     GET_SHELL_KNOWLEDGE_GRAPH,
+    GET_SHELL_TOMES,
 } from "../graphql";
 
 export interface ShellTaskItem {
     id: string;
+    shellId?: string;
+    beaconName?: string;
+    hostName?: string;
     createdAt: string;
     claimedAt?: string | null;
     execStartedAt?: string | null;
@@ -45,6 +49,16 @@ export interface ShellPivotItem {
     destination: string;
     port?: number;
     closedAt?: string | null;
+}
+
+export interface ShellTomeItem {
+    id: string;
+    name: string;
+    description: string;
+    tactic?: string;
+    eldritch: string;
+    paramDefs?: string;
+    supportModel?: string;
 }
 
 export interface KnowledgeCredentialItem {
@@ -118,6 +132,7 @@ export const useShellData = (shellId: string | undefined) => {
     const { data: historyData, refetch: refetchHistory } = useQuery(GET_SHELL_HISTORY, {
         variables: { id: shellId },
         skip: !shellId,
+        fetchPolicy: "cache-and-network",
         pollInterval: 3000,
     });
 
@@ -151,6 +166,11 @@ export const useShellData = (shellId: string | undefined) => {
         variables: { id: shellId },
         skip: !shellId,
         pollInterval: 10000
+    });
+
+    // Fetch Eldritch tomes for the Composer
+    const { data: tomesData } = useQuery(GET_SHELL_TOMES, {
+        skip: !shellId,
     });
 
     // Tick every second when there are running tasks so stuckTask elapsed time updates smoothly
@@ -205,8 +225,51 @@ export const useShellData = (shellId: string | undefined) => {
 
     const shellTasks: ShellTaskItem[] = useMemo(() => {
         const edges = historyData?.node?.shellTasks?.edges || [];
-        return edges.map((e: any) => e.node).filter(Boolean);
-    }, [historyData]);
+        const currentShellIdStr = String(historyData?.node?.id || shellId || "");
+        const currentBeaconName = shellData?.node?.beacon?.name;
+        const currentHostName = shellData?.node?.beacon?.host?.name;
+        return edges
+            .map((e: any) => e.node)
+            .filter(Boolean)
+            .map((t: any) => ({
+                ...t,
+                shellId: t.shellId || currentShellIdStr,
+                beaconName: t.beaconName || currentBeaconName,
+                hostName: t.hostName || currentHostName,
+            }));
+    }, [historyData, shellId, shellData]);
+
+    const allShellTasks: ShellTaskItem[] = useMemo(() => {
+        const byId = new Map<string, ShellTaskItem>();
+        for (const t of shellTasks) {
+            byId.set(String(t.id), t);
+        }
+        const shellEdges = historyData?.crossSessionShells?.edges || [];
+        for (const se of shellEdges) {
+            const sNode = se?.node;
+            if (!sNode) continue;
+            const sId = String(sNode.id || "");
+            const bName = sNode.beacon?.name;
+            const hName = sNode.beacon?.host?.name;
+            const tEdges = sNode.shellTasks?.edges || [];
+            for (const te of tEdges) {
+                const tNode = te?.node;
+                if (!tNode?.id) continue;
+                const key = String(tNode.id);
+                if (!byId.has(key)) {
+                    byId.set(key, {
+                        ...tNode,
+                        shellId: sId,
+                        beaconName: bName,
+                        hostName: hName,
+                    });
+                }
+            }
+        }
+        return Array.from(byId.values()).sort(
+            (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+        );
+    }, [shellTasks, historyData]);
 
     const totalTaskCount: number = historyData?.node?.shellTasks?.totalCount ?? shellTasks.length;
 
@@ -265,6 +328,13 @@ export const useShellData = (shellId: string | undefined) => {
         const edges = historyData?.node?.pivots?.edges || shellData?.node?.pivots?.edges || [];
         return edges.map((e: any) => e.node).filter(Boolean);
     }, [historyData, shellData]);
+
+    const tomes: ShellTomeItem[] = useMemo(() => {
+        const edges = tomesData?.tomes?.edges || [];
+        return edges
+            .map((e: any) => e.node)
+            .filter((t: any) => t && t.eldritch);
+    }, [tomesData]);
 
     // Knowledge Graph derived state
     const currentHostNode = knowledgeData?.currentHost || shellData?.node?.beacon?.host;
@@ -417,12 +487,14 @@ export const useShellData = (shellId: string | undefined) => {
         setPortalId,
         activeUsers,
         shellTasks,
+        allShellTasks,
         totalTaskCount,
         queuedTasks,
         runningTasks,
         stuckTask,
         stuckElapsedSeconds,
         pivots,
+        tomes,
         refetchHistory,
         hostCredentials,
         allCredentials,

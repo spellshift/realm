@@ -110,7 +110,6 @@ describe("ShellHeader", () => {
                     onToggleComposer={vi.fn()}
                     onToggleKnowledge={vi.fn()}
                     onTogglePivots={vi.fn()}
-                    onToggleHistory={vi.fn()}
                     onToggleNux={vi.fn()}
                 />
             </BrowserRouter>
@@ -147,8 +146,14 @@ describe("ShellHeader", () => {
 
         const newInterpreterBtn = screen.getByText("New Interpreter").closest("button")!;
         const newPortalBtn = screen.getByText("New Portal").closest("button")!;
+        const reportBugLink = screen.getByLabelText("Report a bug");
         expect(newInterpreterBtn).toHaveClass("text-white");
         expect(newPortalBtn).toHaveClass("text-white");
+        expect(reportBugLink).toHaveAttribute(
+            "href",
+            "https://github.com/spellshift/realm/issues/new?template=bug_report.md"
+        );
+        expect(screen.getByText("Report a Bug")).toBeInTheDocument();
 
         rerender(
             <BrowserRouter>
@@ -191,7 +196,9 @@ describe("ShellHeader", () => {
         );
 
         const toolbar = screen.getByTestId("shell-header-toolbar");
-        expect(toolbar).toHaveClass("bg-[#1d222f]", "border", "border-[#2f364a]");
+        expect(toolbar).toBeInTheDocument();
+        const homeLink = screen.getByTitle("Return Home");
+        expect(homeLink).not.toHaveClass("border");
 
         const composerBtn = screen.getByLabelText("Toggle multi-line composer");
         expect(composerBtn).toHaveClass("bg-purple-600", "text-white");
