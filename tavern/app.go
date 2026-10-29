@@ -168,22 +168,9 @@ func newApp(ctx context.Context) (app *cli.App) {
 			},
 			Action: func(c *cli.Context) error {
 				configPath := c.String("config")
-				if configPath == "" {
-					return fmt.Errorf("--config flag is required")
-				}
-
-				cfg, err := builder.ParseConfig(configPath)
+				cfg, err := loadBuilderConfig(configPath, c.String("executor"))
 				if err != nil {
-					return fmt.Errorf("failed to parse builder config: %w", err)
-				}
-
-				if cliExec := c.String("executor"); cliExec != "" {
-					switch cliExec {
-					case "docker", "local":
-						cfg.Executor = cliExec
-					default:
-						return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cliExec)
-					}
+					return err
 				}
 
 				slog.InfoContext(ctx, "starting builder",
@@ -211,6 +198,24 @@ func newApp(ctx context.Context) (app *cli.App) {
 		},
 	}
 	return
+}
+
+func loadBuilderConfig(configPath, cliExec string) (*builder.Config, error) {
+	cfg := builder.DefaultConfig()
+	if configPath != "" {
+		var err error
+		cfg, err = builder.ParseConfig(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse builder config: %w", err)
+		}
+	}
+	if cliExec != "" {
+		cfg.Executor = cliExec
+		if err := cfg.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	return cfg, nil
 }
 
 func runTavern(ctx context.Context, options ...func(*Config)) error {

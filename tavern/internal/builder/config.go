@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// DefaultPollInterval is the builder polling interval in seconds for legacy configurations.
+// DefaultPollInterval is the builder polling interval in seconds.
 const DefaultPollInterval = 5
 
 // MaxPollInterval is the largest poll_interval (in seconds) ParseConfig accepts.
@@ -37,6 +37,17 @@ type Config struct {
 	Executor         string   `yaml:"executor"`
 }
 
+// DefaultConfig returns the settings used when no builder configuration is provided.
+func DefaultConfig() *Config {
+	return &Config{
+		PollInterval:     DefaultPollInterval,
+		SupportedTargets: []string{"linux", "windows"},
+		IdentityFile:     "builder.identity",
+		Upstream:         "http://127.0.0.1:8000",
+		Executor:         "docker",
+	}
+}
+
 // ParseConfig reads and parses a builder YAML configuration file.
 func ParseConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
@@ -55,11 +66,20 @@ func ParseConfig(path string) (*Config, error) {
 
 // ParseConfigBytes parses builder YAML configuration from bytes.
 func ParseConfigBytes(data []byte) (*Config, error) {
-	cfg := Config{
-		PollInterval: DefaultPollInterval,
-		Executor:     "docker",
+	var fields map[string]interface{}
+	if err := yaml.Unmarshal(data, &fields); err != nil {
+		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+	for _, name := range []string{"identity_file", "supported_targets", "upstream", "executor", "poll_interval"} {
+		if value, present := fields[name]; present && value == nil {
+			return nil, fmt.Errorf("%s must not be null", name)
+		}
+	}
+	if fields["executor"] == "" {
+		return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", "")
+	}
+	cfg := DefaultConfig()
+	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 
@@ -67,7 +87,7 @@ func ParseConfigBytes(data []byte) (*Config, error) {
 		return nil, err
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 func (cfg *Config) validate() error {

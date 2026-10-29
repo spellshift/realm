@@ -80,6 +80,24 @@ After your certificate has successfully provisioned, it may still take a while (
 
 #### Builder enrollment token
 
+An admin can generate a one-time token from **Admin → Builders → Enroll builder**. On the builder host, from the Realm project root, run the command shown on that page. For a token supplied through another secure channel, run:
+
+```sh
+REALM_BUILDER_ENROLLMENT_TOKEN='<token>' go run ./tavern builder
+```
+
+Without `--config`, the builder connects to `http://127.0.0.1:8000`, saves its identity as `builder.identity` in the working directory, supports Linux and Windows, uses Docker, and polls every five seconds. An optional YAML file overrides only the fields you set:
+
+```yaml
+upstream: https://tavern.example.com
+identity_file: builder.identity
+supported_targets: [linux, windows]
+executor: docker
+poll_interval: 5
+```
+
+Run it with `go run ./tavern builder --config /path/to/builder.yaml`. A relative `identity_file` in YAML resolves relative to the YAML file; without YAML it resolves from the working directory. `--executor docker` or `--executor local` overrides the YAML executor. Keep the saved identity file on the builder host for future starts, which do not need the enrollment token.
+
 Terraform creates one stable, one-time builder enrollment token and passes it to Tavern as `REALM_BUILDER_ENROLLMENT_TOKENS`. Retrieve the raw token from the Terraform directory when you are ready to enroll a builder:
 
 ```sh
