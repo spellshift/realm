@@ -986,15 +986,36 @@ The **http.download** method downloads a file at the URI specified in `uri` to t
 
 ### http.get
 
-`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+`http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> Dict`
 
-The **http.get** method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+The **http.get** method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+
+If the request itself fails to succeed, an error occurs. This does not include an unsuccessful status code.
+
+As an example:
+
+```python
+http.get("http://192.168.56.107:8000")
+```
+```json
+{
+  "body": "Hello! This is an example site.",
+  "headers": {
+    "content-length": "187",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Fri, 30 Oct 2026 14:34:41 GMT"
+  },
+  "status_code": 200
+}
+```
 
 ### http.post
 
-`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
+`http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> Dict`
 
-The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
+The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
+
+The response is in the same format as `http.get`
 
 ---
 
