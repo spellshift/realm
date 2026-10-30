@@ -89,7 +89,7 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 			Chunk: chunk,
 		})
 		if sendErr != nil {
-			return status.Errorf(codes.Internal, "failed to send file content: %v", err)
+			return status.Errorf(codes.Internal, "failed to send file content: %v", sendErr)
 		}
 	}
 }

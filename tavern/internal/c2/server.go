@@ -198,7 +198,7 @@ func parseBeaconIDClaim(v any) (int, error) {
 		}
 		return id, nil
 	case int64:
-		if id <= 0 {
+		if id <= 0 || int64(int(id)) != id {
 			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
 		}
 		return int(id), nil
