@@ -2,6 +2,16 @@
 description: Developer skills for working on the Tavern backend and the react frontend.
 ---
 
+# UI
+
+- Try to be minimalist with initial implementations unless asked not to. For example don't add cards within cards or excess buttons for features that weren't asked for.
+- Avoid being too verbose, adding too many buttons, or labeling components that do not need labels.
+- Don't overuse color, only use it when necessary to convey information or to highlight something of critical importance. Most components do not need additional coloring.
+- Reuse components where possible.
+- When designing, please break features out into reuseable components so that they can be reused elsewhere in the UI.
+- Be consistent with the existing UI's color scheme, padding, and other style design decisions.
+
+
 # GraphQL API
 
 ## Creating a New Model

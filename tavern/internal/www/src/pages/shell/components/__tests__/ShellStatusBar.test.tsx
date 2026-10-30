@@ -33,19 +33,23 @@ describe("ShellStatusBar", () => {
         expect(reconnectingIcon).toBeInTheDocument();
     });
 
-    it("displays portal active message when portalId is present", () => {
+    it("displays portal active message when portalId is present without showing portal ID, and renders cogwheel toggle", () => {
         render(<ShellStatusBar {...defaultProps} portalId={123} />);
         expect(screen.getByText("Portal Active")).toBeInTheDocument();
-        expect(screen.getByText("(ID: 123)")).toBeInTheDocument();
+        expect(screen.queryByText("(ID: 123)")).not.toBeInTheDocument();
+        expect(screen.getByTestId("session-settings-toggle")).toBeInTheDocument();
     });
 
     it("displays async message when portalId is null", () => {
         render(<ShellStatusBar {...defaultProps} portalId={null} />);
         expect(screen.getByText("async")).toBeInTheDocument();
+        expect(screen.getByTestId("session-settings-toggle")).toBeInTheDocument();
     });
 
-    it("displays callback timer", () => {
+    it("displays callback timer with 'Next' label", () => {
         render(<ShellStatusBar {...defaultProps} timeUntilCallback="in 5 minutes" />);
+        expect(screen.getByText("Next")).toBeInTheDocument();
+        expect(screen.queryByText("Next callback:")).not.toBeInTheDocument();
         expect(screen.getByText("in 5 minutes")).toBeInTheDocument();
     });
 

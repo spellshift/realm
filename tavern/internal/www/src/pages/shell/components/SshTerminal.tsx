@@ -1,10 +1,13 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { WebsocketMessageKind } from "../websocket";
 import { getViewportNonEmptyLineCount, transformClearAnsiForScrollback } from "../hooks/shellUtils";
-import { CheckCircle2, Loader2, RefreshCw, Terminal as TerminalIcon, XCircle } from "lucide-react";
+import {
+  WEBSOCKET_CONNECT_TIMEOUT_MS,
+  getExponentialBackoffDelay,
+} from "../../../lib/browser-adapter";
 
 interface SshTerminalProps {
   portalId: number;
@@ -35,7 +38,6 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
   isActive,
   onConnectionStatusChange,
   onPivotCreated,
-  onCloseTab,
 }) => {
   const termRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
@@ -52,41 +54,13 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
     onPivotCreatedRef.current = onPivotCreated;
   }, [onPivotCreated]);
 
-  const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [reconnectCount, setReconnectCount] = useState<number>(0);
-  const [displayPivotId, setDisplayPivotId] = useState<number | undefined>(pivotId);
-  const [dimensions, setDimensions] = useState<{ cols: number; rows: number }>({ cols: 80, rows: 24 });
-
   useEffect(() => {
     if (pivotId !== undefined) {
       connectPivotIdRef.current = pivotId;
-      setDisplayPivotId(pivotId);
     }
   }, [pivotId]);
 
   const displayTarget = maskTargetPassword(target);
-
-  const handleReconnect = useCallback(() => {
-    // When reconnecting after a remote close, start a fresh SSH session over the active portal
-    connectPivotIdRef.current = undefined;
-    setDisplayPivotId(undefined);
-    setErrorMessage(null);
-    setConnectionStatus("connecting");
-    onConnectionStatusChangeRef.current?.("connecting");
-    setReconnectCount((c) => c + 1);
-  }, []);
-
-  const handleTerminateAndClose = useCallback(() => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      try {
-        wsRef.current.send(JSON.stringify({ kind: "close" }));
-      } catch {
-        // ignore
-      }
-    }
-    onCloseTab?.();
-  }, [onCloseTab]);
 
   useEffect(() => {
     if (!termRef.current) return;
@@ -116,7 +90,6 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
     term.open(termRef.current);
     fitAddon.fit();
     termInstance.current = term;
-    setDimensions({ cols: term.cols, rows: term.rows });
 
     const sendResize = (ws: WebSocket | null) => {
       if (ws && ws.readyState === WebSocket.OPEN && term.rows > 0 && term.cols > 0) {
@@ -132,18 +105,63 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
 
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
-      setDimensions({ cols: term.cols, rows: term.rows });
       sendResize(wsRef.current);
     });
     resizeObserver.observe(termRef.current);
 
     let cancelled = false;
     let autoReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let connectTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempts = 0;
     let endedRemotely = false;
     let hadFatalError = false;
 
+    const clearSocketTimers = () => {
+      if (autoReconnectTimer) {
+        clearTimeout(autoReconnectTimer);
+        autoReconnectTimer = null;
+      }
+      if (connectTimeoutTimer) {
+        clearTimeout(connectTimeoutTimer);
+        connectTimeoutTimer = null;
+      }
+    };
+
+    const detachSocket = (ws: WebSocket | null) => {
+      if (!ws) return;
+      if (wsRef.current === ws) {
+        wsRef.current = null;
+      }
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onclose = null;
+      ws.onerror = null;
+      try {
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          ws.close();
+        }
+      } catch {
+        // Ignore close errors on stale socket
+      }
+    };
+
+    const scheduleReconnect = () => {
+      if (cancelled || endedRemotely || hadFatalError) return;
+      if (autoReconnectTimer) return;
+      onConnectionStatusChangeRef.current?.("connecting");
+      const delay = getExponentialBackoffDelay(reconnectAttempts);
+      reconnectAttempts++;
+      autoReconnectTimer = setTimeout(() => {
+        autoReconnectTimer = null;
+        openSocket(true);
+      }, delay);
+    };
+
     const openSocket = (isAutoRetry = false) => {
       if (cancelled) return;
+      clearSocketTimers();
+      detachSocket(wsRef.current);
+
       const scheme = window.location.protocol === "https:" ? "wss" : "ws";
       const targetPivotId = connectPivotIdRef.current;
       let wsUrl = `${scheme}://${window.location.host}/portals/ssh/ws?portal_id=${portalId}&target=${encodeURIComponent(target)}&shell_id=${shellId}`;
@@ -153,9 +171,21 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
+      connectTimeoutTimer = setTimeout(() => {
+        if (cancelled || wsRef.current !== ws) return;
+        if (ws.readyState === WebSocket.CONNECTING) {
+          detachSocket(ws);
+          scheduleReconnect();
+        }
+      }, WEBSOCKET_CONNECT_TIMEOUT_MS);
+
       ws.onopen = () => {
-        if (cancelled) return;
-        setConnectionStatus("connecting");
+        if (cancelled || wsRef.current !== ws) return;
+        if (connectTimeoutTimer) {
+          clearTimeout(connectTimeoutTimer);
+          connectTimeoutTimer = null;
+        }
+        reconnectAttempts = 0;
         onConnectionStatusChangeRef.current?.("connecting");
         if (!isAutoRetry && !targetPivotId) {
           term.write(`\x1b[90m[*] Connecting to ${displayTarget} via portal #${portalId}...\x1b[0m\r\n`);
@@ -164,12 +194,12 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
       };
 
       ws.onmessage = (event) => {
-        if (cancelled) return;
+        if (cancelled || wsRef.current !== ws) return;
         try {
           const msg = JSON.parse(event.data);
           if (msg.kind === WebsocketMessageKind.Output) {
             if (!endedRemotely) {
-              setConnectionStatus("connected");
+              reconnectAttempts = 0;
               onConnectionStatusChangeRef.current?.("connected");
               term.options.cursorBlink = true;
             }
@@ -184,29 +214,24 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
             term.write(`\x1b[31m${msg.error}\x1b[0m`);
           } else if (msg.kind === WebsocketMessageKind.Error) {
             hadFatalError = true;
-            setErrorMessage(msg.error);
-            setConnectionStatus("disconnected");
             onConnectionStatusChangeRef.current?.("disconnected");
             term.options.cursorBlink = false;
             term.write(`\r\n\x1b[31m[-] ${msg.error}\x1b[0m\r\n`);
           } else if (msg.kind === WebsocketMessageKind.Status) {
             if (msg.pivot_id) {
               connectPivotIdRef.current = msg.pivot_id;
-              setDisplayPivotId(msg.pivot_id);
               onPivotCreatedRef.current?.(String(msg.pivot_id));
             }
             if (msg.status === "connecting") {
-              setConnectionStatus("connecting");
               onConnectionStatusChangeRef.current?.("connecting");
             } else if (msg.status === "connected") {
-              setConnectionStatus("connected");
+              reconnectAttempts = 0;
               onConnectionStatusChangeRef.current?.("connected");
               term.options.cursorBlink = true;
               sendResize(ws);
               term.focus();
             } else if (msg.status === "closed") {
               endedRemotely = true;
-              setConnectionStatus("disconnected");
               onConnectionStatusChangeRef.current?.("disconnected");
               term.options.cursorBlink = false;
               term.write(`\r\n\x1b[33m[*] SSH Closed (Read-Only)\x1b[0m\r\n`);
@@ -218,22 +243,21 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
       };
 
       ws.onclose = () => {
-        if (cancelled) return;
-        if (!endedRemotely && !hadFatalError && connectPivotIdRef.current) {
-          setConnectionStatus("connecting");
-          onConnectionStatusChangeRef.current?.("connecting");
-          autoReconnectTimer = setTimeout(() => {
-            openSocket(true);
-          }, 2000);
+        if (cancelled || wsRef.current !== ws) return;
+        if (connectTimeoutTimer) {
+          clearTimeout(connectTimeoutTimer);
+          connectTimeoutTimer = null;
+        }
+        if (!endedRemotely && !hadFatalError) {
+          scheduleReconnect();
           return;
         }
-        setConnectionStatus("disconnected");
         onConnectionStatusChangeRef.current?.("disconnected");
         term.options.cursorBlink = false;
       };
 
       ws.onerror = (e) => {
-        if (cancelled) return;
+        if (cancelled || wsRef.current !== ws) return;
         console.error("SSH WebSocket error:", e);
       };
     };
@@ -254,15 +278,12 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
     return () => {
       cancelled = true;
       clearTimeout(connectTimer);
-      if (autoReconnectTimer) clearTimeout(autoReconnectTimer);
+      clearSocketTimers();
       resizeObserver.disconnect();
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
+      detachSocket(wsRef.current);
       term.dispose();
     };
-  }, [portalId, target, displayTarget, shellId, reconnectCount]);
+  }, [portalId, target, displayTarget, shellId]);
 
   useEffect(() => {
     if (isActive) {
@@ -272,63 +293,6 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
 
   return (
     <div className="flex-grow flex flex-col bg-[#11131a] h-full overflow-hidden">
-      {/* Pivot Session Header Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#161922] border-b border-[#262b38] text-xs">
-        <div className="flex items-center gap-2 min-w-0">
-          <TerminalIcon size={14} className="text-gray-400 flex-shrink-0" />
-          <span className="font-mono font-semibold text-gray-200 truncate">
-            SSH • {displayTarget}{displayPivotId ? ` (#${displayPivotId})` : ""}
-          </span>
-          {connectionStatus === "connected" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-medium">
-              <CheckCircle2 size={11} />
-              Connected
-            </span>
-          )}
-          {connectionStatus === "connecting" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
-              <Loader2 size={11} className="animate-spin" />
-              Negotiating SSH...
-            </span>
-          )}
-          {connectionStatus === "disconnected" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 font-semibold">
-              <XCircle size={11} />
-              Session Ended (Read-Only)
-            </span>
-          )}
-          {connectionStatus === "disconnected" && errorMessage && (
-            <span className="text-red-300 truncate">{errorMessage}</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 font-mono hidden sm:inline">
-            {dimensions.cols}×{dimensions.rows}
-          </span>
-          {portalId > 0 && connectionStatus === "disconnected" && (
-            <button
-              type="button"
-              onClick={handleReconnect}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#2a2f3a] hover:bg-[#343b4d] text-gray-200 hover:text-white font-medium transition-colors"
-            >
-              <RefreshCw size={12} />
-              Reconnect
-            </button>
-          )}
-          {onCloseTab && (
-            <button
-              type="button"
-              onClick={handleTerminateAndClose}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#2a2f3a] hover:bg-red-600/80 text-gray-300 hover:text-white transition-colors"
-              title="Close SSH tab"
-            >
-              Close Tab
-            </button>
-          )}
-        </div>
-      </div>
-
       <div ref={termRef} className="flex-grow w-full h-full p-1" style={{ height: "100%" }} />
     </div>
   );

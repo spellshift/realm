@@ -15,6 +15,7 @@ import MultiLineComposer, {
   loadRcScript,
   markShellExecutedRc,
 } from "./components/MultiLineComposer";
+import SessionSettings from "./components/SessionSettings";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
 import ShellPivotsDrawer from "./components/ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
@@ -28,11 +29,24 @@ import PtyTerminal from "./components/PtyTerminal";
 import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
 import { SquareTerminal, Terminal, WifiOff, X } from "lucide-react";
 
-interface PortalTab {
+export interface PortalTab {
   id: string;
   type: string;
   target: string;
   pivotId?: string;
+}
+
+export function formatPivotTabLabel(tab: Pick<PortalTab, "type" | "target">): string {
+  if (tab.type.toLowerCase() === "ssh") {
+    const raw = (tab.target || "").trim();
+    if (!raw) return "SSH";
+    const afterAt = raw.includes("@") ? raw.slice(raw.lastIndexOf("@") + 1) : raw;
+    const hostOnly = afterAt.replace(/:\d+$/, "");
+    return hostOnly || afterAt || raw;
+  }
+  const cleaned = (tab.target || "PTY").replace(/^PTY\s*#\d+$/i, "PTY").trim();
+  if (!cleaned || cleaned.toLowerCase() === "exit") return "PTY";
+  return cleaned.length > 24 ? `${cleaned.slice(0, 24)}...` : cleaned;
 }
 
 const NUX_STORAGE_KEY = "tavern_shell_nux_dismissed_v1";
@@ -83,6 +97,7 @@ const Shell = () => {
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [nuxOpen, setNuxOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
   const [composerCode, setComposerCode] = useState<string>("");
   const [rcCode, setRcCode] = useState<string>(() => loadRcScript());
   const [rcEnabled, setRcEnabled] = useState<boolean>(() => loadRcEnabled());
@@ -131,22 +146,28 @@ const Shell = () => {
     setPortalTabs((prev) =>
       prev.map((t) => {
         if (t.id !== tabId) return t;
-        const updatedTarget =
-          t.type === "pty" && (t.target === "PTY" || !t.target)
-            ? `PTY #${createdPivotId}`
-            : t.target;
         return {
           ...t,
           pivotId: createdPivotId,
-          target: updatedTarget,
         };
       })
+    );
+  }, []);
+
+  const handleUpdateTabTarget = useCallback((tabId: string, nextTarget: string) => {
+    if (nextTarget.trim().toLowerCase() === "exit") return;
+    setPortalTabs((prev) =>
+      prev.map((t) => (t.id === tabId ? { ...t, target: nextTarget } : t))
     );
   }, []);
 
   const handleOpenPortalTab = useCallback(
     (type: string, target: string, pivotId?: string, focusNewTab = true) => {
       const normalizedType = type.toLowerCase();
+      const cleanedTarget =
+        normalizedType === "pty"
+          ? (target || "PTY").replace(/^PTY\s*#\d+$/i, "PTY")
+          : target;
       if (pivotId) {
         knownPivotIdsRef.current.add(String(pivotId));
       }
@@ -179,8 +200,7 @@ const Shell = () => {
             next[pendingIdx] = {
               ...next[pendingIdx],
               pivotId: String(pivotId),
-              target:
-                normalizedType === "pty" ? `PTY #${pivotId}` : next[pendingIdx].target || target,
+              target: next[pendingIdx].target || cleanedTarget,
             };
             if (focusNewTab) {
               setTabIndex(pendingIdx + 1);
@@ -189,10 +209,15 @@ const Shell = () => {
           }
         }
 
-        const id = deterministicId || `${normalizedType}-${target}-${Date.now()}`;
+        const id = deterministicId || `${normalizedType}-${cleanedTarget}-${Date.now()}`;
         const newTabs = [
           ...prev,
-          { id, type: normalizedType, target, pivotId: pivotId ? String(pivotId) : undefined },
+          {
+            id,
+            type: normalizedType,
+            target: cleanedTarget,
+            pivotId: pivotId ? String(pivotId) : undefined,
+          },
         ];
         if (focusNewTab) {
           setTabIndex(newTabs.length);
@@ -239,7 +264,7 @@ const Shell = () => {
 
       if (!pivot.closedAt && !alreadyKnown) {
         const label =
-          pivot.kind?.toUpperCase() === "PTY" ? `PTY #${pivot.id}` : pivot.destination;
+          pivot.kind?.toUpperCase() === "PTY" ? "PTY" : pivot.destination;
         handleOpenPortalTab(pivot.kind.toLowerCase(), label, pivot.id, !isInitialLoad);
       }
     });
@@ -258,6 +283,7 @@ const Shell = () => {
     connectionStatus,
     connectionMessage,
     isReplReady,
+    isInitialConnecting,
     handleTooltipMouseEnter,
     handleTooltipMouseLeave,
     getSessionInputs,
@@ -445,10 +471,7 @@ const Shell = () => {
     );
   }
 
-  if (loading) {
-    return <div style={{ padding: "20px", color: "#d4d4d4" }}>Loading Shell...</div>;
-  }
-
+  const isConnecting = (loading || isInitialConnecting) && !shellData?.node?.closedAt;
   const useTabs = portalTabs.length > 0;
 
   return (
@@ -459,9 +482,22 @@ const Shell = () => {
           href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap"
         />
         <ShellWalkthrough
-          isOpen={showNuxBanner && !shellData?.node?.closedAt}
+          isOpen={showNuxBanner && !isConnecting && !shellData?.node?.closedAt}
           onDismiss={handleDismissNuxBanner}
-          onOpenComposer={() => setComposerOpen(true)}
+          onOpenComposer={() => {
+            setComposerOpen(true);
+            setSessionSettingsOpen(false);
+          }}
+          onCloseComposer={() => {
+            setComposerOpen(false);
+          }}
+          onOpenSessionSettings={() => {
+            setSessionSettingsOpen(true);
+            setComposerOpen(false);
+          }}
+          onCloseSessionSettings={() => {
+            setSessionSettingsOpen(false);
+          }}
           onPortalStepChange={setActionsMenuTourOpen}
           onQueueStepChange={setQueueTourOpen}
           onOpenGuideDrawer={() => {
@@ -517,7 +553,13 @@ const Shell = () => {
           }}
           onLoadIntoComposer={handleLoadIntoComposer}
           composerOpen={composerOpen}
-          onToggleComposer={() => setComposerOpen((prev) => !prev)}
+          onToggleComposer={() => {
+            setComposerOpen((prev) => {
+              const next = !prev;
+              if (next) setSessionSettingsOpen(false);
+              return next;
+            });
+          }}
           nuxOpen={nuxOpen}
           onToggleNux={() => {
             setNuxOpen((prev) => !prev);
@@ -533,6 +575,7 @@ const Shell = () => {
           closedAt={shellData?.node?.closedAt}
           connectionStatus={connectionStatus}
           connectionMessage={connectionMessage}
+          isConnecting={isConnecting}
           stuckTask={
             stuckTask ? { task: stuckTask, elapsedSeconds: stuckElapsedSeconds } : null
           }
@@ -580,7 +623,7 @@ const Shell = () => {
                       className={`w-2 h-2 rounded-full ${
                         connectionStatus === "connected"
                           ? "bg-emerald-400"
-                          : connectionStatus === "reconnecting"
+                          : isConnecting || connectionStatus === "reconnecting"
                           ? "bg-amber-400 animate-pulse"
                           : "bg-red-500"
                       }`}
@@ -633,7 +676,7 @@ const Shell = () => {
                         )}
 
                         <span className={isDisconnected ? "line-through text-gray-400" : ""}>
-                          {tab.target}
+                          {formatPivotTabLabel(tab)}
                         </span>
 
                         {isDisconnected && (
@@ -645,7 +688,7 @@ const Shell = () => {
                         <span
                           role="button"
                           tabIndex={0}
-                          aria-label={`Close ${tab.target} tab`}
+                          aria-label={`Close ${formatPivotTabLabel(tab)} tab`}
                           onClick={(e) => handleClosePortalTab(tab.id, e)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
@@ -667,6 +710,7 @@ const Shell = () => {
                 <TabPanel flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
                   <ShellTerminal
                     termRef={termRef}
+                    isConnecting={isConnecting}
                     completions={completions}
                     showCompletions={showCompletions}
                     completionPos={completionPos}
@@ -684,6 +728,12 @@ const Shell = () => {
                     code={composerCode}
                     onChange={setComposerCode}
                     onRunCode={(code) => submitShellCode(code)}
+                    disabled={!!shellData?.node?.closedAt}
+                    tomes={tomes}
+                  />
+                  <SessionSettings
+                    isOpen={sessionSettingsOpen}
+                    onToggle={() => setSessionSettingsOpen((prev) => !prev)}
                     disabled={!!shellData?.node?.closedAt}
                     tomes={tomes}
                     rcCode={rcCode}
@@ -730,6 +780,7 @@ const Shell = () => {
                         onPivotCreated={(createdPivotId) =>
                           handleBindTabPivotId(tab.id, String(createdPivotId))
                         }
+                        onLastCommandChange={(cmd) => handleUpdateTabTarget(tab.id, cmd)}
                         onCloseTab={() => handleClosePortalTab(tab.id)}
                       />
                     )}
@@ -812,12 +863,21 @@ const Shell = () => {
           isMissedCallback={isMissedCallback}
           connectionStatus={connectionStatus}
           connectionMessage={connectionMessage}
+          isConnecting={isConnecting}
           closedAt={shellData?.node?.closedAt}
           queuedCount={queuedTasks.length}
           runningCount={runningTasks.length}
           queuedTasks={queuedTasks}
           runningTasks={runningTasks}
           queueTourOpen={queueTourOpen}
+          sessionSettingsOpen={sessionSettingsOpen}
+          onToggleSessionSettings={() => {
+            setSessionSettingsOpen((prev) => {
+              const next = !prev;
+              if (next) setComposerOpen(false);
+              return next;
+            });
+          }}
           onReconnect={reconnect}
         />
       </div>

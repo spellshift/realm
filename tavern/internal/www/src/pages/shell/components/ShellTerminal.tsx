@@ -1,9 +1,11 @@
 import React, { RefObject } from "react";
+import { Loader2 } from "lucide-react";
 import ShellCompletions from "./ShellCompletions";
 import { DocTooltip } from "./DocTooltip";
 
 interface ShellTerminalProps {
   termRef: RefObject<HTMLDivElement>;
+  isConnecting?: boolean;
   completions: string[];
   showCompletions: boolean;
   completionPos: { x: number; y: number };
@@ -24,6 +26,7 @@ interface ShellTerminalProps {
 
 const ShellTerminal: React.FC<ShellTerminalProps> = ({
   termRef,
+  isConnecting = false,
   completions,
   showCompletions,
   completionPos,
@@ -40,9 +43,19 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
       data-tour="shell-terminal"
       className="flex-grow overflow-hidden relative bg-[#11131a]"
     >
+      {isConnecting && (
+        <div
+          data-testid="shell-terminal-loading"
+          role="status"
+          aria-label="Connecting to shell websocket"
+          className="absolute inset-0 z-20 flex items-center justify-center bg-[#11131a]"
+        >
+          <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+        </div>
+      )}
       <div
         ref={termRef}
-        className="p-1.5"
+        className={`p-1.5 ${isConnecting ? "invisible" : ""}`}
         style={{ height: "100%", width: "100%" }}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}

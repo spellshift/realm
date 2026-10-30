@@ -181,7 +181,7 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                 ) : (
                     filteredPivots.map((pivot) => {
                         const isPty = pivot.kind?.toUpperCase() === "PTY";
-                        const label = isPty ? `PTY #${pivot.id}` : pivot.destination;
+                        const label = isPty ? "PTY" : pivot.destination;
                         const isClosed = Boolean(pivot.closedAt);
 
                         return (

@@ -13,6 +13,7 @@ export interface InterpreterStatusBannerProps {
     closedAt?: string | null;
     connectionStatus: ConnectionStatus;
     connectionMessage?: string;
+    isConnecting?: boolean;
     stuckTask: { task: ShellTaskItem; elapsedSeconds: number } | null;
     queuedTasks: ShellTaskItem[];
     runningTasks: ShellTaskItem[];
@@ -32,6 +33,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
     closedAt,
     connectionStatus,
     connectionMessage,
+    isConnecting = false,
     stuckTask,
     onSpawnFreshShell,
     isSpawningShell = false,
@@ -68,8 +70,8 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
         );
     }
 
-    // 2. WebSocket Disconnected / Reconnecting Banner
-    if (connectionStatus === "disconnected" || connectionStatus === "reconnecting") {
+    // 2. WebSocket Disconnected / Reconnecting Banner (suppressed during initial connection)
+    if (!isConnecting && (connectionStatus === "disconnected" || connectionStatus === "reconnecting")) {
         return (
             <div
                 data-testid="shell-ws-banner"

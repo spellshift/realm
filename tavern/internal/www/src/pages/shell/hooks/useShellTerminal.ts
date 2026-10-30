@@ -2,7 +2,12 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { BrowserWasmAdapter, ConnectionStatus, normalizeMultilineScript } from "../../../lib/browser-adapter";
+import {
+    BrowserWasmAdapter,
+    ConnectionStatus,
+    WEBSOCKET_CONNECT_TIMEOUT_MS,
+    normalizeMultilineScript,
+} from "../../../lib/browser-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
 import {
@@ -129,6 +134,7 @@ export const useShellTerminal = (
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
     const [isReplReady, setIsReplReady] = useState<boolean>(false);
+    const [isInitialConnecting, setIsInitialConnecting] = useState<boolean>(true);
     const [localHistory, setLocalHistory] = useState<string[]>(() => loadHistory());
 
     const portalIdRef = useRef<number | null>(null);
@@ -138,6 +144,7 @@ export const useShellTerminal = (
     const seenTaskIdsRef = useRef<Set<number>>(new Set());
     const seenBeforeReconnectRef = useRef<Set<number>>(new Set());
     const hasConnectedOnceRef = useRef<boolean>(false);
+    const initialConnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const onCommandSubmittedRef = useRef(onCommandSubmitted);
     const onOpenPortalTabRef = useRef(onOpenPortalTab);
 
@@ -472,6 +479,14 @@ export const useShellTerminal = (
         portalIdRef.current = null;
         isReplReadyRef.current = false;
         setIsReplReady(false);
+        setIsInitialConnecting(true);
+        if (initialConnectTimeoutRef.current) {
+            clearTimeout(initialConnectTimeoutRef.current);
+        }
+        initialConnectTimeoutRef.current = setTimeout(() => {
+            initialConnectTimeoutRef.current = null;
+            setIsInitialConnecting(false);
+        }, WEBSOCKET_CONNECT_TIMEOUT_MS);
         seenTaskIdsRef.current.clear();
         seenBeforeReconnectRef.current.clear();
         hasConnectedOnceRef.current = false;
@@ -640,7 +655,15 @@ export const useShellTerminal = (
                 setConnectionMessage(message || "");
                 if (status === "disconnected" || status === "reconnecting") {
                     seenBeforeReconnectRef.current = new Set(seenTaskIdsRef.current);
+                    if (hasConnectedOnceRef.current || !initialConnectTimeoutRef.current) {
+                        setIsInitialConnecting(false);
+                    }
                 } else if (status === "connected") {
+                    if (initialConnectTimeoutRef.current) {
+                        clearTimeout(initialConnectTimeoutRef.current);
+                        initialConnectTimeoutRef.current = null;
+                    }
+                    setIsInitialConnecting(false);
                     if (hasConnectedOnceRef.current && prevStatus !== "connected") {
                         redrawLine();
                     }
@@ -1176,6 +1199,10 @@ export const useShellTerminal = (
         return () => {
             isReplReadyRef.current = false;
             setIsReplReady(false);
+            if (initialConnectTimeoutRef.current) {
+                clearTimeout(initialConnectTimeoutRef.current);
+                initialConnectTimeoutRef.current = null;
+            }
             window.removeEventListener("resize", handleResize);
             resizeObserver.disconnect();
             adapter.current?.close();
@@ -1345,6 +1372,11 @@ export const useShellTerminal = (
     }, [redrawLine]);
 
     const reconnect = useCallback(() => {
+        if (initialConnectTimeoutRef.current) {
+            clearTimeout(initialConnectTimeoutRef.current);
+            initialConnectTimeoutRef.current = null;
+        }
+        setIsInitialConnecting(false);
         adapter.current?.reconnect();
     }, []);
 
@@ -1361,6 +1393,7 @@ export const useShellTerminal = (
         connectionStatus,
         connectionMessage,
         isReplReady,
+        isInitialConnecting,
         handleTooltipMouseEnter: cancelHideTooltip,
         handleTooltipMouseLeave: scheduleHideTooltip,
         getSessionInputs,

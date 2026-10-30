@@ -1,0 +1,20 @@
+Let's completely rethink the Knowledge Graph and Pivots drawers.
+I'd like to combine them, and reimplement them from the ground up with a minimalist design.
+
+Please use the Tavern Developer skill with a focus on the UI section.
+
+The goal is to create a single, unified interface for exploring and analyzing relationships in the graph,
+without the clutter of the current implementation. The purpose of this information is to enable the operator to expand lateral access to other systems.
+
+Create new ents "NetworkHost" and "Network" which can be used to store information about hosts and routing. NetworkHost should include a name, hostname, ip address, subnet, and a list of open ports. It should have an optional edge to ONE host, which is a link to the compromised version of a host. It should also have zero or more edges to any Networks it's on. Create relevant CRUD graphql mutations. These ents will be used for the pivoting features below.
+
+Relevant Information:
+- Credentials associated with any of the nearby hosts
+- Hosts on the same subnet as our host (adjacent hosts in this context means hosts on the same subnet or reachable from the current host)
+- Previous pivot sessions on our host or adjacent hosts
+- Reported files from our host or adjacent hosts
+- Whenever a non PTY pivot is successful to another host, a corresponding NetworkHost (and Network if needed) should be created.
+
+I also expect this view to be able to allow me to reopen pivots or switch to my other shells.
+
+Please keep in mind that we need to create a powerful view but also reduce as much clutter as possible, we don't want users to feel overwhelmed when navigating this system.

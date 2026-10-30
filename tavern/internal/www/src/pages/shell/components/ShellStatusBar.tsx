@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ConnectionStatus } from "../../../lib/browser-adapter";
-import { Wifi, WifiOff, RefreshCw, Clock, Loader2 } from "lucide-react";
+import { Wifi, WifiOff, RefreshCw, Clock, Loader2, Settings } from "lucide-react";
 import { ShellTaskItem } from "../hooks/useShellData";
 
 interface ShellStatusBarProps {
@@ -9,12 +9,15 @@ interface ShellStatusBarProps {
   isMissedCallback: boolean;
   connectionStatus: ConnectionStatus;
   connectionMessage?: string;
+  isConnecting?: boolean;
   closedAt?: string | null;
   queuedCount?: number;
   runningCount?: number;
   queuedTasks?: ShellTaskItem[];
   runningTasks?: ShellTaskItem[];
   queueTourOpen?: boolean;
+  sessionSettingsOpen?: boolean;
+  onToggleSessionSettings?: () => void;
   onOpenQueue?: () => void;
   onReconnect?: () => void;
 }
@@ -59,12 +62,15 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
   isMissedCallback,
   connectionStatus,
   connectionMessage,
+  isConnecting = false,
   closedAt,
   queuedCount,
   runningCount,
   queuedTasks = [],
   runningTasks = [],
   queueTourOpen = false,
+  sessionSettingsOpen = false,
+  onToggleSessionSettings,
   onOpenQueue,
   onReconnect,
 }) => {
@@ -77,6 +83,9 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
   const showQueuePopover = (queueHovered || queuePinned) && hasActiveQueue;
 
   const getConnectionStatusIcon = () => {
+    if (isConnecting) {
+      return null;
+    }
     switch (connectionStatus) {
       case "connected":
         return <Wifi className="w-3.5 h-3.5 text-green-500" />;
@@ -104,7 +113,24 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
       data-tour="shell-status-bar"
       className="bg-[#161922] px-3 py-1 border-t border-[#262b38] text-xs text-gray-400 flex justify-between items-center select-none"
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          data-tour="shell-session-settings-toggle"
+          data-testid="session-settings-toggle"
+          aria-label="Session settings"
+          aria-expanded={sessionSettingsOpen}
+          title="Session settings (RC)"
+          onClick={onToggleSessionSettings}
+          className={`inline-flex items-center justify-center p-1 rounded transition-colors ${
+            sessionSettingsOpen
+              ? "text-gray-100 bg-white/10"
+              : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+          }`}
+        >
+          <Settings className="w-3.5 h-3.5" />
+        </button>
+
         {closedAt ? (
           <span className="flex items-center gap-2 text-red-400 font-semibold">
             <span className="w-2 h-2 rounded-full bg-red-500"></span>
@@ -123,7 +149,6 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
           >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
             <span>Portal Active</span>
-            <span className="text-xs text-gray-500 font-normal">(ID: {portalId})</span>
           </span>
         ) : (
           <div className="flex items-center gap-2">
@@ -139,9 +164,9 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
                 <span className="text-gray-600">|</span>
                 <span
                   data-tour="shell-next-callback"
-                  className="inline-flex items-center gap-2"
+                  className="inline-flex items-center gap-1.5"
                 >
-                  <span>Next callback:</span>
+                  <span>Next</span>
                   <span className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-300"}>
                     {timeUntilCallback}
                   </span>

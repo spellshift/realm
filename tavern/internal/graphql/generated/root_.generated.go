@@ -12512,6 +12512,7 @@ enum TomeTactic @goModel(model: "realm.pub/tavern/internal/ent/tome.Tactic") {
   COMMAND_AND_CONTROL
   EXFILTRATION
   IMPACT
+  SHELL_RC
 }
 """
 TomeWhereInput is used for filtering Tome objects.

@@ -11,14 +11,22 @@ import MultiLineComposer, {
     loadRcEnabled,
     loadRcScript,
 } from "../MultiLineComposer";
+import SessionSettings from "../SessionSettings";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
 import ShellPivotsDrawer from "../ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "../ShellKnowledgeDrawer";
 import ShellNuxDrawer from "../ShellNuxDrawer";
+import ShellTerminal from "../ShellTerminal";
 import ShellWalkthrough from "../ShellWalkthrough";
 import SshConnectionModal from "../SshConnectionModal";
+import { formatPivotTabLabel } from "../../index";
 import { analyzeEldritchCode, completeEldritchCode } from "../../utils/eldritchLsp";
-import { normalizeMultilineScript } from "../../../../lib/browser-adapter";
+import {
+    BrowserWasmAdapter,
+    WEBSOCKET_CONNECT_TIMEOUT_MS,
+    getExponentialBackoffDelay,
+    normalizeMultilineScript,
+} from "../../../../lib/browser-adapter";
 import {
     KnowledgeCredentialItem,
     KnowledgeFileItem,
@@ -45,6 +53,8 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         const onDismiss = vi.fn();
         const onOpenGuideDrawer = vi.fn();
         const onOpenComposer = vi.fn();
+        const onCloseComposer = vi.fn();
+        const onOpenSessionSettings = vi.fn();
         const onPortalStepChange = vi.fn();
         const onQueueStepChange = vi.fn();
 
@@ -54,6 +64,8 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
                 onDismiss={onDismiss}
                 onOpenGuideDrawer={onOpenGuideDrawer}
                 onOpenComposer={onOpenComposer}
+                onCloseComposer={onCloseComposer}
+                onOpenSessionSettings={onOpenSessionSettings}
                 onPortalStepChange={onPortalStepChange}
                 onQueueStepChange={onQueueStepChange}
             />
@@ -64,20 +76,17 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(screen.getByText(/You can use the ! macro to quickly run shell commands, such as !ls/i)).toBeInTheDocument();
         expect(onOpenComposer).not.toHaveBeenCalled();
 
-        // Step 2: Eldritch Composer (opens composer if closed)
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Eldritch Composer")).toBeInTheDocument();
-        expect(onOpenComposer).toHaveBeenCalledTimes(1);
-
-        // Step 3: Load Tomes (right after composer step)
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Load Tomes")).toBeInTheDocument();
-
-        // Step 4: RC Script (right after load tomes step)
+        // Step 2: RC Script (second NUX in the flow, pointing to cogwheel)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("RC Script")).toBeInTheDocument();
+        expect(onOpenSessionSettings).not.toHaveBeenCalled();
 
-        // Step 5: Async Mode (positioned above bottom status bar element without overlapping)
+        // Step 3: Setup Aliases (opens SessionSettings drawer and highlights Setup Aliases button)
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Setup Aliases")).toBeInTheDocument();
+        expect(onOpenSessionSettings).toHaveBeenCalledTimes(1);
+
+        // Step 4: Async Mode (positioned above bottom status bar element without overlapping)
         const nonInteractiveEl = document.createElement("span");
         nonInteractiveEl.setAttribute("data-tour", "shell-non-interactive");
         nonInteractiveEl.getBoundingClientRect = () =>
@@ -101,19 +110,27 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(dialog.style.top).toBe("");
         document.body.removeChild(nonInteractiveEl);
 
-        // Step 6: Agent Callback
+        // Step 5: Agent Callback
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Agent Callback")).toBeInTheDocument();
 
-        // Step 7: Queued & Executing Tasks (after Agent Callback)
+        // Step 6: Queued & Executing Tasks (after Agent Callback)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Queued & Executing Tasks")).toBeInTheDocument();
         expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
 
-        // Step 8: Knowledge Graph
+        // Step 7: Eldritch Composer (after Queued Tasks, before Knowledge Graph; opens composer)
+        onCloseComposer.mockClear();
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Eldritch Composer")).toBeInTheDocument();
+        expect(onOpenComposer).toHaveBeenCalledTimes(1);
+        expect(onCloseComposer).not.toHaveBeenCalled();
+        expect(onQueueStepChange).toHaveBeenLastCalledWith(false);
+
+        // Step 8: Knowledge Graph (closes composer when moving on to the next NUX)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
-        expect(onQueueStepChange).toHaveBeenLastCalledWith(false);
+        expect(onCloseComposer).toHaveBeenCalledTimes(1);
 
         // Step 9: Pivots
         fireEvent.click(screen.getByText("Next"));
@@ -157,10 +174,23 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(screen.queryByTestId("queued-tasks-strip")).not.toBeInTheDocument();
         expect(screen.queryByTestId("stuck-interpreter-banner")).not.toBeInTheDocument();
 
+        // While initial WebSocket connection is in flight (isConnecting=true), do NOT show disconnection banner
         rerender(
             <InterpreterStatusBanner
                 {...baseProps}
                 connectionStatus="disconnected"
+                isConnecting={true}
+                onReconnect={onReconnect}
+            />
+        );
+        expect(screen.queryByTestId("shell-ws-banner")).not.toBeInTheDocument();
+
+        // Once initial connection finishes and socket is disconnected (isConnecting=false), show banner
+        rerender(
+            <InterpreterStatusBanner
+                {...baseProps}
+                connectionStatus="disconnected"
+                isConnecting={false}
                 onReconnect={onReconnect}
             />
         );
@@ -168,6 +198,25 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(reconnectBtn).toBeInTheDocument();
         fireEvent.click(reconnectBtn);
         expect(onReconnect).toHaveBeenCalled();
+
+        // ShellTerminal renders a large icon-only spinner in place of the terminal window while isConnecting=true
+        const termRef = React.createRef<HTMLDivElement>();
+        render(
+            <ShellTerminal
+                termRef={termRef}
+                isConnecting={true}
+                completions={[]}
+                showCompletions={false}
+                completionPos={{ x: 0, y: 0 }}
+                completionIndex={0}
+                onMouseMove={vi.fn()}
+                tooltipState={{ visible: false, x: 0, y: 0, signature: "", description: "" }}
+                handleCompletionSelect={vi.fn()}
+            />
+        );
+        const loadingSpinner = screen.getByTestId("shell-terminal-loading");
+        expect(loadingSpinner).toBeInTheDocument();
+        expect(loadingSpinner.textContent).toBe("");
     });
 
     it("renders stuck interpreter warning and triggers New Interpreter", () => {
@@ -194,9 +243,89 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         fireEvent.click(screen.getByText(/New Interpreter/i));
         expect(onSpawnFreshShell).toHaveBeenCalled();
     });
+
+    it("enforces a 10s WebSocket connection timeout and retries with exponential backoff", () => {
+        expect(WEBSOCKET_CONNECT_TIMEOUT_MS).toBe(10_000);
+        expect(getExponentialBackoffDelay(0)).toBe(1_000);
+        expect(getExponentialBackoffDelay(1)).toBe(2_000);
+        expect(getExponentialBackoffDelay(2)).toBe(4_000);
+        expect(getExponentialBackoffDelay(3)).toBe(8_000);
+        expect(getExponentialBackoffDelay(4)).toBe(16_000);
+        expect(getExponentialBackoffDelay(5)).toBe(30_000);
+
+        vi.useFakeTimers();
+        const OriginalWebSocket = globalThis.WebSocket;
+        const createdSockets: any[] = [];
+
+        class MockWebSocket {
+            static CONNECTING = 0;
+            static OPEN = 1;
+            static CLOSING = 2;
+            static CLOSED = 3;
+            readyState = MockWebSocket.CONNECTING;
+            url: string;
+            onopen: (() => void) | null = null;
+            onmessage: ((ev: any) => void) | null = null;
+            onclose: ((ev: any) => void) | null = null;
+            onerror: ((ev: any) => void) | null = null;
+            close = vi.fn(() => {
+                this.readyState = MockWebSocket.CLOSED;
+            });
+            send = vi.fn();
+            constructor(url: string) {
+                this.url = url;
+                createdSockets.push(this);
+            }
+        }
+
+        (globalThis as any).WebSocket = MockWebSocket;
+        try {
+            const statuses: string[] = [];
+            const adapter = new BrowserWasmAdapter(
+                "ws://localhost/shell/ws?shell_id=1",
+                vi.fn(),
+                vi.fn(),
+                (s) => statuses.push(s)
+            );
+
+            // Initial socket created; does not time out at 5s
+            expect(createdSockets).toHaveLength(1);
+            vi.advanceTimersByTime(5_000);
+            expect(createdSockets).toHaveLength(1);
+            expect(statuses).toEqual([]);
+
+            // At 10s, initial connection attempt times out and schedules retry #1 (1s backoff)
+            vi.advanceTimersByTime(5_000);
+            expect(statuses).toContain("reconnecting");
+            expect(createdSockets).toHaveLength(1);
+
+            vi.advanceTimersByTime(1_000);
+            expect(createdSockets).toHaveLength(2);
+
+            // Second attempt also hangs for 10s -> schedules retry #2 (2s backoff)
+            vi.advanceTimersByTime(10_000);
+            expect(createdSockets).toHaveLength(2);
+            vi.advanceTimersByTime(1_999);
+            expect(createdSockets).toHaveLength(2);
+            vi.advanceTimersByTime(1);
+            expect(createdSockets).toHaveLength(3);
+
+            // Third attempt fails immediately via onclose -> schedules retry #3 (4s backoff)
+            createdSockets[2].onclose?.({ reason: "network error" });
+            vi.advanceTimersByTime(3_999);
+            expect(createdSockets).toHaveLength(3);
+            vi.advanceTimersByTime(1);
+            expect(createdSockets).toHaveLength(4);
+
+            adapter.close();
+        } finally {
+            (globalThis as any).WebSocket = OriginalWebSocket;
+            vi.useRealTimers();
+        }
+    });
 });
 
-describe("MultiLineComposer (Composer, Searchable Tomes, RC Script) & eldritch-lsp", () => {
+describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldritch-lsp", () => {
     const sampleTomes: ShellTomeItem[] = [
         {
             id: "tome-1",
@@ -218,50 +347,59 @@ describe("MultiLineComposer (Composer, Searchable Tomes, RC Script) & eldritch-l
             paramDefs: "[]",
             eldritch: 'for p in process.list():\n    print(p["pid"], p["name"])',
         },
+        {
+            id: "tome-rc-1",
+            name: "Shell Aliases",
+            description: "Interactive Eldritch REPL helper functions (ls, whoami, ps, pwd, cat, netstat).",
+            tactic: "SHELL_RC",
+            supportModel: "FIRST_PARTY",
+            paramDefs: "[]",
+            eldritch: DEFAULT_RC_ALIASES_SCRIPT,
+        },
     ];
 
-    it("allows searching and loading Eldritch Tomes (always switching to Script view and replacing contents), and toggling the shared RC aliases script with a purple button toggle", () => {
+    it("loads regular tomes in MultiLineComposer (filtering out SHELL_RC) and manages RC scripts in SessionSettings with Load RC Tome or custom chooser", () => {
         window.localStorage.clear();
         const onRunCode = vi.fn();
 
         expect(loadRcEnabled()).toBe(false);
-        expect(loadRcScript()).toContain("def ls(");
+        expect(loadRcScript()).toBe("");
 
-        const StatefulComposerWithRcAndTomes = () => {
+        const onCloseSessionSettings = vi.fn();
+        const StatefulComposerAndSessionSettings = () => {
             const [code, setCode] = React.useState('for p in process.list():\n    print(p["name"])');
+            const [rcCode, setRcCode] = React.useState("");
             const [rcEnabled, setRcEnabled] = React.useState(false);
             return (
-                <MultiLineComposer
-                    isOpen={true}
-                    onToggle={vi.fn()}
-                    code={code}
-                    onChange={setCode}
-                    onRunCode={onRunCode}
-                    tomes={sampleTomes}
-                    rcCode={DEFAULT_RC_ALIASES_SCRIPT}
-                    rcEnabled={rcEnabled}
-                    onRcEnabledChange={setRcEnabled}
-                />
+                <>
+                    <MultiLineComposer
+                        isOpen={true}
+                        onToggle={vi.fn()}
+                        code={code}
+                        onChange={setCode}
+                        onRunCode={onRunCode}
+                        tomes={sampleTomes}
+                    />
+                    <SessionSettings
+                        isOpen={true}
+                        onClose={onCloseSessionSettings}
+                        rcCode={rcCode}
+                        onRcChange={setRcCode}
+                        rcEnabled={rcEnabled}
+                        onRcEnabledChange={setRcEnabled}
+                        tomes={sampleTomes}
+                    />
+                </>
             );
         };
 
-        render(<StatefulComposerWithRcAndTomes />);
+        render(<StatefulComposerAndSessionSettings />);
 
-        expect(screen.getByTestId("composer-script-tab")).toBeInTheDocument();
-        expect(screen.getByTestId("composer-rc-tab")).toBeInTheDocument();
         expect(screen.getByTestId("composer-syntax-highlight")).toBeInTheDocument();
         expect(screen.getByTestId("eldritch-lsp-status")).toBeInTheDocument();
         expect(screen.getByTestId("eldritch-lsp-status")).not.toHaveTextContent("eldritch-lsp");
         expect(screen.getByTestId("composer-resize-handle")).toBeInTheDocument();
-
-        // RC toggle is off by default and turns purple when toggled on (without verbose "RC: On"/"RC: Off" text)
-        const rcToggle = screen.getByTestId("composer-rc-toggle");
-        expect(rcToggle).toHaveAttribute("aria-checked", "false");
-        expect(rcToggle).not.toHaveClass("bg-purple-600");
-
-        fireEvent.click(rcToggle);
-        expect(rcToggle).toHaveAttribute("aria-checked", "true");
-        expect(rcToggle).toHaveClass("bg-purple-600");
+        expect(screen.queryByTestId("composer-rc-tab")).not.toBeInTheDocument();
 
         const textarea = screen.getByLabelText("Multi-line Eldritch script editor") as HTMLTextAreaElement;
         expect(textarea.value).toContain("process.list()");
@@ -269,25 +407,18 @@ describe("MultiLineComposer (Composer, Searchable Tomes, RC Script) & eldritch-l
         fireEvent.keyDown(textarea, { key: "Enter", ctrlKey: true });
         expect(onRunCode).toHaveBeenCalledWith('for p in process.list():\n    print(p["name"])');
 
-        // Switch to RC tab and verify the aliases script is in the RC component with 0 LSP diagnostics
-        fireEvent.click(screen.getByTestId("composer-rc-tab"));
-        const rcTextarea = screen.getByLabelText("Shared Eldritch RC script editor") as HTMLTextAreaElement;
-        expect(rcTextarea.value).toContain("def ls(");
-        expect(rcTextarea.value).toContain("def whoami(");
-        expect(rcTextarea.value).toContain("def ps(");
-        expect(rcTextarea.value).toContain("def netstat(");
-
-        const diagnostics = analyzeEldritchCode(normalizeMultilineScript(rcTextarea.value));
-        expect(diagnostics).toHaveLength(0);
-
-        // While in RC view, open searchable Eldritch Tome picker (icon-only button) and load a tome ->
-        // should switch back to Script view and fully replace the Script view contents
+        // Composer Tome picker filters out SHELL_RC tomes and replaces Script view contents
         const tomePickerBtn = screen.getByTestId("composer-tome-picker-button");
         expect(tomePickerBtn).not.toHaveTextContent("Load Tome...");
         expect(tomePickerBtn).not.toHaveClass("border");
         expect(screen.queryByText("Clear")).not.toBeInTheDocument();
         fireEvent.click(tomePickerBtn);
         expect(screen.getByTestId("composer-tome-picker-popover")).toBeInTheDocument();
+
+        const composerOptions = screen.getAllByTestId("composer-tome-option");
+        expect(composerOptions.map((o) => o.textContent)).not.toEqual(
+            expect.arrayContaining([expect.stringContaining("Shell Aliases")])
+        );
 
         const searchInput = screen.getByLabelText("Search Eldritch tomes");
         fireEvent.change(searchInput, { target: { value: "File List" } });
@@ -301,6 +432,48 @@ describe("MultiLineComposer (Composer, Searchable Tomes, RC Script) & eldritch-l
         expect(scriptTextarea.value).toContain('"path": "/tmp"');
         expect(scriptTextarea.value).toContain('file.list(input_params["path"])');
         expect(scriptTextarea.value).not.toContain("process.list()");
+
+        // SessionSettings drawer renders radio toggle and initial chooser with "Setup Aliases" above "Load RC Tome" or "or custom"
+        expect(screen.getByTestId("session-settings-drawer")).toBeInTheDocument();
+        const rcToggle = screen.getByTestId("session-settings-rc-toggle");
+        expect(rcToggle).toHaveAttribute("aria-checked", "false");
+        expect(rcToggle).not.toHaveClass("bg-purple-600");
+
+        expect(screen.getByTestId("session-settings-initial-chooser")).toBeInTheDocument();
+        const setupAliasesBtn = screen.getByTestId("session-settings-shell-aliases-setup");
+        expect(setupAliasesBtn).toHaveTextContent("Setup Aliases");
+        expect(setupAliasesBtn).toHaveClass("bg-purple-600");
+        expect(setupAliasesBtn).not.toHaveTextContent(/click setup/i);
+        expect(screen.getByTestId("session-settings-load-tome-button")).toHaveTextContent("RC Tome");
+        expect(screen.getByTestId("session-settings-load-tome-button")).not.toHaveTextContent(
+            "Load RC Tome"
+        );
+        expect(screen.queryByLabelText("Shared Eldritch RC script editor")).not.toBeInTheDocument();
+
+        // Clicking "Setup Aliases" loads the aliases script, enables RC, and closes the RC window
+        fireEvent.click(setupAliasesBtn);
+        expect(onCloseSessionSettings).toHaveBeenCalledTimes(1);
+        expect(rcToggle).toHaveAttribute("aria-checked", "true");
+        expect(rcToggle).toHaveClass("bg-purple-600");
+        const rcTextarea = screen.getByLabelText("Shared Eldritch RC script editor") as HTMLTextAreaElement;
+        expect(rcTextarea.value).toContain("def ls(");
+        expect(rcTextarea.value).toContain("def whoami(");
+        expect(rcTextarea.value).toContain("def ps(");
+        expect(rcTextarea.value).toContain("def netstat(");
+
+        // Lint checkmark matches composer view (green text-emerald-400)
+        expect(screen.getByTestId("rc-eldritch-lsp-status")).toHaveClass("text-emerald-400");
+
+        // Open SHELL_RC Tome picker in SessionSettings -> only shows SHELL_RC tomes ("Shell Aliases")
+        fireEvent.click(screen.getByTestId("session-settings-tome-picker-button"));
+        expect(screen.getByTestId("session-settings-tome-picker-popover")).toBeInTheDocument();
+        const rcTomeOptions = screen.getAllByTestId("session-settings-tome-option");
+        expect(rcTomeOptions).toHaveLength(1);
+        expect(rcTomeOptions[0]).toHaveTextContent("Shell Aliases");
+        fireEvent.click(rcTomeOptions[0]);
+
+        const diagnostics = analyzeEldritchCode(normalizeMultilineScript(rcTextarea.value));
+        expect(diagnostics).toHaveLength(0);
     });
 
     it("supports Undo/Redo shortcuts (Ctrl+Z, Cmd+Z, Ctrl+Shift+Z, Ctrl+Y) and eldritch-lsp quick fixes", () => {
@@ -464,6 +637,17 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         expect(screen.getByText(/SSH • root@10.0.0.15:22/i)).toBeInTheDocument();
         fireEvent.click(screen.getByText("View Saved Transcript"));
         expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.15:22", "42");
+
+        // Pivot tab labels omit IDs and show IP for SSH or truncated last command for PTY (ignoring "exit")
+        expect(formatPivotTabLabel({ type: "ssh", target: "root:secret@10.0.0.15:22" })).toBe("10.0.0.15");
+        expect(formatPivotTabLabel({ type: "pty", target: "PTY #90194313217" })).toBe("PTY");
+        expect(formatPivotTabLabel({ type: "pty", target: "exit" })).toBe("PTY");
+        expect(
+            formatPivotTabLabel({
+                type: "pty",
+                target: "cat /etc/shadow && grep root /etc/passwd",
+            })
+        ).toBe("cat /etc/shadow && grep ...");
     });
 
     it("strictly filters Queued / Running commands and responds to focusQueueTrigger", () => {

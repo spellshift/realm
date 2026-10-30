@@ -7,8 +7,6 @@ import {
     Code2,
     GripHorizontal,
     Play,
-    Power,
-    RotateCcw,
     Search,
     Wand2,
     X,
@@ -51,7 +49,7 @@ export function loadRcScript(): string {
     } catch {
         // Ignore storage error
     }
-    return DEFAULT_RC_ALIASES_SCRIPT;
+    return "";
 }
 
 export function saveRcScript(script: string): void {
@@ -109,6 +107,14 @@ export function markShellExecutedRc(shellId: string): void {
 }
 
 export const FALLBACK_ELDRITCH_TOMES: ShellTomeItem[] = [
+    {
+        id: "tome-shell-aliases",
+        name: "Shell Aliases",
+        description: "Define common shell command aliases (ls, whoami, ps, pwd, cat, netstat) in the Eldritch REPL.",
+        tactic: "SHELL_RC",
+        supportModel: "FIRST_PARTY",
+        eldritch: DEFAULT_RC_ALIASES_SCRIPT,
+    },
     {
         id: "tome-file-list",
         name: "List files",
@@ -253,62 +259,23 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
     const tomePickerRef = useRef<HTMLDivElement>(null);
     const tomeSearchInputRef = useRef<HTMLInputElement>(null);
 
-    // Editor mode: "script" (scratch pad) vs "rc" (shared RC script across shells)
-    const [activeMode, setActiveMode] = useState<"script" | "rc">("script");
-
-    // Shared RC state (supports controlled, semi-controlled, and uncontrolled usage)
-    const [internalRcCode, setInternalRcCode] = useState<string>(
-        () => controlledRcCode ?? loadRcScript()
-    );
-    const [internalRcEnabled, setInternalRcEnabled] = useState<boolean>(
-        () => controlledRcEnabled ?? loadRcEnabled()
-    );
-
-    useEffect(() => {
-        if (controlledRcCode !== undefined) {
-            setInternalRcCode(controlledRcCode);
-        }
-    }, [controlledRcCode]);
-
-    useEffect(() => {
-        if (controlledRcEnabled !== undefined) {
-            setInternalRcEnabled(controlledRcEnabled);
-        }
-    }, [controlledRcEnabled]);
-
-    const effectiveRcCode = internalRcCode;
-    const effectiveRcEnabled = internalRcEnabled;
-
-    const activeCode = activeMode === "rc" ? effectiveRcCode : code;
+    const activeCode = code;
 
     const handleActiveCodeChange = useCallback(
         (nextCode: string) => {
-            if (activeMode === "rc") {
-                setInternalRcCode(nextCode);
-                saveRcScript(nextCode);
-                onRcCodeChange?.(nextCode);
-            } else {
-                onChange(nextCode);
-            }
+            onChange(nextCode);
         },
-        [activeMode, onChange, onRcCodeChange]
+        [onChange]
     );
-
-    const handleToggleRcEnabled = useCallback(() => {
-        const next = !effectiveRcEnabled;
-        setInternalRcEnabled(next);
-        saveRcEnabled(next);
-        onRcEnabledChange?.(next);
-    }, [effectiveRcEnabled, onRcEnabledChange]);
 
     // Searchable Tome Picker state
     const [tomePickerOpen, setTomePickerOpen] = useState<boolean>(false);
     const [tomeSearchQuery, setTomeSearchQuery] = useState<string>("");
 
-    const availableTomes = useMemo(
-        () => (tomes && tomes.length > 0 ? tomes : FALLBACK_ELDRITCH_TOMES),
-        [tomes]
-    );
+    const availableTomes = useMemo(() => {
+        const source = tomes && tomes.length > 0 ? tomes : FALLBACK_ELDRITCH_TOMES;
+        return source.filter((t) => t.tactic?.toUpperCase() !== "SHELL_RC");
+    }, [tomes]);
 
     const filteredTomes = useMemo(() => {
         const q = tomeSearchQuery.trim().toLowerCase();
@@ -363,25 +330,6 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
     const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState<boolean>(true);
     const [hoveredDiagLine, setHoveredDiagLine] = useState<number | null>(null);
     const [editorScrollTop, setEditorScrollTop] = useState<number>(0);
-
-    // Switch between Script and RC tabs and reset the undo stack for the selected buffer
-    const handleSwitchMode = useCallback(
-        (nextMode: "script" | "rc") => {
-            const nextBuffer = nextMode === "rc" ? effectiveRcCode : code;
-            setActiveMode(nextMode);
-            historyRef.current = [
-                {
-                    code: nextBuffer,
-                    selectionStart: nextBuffer.length,
-                    selectionEnd: nextBuffer.length,
-                },
-            ];
-            historyIndexRef.current = 0;
-            setCursorOffset(nextBuffer.length);
-            setHistoryVersion((v) => v + 1);
-        },
-        [code, effectiveRcCode]
-    );
 
     // Keep undo stack synced when parent updates `activeCode` externally
     useEffect(() => {
@@ -640,10 +588,8 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         [activeCode, commitCodeChange]
     );
 
-    // Main toolbar "Load Tome..." -> always switches back to Script view and replaces contents
     const handleSelectTome = (tome: ShellTomeItem) => {
         const formatted = formatTomeForComposer(tome);
-        setActiveMode("script");
         const nextEntries = historyRef.current.slice(0, historyIndexRef.current + 1);
         nextEntries.push({
             code: formatted,
@@ -894,60 +840,6 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         <Code2 className="w-3.5 h-3.5" />
                     </span>
 
-                    {/* Script vs RC Mode Switcher + Compact Purple RC Button Toggle */}
-                    <div className="inline-flex items-center rounded-md border border-[#2f364a] bg-[#11131a] p-0.5 text-xs">
-                        <button
-                            type="button"
-                            data-testid="composer-script-tab"
-                            onClick={() => handleSwitchMode("script")}
-                            className={`px-2.5 py-0.5 rounded font-semibold transition-colors ${
-                                activeMode === "script"
-                                    ? "bg-[#262c3d] text-white"
-                                    : "text-gray-400 hover:text-gray-200"
-                            }`}
-                        >
-                            Script
-                        </button>
-                        <div
-                            data-tour="shell-composer-rc"
-                            className="inline-flex items-center gap-0.5"
-                        >
-                            <button
-                                type="button"
-                                data-testid="composer-rc-tab"
-                                onClick={() => handleSwitchMode("rc")}
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded font-semibold transition-colors ${
-                                    activeMode === "rc"
-                                        ? "bg-[#262c3d] text-white"
-                                        : "text-gray-400 hover:text-gray-200"
-                                }`}
-                                title="Shared RC script across all shells"
-                            >
-                                <span>RC</span>
-                            </button>
-                            <button
-                                type="button"
-                                role="switch"
-                                aria-checked={effectiveRcEnabled}
-                                aria-label="Auto-run RC script on new shells"
-                                data-testid="composer-rc-toggle"
-                                onClick={handleToggleRcEnabled}
-                                title={
-                                    effectiveRcEnabled
-                                        ? "RC auto-run enabled (click to disable)"
-                                        : "Enable RC auto-run on new shells"
-                                }
-                                className={`inline-flex items-center justify-center p-1 rounded transition-colors ${
-                                    effectiveRcEnabled
-                                        ? "bg-purple-600 hover:bg-purple-500 text-white shadow-sm"
-                                        : "text-gray-400 hover:text-gray-200 hover:bg-[#1e2330]"
-                                }`}
-                            >
-                                <Power className="w-3 h-3" />
-                            </button>
-                        </div>
-                    </div>
-
                     {/* Live eldritch-lsp Status Button (icon-only without border when all checks pass) */}
                     <button
                         type="button"
@@ -1057,23 +949,6 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                             </div>
                         )}
                     </div>
-
-                    {activeMode === "rc" && effectiveRcCode !== DEFAULT_RC_ALIASES_SCRIPT && (
-                        <button
-                            type="button"
-                            onClick={() =>
-                                commitCodeChange(
-                                    DEFAULT_RC_ALIASES_SCRIPT,
-                                    DEFAULT_RC_ALIASES_SCRIPT.length,
-                                    DEFAULT_RC_ALIASES_SCRIPT.length
-                                )
-                            }
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-xs font-semibold text-gray-200 shadow-sm transition-colors"
-                        >
-                            <RotateCcw className="w-3 h-3" />
-                            Reset Aliases
-                        </button>
-                    )}
 
                     <button
                         type="button"
@@ -1228,11 +1103,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
 
                     <textarea
                         ref={textareaRef}
-                        aria-label={
-                            activeMode === "rc"
-                                ? "Shared Eldritch RC script editor"
-                                : "Multi-line Eldritch script editor"
-                        }
+                        aria-label="Multi-line Eldritch script editor"
                         value={activeCode}
                         disabled={disabled}
                         onScroll={handleScroll}

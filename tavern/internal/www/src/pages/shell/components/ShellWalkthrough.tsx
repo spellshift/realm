@@ -11,7 +11,7 @@ import {
   History,
   Loader2,
   Network,
-  Power,
+  Settings,
   Shell,
   Sparkles,
   Terminal,
@@ -39,31 +39,21 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <Terminal size={16} className="text-purple-400" />,
   },
   {
-    id: "composer",
-    selector: '[data-tour="shell-composer"]',
-    fallbackSelector: '[data-tour="shell-composer-toggle"]',
-    title: "Eldritch Composer",
-    description:
-      "For more complex scripts, it may be easier to write them in the Composer view.",
-    icon: <Code2 size={16} className="text-purple-400" />,
-  },
-  {
-    id: "composer-tomes",
-    selector: '[data-tour="shell-composer-tomes"]',
-    fallbackSelector: '[data-tour="shell-composer"]',
-    title: "Load Tomes",
-    description:
-      "Search and load pre-built Eldritch tomes directly into the script view to save time.",
-    icon: <BookMarked size={16} className="text-purple-400" />,
-  },
-  {
-    id: "composer-rc",
-    selector: '[data-tour="shell-composer-rc"]',
-    fallbackSelector: '[data-tour="shell-composer"]',
+    id: "session-settings",
+    selector: '[data-tour="shell-session-settings-toggle"]',
     title: "RC Script",
     description:
-      "Edit your shared RC script (pre-loaded with shell aliases) and toggle it on to automatically run the first time you connect to a shell.",
-    icon: <Power size={16} className="text-purple-400" />,
+      "Click the cogwheel on the bottom bar to open Session Settings and configure an RC script that runs automatically when you connect to a shell.",
+    icon: <Settings size={16} className="text-gray-300" />,
+  },
+  {
+    id: "setup-aliases",
+    selector: '[data-tour="shell-setup-aliases"]',
+    fallbackSelector: '[data-tour="shell-session-settings"]',
+    title: "Setup Aliases",
+    description:
+      "Click Setup Aliases to enable common shell helper functions (like ls, ps, cat, and whoami) across your shells in one click, or load another RC tome or custom script.",
+    icon: <BookMarked size={16} className="text-purple-400" />,
   },
   {
     id: "non-interactive",
@@ -90,6 +80,15 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     description:
       "When tasks are queued or executing on the agent, hover or click this indicator to see what's currently in the queue.",
     icon: <Loader2 size={16} className="text-amber-400" />,
+  },
+  {
+    id: "composer",
+    selector: '[data-tour="shell-composer-toggle"]',
+    fallbackSelector: '[data-tour="shell-composer"]',
+    title: "Eldritch Composer",
+    description:
+      "For more complex scripts, it may be easier to write them in the Composer view.",
+    icon: <Code2 size={16} className="text-purple-400" />,
   },
   {
     id: "knowledge",
@@ -152,6 +151,9 @@ interface ShellWalkthroughProps {
   onDismiss: () => void;
   onOpenGuideDrawer?: () => void;
   onOpenComposer?: () => void;
+  onCloseComposer?: () => void;
+  onOpenSessionSettings?: () => void;
+  onCloseSessionSettings?: () => void;
   onPortalStepChange?: (isActive: boolean) => void;
   onQueueStepChange?: (isActive: boolean) => void;
 }
@@ -168,6 +170,9 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   onDismiss,
   onOpenGuideDrawer,
   onOpenComposer,
+  onCloseComposer,
+  onOpenSessionSettings,
+  onCloseSessionSettings,
   onPortalStepChange,
   onQueueStepChange,
 }) => {
@@ -184,11 +189,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       return;
     }
 
-    if (
-      currentStep.id === "composer" ||
-      currentStep.id === "composer-tomes" ||
-      currentStep.id === "composer-rc"
-    ) {
+    if (currentStep.id === "composer") {
       if (onOpenComposer) {
         onOpenComposer();
       } else if (!document.querySelector('[data-tour="shell-composer"]')) {
@@ -197,25 +198,62 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         );
         toggleBtn?.click();
       }
+    } else {
+      onCloseComposer?.();
     }
+
+    if (currentStep.id === "setup-aliases") {
+      if (onOpenSessionSettings) {
+        onOpenSessionSettings();
+      } else if (!document.querySelector('[data-tour="shell-session-settings"]')) {
+        const toggleBtn = document.querySelector<HTMLElement>(
+          '[data-tour="shell-session-settings-toggle"]'
+        );
+        toggleBtn?.click();
+      }
+    } else if (currentStep.id === "session-settings" || currentStep.id === "non-interactive") {
+      onCloseSessionSettings?.();
+    }
+
+    const handleTargetClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (
+        currentStep.id === "session-settings" &&
+        target.closest('[data-tour="shell-session-settings-toggle"]')
+      ) {
+        setStepIndex((i) => Math.min(WALKTHROUGH_STEPS.length - 1, i + 1));
+      } else if (
+        currentStep.id === "setup-aliases" &&
+        target.closest('[data-tour="shell-setup-aliases"]')
+      ) {
+        setStepIndex((i) => Math.min(WALKTHROUGH_STEPS.length - 1, i + 1));
+      }
+    };
+
+    document.addEventListener("click", handleTargetClick, true);
 
     onPortalStepChange?.(currentStep.id === "portal" || currentStep.id === "feedback");
     onQueueStepChange?.(currentStep.id === "queue-status");
 
-    const updateRect = () => {
+    const updateRect = (allowClear = false) => {
       const el =
         document.querySelector(currentStep.selector) ||
         (currentStep.fallbackSelector
           ? document.querySelector(currentStep.fallbackSelector)
           : null);
       if (!el) {
-        setTargetRect(null);
-        return;
+        if (allowClear) {
+          setTargetRect(null);
+        }
+        return false;
       }
       const r = el.getBoundingClientRect();
       if (r.width === 0 && r.height === 0) {
-        setTargetRect(null);
-        return;
+        if (allowClear) {
+          setTargetRect(null);
+        }
+        return false;
       }
       setTargetRect({
         top: r.top,
@@ -223,16 +261,23 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         width: r.width,
         height: r.height,
       });
+      return true;
     };
 
-    updateRect();
-    const timer = setTimeout(updateRect, 30);
-    window.addEventListener("resize", updateRect);
-    window.addEventListener("scroll", updateRect, true);
+    updateRect(false);
+    const rafId = window.requestAnimationFrame(() => {
+      updateRect(false);
+    });
+    const timer = setTimeout(() => updateRect(true), 50);
+    const handleViewportChange = () => updateRect(false);
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("scroll", handleViewportChange, true);
     return () => {
+      window.cancelAnimationFrame(rafId);
       clearTimeout(timer);
-      window.removeEventListener("resize", updateRect);
-      window.removeEventListener("scroll", updateRect, true);
+      document.removeEventListener("click", handleTargetClick, true);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
     };
   }, [
     isOpen,
@@ -241,6 +286,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     currentStep.selector,
     currentStep.fallbackSelector,
     onOpenComposer,
+    onOpenSessionSettings,
     onPortalStepChange,
     onQueueStepChange,
   ]);
@@ -258,23 +304,23 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
 
   // Compute popover position near the highlighted element
   const getPopoverStyle = (): React.CSSProperties => {
+    const viewportW = typeof window !== "undefined" ? window.innerWidth : 1280;
+    const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
+    const popoverW = 384;
+    const popoverEstH = currentStep.tip ? 260 : 230;
+
     if (!targetRect) {
       return {
         top: "88px",
-        right: "24px",
+        left: `${Math.max(16, viewportW - popoverW - 24)}px`,
       };
     }
-
-    const viewportW = typeof window !== "undefined" ? window.innerWidth : 1280;
-    const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
-    const popoverW = 360;
-    const popoverEstH = currentStep.tip ? 260 : 230;
 
     // If highlighting the large terminal area, dock the popover cleanly in the top-right of the terminal
     if (currentStep.id === "terminal") {
       return {
         top: `${Math.max(76, targetRect.top + 16)}px`,
-        right: "28px",
+        left: `${Math.max(16, viewportW - popoverW - 28)}px`,
       };
     }
 
@@ -318,7 +364,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       {targetRect ? (
         <div
           data-testid="walkthrough-spotlight"
-          className="fixed rounded-lg border-2 border-purple-400/90 transition-all duration-200 pointer-events-none"
+          className="fixed rounded-lg border-2 border-purple-400/90 transition-all duration-300 ease-out pointer-events-none"
           style={{
             top: `${Math.max(2, targetRect.top - 4)}px`,
             left: `${Math.max(2, targetRect.left - 4)}px`,
@@ -329,7 +375,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
           }}
         />
       ) : (
-        <div className="fixed inset-0 bg-black/50 pointer-events-none" />
+        <div className="fixed inset-0 bg-black/50 transition-opacity duration-300 ease-out pointer-events-none" />
       )}
 
       {/* Floating Walkthrough Popover */}
@@ -338,7 +384,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         aria-modal="false"
         aria-label={currentStep.title}
         style={getPopoverStyle()}
-        className="fixed w-[350px] max-w-[calc(100vw-32px)] rounded-xl bg-[#161922] border border-purple-500/40 shadow-2xl p-4 text-xs text-gray-200 pointer-events-auto transition-all duration-200"
+        className="fixed w-96 max-w-[calc(100vw-32px)] rounded-xl bg-[#161922] border border-purple-500/40 shadow-2xl p-4 text-xs text-gray-200 pointer-events-auto transition-all duration-300 ease-out"
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -385,23 +431,23 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         {/* Footer Controls */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#262b38]">
           {/* Step Dots */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 min-w-0">
             {WALKTHROUGH_STEPS.map((s, idx) => (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => setStepIndex(idx)}
                 aria-label={`Go to step ${idx + 1}: ${s.title}`}
-                className={`h-1.5 rounded-full transition-all ${
+                className={`h-1.5 rounded-full transition-all shrink-0 ${
                   idx === stepIndex
-                    ? "w-4 bg-purple-400"
-                    : "w-1.5 bg-gray-600 hover:bg-gray-400"
+                    ? "w-3 bg-purple-400"
+                    : "w-1 bg-gray-600 hover:bg-gray-400"
                 }`}
               />
             ))}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={onDismiss}

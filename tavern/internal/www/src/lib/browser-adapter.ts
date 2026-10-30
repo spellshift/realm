@@ -9,6 +9,18 @@ export interface ExecutionResult {
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
 
+export const WEBSOCKET_CONNECT_TIMEOUT_MS = 10_000;
+export const WEBSOCKET_INITIAL_BACKOFF_MS = 1_000;
+export const WEBSOCKET_MAX_BACKOFF_MS = 30_000;
+
+export function getExponentialBackoffDelay(
+    attempt: number,
+    baseDelayMs: number = WEBSOCKET_INITIAL_BACKOFF_MS,
+    maxDelayMs: number = WEBSOCKET_MAX_BACKOFF_MS
+): number {
+    return Math.min(maxDelayMs, baseDelayMs * Math.pow(2, Math.max(0, attempt)));
+}
+
 /**
  * Normalizes a multi-line Eldritch script before sending it to the REPL:
  * - Normalizes CRLF/CR to LF and expands tabs to 4 spaces
@@ -153,14 +165,14 @@ export class BrowserWasmAdapter {
 
         this.ws = ws;
 
-        // Guard against hung CONNECTING state (e.g. after sleep or network switch)
+        // Guard against hung CONNECTING state (e.g. initial connection or after sleep/network switch)
         this.connectTimeoutTimer = setTimeout(() => {
             if (this.ws === ws && ws.readyState === WebSocket.CONNECTING) {
                 this.isWsOpen = false;
                 this.detachCurrentSocket();
-                this.scheduleReconnect();
+                this.scheduleReconnect("Connection timed out");
             }
-        }, 5000);
+        }, WEBSOCKET_CONNECT_TIMEOUT_MS);
 
         ws.onopen = () => {
             if (this.ws !== ws) return;
@@ -210,7 +222,7 @@ export class BrowserWasmAdapter {
         }
 
         this.onStatusChangeCallback?.("reconnecting", reason);
-        const delay = this.reconnectAttempts === 0 ? 1000 : Math.min(3000, 1000 * (this.reconnectAttempts + 1));
+        const delay = getExponentialBackoffDelay(this.reconnectAttempts);
         this.reconnectAttempts++;
 
         this.reconnectTimer = setTimeout(() => {
