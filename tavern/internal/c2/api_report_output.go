@@ -25,8 +25,14 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		}
 
 		output := taskOutputMsg.Output
-		if output == nil || output.Id == 0 {
+		if output == nil || output.Id <= 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
+		}
+		// When the context references a task, it must be the same task the
+		// output reports on, so a valid token cannot be paired with an
+		// unrelated task id.
+		if taskOutputMsg.Context.TaskId != 0 && taskOutputMsg.Context.TaskId != output.Id {
+			return nil, status.Errorf(codes.InvalidArgument, "task context id does not match output task id")
 		}
 
 		var (
@@ -83,8 +89,14 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		}
 
 		output := shellTaskOutputMsg.Output
-		if output == nil || output.Id == 0 {
+		if output == nil || output.Id <= 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "must provide shell task id")
+		}
+		// When the context references a shell task, it must be the same shell
+		// task the output reports on, so a valid token cannot be paired with
+		// an unrelated shell task id.
+		if shellTaskOutputMsg.Context.ShellTaskId != 0 && shellTaskOutputMsg.Context.ShellTaskId != output.Id {
+			return nil, status.Errorf(codes.InvalidArgument, "shell task context id does not match output shell task id")
 		}
 
 		var (

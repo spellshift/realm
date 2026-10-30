@@ -41,6 +41,9 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		if err != nil {
 			return err
 		}
+		if tc.GetTaskId() <= 0 {
+			return status.Errorf(codes.InvalidArgument, "invalid task id")
+		}
 		taskID = int(tc.GetTaskId())
 		t, err := srv.graph.Task.Get(ctx, taskID)
 		if ent.IsNotFound(err) {
@@ -57,6 +60,9 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		if err != nil {
 			return err
 		}
+		if stc.GetShellTaskId() <= 0 {
+			return status.Errorf(codes.InvalidArgument, "invalid shell task id")
+		}
 		shellTaskID = int(stc.GetShellTaskId())
 		st, err := srv.graph.ShellTask.Get(ctx, shellTaskID)
 		if ent.IsNotFound(err) {
@@ -70,10 +76,6 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		}
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
-	}
-
-	if taskID <= 0 && shellTaskID <= 0 {
-		return status.Errorf(codes.InvalidArgument, "invalid task ID or shell task ID")
 	}
 
 	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID)

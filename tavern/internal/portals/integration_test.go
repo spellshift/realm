@@ -41,10 +41,11 @@ type TestEnv struct {
 	PrivKey      ed25519.PrivateKey
 }
 
-func generateJWT(t testing.TB, privKey ed25519.PrivateKey) string {
+func generateJWT(t testing.TB, privKey ed25519.PrivateKey, beaconID int) string {
 	claims := jwt.MapClaims{
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		c2.ClaimBeaconID: beaconID,
+		"iat":            time.Now().Unix(),
+		"exp":            time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -127,7 +128,9 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	}
 }
 
-func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
+// CreateTask creates a user, host, beacon, tome, quest, and a task assigned
+// to the beacon. It returns the task and beacon IDs.
+func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
 	// Create user
 	u, err := client.User.Create().
 		SetOauthID("testuser").
@@ -135,7 +138,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 		SetPhotoURL("http://example.com/photo.jpg"). // Required field
 		Save(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create user: %w", err)
+		return 0, 0, fmt.Errorf("failed to create user: %w", err)
 	}
 
 	// Create Host (Required by Beacon)
@@ -146,7 +149,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 		SetPlatform(c2pb.Host_PLATFORM_LINUX).
 		Save(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create host: %w", err)
+		return 0, 0, fmt.Errorf("failed to create host: %w", err)
 	}
 
 	// Create beacon
@@ -156,7 +159,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).
 		Save(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create beacon: %w", err)
+		return 0, 0, fmt.Errorf("failed to create beacon: %w", err)
 	}
 
 	// Create tome
@@ -168,7 +171,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 		SetEldritch("print('hello')"). // Required field
 		Save(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create tome: %w", err)
+		return 0, 0, fmt.Errorf("failed to create tome: %w", err)
 	}
 
 	// Create quest
@@ -178,7 +181,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 		SetTome(tom).
 		Save(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create quest: %w", err)
+		return 0, 0, fmt.Errorf("failed to create quest: %w", err)
 	}
 
 	// Create Task
@@ -188,10 +191,10 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 		Save(ctx)
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to create task: %w", err)
+		return 0, 0, fmt.Errorf("failed to create task: %w", err)
 	}
 
-	return t.ID, nil
+	return t.ID, b.ID, nil
 }
 
 func TestPortalIntegration(t *testing.T) {
@@ -201,7 +204,7 @@ func TestPortalIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Setup Data (Task)
-	taskID, err := CreateTask(ctx, env.EntClient)
+	taskID, beaconID, err := CreateTask(ctx, env.EntClient)
 	require.NoError(t, err)
 
 	// 2. Start C2.CreatePortal (Agent Side)
@@ -213,7 +216,7 @@ func TestPortalIntegration(t *testing.T) {
 		Context: &c2pb.CreatePortalRequest_TaskContext{
 			TaskContext: &c2pb.TaskContext{
 				TaskId: int64(taskID),
-				Jwt:    generateJWT(t, env.PrivKey),
+				Jwt:    generateJWT(t, env.PrivKey, beaconID),
 			},
 		},
 	})

@@ -35,6 +35,7 @@ func TestFetchAsset(t *testing.T) {
 		name     string
 		fileName string
 		fileSize int
+		attach   bool // attach the asset to the task's tome
 		req      *c2pb.FetchAssetRequest
 		wantCode codes.Code
 	}
@@ -43,6 +44,7 @@ func TestFetchAsset(t *testing.T) {
 			name:     "Small_File",
 			fileName: "small_file",
 			fileSize: 100,
+			attach:   true,
 			req:      &c2pb.FetchAssetRequest{Name: "small_file"},
 			wantCode: codes.OK,
 		},
@@ -50,6 +52,7 @@ func TestFetchAsset(t *testing.T) {
 			name:     "Large_File",
 			fileName: "large_file",
 			fileSize: 1024 * 1024 * 10, // 10 MB
+			attach:   true,
 			req:      &c2pb.FetchAssetRequest{Name: "large_file"},
 			wantCode: codes.OK,
 		},
@@ -58,6 +61,16 @@ func TestFetchAsset(t *testing.T) {
 			fileName: "n/a",
 			fileSize: 0,
 			req:      &c2pb.FetchAssetRequest{Name: "this_file_does_not_exist"},
+			wantCode: codes.NotFound,
+		},
+		{
+			// The asset exists in the DB but not on the task's tome, so the
+			// scoped lookup must not return it.
+			name:     "Asset_Not_In_Tome",
+			fileName: "other_tome_asset",
+			fileSize: 100,
+			attach:   false,
+			req:      &c2pb.FetchAssetRequest{Name: "other_tome_asset"},
 			wantCode: codes.NotFound,
 		},
 	}
@@ -75,6 +88,13 @@ func TestFetchAsset(t *testing.T) {
 				SetName(tc.fileName).
 				SetContent(data).
 				SaveX(ctx)
+
+			// Attach the asset to the task's tome: asset fetches are scoped
+			// to the referenced task's tome.
+			if tc.attach {
+				tome := existingTask.QueryQuest().QueryTome().OnlyX(ctx)
+				tome.Update().AddAssets(a).SaveX(ctx)
+			}
 		}
 
 		// Ensure request contains JWT + owned task reference

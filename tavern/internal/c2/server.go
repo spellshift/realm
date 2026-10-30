@@ -3,9 +3,11 @@ package c2
 import (
 	"context"
 	"crypto/ed25519"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -176,7 +178,8 @@ func (srv *Server) authorizeShellTaskForBeacon(ctx context.Context, st *ent.Shel
 }
 
 // parseBeaconIDClaim extracts the beacon ID from the JWT beacon_id claim.
-// Numeric JSON claims decode as float64, so accept float64, int variants, and strings.
+// Numeric JSON claims decode as float64, so accept float64, int variants,
+// json.Number, and strictly-numeric strings.
 func parseBeaconIDClaim(v any) (int, error) {
 	switch id := v.(type) {
 	case float64:
@@ -199,13 +202,20 @@ func parseBeaconIDClaim(v any) (int, error) {
 			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
 		}
 		return int(id), nil
+	case json.Number:
+		return parseBeaconIDString(string(id))
 	case string:
-		var parsed int
-		if _, err := fmt.Sscanf(id, "%d", &parsed); err != nil || parsed <= 0 {
-			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
-		}
-		return parsed, nil
+		return parseBeaconIDString(id)
 	default:
 		return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
 	}
+}
+
+// parseBeaconIDString strictly parses a positive integer beacon ID from a string.
+func parseBeaconIDString(id string) (int, error) {
+	parsed, err := strconv.Atoi(id)
+	if err != nil || parsed <= 0 {
+		return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
+	}
+	return parsed, nil
 }

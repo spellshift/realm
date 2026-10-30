@@ -205,4 +205,34 @@ func TestJWTValidate(t *testing.T) {
 	}
 	_, err = srv.ValidateJWT(legacyStr)
 	assert.NotNil(t, err)
+
+	// Verify string beacon_id claims parse strictly
+	validStringClaims := jwt.MapClaims{
+		ClaimBeaconID: "5678",
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(1 * time.Hour).Unix(),
+	}
+	validStringToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, validStringClaims)
+	validStringStr, err := validStringToken.SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign JWT: %v", err)
+	}
+	beaconID, err = srv.ValidateJWT(validStringStr)
+	assert.Nil(t, err)
+	assert.Equal(t, 5678, beaconID)
+
+	for _, bad := range []string{"12abc", "-3", "0", ""} {
+		badClaims := jwt.MapClaims{
+			ClaimBeaconID: bad,
+			"iat":         time.Now().Unix(),
+			"exp":         time.Now().Add(1 * time.Hour).Unix(),
+		}
+		badToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, badClaims)
+		badStr, err := badToken.SignedString(privKey)
+		if err != nil {
+			t.Fatalf("failed to sign JWT: %v", err)
+		}
+		_, err = srv.ValidateJWT(badStr)
+		assert.NotNil(t, err, "expected rejection for beacon_id claim %q", bad)
+	}
 }

@@ -15,10 +15,12 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
-	var beaconID int
+	var task *ent.Task
 	if tc := req.GetTaskContext(); tc != nil {
-		var err error
-		beaconID, err = srv.ValidateJWT(tc.GetJwt())
+		if tc.GetTaskId() <= 0 {
+			return status.Errorf(codes.InvalidArgument, "invalid task id")
+		}
+		beaconID, err := srv.ValidateJWT(tc.GetJwt())
 		if err != nil {
 			return err
 		}
@@ -34,34 +36,23 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
 			return err
 		}
-	} else if stc := req.GetShellTaskContext(); stc != nil {
-		var err error
-		beaconID, err = srv.ValidateJWT(stc.GetJwt())
-		if err != nil {
-			return err
-		}
-		st, err := srv.graph.ShellTask.Get(ctx, int(stc.GetShellTaskId()))
-		if ent.IsNotFound(err) {
-			return status.Errorf(codes.NotFound, "shell task not found: %v", err)
-		}
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
-		}
-		if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
-			return err
-		}
+		task = t
+	} else if req.GetShellTaskContext() != nil {
+		// Shell tasks have no associated tomes or assets, so only task
+		// contexts may fetch assets.
+		return status.Errorf(codes.InvalidArgument, "fetch_asset requires a task context")
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
-	_ = beaconID
 
-	// Load Asset
+	// Load Asset scoped to the task's tome.
 	name := req.GetName()
-	a, err := srv.graph.Asset.Query().
+	a, err := task.QueryQuest().QueryTome().
+		QueryAssets().
 		Where(asset.Name(name)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
-		return status.Errorf(codes.NotFound, "%v", err)
+		return status.Errorf(codes.NotFound, "asset %q not found for this task", name)
 	}
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to query asset (%q): %v", name, err)

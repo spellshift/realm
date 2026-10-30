@@ -106,7 +106,7 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-						TaskContext: &c2pb.TaskContext{TaskId: 1234, Jwt: token},
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
 					},
 				},
 			},

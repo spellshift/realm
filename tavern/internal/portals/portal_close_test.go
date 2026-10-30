@@ -19,7 +19,7 @@ func TestPortalClose(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Setup Data (Task)
-	taskID, err := CreateTask(ctx, env.EntClient)
+	taskID, beaconID, err := CreateTask(ctx, env.EntClient)
 	require.NoError(t, err)
 
 	// 2. Start C2.CreatePortal (Agent Side)
@@ -31,7 +31,7 @@ func TestPortalClose(t *testing.T) {
 		Context: &c2pb.CreatePortalRequest_TaskContext{
 			TaskContext: &c2pb.TaskContext{
 				TaskId: int64(taskID),
-				Jwt:    generateJWT(t, env.PrivKey),
+				Jwt:    generateJWT(t, env.PrivKey, beaconID),
 			},
 		},
 	})
