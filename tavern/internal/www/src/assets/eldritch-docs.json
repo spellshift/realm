@@ -396,12 +396,12 @@
     "description": "The **http.download** method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten."
   },
   "http.get": {
-    "signature": "http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str",
-    "description": "The **http.get** method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase."
+    "signature": "http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> Dict",
+    "description": "The **http.get** method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.\nIf the request itself fails to succeed, an error occurs. This does not include an unsuccessful status code.\nAs an example:\n```python\nhttp.get(\"http://192.168.56.107:8000\")\n```\n```json\n{\n\"body\": \"Hello! This is an example site.\",\n\"headers\": {\n\"content-length\": \"187\",\n\"content-type\": \"text/html; charset=utf-8\",\n\"date\": \"Fri, 30 Oct 2026 14:34:41 GMT\"\n},\n\"status_code\": 200\n}\n```"
   },
   "http.post": {
-    "signature": "http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str",
-    "description": "The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.\n---"
+    "signature": "http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> Dict",
+    "description": "The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.\nThe response is in the same format as `http.get`\n---"
   },
   "json": {
     "signature": "json",
