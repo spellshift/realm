@@ -94,7 +94,7 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     selector: '[data-tour="shell-knowledge"]',
     title: "Context",
     description:
-      "Explore active and past pivots, nearby hosts, shells, credentials, and reported files in one unified drawer.",
+      "Explore Realm's knowledge graph with a view tailored for your operation. Your pivoting sessions, PTYs, and other operational info are stored here.",
     tip: "Items reported via the Eldritch report module and successful pivots appear here automatically.",
     icon: <Database size={16} className="text-emerald-400" />,
   },
@@ -111,10 +111,9 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   {
     id: "history",
     selector: '[data-tour="shell-history"]',
-    title: "Command Queue & History",
+    title: "History",
     description:
-      "Inspect queued, running, and completed commands. View full output, re-run previous commands, or load them into the Composer.",
-    tip: "Filter by Queued / Running to see tasks waiting for the next beacon callback.",
+      "Inspect queued, running, and completed commands across all of your shell sessions, not just the active one. View full output, re-run previous commands, or load them into the Composer.",
     icon: <History size={16} className="text-blue-400" />,
   },
   {
@@ -259,10 +258,10 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     cb.onPortalStepChange?.(currentStep.id === "guide" || currentStep.id === "feedback");
     cb.onQueueStepChange?.(currentStep.id === "queue-status");
 
-    const updateRect = (allowClear = false) => {
+    const updateRect = (allowClear = false, allowFallback = true) => {
       const el =
         document.querySelector(currentStep.selector) ||
-        (currentStep.fallbackSelector
+        (allowFallback && currentStep.fallbackSelector
           ? document.querySelector(currentStep.fallbackSelector)
           : null);
       if (!el) {
@@ -287,17 +286,21 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       return true;
     };
 
-    updateRect(false);
+    updateRect(false, false);
     const rafId = window.requestAnimationFrame(() => {
-      updateRect(false);
+      updateRect(false, true);
     });
-    const timer = setTimeout(() => updateRect(true), 50);
-    const handleViewportChange = () => updateRect(false);
+    const timer1 = setTimeout(() => updateRect(true, true), 50);
+    const timer2 = setTimeout(() => updateRect(true, true), 120);
+    const timer3 = setTimeout(() => updateRect(true, true), 250);
+    const handleViewportChange = () => updateRect(false, true);
     window.addEventListener("resize", handleViewportChange);
     window.addEventListener("scroll", handleViewportChange, true);
     return () => {
       window.cancelAnimationFrame(rafId);
-      clearTimeout(timer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
       document.removeEventListener("click", handleTargetClick, true);
       window.removeEventListener("resize", handleViewportChange);
       window.removeEventListener("scroll", handleViewportChange, true);

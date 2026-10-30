@@ -1,16 +1,97 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import moment from "moment";
 
-export const useCallbackTimer = (beaconData: any) => {
+export interface BeaconHistoryNode {
+    id?: string;
+    createdAt?: string;
+    latency: number;
+}
+
+export interface CallbackStats {
+    intervalSeconds: number | null;
+    formattedInterval: string;
+    sampleCount: number;
+    onTimeCount: number;
+    lateCount: number;
+    onTimePercentage: number;
+    avgLatencyMs: number | null;
+    lastSeenAt: string | null;
+    nextSeenAt: string | null;
+}
+
+export const ON_TIME_MIN_TOLERANCE_MS = 2000;
+
+export const formatCallbackInterval = (intervalSeconds: number | null | undefined): string => {
+    const sec = Number(intervalSeconds);
+    if (intervalSeconds == null || Number.isNaN(sec) || sec <= 0) {
+        return "Unknown";
+    }
+    if (sec < 60) {
+        return `${sec}s`;
+    }
+    const hours = Math.floor(sec / 3600);
+    const minutes = Math.floor((sec % 3600) / 60);
+    const remainingSeconds = sec % 60;
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+    return `${parts.join(" ")} (${sec}s)`;
+};
+
+export const computeCallbackStats = (
+    beaconNode: any,
+    fallbackIntervalSeconds?: number | null
+): CallbackStats => {
+    const rawInterval = beaconNode?.interval ?? fallbackIntervalSeconds;
+    const parsedInterval =
+        rawInterval != null && !Number.isNaN(Number(rawInterval)) && Number(rawInterval) > 0
+            ? Number(rawInterval)
+            : null;
+
+    const edges = Array.isArray(beaconNode?.history?.edges) ? beaconNode.history.edges : [];
+    const nodes: BeaconHistoryNode[] = edges
+        .map((e: any) => e?.node)
+        .filter((n: any): n is BeaconHistoryNode => Boolean(n && typeof n.latency === "number"))
+        .slice(-100);
+
+    const onTimeThresholdMs = Math.max(
+        ON_TIME_MIN_TOLERANCE_MS,
+        (parsedInterval ?? 0) * 100
+    );
+
+    const sampleCount = nodes.length;
+    const onTimeCount = nodes.filter((n) => n.latency <= onTimeThresholdMs).length;
+    const lateCount = sampleCount - onTimeCount;
+    const onTimePercentage =
+        sampleCount > 0 ? Math.round((onTimeCount / sampleCount) * 100) : 100;
+
+    const avgLatencyMs =
+        sampleCount > 0
+            ? Math.round(nodes.reduce((sum, n) => sum + Math.max(0, n.latency), 0) / sampleCount)
+            : null;
+
+    return {
+        intervalSeconds: parsedInterval,
+        formattedInterval: formatCallbackInterval(parsedInterval),
+        sampleCount,
+        onTimeCount,
+        lateCount,
+        onTimePercentage,
+        avgLatencyMs,
+        lastSeenAt: beaconNode?.lastSeenAt ?? null,
+        nextSeenAt: beaconNode?.nextSeenAt ?? null,
+    };
+};
+
+export const useCallbackTimer = (beaconData: any, fallbackIntervalSeconds?: number | null) => {
     const [timeUntilCallback, setTimeUntilCallback] = useState<string>("");
     const [isMissedCallback, setIsMissedCallback] = useState(false);
     const [isLateCheckin, setIsLateCheckin] = useState(false);
 
     useEffect(() => {
         const updateTimer = () => {
-            // @ts-ignore
             if (!beaconData?.node?.nextSeenAt) return;
-            // @ts-ignore
             const next = moment(beaconData.node.nextSeenAt);
             const now = moment();
             const diff = next.diff(now, 'seconds');
@@ -21,11 +102,6 @@ export const useCallbackTimer = (beaconData: any) => {
                     setIsMissedCallback(false);
                     setIsLateCheckin(false);
                 } else {
-                    // next.fromNow() returns "X [time_unit] ago" for past dates
-                    // We want "expected X [time_unit] ago"
-                    // However, fromNow() already includes "ago", so just prepend "expected "
-                    // But wait, "expected 2 minutes ago" vs "expected 2 minutes ago ago"? No, fromNow() returns "2 minutes ago".
-                    // So `expected ${next.fromNow()}` yields "expected 2 minutes ago". Correct.
                     setTimeUntilCallback(`expected ${next.fromNow()}`);
                     setIsMissedCallback(true);
 
@@ -47,5 +123,10 @@ export const useCallbackTimer = (beaconData: any) => {
         return () => clearInterval(intervalId);
     }, [beaconData]);
 
-    return { timeUntilCallback, isMissedCallback, isLateCheckin };
+    const callbackStats = useMemo(
+        () => computeCallbackStats(beaconData?.node, fallbackIntervalSeconds),
+        [beaconData, fallbackIntervalSeconds]
+    );
+
+    return { timeUntilCallback, isMissedCallback, isLateCheckin, callbackStats };
 };

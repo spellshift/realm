@@ -270,7 +270,7 @@ func TestInteractiveShell(t *testing.T) {
 			found = true
 		}
 	}
-	require.Equal(t, fmt.Sprintf("[+] %s\n%s", inputCmd, outputData), outMsg.Output)
+	require.Equal(t, outputData, outMsg.Output)
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
 }
 
@@ -350,7 +350,7 @@ func TestNonInteractiveShell(t *testing.T) {
 			found = true
 		}
 	}
-	require.Equal(t, fmt.Sprintf("[+] %s\nroot", inputCmd), outMsg.Output)
+	require.Equal(t, "root", outMsg.Output)
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
 }
 
@@ -608,9 +608,7 @@ func TestTruncation(t *testing.T) {
 		}
 	}
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
-
-	expectedPrefix := "[+] " + longInput[:64] + "...\n"
-	require.Contains(t, outMsg.Output, expectedPrefix)
+	require.Equal(t, "out", outMsg.Output)
 }
 
 func TestLargeShellTask(t *testing.T) {

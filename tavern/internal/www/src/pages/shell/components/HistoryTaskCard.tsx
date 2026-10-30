@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-    CommandLineIcon,
+    BookOpenIcon,
     DocumentTextIcon,
     NoSymbolIcon,
     ArrowDownTrayIcon,
@@ -14,10 +14,10 @@ import {
     CircleX,
     Clock,
     Copy,
-    FileCode2,
     FileText,
     KeyRound,
     ListVideo,
+    Pencil,
     Play,
 } from "lucide-react";
 import { ShellTaskItem } from "../hooks/useShellData";
@@ -226,65 +226,77 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
         >
             {/* Header row modeled after TaskCard header */}
             <div className="flex flex-row items-center justify-between gap-2 px-3 py-2 bg-gray-900/50">
-                <div className="flex flex-row items-center gap-2 min-w-0 flex-wrap">
+                <div className="flex flex-row items-center gap-2 min-w-0">
                     <HistoryTaskStatusIcon status={task.status} />
 
                     {task.creator?.name && (
-                        <div className="flex flex-row gap-1 items-center text-xs text-gray-300">
-                            <CircleUser className="w-3.5 h-3.5 text-gray-500" />
-                            <span>{task.creator.name}</span>
+                        <div className="flex flex-row gap-1 items-center text-xs text-gray-300 min-w-0">
+                            <CircleUser className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                            <span className="truncate">{task.creator.name}</span>
                         </div>
                     )}
 
-                    {formattedTime && (
-                        <span className="text-[11px] text-gray-500">{formattedTime}</span>
-                    )}
+                    {(formattedTime || group.count > 1) && (
+                        <div className="inline-flex items-center gap-1.5 shrink-0">
+                            {formattedTime && (
+                                <span
+                                    data-testid="history-task-time"
+                                    className="text-[11px] text-gray-500 whitespace-nowrap"
+                                >
+                                    {formattedTime}
+                                </span>
+                            )}
 
-                    {group.count > 1 && (
-                        <span
-                            data-testid="history-aggregated-count"
-                            title={`Aggregated ${group.count} executions with matching output`}
-                            className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 font-mono text-[10px]"
-                        >
-                            ×{group.count}
-                        </span>
+                            {group.count > 1 && (
+                                <span
+                                    data-testid="history-aggregated-count"
+                                    title={`Aggregated ${group.count} executions with matching output`}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 font-mono text-[10px] leading-none shrink-0"
+                                >
+                                    ×{group.count}
+                                </span>
+                            )}
+                        </div>
                     )}
 
                     {isOtherSession && (
-                        <span className="px-1.5 py-0.5 rounded bg-gray-800/80 text-gray-400 font-mono text-[10px]">
+                        <span className="px-1.5 py-0.5 rounded bg-gray-800/80 text-gray-400 font-mono text-[10px] leading-none shrink-0">
                             Shell #{task.shellId}
                         </span>
                     )}
                 </div>
 
-                {/* Minimalist actions */}
+                {/* Minimalist icon-only actions: Run, Copy, Edit */}
                 <div className="flex items-center gap-1 shrink-0">
                     <button
                         type="button"
+                        data-testid="history-card-run"
                         onClick={() => onRunCode(task.cleanedInput)}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                        className="inline-flex items-center justify-center p-1 rounded text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                         title="Re-run command"
+                        aria-label="Re-run"
                     >
-                        <Play className="w-3 h-3" />
-                        <span>Re-run</span>
+                        <Play className="w-3.5 h-3.5" />
                     </button>
                     <button
                         type="button"
-                        onClick={() => onLoadIntoComposer(task.cleanedInput)}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
-                        title="Open in Composer"
-                    >
-                        <FileCode2 className="w-3 h-3" />
-                        <span>Composer</span>
-                    </button>
-                    <button
-                        type="button"
+                        data-testid="history-card-copy"
                         onClick={() => navigator.clipboard?.writeText(activeTextContent)}
-                        className="inline-flex items-center gap-1 p-1 rounded text-[11px] text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+                        className="inline-flex items-center justify-center p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
                         title="Copy"
                         aria-label="Copy"
                     >
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="history-card-edit"
+                        onClick={() => onLoadIntoComposer(task.cleanedInput)}
+                        className="inline-flex items-center justify-center p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+                        title="Edit in Composer"
+                        aria-label="Edit in Composer"
+                    >
+                        <Pencil className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </div>
@@ -304,7 +316,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                             onClick={() => setActiveTab("input")}
                             className={getTabClassName("input")}
                         >
-                            <CommandLineIcon className="w-3.5 h-3.5" />
+                            <BookOpenIcon className="w-3.5 h-3.5" />
                             <span>Input</span>
                         </button>
 

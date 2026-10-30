@@ -606,7 +606,13 @@ export function analyzeEldritchCode(code: string): EldritchDiagnostic[] {
             continue;
         }
 
-        const { masked, unterminatedQuote } = maskStringsAndCommentsOnLine(rawLine);
+        const indentMatch = rawLine.match(/^([ \t]*)/);
+        const leadingWhitespace = indentMatch ? indentMatch[1] : "";
+        const isShellMacroLine = rawLine.trimStart().startsWith("!");
+
+        const { masked, unterminatedQuote } = isShellMacroLine
+            ? { masked: `${leadingWhitespace}sys.shell(" ")`, unterminatedQuote: null }
+            : maskStringsAndCommentsOnLine(rawLine);
         if (unterminatedQuote) {
             diagnostics.push({
                 line: lineIdx,
@@ -626,8 +632,6 @@ export function analyzeEldritchCode(code: string): EldritchDiagnostic[] {
         const insideGrouping = bracketStack.length > 0;
 
         // Indentation & block structure validation when not inside open (), [], {}
-        const indentMatch = rawLine.match(/^([ \t]*)/);
-        const leadingWhitespace = indentMatch ? indentMatch[1] : "";
         const indent = leadingWhitespace.replace(/\t/g, "    ").length;
 
         if (leadingWhitespace.includes("\t") && leadingWhitespace.includes(" ")) {
@@ -1022,7 +1026,10 @@ export function completeEldritchCode(
     const currentLineStart = beforeCursor.lastIndexOf("\n") + 1;
     const lineBeforeCursor = beforeCursor.slice(currentLineStart);
 
-    // Do not trigger autocomplete inside comments or string literals
+    // Do not trigger autocomplete on `!command` shell macro lines, inside comments, or string literals
+    if (lineBeforeCursor.trimStart().startsWith("!")) {
+        return null;
+    }
     const { masked, unterminatedQuote } = maskStringsAndCommentsOnLine(lineBeforeCursor);
     if (unterminatedQuote) {
         return null;

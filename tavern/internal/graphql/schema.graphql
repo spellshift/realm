@@ -1947,9 +1947,10 @@ input CreateHostCredentialInput {
   Kind of credential.
   """
   kind: HostCredentialKind!
-  hostID: ID!
+  hostID: ID
   taskID: ID
   shellTaskID: ID
+  networkHostIDs: [ID!]
 }
 """
 CreateLinkInput is used for create Link object.
@@ -2001,6 +2002,7 @@ input CreateNetworkHostInput {
   openPorts: [Int!]
   hostID: ID
   networkIDs: [ID!]
+  credentialIDs: [ID!]
 }
 """
 CreateNetworkInput is used for create Network object.
@@ -2940,7 +2942,7 @@ type HostCredential implements Node {
   """
   Host the credential was reported on.
   """
-  host: Host!
+  host: Host
   """
   Task that reported this credential.
   """
@@ -2949,6 +2951,37 @@ type HostCredential implements Node {
   Shell Task that reported this credential.
   """
   shellTask: ShellTask
+  networkHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for NetworkHosts returned from the connection.
+    """
+    orderBy: [NetworkHostOrder!]
+
+    """
+    Filtering options for NetworkHosts returned from the connection.
+    """
+    where: NetworkHostWhereInput
+  ): NetworkHostConnection!
 }
 """
 A connection to a list of items.
@@ -3105,6 +3138,11 @@ input HostCredentialWhereInput {
   """
   hasShellTask: Boolean
   hasShellTaskWith: [ShellTaskWhereInput!]
+  """
+  network_hosts edge predicates
+  """
+  hasNetworkHosts: Boolean
+  hasNetworkHostsWith: [NetworkHostWhereInput!]
 }
 """
 An edge in a connection.
@@ -4306,6 +4344,37 @@ type NetworkHost implements Node {
     """
     where: NetworkWhereInput
   ): NetworkConnection!
+  credentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
 }
 """
 A connection to a list of items.
@@ -4482,6 +4551,11 @@ input NetworkHostWhereInput {
   """
   hasNetworks: Boolean
   hasNetworksWith: [NetworkWhereInput!]
+  """
+  credentials edge predicates
+  """
+  hasCredentials: Boolean
+  hasCredentialsWith: [HostCredentialWhereInput!]
 }
 """
 Ordering options for Network connections
@@ -7893,6 +7967,9 @@ input UpdateNetworkHostInput {
   addNetworkIDs: [ID!]
   removeNetworkIDs: [ID!]
   clearNetworks: Boolean
+  addCredentialIDs: [ID!]
+  removeCredentialIDs: [ID!]
+  clearCredentials: Boolean
 }
 """
 UpdateNetworkInput is used for update Network object.

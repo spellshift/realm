@@ -26,7 +26,7 @@ import SshTerminal from "./components/SshTerminal";
 import PtyTerminal from "./components/PtyTerminal";
 import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
 import { formatPivotTabLabel } from "./utils/networkGraphUtils";
-import { SquareTerminal, Terminal, WifiOff, X } from "lucide-react";
+import { Minus, SquareTerminal, Terminal, WifiOff } from "lucide-react";
 
 export { formatPivotTabLabel };
 
@@ -38,6 +38,7 @@ export interface PortalTab {
 }
 
 const NUX_STORAGE_KEY = "tavern_shell_nux_dismissed_v1";
+const PIVOT_TARGETS_STORAGE_KEY = "tavern_shell_pivot_targets_v1";
 
 const ShellContent = () => {
   const { shellId } = useParams<{ shellId: string }>();
@@ -60,6 +61,7 @@ const ShellContent = () => {
     stuckElapsedSeconds,
     pivots,
     tomes,
+    refetchTomes,
     hostCredentials,
     allCredentials,
     networkHosts,
@@ -72,7 +74,10 @@ const ShellContent = () => {
     refetchShell,
   } = useShellData(shellId);
 
-  const { timeUntilCallback, isMissedCallback, isLateCheckin } = useCallbackTimer(beaconData);
+  const { timeUntilCallback, isMissedCallback, isLateCheckin, callbackStats } = useCallbackTimer(
+    beaconData,
+    shellData?.node?.beacon?.interval
+  );
 
   const [portalTabs, setPortalTabs] = useState<PortalTab[]>([]);
   const [tabIndex, setTabIndex] = useState(0);
@@ -102,6 +107,32 @@ const ShellContent = () => {
 
   const initializedPivotsShellRef = useRef<string | undefined>(undefined);
   const knownPivotIdsRef = useRef<Set<string>>(new Set());
+  const [pivotTargets, setPivotTargets] = useState<Record<string, string>>(() => {
+    try {
+      const raw = sessionStorage.getItem(PIVOT_TARGETS_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const pivotTargetsRef = useRef<Record<string, string>>(pivotTargets);
+  pivotTargetsRef.current = pivotTargets;
+  const lastUnboundPtyTargetRef = useRef<string>("");
+
+  const recordPivotTarget = useCallback((pivotIdStr: string, target: string) => {
+    if (!pivotIdStr || !target || target.toUpperCase() === "PTY") return;
+    setPivotTargets((prev) => {
+      if (prev[pivotIdStr] === target) return prev;
+      const next = { ...prev, [pivotIdStr]: target };
+      pivotTargetsRef.current = next;
+      try {
+        sessionStorage.setItem(PIVOT_TARGETS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage error
+      }
+      return next;
+    });
+  }, []);
 
   const handleDismissNuxBanner = useCallback(() => {
     setShowNuxBanner(false);
@@ -126,6 +157,7 @@ const ShellContent = () => {
     setTabStatuses({});
     initializedPivotsShellRef.current = undefined;
     knownPivotIdsRef.current = new Set();
+    lastUnboundPtyTargetRef.current = "";
   }, [shellId]);
 
   const handleBindTabPivotId = useCallback(
@@ -134,8 +166,17 @@ const ShellContent = () => {
       setPortalTabs((prev) =>
         prev.map((t) => {
           if (t.id !== tabId) return t;
+          const targetToSave =
+            t.target && t.target !== "PTY" ? t.target : lastUnboundPtyTargetRef.current;
+          if (targetToSave) {
+            recordPivotTarget(String(createdPivotId), targetToSave);
+            if (lastUnboundPtyTargetRef.current === targetToSave) {
+              lastUnboundPtyTargetRef.current = "";
+            }
+          }
           return {
             ...t,
+            target: targetToSave || t.target,
             pivotId: createdPivotId,
           };
         })
@@ -143,25 +184,41 @@ const ShellContent = () => {
       refetchHistory();
       refetchKnowledgeGraph();
     },
-    [refetchHistory, refetchKnowledgeGraph]
+    [recordPivotTarget, refetchHistory, refetchKnowledgeGraph]
   );
 
-  const handleUpdateTabTarget = useCallback((tabId: string, nextTarget: string) => {
-    if (nextTarget.trim().toLowerCase() === "exit") return;
-    setPortalTabs((prev) =>
-      prev.map((t) => (t.id === tabId ? { ...t, target: nextTarget } : t))
-    );
-  }, []);
+  const handleUpdateTabTarget = useCallback(
+    (tabId: string, nextTarget: string) => {
+      if (nextTarget.trim().toLowerCase() === "exit") return;
+      setPortalTabs((prev) => {
+        const matched = prev.find((t) => t.id === tabId);
+        if (matched?.pivotId) {
+          recordPivotTarget(String(matched.pivotId), nextTarget);
+        } else if (matched?.type === "pty") {
+          lastUnboundPtyTargetRef.current = nextTarget;
+        }
+        return prev.map((t) => (t.id === tabId ? { ...t, target: nextTarget } : t));
+      });
+    },
+    [recordPivotTarget]
+  );
 
   const handleOpenPortalTab = useCallback(
     (type: string, target: string, pivotId?: string, focusNewTab = true) => {
       const normalizedType = type.toLowerCase();
+      const rememberedTarget =
+        pivotId && normalizedType === "pty"
+          ? pivotTargetsRef.current[String(pivotId)]
+          : undefined;
       const cleanedTarget =
         normalizedType === "pty"
-          ? (target || "PTY").replace(/^PTY\s*#\d+$/i, "PTY")
+          ? rememberedTarget || (target || "PTY").replace(/^PTY\s*#\d+$/i, "PTY")
           : target;
       if (pivotId) {
         knownPivotIdsRef.current.add(String(pivotId));
+        if (cleanedTarget && cleanedTarget !== "PTY" && normalizedType === "pty") {
+          recordPivotTarget(String(pivotId), cleanedTarget);
+        }
       }
       setPortalTabs((prev) => {
         // 1. Check if a tab already exists for this exact pivotId or deterministic id
@@ -189,10 +246,17 @@ const ShellContent = () => {
           );
           if (pendingIdx !== -1) {
             const next = [...prev];
+            const resolvedTarget =
+              next[pendingIdx].target && next[pendingIdx].target !== "PTY"
+                ? next[pendingIdx].target
+                : cleanedTarget;
+            if (normalizedType === "pty" && resolvedTarget && resolvedTarget !== "PTY") {
+              recordPivotTarget(String(pivotId), resolvedTarget);
+            }
             next[pendingIdx] = {
               ...next[pendingIdx],
               pivotId: String(pivotId),
-              target: next[pendingIdx].target || cleanedTarget,
+              target: resolvedTarget,
             };
             if (focusNewTab) {
               setTabIndex(pendingIdx + 1);
@@ -217,29 +281,42 @@ const ShellContent = () => {
         return newTabs;
       });
     },
-    []
+    [recordPivotTarget]
   );
 
-  const handleClosePortalTab = useCallback((tabId: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    setPortalTabs((prev) => {
-      const idx = prev.findIndex((t) => t.id === tabId);
-      if (idx === -1) return prev;
-      const next = prev.filter((t) => t.id !== tabId);
-      setTabIndex((currentTabIdx) => {
-        if (currentTabIdx === idx + 1) {
-          return Math.max(0, currentTabIdx - 1);
+  const handleClosePortalTab = useCallback(
+    (tabId: string, e?: React.MouseEvent) => {
+      if (e) {
+        e.stopPropagation();
+      }
+      setPortalTabs((prev) => {
+        const idx = prev.findIndex((t) => t.id === tabId);
+        if (idx === -1) return prev;
+        const closingTab = prev[idx];
+        if (closingTab?.pivotId && closingTab.target && closingTab.target !== "PTY") {
+          recordPivotTarget(String(closingTab.pivotId), closingTab.target);
+        } else if (
+          closingTab?.type === "pty" &&
+          closingTab.target &&
+          closingTab.target !== "PTY"
+        ) {
+          lastUnboundPtyTargetRef.current = closingTab.target;
         }
-        if (currentTabIdx > idx + 1) {
-          return currentTabIdx - 1;
-        }
-        return currentTabIdx;
+        const next = prev.filter((t) => t.id !== tabId);
+        setTabIndex((currentTabIdx) => {
+          if (currentTabIdx === idx + 1) {
+            return Math.max(0, currentTabIdx - 1);
+          }
+          if (currentTabIdx > idx + 1) {
+            return currentTabIdx - 1;
+          }
+          return currentTabIdx;
+        });
+        return next;
       });
-      return next;
-    });
-  }, []);
+    },
+    [recordPivotTarget]
+  );
 
   // Populate active pivots on initial load without hijacking focus from the main REPL tab,
   // and focus newly created pivots that appear after initial load.
@@ -269,6 +346,9 @@ const ShellContent = () => {
     showCompletions,
     completionPos,
     completionIndex,
+    promptPos,
+    isAwaitingCommand,
+    completedTaskIds,
     handleMouseMove,
     tooltipState,
     handleCompletionSelect,
@@ -297,6 +377,12 @@ const ShellContent = () => {
     },
     allShellTasks.length > 0 ? allShellTasks : shellTasks
   );
+
+  const completedTaskIdSet = new Set(completedTaskIds);
+  const activeQueuedTasks = queuedTasks.filter((t) => !completedTaskIdSet.has(String(t.id)));
+  const activeRunningTasks = runningTasks.filter((t) => !completedTaskIdSet.has(String(t.id)));
+  const isPromptBusy =
+    activeQueuedTasks.length > 0 || activeRunningTasks.length > 0 || isAwaitingCommand;
 
   // Automatically execute the shared RC script the first time a user connects to a shell when RC is toggled on
   useEffect(() => {
@@ -523,7 +609,7 @@ const ShellContent = () => {
             setKnowledgeOpen(false);
           }}
           historyCount={shellTasks.length}
-          activeQueueCount={queuedTasks.length + runningTasks.length}
+          activeQueueCount={activeQueuedTasks.length + activeRunningTasks.length}
           pivotCount={pivots.filter((p) => !p.closedAt).length}
           knowledgeOpen={knowledgeOpen}
           onToggleKnowledge={() => {
@@ -563,10 +649,12 @@ const ShellContent = () => {
           connectionMessage={connectionMessage}
           isConnecting={isConnecting}
           stuckTask={
-            stuckTask ? { task: stuckTask, elapsedSeconds: stuckElapsedSeconds } : null
+            stuckTask && !completedTaskIdSet.has(String(stuckTask.id))
+              ? { task: stuckTask, elapsedSeconds: stuckElapsedSeconds }
+              : null
           }
-          queuedTasks={queuedTasks}
-          runningTasks={runningTasks}
+          queuedTasks={activeQueuedTasks}
+          runningTasks={activeRunningTasks}
           timeUntilCallback={timeUntilCallback}
           onSpawnFreshShell={handleSpawnFreshShell}
           isSpawningShell={isSpawningShell}
@@ -684,7 +772,7 @@ const ShellContent = () => {
                           }}
                           className="ml-1 p-0.5 rounded hover:bg-[#343b4d] text-gray-400 hover:text-white transition-colors"
                         >
-                          <X size={12} />
+                          <Minus size={12} />
                         </span>
                       </span>
                     </Tab>
@@ -697,6 +785,9 @@ const ShellContent = () => {
                   <ShellTerminal
                     termRef={termRef}
                     isConnecting={isConnecting}
+                    isPromptBusy={isPromptBusy}
+                    isMissedCallback={isMissedCallback}
+                    promptPos={promptPos}
                     completions={completions}
                     showCompletions={showCompletions}
                     completionPos={completionPos}
@@ -766,6 +857,17 @@ const ShellContent = () => {
               }}
               disabled={!!shellData?.node?.closedAt}
               tomes={tomes}
+              defaultAuthor={shellData?.node?.owner?.name}
+              onTomeCreated={(createdTome) => {
+                refetchTomes?.();
+                toast({
+                  title: "Tome created",
+                  description: `"${createdTome.name}" has been saved and is now available in your tomes.`,
+                  status: "success",
+                  duration: 4000,
+                  isClosable: true,
+                });
+              }}
             />
             <SessionSettings
               isOpen={sessionSettingsOpen}
@@ -793,8 +895,17 @@ const ShellContent = () => {
                 (!p.closedAt && String(p.kind || "").toLowerCase() === "pty"
                   ? portalTabs.find((t) => !t.pivotId && t.type === "pty")
                   : undefined);
-              if (matchingTab?.target) {
-                return { ...p, activeTarget: matchingTab.target };
+              const activeTarget =
+                (matchingTab?.target && matchingTab.target !== "PTY"
+                  ? matchingTab.target
+                  : undefined) ||
+                pivotTargets[String(p.id)] ||
+                matchingTab?.target ||
+                (!p.closedAt && String(p.kind || "").toLowerCase() === "pty"
+                  ? lastUnboundPtyTargetRef.current || undefined
+                  : undefined);
+              if (activeTarget) {
+                return { ...p, activeTarget };
               }
               return p;
             })}
@@ -838,14 +949,15 @@ const ShellContent = () => {
           portalId={portalId}
           timeUntilCallback={timeUntilCallback}
           isMissedCallback={isMissedCallback}
+          callbackStats={callbackStats}
           connectionStatus={connectionStatus}
           connectionMessage={connectionMessage}
           isConnecting={isConnecting}
           closedAt={shellData?.node?.closedAt}
-          queuedCount={queuedTasks.length}
-          runningCount={runningTasks.length}
-          queuedTasks={queuedTasks}
-          runningTasks={runningTasks}
+          queuedCount={activeQueuedTasks.length}
+          runningCount={activeRunningTasks.length}
+          queuedTasks={activeQueuedTasks}
+          runningTasks={activeRunningTasks}
           queueTourOpen={queueTourOpen}
           sessionSettingsOpen={sessionSettingsOpen}
           onToggleSessionSettings={() => {

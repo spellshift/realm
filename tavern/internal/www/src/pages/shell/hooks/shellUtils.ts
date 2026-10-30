@@ -130,8 +130,12 @@ export const transformClearAnsiForScrollback = (
 
 export const moveWordLeft = (buffer: string, cursor: number): number => {
     const beforeCursor = buffer.slice(0, cursor);
-    const trimmed = beforeCursor.trimEnd();
-    const lastSpace = trimmed.lastIndexOf(" ");
+    const trimmed = beforeCursor.replace(/\s+$/, "");
+    const lastSpace = Math.max(
+        trimmed.lastIndexOf(" "),
+        trimmed.lastIndexOf("\n"),
+        trimmed.lastIndexOf("\t")
+    );
     return lastSpace === -1 ? 0 : lastSpace + 1;
 };
 
@@ -142,13 +146,13 @@ export const moveWordRight = (buffer: string, cursor: number): number => {
     // 1. If we are at the end, stay there
     if (i >= len) return len;
 
-    // 2. If we are on a space, skip all spaces first
-    while (i < len && buffer[i] === ' ') {
+    // 2. If we are on whitespace, skip all whitespace first
+    while (i < len && /\s/.test(buffer[i])) {
         i++;
     }
 
-    // 3. Now skip all non-spaces (the word)
-    while (i < len && buffer[i] !== ' ') {
+    // 3. Now skip all non-whitespace (the word)
+    while (i < len && !/\s/.test(buffer[i])) {
         i++;
     }
 
@@ -223,7 +227,11 @@ export const getCursorLineInfo = (buffer: string, cursorPos: number): CursorLine
     };
 };
 
-export const moveCursorUpInBuffer = (buffer: string, cursorPos: number): number | null => {
+export const moveCursorUpInBuffer = (
+    buffer: string,
+    cursorPos: number,
+    preferredCol?: number | null
+): number | null => {
     const { lines, lineIndex, col } = getCursorLineInfo(buffer, cursorPos);
     if (lineIndex <= 0) {
         return null;
@@ -232,11 +240,16 @@ export const moveCursorUpInBuffer = (buffer: string, cursorPos: number): number 
     for (let i = 0; i < lineIndex - 1; i++) {
         targetLineStart += lines[i].length + 1;
     }
-    const targetCol = Math.min(col, lines[lineIndex - 1].length);
+    const desiredCol = typeof preferredCol === "number" ? preferredCol : col;
+    const targetCol = Math.min(desiredCol, lines[lineIndex - 1].length);
     return targetLineStart + targetCol;
 };
 
-export const moveCursorDownInBuffer = (buffer: string, cursorPos: number): number | null => {
+export const moveCursorDownInBuffer = (
+    buffer: string,
+    cursorPos: number,
+    preferredCol?: number | null
+): number | null => {
     const { lines, lineIndex, col } = getCursorLineInfo(buffer, cursorPos);
     if (lineIndex >= lines.length - 1) {
         return null;
@@ -245,7 +258,8 @@ export const moveCursorDownInBuffer = (buffer: string, cursorPos: number): numbe
     for (let i = 0; i <= lineIndex; i++) {
         targetLineStart += lines[i].length + 1;
     }
-    const targetCol = Math.min(col, lines[lineIndex + 1].length);
+    const desiredCol = typeof preferredCol === "number" ? preferredCol : col;
+    const targetCol = Math.min(desiredCol, lines[lineIndex + 1].length);
     return targetLineStart + targetCol;
 };
 
@@ -255,6 +269,23 @@ export const moveCursorToLineStart = (buffer: string, cursorPos: number): number
 
 export const moveCursorToLineEnd = (buffer: string, cursorPos: number): number => {
     return getCursorLineInfo(buffer, cursorPos).lineEndOffset;
+};
+
+export const dedentCurrentLine = (
+    buffer: string,
+    cursorPos: number
+): { buffer: string; cursorPos: number } => {
+    const { lines, lineIndex, lineStartOffset } = getCursorLineInfo(buffer, cursorPos);
+    const currentLine = lines[lineIndex] ?? "";
+    const match = currentLine.match(/^( {1,4})/);
+    if (!match) {
+        return { buffer, cursorPos };
+    }
+    const removeCount = match[1].length;
+    const nextBuffer =
+        buffer.slice(0, lineStartOffset) + buffer.slice(lineStartOffset + removeCount);
+    const nextCursorPos = Math.max(lineStartOffset, cursorPos - removeCount);
+    return { buffer: nextBuffer, cursorPos: nextCursorPos };
 };
 
 export const stripTrailingCommentOutsideStrings = (line: string): string => {
@@ -292,6 +323,27 @@ export const hasUnclosedBracketsOrStrings = (buffer: string): boolean => {
     let escape = false;
 
     for (let i = 0; i < buffer.length; i++) {
+        // At the start of any line outside multi-line triple-quoted strings,
+        // if the line is a `!command` shell macro, skip to the end of the line
+        // because `expand_macros` escapes the entire line into `sys.shell("...")`.
+        if (
+            (i === 0 || buffer[i - 1] === "\n") &&
+            !inTripleSingle &&
+            !inTripleDouble &&
+            !inSingle &&
+            !inDouble
+        ) {
+            const lineEnd = buffer.indexOf("\n", i);
+            const lineSlice = lineEnd === -1 ? buffer.slice(i) : buffer.slice(i, lineEnd);
+            if (lineSlice.trimStart().startsWith("!")) {
+                if (lineEnd === -1) {
+                    break;
+                }
+                i = lineEnd; // Loop's i++ will advance to the start of the next line
+                continue;
+            }
+        }
+
         const ch = buffer[i];
         const nextTwo = buffer.slice(i, i + 3);
 
@@ -394,6 +446,11 @@ export const hasUnclosedBracketsOrStrings = (buffer: string): boolean => {
 export const shouldContinueMultilineOnEnter = (buffer: string, cursorPos: number): boolean => {
     const { lines, lineIndex } = getCursorLineInfo(buffer, cursorPos);
 
+    // Single-line `!command` shell macros always execute immediately on Enter
+    if (lines.length === 1 && lines[0].trimStart().startsWith("!")) {
+        return false;
+    }
+
     // If the cursor is on an earlier line of a multi-line buffer, Enter splits/adds a line in place
     if (lineIndex < lines.length - 1) {
         return true;
@@ -419,9 +476,11 @@ export const shouldContinueMultilineOnEnter = (buffer: string, cursorPos: number
     // Last line is empty/whitespace-only; verify the previous non-empty line wasn't a bare block header ':'
     for (let i = lines.length - 2; i >= 0; i--) {
         if (lines[i].trim() !== "") {
-            const prevStripped = stripTrailingCommentOutsideStrings(lines[i]).trimEnd();
-            if (prevStripped.endsWith(":") || prevStripped.endsWith("\\")) {
-                return true;
+            if (!lines[i].trimStart().startsWith("!")) {
+                const prevStripped = stripTrailingCommentOutsideStrings(lines[i]).trimEnd();
+                if (prevStripped.endsWith(":") || prevStripped.endsWith("\\")) {
+                    return true;
+                }
             }
             break;
         }
@@ -440,10 +499,11 @@ export const insertNewlineWithAutoIndent = (
     const indentMatch = currentLine.match(/^(\s*)/);
     let indent = indentMatch ? indentMatch[1] : "";
 
+    const isMacroLine = currentLine.trimStart().startsWith("!");
     const strippedBefore = stripTrailingCommentOutsideStrings(beforeCursorOnLine).trimEnd();
-    if (strippedBefore.endsWith(":")) {
+    if (!isMacroLine && strippedBefore.endsWith(":")) {
         indent += "    ";
-    } else if (/^\s*(?:return|break|continue|pass|raise)\b/.test(beforeCursorOnLine)) {
+    } else if (!isMacroLine && /^\s*(?:return|break|continue|pass|raise)\b/.test(beforeCursorOnLine)) {
         indent = indent.length >= 4 ? indent.slice(0, indent.length - 4) : "";
     }
 
@@ -476,6 +536,128 @@ export const formatMultilineTerminalBuffer = (
         contentToWrite: plainLines.join("\n"),
         contentToDisplay: displayLines.join("\n"),
         cursorIndex,
+    };
+};
+
+export const getVisualLineCount = (text: string, cols: number): number => {
+    const safeCols = Math.max(1, cols || 80);
+    const lines = text.split("\n");
+    let count = 0;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (i > 0) count++;
+        if (line.length > 0) {
+            count += Math.floor((line.length - 1) / safeCols);
+        }
+    }
+    return count;
+};
+
+export interface TerminalCursorLayout {
+    totalRows: number;
+    cursorRow: number;
+    cursorCol: number;
+}
+
+export const getTerminalCursorLayout = (
+    contentToWrite: string,
+    cursorIndex: number,
+    cols: number
+): TerminalCursorLayout => {
+    const safeCols = Math.max(1, cols || 80);
+    const clampedCursor = Math.max(0, Math.min(cursorIndex, contentToWrite.length));
+    const fullLines = contentToWrite.split("\n");
+    const prefix = contentToWrite.slice(0, clampedCursor);
+    const prefixLines = prefix.split("\n");
+    const cursorLineIdx = prefixLines.length - 1;
+    const beforeCursorOnLine = prefixLines[cursorLineIdx] ?? "";
+
+    let totalRows = 0;
+    let cursorRow = 0;
+    let cursorCol = 0;
+
+    for (let i = 0; i < fullLines.length; i++) {
+        const lineLen = fullLines[i].length;
+        const lineExtraRows = lineLen > 0 ? Math.floor((lineLen - 1) / safeCols) : 0;
+
+        if (i > 0) {
+            totalRows += 1;
+        }
+        totalRows += lineExtraRows;
+
+        if (i < cursorLineIdx) {
+            cursorRow += 1 + lineExtraRows;
+        } else if (i === cursorLineIdx) {
+            const b = beforeCursorOnLine.length;
+            if (b === 0) {
+                cursorCol = 0;
+            } else if (b < lineLen) {
+                cursorRow += Math.floor(b / safeCols);
+                cursorCol = b % safeCols;
+            } else {
+                // b === lineLen and lineLen > 0
+                if (lineLen % safeCols === 0) {
+                    cursorRow += lineLen / safeCols - 1;
+                    cursorCol = safeCols - 1;
+                } else {
+                    cursorRow += Math.floor(lineLen / safeCols);
+                    cursorCol = lineLen % safeCols;
+                }
+            }
+        }
+    }
+
+    return {
+        totalRows,
+        cursorRow,
+        cursorCol,
+    };
+};
+
+export interface TerminalRedrawResult {
+    sequence: string;
+    totalRows: number;
+    cursorRow: number;
+    cursorCol: number;
+}
+
+export const buildTerminalRedrawSequence = (
+    contentToWrite: string,
+    contentToDisplay: string,
+    cursorIndex: number,
+    cols: number,
+    prevCursorRow: number
+): TerminalRedrawResult => {
+    const { totalRows, cursorRow, cursorCol } = getTerminalCursorLayout(
+        contentToWrite,
+        cursorIndex,
+        cols
+    );
+
+    let seq = "";
+    const safePrevCursorRow = Math.max(0, prevCursorRow);
+    if (safePrevCursorRow > 0) {
+        seq += `\x1b[${safePrevCursorRow}A`;
+    }
+
+    seq += "\r\x1b[J";
+    seq += contentToDisplay.replace(/\n/g, "\r\n");
+
+    const moveUp = totalRows - cursorRow;
+    if (moveUp > 0) {
+        seq += `\x1b[${moveUp}A`;
+    }
+
+    seq += "\r";
+    if (cursorCol > 0) {
+        seq += `\x1b[${cursorCol}C`;
+    }
+
+    return {
+        sequence: seq,
+        totalRows,
+        cursorRow,
+        cursorCol,
     };
 };
 

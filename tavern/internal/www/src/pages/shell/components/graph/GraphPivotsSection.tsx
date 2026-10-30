@@ -21,7 +21,13 @@ const ActivePivotActions: React.FC<{
     return (
         <button
             type="button"
-            onClick={() => onOpenPivotTab?.(kindLower, pivot.destination, String(pivot.id))}
+            onClick={() =>
+                onOpenPivotTab?.(
+                    kindLower,
+                    pivot.activeTarget || pivot.destination,
+                    String(pivot.id)
+                )
+            }
             className="text-[11px] text-gray-200 hover:text-white px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
         >
             Switch
@@ -58,7 +64,13 @@ const ClosedPivotActions: React.FC<{
             {onOpenPivotTab && (
                 <button
                     type="button"
-                    onClick={() => onOpenPivotTab(kindLower, pivot.destination, String(pivot.id))}
+                    onClick={() =>
+                        onOpenPivotTab(
+                            kindLower,
+                            pivot.activeTarget || pivot.destination,
+                            String(pivot.id)
+                        )
+                    }
                     className="text-[11px] text-gray-400 hover:text-gray-200 px-1.5 py-0.5 transition-colors"
                 >
                     Transcript

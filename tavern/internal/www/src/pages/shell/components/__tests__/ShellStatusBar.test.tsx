@@ -51,9 +51,16 @@ describe("ShellStatusBar", () => {
         );
         expect(screen.getByText("Portal Active")).toBeInTheDocument();
         expect(screen.queryByText("(ID: 123)")).not.toBeInTheDocument();
-        expect(screen.getByTestId("session-settings-toggle")).toBeInTheDocument();
-        expect(screen.getByTestId("status-bar-composer-toggle")).toBeInTheDocument();
-        expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
+        const bellEl = screen.getByTestId("notification-bell");
+        const settingsEl = screen.getByTestId("session-settings-toggle");
+        const composerEl = screen.getByTestId("status-bar-composer-toggle");
+        expect(bellEl).toBeInTheDocument();
+        expect(settingsEl).toBeInTheDocument();
+        expect(composerEl).toBeInTheDocument();
+
+        // Verify left-toolbar DOM order: Notification Bell -> Settings -> Composer
+        expect(bellEl.compareDocumentPosition(settingsEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(settingsEl.compareDocumentPosition(composerEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
         fireEvent.click(screen.getByTestId("status-bar-portal-active-button"));
         const closeDialog = screen.getByTestId("close-portal-dialog");
@@ -73,16 +80,47 @@ describe("ShellStatusBar", () => {
         fireEvent.click(screen.getByTestId("status-bar-async-button"));
         const openDialog = screen.getByTestId("open-portal-dialog");
         expect(openDialog).toBeInTheDocument();
+        expect(openDialog).toHaveTextContent(
+            "Opens an interactive portal on this beacon, which works similar to a SOCKS5 proxy. This establishes a real-time stream between the agent and server for low-latency execution, interactive PTY, or pivoting operations."
+        );
 
         fireEvent.click(screen.getByRole("button", { name: "Open Portal" }));
         expect(onNewPortal).toHaveBeenCalledTimes(1);
     });
 
-    it("displays callback timer with 'Next' label", () => {
-        render(<ShellStatusBar {...defaultProps} timeUntilCallback="in 5 minutes" />);
+    it("displays callback timer with 'Next' label and shows callback stats popover on hover", () => {
+        render(
+            <ShellStatusBar
+                {...defaultProps}
+                timeUntilCallback="in 5 minutes"
+                callbackStats={{
+                    intervalSeconds: 5,
+                    formattedInterval: "5s",
+                    sampleCount: 100,
+                    onTimeCount: 98,
+                    lateCount: 2,
+                    onTimePercentage: 98,
+                    avgLatencyMs: 85,
+                    lastSeenAt: "2025-01-01T12:00:00Z",
+                    nextSeenAt: "2025-01-01T12:00:05Z",
+                }}
+            />
+        );
         expect(screen.getByText("Next")).toBeInTheDocument();
         expect(screen.queryByText("Next callback:")).not.toBeInTheDocument();
         expect(screen.getByText("in 5 minutes")).toBeInTheDocument();
+        expect(screen.queryByTestId("status-bar-callback-popover")).not.toBeInTheDocument();
+
+        const nextCallbackEl = screen.getByTestId("status-bar-next-callback");
+        fireEvent.mouseEnter(nextCallbackEl);
+
+        const popover = screen.getByTestId("status-bar-callback-popover");
+        expect(popover).toBeInTheDocument();
+        expect(screen.getByTestId("callback-stats-interval")).toHaveTextContent("5s");
+        expect(screen.getByTestId("callback-stats-ontime")).toHaveTextContent("98 / 100 (98%)");
+
+        fireEvent.mouseLeave(nextCallbackEl);
+        expect(screen.queryByTestId("status-bar-callback-popover")).not.toBeInTheDocument();
     });
 
     it("highlights missed callback", () => {

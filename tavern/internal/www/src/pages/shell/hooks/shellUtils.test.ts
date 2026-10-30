@@ -7,8 +7,13 @@ import {
     moveCursorDownInBuffer,
     moveCursorToLineStart,
     moveCursorToLineEnd,
+    dedentCurrentLine,
+    hasUnclosedBracketsOrStrings,
     shouldContinueMultilineOnEnter,
     insertNewlineWithAutoIndent,
+    formatMultilineTerminalBuffer,
+    getTerminalCursorLayout,
+    buildTerminalRedrawSequence,
     highlightPythonSyntax,
     loadHistory,
     saveHistory,
@@ -219,6 +224,232 @@ describe('Multi-line terminal buffer editing', () => {
         const res2 = insertNewlineWithAutoIndent(res1.buffer + 'x = 1', res1.buffer.length + 5);
         expect(res2.buffer).toBe('def my_func():\n    x = 1\n    ');
     });
+
+    it('preserves preferredCol across shorter or empty intermediate lines on Up/Down navigation', () => {
+        const buffer = 'def my_function(alpha, beta):\n    \n    return alpha + beta';
+        const endCursor = buffer.length;
+        const startCol = getCursorLineInfo(buffer, endCursor).col; // 23
+
+        const up1 = moveCursorUpInBuffer(buffer, endCursor, startCol)!;
+        expect(getCursorLineInfo(buffer, up1)).toMatchObject({ lineIndex: 1, col: 4 });
+
+        const up2 = moveCursorUpInBuffer(buffer, up1, startCol)!;
+        expect(getCursorLineInfo(buffer, up2)).toMatchObject({ lineIndex: 0, col: startCol });
+
+        const down1 = moveCursorDownInBuffer(buffer, up2, startCol)!;
+        expect(getCursorLineInfo(buffer, down1)).toMatchObject({ lineIndex: 1, col: 4 });
+
+        const down2 = moveCursorDownInBuffer(buffer, down1, startCol)!;
+        expect(getCursorLineInfo(buffer, down2)).toMatchObject({ lineIndex: 2, col: startCol });
+    });
+
+    it('dedents current line by up to 4 spaces on Shift+Tab and respects newlines in word movement', () => {
+        const buffer = 'def foo():\n    return 1';
+        const cursor = buffer.length;
+        const dedented = dedentCurrentLine(buffer, cursor);
+        expect(dedented.buffer).toBe('def foo():\nreturn 1');
+        expect(dedented.cursorPos).toBe('def foo():\nreturn 1'.length);
+
+        // Word left at start of unindented second line should stop at start of word or line, not eat across newline
+        const afterReturn = 'def foo():\nreturn'.length;
+        expect(moveWordLeft('def foo():\nreturn', afterReturn)).toBe('def foo():\n'.length);
+        expect(moveWordRight('def foo():\nreturn', 4)).toBe('def foo():'.length);
+    });
+
+    it('tracks cursorRow accurately across multi-line Up/Down navigation and edits without overwriting history lines', () => {
+        // Minimal VT100/xterm screen simulator that processes \r, \n, \x1b[nA, \x1b[nC, and \x1b[J
+        const createTerminalSimulator = (cols: number) => {
+            const lines: string[] = [''];
+            let row = 0;
+            let col = 0;
+
+            const stripAnsiColors = (s: string) =>
+                s.replace(/\x1b\[[0-9;]*m/g, '');
+
+            const write = (rawData: string) => {
+                const data = stripAnsiColors(rawData);
+                let i = 0;
+                while (i < data.length) {
+                    if (data[i] === '\x1b' && data[i + 1] === '[') {
+                        let j = i + 2;
+                        while (j < data.length && /[0-9;]/.test(data[j])) {
+                            j++;
+                        }
+                        const paramStr = data.slice(i + 2, j);
+                        const cmd = data[j];
+                        const count = paramStr ? parseInt(paramStr, 10) : 1;
+                        if (cmd === 'A') {
+                            row = Math.max(0, row - count);
+                        } else if (cmd === 'B') {
+                            row += count;
+                            while (lines.length <= row) lines.push('');
+                        } else if (cmd === 'C') {
+                            col = Math.min(cols - 1, col + count);
+                        } else if (cmd === 'D') {
+                            col = Math.max(0, col - count);
+                        } else if (cmd === 'J') {
+                            lines[row] = (lines[row] ?? '').slice(0, col);
+                            lines.splice(row + 1);
+                        }
+                        i = j + 1;
+                        continue;
+                    }
+                    const ch = data[i];
+                    if (ch === '\r') {
+                        col = 0;
+                    } else if (ch === '\n') {
+                        row++;
+                        while (lines.length <= row) lines.push('');
+                    } else {
+                        if (col >= cols) {
+                            row++;
+                            col = 0;
+                            while (lines.length <= row) lines.push('');
+                        }
+                        const cur = lines[row] ?? '';
+                        const padded = cur.length < col ? cur.padEnd(col, ' ') : cur;
+                        lines[row] = padded.slice(0, col) + ch + padded.slice(col + 1);
+                        col++;
+                    }
+                    i++;
+                }
+            };
+
+            return {
+                lines,
+                get cursorRow() {
+                    return row;
+                },
+                get cursorCol() {
+                    return col;
+                },
+                write,
+            };
+        };
+
+        const cols = 80;
+        const sim = createTerminalSimulator(cols);
+
+        // Seed terminal with existing history output above the active prompt
+        sim.write('Eldritch v0.4.1\r\nConnected to Tavern.\r\n>>> !whoami\r\nroot\r\n>>> ');
+        expect(sim.lines.slice(0, 4)).toEqual([
+            'Eldritch v0.4.1',
+            'Connected to Tavern.',
+            '>>> !whoami',
+            'root',
+        ]);
+
+        let lastCursorRow = 0;
+        const redrawBuffer = (buffer: string, cursorPos: number) => {
+            const formatted = formatMultilineTerminalBuffer(buffer, cursorPos, '>>> ', '... ');
+            const redraw = buildTerminalRedrawSequence(
+                formatted.contentToWrite,
+                formatted.contentToDisplay,
+                formatted.cursorIndex,
+                cols,
+                lastCursorRow
+            );
+            sim.write(redraw.sequence);
+            lastCursorRow = redraw.cursorRow;
+            return redraw;
+        };
+
+        // 1. User enters a 4-line function
+        let buffer = 'def calc(x):\n    y = x + 1\n    z = y * 2\n    return z';
+        let cursorPos = buffer.length;
+        redrawBuffer(buffer, cursorPos);
+
+        expect(sim.lines).toEqual([
+            'Eldritch v0.4.1',
+            'Connected to Tavern.',
+            '>>> !whoami',
+            'root',
+            '>>> def calc(x):',
+            '...     y = x + 1',
+            '...     z = y * 2',
+            '...     return z',
+        ]);
+        expect(lastCursorRow).toBe(3);
+
+        // 2. User presses Up Arrow 3 times to reach the top line (line 0)
+        cursorPos = moveCursorUpInBuffer(buffer, cursorPos)!; // line 2
+        redrawBuffer(buffer, cursorPos);
+        expect(lastCursorRow).toBe(2);
+
+        cursorPos = moveCursorUpInBuffer(buffer, cursorPos)!; // line 1
+        redrawBuffer(buffer, cursorPos);
+        expect(lastCursorRow).toBe(1);
+
+        cursorPos = moveCursorUpInBuffer(buffer, cursorPos)!; // line 0
+        redrawBuffer(buffer, cursorPos);
+        expect(lastCursorRow).toBe(0);
+
+        // History lines above prompt must NOT be overwritten
+        expect(sim.lines.slice(0, 4)).toEqual([
+            'Eldritch v0.4.1',
+            'Connected to Tavern.',
+            '>>> !whoami',
+            'root',
+        ]);
+
+        // 3. User edits line 0 ("def calc(x):" -> "def compute(x):") and line 1 ("y = x + 10")
+        const line0EditPos = 'def calc'.length;
+        buffer = 'def compute' + buffer.slice(line0EditPos);
+        cursorPos = 'def compute'.length;
+        redrawBuffer(buffer, cursorPos);
+
+        cursorPos = moveCursorDownInBuffer(buffer, cursorPos)!; // down to line 1
+        cursorPos = moveCursorToLineEnd(buffer, cursorPos);
+        buffer = buffer.slice(0, cursorPos) + '0' + buffer.slice(cursorPos);
+        cursorPos += 1;
+        redrawBuffer(buffer, cursorPos);
+
+        // 4. User moves back up to line 0 and then recalls a single-line history item
+        cursorPos = moveCursorUpInBuffer(buffer, cursorPos)!;
+        redrawBuffer(buffer, cursorPos);
+        expect(sim.lines).toEqual([
+            'Eldritch v0.4.1',
+            'Connected to Tavern.',
+            '>>> !whoami',
+            'root',
+            '>>> def compute(x):',
+            '...     y = x + 10',
+            '...     z = y * 2',
+            '...     return z',
+        ]);
+
+        // Recall single-line history item from line 0
+        buffer = '!id';
+        cursorPos = buffer.length;
+        redrawBuffer(buffer, cursorPos);
+        expect(sim.lines).toEqual([
+            'Eldritch v0.4.1',
+            'Connected to Tavern.',
+            '>>> !whoami',
+            'root',
+            '>>> !id',
+        ]);
+    });
+
+    it('computes wrapped cursor layout accurately when lines wrap across terminal columns', () => {
+        // 20-column terminal where line 0 wraps onto 2 visual rows (length 25) and line 1 is 10 chars
+        const contentToWrite = '>>> 123456789012345678901\n... return';
+        // Cursor at index 20 of line 0 (start of second wrapped visual row)
+        const layoutAtWrap = getTerminalCursorLayout(contentToWrite, 20, 20);
+        expect(layoutAtWrap).toEqual({
+            totalRows: 2,
+            cursorRow: 1,
+            cursorCol: 0,
+        });
+
+        // Cursor at end of line 1
+        const layoutAtEnd = getTerminalCursorLayout(contentToWrite, contentToWrite.length, 20);
+        expect(layoutAtEnd).toEqual({
+            totalRows: 2,
+            cursorRow: 2,
+            cursorCol: 10,
+        });
+    });
 });
 
 describe('highlightPythonSyntax', () => {
@@ -398,5 +629,35 @@ describe('Scrollback-Preserving Terminal Clear', () => {
             },
         };
         expect(getViewportNonEmptyLineCount(mockTerm)).toBe(4);
+    });
+});
+
+describe('Shell !command macro handling', () => {
+    it('submits single-line !command macros immediately on Enter even with colons, quotes, or brackets', () => {
+        for (const cmd of [
+            '!ls',
+            '!whoami',
+            '!ls -la /tmp',
+            '!echo "hello:"',
+            '!echo foo:',
+            "!awk '{print $1}' /etc/passwd",
+            '!echo "unclosed quote',
+            '!echo (unclosed paren',
+        ]) {
+            expect(shouldContinueMultilineOnEnter(cmd, cmd.length)).toBe(false);
+            expect(hasUnclosedBracketsOrStrings(cmd)).toBe(false);
+        }
+    });
+
+    it('handles !command macros inside multi-line blocks cleanly', () => {
+        const blockWithMacro = 'if True:\n    !echo foo:\n    ';
+        expect(hasUnclosedBracketsOrStrings(blockWithMacro)).toBe(false);
+        // Pressing Enter on the trailing blank line submits the block
+        expect(shouldContinueMultilineOnEnter(blockWithMacro, blockWithMacro.length)).toBe(false);
+
+        // Pressing Enter at the end of an indented `!echo foo:` line preserves indent without adding +4 spaces
+        const midBlock = 'if True:\n    !echo foo:';
+        const inserted = insertNewlineWithAutoIndent(midBlock, midBlock.length);
+        expect(inserted.buffer).toBe('if True:\n    !echo foo:\n    ');
     });
 });

@@ -2181,6 +2181,8 @@ func (ec *executionContext) fieldContext_Mutation_createCredential(ctx context.C
 				return ec.fieldContext_HostCredential_task(ctx, field)
 			case "shellTask":
 				return ec.fieldContext_HostCredential_shellTask(ctx, field)
+			case "networkHosts":
+				return ec.fieldContext_HostCredential_networkHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
 		},
@@ -3626,6 +3628,8 @@ func (ec *executionContext) fieldContext_Mutation_createNetworkHost(ctx context.
 				return ec.fieldContext_NetworkHost_host(ctx, field)
 			case "networks":
 				return ec.fieldContext_NetworkHost_networks(ctx, field)
+			case "credentials":
+				return ec.fieldContext_NetworkHost_credentials(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NetworkHost", field.Name)
 		},
@@ -3707,6 +3711,8 @@ func (ec *executionContext) fieldContext_Mutation_updateNetworkHost(ctx context.
 				return ec.fieldContext_NetworkHost_host(ctx, field)
 			case "networks":
 				return ec.fieldContext_NetworkHost_networks(ctx, field)
+			case "credentials":
+				return ec.fieldContext_NetworkHost_credentials(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NetworkHost", field.Name)
 		},

@@ -2439,6 +2439,22 @@ func (c *HostCredentialClient) QueryShellTask(hc *HostCredential) *ShellTaskQuer
 	return query
 }
 
+// QueryNetworkHosts queries the network_hosts edge of a HostCredential.
+func (c *HostCredentialClient) QueryNetworkHosts(hc *HostCredential) *NetworkHostQuery {
+	query := (&NetworkHostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, id),
+			sqlgraph.To(networkhost.Table, networkhost.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, hostcredential.NetworkHostsTable, hostcredential.NetworkHostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(hc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostCredentialClient) Hooks() []Hook {
 	return c.hooks.HostCredential
@@ -3274,6 +3290,22 @@ func (c *NetworkHostClient) QueryNetworks(nh *NetworkHost) *NetworkQuery {
 			sqlgraph.From(networkhost.Table, networkhost.FieldID, id),
 			sqlgraph.To(network.Table, network.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, networkhost.NetworksTable, networkhost.NetworksPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(nh.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCredentials queries the credentials edge of a NetworkHost.
+func (c *NetworkHostClient) QueryCredentials(nh *NetworkHost) *HostCredentialQuery {
+	query := (&HostCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := nh.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(networkhost.Table, networkhost.FieldID, id),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, networkhost.CredentialsTable, networkhost.CredentialsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(nh.driver.Dialect(), step)
 		return fromV, nil

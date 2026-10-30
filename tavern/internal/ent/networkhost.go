@@ -46,13 +46,16 @@ type NetworkHostEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Networks that this network host belongs to.
 	Networks []*Network `json:"networks,omitempty"`
+	// Credentials associated with this network host.
+	Credentials []*HostCredential `json:"credentials,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
-	namedNetworks map[string][]*Network
+	namedNetworks    map[string][]*Network
+	namedCredentials map[string][]*HostCredential
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -73,6 +76,15 @@ func (e NetworkHostEdges) NetworksOrErr() ([]*Network, error) {
 		return e.Networks, nil
 	}
 	return nil, &NotLoadedError{edge: "networks"}
+}
+
+// CredentialsOrErr returns the Credentials value or an error if the edge
+// was not loaded in eager-loading.
+func (e NetworkHostEdges) CredentialsOrErr() ([]*HostCredential, error) {
+	if e.loadedTypes[2] {
+		return e.Credentials, nil
+	}
+	return nil, &NotLoadedError{edge: "credentials"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -185,6 +197,11 @@ func (nh *NetworkHost) QueryNetworks() *NetworkQuery {
 	return NewNetworkHostClient(nh.config).QueryNetworks(nh)
 }
 
+// QueryCredentials queries the "credentials" edge of the NetworkHost entity.
+func (nh *NetworkHost) QueryCredentials() *HostCredentialQuery {
+	return NewNetworkHostClient(nh.config).QueryCredentials(nh)
+}
+
 // Update returns a builder for updating this NetworkHost.
 // Note that you need to call NetworkHost.Unwrap() before calling this method if this NetworkHost
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -253,6 +270,30 @@ func (nh *NetworkHost) appendNamedNetworks(name string, edges ...*Network) {
 		nh.Edges.namedNetworks[name] = []*Network{}
 	} else {
 		nh.Edges.namedNetworks[name] = append(nh.Edges.namedNetworks[name], edges...)
+	}
+}
+
+// NamedCredentials returns the Credentials named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (nh *NetworkHost) NamedCredentials(name string) ([]*HostCredential, error) {
+	if nh.Edges.namedCredentials == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := nh.Edges.namedCredentials[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (nh *NetworkHost) appendNamedCredentials(name string, edges ...*HostCredential) {
+	if nh.Edges.namedCredentials == nil {
+		nh.Edges.namedCredentials = make(map[string][]*HostCredential)
+	}
+	if len(edges) == 0 {
+		nh.Edges.namedCredentials[name] = []*HostCredential{}
+	} else {
+		nh.Edges.namedCredentials[name] = append(nh.Edges.namedCredentials[name], edges...)
 	}
 }
 

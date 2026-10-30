@@ -10214,24 +10214,27 @@ func (m *HostMutation) ResetEdge(name string) error {
 // HostCredentialMutation represents an operation that mutates the HostCredential nodes in the graph.
 type HostCredentialMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	last_modified_at  *time.Time
-	principal         *string
-	secret            *string
-	kind              *epb.Credential_Kind
-	clearedFields     map[string]struct{}
-	host              *int
-	clearedhost       bool
-	task              *int
-	clearedtask       bool
-	shell_task        *int
-	clearedshell_task bool
-	done              bool
-	oldValue          func(context.Context) (*HostCredential, error)
-	predicates        []predicate.HostCredential
+	op                   Op
+	typ                  string
+	id                   *int
+	created_at           *time.Time
+	last_modified_at     *time.Time
+	principal            *string
+	secret               *string
+	kind                 *epb.Credential_Kind
+	clearedFields        map[string]struct{}
+	host                 *int
+	clearedhost          bool
+	task                 *int
+	clearedtask          bool
+	shell_task           *int
+	clearedshell_task    bool
+	network_hosts        map[int]struct{}
+	removednetwork_hosts map[int]struct{}
+	clearednetwork_hosts bool
+	done                 bool
+	oldValue             func(context.Context) (*HostCredential, error)
+	predicates           []predicate.HostCredential
 }
 
 var _ ent.Mutation = (*HostCredentialMutation)(nil)
@@ -10629,6 +10632,60 @@ func (m *HostCredentialMutation) ResetShellTask() {
 	m.clearedshell_task = false
 }
 
+// AddNetworkHostIDs adds the "network_hosts" edge to the NetworkHost entity by ids.
+func (m *HostCredentialMutation) AddNetworkHostIDs(ids ...int) {
+	if m.network_hosts == nil {
+		m.network_hosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.network_hosts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearNetworkHosts clears the "network_hosts" edge to the NetworkHost entity.
+func (m *HostCredentialMutation) ClearNetworkHosts() {
+	m.clearednetwork_hosts = true
+}
+
+// NetworkHostsCleared reports if the "network_hosts" edge to the NetworkHost entity was cleared.
+func (m *HostCredentialMutation) NetworkHostsCleared() bool {
+	return m.clearednetwork_hosts
+}
+
+// RemoveNetworkHostIDs removes the "network_hosts" edge to the NetworkHost entity by IDs.
+func (m *HostCredentialMutation) RemoveNetworkHostIDs(ids ...int) {
+	if m.removednetwork_hosts == nil {
+		m.removednetwork_hosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.network_hosts, ids[i])
+		m.removednetwork_hosts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedNetworkHosts returns the removed IDs of the "network_hosts" edge to the NetworkHost entity.
+func (m *HostCredentialMutation) RemovedNetworkHostsIDs() (ids []int) {
+	for id := range m.removednetwork_hosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// NetworkHostsIDs returns the "network_hosts" edge IDs in the mutation.
+func (m *HostCredentialMutation) NetworkHostsIDs() (ids []int) {
+	for id := range m.network_hosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetNetworkHosts resets all changes to the "network_hosts" edge.
+func (m *HostCredentialMutation) ResetNetworkHosts() {
+	m.network_hosts = nil
+	m.clearednetwork_hosts = false
+	m.removednetwork_hosts = nil
+}
+
 // Where appends a list predicates to the HostCredentialMutation builder.
 func (m *HostCredentialMutation) Where(ps ...predicate.HostCredential) {
 	m.predicates = append(m.predicates, ps...)
@@ -10830,7 +10887,7 @@ func (m *HostCredentialMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostCredentialMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.host != nil {
 		edges = append(edges, hostcredential.EdgeHost)
 	}
@@ -10839,6 +10896,9 @@ func (m *HostCredentialMutation) AddedEdges() []string {
 	}
 	if m.shell_task != nil {
 		edges = append(edges, hostcredential.EdgeShellTask)
+	}
+	if m.network_hosts != nil {
+		edges = append(edges, hostcredential.EdgeNetworkHosts)
 	}
 	return edges
 }
@@ -10859,25 +10919,42 @@ func (m *HostCredentialMutation) AddedIDs(name string) []ent.Value {
 		if id := m.shell_task; id != nil {
 			return []ent.Value{*id}
 		}
+	case hostcredential.EdgeNetworkHosts:
+		ids := make([]ent.Value, 0, len(m.network_hosts))
+		for id := range m.network_hosts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostCredentialMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.removednetwork_hosts != nil {
+		edges = append(edges, hostcredential.EdgeNetworkHosts)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *HostCredentialMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case hostcredential.EdgeNetworkHosts:
+		ids := make([]ent.Value, 0, len(m.removednetwork_hosts))
+		for id := range m.removednetwork_hosts {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostCredentialMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedhost {
 		edges = append(edges, hostcredential.EdgeHost)
 	}
@@ -10886,6 +10963,9 @@ func (m *HostCredentialMutation) ClearedEdges() []string {
 	}
 	if m.clearedshell_task {
 		edges = append(edges, hostcredential.EdgeShellTask)
+	}
+	if m.clearednetwork_hosts {
+		edges = append(edges, hostcredential.EdgeNetworkHosts)
 	}
 	return edges
 }
@@ -10900,6 +10980,8 @@ func (m *HostCredentialMutation) EdgeCleared(name string) bool {
 		return m.clearedtask
 	case hostcredential.EdgeShellTask:
 		return m.clearedshell_task
+	case hostcredential.EdgeNetworkHosts:
+		return m.clearednetwork_hosts
 	}
 	return false
 }
@@ -10933,6 +11015,9 @@ func (m *HostCredentialMutation) ResetEdge(name string) error {
 		return nil
 	case hostcredential.EdgeShellTask:
 		m.ResetShellTask()
+		return nil
+	case hostcredential.EdgeNetworkHosts:
+		m.ResetNetworkHosts()
 		return nil
 	}
 	return fmt.Errorf("unknown HostCredential edge %s", name)
@@ -14960,26 +15045,29 @@ func (m *NetworkMutation) ResetEdge(name string) error {
 // NetworkHostMutation represents an operation that mutates the NetworkHost nodes in the graph.
 type NetworkHostMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	name             *string
-	hostname         *string
-	ip_address       *string
-	subnet           *string
-	open_ports       *[]int
-	appendopen_ports []int
-	clearedFields    map[string]struct{}
-	host             *int
-	clearedhost      bool
-	networks         map[int]struct{}
-	removednetworks  map[int]struct{}
-	clearednetworks  bool
-	done             bool
-	oldValue         func(context.Context) (*NetworkHost, error)
-	predicates       []predicate.NetworkHost
+	op                 Op
+	typ                string
+	id                 *int
+	created_at         *time.Time
+	last_modified_at   *time.Time
+	name               *string
+	hostname           *string
+	ip_address         *string
+	subnet             *string
+	open_ports         *[]int
+	appendopen_ports   []int
+	clearedFields      map[string]struct{}
+	host               *int
+	clearedhost        bool
+	networks           map[int]struct{}
+	removednetworks    map[int]struct{}
+	clearednetworks    bool
+	credentials        map[int]struct{}
+	removedcredentials map[int]struct{}
+	clearedcredentials bool
+	done               bool
+	oldValue           func(context.Context) (*NetworkHost, error)
+	predicates         []predicate.NetworkHost
 }
 
 var _ ent.Mutation = (*NetworkHostMutation)(nil)
@@ -15493,6 +15581,60 @@ func (m *NetworkHostMutation) ResetNetworks() {
 	m.removednetworks = nil
 }
 
+// AddCredentialIDs adds the "credentials" edge to the HostCredential entity by ids.
+func (m *NetworkHostMutation) AddCredentialIDs(ids ...int) {
+	if m.credentials == nil {
+		m.credentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.credentials[ids[i]] = struct{}{}
+	}
+}
+
+// ClearCredentials clears the "credentials" edge to the HostCredential entity.
+func (m *NetworkHostMutation) ClearCredentials() {
+	m.clearedcredentials = true
+}
+
+// CredentialsCleared reports if the "credentials" edge to the HostCredential entity was cleared.
+func (m *NetworkHostMutation) CredentialsCleared() bool {
+	return m.clearedcredentials
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to the HostCredential entity by IDs.
+func (m *NetworkHostMutation) RemoveCredentialIDs(ids ...int) {
+	if m.removedcredentials == nil {
+		m.removedcredentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.credentials, ids[i])
+		m.removedcredentials[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCredentials returns the removed IDs of the "credentials" edge to the HostCredential entity.
+func (m *NetworkHostMutation) RemovedCredentialsIDs() (ids []int) {
+	for id := range m.removedcredentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CredentialsIDs returns the "credentials" edge IDs in the mutation.
+func (m *NetworkHostMutation) CredentialsIDs() (ids []int) {
+	for id := range m.credentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCredentials resets all changes to the "credentials" edge.
+func (m *NetworkHostMutation) ResetCredentials() {
+	m.credentials = nil
+	m.clearedcredentials = false
+	m.removedcredentials = nil
+}
+
 // Where appends a list predicates to the NetworkHostMutation builder.
 func (m *NetworkHostMutation) Where(ps ...predicate.NetworkHost) {
 	m.predicates = append(m.predicates, ps...)
@@ -15755,12 +15897,15 @@ func (m *NetworkHostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *NetworkHostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.host != nil {
 		edges = append(edges, networkhost.EdgeHost)
 	}
 	if m.networks != nil {
 		edges = append(edges, networkhost.EdgeNetworks)
+	}
+	if m.credentials != nil {
+		edges = append(edges, networkhost.EdgeCredentials)
 	}
 	return edges
 }
@@ -15779,15 +15924,24 @@ func (m *NetworkHostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case networkhost.EdgeCredentials:
+		ids := make([]ent.Value, 0, len(m.credentials))
+		for id := range m.credentials {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *NetworkHostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removednetworks != nil {
 		edges = append(edges, networkhost.EdgeNetworks)
+	}
+	if m.removedcredentials != nil {
+		edges = append(edges, networkhost.EdgeCredentials)
 	}
 	return edges
 }
@@ -15802,18 +15956,27 @@ func (m *NetworkHostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case networkhost.EdgeCredentials:
+		ids := make([]ent.Value, 0, len(m.removedcredentials))
+		for id := range m.removedcredentials {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *NetworkHostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedhost {
 		edges = append(edges, networkhost.EdgeHost)
 	}
 	if m.clearednetworks {
 		edges = append(edges, networkhost.EdgeNetworks)
+	}
+	if m.clearedcredentials {
+		edges = append(edges, networkhost.EdgeCredentials)
 	}
 	return edges
 }
@@ -15826,6 +15989,8 @@ func (m *NetworkHostMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case networkhost.EdgeNetworks:
 		return m.clearednetworks
+	case networkhost.EdgeCredentials:
+		return m.clearedcredentials
 	}
 	return false
 }
@@ -15850,6 +16015,9 @@ func (m *NetworkHostMutation) ResetEdge(name string) error {
 		return nil
 	case networkhost.EdgeNetworks:
 		m.ResetNetworks()
+		return nil
+	case networkhost.EdgeCredentials:
+		m.ResetCredentials()
 		return nil
 	}
 	return fmt.Errorf("unknown NetworkHost edge %s", name)

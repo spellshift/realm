@@ -535,7 +535,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 	// Cache of sent task IDs to avoid duplication
 	sentTasks := make(map[int]struct{})
 
-	// Polls the DB for any new tasks with output or finished execution
+	// Polls the DB for any new tasks with output, errors, or finished execution
 	pollForShellTasks := func() {
 		tasks, err := RetryOnLock(ctx, func() ([]*ent.ShellTask, error) {
 			return sh.QueryShellTasks().
@@ -561,10 +561,9 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				continue
 			}
 
-			if task.Output != "" || (task.Error == "" && !task.ExecFinishedAt.IsZero()) {
+			if task.Output != "" {
 				if task.StreamID == streamID {
 					msg := NewWebsocketTaskOutputMessage(task)
-					msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
 					taskOutputCh <- msg
 				} else {
 					msg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
@@ -575,10 +574,11 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					msg.Output = fmt.Sprintf("%s[@%s]%s%s[+]%s %s\n%s", colorCodeUsername, creatorName, colorCodeReset, colorCodeSuccess, colorCodeReset, truncateInput(task.Input), msg.Output)
 					otherStreamCh <- msg
 				}
+			} else if task.Error == "" && !task.ExecFinishedAt.IsZero() && task.StreamID == streamID {
+				taskOutputCh <- NewWebsocketTaskOutputMessage(task)
 			}
 			if task.Error != "" {
 				msg := NewWebsocketTaskErrorMessage(task)
-				msg.Error = fmt.Sprintf("[!] %s\n%s", truncateInput(task.Input), msg.Error)
 				taskErrCh <- msg
 			}
 			sentTasks[task.ID] = struct{}{}
@@ -687,23 +687,16 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					// Local stream output
 					if shellPayload.Output != "" || shellPayload.Error == "" {
 						outputMsg := NewWebsocketTaskOutputMessage(task)
-						if _, sent := sentTasks[task.ID]; !sent {
-							outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), shellPayload.Output)
+						outputMsg.Output = shellPayload.Output // Use real-time chunk
+						if _, sent := sentTasks[task.ID]; !sent || shellPayload.Output != "" {
 							sentTasks[task.ID] = struct{}{}
-							taskOutputCh <- outputMsg
-						} else if shellPayload.Output != "" {
-							outputMsg.Output = shellPayload.Output // Use real-time chunk
 							taskOutputCh <- outputMsg
 						}
 					}
 					if shellPayload.Error != "" {
 						errMsg := NewWebsocketTaskErrorMessage(task)
-						if _, sent := sentTasks[task.ID]; !sent {
-							errMsg.Error = fmt.Sprintf("[!] %s\n%s", truncateInput(task.Input), shellPayload.Error)
-							sentTasks[task.ID] = struct{}{}
-						} else {
-							errMsg.Error = shellPayload.Error // Use real-time chunk
-						}
+						errMsg.Error = shellPayload.Error // Use real-time chunk
+						sentTasks[task.ID] = struct{}{}
 						taskErrCh <- errMsg
 					}
 				} else {

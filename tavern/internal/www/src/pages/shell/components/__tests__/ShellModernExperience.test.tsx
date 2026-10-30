@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { BrowserRouter } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing";
@@ -11,6 +11,14 @@ import MultiLineComposer, {
     loadRcEnabled,
     loadRcScript,
 } from "../MultiLineComposer";
+import {
+    CREATE_CREDENTIAL_MUTATION,
+    CREATE_NETWORK_HOST_MUTATION,
+    CREATE_TOME_MUTATION,
+    GET_SHELL_TOMES,
+    UPDATE_NETWORK_HOST_MUTATION,
+} from "../../graphql";
+import { parseComposerScriptForTome } from "../../utils/tomeComposerUtils";
 import SessionSettings from "../SessionSettings";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
 import ShellPivotsDrawer from "../ShellPivotsDrawer";
@@ -24,8 +32,11 @@ import {
     buildUnifiedGraphData,
     extractPivotTargetHost,
     formatFileSize,
+    formatPortListInput,
     formatSubnetCidr,
     getIpv4SubnetPrefix,
+    parsePortList,
+    togglePortInList,
 } from "../../utils/networkGraphUtils";
 import {
     BrowserWasmAdapter,
@@ -137,15 +148,24 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         // Step 8: Context
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Context")).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                /Explore Realm's knowledge graph with a view tailored for your operation\. Your pivoting sessions, PTYs, and other operational info are stored here\./i
+            )
+        ).toBeInTheDocument();
 
         // Step 9: Going Interactive (Portal in Context drawer / status bar)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Going Interactive")).toBeInTheDocument();
         expect(onPortalStepChange).toHaveBeenLastCalledWith(false);
 
-        // Step 10: Command Queue & History
+        // Step 10: History
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Command Queue & History")).toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "History" })).toBeInTheDocument();
+        expect(
+            screen.getByText(/across all of your shell sessions, not just the active one/i)
+        ).toBeInTheDocument();
+        expect(screen.queryByText("Tip:")).not.toBeInTheDocument();
 
         // Step 11: Eldritch Documentation (opens ... actions menu)
         fireEvent.click(screen.getByText("Next"));
@@ -204,7 +224,7 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
 
         // ShellTerminal renders a large icon-only spinner in place of the terminal window while isConnecting=true
         const termRef = React.createRef<HTMLDivElement>();
-        render(
+        const { rerender: rerenderTerm } = render(
             <ShellTerminal
                 termRef={termRef}
                 isConnecting={true}
@@ -220,6 +240,49 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         const loadingSpinner = screen.getByTestId("shell-terminal-loading");
         expect(loadingSpinner).toBeInTheDocument();
         expect(loadingSpinner.textContent).toBe("");
+
+        // When connected and commands are queued/executing (isPromptBusy=true), renders a small spinner overlay with '>' at the prompt
+        rerenderTerm(
+            <ShellTerminal
+                termRef={termRef}
+                isConnecting={false}
+                isPromptBusy={true}
+                isMissedCallback={false}
+                promptPos={{ top: 24, left: 6, width: 24, height: 18, visible: true }}
+                completions={[]}
+                showCompletions={false}
+                completionPos={{ x: 0, y: 0 }}
+                completionIndex={0}
+                onMouseMove={vi.fn()}
+                tooltipState={{ visible: false, x: 0, y: 0, signature: "", description: "" }}
+                handleCompletionSelect={vi.fn()}
+            />
+        );
+        const promptSpinner = screen.getByTestId("shell-prompt-spinner");
+        expect(promptSpinner).toBeInTheDocument();
+        expect(promptSpinner).toHaveTextContent(">");
+        expect(promptSpinner.style.top).toBe("24px");
+        expect(promptSpinner.style.left).toBe("6px");
+        expect(screen.getByTestId("shell-prompt-spinner-icon")).toHaveClass("text-amber-400");
+
+        // Turns red when beacon misses a callback
+        rerenderTerm(
+            <ShellTerminal
+                termRef={termRef}
+                isConnecting={false}
+                isPromptBusy={true}
+                isMissedCallback={true}
+                promptPos={{ top: 24, left: 6, width: 24, height: 18, visible: true }}
+                completions={[]}
+                showCompletions={false}
+                completionPos={{ x: 0, y: 0 }}
+                completionIndex={0}
+                onMouseMove={vi.fn()}
+                tooltipState={{ visible: false, x: 0, y: 0, signature: "", description: "" }}
+                handleCompletionSelect={vi.fn()}
+            />
+        );
+        expect(screen.getByTestId("shell-prompt-spinner-icon")).toHaveClass("text-red-400");
     });
 
     it("renders stuck interpreter warning and triggers New Interpreter", () => {
@@ -325,6 +388,33 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
             expect(createdSockets).toHaveLength(3);
             vi.advanceTimersByTime(1);
             expect(createdSockets).toHaveLength(4);
+
+            // When connected, `input("!ls")` finalizes the expanded macro with a follow-up `input("")` call
+            createdSockets[3].readyState = MockWebSocket.OPEN;
+            createdSockets[3].onopen?.();
+            const replInputs: string[] = [];
+            (adapter as any).repl = {
+                input: vi.fn((line: string) => {
+                    replInputs.push(line);
+                    if (line.trimStart().startsWith("!")) {
+                        return JSON.stringify({ status: "incomplete", prompt: ".. " });
+                    }
+                    return JSON.stringify({
+                        status: "complete",
+                        payload:
+                            'for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = sys.shell("ls")\n\tprint(_nonomacroclowntown[\'stdout\']);print(_nonomacroclowntown[\'stderr\'])\n',
+                    });
+                }),
+                reset: vi.fn(),
+            };
+            const macroRes = adapter.input("!ls");
+            expect(macroRes).toEqual({ status: "complete" });
+            expect(replInputs).toEqual(["!ls", ""]);
+            expect(createdSockets[3].send).toHaveBeenCalledTimes(1);
+            expect(JSON.parse(createdSockets[3].send.mock.calls[0][0])).toEqual({
+                kind: "INPUT",
+                input: 'for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = sys.shell("ls")\n\tprint(_nonomacroclowntown[\'stdout\']);print(_nonomacroclowntown[\'stderr\'])\n',
+            });
 
             adapter.close();
         } finally {
@@ -485,6 +575,216 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect(diagnostics).toHaveLength(0);
     });
 
+    it("renders Save Tome button with plus overlay next to Tome button and guides user through creating a Tome from the composer script", async () => {
+        const initialScript = [
+            "# Tome: File List",
+            "# List files and directories with metadata.",
+            "input_params = {",
+            '    "path": "/tmp",  # Target directory',
+            "}",
+            "",
+            'for f in file.list(input_params["path"]):',
+            '    print(f["file_name"], input_params["filter_ext"])',
+        ].join("\n");
+
+        const parsed = parseComposerScriptForTome(initialScript, sampleTomes);
+        expect(parsed.suggestedName).toBe("File List (Custom)");
+        expect(parsed.suggestedDescription).toBe("List files and directories with metadata.");
+        expect(parsed.suggestedTactic).toBe("DISCOVERY");
+        expect(parsed.cleanedEldritch).toBe(
+            'for f in file.list(input_params["path"]):\n    print(f["file_name"], input_params["filter_ext"])'
+        );
+        expect(parsed.detectedParams).toEqual([
+            {
+                name: "path",
+                label: "Target directory",
+                type: "string",
+                placeholder: "/tmp",
+            },
+            {
+                name: "filter_ext",
+                label: "Filter ext",
+                type: "string",
+                placeholder: "",
+            },
+        ]);
+
+        const onTomeCreated = vi.fn();
+        const createTomeMock = {
+            request: {
+                query: CREATE_TOME_MUTATION,
+                variables: {
+                    input: {
+                        name: "Custom File Finder",
+                        description: "List files matching extension.",
+                        author: "alice",
+                        tactic: "RECON",
+                        supportModel: "COMMUNITY",
+                        paramDefs: JSON.stringify([
+                            {
+                                name: "path",
+                                label: "Target directory",
+                                type: "string",
+                                placeholder: "/var/log",
+                            },
+                            {
+                                name: "filter_ext",
+                                label: "Extension filter",
+                                type: "string",
+                                placeholder: ".log",
+                            },
+                        ]),
+                        eldritch:
+                            'for f in file.list(input_params["path"]):\n    print(f["file_name"], input_params["filter_ext"])',
+                    },
+                },
+            },
+            result: {
+                data: {
+                    createTome: {
+                        id: "tome-new-99",
+                        name: "Custom File Finder",
+                        description: "List files matching extension.",
+                        author: "alice",
+                        tactic: "RECON",
+                        supportModel: "COMMUNITY",
+                        paramDefs: JSON.stringify([
+                            {
+                                name: "path",
+                                label: "Target directory",
+                                type: "string",
+                                placeholder: "/var/log",
+                            },
+                            {
+                                name: "filter_ext",
+                                label: "Extension filter",
+                                type: "string",
+                                placeholder: ".log",
+                            },
+                        ]),
+                        eldritch:
+                            'for f in file.list(input_params["path"]):\n    print(f["file_name"], input_params["filter_ext"])',
+                    },
+                },
+            },
+        };
+
+        const getShellTomesMock = {
+            request: {
+                query: GET_SHELL_TOMES,
+            },
+            result: {
+                data: {
+                    tomes: {
+                        edges: [],
+                    },
+                },
+            },
+        };
+
+        const StatefulSaveTomeComposer = () => {
+            const [code, setCode] = React.useState(initialScript);
+            return (
+                <MockedProvider mocks={[createTomeMock, getShellTomesMock]} addTypename={false}>
+                    <MultiLineComposer
+                        isOpen={true}
+                        onToggle={vi.fn()}
+                        code={code}
+                        onChange={setCode}
+                        onRunCode={vi.fn()}
+                        tomes={sampleTomes}
+                        defaultAuthor="alice"
+                        onTomeCreated={onTomeCreated}
+                    />
+                </MockedProvider>
+            );
+        };
+
+        render(<StatefulSaveTomeComposer />);
+
+        const tomePickerBtn = screen.getByTestId("composer-tome-picker-button");
+        const saveTomeBtn = screen.getByTestId("composer-save-tome-button");
+        expect(saveTomeBtn).toBeInTheDocument();
+        expect(saveTomeBtn.textContent).toBe("");
+        expect(screen.getByTestId("composer-save-tome-plus-icon")).toBeInTheDocument();
+        expect(
+            tomePickerBtn.compareDocumentPosition(saveTomeBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+
+        // Click Save Tome button -> opens modal at Step 1 (Details) with vertical FormSteps progression
+        fireEvent.click(saveTomeBtn);
+        expect(screen.getByTestId("save-tome-modal")).toBeInTheDocument();
+        expect(screen.getByRole("navigation", { name: "Progress" })).toBeInTheDocument();
+        expect(screen.getByText("Configure details")).toBeInTheDocument();
+        expect(screen.getByText("Define parameters")).toBeInTheDocument();
+        expect(screen.getByText("Confirm tome")).toBeInTheDocument();
+        expect(screen.getByTestId("save-tome-details-step")).toBeInTheDocument();
+
+        const nameInput = screen.getByLabelText(/Tome Name/i) as HTMLInputElement;
+        const descInput = screen.getByLabelText(/Description/i) as HTMLTextAreaElement;
+        const tacticSelect = screen.getByLabelText(/Tactic/i) as HTMLSelectElement;
+        const authorInput = screen.getByLabelText(/Author/i) as HTMLInputElement;
+
+        expect(nameInput.value).toBe("File List (Custom)");
+        expect(descInput.value).toBe("List files and directories with metadata.");
+        expect(tacticSelect.value).toBe("DISCOVERY");
+        expect(tacticSelect).toHaveClass("appearance-none");
+        expect(Array.from(tacticSelect.options).map((o) => o.text)).toContain("Recon");
+        expect(Array.from(tacticSelect.options).some((o) => o.text.includes("RECON"))).toBe(false);
+        expect(authorInput.value).toBe("alice");
+
+        // Duplicate name check against existing tome
+        fireEvent.change(nameInput, { target: { value: "File List" } });
+        expect(screen.getByTestId("save-tome-duplicate-error")).toBeInTheDocument();
+        expect(screen.getByTestId("save-tome-next-button")).toBeDisabled();
+
+        // Update details to valid values
+        fireEvent.change(nameInput, { target: { value: "Custom File Finder" } });
+        fireEvent.change(descInput, { target: { value: "List files matching extension." } });
+        fireEvent.change(tacticSelect, { target: { value: "RECON" } });
+        expect(screen.queryByTestId("save-tome-duplicate-error")).not.toBeInTheDocument();
+
+        // Advance to Step 2 (Parameters)
+        fireEvent.click(screen.getByTestId("save-tome-next-button"));
+        expect(screen.getByTestId("save-tome-params-step")).toBeInTheDocument();
+
+        const paramRows = screen.getAllByTestId("save-tome-param-row");
+        expect(paramRows).toHaveLength(2);
+
+        const placeholders = screen.getAllByLabelText("Parameter placeholder") as HTMLInputElement[];
+        const labels = screen.getAllByLabelText("Parameter label") as HTMLInputElement[];
+        fireEvent.change(placeholders[0], { target: { value: "/var/log" } });
+        fireEvent.change(labels[1], { target: { value: "Extension filter" } });
+        fireEvent.change(placeholders[1], { target: { value: ".log" } });
+
+        // Advance to Step 3 (Review & Save)
+        fireEvent.click(screen.getByTestId("save-tome-next-button"));
+        expect(screen.getByTestId("save-tome-review-step")).toBeInTheDocument();
+        expect(screen.getByTestId("save-tome-lsp-status")).toHaveTextContent("Syntax OK");
+
+        const scriptArea = screen.getByLabelText("Tome Eldritch Script") as HTMLTextAreaElement;
+        expect(scriptArea.value).toBe(
+            'for f in file.list(input_params["path"]):\n    print(f["file_name"], input_params["filter_ext"])'
+        );
+
+        // Submit Create Tome
+        fireEvent.click(screen.getByTestId("save-tome-submit-button"));
+
+        await waitFor(() => {
+            expect(onTomeCreated).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: "tome-new-99",
+                    name: "Custom File Finder",
+                    tactic: "RECON",
+                })
+            );
+        });
+
+        // Newly saved tome is immediately available in the Composer Tome Picker
+        fireEvent.click(screen.getByTestId("composer-tome-picker-button"));
+        expect(screen.getByText("Custom File Finder")).toBeInTheDocument();
+    });
+
     it("supports Undo/Redo shortcuts (Ctrl+Z, Cmd+Z, Ctrl+Shift+Z, Ctrl+Y) and eldritch-lsp quick fixes", () => {
         const StatefulComposer = () => {
             const [code, setCode] = React.useState("os_info = sys.get_os()");
@@ -534,6 +834,10 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
 
         const badIndentDiagnostics = analyzeEldritchCode("def foo():\nprint(1)");
         expect(badIndentDiagnostics.some((d) => d.message.includes("Expected an indented block"))).toBe(true);
+
+        // `!command` shell macros do not trigger false-positive syntax diagnostics or completions
+        expect(analyzeEldritchCode("!ls -la /tmp\nif True:\n    !awk '{print $1}' /etc/passwd")).toEqual([]);
+        expect(completeEldritchCode("!file.", 6)).toBeNull();
 
         const StatefulAutocompleteComposer = () => {
             const [code, setCode] = React.useState("");
@@ -637,9 +941,13 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         fireEvent.click(screen.getByRole("tab", { name: /Creds \(1\)/i }));
         expect(screen.getByText("admin")).toBeInTheDocument();
 
-        // Re-run command
-        fireEvent.click(screen.getByText("Re-run"));
+        // Action buttons are icon-only (no text labels) for Run, Copy, and Edit
+        expect(screen.queryByText("Re-run")).not.toBeInTheDocument();
+        expect(screen.queryByText("Composer")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Re-run" }));
         expect(onRunCode).toHaveBeenCalledWith('report.user_password("admin", "hunter2")');
+        fireEvent.click(screen.getByRole("button", { name: "Edit in Composer" }));
+        expect(onLoadIntoComposer).toHaveBeenCalledWith('report.user_password("admin", "hunter2")');
 
         // Dedicated Pivots drawer displays PTY and SSH buttons and opens saved transcript
         expect(screen.getByTestId("shell-pivots-drawer")).toBeInTheDocument();
@@ -747,8 +1055,13 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
             />
         );
 
-        // Two identical whoami() runs are aggregated with a ×2 badge
-        expect(screen.getByTestId("history-aggregated-count")).toHaveTextContent("×2");
+        // Two identical whoami() runs are aggregated with a ×2 badge inline to the right of the time
+        const aggregatedBadge = screen.getByTestId("history-aggregated-count");
+        expect(aggregatedBadge).toHaveTextContent("×2");
+        const timeEls = screen.getAllByTestId("history-task-time");
+        expect(
+            timeEls[0].compareDocumentPosition(aggregatedBadge) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
         // Cross-session task from Shell #99 is visible by default under "All Sessions"
         expect(screen.getByText("Shell #99")).toBeInTheDocument();
 
@@ -905,6 +1218,12 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         expect(onOpenSshWithTarget).toHaveBeenCalledWith("root@10.0.0.20:22");
         fireEvent.click(screen.getByRole("button", { name: "Transcript" }));
         expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.20:22", "piv-10");
+        fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+        expect(onOpenPivotTab).toHaveBeenCalledWith(
+            "pty",
+            "cat /etc/shadow && grep root /etc/passwd",
+            "piv-11"
+        );
 
         // Switch to Hosts tab: adjacent host renders IP, subnet, open ports, link to /hosts/h-2, and Pivot button
         fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
@@ -945,13 +1264,29 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         expect(formatSubnetCidr("10.0.0.15")).toBe("10.0.0.0/24");
         expect(extractPivotTargetHost("root:secret@10.0.0.25:22")).toBe("10.0.0.25");
         expect(formatFileSize(2048)).toBe("2.0 KB");
+        expect(parsePortList("22, :443, 80, 22")).toEqual([22, 80, 443]);
+        expect(formatPortListInput([22, 443])).toBe("22, 443");
+        expect(togglePortInList([22, 5432], 5432)).toEqual([22]);
+        expect(togglePortInList([22], 443)).toEqual([22, 443]);
 
         const result = buildUnifiedGraphData({
             currentHostNode: {
                 id: "1",
                 name: "jumpbox",
                 primaryIP: "10.0.0.5",
-                credentials: { edges: [] },
+                credentials: {
+                    edges: [
+                        {
+                            node: {
+                                id: "c-51",
+                                principal: "nasadmin",
+                                kind: "KIND_PASSWORD",
+                                secret: "naspass",
+                                createdAt: "2025-01-01T00:00:00Z",
+                            },
+                        },
+                    ],
+                },
                 files: { edges: [] },
                 beacons: { edges: [] },
             },
@@ -1049,16 +1384,47 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
                                 },
                             },
                         },
+                        {
+                            node: {
+                                id: "51",
+                                name: "discovered-nas",
+                                hostname: "nas.local",
+                                ipAddress: "10.0.0.88",
+                                subnet: "10.0.0.0/24",
+                                openPorts: [22, 445],
+                                host: null,
+                                credentials: {
+                                    edges: [
+                                        {
+                                            node: {
+                                                id: "c-51",
+                                                principal: "nasadmin",
+                                                kind: "KIND_PASSWORD",
+                                                secret: "naspass",
+                                                createdAt: "2025-01-01T00:00:00Z",
+                                            },
+                                        },
+                                    ],
+                                },
+                                networks: { edges: [] },
+                            },
+                        },
                     ],
                 },
             },
         });
 
-        expect(result.networkHosts).toHaveLength(1);
-        expect(result.networkHosts[0].openPorts).toEqual([22, 5432]);
-        expect(result.networkHosts[0].hostId).toBe("2");
-        expect(result.allCredentials).toHaveLength(1);
-        expect(result.allCredentials[0].principal).toBe("dbadmin");
+        expect(result.networkHosts).toHaveLength(2);
+        const internalDbHost = result.networkHosts.find((h) => h.name === "internal-db");
+        expect(internalDbHost?.openPorts).toEqual([22, 5432]);
+        expect(internalDbHost?.hostId).toBe("2");
+        expect(result.allCredentials).toHaveLength(2);
+        expect(result.allCredentials.some((c) => c.principal === "dbadmin")).toBe(true);
+        const nasCred = result.allCredentials.find((c) => c.id === "c-51");
+        expect(nasCred?.hostName).toBe("discovered-nas");
+        expect(nasCred?.hostPrimaryIP).toBe("10.0.0.88");
+        expect(nasCred?.isCurrentHost).toBe(false);
+        expect(result.hostCredentials).toHaveLength(0);
         expect(result.hostFiles).toHaveLength(1);
         expect(result.hostFiles[0].path).toBe("/var/lib/pgsql/backup.sql");
         expect(result.hostShells).toHaveLength(1);
@@ -1132,5 +1498,260 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         );
 
         expect(onCloseContextDrawer).not.toHaveBeenCalled();
+    });
+
+    it("supports documenting a reachable host, editing a discovered host (associating credentials & modifying open/closed ports), and creating new credentials", async () => {
+        const onRefetchKnowledgeGraph = vi.fn();
+        const onOpenSshWithTarget = vi.fn();
+
+        const createNetworkHostMock = {
+            request: {
+                query: CREATE_NETWORK_HOST_MUTATION,
+                variables: {
+                    input: {
+                        name: "fileserver",
+                        hostname: "fileserver",
+                        ipAddress: "10.0.0.30",
+                        subnet: "10.0.0.0/24",
+                        openPorts: [22, 445],
+                    },
+                },
+            },
+            result: {
+                data: {
+                    createNetworkHost: {
+                        id: "nh-30",
+                        name: "fileserver",
+                        hostname: "fileserver",
+                        ipAddress: "10.0.0.30",
+                        subnet: "10.0.0.0/24",
+                        openPorts: [22, 445],
+                        host: null,
+                        networks: { edges: [] },
+                    },
+                },
+            },
+        };
+
+        const updateNetworkHostMock = {
+            request: {
+                query: UPDATE_NETWORK_HOST_MUTATION,
+                variables: {
+                    networkHostID: "nh-2",
+                    input: {
+                        name: "db-01",
+                        hostname: "db-01",
+                        ipAddress: "10.0.0.20",
+                        openPorts: [22, 443],
+                        addCredentialIDs: ["cred-1"],
+                    },
+                },
+            },
+            result: {
+                data: {
+                    updateNetworkHost: {
+                        id: "nh-2",
+                        name: "db-01",
+                        hostname: "db-01.corp.local",
+                        ipAddress: "10.0.0.20",
+                        subnet: "10.0.0.0/24",
+                        openPorts: [22, 443],
+                    },
+                },
+            },
+        };
+
+        const createCredentialMock = {
+            request: {
+                query: CREATE_CREDENTIAL_MUTATION,
+                variables: {
+                    input: {
+                        hostID: "h-1",
+                        principal: "deploy",
+                        secret: "DeployKey2026!",
+                        kind: "KIND_PASSWORD",
+                    },
+                },
+            },
+            result: {
+                data: {
+                    createCredential: {
+                        id: "cred-99",
+                        principal: "deploy",
+                        kind: "KIND_PASSWORD",
+                        secret: "DeployKey2026!",
+                        createdAt: "2026-01-01T00:00:00Z",
+                    },
+                },
+            },
+        };
+
+        const createNetworkHostCredMock = {
+            request: {
+                query: CREATE_CREDENTIAL_MUTATION,
+                variables: {
+                    input: {
+                        networkHostIDs: ["nh-30"],
+                        principal: "postgres",
+                        secret: "PgPass2026!",
+                        kind: "KIND_PASSWORD",
+                    },
+                },
+            },
+            result: {
+                data: {
+                    createCredential: {
+                        id: "cred-100",
+                        principal: "postgres",
+                        kind: "KIND_PASSWORD",
+                        secret: "PgPass2026!",
+                        createdAt: "2026-01-01T00:00:00Z",
+                    },
+                },
+            },
+        };
+
+        render(
+            <MockedProvider
+                mocks={[
+                    createNetworkHostMock,
+                    updateNetworkHostMock,
+                    createCredentialMock,
+                    createNetworkHostCredMock,
+                ]}
+                addTypename={false}
+            >
+                <BrowserRouter>
+                    <ShellKnowledgeDrawer
+                        isOpen={true}
+                        onClose={vi.fn()}
+                        currentShellId="1"
+                        currentHostId="h-1"
+                        currentHostName="web-01"
+                        currentHostIp="10.0.0.10"
+                        portalId={99}
+                        pivots={[]}
+                        hostCredentials={sampleCreds}
+                        allCredentials={sampleCreds}
+                        networkHosts={sampleHosts}
+                        hostFiles={sampleFiles}
+                        hostShells={[]}
+                        onRefetchKnowledgeGraph={onRefetchKnowledgeGraph}
+                        onOpenSshWithTarget={onOpenSshWithTarget}
+                    />
+                </BrowserRouter>
+            </MockedProvider>
+        );
+
+        // 1. Switch to Hosts tab and click the right-aligned + button next to "Adjacent Hosts"
+        fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
+        const adjacentHeader = screen.getByText(/Adjacent Hosts \(1\)/i);
+        const addHostBtn = screen.getByTestId("add-host-button");
+        expect(adjacentHeader.parentElement).toContainElement(addHostBtn);
+        expect(adjacentHeader.parentElement).toHaveClass("justify-between");
+
+        fireEvent.click(addHostBtn);
+        expect(screen.getByTestId("host-modal")).toBeInTheDocument();
+        expect(screen.getByText("New Host")).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("IP Address"), {
+            target: { value: "10.0.0.30" },
+        });
+        fireEvent.change(screen.getByLabelText("Name / Hostname"), {
+            target: { value: "fileserver" },
+        });
+        fireEvent.change(screen.getByLabelText("Open Ports"), {
+            target: { value: "22, 445" },
+        });
+
+        fireEvent.click(screen.getByTestId("host-modal-submit"));
+
+        await waitFor(() => {
+            expect(screen.getByText("fileserver")).toBeInTheDocument();
+        });
+        expect(screen.getByText("10.0.0.30")).toBeInTheDocument();
+        expect(screen.getByText("ports: :22, :445")).toBeInTheDocument();
+        expect(onRefetchKnowledgeGraph).toHaveBeenCalled();
+
+        // 2. Edit existing discovered host db-01: close port 5432, open port 443, and associate credential svc_backup
+        fireEvent.click(screen.getByTestId("edit-host-h-2"));
+        expect(screen.getByTestId("host-modal")).toBeInTheDocument();
+        expect(screen.getByText("Edit Host")).toBeInTheDocument();
+
+        // Close port 5432 by clicking its port pill
+        const port5432Pill = screen.getByTestId("host-port-pill-5432");
+        expect(port5432Pill).toHaveAttribute("aria-pressed", "true");
+        fireEvent.click(port5432Pill);
+        expect(port5432Pill).toHaveAttribute("aria-pressed", "false");
+        expect((screen.getByLabelText("Open Ports") as HTMLInputElement).value).toBe("22");
+
+        // Add port 443 via Open Ports input
+        fireEvent.change(screen.getByLabelText("Open Ports"), {
+            target: { value: "22, 443" },
+        });
+
+        // Associate credential svc_backup (cred-1)
+        const credOption = screen.getByTestId("host-cred-option-cred-1");
+        expect(credOption).toHaveAttribute("aria-pressed", "false");
+        fireEvent.click(credOption);
+        expect(credOption).toHaveAttribute("aria-pressed", "true");
+
+        fireEvent.click(screen.getByTestId("host-modal-submit"));
+
+        await waitFor(() => {
+            expect(screen.getByText("ports: :22, :443")).toBeInTheDocument();
+        });
+        expect(screen.getByText("creds: svc_backup")).toBeInTheDocument();
+
+        // 3. Switch to Creds tab and click the right-aligned + button to create a new credential
+        fireEvent.click(screen.getByRole("button", { name: "Creds" }));
+        const credsHeader = screen.getByText(/Credentials \(1\)/i);
+        const addCredBtn = screen.getByTestId("add-credential-button");
+        expect(credsHeader.parentElement).toContainElement(addCredBtn);
+        expect(credsHeader.parentElement).toHaveClass("justify-between");
+
+        fireEvent.click(addCredBtn);
+        expect(screen.getByTestId("credential-modal")).toBeInTheDocument();
+        expect(screen.getByText("New Credential")).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Principal / Username"), {
+            target: { value: "deploy" },
+        });
+        fireEvent.change(screen.getByLabelText("Secret / Password"), {
+            target: { value: "DeployKey2026!" },
+        });
+
+        fireEvent.click(screen.getByTestId("credential-modal-submit"));
+
+        await waitFor(() => {
+            expect(screen.getByText("deploy")).toBeInTheDocument();
+        });
+        expect(screen.getByText(/Credentials \(2\)/i)).toBeInTheDocument();
+
+        // 4. Create a credential associated with a discovered NetworkHost ("fileserver") from the Host dropdown
+        fireEvent.click(screen.getByTestId("add-credential-button"));
+        expect(screen.getByTestId("credential-modal")).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Principal / Username"), {
+            target: { value: "postgres" },
+        });
+        fireEvent.change(screen.getByLabelText("Secret / Password"), {
+            target: { value: "PgPass2026!" },
+        });
+        fireEvent.change(screen.getByLabelText("Host"), {
+            target: { value: "nh-nh-30" },
+        });
+
+        fireEvent.click(screen.getByTestId("credential-modal-submit"));
+
+        await waitFor(() => {
+            expect(screen.getByText("postgres")).toBeInTheDocument();
+        });
+        expect(screen.getByText("@fileserver")).toBeInTheDocument();
+        expect(screen.getByText(/Credentials \(3\)/i)).toBeInTheDocument();
+
+        // Verify the NetworkHost in the Hosts tab also shows the newly associated credential
+        fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
+        expect(screen.getByText("creds: postgres")).toBeInTheDocument();
     });
 });

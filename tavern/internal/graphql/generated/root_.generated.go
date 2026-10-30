@@ -341,6 +341,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		Kind           func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
+		NetworkHosts   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkHostOrder, where *ent.NetworkHostWhereInput) int
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
 		ShellTask      func(childComplexity int) int
@@ -517,6 +518,7 @@ type ComplexityRoot struct {
 
 	NetworkHost struct {
 		CreatedAt      func(childComplexity int) int
+		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		Host           func(childComplexity int) int
 		Hostname       func(childComplexity int) int
 		ID             func(childComplexity int) int
@@ -2421,6 +2423,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.HostCredential.LastModifiedAt(childComplexity), true
 
+	case "HostCredential.networkHosts":
+		if e.ComplexityRoot.HostCredential.NetworkHosts == nil {
+			break
+		}
+
+		args, err := ec.field_HostCredential_networkHosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.HostCredential.NetworkHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NetworkHostOrder), args["where"].(*ent.NetworkHostWhereInput)), true
+
 	case "HostCredential.principal":
 		if e.ComplexityRoot.HostCredential.Principal == nil {
 			break
@@ -3479,6 +3493,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.NetworkHost.CreatedAt(childComplexity), true
+
+	case "NetworkHost.credentials":
+		if e.ComplexityRoot.NetworkHost.Credentials == nil {
+			break
+		}
+
+		args, err := ec.field_NetworkHost_credentials_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.NetworkHost.Credentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
 
 	case "NetworkHost.host":
 		if e.ComplexityRoot.NetworkHost.Host == nil {
@@ -7767,9 +7793,10 @@ input CreateHostCredentialInput {
   Kind of credential.
   """
   kind: HostCredentialKind!
-  hostID: ID!
+  hostID: ID
   taskID: ID
   shellTaskID: ID
+  networkHostIDs: [ID!]
 }
 """
 CreateLinkInput is used for create Link object.
@@ -7821,6 +7848,7 @@ input CreateNetworkHostInput {
   openPorts: [Int!]
   hostID: ID
   networkIDs: [ID!]
+  credentialIDs: [ID!]
 }
 """
 CreateNetworkInput is used for create Network object.
@@ -8760,7 +8788,7 @@ type HostCredential implements Node {
   """
   Host the credential was reported on.
   """
-  host: Host!
+  host: Host
   """
   Task that reported this credential.
   """
@@ -8769,6 +8797,37 @@ type HostCredential implements Node {
   Shell Task that reported this credential.
   """
   shellTask: ShellTask
+  networkHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for NetworkHosts returned from the connection.
+    """
+    orderBy: [NetworkHostOrder!]
+
+    """
+    Filtering options for NetworkHosts returned from the connection.
+    """
+    where: NetworkHostWhereInput
+  ): NetworkHostConnection!
 }
 """
 A connection to a list of items.
@@ -8925,6 +8984,11 @@ input HostCredentialWhereInput {
   """
   hasShellTask: Boolean
   hasShellTaskWith: [ShellTaskWhereInput!]
+  """
+  network_hosts edge predicates
+  """
+  hasNetworkHosts: Boolean
+  hasNetworkHostsWith: [NetworkHostWhereInput!]
 }
 """
 An edge in a connection.
@@ -10126,6 +10190,37 @@ type NetworkHost implements Node {
     """
     where: NetworkWhereInput
   ): NetworkConnection!
+  credentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
 }
 """
 A connection to a list of items.
@@ -10302,6 +10397,11 @@ input NetworkHostWhereInput {
   """
   hasNetworks: Boolean
   hasNetworksWith: [NetworkWhereInput!]
+  """
+  credentials edge predicates
+  """
+  hasCredentials: Boolean
+  hasCredentialsWith: [HostCredentialWhereInput!]
 }
 """
 Ordering options for Network connections
@@ -13713,6 +13813,9 @@ input UpdateNetworkHostInput {
   addNetworkIDs: [ID!]
   removeNetworkIDs: [ID!]
   clearNetworks: Boolean
+  addCredentialIDs: [ID!]
+  removeCredentialIDs: [ID!]
+  clearCredentials: Boolean
 }
 """
 UpdateNetworkInput is used for update Network object.

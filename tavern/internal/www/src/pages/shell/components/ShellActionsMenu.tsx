@@ -80,9 +80,9 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                             <Transition
                                 show={isMenuOpen}
                                 as={Fragment}
-                                enter="transition ease-out duration-100"
-                                enterFrom="transform opacity-0 scale-95"
-                                enterTo="transform opacity-100 scale-100"
+                                enter={forceOpen ? "" : "transition ease-out duration-100"}
+                                enterFrom={forceOpen ? "" : "transform opacity-0 scale-95"}
+                                enterTo={forceOpen ? "" : "transform opacity-100 scale-100"}
                                 leave="transition ease-in duration-75"
                                 leaveFrom="transform opacity-100 scale-100"
                                 leaveTo="transform opacity-0 scale-95"
@@ -156,43 +156,44 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
 
                                         <div className="border-t border-[#343b4d] my-1" />
 
-                                        {onReplayTutorial && (
+                                        <div data-tour="shell-guide" className="space-y-0.5">
+                                            {onReplayTutorial && (
+                                                <Menu.Item>
+                                                    {() => (
+                                                        <Button
+                                                            buttonVariant="ghost"
+                                                            buttonStyle={{ color: "gray", size: "sm" }}
+                                                            className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                            leftIcon={<Compass className="w-4 h-4" />}
+                                                            onClick={onReplayTutorial}
+                                                        >
+                                                            Replay Tutorial
+                                                        </Button>
+                                                    )}
+                                                </Menu.Item>
+                                            )}
+
                                             <Menu.Item>
                                                 {() => (
-                                                    <Button
-                                                        buttonVariant="ghost"
-                                                        buttonStyle={{ color: "gray", size: "sm" }}
-                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
-                                                        leftIcon={<Compass className="w-4 h-4" />}
-                                                        onClick={onReplayTutorial}
+                                                    <a
+                                                        href="https://docs.realm.pub/user-guide/eldritch"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        aria-label="Documentation"
+                                                        className="block w-full"
                                                     >
-                                                        Replay Tutorial
-                                                    </Button>
+                                                        <Button
+                                                            buttonVariant="ghost"
+                                                            buttonStyle={{ color: "gray", size: "sm" }}
+                                                            className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                            leftIcon={<BookOpen className="w-4 h-4" />}
+                                                        >
+                                                            Documentation
+                                                        </Button>
+                                                    </a>
                                                 )}
                                             </Menu.Item>
-                                        )}
-
-                                        <Menu.Item>
-                                            {() => (
-                                                <a
-                                                    data-tour="shell-guide"
-                                                    href="https://docs.realm.pub/user-guide/eldritch"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    aria-label="Documentation"
-                                                    className="block w-full"
-                                                >
-                                                    <Button
-                                                        buttonVariant="ghost"
-                                                        buttonStyle={{ color: "gray", size: "sm" }}
-                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
-                                                        leftIcon={<BookOpen className="w-4 h-4" />}
-                                                    >
-                                                        Documentation
-                                                    </Button>
-                                                </a>
-                                            )}
-                                        </Menu.Item>
+                                        </div>
 
                                         <Menu.Item>
                                             {() => (

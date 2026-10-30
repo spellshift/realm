@@ -7,6 +7,7 @@ import {
     Code2,
     GripHorizontal,
     Play,
+    Plus,
     Search,
     Wand2,
     X,
@@ -20,6 +21,7 @@ import {
     tokenizeEldritchLine,
 } from "../utils/eldritchLsp";
 import { ShellTomeItem } from "../hooks/useShellData";
+import SaveTomeModal from "./SaveTomeModal";
 
 export const RC_SCRIPT_STORAGE_KEY = "tavern_shell_rc_script_v1";
 export const RC_ENABLED_STORAGE_KEY = "tavern_shell_rc_enabled_v1";
@@ -230,6 +232,8 @@ interface MultiLineComposerProps {
     onStageToPrompt?: (code: string) => void;
     disabled?: boolean;
     tomes?: ShellTomeItem[];
+    defaultAuthor?: string;
+    onTomeCreated?: (tome: ShellTomeItem) => void;
     rcCode?: string;
     onRcCodeChange?: (nextRcCode: string) => void;
     rcEnabled?: boolean;
@@ -248,6 +252,8 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
     onRunCode,
     disabled = false,
     tomes,
+    defaultAuthor,
+    onTomeCreated,
     rcCode: controlledRcCode,
     onRcCodeChange,
     rcEnabled: controlledRcEnabled,
@@ -268,14 +274,27 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         [onChange]
     );
 
-    // Searchable Tome Picker state
+    // Searchable Tome Picker & Save Tome Modal state
     const [tomePickerOpen, setTomePickerOpen] = useState<boolean>(false);
     const [tomeSearchQuery, setTomeSearchQuery] = useState<string>("");
+    const [saveTomeModalOpen, setSaveTomeModalOpen] = useState<boolean>(false);
+    const [localSavedTomes, setLocalSavedTomes] = useState<ShellTomeItem[]>([]);
+
+    const allKnownTomes = useMemo(() => {
+        const base = tomes && tomes.length > 0 ? tomes : FALLBACK_ELDRITCH_TOMES;
+        const byName = new Map<string, ShellTomeItem>();
+        for (const t of base) {
+            byName.set(t.name.toLowerCase(), t);
+        }
+        for (const t of localSavedTomes) {
+            byName.set(t.name.toLowerCase(), t);
+        }
+        return Array.from(byName.values());
+    }, [tomes, localSavedTomes]);
 
     const availableTomes = useMemo(() => {
-        const source = tomes && tomes.length > 0 ? tomes : FALLBACK_ELDRITCH_TOMES;
-        return source.filter((t) => t.tactic?.toUpperCase() !== "SHELL_RC");
-    }, [tomes]);
+        return allKnownTomes.filter((t) => t.tactic?.toUpperCase() !== "SHELL_RC");
+    }, [allKnownTomes]);
 
     const filteredTomes = useMemo(() => {
         const q = tomeSearchQuery.trim().toLowerCase();
@@ -950,6 +969,27 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         )}
                     </div>
 
+                    {/* Save Tome Button (Tome icon with Plus overlayed, aligned next to existing Tome button) */}
+                    <button
+                        type="button"
+                        data-testid="composer-save-tome-button"
+                        aria-label="Save Tome"
+                        title="Save Tome"
+                        onClick={() => {
+                            setTomePickerOpen(false);
+                            setSaveTomeModalOpen(true);
+                        }}
+                        className="inline-flex items-center justify-center p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#272e3f] transition-colors"
+                    >
+                        <span className="relative inline-flex items-center justify-center">
+                            <BookOpenIcon className="w-3.5 h-3.5" />
+                            <Plus
+                                data-testid="composer-save-tome-plus-icon"
+                                className="w-2.5 h-2.5 absolute -top-1 -right-1 bg-[#181c28] rounded-full stroke-[2.5]"
+                            />
+                        </span>
+                    </button>
+
                     <button
                         type="button"
                         disabled={!activeCode.trim() || disabled}
@@ -1229,6 +1269,18 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                     </div>
                 )}
             </div>
+
+            <SaveTomeModal
+                isOpen={saveTomeModalOpen}
+                onClose={() => setSaveTomeModalOpen(false)}
+                composerCode={activeCode}
+                existingTomes={allKnownTomes}
+                defaultAuthor={defaultAuthor}
+                onTomeCreated={(createdTome) => {
+                    setLocalSavedTomes((prev) => [...prev, createdTome]);
+                    onTomeCreated?.(createdTome);
+                }}
+            />
         </div>
     );
 };

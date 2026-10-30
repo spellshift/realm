@@ -14,11 +14,14 @@ import {
 } from "lucide-react";
 import NotificationBell from "../../../components/notifications/NotificationBell";
 import { ShellTaskItem } from "../hooks/useShellData";
+import { CallbackStats, computeCallbackStats } from "../hooks/useCallbackTimer";
 
 interface ShellStatusBarProps {
   portalId: number | null;
   timeUntilCallback: string;
   isMissedCallback: boolean;
+  callbackStats?: CallbackStats;
+  callbackInterval?: number | null;
   connectionStatus: ConnectionStatus;
   connectionMessage?: string;
   isConnecting?: boolean;
@@ -128,7 +131,7 @@ const PortalActionDialog: React.FC<{
         <p className="text-gray-300 leading-relaxed">
           {isClose
             ? "Are you sure you want to close the active portal? Warning: closing this portal will immediately terminate and close all associated pivots (including active SSH and PTY sessions)."
-            : "Open an interactive portal on this beacon? This establishes a real-time stream (portal.create()) for low-latency execution and interactive PTY or SSH pivots."}
+            : "Opens an interactive portal on this beacon, which works similar to a SOCKS5 proxy. This establishes a real-time stream between the agent and server for low-latency execution, interactive PTY, or pivoting operations."}
         </p>
 
         <div className="flex items-center justify-end gap-2 pt-1">
@@ -156,10 +159,90 @@ const PortalActionDialog: React.FC<{
   );
 };
 
+const CallbackStatsPopover: React.FC<{
+  stats: CallbackStats;
+  timeUntilCallback: string;
+  isMissedCallback: boolean;
+}> = ({ stats, timeUntilCallback, isMissedCallback }) => {
+  const statusLabel = isMissedCallback ? "Delayed" : "On Schedule";
+  const statusBadgeClass = isMissedCallback
+    ? "bg-red-500/15 text-red-400 border-red-500/30"
+    : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+  const barColorClass =
+    stats.onTimePercentage >= 90
+      ? "bg-emerald-500"
+      : stats.onTimePercentage >= 70
+      ? "bg-amber-500"
+      : "bg-red-500";
+
+  return (
+    <div
+      data-testid="status-bar-callback-popover"
+      role="tooltip"
+      aria-label="Callback statistics"
+      className="absolute bottom-full right-0 mb-2 w-64 p-2.5 bg-[#1a1e29] border border-[#2f364a] rounded-lg shadow-xl text-xs text-gray-200 z-50 space-y-2 pointer-events-none"
+    >
+      <div className="flex items-center justify-between border-b border-[#262b38] pb-1.5">
+        <span className="font-semibold text-white">Callback Stats</span>
+        <span
+          className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${statusBadgeClass}`}
+        >
+          {statusLabel}
+        </span>
+      </div>
+
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-400">Callback Interval</span>
+          <span
+            data-testid="callback-stats-interval"
+            className="font-mono font-semibold text-gray-100"
+          >
+            {stats.formattedInterval}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-gray-400">On-Time (Past 100)</span>
+          <span
+            data-testid="callback-stats-ontime"
+            className="font-mono font-semibold text-gray-100"
+          >
+            {stats.onTimeCount} / {stats.sampleCount} ({stats.onTimePercentage}%)
+          </span>
+        </div>
+
+        <div className="w-full h-1.5 rounded-full bg-[#12151e] overflow-hidden border border-[#262b38]">
+          <div
+            className={`h-full transition-all ${barColorClass}`}
+            style={{ width: `${Math.min(100, Math.max(0, stats.onTimePercentage))}%` }}
+          />
+        </div>
+
+        <div className="flex items-center justify-between text-[11px] text-gray-400 pt-0.5">
+          <span>Next Check-in</span>
+          <span className={isMissedCallback ? "text-red-400 font-semibold" : "text-gray-300"}>
+            {timeUntilCallback}
+          </span>
+        </div>
+
+        {stats.avgLatencyMs !== null && (
+          <div className="flex items-center justify-between text-[11px] text-gray-400">
+            <span>Avg Drift</span>
+            <span className="font-mono text-gray-300">{stats.avgLatencyMs}ms</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
   portalId,
   timeUntilCallback,
   isMissedCallback,
+  callbackStats,
+  callbackInterval,
   connectionStatus,
   connectionMessage,
   isConnecting = false,
@@ -178,9 +261,13 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
   onOpenQueue,
   onReconnect,
 }) => {
+  const [callbackHovered, setCallbackHovered] = useState(false);
   const [queueHovered, setQueueHovered] = useState(false);
   const [queuePinned, setQueuePinned] = useState(false);
   const [portalDialogMode, setPortalDialogMode] = useState<"open" | "close" | null>(null);
+
+  const effectiveCallbackStats =
+    callbackStats ?? computeCallbackStats(null, callbackInterval);
 
   const effectiveRunningCount = runningCount ?? runningTasks.length;
   const effectiveQueuedCount = queuedCount ?? queuedTasks.length;
@@ -219,8 +306,14 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
         data-tour="shell-status-bar"
         className="bg-[#161922] px-3 py-1 border-t border-[#262b38] text-xs text-gray-400 flex justify-between items-center select-none"
       >
-        {/* Left side: Session Settings, Notification Bell, Composer */}
+        {/* Left side: Notification Bell, Session Settings, Composer */}
         <div className="flex items-center gap-2">
+          <NotificationBell
+            placement="top-start"
+            buttonClassName="relative inline-flex items-center justify-center p-1 rounded transition-colors text-gray-400 hover:text-gray-200 hover:bg-white/5"
+            iconClassName="w-3.5 h-3.5"
+          />
+
           <button
             type="button"
             data-tour="shell-session-settings-toggle"
@@ -237,12 +330,6 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
-
-          <NotificationBell
-            placement="top-start"
-            buttonClassName="relative inline-flex items-center justify-center p-1 rounded transition-colors text-gray-400 hover:text-gray-200 hover:bg-white/5"
-            iconClassName="w-3.5 h-3.5"
-          />
 
           {onToggleComposer && (
             <button
@@ -280,15 +367,25 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
         {/* Right side: Next / Queue / Async (or Portal Active) / Connection Status */}
         <div className="flex items-center gap-3">
           {!closedAt && !portalId && timeUntilCallback && (
-            <span
+            <div
               data-tour="shell-next-callback"
-              className="inline-flex items-center gap-1.5"
+              data-testid="status-bar-next-callback"
+              className="relative inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors cursor-default"
+              onMouseEnter={() => setCallbackHovered(true)}
+              onMouseLeave={() => setCallbackHovered(false)}
             >
               <span>Next</span>
               <span className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-300"}>
                 {timeUntilCallback}
               </span>
-            </span>
+              {callbackHovered && (
+                <CallbackStatsPopover
+                  stats={effectiveCallbackStats}
+                  timeUntilCallback={timeUntilCallback}
+                  isMissedCallback={isMissedCallback}
+                />
+              )}
+            </div>
           )}
 
           {(hasActiveQueue || queueTourOpen) && (

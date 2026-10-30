@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
@@ -86,6 +87,14 @@ func (hcu *HostCredentialUpdate) SetHostID(id int) *HostCredentialUpdate {
 	return hcu
 }
 
+// SetNillableHostID sets the "host" edge to the Host entity by ID if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableHostID(id *int) *HostCredentialUpdate {
+	if id != nil {
+		hcu = hcu.SetHostID(*id)
+	}
+	return hcu
+}
+
 // SetHost sets the "host" edge to the Host entity.
 func (hcu *HostCredentialUpdate) SetHost(h *Host) *HostCredentialUpdate {
 	return hcu.SetHostID(h.ID)
@@ -129,6 +138,21 @@ func (hcu *HostCredentialUpdate) SetShellTask(s *ShellTask) *HostCredentialUpdat
 	return hcu.SetShellTaskID(s.ID)
 }
 
+// AddNetworkHostIDs adds the "network_hosts" edge to the NetworkHost entity by IDs.
+func (hcu *HostCredentialUpdate) AddNetworkHostIDs(ids ...int) *HostCredentialUpdate {
+	hcu.mutation.AddNetworkHostIDs(ids...)
+	return hcu
+}
+
+// AddNetworkHosts adds the "network_hosts" edges to the NetworkHost entity.
+func (hcu *HostCredentialUpdate) AddNetworkHosts(n ...*NetworkHost) *HostCredentialUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return hcu.AddNetworkHostIDs(ids...)
+}
+
 // Mutation returns the HostCredentialMutation object of the builder.
 func (hcu *HostCredentialUpdate) Mutation() *HostCredentialMutation {
 	return hcu.mutation
@@ -150,6 +174,27 @@ func (hcu *HostCredentialUpdate) ClearTask() *HostCredentialUpdate {
 func (hcu *HostCredentialUpdate) ClearShellTask() *HostCredentialUpdate {
 	hcu.mutation.ClearShellTask()
 	return hcu
+}
+
+// ClearNetworkHosts clears all "network_hosts" edges to the NetworkHost entity.
+func (hcu *HostCredentialUpdate) ClearNetworkHosts() *HostCredentialUpdate {
+	hcu.mutation.ClearNetworkHosts()
+	return hcu
+}
+
+// RemoveNetworkHostIDs removes the "network_hosts" edge to NetworkHost entities by IDs.
+func (hcu *HostCredentialUpdate) RemoveNetworkHostIDs(ids ...int) *HostCredentialUpdate {
+	hcu.mutation.RemoveNetworkHostIDs(ids...)
+	return hcu
+}
+
+// RemoveNetworkHosts removes "network_hosts" edges to NetworkHost entities.
+func (hcu *HostCredentialUpdate) RemoveNetworkHosts(n ...*NetworkHost) *HostCredentialUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return hcu.RemoveNetworkHostIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -204,9 +249,6 @@ func (hcu *HostCredentialUpdate) check() error {
 		if err := hostcredential.KindValidator(v); err != nil {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
-	}
-	if hcu.mutation.HostCleared() && len(hcu.mutation.HostIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
 	return nil
 }
@@ -322,6 +364,51 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if hcu.mutation.NetworkHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   hostcredential.NetworkHostsTable,
+			Columns: hostcredential.NetworkHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcu.mutation.RemovedNetworkHostsIDs(); len(nodes) > 0 && !hcu.mutation.NetworkHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   hostcredential.NetworkHostsTable,
+			Columns: hostcredential.NetworkHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcu.mutation.NetworkHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   hostcredential.NetworkHostsTable,
+			Columns: hostcredential.NetworkHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, hcu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{hostcredential.Label}
@@ -396,6 +483,14 @@ func (hcuo *HostCredentialUpdateOne) SetHostID(id int) *HostCredentialUpdateOne 
 	return hcuo
 }
 
+// SetNillableHostID sets the "host" edge to the Host entity by ID if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableHostID(id *int) *HostCredentialUpdateOne {
+	if id != nil {
+		hcuo = hcuo.SetHostID(*id)
+	}
+	return hcuo
+}
+
 // SetHost sets the "host" edge to the Host entity.
 func (hcuo *HostCredentialUpdateOne) SetHost(h *Host) *HostCredentialUpdateOne {
 	return hcuo.SetHostID(h.ID)
@@ -439,6 +534,21 @@ func (hcuo *HostCredentialUpdateOne) SetShellTask(s *ShellTask) *HostCredentialU
 	return hcuo.SetShellTaskID(s.ID)
 }
 
+// AddNetworkHostIDs adds the "network_hosts" edge to the NetworkHost entity by IDs.
+func (hcuo *HostCredentialUpdateOne) AddNetworkHostIDs(ids ...int) *HostCredentialUpdateOne {
+	hcuo.mutation.AddNetworkHostIDs(ids...)
+	return hcuo
+}
+
+// AddNetworkHosts adds the "network_hosts" edges to the NetworkHost entity.
+func (hcuo *HostCredentialUpdateOne) AddNetworkHosts(n ...*NetworkHost) *HostCredentialUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return hcuo.AddNetworkHostIDs(ids...)
+}
+
 // Mutation returns the HostCredentialMutation object of the builder.
 func (hcuo *HostCredentialUpdateOne) Mutation() *HostCredentialMutation {
 	return hcuo.mutation
@@ -460,6 +570,27 @@ func (hcuo *HostCredentialUpdateOne) ClearTask() *HostCredentialUpdateOne {
 func (hcuo *HostCredentialUpdateOne) ClearShellTask() *HostCredentialUpdateOne {
 	hcuo.mutation.ClearShellTask()
 	return hcuo
+}
+
+// ClearNetworkHosts clears all "network_hosts" edges to the NetworkHost entity.
+func (hcuo *HostCredentialUpdateOne) ClearNetworkHosts() *HostCredentialUpdateOne {
+	hcuo.mutation.ClearNetworkHosts()
+	return hcuo
+}
+
+// RemoveNetworkHostIDs removes the "network_hosts" edge to NetworkHost entities by IDs.
+func (hcuo *HostCredentialUpdateOne) RemoveNetworkHostIDs(ids ...int) *HostCredentialUpdateOne {
+	hcuo.mutation.RemoveNetworkHostIDs(ids...)
+	return hcuo
+}
+
+// RemoveNetworkHosts removes "network_hosts" edges to NetworkHost entities.
+func (hcuo *HostCredentialUpdateOne) RemoveNetworkHosts(n ...*NetworkHost) *HostCredentialUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return hcuo.RemoveNetworkHostIDs(ids...)
 }
 
 // Where appends a list predicates to the HostCredentialUpdate builder.
@@ -527,9 +658,6 @@ func (hcuo *HostCredentialUpdateOne) check() error {
 		if err := hostcredential.KindValidator(v); err != nil {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
-	}
-	if hcuo.mutation.HostCleared() && len(hcuo.mutation.HostIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "HostCredential.host"`)
 	}
 	return nil
 }
@@ -655,6 +783,51 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hcuo.mutation.NetworkHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   hostcredential.NetworkHostsTable,
+			Columns: hostcredential.NetworkHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcuo.mutation.RemovedNetworkHostsIDs(); len(nodes) > 0 && !hcuo.mutation.NetworkHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   hostcredential.NetworkHostsTable,
+			Columns: hostcredential.NetworkHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcuo.mutation.NetworkHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   hostcredential.NetworkHostsTable,
+			Columns: hostcredential.NetworkHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

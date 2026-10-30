@@ -370,6 +370,18 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
               }
             }
           }
+          credentials {
+            totalCount
+            edges {
+              node {
+                id
+                principal
+                kind
+                secret
+                createdAt
+              }
+            }
+          }
           networks {
             edges {
               node {
@@ -501,6 +513,16 @@ export const GET_BEACON_STATUS = gql`
         lastSeenAt
         nextSeenAt
         interval
+        history(last: 100) {
+          totalCount
+          edges {
+            node {
+              id
+              createdAt
+              latency
+            }
+          }
+        }
       }
     }
   }
@@ -568,3 +590,19 @@ export const GET_SHELL_TOMES = gql`
     }
   }
 `;
+
+export const CREATE_TOME_MUTATION = gql`
+  mutation CreateTomeFromShell($input: CreateTomeInput!) {
+    createTome(input: $input) {
+      id
+      name
+      description
+      author
+      tactic
+      supportModel
+      eldritch
+      paramDefs
+    }
+  }
+`;
+

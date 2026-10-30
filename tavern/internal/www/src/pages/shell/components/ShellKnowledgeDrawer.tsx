@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Shell, Unplug } from "lucide-react";
 import { GraphStar } from "./ShellHeader";
@@ -91,6 +91,7 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
     isOpen,
     onClose,
     currentShellId,
+    currentHostId,
     currentHostName,
     currentHostIp,
     portalId,
@@ -99,6 +100,7 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
     networkHosts,
     hostFiles,
     hostShells,
+    onRefetchKnowledgeGraph,
     onNewPortal,
     onClosePortal,
     onOpenPty,
@@ -108,8 +110,124 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
 }) => {
     const [activeSection, setActiveSection] = useState<GraphSectionFilter>("pivots");
     const [searchQuery, setSearchQuery] = useState("");
+    const [savedHostsById, setSavedHostsById] = useState<Record<string, KnowledgeHostItem>>({});
+    const [localCredentials, setLocalCredentials] = useState<KnowledgeCredentialItem[]>([]);
 
     const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    const mergedHosts = useMemo(() => {
+        const result: KnowledgeHostItem[] = [];
+        const seenIds = new Set<string>();
+
+        for (const h of networkHosts) {
+            seenIds.add(h.id);
+            if (h.networkHostId) {
+                seenIds.add(`nh-${h.networkHostId}`);
+            }
+            const override =
+                savedHostsById[h.id] ||
+                (h.networkHostId ? savedHostsById[`nh-${h.networkHostId}`] : undefined);
+            if (override) {
+                const credById = new Map<string, KnowledgeCredentialItem>();
+                for (const c of h.credentials || []) {
+                    credById.set(c.id, c);
+                }
+                for (const c of override.credentials || []) {
+                    credById.set(c.id, c);
+                }
+                const mergedCreds = Array.from(credById.values());
+                result.push({
+                    ...h,
+                    ...override,
+                    id: h.id,
+                    hostId: h.hostId || override.hostId,
+                    networkHostId: h.networkHostId || override.networkHostId,
+                    credentials: mergedCreds,
+                    credentialCount: mergedCreds.length,
+                });
+            } else {
+                result.push(h);
+            }
+        }
+
+        for (const [id, savedHost] of Object.entries(savedHostsById)) {
+            const nhKey = savedHost.networkHostId ? `nh-${savedHost.networkHostId}` : undefined;
+            if (!seenIds.has(id) && (!nhKey || !seenIds.has(nhKey))) {
+                seenIds.add(id);
+                if (nhKey) {
+                    seenIds.add(nhKey);
+                }
+                result.push(savedHost);
+            }
+        }
+
+        return result;
+    }, [networkHosts, savedHostsById]);
+
+    const mergedCredentials = useMemo(() => {
+        const byId = new Map<string, KnowledgeCredentialItem>();
+        for (const c of allCredentials) {
+            byId.set(c.id, c);
+        }
+        for (const savedHost of Object.values(savedHostsById)) {
+            for (const c of savedHost.credentials || []) {
+                byId.set(c.id, c);
+            }
+        }
+        for (const c of localCredentials) {
+            byId.set(c.id, c);
+        }
+        return Array.from(byId.values());
+    }, [allCredentials, savedHostsById, localCredentials]);
+
+    const handleHostSaved = useCallback(
+        (savedHost: KnowledgeHostItem) => {
+            setSavedHostsById((prev) => ({
+                ...prev,
+                [savedHost.id]: savedHost,
+            }));
+            onRefetchKnowledgeGraph();
+        },
+        [onRefetchKnowledgeGraph]
+    );
+
+    const handleCredentialCreated = useCallback(
+        (createdCred: KnowledgeCredentialItem, targetHostId?: string) => {
+            setLocalCredentials((prev) => [
+                ...prev.filter((c) => c.id !== createdCred.id),
+                createdCred,
+            ]);
+            if (targetHostId) {
+                setSavedHostsById((prev) => {
+                    const existing =
+                        prev[targetHostId] ||
+                        networkHosts.find(
+                            (h) =>
+                                h.id === targetHostId ||
+                                (h.networkHostId && `nh-${h.networkHostId}` === targetHostId) ||
+                                (h.networkHostId && h.networkHostId === targetHostId)
+                        );
+                    if (!existing) {
+                        return prev;
+                    }
+                    const nextCreds = [
+                        ...(existing.credentials || []).filter((c) => c.id !== createdCred.id),
+                        createdCred,
+                    ];
+                    return {
+                        ...prev,
+                        [existing.id]: {
+                            ...existing,
+                            credentials: nextCreds,
+                            credentialCount: nextCreds.length,
+                        },
+                    };
+                });
+            }
+            onRefetchKnowledgeGraph();
+        },
+        [networkHosts, onRefetchKnowledgeGraph]
+    );
 
     const filteredPivots = useMemo(() => {
         if (!normalizedQuery) {
@@ -126,18 +244,21 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
 
     const filteredHosts = useMemo(() => {
         if (!normalizedQuery) {
-            return networkHosts;
+            return mergedHosts;
         }
-        return networkHosts.filter(
+        return mergedHosts.filter(
             (h) =>
                 h.name?.toLowerCase().includes(normalizedQuery) ||
                 h.hostname?.toLowerCase().includes(normalizedQuery) ||
                 h.ipAddress?.toLowerCase().includes(normalizedQuery) ||
                 h.primaryIP?.toLowerCase().includes(normalizedQuery) ||
                 h.subnet?.toLowerCase().includes(normalizedQuery) ||
-                (h.openPorts || []).some((port) => String(port).includes(normalizedQuery))
+                (h.openPorts || []).some((port) => String(port).includes(normalizedQuery)) ||
+                (h.credentials || []).some((c) =>
+                    c.principal?.toLowerCase().includes(normalizedQuery)
+                )
         );
-    }, [networkHosts, normalizedQuery]);
+    }, [mergedHosts, normalizedQuery]);
 
     const filteredShells = useMemo(() => {
         if (!normalizedQuery) {
@@ -154,15 +275,15 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
 
     const filteredCredentials = useMemo(() => {
         if (!normalizedQuery) {
-            return allCredentials;
+            return mergedCredentials;
         }
-        return allCredentials.filter(
+        return mergedCredentials.filter(
             (c) =>
                 c.principal?.toLowerCase().includes(normalizedQuery) ||
                 c.hostName?.toLowerCase().includes(normalizedQuery) ||
                 c.hostPrimaryIP?.toLowerCase().includes(normalizedQuery)
         );
-    }, [allCredentials, normalizedQuery]);
+    }, [mergedCredentials, normalizedQuery]);
 
     const filteredFiles = useMemo(() => {
         if (!normalizedQuery) {
@@ -272,7 +393,9 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                 {showHosts && (
                     <GraphHostsSection
                         hosts={filteredHosts}
+                        availableCredentials={mergedCredentials}
                         onOpenSshWithTarget={onOpenSshWithTarget}
+                        onHostSaved={handleHostSaved}
                     />
                 )}
                 {showShells && (
@@ -284,8 +407,12 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                 {showCreds && (
                     <GraphCredentialsSection
                         credentials={filteredCredentials}
+                        currentHostId={currentHostId}
+                        currentHostName={currentHostName}
                         currentHostIp={currentHostIp}
+                        hosts={mergedHosts}
                         onOpenSshWithTarget={onOpenSshWithTarget}
+                        onCredentialCreated={handleCredentialCreated}
                     />
                 )}
                 {showFiles && <GraphFilesSection files={filteredFiles} />}

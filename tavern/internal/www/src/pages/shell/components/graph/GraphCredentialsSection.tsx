@@ -1,11 +1,23 @@
 import React, { useState } from "react";
 import { ClipboardIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { KnowledgeCredentialItem } from "../../hooks/useShellData";
+import { Plus } from "lucide-react";
+import {
+    KnowledgeCredentialItem,
+    KnowledgeHostItem,
+} from "../../hooks/useShellData";
+import CredentialModal from "./CredentialModal";
 
 export interface GraphCredentialsSectionProps {
     credentials: KnowledgeCredentialItem[];
+    currentHostId?: string;
+    currentHostName?: string;
     currentHostIp?: string;
+    hosts?: KnowledgeHostItem[];
     onOpenSshWithTarget: (target: string) => void;
+    onCredentialCreated?: (
+        credential: KnowledgeCredentialItem,
+        targetHostId?: string
+    ) => void;
 }
 
 const SecretToggleIcon: React.FC<{ isRevealed: boolean }> = ({ isRevealed }) => {
@@ -72,15 +84,31 @@ const CredentialRow: React.FC<{
 
 export const GraphCredentialsSection: React.FC<GraphCredentialsSectionProps> = ({
     credentials,
+    currentHostId,
+    currentHostName,
     currentHostIp,
+    hosts = [],
     onOpenSshWithTarget,
+    onCredentialCreated,
 }) => {
+    const [modalOpen, setModalOpen] = useState(false);
+
     return (
         <div className="px-4 py-3 border-b border-gray-800" data-testid="graph-credentials-section">
             <div className="flex items-center justify-between mb-1">
                 <span className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">
                     Credentials ({credentials.length})
                 </span>
+                <button
+                    type="button"
+                    onClick={() => setModalOpen(true)}
+                    aria-label="Add credential"
+                    title="Create credential"
+                    data-testid="add-credential-button"
+                    className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                >
+                    <Plus className="w-3.5 h-3.5" />
+                </button>
             </div>
             {credentials.length === 0 ? (
                 <div className="py-2 text-xs text-gray-500">No credentials reported nearby.</div>
@@ -96,9 +124,18 @@ export const GraphCredentialsSection: React.FC<GraphCredentialsSectionProps> = (
                     ))}
                 </div>
             )}
+
+            <CredentialModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                currentHostId={currentHostId}
+                currentHostName={currentHostName}
+                currentHostIp={currentHostIp}
+                hosts={hosts}
+                onCredentialCreated={onCredentialCreated}
+            />
         </div>
     );
 };
 
 export default GraphCredentialsSection;
-

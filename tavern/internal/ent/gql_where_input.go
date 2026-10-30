@@ -5174,6 +5174,10 @@ type HostCredentialWhereInput struct {
 	// "shell_task" edge predicates.
 	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
 	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
+
+	// "network_hosts" edge predicates.
+	HasNetworkHosts     *bool                    `json:"hasNetworkHosts,omitempty"`
+	HasNetworkHostsWith []*NetworkHostWhereInput `json:"hasNetworkHostsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -5463,6 +5467,24 @@ func (i *HostCredentialWhereInput) P() (predicate.HostCredential, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, hostcredential.HasShellTaskWith(with...))
+	}
+	if i.HasNetworkHosts != nil {
+		p := hostcredential.HasNetworkHosts()
+		if !*i.HasNetworkHosts {
+			p = hostcredential.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNetworkHostsWith) > 0 {
+		with := make([]predicate.NetworkHost, 0, len(i.HasNetworkHostsWith))
+		for _, w := range i.HasNetworkHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNetworkHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostcredential.HasNetworkHostsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -7738,6 +7760,10 @@ type NetworkHostWhereInput struct {
 	// "networks" edge predicates.
 	HasNetworks     *bool                `json:"hasNetworks,omitempty"`
 	HasNetworksWith []*NetworkWhereInput `json:"hasNetworksWith,omitempty"`
+
+	// "credentials" edge predicates.
+	HasCredentials     *bool                       `json:"hasCredentials,omitempty"`
+	HasCredentialsWith []*HostCredentialWhereInput `json:"hasCredentialsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -8093,6 +8119,24 @@ func (i *NetworkHostWhereInput) P() (predicate.NetworkHost, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, networkhost.HasNetworksWith(with...))
+	}
+	if i.HasCredentials != nil {
+		p := networkhost.HasCredentials()
+		if !*i.HasCredentials {
+			p = networkhost.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCredentialsWith) > 0 {
+		with := make([]predicate.HostCredential, 0, len(i.HasCredentialsWith))
+		for _, w := range i.HasCredentialsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCredentialsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, networkhost.HasCredentialsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

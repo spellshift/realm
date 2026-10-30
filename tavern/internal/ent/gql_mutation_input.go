@@ -315,12 +315,13 @@ func (c *HostUpdateOne) SetInput(i UpdateHostInput) *HostUpdateOne {
 
 // CreateHostCredentialInput represents a mutation input for creating hostcredentials.
 type CreateHostCredentialInput struct {
-	Principal   string
-	Secret      string
-	Kind        epb.Credential_Kind
-	HostID      int
-	TaskID      *int
-	ShellTaskID *int
+	Principal      string
+	Secret         string
+	Kind           epb.Credential_Kind
+	HostID         *int
+	TaskID         *int
+	ShellTaskID    *int
+	NetworkHostIDs []int
 }
 
 // Mutate applies the CreateHostCredentialInput on the HostCredentialMutation builder.
@@ -328,12 +329,17 @@ func (i *CreateHostCredentialInput) Mutate(m *HostCredentialMutation) {
 	m.SetPrincipal(i.Principal)
 	m.SetSecret(i.Secret)
 	m.SetKind(i.Kind)
-	m.SetHostID(i.HostID)
+	if v := i.HostID; v != nil {
+		m.SetHostID(*v)
+	}
 	if v := i.TaskID; v != nil {
 		m.SetTaskID(*v)
 	}
 	if v := i.ShellTaskID; v != nil {
 		m.SetShellTaskID(*v)
+	}
+	if v := i.NetworkHostIDs; len(v) > 0 {
+		m.AddNetworkHostIDs(v...)
 	}
 }
 
@@ -513,13 +519,14 @@ func (c *NetworkUpdateOne) SetInput(i UpdateNetworkInput) *NetworkUpdateOne {
 
 // CreateNetworkHostInput represents a mutation input for creating networkhosts.
 type CreateNetworkHostInput struct {
-	Name       *string
-	Hostname   *string
-	IPAddress  string
-	Subnet     *string
-	OpenPorts  []int
-	HostID     *int
-	NetworkIDs []int
+	Name          *string
+	Hostname      *string
+	IPAddress     string
+	Subnet        *string
+	OpenPorts     []int
+	HostID        *int
+	NetworkIDs    []int
+	CredentialIDs []int
 }
 
 // Mutate applies the CreateNetworkHostInput on the NetworkHostMutation builder.
@@ -543,6 +550,9 @@ func (i *CreateNetworkHostInput) Mutate(m *NetworkHostMutation) {
 	if v := i.NetworkIDs; len(v) > 0 {
 		m.AddNetworkIDs(v...)
 	}
+	if v := i.CredentialIDs; len(v) > 0 {
+		m.AddCredentialIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the CreateNetworkHostInput on the NetworkHostCreate builder.
@@ -553,22 +563,25 @@ func (c *NetworkHostCreate) SetInput(i CreateNetworkHostInput) *NetworkHostCreat
 
 // UpdateNetworkHostInput represents a mutation input for updating networkhosts.
 type UpdateNetworkHostInput struct {
-	LastModifiedAt   *time.Time
-	ClearName        bool
-	Name             *string
-	ClearHostname    bool
-	Hostname         *string
-	IPAddress        *string
-	ClearSubnet      bool
-	Subnet           *string
-	ClearOpenPorts   bool
-	OpenPorts        []int
-	AppendOpenPorts  []int
-	ClearHost        bool
-	HostID           *int
-	ClearNetworks    bool
-	AddNetworkIDs    []int
-	RemoveNetworkIDs []int
+	LastModifiedAt      *time.Time
+	ClearName           bool
+	Name                *string
+	ClearHostname       bool
+	Hostname            *string
+	IPAddress           *string
+	ClearSubnet         bool
+	Subnet              *string
+	ClearOpenPorts      bool
+	OpenPorts           []int
+	AppendOpenPorts     []int
+	ClearHost           bool
+	HostID              *int
+	ClearNetworks       bool
+	AddNetworkIDs       []int
+	RemoveNetworkIDs    []int
+	ClearCredentials    bool
+	AddCredentialIDs    []int
+	RemoveCredentialIDs []int
 }
 
 // Mutate applies the UpdateNetworkHostInput on the NetworkHostMutation builder.
@@ -620,6 +633,15 @@ func (i *UpdateNetworkHostInput) Mutate(m *NetworkHostMutation) {
 	}
 	if v := i.RemoveNetworkIDs; len(v) > 0 {
 		m.RemoveNetworkIDs(v...)
+	}
+	if i.ClearCredentials {
+		m.ClearCredentials()
+	}
+	if v := i.AddCredentialIDs; len(v) > 0 {
+		m.AddCredentialIDs(v...)
+	}
+	if v := i.RemoveCredentialIDs; len(v) > 0 {
+		m.RemoveCredentialIDs(v...)
 	}
 }
 

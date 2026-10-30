@@ -406,6 +406,42 @@ func (ec *executionContext) field_Event_notifications_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_HostCredential_networkHosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalONetworkHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNetworkHostOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalONetworkHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNetworkHostWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_Host_beacons_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -759,6 +795,42 @@ func (ec *executionContext) field_Host_tags_args(ctx context.Context, rawArgs ma
 	}
 	args["orderBy"] = arg4
 	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOTagWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_NetworkHost_credentials_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostCredentialOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostCredentialWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -8569,9 +8641,9 @@ func (ec *executionContext) _HostCredential_host(ctx context.Context, field grap
 			return obj.Host(ctx)
 		},
 		nil,
-		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		ec.marshalOHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -8758,6 +8830,55 @@ func (ec *executionContext) fieldContext_HostCredential_shellTask(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _HostCredential_networkHosts(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostCredential_networkHosts,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.NetworkHosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.NetworkHostOrder), fc.Args["where"].(*ent.NetworkHostWhereInput))
+		},
+		nil,
+		ec.marshalNNetworkHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNetworkHostConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_HostCredential_networkHosts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HostCredential",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_NetworkHostConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_NetworkHostConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_NetworkHostConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NetworkHostConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_HostCredential_networkHosts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _HostCredentialConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredentialConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8903,6 +9024,8 @@ func (ec *executionContext) fieldContext_HostCredentialEdge_node(_ context.Conte
 				return ec.fieldContext_HostCredential_task(ctx, field)
 			case "shellTask":
 				return ec.fieldContext_HostCredential_shellTask(ctx, field)
+			case "networkHosts":
+				return ec.fieldContext_HostCredential_networkHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
 		},
@@ -11761,6 +11884,55 @@ func (ec *executionContext) fieldContext_NetworkHost_networks(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _NetworkHost_credentials(ctx context.Context, field graphql.CollectedField, obj *ent.NetworkHost) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NetworkHost_credentials,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Credentials(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostCredentialOrder), fc.Args["where"].(*ent.HostCredentialWhereInput))
+		},
+		nil,
+		ec.marshalNHostCredentialConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NetworkHost_credentials(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NetworkHost",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_HostCredentialConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_HostCredentialConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_HostCredentialConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HostCredentialConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_NetworkHost_credentials_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NetworkHostConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.NetworkHostConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11908,6 +12080,8 @@ func (ec *executionContext) fieldContext_NetworkHostEdge_node(_ context.Context,
 				return ec.fieldContext_NetworkHost_host(ctx, field)
 			case "networks":
 				return ec.fieldContext_NetworkHost_networks(ctx, field)
+			case "credentials":
+				return ec.fieldContext_NetworkHost_credentials(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NetworkHost", field.Name)
 		},
@@ -18326,6 +18500,8 @@ func (ec *executionContext) fieldContext_ShellPivot_credential(_ context.Context
 				return ec.fieldContext_HostCredential_task(ctx, field)
 			case "shellTask":
 				return ec.fieldContext_HostCredential_shellTask(ctx, field)
+			case "networkHosts":
+				return ec.fieldContext_HostCredential_networkHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
 		},
@@ -18991,6 +19167,8 @@ func (ec *executionContext) fieldContext_ShellTask_reportedCredentials(_ context
 				return ec.fieldContext_HostCredential_task(ctx, field)
 			case "shellTask":
 				return ec.fieldContext_HostCredential_shellTask(ctx, field)
+			case "networkHosts":
+				return ec.fieldContext_HostCredential_networkHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
 		},
@@ -27155,7 +27333,7 @@ func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"principal", "secret", "kind", "hostID", "taskID", "shellTaskID"}
+	fieldsInOrder := [...]string{"principal", "secret", "kind", "hostID", "taskID", "shellTaskID", "networkHostIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27185,7 +27363,7 @@ func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.
 			it.Kind = data
 		case "hostID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostID"))
-			data, err := ec.unmarshalNID2int(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -27204,6 +27382,13 @@ func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.
 				return it, err
 			}
 			it.ShellTaskID = data
+		case "networkHostIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("networkHostIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.NetworkHostIDs = data
 		}
 	}
 	return it, nil
@@ -27278,7 +27463,7 @@ func (ec *executionContext) unmarshalInputCreateNetworkHostInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "hostname", "ipAddress", "subnet", "openPorts", "hostID", "networkIDs"}
+	fieldsInOrder := [...]string{"name", "hostname", "ipAddress", "subnet", "openPorts", "hostID", "networkIDs", "credentialIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27334,6 +27519,13 @@ func (ec *executionContext) unmarshalInputCreateNetworkHostInput(ctx context.Con
 				return it, err
 			}
 			it.NetworkIDs = data
+		case "credentialIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("credentialIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CredentialIDs = data
 		}
 	}
 	return it, nil
@@ -28676,7 +28868,7 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "secret", "secretNEQ", "secretIn", "secretNotIn", "secretGT", "secretGTE", "secretLT", "secretLTE", "secretContains", "secretHasPrefix", "secretHasSuffix", "secretEqualFold", "secretContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "secret", "secretNEQ", "secretIn", "secretNotIn", "secretGT", "secretGTE", "secretLT", "secretLTE", "secretContains", "secretHasPrefix", "secretHasSuffix", "secretEqualFold", "secretContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "hasNetworkHosts", "hasNetworkHostsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29124,6 +29316,20 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 				return it, err
 			}
 			it.HasShellTaskWith = data
+		case "hasNetworkHosts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNetworkHosts"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasNetworkHosts = data
+		case "hasNetworkHostsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNetworkHostsWith"))
+			data, err := ec.unmarshalONetworkHostWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNetworkHostWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasNetworkHostsWith = data
 		}
 	}
 	return it, nil
@@ -32713,7 +32919,7 @@ func (ec *executionContext) unmarshalInputNetworkHostWhereInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "hostname", "hostnameNEQ", "hostnameIn", "hostnameNotIn", "hostnameGT", "hostnameGTE", "hostnameLT", "hostnameLTE", "hostnameContains", "hostnameHasPrefix", "hostnameHasSuffix", "hostnameIsNil", "hostnameNotNil", "hostnameEqualFold", "hostnameContainsFold", "ipAddress", "ipAddressNEQ", "ipAddressIn", "ipAddressNotIn", "ipAddressGT", "ipAddressGTE", "ipAddressLT", "ipAddressLTE", "ipAddressContains", "ipAddressHasPrefix", "ipAddressHasSuffix", "ipAddressEqualFold", "ipAddressContainsFold", "subnet", "subnetNEQ", "subnetIn", "subnetNotIn", "subnetGT", "subnetGTE", "subnetLT", "subnetLTE", "subnetContains", "subnetHasPrefix", "subnetHasSuffix", "subnetIsNil", "subnetNotNil", "subnetEqualFold", "subnetContainsFold", "hasHost", "hasHostWith", "hasNetworks", "hasNetworksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "hostname", "hostnameNEQ", "hostnameIn", "hostnameNotIn", "hostnameGT", "hostnameGTE", "hostnameLT", "hostnameLTE", "hostnameContains", "hostnameHasPrefix", "hostnameHasSuffix", "hostnameIsNil", "hostnameNotNil", "hostnameEqualFold", "hostnameContainsFold", "ipAddress", "ipAddressNEQ", "ipAddressIn", "ipAddressNotIn", "ipAddressGT", "ipAddressGTE", "ipAddressLT", "ipAddressLTE", "ipAddressContains", "ipAddressHasPrefix", "ipAddressHasSuffix", "ipAddressEqualFold", "ipAddressContainsFold", "subnet", "subnetNEQ", "subnetIn", "subnetNotIn", "subnetGT", "subnetGTE", "subnetLT", "subnetLTE", "subnetContains", "subnetHasPrefix", "subnetHasSuffix", "subnetIsNil", "subnetNotNil", "subnetEqualFold", "subnetContainsFold", "hasHost", "hasHostWith", "hasNetworks", "hasNetworksWith", "hasCredentials", "hasCredentialsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -33343,6 +33549,20 @@ func (ec *executionContext) unmarshalInputNetworkHostWhereInput(ctx context.Cont
 				return it, err
 			}
 			it.HasNetworksWith = data
+		case "hasCredentials":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCredentials"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasCredentials = data
+		case "hasCredentialsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCredentialsWith"))
+			data, err := ec.unmarshalOHostCredentialWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasCredentialsWith = data
 		}
 	}
 	return it, nil
@@ -41733,7 +41953,7 @@ func (ec *executionContext) unmarshalInputUpdateNetworkHostInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "name", "clearName", "hostname", "clearHostname", "ipAddress", "subnet", "clearSubnet", "openPorts", "appendOpenPorts", "clearOpenPorts", "hostID", "clearHost", "addNetworkIDs", "removeNetworkIDs", "clearNetworks"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "name", "clearName", "hostname", "clearHostname", "ipAddress", "subnet", "clearSubnet", "openPorts", "appendOpenPorts", "clearOpenPorts", "hostID", "clearHost", "addNetworkIDs", "removeNetworkIDs", "clearNetworks", "addCredentialIDs", "removeCredentialIDs", "clearCredentials"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -41852,6 +42072,27 @@ func (ec *executionContext) unmarshalInputUpdateNetworkHostInput(ctx context.Con
 				return it, err
 			}
 			it.ClearNetworks = data
+		case "addCredentialIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addCredentialIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddCredentialIDs = data
+		case "removeCredentialIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeCredentialIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemoveCredentialIDs = data
+		case "clearCredentials":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearCredentials"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearCredentials = data
 		}
 	}
 	return it, nil
@@ -45787,16 +46028,13 @@ func (ec *executionContext) _HostCredential(ctx context.Context, sel ast.Selecti
 		case "host":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._HostCredential_host(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -45863,6 +46101,42 @@ func (ec *executionContext) _HostCredential(ctx context.Context, sel ast.Selecti
 					}
 				}()
 				res = ec._HostCredential_shellTask(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "networkHosts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._HostCredential_networkHosts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -47086,6 +47360,42 @@ func (ec *executionContext) _NetworkHost(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._NetworkHost_networks(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "credentials":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NetworkHost_credentials(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

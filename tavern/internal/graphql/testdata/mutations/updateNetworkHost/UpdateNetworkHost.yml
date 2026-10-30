@@ -1,6 +1,10 @@
 state: |
   INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `hosts` (id, name, identifier, platform, created_at, last_modified_at)
+    VALUES (1010, "jumpbox", "JUMP-HOST", "PLATFORM_LINUX", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `host_credentials` (id, principal, secret, kind, host_credential_host, created_at, last_modified_at)
+    VALUES (501, "svc_backup", "Winter2025!", "KIND_PASSWORD", 1010, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
   INSERT INTO `network_hosts` (id, name, hostname, ip_address, subnet, open_ports, created_at, last_modified_at)
     VALUES (300, "srv1", "srv1.local", "10.0.0.50", "10.0.0.0/24", "[22]", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
 requestor:
@@ -14,6 +18,15 @@ query: |
       ipAddress
       subnet
       openPorts
+      credentials {
+        edges {
+          node {
+            id
+            principal
+            kind
+          }
+        }
+      }
     }
   }
 variables:
@@ -23,6 +36,8 @@ variables:
     openPorts:
       - 22
       - 443
+    addCredentialIDs:
+      - 501
 expected:
   updateNetworkHost:
     id: "300"
@@ -33,4 +48,10 @@ expected:
     openPorts:
       - 22
       - 443
+    credentials:
+      edges:
+        - node:
+            id: "501"
+            principal: "svc_backup"
+            kind: "KIND_PASSWORD"
 

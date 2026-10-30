@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -163,6 +164,21 @@ func (nhu *NetworkHostUpdate) AddNetworks(n ...*Network) *NetworkHostUpdate {
 	return nhu.AddNetworkIDs(ids...)
 }
 
+// AddCredentialIDs adds the "credentials" edge to the HostCredential entity by IDs.
+func (nhu *NetworkHostUpdate) AddCredentialIDs(ids ...int) *NetworkHostUpdate {
+	nhu.mutation.AddCredentialIDs(ids...)
+	return nhu
+}
+
+// AddCredentials adds the "credentials" edges to the HostCredential entity.
+func (nhu *NetworkHostUpdate) AddCredentials(h ...*HostCredential) *NetworkHostUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return nhu.AddCredentialIDs(ids...)
+}
+
 // Mutation returns the NetworkHostMutation object of the builder.
 func (nhu *NetworkHostUpdate) Mutation() *NetworkHostMutation {
 	return nhu.mutation
@@ -193,6 +209,27 @@ func (nhu *NetworkHostUpdate) RemoveNetworks(n ...*Network) *NetworkHostUpdate {
 		ids[i] = n[i].ID
 	}
 	return nhu.RemoveNetworkIDs(ids...)
+}
+
+// ClearCredentials clears all "credentials" edges to the HostCredential entity.
+func (nhu *NetworkHostUpdate) ClearCredentials() *NetworkHostUpdate {
+	nhu.mutation.ClearCredentials()
+	return nhu
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to HostCredential entities by IDs.
+func (nhu *NetworkHostUpdate) RemoveCredentialIDs(ids ...int) *NetworkHostUpdate {
+	nhu.mutation.RemoveCredentialIDs(ids...)
+	return nhu
+}
+
+// RemoveCredentials removes "credentials" edges to HostCredential entities.
+func (nhu *NetworkHostUpdate) RemoveCredentials(h ...*HostCredential) *NetworkHostUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return nhu.RemoveCredentialIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -362,6 +399,51 @@ func (nhu *NetworkHostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if nhu.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   networkhost.CredentialsTable,
+			Columns: networkhost.CredentialsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nhu.mutation.RemovedCredentialsIDs(); len(nodes) > 0 && !nhu.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   networkhost.CredentialsTable,
+			Columns: networkhost.CredentialsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nhu.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   networkhost.CredentialsTable,
+			Columns: networkhost.CredentialsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, nhu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{networkhost.Label}
@@ -514,6 +596,21 @@ func (nhuo *NetworkHostUpdateOne) AddNetworks(n ...*Network) *NetworkHostUpdateO
 	return nhuo.AddNetworkIDs(ids...)
 }
 
+// AddCredentialIDs adds the "credentials" edge to the HostCredential entity by IDs.
+func (nhuo *NetworkHostUpdateOne) AddCredentialIDs(ids ...int) *NetworkHostUpdateOne {
+	nhuo.mutation.AddCredentialIDs(ids...)
+	return nhuo
+}
+
+// AddCredentials adds the "credentials" edges to the HostCredential entity.
+func (nhuo *NetworkHostUpdateOne) AddCredentials(h ...*HostCredential) *NetworkHostUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return nhuo.AddCredentialIDs(ids...)
+}
+
 // Mutation returns the NetworkHostMutation object of the builder.
 func (nhuo *NetworkHostUpdateOne) Mutation() *NetworkHostMutation {
 	return nhuo.mutation
@@ -544,6 +641,27 @@ func (nhuo *NetworkHostUpdateOne) RemoveNetworks(n ...*Network) *NetworkHostUpda
 		ids[i] = n[i].ID
 	}
 	return nhuo.RemoveNetworkIDs(ids...)
+}
+
+// ClearCredentials clears all "credentials" edges to the HostCredential entity.
+func (nhuo *NetworkHostUpdateOne) ClearCredentials() *NetworkHostUpdateOne {
+	nhuo.mutation.ClearCredentials()
+	return nhuo
+}
+
+// RemoveCredentialIDs removes the "credentials" edge to HostCredential entities by IDs.
+func (nhuo *NetworkHostUpdateOne) RemoveCredentialIDs(ids ...int) *NetworkHostUpdateOne {
+	nhuo.mutation.RemoveCredentialIDs(ids...)
+	return nhuo
+}
+
+// RemoveCredentials removes "credentials" edges to HostCredential entities.
+func (nhuo *NetworkHostUpdateOne) RemoveCredentials(h ...*HostCredential) *NetworkHostUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return nhuo.RemoveCredentialIDs(ids...)
 }
 
 // Where appends a list predicates to the NetworkHostUpdate builder.
@@ -736,6 +854,51 @@ func (nhuo *NetworkHostUpdateOne) sqlSave(ctx context.Context) (_node *NetworkHo
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(network.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nhuo.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   networkhost.CredentialsTable,
+			Columns: networkhost.CredentialsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nhuo.mutation.RemovedCredentialsIDs(); len(nodes) > 0 && !nhuo.mutation.CredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   networkhost.CredentialsTable,
+			Columns: networkhost.CredentialsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nhuo.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   networkhost.CredentialsTable,
+			Columns: networkhost.CredentialsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

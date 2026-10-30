@@ -32,6 +32,8 @@ const (
 	EdgeHost = "host"
 	// EdgeNetworks holds the string denoting the networks edge name in mutations.
 	EdgeNetworks = "networks"
+	// EdgeCredentials holds the string denoting the credentials edge name in mutations.
+	EdgeCredentials = "credentials"
 	// Table holds the table name of the networkhost in the database.
 	Table = "network_hosts"
 	// HostTable is the table that holds the host relation/edge.
@@ -46,6 +48,11 @@ const (
 	// NetworksInverseTable is the table name for the Network entity.
 	// It exists in this package in order to avoid circular dependency with the "network" package.
 	NetworksInverseTable = "networks"
+	// CredentialsTable is the table that holds the credentials relation/edge. The primary key declared below.
+	CredentialsTable = "network_host_credentials"
+	// CredentialsInverseTable is the table name for the HostCredential entity.
+	// It exists in this package in order to avoid circular dependency with the "hostcredential" package.
+	CredentialsInverseTable = "host_credentials"
 )
 
 // Columns holds all SQL columns for networkhost fields.
@@ -70,6 +77,9 @@ var (
 	// NetworksPrimaryKey and NetworksColumn2 are the table columns denoting the
 	// primary key for the networks relation (M2M).
 	NetworksPrimaryKey = []string{"network_host_id", "network_id"}
+	// CredentialsPrimaryKey and CredentialsColumn2 are the table columns denoting the
+	// primary key for the credentials relation (M2M).
+	CredentialsPrimaryKey = []string{"network_host_id", "host_credential_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -162,6 +172,20 @@ func ByNetworks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newNetworksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByCredentialsCount orders the results by credentials count.
+func ByCredentialsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCredentialsStep(), opts...)
+	}
+}
+
+// ByCredentials orders the results by credentials terms.
+func ByCredentials(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCredentialsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newHostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -174,5 +198,12 @@ func newNetworksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(NetworksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, false, NetworksTable, NetworksPrimaryKey...),
+	)
+}
+func newCredentialsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CredentialsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, CredentialsTable, CredentialsPrimaryKey...),
 	)
 }

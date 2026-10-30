@@ -1,0 +1,48 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `network_hosts` (id, name, hostname, ip_address, subnet, open_ports, created_at, last_modified_at)
+    VALUES (1, "db-01", "db-01.corp.local", "10.0.0.25", "10.0.0.0/24", "[22,5432]", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation CreateCredentialForNetworkHost($input: CreateHostCredentialInput!) {
+    createCredential(input: $input) {
+      principal
+      secret
+      kind
+      host {
+        id
+      }
+      networkHosts {
+        edges {
+          node {
+            id
+            name
+            ipAddress
+          }
+        }
+      }
+    }
+  }
+variables:
+  input:
+    principal: "postgres"
+    secret: "s3cr3t!"
+    kind: "KIND_PASSWORD"
+    networkHostIDs:
+      - 1
+
+expected:
+  createCredential:
+    principal: "postgres"
+    secret: "s3cr3t!"
+    kind: "KIND_PASSWORD"
+    host: null
+    networkHosts:
+      edges:
+        - node:
+            id: "1"
+            name: "db-01"
+            ipAddress: "10.0.0.25"
+

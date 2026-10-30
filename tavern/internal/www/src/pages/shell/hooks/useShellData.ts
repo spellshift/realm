@@ -214,7 +214,7 @@ export const useShellData = (shellId: string | undefined) => {
     });
 
     // Fetch Eldritch tomes for the Composer
-    const { data: tomesData } = useQuery(GET_SHELL_TOMES, {
+    const { data: tomesData, refetch: refetchTomes } = useQuery(GET_SHELL_TOMES, {
         skip: !shellId,
     });
 
@@ -436,6 +436,7 @@ export const useShellData = (shellId: string | undefined) => {
         stuckElapsedSeconds,
         pivots,
         tomes,
+        refetchTomes,
         refetchHistory,
         hostCredentials,
         allCredentials,

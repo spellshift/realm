@@ -26,9 +26,11 @@ import {
     moveCursorDownInBuffer,
     moveCursorToLineStart,
     moveCursorToLineEnd,
+    dedentCurrentLine,
     shouldContinueMultilineOnEnter,
     insertNewlineWithAutoIndent,
     formatMultilineTerminalBuffer,
+    buildTerminalRedrawSequence,
 } from "./shellUtils";
 import { ShellTaskItem } from "./useShellData";
 
@@ -108,6 +110,8 @@ const writeHelpMessage = (term: Terminal, version: string) => {
 interface ShellState {
     inputBuffer: string;
     cursorPos: number;
+    preferredCol: number | null;
+    savedDraftBuffer: string;
     history: string[];
     historyIndex: number;
     prompt: string;
@@ -176,6 +180,8 @@ export const useShellTerminal = (
     const shellState = useRef<ShellState>({
         inputBuffer: "",
         cursorPos: 0,
+        preferredCol: null,
+        savedDraftBuffer: "",
         history: loadHistory(),
         historyIndex: -1,
         prompt: ">>> ",
@@ -212,6 +218,35 @@ export const useShellTerminal = (
     const [showCompletions, setShowCompletions] = useState(false);
     const [completionIndex, setCompletionIndex] = useState(0);
     const [completionPos, setCompletionPos] = useState({ x: 0, y: 0 });
+    const [promptPos, setPromptPos] = useState<{
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+        visible: boolean;
+    }>({ top: 6, left: 6, width: 24, height: 18, visible: false });
+    const [isAwaitingCommand, setIsAwaitingCommand] = useState(false);
+    const [completedTaskIds, setCompletedTaskIds] = useState<string[]>([]);
+    const awaitingCommandTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const markCommandAwaiting = useCallback(() => {
+        setIsAwaitingCommand(true);
+        if (awaitingCommandTimeoutRef.current) {
+            clearTimeout(awaitingCommandTimeoutRef.current);
+        }
+        awaitingCommandTimeoutRef.current = setTimeout(() => {
+            awaitingCommandTimeoutRef.current = null;
+            setIsAwaitingCommand(false);
+        }, 3500);
+    }, []);
+
+    const clearCommandAwaiting = useCallback(() => {
+        if (awaitingCommandTimeoutRef.current) {
+            clearTimeout(awaitingCommandTimeoutRef.current);
+            awaitingCommandTimeoutRef.current = null;
+        }
+        setIsAwaitingCommand(false);
+    }, []);
 
     // Tooltip state
     const [tooltipState, setTooltipState] = useState<{
@@ -226,6 +261,7 @@ export const useShellTerminal = (
     const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const lastBufferHeight = useRef(0);
+    const lastCursorRow = useRef(0);
 
     // We need a ref to access current completions inside onData without stale closure
     const completionsRef = useRef<{ list: string[], start: number, show: boolean, index: number }>({
@@ -258,7 +294,76 @@ export const useShellTerminal = (
         }
     }, [isLateCheckin, connectionStatus, shellClosedAt]);
 
+    const updatePromptPos = useCallback(() => {
+        const term = termInstance.current;
+        const container = termNodeRef.current;
+        if (!term || !container || !isReplReadyRef.current || shellState.current.isSearching) {
+            setPromptPos((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+            return;
+        }
+
+        const activeBuf = term.buffer?.active;
+        const cursorY = activeBuf?.cursorY ?? 0;
+        const baseY = activeBuf?.baseY ?? 0;
+        const viewportY = activeBuf?.viewportY ?? 0;
+
+        const promptScreenRow = Math.max(0, cursorY - lastCursorRow.current);
+        const visibleRow = promptScreenRow + (baseY - viewportY);
+        const rows = Math.max(1, term.rows || 24);
+        const cols = Math.max(1, term.cols || 80);
+
+        if (visibleRow < 0 || visibleRow >= rows) {
+            setPromptPos((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+            return;
+        }
+
+        let offsetX = 6;
+        let offsetY = 6;
+        let cellHeight = 13.5 * 1.35;
+        let cellWidth = 8.1;
+
+        const screenEl = container.querySelector(".xterm-screen") as HTMLElement | null;
+        if (screenEl) {
+            const containerRect = container.getBoundingClientRect();
+            const screenRect = screenEl.getBoundingClientRect();
+            if (screenRect.width > 0 && screenRect.height > 0) {
+                offsetX = screenRect.left - containerRect.left;
+                offsetY = screenRect.top - containerRect.top;
+                cellHeight = screenRect.height / rows;
+                cellWidth = screenRect.width / cols;
+            }
+        }
+
+        const nextTop = Math.round(offsetY + visibleRow * cellHeight);
+        const nextLeft = Math.round(offsetX);
+        const nextWidth = Math.max(20, Math.round(3 * cellWidth));
+        const nextHeight = Math.max(16, Math.round(cellHeight));
+
+        setPromptPos((prev) => {
+            if (
+                prev.visible &&
+                prev.top === nextTop &&
+                prev.left === nextLeft &&
+                prev.width === nextWidth &&
+                prev.height === nextHeight
+            ) {
+                return prev;
+            }
+            return {
+                top: nextTop,
+                left: nextLeft,
+                width: nextWidth,
+                height: nextHeight,
+                visible: true,
+            };
+        });
+    }, []);
+
     const redrawLine = useCallback(() => {
+        if (redrawTimeoutRef.current) {
+            clearTimeout(redrawTimeoutRef.current);
+            redrawTimeoutRef.current = null;
+        }
         const term = termInstance.current;
         if (!term) return;
         const state = shellState.current;
@@ -294,48 +399,22 @@ export const useShellTerminal = (
         }
 
         const termCols = Math.max(1, term.cols || 80);
-        const getVisualLineCount = (text: string, cols: number) => {
-            const lines = text.split("\n");
-            let count = 0;
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                if (i > 0) count++;
-                if (line.length > 0) {
-                    count += Math.floor((line.length - 1) / cols);
-                }
-            }
-            return count;
-        };
+        const redraw = buildTerminalRedrawSequence(
+            contentToWrite,
+            contentToDisplay,
+            cursorIndex,
+            termCols,
+            lastCursorRow.current
+        );
 
-        const rows = getVisualLineCount(contentToWrite, termCols);
-
-        const prevRows = lastBufferHeight.current;
-        if (prevRows > 0) {
-            term.write(`\x1b[${prevRows}A`);
+        term.write(redraw.sequence);
+        lastBufferHeight.current = redraw.totalRows;
+        lastCursorRow.current = redraw.cursorRow;
+        updatePromptPos();
+        if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+            window.requestAnimationFrame(() => updatePromptPos());
         }
-
-        term.write("\r\x1b[J");
-        term.write(contentToDisplay.replace(/\n/g, "\r\n"));
-
-        lastBufferHeight.current = rows;
-
-        if (!state.isSearching) {
-            const prefix = contentToWrite.slice(0, cursorIndex);
-            const cursorRow = getVisualLineCount(prefix, termCols);
-            const lastLine = prefix.split("\n").pop() || "";
-            const cursorCol = lastLine.length % termCols;
-
-            const moveUp = rows - cursorRow;
-            if (moveUp > 0) {
-                term.write(`\x1b[${moveUp}A`);
-            }
-
-            term.write("\r");
-            if (cursorCol > 0) {
-                term.write(`\x1b[${cursorCol}C`);
-            }
-        }
-    }, []);
+    }, [updatePromptPos]);
 
     const updateCompletionsUI = useCallback((list: string[], start: number, show: boolean, index: number) => {
         setCompletions(list);
@@ -510,9 +589,12 @@ export const useShellTerminal = (
         seenBeforeReconnectRef.current.clear();
         hasConnectedOnceRef.current = false;
         lastBufferHeight.current = 0;
+        lastCursorRow.current = 0;
         shellState.current.inputBuffer = "";
         shellState.current.currentBlock = "";
         shellState.current.cursorPos = 0;
+        shellState.current.preferredCol = null;
+        shellState.current.savedDraftBuffer = "";
         shellState.current.historyIndex = -1;
         shellState.current.prompt = ">>> ";
         shellState.current.isSearching = false;
@@ -545,27 +627,25 @@ export const useShellTerminal = (
         termInstance.current.open(termNodeRef.current);
         fitAddon.fit();
 
+        termInstance.current.onWriteParsed?.(() => updatePromptPos());
+        termInstance.current.onCursorMove?.(() => updatePromptPos());
+        termInstance.current.onScroll?.(() => updatePromptPos());
+        termInstance.current.onRender?.(() => updatePromptPos());
+
         const handleResize = () => {
             fitAddon.fit();
+            updatePromptPos();
         };
         window.addEventListener("resize", handleResize);
 
         // Also observe container size changes (e.g. tab switches)
         const resizeObserver = new ResizeObserver(() => {
             fitAddon.fit();
+            updatePromptPos();
         });
         resizeObserver.observe(termNodeRef.current);
 
         termInstance.current.write("Eldritch v0.4.1\r\n");
-
-        const scheduleRedraw = () => {
-            if (redrawTimeoutRef.current) {
-                clearTimeout(redrawTimeoutRef.current);
-            }
-            redrawTimeoutRef.current = setTimeout(() => {
-                redrawLine();
-            }, 35);
-        };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const url = `${scheme}://${window.location.host}/shell/ws?shell_id=${shellId}`;
@@ -575,6 +655,15 @@ export const useShellTerminal = (
             (msg: WebsocketMessage) => {
                 const term = termInstance.current;
                 if (!term) return;
+
+                if (
+                    msg.kind === WebsocketMessageKind.ControlFlow &&
+                    msg.signal === WebsocketControlFlowSignal.TaskQueued
+                ) {
+                    markCommandAwaiting();
+                    onCommandSubmittedRef.current?.();
+                    return;
+                }
 
                 // Deduplicate historical task output re-sent by the server after a WebSocket reconnect
                 const maybeTaskId = (msg as any).shell_task_id;
@@ -589,12 +678,14 @@ export const useShellTerminal = (
                         return;
                     }
                     seenTaskIdsRef.current.add(maybeTaskId);
+                    const idStr = String(maybeTaskId);
+                    setCompletedTaskIds((prev) => (prev.includes(idStr) ? prev : [...prev, idStr]));
                 }
 
-                // Clear current input line(s) before printing output
-                const prevRows = lastBufferHeight.current;
-                if (prevRows > 0) {
-                    term.write(`\x1b[${prevRows}A`);
+                // Clear current input line(s) from the prompt's top row before printing output
+                const prevCursorRow = lastCursorRow.current;
+                if (prevCursorRow > 0) {
+                    term.write(`\x1b[${prevCursorRow}A`);
                 }
                 term.write("\r\x1b[J");
 
@@ -605,20 +696,22 @@ export const useShellTerminal = (
                 switch (msg.kind) {
                     case WebsocketMessageKind.Output:
                         content = msg.output;
+                        clearCommandAwaiting();
+                        onCommandSubmittedRef.current?.();
                         break;
                     case WebsocketMessageKind.TaskError:
                         content = msg.error;
                         color = "\x1b[38;2;255;0;0m"; // Red
+                        clearCommandAwaiting();
+                        onCommandSubmittedRef.current?.();
                         break;
                     case WebsocketMessageKind.Error:
                         content = msg.error;
                         color = "\x1b[38;2;255;0;0m"; // Red
+                        clearCommandAwaiting();
                         break;
                     case WebsocketMessageKind.ControlFlow:
-                        if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
-                            content = msg.message + "\n";
-                            color = "\x1b[38;5;178m"; // Gold
-                        } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                        if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
                             const wasUpgraded = portalIdRef.current !== msg.portal_id;
                             portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
@@ -637,6 +730,7 @@ export const useShellTerminal = (
                         break;
                     case WebsocketMessageKind.OutputFromOtherStream:
                         content = msg.output;
+                        onCommandSubmittedRef.current?.();
                         break;
                 }
 
@@ -660,12 +754,19 @@ export const useShellTerminal = (
 
                 // Reset input line state and redraw it at the bottom
                 lastBufferHeight.current = 0;
+                lastCursorRow.current = 0;
                 redrawLine();
             },
             () => {
                 termInstance.current?.write("Connected to Tavern.\r\n>>> ");
+                lastBufferHeight.current = 0;
+                lastCursorRow.current = 0;
                 isReplReadyRef.current = true;
                 setIsReplReady(true);
+                updatePromptPos();
+                if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+                    window.requestAnimationFrame(() => updatePromptPos());
+                }
             },
             (status: ConnectionStatus, message?: string) => {
                 const prevStatus = connectionStatusRef.current;
@@ -703,6 +804,11 @@ export const useShellTerminal = (
             const term = termInstance.current;
             if (!term) return;
 
+            const isUpArrow = data === "\x1b[A" || data === "\x1bOA";
+            const isDownArrow = data === "\x1b[B" || data === "\x1bOB";
+            const isLeftArrow = data === "\x1b[D" || data === "\x1bOD";
+            const isRightArrow = data === "\x1b[C" || data === "\x1bOC";
+
             // If completions are showing, handle navigation
             if (completionsRef.current.show && !isPaste) {
                 if (code === 9) { // Tab: cycle or apply if single
@@ -715,11 +821,19 @@ export const useShellTerminal = (
                     }
                     return;
                 }
+                if (data === "\x1b[Z") { // Shift+Tab: cycle backwards
+                    const list = completionsRef.current.list;
+                    if (list.length > 0) {
+                        const prev = (completionsRef.current.index - 1 + list.length) % list.length;
+                        updateCompletionsUI(list, completionsRef.current.start, true, prev);
+                    }
+                    return;
+                }
                 if (code === 13) { // Enter: select
                     applyCompletion(completionsRef.current.list[completionsRef.current.index]);
                     return;
                 }
-                if (data === "\x1b[B") { // Down
+                if (isDownArrow) { // Down
                     const list = completionsRef.current.list;
                     if (list.length > 0) {
                         const next = (completionsRef.current.index + 1) % list.length;
@@ -727,7 +841,7 @@ export const useShellTerminal = (
                     }
                     return;
                 }
-                if (data === "\x1b[A") { // Up
+                if (isUpArrow) { // Up
                     const list = completionsRef.current.list;
                     if (list.length > 0) {
                         const next = (completionsRef.current.index - 1 + list.length) % list.length;
@@ -767,11 +881,12 @@ export const useShellTerminal = (
                     }
                     state.inputBuffer = match;
                     state.cursorPos = match.length;
+                    state.preferredCol = null;
                     state.searchQuery = "";
                     redrawLine();
                     return;
                 }
-                if (code === 127) { // Backspace
+                if (code === 127 || code === 8) { // Backspace
                     state.searchQuery = state.searchQuery.slice(0, -1);
                     redrawLine();
                     return;
@@ -785,17 +900,29 @@ export const useShellTerminal = (
                 return;
             }
 
+            // Reset sticky vertical column on any non-vertical navigation key
+            if (!isUpArrow && !isDownArrow) {
+                state.preferredCol = null;
+            }
+
             // Normal mode
             if (data === "\x03") { // Ctrl+C
                 adapter.current?.reset();
+                if (state.inputBuffer.length > 0 && lastCursorRow.current < lastBufferHeight.current) {
+                    state.cursorPos = state.inputBuffer.length;
+                    redrawLine();
+                }
                 term.write("^C\r\n");
                 state.inputBuffer = "";
                 state.currentBlock = "";
                 state.cursorPos = 0;
+                state.preferredCol = null;
+                state.savedDraftBuffer = "";
                 state.historyIndex = -1;
                 state.prompt = ">>> ";
                 term.write(state.prompt);
                 lastBufferHeight.current = 0;
+                lastCursorRow.current = 0;
                 return;
             }
 
@@ -810,10 +937,11 @@ export const useShellTerminal = (
                 const clearSeq = buildScrollbackPreservingClearSequence(
                     term.rows,
                     term.buffer?.active?.cursorY ?? 0,
-                    lastBufferHeight.current
+                    lastCursorRow.current
                 );
                 term.write(clearSeq);
                 lastBufferHeight.current = 0;
+                lastCursorRow.current = 0;
                 redrawLine();
                 term.scrollToBottom?.();
                 return;
@@ -851,6 +979,15 @@ export const useShellTerminal = (
                 const next = insertNewlineWithAutoIndent(state.inputBuffer, state.cursorPos);
                 state.inputBuffer = next.buffer;
                 state.cursorPos = next.cursorPos;
+                redrawLine();
+                return;
+            }
+
+            // Shift+Tab: Dedent current line by up to 4 spaces
+            if (data === "\x1b[Z") {
+                const dedented = dedentCurrentLine(state.inputBuffer, state.cursorPos);
+                state.inputBuffer = dedented.buffer;
+                state.cursorPos = dedented.cursorPos;
                 redrawLine();
                 return;
             }
@@ -898,16 +1035,28 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x1b[A") { // Up: navigate to previous line inside multi-line block first, then history
-                const upPos = moveCursorUpInBuffer(state.inputBuffer, state.cursorPos);
+            if (isUpArrow) { // Up: navigate to previous line inside multi-line block first, then history
+                if (state.preferredCol === null) {
+                    state.preferredCol = getCursorLineInfo(state.inputBuffer, state.cursorPos).col;
+                }
+                const upPos = moveCursorUpInBuffer(
+                    state.inputBuffer,
+                    state.cursorPos,
+                    state.preferredCol
+                );
                 if (upPos !== null) {
                     state.cursorPos = upPos;
                     redrawLine();
                     return;
                 }
+                state.preferredCol = null;
                 if (state.history.length > 0) {
-                    if (state.historyIndex === -1) state.historyIndex = state.history.length - 1;
-                    else if (state.historyIndex > 0) state.historyIndex--;
+                    if (state.historyIndex === -1) {
+                        state.savedDraftBuffer = state.inputBuffer;
+                        state.historyIndex = state.history.length - 1;
+                    } else if (state.historyIndex > 0) {
+                        state.historyIndex--;
+                    }
                     state.inputBuffer = state.history[state.historyIndex];
                     state.cursorPos = state.inputBuffer.length;
                     redrawLine();
@@ -915,20 +1064,29 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x1b[B") { // Down: navigate to next line inside multi-line block first, then history
-                const downPos = moveCursorDownInBuffer(state.inputBuffer, state.cursorPos);
+            if (isDownArrow) { // Down: navigate to next line inside multi-line block first, then history
+                if (state.preferredCol === null) {
+                    state.preferredCol = getCursorLineInfo(state.inputBuffer, state.cursorPos).col;
+                }
+                const downPos = moveCursorDownInBuffer(
+                    state.inputBuffer,
+                    state.cursorPos,
+                    state.preferredCol
+                );
                 if (downPos !== null) {
                     state.cursorPos = downPos;
                     redrawLine();
                     return;
                 }
+                state.preferredCol = null;
                 if (state.historyIndex !== -1) {
                     if (state.historyIndex < state.history.length - 1) {
                         state.historyIndex++;
                         state.inputBuffer = state.history[state.historyIndex];
                     } else {
                         state.historyIndex = -1;
-                        state.inputBuffer = "";
+                        state.inputBuffer = state.savedDraftBuffer;
+                        state.savedDraftBuffer = "";
                     }
                     state.cursorPos = state.inputBuffer.length;
                     redrawLine();
@@ -936,28 +1094,18 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x1b[D") { // Left
+            if (isLeftArrow) { // Left
                 if (state.cursorPos > 0) {
-                    const prevChar = state.inputBuffer[state.cursorPos - 1];
                     state.cursorPos--;
-                    if (prevChar === "\n" || state.inputBuffer.includes("\n")) {
-                        redrawLine();
-                    } else {
-                        term.write("\x1b[D");
-                    }
+                    redrawLine();
                 }
                 return;
             }
 
-            if (data === "\x1b[C") { // Right
+            if (isRightArrow) { // Right
                 if (state.cursorPos < state.inputBuffer.length) {
-                    const currChar = state.inputBuffer[state.cursorPos];
                     state.cursorPos++;
-                    if (currChar === "\n" || state.inputBuffer.includes("\n")) {
-                        redrawLine();
-                    } else {
-                        term.write("\x1b[C");
-                    }
+                    redrawLine();
                 }
                 return;
             }
@@ -978,7 +1126,11 @@ export const useShellTerminal = (
 
             if (code === 9) { // Tab
                 const { lines, lineIndex, col } = getCursorLineInfo(state.inputBuffer, state.cursorPos);
-                const currentLineBeforeCursor = (lines[lineIndex] ?? "").slice(0, col);
+                const currentLine = lines[lineIndex] ?? "";
+                const currentLineBeforeCursor = currentLine.slice(0, col);
+                if (currentLine.trimStart().startsWith("!")) {
+                    return;
+                }
                 // Indent if current line before cursor is empty/whitespace or inside a string (or if we are pasting)
                 if (isPaste || !currentLineBeforeCursor.trim() || isInsideString(state.inputBuffer, state.cursorPos)) {
                     const indent = "    ";
@@ -1002,17 +1154,9 @@ export const useShellTerminal = (
             }
 
             if (code >= 32 && code !== 127) {
-                // Fast path for simple appending at the end of a single-line buffer
-                if (data.length === 1 && state.cursorPos === state.inputBuffer.length && !state.inputBuffer.includes("\n")) {
-                    state.inputBuffer += data;
-                    state.cursorPos++;
-                    term.write(data);
-                    scheduleRedraw();
-                } else {
-                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
-                    state.cursorPos += data.length;
-                    redrawLine();
-                }
+                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
+                state.cursorPos += data.length;
+                redrawLine();
             } else if (code === 13) { // Enter
                 if (!isPaste && shouldContinueMultilineOnEnter(state.inputBuffer, state.cursorPos)) {
                     const next = insertNewlineWithAutoIndent(state.inputBuffer, state.cursorPos);
@@ -1027,6 +1171,22 @@ export const useShellTerminal = (
                 let finalizedCode = state.inputBuffer;
                 if (lines.length > 1 && lines[lines.length - 1].trim() === "") {
                     finalizedCode = lines.slice(0, -1).join("\n");
+                }
+
+                if (!finalizedCode.trim()) {
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    redrawLine();
+                    term.write("\r\n");
+                    state.currentBlock = "";
+                    state.historyIndex = -1;
+                    state.savedDraftBuffer = "";
+                    state.prompt = ">>> ";
+                    term.write(state.prompt);
+                    lastBufferHeight.current = 0;
+                    lastCursorRow.current = 0;
+                    updatePromptPos();
+                    return;
                 }
 
                 state.inputBuffer = finalizedCode;
@@ -1047,10 +1207,12 @@ export const useShellTerminal = (
                     term.write(clearSeq);
                     state.currentBlock = "";
                     state.historyIndex = -1;
+                    state.savedDraftBuffer = "";
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
                     lastBufferHeight.current = 0;
+                    lastCursorRow.current = 0;
                     redrawLine();
                     term.scrollToBottom?.();
                     return;
@@ -1072,9 +1234,12 @@ export const useShellTerminal = (
                     }
                     state.currentBlock = "";
                     state.historyIndex = -1;
+                    state.savedDraftBuffer = "";
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
+                    term.write(state.prompt);
+                    markCommandAwaiting();
                     onCommandSubmittedRef.current?.();
                 } else if (res?.status === "meta") {
                     const metaCmd = res.meta_command;
@@ -1113,6 +1278,7 @@ export const useShellTerminal = (
                     term.write(">>> ");
                     state.currentBlock = "";
                     state.historyIndex = -1;
+                    state.savedDraftBuffer = "";
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
@@ -1121,7 +1287,7 @@ export const useShellTerminal = (
                     const next = insertNewlineWithAutoIndent(finalizedCode, finalizedCode.length);
                     state.inputBuffer = next.buffer;
                     state.cursorPos = next.cursorPos;
-                    lastBufferHeight.current = 0;
+                    lastCursorRow.current += 1;
                     redrawLine();
                     return;
                 } else {
@@ -1131,17 +1297,21 @@ export const useShellTerminal = (
                         state.inputBuffer = finalizedCode;
                         state.cursorPos = finalizedCode.length;
                         lastBufferHeight.current = 0;
+                        lastCursorRow.current = 0;
                         redrawLine();
                         return;
                     }
                     term.write(">>> ");
                     state.currentBlock = "";
+                    state.savedDraftBuffer = "";
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
                 }
                 lastBufferHeight.current = 0;
-            } else if (code === 127) { // Backspace
+                lastCursorRow.current = 0;
+                updatePromptPos();
+            } else if (code === 127 || code === 8) { // Backspace
                 if (state.cursorPos > 0) {
                     const { lines, lineIndex, col } = getCursorLineInfo(state.inputBuffer, state.cursorPos);
                     const currentLineBefore = (lines[lineIndex] ?? "").slice(0, col);
@@ -1150,11 +1320,6 @@ export const useShellTerminal = (
                         state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 4) + state.inputBuffer.slice(state.cursorPos);
                         state.cursorPos -= 4;
                         redrawLine();
-                    } else if (state.cursorPos === state.inputBuffer.length && !state.inputBuffer.includes("\n")) {
-                        state.inputBuffer = state.inputBuffer.slice(0, -1);
-                        state.cursorPos--;
-                        term.write('\b \b');
-                        scheduleRedraw();
                     } else {
                         state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
                         state.cursorPos--;
@@ -1172,7 +1337,7 @@ export const useShellTerminal = (
                 } else {
                     const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
                     if (res && res.suggestions.length > 0) {
-                        if (res.suggestions.length === 1 && state.inputBuffer.slice(res.start) === res.suggestions[0]) {
+                        if (res.suggestions.length === 1 && state.inputBuffer.slice(res.start, state.cursorPos) === res.suggestions[0]) {
                             updateCompletionsUI([], 0, false, 0);
                         } else {
                             updateCompletionsUI(res.suggestions, res.start, true, 0);
@@ -1185,6 +1350,16 @@ export const useShellTerminal = (
                 }
             }
         };
+
+        // Allow Shift+Enter to insert a newline in place instead of submitting
+        termInstance.current.attachCustomKeyEventHandler((ev: KeyboardEvent) => {
+            if (ev.type === "keydown" && ev.key === "Enter" && ev.shiftKey) {
+                ev.preventDefault();
+                handleData("\n", false);
+                return false;
+            }
+            return true;
+        });
 
         termInstance.current.onData((data) => {
             // Check if this is a paste or multi-character sequence (not starting with ESC)
@@ -1199,6 +1374,7 @@ export const useShellTerminal = (
                     // so the operator can inspect, arrow Up/Down to edit any line, and press Enter to execute.
                     const normalized = data.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n+$/, "");
                     const state = shellState.current;
+                    state.preferredCol = null;
                     state.inputBuffer =
                         state.inputBuffer.slice(0, state.cursorPos) +
                         normalized +
@@ -1218,6 +1394,7 @@ export const useShellTerminal = (
         return () => {
             isReplReadyRef.current = false;
             setIsReplReady(false);
+            clearCommandAwaiting();
             if (initialConnectTimeoutRef.current) {
                 clearTimeout(initialConnectTimeoutRef.current);
                 initialConnectTimeoutRef.current = null;
@@ -1230,7 +1407,7 @@ export const useShellTerminal = (
             termInstance.current = null;
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
-    }, [shellId, shellNodeId, termMounted, reconnectInitTick, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
+    }, [shellId, shellNodeId, termMounted, reconnectInitTick, setPortalId, redrawLine, updatePromptPos, markCommandAwaiting, clearCommandAwaiting, updateCompletionsUI, applyCompletion]);
 
     const getSessionInputs = useCallback(() => {
         if (shellTasksRef.current.length > 0) {
@@ -1248,6 +1425,7 @@ export const useShellTerminal = (
         const state = shellState.current;
         state.inputBuffer = text;
         state.cursorPos = text.length;
+        state.preferredCol = null;
         redrawLine();
         term.focus();
     }, [redrawLine]);
@@ -1264,10 +1442,10 @@ export const useShellTerminal = (
 
         const state = shellState.current;
 
-        // Clear any current partial input line
-        const prevRows = lastBufferHeight.current;
-        if (prevRows > 0) {
-            term.write(`\x1b[${prevRows}A`);
+        // Clear any current partial input line from the prompt's top row
+        const prevCursorRow = lastCursorRow.current;
+        if (prevCursorRow > 0) {
+            term.write(`\x1b[${prevCursorRow}A`);
         }
         term.write("\r\x1b[J");
         adapter.current.reset();
@@ -1287,11 +1465,16 @@ export const useShellTerminal = (
             setLocalHistory([...state.history]);
             state.currentBlock = "";
             state.historyIndex = -1;
+            state.savedDraftBuffer = "";
+            state.preferredCol = null;
             state.inputBuffer = "";
             state.cursorPos = 0;
             state.prompt = ">>> ";
             term.write(state.prompt);
             lastBufferHeight.current = 0;
+            lastCursorRow.current = 0;
+            markCommandAwaiting();
+            updatePromptPos();
             onCommandSubmittedRef.current?.();
             return true;
         } else if (res?.status === "meta") {
@@ -1330,11 +1513,14 @@ export const useShellTerminal = (
             }
             state.currentBlock = "";
             state.historyIndex = -1;
+            state.savedDraftBuffer = "";
+            state.preferredCol = null;
             state.inputBuffer = "";
             state.cursorPos = 0;
             state.prompt = ">>> ";
             term.write(state.prompt);
             lastBufferHeight.current = 0;
+            lastCursorRow.current = 0;
             return true;
         } else {
             // Incomplete or syntax error in multi-line block: reset and show message
@@ -1342,13 +1528,16 @@ export const useShellTerminal = (
             const errMsg = res?.message || "Incomplete block (check indentation or unclosed brackets)";
             term.write(`\x1b[31mError: ${errMsg}\x1b[0m\r\n>>> `);
             state.currentBlock = "";
+            state.savedDraftBuffer = "";
+            state.preferredCol = null;
             state.inputBuffer = "";
             state.cursorPos = 0;
             state.prompt = ">>> ";
             lastBufferHeight.current = 0;
+            lastCursorRow.current = 0;
             return false;
         }
-    }, []);
+    }, [markCommandAwaiting, updatePromptPos]);
 
     const clearTerminal = useCallback(() => {
         const term = termInstance.current;
@@ -1356,10 +1545,11 @@ export const useShellTerminal = (
         const clearSeq = buildScrollbackPreservingClearSequence(
             term.rows,
             term.buffer?.active?.cursorY ?? 0,
-            lastBufferHeight.current
+            lastCursorRow.current
         );
         term.write(clearSeq);
         lastBufferHeight.current = 0;
+        lastCursorRow.current = 0;
         redrawLine();
         term.scrollToBottom?.();
     }, [redrawLine]);
@@ -1373,15 +1563,22 @@ export const useShellTerminal = (
         if (!term) return;
         const state = shellState.current;
         adapter.current?.reset();
+        if (state.inputBuffer.length > 0 && lastCursorRow.current < lastBufferHeight.current) {
+            state.cursorPos = state.inputBuffer.length;
+            redrawLine();
+        }
         term.write("^C\r\n");
         state.inputBuffer = "";
         state.currentBlock = "";
         state.cursorPos = 0;
+        state.preferredCol = null;
+        state.savedDraftBuffer = "";
         state.historyIndex = -1;
         state.prompt = ">>> ";
         term.write(state.prompt);
         lastBufferHeight.current = 0;
-    }, []);
+        lastCursorRow.current = 0;
+    }, [redrawLine]);
 
     const sendCtrlR = useCallback(() => {
         const term = termInstance.current;
@@ -1412,6 +1609,9 @@ export const useShellTerminal = (
         showCompletions,
         completionPos,
         completionIndex,
+        promptPos,
+        isAwaitingCommand,
+        completedTaskIds,
         handleMouseMove,
         tooltipState,
         handleCompletionSelect: applyCompletion,

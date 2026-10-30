@@ -520,7 +520,7 @@ func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
 	if IsNotLoaded(err) {
 		result, err = hc.QueryHost().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
 }
 
 func (hc *HostCredential) Task(ctx context.Context) (*Task, error) {
@@ -537,6 +537,27 @@ func (hc *HostCredential) ShellTask(ctx context.Context) (*ShellTask, error) {
 		result, err = hc.QueryShellTask().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (hc *HostCredential) NetworkHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*NetworkHostOrder, where *NetworkHostWhereInput,
+) (*NetworkHostConnection, error) {
+	opts := []NetworkHostPaginateOption{
+		WithNetworkHostOrder(orderBy),
+		WithNetworkHostFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := hc.Edges.totalCount[3][alias]
+	if nodes, err := hc.NamedNetworkHosts(alias); err == nil || hasTotalCount {
+		pager, err := newNetworkHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &NetworkHostConnection{Edges: []*NetworkHostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return hc.QueryNetworkHosts().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (hf *HostFile) Host(ctx context.Context) (*Host, error) {
@@ -651,6 +672,27 @@ func (nh *NetworkHost) Networks(
 		return conn, nil
 	}
 	return nh.QueryNetworks().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (nh *NetworkHost) Credentials(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostCredentialOrder, where *HostCredentialWhereInput,
+) (*HostCredentialConnection, error) {
+	opts := []HostCredentialPaginateOption{
+		WithHostCredentialOrder(orderBy),
+		WithHostCredentialFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := nh.Edges.totalCount[2][alias]
+	if nodes, err := nh.NamedCredentials(alias); err == nil || hasTotalCount {
+		pager, err := newHostCredentialPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostCredentialConnection{Edges: []*HostCredentialEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return nh.QueryCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (n *Notification) User(ctx context.Context) (*User, error) {

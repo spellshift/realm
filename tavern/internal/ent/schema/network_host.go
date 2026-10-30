@@ -62,6 +62,12 @@ func (NetworkHost) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Networks that this network host belongs to."),
+		edge.To("credentials", HostCredential.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Credentials associated with this network host."),
 	}
 }
 

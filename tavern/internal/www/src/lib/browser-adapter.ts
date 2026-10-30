@@ -310,9 +310,17 @@ export class BrowserWasmAdapter {
             return { status: "error", message: "WebSocket not connected (reconnecting...)" };
         }
 
-        const resultJson = this.repl.input(line);
+        let resultJson = this.repl.input(line);
         try {
-            const result = JSON.parse(resultJson);
+            let result = JSON.parse(resultJson);
+
+            // In BrowserRepl::input (eldritch-wasm), `!command` macros expand into a 3-line
+            // `for _nonomacroclowntown in range(1):` block on the first `input()` call and
+            // require a follow-up `input("")` call to finalize.
+            if (result.status === "incomplete" && line.trimStart().startsWith("!")) {
+                resultJson = this.repl.input("");
+                result = JSON.parse(resultJson);
+            }
 
             if (result.status === "complete") {
                 if (this.isSocketReady() && this.ws) {

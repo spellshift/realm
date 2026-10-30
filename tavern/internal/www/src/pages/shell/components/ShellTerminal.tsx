@@ -6,6 +6,15 @@ import { DocTooltip } from "./DocTooltip";
 interface ShellTerminalProps {
   termRef: RefObject<HTMLDivElement>;
   isConnecting?: boolean;
+  isPromptBusy?: boolean;
+  isMissedCallback?: boolean;
+  promptPos?: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+    visible: boolean;
+  };
   completions: string[];
   showCompletions: boolean;
   completionPos: { x: number; y: number };
@@ -27,6 +36,9 @@ interface ShellTerminalProps {
 const ShellTerminal: React.FC<ShellTerminalProps> = ({
   termRef,
   isConnecting = false,
+  isPromptBusy = false,
+  isMissedCallback = false,
+  promptPos,
   completions,
   showCompletions,
   completionPos,
@@ -51,6 +63,40 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
           className="absolute inset-0 z-20 flex items-center justify-center bg-[#11131a]"
         >
           <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+        </div>
+      )}
+      {isPromptBusy && !isConnecting && (promptPos?.visible ?? true) && (
+        <div
+          data-testid="shell-prompt-spinner"
+          role="status"
+          aria-label="Commands queued or executing"
+          className="absolute z-10 flex items-center justify-between bg-[#11131a] pointer-events-none select-none"
+          style={{
+            top: `${promptPos?.top ?? 6}px`,
+            left: `${promptPos?.left ?? 6}px`,
+            width: `${promptPos?.width ?? 24}px`,
+            height: `${promptPos?.height ?? 18}px`,
+          }}
+        >
+          <span className="w-2/3 flex items-center justify-start -ml-0.5">
+            <Loader2
+              data-testid="shell-prompt-spinner-icon"
+              className={`w-3.5 h-3.5 animate-spin ${
+                isMissedCallback ? "text-red-400" : "text-amber-400"
+              }`}
+            />
+          </span>
+          <span
+            className="w-1/3 flex items-center justify-center text-[#e2e8f0]"
+            style={{
+              fontFamily:
+                "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
+              fontSize: "13.5px",
+              lineHeight: 1,
+            }}
+          >
+            &gt;
+          </span>
         </div>
       )}
       <div

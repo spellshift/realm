@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 )
@@ -138,6 +139,21 @@ func (nhc *NetworkHostCreate) AddNetworks(n ...*Network) *NetworkHostCreate {
 		ids[i] = n[i].ID
 	}
 	return nhc.AddNetworkIDs(ids...)
+}
+
+// AddCredentialIDs adds the "credentials" edge to the HostCredential entity by IDs.
+func (nhc *NetworkHostCreate) AddCredentialIDs(ids ...int) *NetworkHostCreate {
+	nhc.mutation.AddCredentialIDs(ids...)
+	return nhc
+}
+
+// AddCredentials adds the "credentials" edges to the HostCredential entity.
+func (nhc *NetworkHostCreate) AddCredentials(h ...*HostCredential) *NetworkHostCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return nhc.AddCredentialIDs(ids...)
 }
 
 // Mutation returns the NetworkHostMutation object of the builder.
@@ -294,6 +310,22 @@ func (nhc *NetworkHostCreate) createSpec() (*NetworkHost, *sqlgraph.CreateSpec) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(network.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := nhc.mutation.CredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   networkhost.CredentialsTable,
+			Columns: networkhost.CredentialsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

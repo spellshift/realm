@@ -299,7 +299,7 @@ var (
 		{Name: "principal", Type: field.TypeString},
 		{Name: "secret", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_NTLM_HASH", "KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
-		{Name: "host_credential_host", Type: field.TypeInt},
+		{Name: "host_credential_host", Type: field.TypeInt, Nullable: true},
 		{Name: "shell_task_reported_credentials", Type: field.TypeInt, Nullable: true},
 		{Name: "task_reported_credentials", Type: field.TypeInt, Nullable: true},
 	}
@@ -1010,6 +1010,31 @@ var (
 			},
 		},
 	}
+	// NetworkHostCredentialsColumns holds the columns for the "network_host_credentials" table.
+	NetworkHostCredentialsColumns = []*schema.Column{
+		{Name: "network_host_id", Type: field.TypeInt},
+		{Name: "host_credential_id", Type: field.TypeInt},
+	}
+	// NetworkHostCredentialsTable holds the schema information for the "network_host_credentials" table.
+	NetworkHostCredentialsTable = &schema.Table{
+		Name:       "network_host_credentials",
+		Columns:    NetworkHostCredentialsColumns,
+		PrimaryKey: []*schema.Column{NetworkHostCredentialsColumns[0], NetworkHostCredentialsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "network_host_credentials_network_host_id",
+				Columns:    []*schema.Column{NetworkHostCredentialsColumns[0]},
+				RefColumns: []*schema.Column{NetworkHostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "network_host_credentials_host_credential_id",
+				Columns:    []*schema.Column{NetworkHostCredentialsColumns[1]},
+				RefColumns: []*schema.Column{HostCredentialsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// ShellActiveUsersColumns holds the columns for the "shell_active_users" table.
 	ShellActiveUsersColumns = []*schema.Column{
 		{Name: "shell_id", Type: field.TypeInt},
@@ -1143,6 +1168,7 @@ var (
 		UsersTable,
 		HostTagsTable,
 		NetworkHostNetworksTable,
+		NetworkHostCredentialsTable,
 		ShellActiveUsersTable,
 		TomeAssetsTable,
 		UserFavoriteHostsTable,
@@ -1295,6 +1321,8 @@ func init() {
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
 	NetworkHostNetworksTable.ForeignKeys[0].RefTable = NetworkHostsTable
 	NetworkHostNetworksTable.ForeignKeys[1].RefTable = NetworksTable
+	NetworkHostCredentialsTable.ForeignKeys[0].RefTable = NetworkHostsTable
+	NetworkHostCredentialsTable.ForeignKeys[1].RefTable = HostCredentialsTable
 	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
 	TomeAssetsTable.ForeignKeys[0].RefTable = TomesTable

@@ -80,6 +80,39 @@ export const formatFileSize = (bytes?: number | null): string => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+export const parsePortList = (raw?: string | null): number[] => {
+    if (!raw) {
+        return [];
+    }
+    const tokens = raw.split(/[\s,]+/);
+    const seen = new Set<number>();
+    for (const token of tokens) {
+        const cleaned = token.replace(/^:/, "").trim();
+        if (!cleaned) {
+            continue;
+        }
+        const num = Number(cleaned);
+        if (Number.isInteger(num) && num >= 1 && num <= 65535) {
+            seen.add(num);
+        }
+    }
+    return Array.from(seen).sort((a, b) => a - b);
+};
+
+export const formatPortListInput = (ports?: number[] | null): string => {
+    if (!Array.isArray(ports) || ports.length === 0) {
+        return "";
+    }
+    return ports.join(", ");
+};
+
+export const togglePortInList = (openPorts: number[], port: number): number[] => {
+    if (openPorts.includes(port)) {
+        return openPorts.filter((p) => p !== port);
+    }
+    return [...openPorts, port].sort((a, b) => a - b);
+};
+
 export interface BuildGraphDataParams {
     currentHostNode: any;
     hostId?: string;
@@ -226,6 +259,45 @@ export const buildUnifiedGraphData = ({
             }));
     };
 
+    const extractCredsFromNetworkHost = (
+        nhNode: any,
+        fallbackHost: any,
+        isCurr: boolean
+    ): KnowledgeCredentialItem[] => {
+        const byId = new Map<string, KnowledgeCredentialItem>();
+        const nhHostId = fallbackHost?.id ? String(fallbackHost.id) : `nh-${nhNode.id}`;
+        const nhName =
+            nhNode.name || fallbackHost?.name || nhNode.hostname || nhNode.ipAddress || nhHostId;
+        const nhIp = nhNode.ipAddress || fallbackHost?.primaryIP;
+
+        for (const ce of nhNode?.credentials?.edges || []) {
+            const c = ce?.node;
+            if (!c?.id) {
+                continue;
+            }
+            const cId = String(c.id);
+            byId.set(cId, {
+                id: cId,
+                principal: c.principal,
+                kind: c.kind,
+                secret: c.secret,
+                createdAt: c.createdAt,
+                hostId: nhHostId,
+                hostName: nhName,
+                hostPrimaryIP: nhIp,
+                isCurrentHost: isCurr,
+            });
+        }
+
+        for (const c of extractCredsFromHost(fallbackHost, isCurr)) {
+            if (!byId.has(c.id)) {
+                byId.set(c.id, c);
+            }
+        }
+
+        return Array.from(byId.values());
+    };
+
     // 4. Process NetworkHost records first and link to matching Host if present
     for (const nh of rawNetworkHosts) {
         const linkedHost =
@@ -273,7 +345,7 @@ export const buildUnifiedGraphData = ({
         const sharedTags = tags
             .map((t: any) => t.name)
             .filter((name: string) => currentHostTags.includes(name));
-        const creds = extractCredsFromHost(linkedHost, isCurrentHost);
+        const creds = extractCredsFromNetworkHost(nh, linkedHost, isCurrentHost);
         const openPorts = Array.isArray(nh.openPorts)
             ? nh.openPorts.map((p: any) => Number(p)).filter((p: number) => !Number.isNaN(p) && p > 0)
             : [];
@@ -294,7 +366,7 @@ export const buildUnifiedGraphData = ({
             lastSeenAt: linkedHost?.lastSeenAt,
             tags,
             beaconCount: linkedHost?.beacons?.totalCount ?? 0,
-            credentialCount: linkedHost?.credentials?.totalCount ?? creds.length,
+            credentialCount: Math.max(linkedHost?.credentials?.totalCount ?? 0, creds.length),
             credentials: creds,
             isCurrentHost,
             sharedTags,
@@ -380,7 +452,21 @@ export const buildUnifiedGraphData = ({
     }
 
     // 6. Credentials from current host and nearby hosts
-    const hostCredentials = extractCredsFromHost(currentHostNode, true);
+    // Credentials explicitly linked to an adjacent NetworkHost take attribution precedence
+    // over a fallback currentHost association.
+    const adjacentNetworkHostCredIds = new Set<string>();
+    for (const h of sortedHosts) {
+        if (h.isCurrentHost) {
+            continue;
+        }
+        for (const c of h.credentials) {
+            adjacentNetworkHostCredIds.add(c.id);
+        }
+    }
+
+    const hostCredentials = extractCredsFromHost(currentHostNode, true).filter(
+        (c) => !adjacentNetworkHostCredIds.has(c.id)
+    );
     const seenCredIds = new Set<string>();
     const allCredentials: KnowledgeCredentialItem[] = [];
     for (const c of hostCredentials) {

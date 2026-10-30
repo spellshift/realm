@@ -47,8 +47,6 @@ test('End-to-end shell repl test', async ({ page, context }) => {
 
   // 7. Verify the output — non-interactive shell queues and returns output
   // Expected output pattern:
-  //   [*] Task Queued for <beacon-name>
-  //   [+] print("Hello E2E")
   //   Hello E2E
   //   >>>
   console.log('Verifying output');
