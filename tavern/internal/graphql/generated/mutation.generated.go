@@ -59,6 +59,9 @@ type MutationResolver interface {
 	CreateNetworkHost(ctx context.Context, input ent.CreateNetworkHostInput) (*ent.NetworkHost, error)
 	UpdateNetworkHost(ctx context.Context, networkHostID int, input ent.UpdateNetworkHostInput) (*ent.NetworkHost, error)
 	DeleteNetworkHost(ctx context.Context, networkHostID int) (int, error)
+	CreateOperatorNote(ctx context.Context, input ent.CreateOperatorNoteInput) (*ent.OperatorNote, error)
+	UpdateOperatorNote(ctx context.Context, operatorNoteID int, input ent.UpdateOperatorNoteInput) (*ent.OperatorNote, error)
+	DeleteOperatorNote(ctx context.Context, operatorNoteID int) (int, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -135,6 +138,17 @@ func (ec *executionContext) field_Mutation_createNetwork_args(ctx context.Contex
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateNetworkInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateNetworkInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createOperatorNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateOperatorNoteInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateOperatorNoteInput)
 	if err != nil {
 		return nil, err
 	}
@@ -270,6 +284,17 @@ func (ec *executionContext) field_Mutation_deleteNetwork_args(ctx context.Contex
 		return nil, err
 	}
 	args["networkID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteOperatorNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "operatorNoteID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["operatorNoteID"] = arg0
 	return args, nil
 }
 
@@ -488,6 +513,22 @@ func (ec *executionContext) field_Mutation_updateNetwork_args(ctx context.Contex
 	}
 	args["networkID"] = arg0
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateNetworkInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateNetworkInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateOperatorNote_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "operatorNoteID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["operatorNoteID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateOperatorNoteInput2realmᚗpubᚋtavernᚋinternalᚋentᚐUpdateOperatorNoteInput)
 	if err != nil {
 		return nil, err
 	}
@@ -851,6 +892,8 @@ func (ec *executionContext) fieldContext_Mutation_createShell(ctx context.Contex
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
 			case "pivots":
 				return ec.fieldContext_Shell_pivots(ctx, field)
+			case "operatorNotes":
+				return ec.fieldContext_Shell_operatorNotes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -2024,6 +2067,8 @@ func (ec *executionContext) fieldContext_Mutation_resetUserAPIKey(_ context.Cont
 				return ec.fieldContext_User_subscribedhosts(ctx, field)
 			case "events":
 				return ec.fieldContext_User_events(ctx, field)
+			case "operatorNotes":
+				return ec.fieldContext_User_operatorNotes(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -2100,6 +2145,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_subscribedhosts(ctx, field)
 			case "events":
 				return ec.fieldContext_User_events(ctx, field)
+			case "operatorNotes":
+				return ec.fieldContext_User_operatorNotes(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -3790,6 +3837,211 @@ func (ec *executionContext) fieldContext_Mutation_deleteNetworkHost(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createOperatorNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createOperatorNote,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateOperatorNote(ctx, fc.Args["input"].(ent.CreateOperatorNoteInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.OperatorNote
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.OperatorNote
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNOperatorNote2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐOperatorNote,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createOperatorNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_OperatorNote_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_OperatorNote_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_OperatorNote_lastModifiedAt(ctx, field)
+			case "content":
+				return ec.fieldContext_OperatorNote_content(ctx, field)
+			case "author":
+				return ec.fieldContext_OperatorNote_author(ctx, field)
+			case "shells":
+				return ec.fieldContext_OperatorNote_shells(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OperatorNote", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createOperatorNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateOperatorNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateOperatorNote,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateOperatorNote(ctx, fc.Args["operatorNoteID"].(int), fc.Args["input"].(ent.UpdateOperatorNoteInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.OperatorNote
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.OperatorNote
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNOperatorNote2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐOperatorNote,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateOperatorNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_OperatorNote_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_OperatorNote_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_OperatorNote_lastModifiedAt(ctx, field)
+			case "content":
+				return ec.fieldContext_OperatorNote_content(ctx, field)
+			case "author":
+				return ec.fieldContext_OperatorNote_author(ctx, field)
+			case "shells":
+				return ec.fieldContext_OperatorNote_shells(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OperatorNote", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateOperatorNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteOperatorNote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteOperatorNote,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteOperatorNote(ctx, fc.Args["operatorNoteID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal int
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal int
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNID2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteOperatorNote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteOperatorNote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -4098,6 +4350,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteNetworkHost":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteNetworkHost(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createOperatorNote":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createOperatorNote(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateOperatorNote":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateOperatorNote(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteOperatorNote":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteOperatorNote(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

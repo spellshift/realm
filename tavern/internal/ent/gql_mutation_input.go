@@ -701,6 +701,84 @@ func (c *NotificationUpdateOne) SetInput(i UpdateNotificationInput) *Notificatio
 	return c
 }
 
+// CreateOperatorNoteInput represents a mutation input for creating operatornotes.
+type CreateOperatorNoteInput struct {
+	Content  *string
+	AuthorID *int
+	ShellIDs []int
+}
+
+// Mutate applies the CreateOperatorNoteInput on the OperatorNoteMutation builder.
+func (i *CreateOperatorNoteInput) Mutate(m *OperatorNoteMutation) {
+	if v := i.Content; v != nil {
+		m.SetContent(*v)
+	}
+	if v := i.AuthorID; v != nil {
+		m.SetAuthorID(*v)
+	}
+	if v := i.ShellIDs; len(v) > 0 {
+		m.AddShellIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateOperatorNoteInput on the OperatorNoteCreate builder.
+func (c *OperatorNoteCreate) SetInput(i CreateOperatorNoteInput) *OperatorNoteCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateOperatorNoteInput represents a mutation input for updating operatornotes.
+type UpdateOperatorNoteInput struct {
+	LastModifiedAt *time.Time
+	ClearContent   bool
+	Content        *string
+	ClearAuthor    bool
+	AuthorID       *int
+	ClearShells    bool
+	AddShellIDs    []int
+	RemoveShellIDs []int
+}
+
+// Mutate applies the UpdateOperatorNoteInput on the OperatorNoteMutation builder.
+func (i *UpdateOperatorNoteInput) Mutate(m *OperatorNoteMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if i.ClearContent {
+		m.ClearContent()
+	}
+	if v := i.Content; v != nil {
+		m.SetContent(*v)
+	}
+	if i.ClearAuthor {
+		m.ClearAuthor()
+	}
+	if v := i.AuthorID; v != nil {
+		m.SetAuthorID(*v)
+	}
+	if i.ClearShells {
+		m.ClearShells()
+	}
+	if v := i.AddShellIDs; len(v) > 0 {
+		m.AddShellIDs(v...)
+	}
+	if v := i.RemoveShellIDs; len(v) > 0 {
+		m.RemoveShellIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateOperatorNoteInput on the OperatorNoteUpdate builder.
+func (c *OperatorNoteUpdate) SetInput(i UpdateOperatorNoteInput) *OperatorNoteUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateOperatorNoteInput on the OperatorNoteUpdateOne builder.
+func (c *OperatorNoteUpdateOne) SetInput(i UpdateOperatorNoteInput) *OperatorNoteUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateQuestInput represents a mutation input for creating quests.
 type CreateQuestInput struct {
 	Name       string
@@ -1096,6 +1174,9 @@ type UpdateUserInput struct {
 	ClearEvents             bool
 	AddEventIDs             []int
 	RemoveEventIDs          []int
+	ClearOperatorNotes      bool
+	AddOperatorNoteIDs      []int
+	RemoveOperatorNoteIDs   []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -1174,6 +1255,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveEventIDs; len(v) > 0 {
 		m.RemoveEventIDs(v...)
+	}
+	if i.ClearOperatorNotes {
+		m.ClearOperatorNotes()
+	}
+	if v := i.AddOperatorNoteIDs; len(v) > 0 {
+		m.AddOperatorNoteIDs(v...)
+	}
+	if v := i.RemoveOperatorNoteIDs; len(v) > 0 {
+		m.RemoveOperatorNoteIDs(v...)
 	}
 }
 

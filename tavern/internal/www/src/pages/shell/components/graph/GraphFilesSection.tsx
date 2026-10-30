@@ -31,9 +31,9 @@ const FileRow: React.FC<{ file: KnowledgeFileItem }> = ({ file }) => {
 
 export const GraphFilesSection: React.FC<GraphFilesSectionProps> = ({ files }) => {
     return (
-        <div className="px-4 py-3 border-b border-gray-800" data-testid="graph-files-section">
+        <div className="px-3 py-3 border-b border-gray-800" data-testid="graph-files-section">
             <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">
+                <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
                     Reported Files ({files.length})
                 </span>
             </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
-import { Code2, GripHorizontal, Play, Plus, Search, X } from "lucide-react";
+import { Code2, Play, Plus, Search, X } from "lucide-react";
 import { analyzeEldritchCode } from "../utils/eldritchLsp";
 import { ShellTomeItem } from "../hooks/useShellData";
 import EldritchCodeEditor, {
@@ -332,9 +332,9 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         <div
             data-testid="multiline-composer"
             data-tour="shell-composer"
-            className="flex flex-col border-t border-[#262b38] bg-[#141822] overflow-hidden relative"
+            className="flex flex-col border-t border-gray-800 bg-gray-900 overflow-hidden relative"
         >
-            {/* Top Vertical Resize Drag Handle */}
+            {/* Top Vertical Resize Drag Handle (Overlaid on Top Border for Compact Header) */}
             <div
                 data-testid="composer-resize-handle"
                 role="separator"
@@ -344,19 +344,17 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                 onMouseDown={handleResizeMouseDown}
                 onKeyDown={handleResizeKeyDown}
                 title="Drag to resize composer height"
-                className="h-1.5 w-full bg-[#181c28] hover:bg-purple-500/30 cursor-ns-resize flex items-center justify-center transition-colors group"
-            >
-                <GripHorizontal className="w-3 h-3 text-gray-600 group-hover:text-purple-300" />
-            </div>
+                className="absolute inset-x-0 top-0 h-1 bg-transparent hover:bg-purple-500/50 cursor-ns-resize z-20 transition-colors"
+            />
 
             {/* Composer Toolbar Header */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-1.5 pt-0.5 bg-[#181c28] border-b border-[#262b38]">
-                <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center justify-between gap-2 px-3 py-1 bg-gray-900 border-b border-gray-800 text-xs text-gray-400 select-none">
+                <div className="flex items-center gap-1.5">
                     <span
                         className="inline-flex items-center justify-center p-1 text-purple-400"
                         title="Eldritch Composer"
                     >
-                        <Code2 className="w-3.5 h-3.5" />
+                        <Code2 className="w-4 h-4" />
                     </span>
 
                     <EldritchLspStatusButton
@@ -367,9 +365,9 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                     />
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5">
                     {/* Searchable Eldritch Tome Picker */}
-                    <div ref={tomePickerRef} className="relative">
+                    <div ref={tomePickerRef} className="relative flex items-center">
                         <button
                             type="button"
                             data-tour="shell-composer-tomes"
@@ -378,9 +376,9 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                             aria-expanded={tomePickerOpen}
                             title="Load Tome"
                             onClick={() => setTomePickerOpen((prev) => !prev)}
-                            className="inline-flex items-center justify-center p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#272e3f] transition-colors"
+                            className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                         >
-                            <BookOpenIcon className="w-3.5 h-3.5" />
+                            <BookOpenIcon className="w-4 h-4" />
                         </button>
 
                         {tomePickerOpen && (
@@ -388,11 +386,11 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                                 data-testid="composer-tome-picker-popover"
                                 role="dialog"
                                 aria-label="Search and load Eldritch tome"
-                                className="absolute right-0 top-full mt-1.5 w-80 max-w-[calc(100vw-32px)] rounded-lg bg-[#161a26] border border-[#2f364a] shadow-2xl z-30 overflow-hidden"
+                                className="absolute right-0 top-full mt-1.5 w-80 max-w-[calc(100vw-32px)] rounded-lg bg-gray-900 border border-gray-700 shadow-2xl z-30 overflow-hidden"
                             >
-                                <div className="p-2 border-b border-[#262b38]">
+                                <div className="p-2 border-b border-gray-800">
                                     <div className="relative">
-                                        <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                        <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                                         <input
                                             ref={tomeSearchInputRef}
                                             type="text"
@@ -400,12 +398,12 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                                             value={tomeSearchQuery}
                                             onChange={(e) => setTomeSearchQuery(e.target.value)}
                                             placeholder="Search tomes by name, tactic, or description..."
-                                            className="w-full pl-8 pr-3 py-1.5 rounded-md bg-[#0f1117] border border-[#2a3040] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                            className="w-full pl-8 pr-3 py-1.5 rounded-md bg-gray-800 border border-gray-700 text-xs text-gray-200 placeholder-gray-400 focus:outline-none focus:border-purple-500"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="max-h-56 overflow-y-auto shell-scrollbar divide-y divide-[#222736]">
+                                <div className="max-h-56 overflow-y-auto shell-scrollbar divide-y divide-gray-800">
                                     {filteredTomes.length === 0 ? (
                                         <div className="p-3 text-center text-xs text-gray-500">
                                             No matching Eldritch tomes found.
@@ -417,20 +415,20 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                                                 type="button"
                                                 data-testid="composer-tome-option"
                                                 onClick={() => handleSelectTome(tome)}
-                                                className="w-full text-left px-3 py-2 hover:bg-[#202637] transition-colors space-y-0.5"
+                                                className="w-full text-left px-3 py-2 hover:bg-gray-800 transition-colors space-y-0.5"
                                             >
                                                 <div className="flex items-center justify-between gap-2">
                                                     <span className="text-xs font-semibold text-gray-200 truncate">
                                                         {tome.name}
                                                     </span>
                                                     {tome.tactic && (
-                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-gray-400 shrink-0">
+                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 shrink-0">
                                                             {tome.tactic}
                                                         </span>
                                                     )}
                                                 </div>
                                                 {tome.description && (
-                                                    <p className="text-[11px] text-gray-400 line-clamp-1">
+                                                    <p className="text-xs text-gray-400 line-clamp-1">
                                                         {tome.description}
                                                     </p>
                                                 )}
@@ -452,13 +450,13 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                             setTomePickerOpen(false);
                             setSaveTomeModalOpen(true);
                         }}
-                        className="inline-flex items-center justify-center p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#272e3f] transition-colors"
+                        className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                     >
                         <span className="relative inline-flex items-center justify-center">
-                            <BookOpenIcon className="w-3.5 h-3.5" />
+                            <BookOpenIcon className="w-4 h-4" />
                             <Plus
                                 data-testid="composer-save-tome-plus-icon"
-                                className="w-2.5 h-2.5 absolute -top-1 -right-1 bg-[#181c28] rounded-full stroke-[2.5]"
+                                className="w-2.5 h-2.5 absolute -top-1 -right-1 bg-gray-900 rounded-full stroke-[2.5]"
                             />
                         </span>
                     </button>
@@ -467,7 +465,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         type="button"
                         disabled={!code.trim() || disabled}
                         onClick={() => onRunCode(code)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors shadow-sm"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors shadow-sm"
                         title="Execute script in shell (Ctrl+Enter / Cmd+Enter)"
                     >
                         <Play className="w-3 h-3 fill-current" />
@@ -479,9 +477,9 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         onClick={onToggle}
                         aria-label="Close composer"
                         title="Hide composer (Alt+M)"
-                        className="p-1.5 rounded-md text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors"
+                        className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                     >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
             </div>

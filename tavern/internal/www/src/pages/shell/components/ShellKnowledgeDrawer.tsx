@@ -43,12 +43,12 @@ export interface ShellKnowledgeDrawerProps {
     onStageToPrompt?: (code: string) => void;
 }
 
-type GraphSectionFilter = "pivots" | "hosts" | "shells" | "creds" | "files";
+type GraphSectionFilter = "pivots" | "shells" | "hosts" | "creds" | "files";
 
 const SECTION_TABS: { key: GraphSectionFilter; label: string }[] = [
     { key: "pivots", label: "Pivots" },
-    { key: "hosts", label: "Hosts" },
     { key: "shells", label: "Shells" },
+    { key: "hosts", label: "Hosts" },
     { key: "creds", label: "Creds" },
     { key: "files", label: "Files" },
 ];
@@ -66,9 +66,9 @@ const HeaderPortalButton: React.FC<{
                 onClick={onClosePortal}
                 title={`Close portal #${portalId}`}
                 aria-label="Close portal"
-                className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-gray-800 transition-colors"
+                className="p-1 rounded-md text-red-400 hover:text-red-300 hover:bg-gray-800 transition-colors"
             >
-                <Unplug size={15} />
+                <Unplug className="w-4 h-4" />
             </button>
         );
     }
@@ -80,9 +80,9 @@ const HeaderPortalButton: React.FC<{
             onClick={onNewPortal}
             title="Open portal"
             aria-label="Open portal"
-            className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
         >
-            <Shell size={15} />
+            <Shell className="w-4 h-4" />
         </button>
     );
 };
@@ -302,25 +302,25 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
 
     const currentSubnet = formatSubnetCidr(currentHostIp);
     const showPivots = activeSection === "pivots";
-    const showHosts = activeSection === "hosts";
     const showShells = activeSection === "shells";
+    const showHosts = activeSection === "hosts";
     const showCreds = activeSection === "creds";
     const showFiles = activeSection === "files";
 
     return (
         <aside
-            className="w-96 max-w-full bg-gray-950 border-l border-gray-800 flex flex-col h-full select-none z-20 shrink-0"
+            className="w-full md:w-96 max-w-full bg-gray-900 border-l border-gray-800 flex flex-col h-full select-none z-20 shrink-0"
             aria-label="Knowledge graph and pivots drawer"
             data-testid="shell-knowledge-drawer"
         >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between bg-gray-900/50">
+            <div className="px-3 py-2 border-b border-gray-800 flex items-center justify-between bg-gray-900">
                 <div className="min-w-0">
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-200 flex items-center gap-1.5">
-                        <GraphStar size={14} className="text-gray-400" />
+                        <GraphStar className="w-4 h-4 text-gray-400" />
                         <span>Context</span>
                     </h2>
-                    <div className="text-[11px] text-gray-400 font-mono truncate mt-0.5">
+                    <div className="text-xs text-gray-400 font-mono truncate mt-0.5">
                         {currentHostName || "Current Host"}
                         {currentHostIp ? ` • ${currentHostIp}` : ""}
                         {currentSubnet ? ` (${currentSubnet})` : ""}
@@ -336,7 +336,7 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                         type="button"
                         onClick={onClose}
                         aria-label="Close knowledge drawer"
-                        className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                        className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                     >
                         <XMarkIcon className="w-4 h-4" />
                     </button>
@@ -344,30 +344,30 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
             </div>
 
             {/* Filter Input & Section Tabs */}
-            <div className="px-4 pt-2.5 border-b border-gray-800 bg-gray-900/20">
+            <div className="px-3 pt-2 border-b border-gray-800 bg-gray-900">
                 <div className="relative mb-2">
-                    <MagnifyingGlassIcon className="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Filter hosts, pivots, creds, files..."
                         aria-label="Filter graph items"
-                        className="w-full bg-gray-900 border border-gray-800 rounded pl-8 pr-2.5 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gray-600"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-md pl-8 pr-2.5 py-1.5 text-xs text-gray-200 placeholder-gray-400 focus:outline-none focus:border-purple-500"
                     />
                 </div>
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
                     {SECTION_TABS.map((tab) => {
                         const isActive = activeSection === tab.key;
                         const tabClass = isActive
-                            ? "border-white text-white"
+                            ? "border-purple-500 text-white"
                             : "border-transparent text-gray-400 hover:text-gray-200";
                         return (
                             <button
                                 key={tab.key}
                                 type="button"
                                 onClick={() => setActiveSection(tab.key)}
-                                className={`pb-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${tabClass}`}
+                                className={`pb-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${tabClass}`}
                             >
                                 {tab.label}
                             </button>
@@ -390,18 +390,18 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                         onOpenPivotTab={onOpenPivotTab}
                     />
                 )}
+                {showShells && (
+                    <GraphShellsSection
+                        shells={filteredShells}
+                        currentShellId={currentShellId}
+                    />
+                )}
                 {showHosts && (
                     <GraphHostsSection
                         hosts={filteredHosts}
                         availableCredentials={mergedCredentials}
                         onOpenSshWithTarget={onOpenSshWithTarget}
                         onHostSaved={handleHostSaved}
-                    />
-                )}
-                {showShells && (
-                    <GraphShellsSection
-                        shells={filteredShells}
-                        currentShellId={currentShellId}
                     />
                 )}
                 {showCreds && (

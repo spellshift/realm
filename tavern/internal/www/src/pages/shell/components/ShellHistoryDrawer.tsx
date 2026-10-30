@@ -178,21 +178,21 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
 
     const scopeButtonClass = currentSessionOnly
         ? "bg-gray-800 text-white border border-gray-700"
-        : "bg-gray-900 hover:bg-gray-800 text-gray-400 hover:text-gray-200 border border-gray-800";
+        : "bg-gray-800/60 hover:bg-gray-800 text-gray-400 hover:text-gray-200 border border-gray-800";
 
     return (
         <aside
             data-testid="shell-history-drawer"
-            className="w-full md:w-[420px] shrink-0 border-l border-gray-800 bg-gray-950 text-gray-200 flex flex-col h-full overflow-hidden z-20"
+            className="w-full md:w-96 max-w-full shrink-0 border-l border-gray-800 bg-gray-900 text-gray-200 flex flex-col h-full overflow-hidden z-20"
         >
             {/* Drawer Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/50">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800 bg-gray-900">
                 <div className="flex items-center gap-1.5">
-                    <History size={14} className="text-gray-400" />
+                    <History className="w-4 h-4 text-gray-400" />
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-200">
                         History
                     </h2>
-                    <span className="text-[11px] font-mono text-gray-500">
+                    <span className="text-xs font-mono text-gray-500">
                         ({aggregatedGroups.length})
                     </span>
                 </div>
@@ -208,7 +208,7 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
                                 ? "Showing current session only (click for cross-session history)"
                                 : "Showing cross-session history (click to limit to current session)"
                         }
-                        className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${scopeButtonClass}`}
+                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${scopeButtonClass}`}
                     >
                         <span>{currentSessionOnly ? "Current Session" : "All Sessions"}</span>
                     </button>
@@ -217,7 +217,7 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
                         type="button"
                         onClick={onClose}
                         aria-label="Close history drawer"
-                        className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                        className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                     >
                         <XMarkIcon className="w-4 h-4" />
                     </button>
@@ -225,29 +225,29 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
             </div>
 
             {/* Search & Status Filters */}
-            <div className="px-4 pt-2.5 border-b border-gray-800 bg-gray-900/20">
+            <div className="px-3 pt-2 border-b border-gray-800 bg-gray-900">
                 <div className="relative mb-2">
-                    <MagnifyingGlassIcon className="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search command, output, or operator..."
-                        className="w-full bg-gray-900 border border-gray-800 rounded pl-8 pr-2.5 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gray-600"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-md pl-8 pr-2.5 py-1.5 text-xs text-gray-200 placeholder-gray-400 focus:outline-none focus:border-purple-500"
                     />
                 </div>
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
                     {STATUS_FILTERS.map((filter) => {
                         const isActive = statusFilter === filter.key;
                         const tabClass = isActive
-                            ? "border-white text-white"
+                            ? "border-purple-500 text-white"
                             : "border-transparent text-gray-400 hover:text-gray-200";
                         return (
                             <button
                                 key={filter.key}
                                 type="button"
                                 onClick={() => setStatusFilter(filter.key)}
-                                className={`pb-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${tabClass}`}
+                                className={`pb-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${tabClass}`}
                             >
                                 {filter.label}
                             </button>

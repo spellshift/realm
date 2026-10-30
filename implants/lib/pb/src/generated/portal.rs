@@ -5,10 +5,6 @@ pub struct BytesPayload {
     pub data: ::prost::alloc::vec::Vec<u8>,
     #[prost(enumeration = "BytesPayloadKind", tag = "2")]
     pub kind: i32,
-    #[prost(uint32, tag = "3")]
-    pub rows: u32,
-    #[prost(uint32, tag = "4")]
-    pub cols: u32,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct TcpPayload {

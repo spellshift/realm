@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -534,6 +535,25 @@ func init() {
 	notificationDescArchived := notificationFields[2].Descriptor()
 	// notification.DefaultArchived holds the default value on creation for the archived field.
 	notification.DefaultArchived = notificationDescArchived.Default.(bool)
+	operatornoteMixin := schema.OperatorNote{}.Mixin()
+	operatornoteMixinFields0 := operatornoteMixin[0].Fields()
+	_ = operatornoteMixinFields0
+	operatornoteFields := schema.OperatorNote{}.Fields()
+	_ = operatornoteFields
+	// operatornoteDescCreatedAt is the schema descriptor for created_at field.
+	operatornoteDescCreatedAt := operatornoteMixinFields0[0].Descriptor()
+	// operatornote.DefaultCreatedAt holds the default value on creation for the created_at field.
+	operatornote.DefaultCreatedAt = operatornoteDescCreatedAt.Default.(func() time.Time)
+	// operatornoteDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	operatornoteDescLastModifiedAt := operatornoteMixinFields0[1].Descriptor()
+	// operatornote.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	operatornote.DefaultLastModifiedAt = operatornoteDescLastModifiedAt.Default.(func() time.Time)
+	// operatornote.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	operatornote.UpdateDefaultLastModifiedAt = operatornoteDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// operatornoteDescContent is the schema descriptor for content field.
+	operatornoteDescContent := operatornoteFields[0].Descriptor()
+	// operatornote.DefaultContent holds the default value on creation for the content field.
+	operatornote.DefaultContent = operatornoteDescContent.Default.(string)
 	portalMixin := schema.Portal{}.Mixin()
 	portalMixinFields0 := portalMixin[0].Fields()
 	_ = portalMixinFields0

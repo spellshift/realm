@@ -133,7 +133,7 @@ export const EldritchLspStatusButton: React.FC<EldritchLspStatusButtonProps> = (
                 type="button"
                 data-testid={testId}
                 onClick={onClick}
-                className="inline-flex items-center gap-1 rounded-md text-[11px] font-mono transition-colors px-2 py-0.5 bg-red-500/15 text-red-300 hover:bg-red-500/25"
+                className="inline-flex items-center gap-1 rounded-md text-xs font-mono transition-colors px-2 py-0.5 bg-red-500/15 text-red-300 hover:bg-red-500/25"
                 title="eldritch-lsp live diagnostics"
             >
                 <AlertCircle className="w-3.5 h-3.5 text-red-400" />
@@ -153,7 +153,7 @@ export const EldritchLspStatusButton: React.FC<EldritchLspStatusButtonProps> = (
                 type="button"
                 data-testid={testId}
                 onClick={onClick}
-                className="inline-flex items-center gap-1 rounded-md text-[11px] font-mono transition-colors px-2 py-0.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
+                className="inline-flex items-center gap-1 rounded-md text-xs font-mono transition-colors px-2 py-0.5 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
                 title="eldritch-lsp live diagnostics"
             >
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
@@ -194,15 +194,15 @@ export const EldritchLspStatusButton: React.FC<EldritchLspStatusButtonProps> = (
                     }
                     onClick();
                 }}
-                className="inline-flex items-center gap-1 rounded-md text-[11px] font-mono transition-colors p-1.5 text-emerald-400 hover:bg-[#272e3f]"
+                className="inline-flex items-center gap-1 rounded-md text-xs font-mono transition-colors p-1 text-emerald-400 hover:bg-gray-800"
             >
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             </button>
             {showPopover && (
                 <div
                     data-testid={`${testId}-popover`}
                     role="tooltip"
-                    className="absolute left-0 top-full mt-1 z-30 whitespace-nowrap rounded-md bg-[#161a26] border border-[#2f364a] px-2 py-1 text-[11px] text-gray-200 shadow-lg pointer-events-none"
+                    className="absolute left-0 top-full mt-1 z-30 whitespace-nowrap rounded-md bg-gray-900 border border-gray-700 px-2 py-1 text-xs text-gray-200 shadow-lg pointer-events-none"
                 >
                     No errors
                 </div>
@@ -706,7 +706,7 @@ const EldritchCodeEditor: React.FC<EldritchCodeEditorProps> = ({
             <div
                 ref={gutterRef}
                 aria-hidden="true"
-                className="select-none py-2 px-2 bg-[#12151e] border-r border-[#222736] text-right text-gray-600 leading-5 min-w-[2.5rem] overflow-hidden"
+                className="select-none py-2 px-2 bg-gray-900 border-r border-gray-800 text-right text-gray-500 leading-5 min-w-[2.5rem] overflow-hidden"
                 style={
                     fontSize !== undefined
                         ? { fontSize: `${fontSize}px`, lineHeight: `${lineHeightPx}px` }
@@ -869,7 +869,7 @@ const EldritchCodeEditor: React.FC<EldritchCodeEditorProps> = ({
                             )}px`,
                             left: "12px",
                         }}
-                        className="absolute z-30 max-w-lg rounded-md bg-[#161a26] border border-[#2f364a] px-3 py-2 text-xs shadow-xl space-y-1.5"
+                        className="absolute z-30 max-w-lg rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-xs shadow-xl space-y-1.5"
                     >
                         {hoveredLineDiags.map((diag, idx) => (
                             <div
@@ -900,9 +900,9 @@ const EldritchCodeEditor: React.FC<EldritchCodeEditorProps> = ({
                                             applyQuickFix(diag);
                                             setHoveredDiagLine(null);
                                         }}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-gray-200 text-[11px] font-mono shrink-0 transition-colors"
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-xs font-mono shrink-0 transition-colors"
                                     >
-                                        <Wand2 className="w-3 h-3 text-gray-400" />
+                                        <Wand2 className="w-3.5 h-3.5 text-gray-400" />
                                         {diag.replacement.label}
                                     </button>
                                 )}
@@ -916,7 +916,7 @@ const EldritchCodeEditor: React.FC<EldritchCodeEditorProps> = ({
             {showDiagnosticsPanel && diagnostics.length > 0 && (
                 <div
                     data-testid={`${testIdPrefix}-diagnostics-list`}
-                    className="absolute bottom-0 left-0 right-0 z-20 max-h-28 overflow-y-auto divide-y divide-[#222736] bg-[#131722]/95 backdrop-blur-sm border-t border-[#262b38] text-xs shadow-lg"
+                    className="absolute bottom-0 left-0 right-0 z-20 max-h-28 overflow-y-auto divide-y divide-gray-800 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 text-xs shadow-lg"
                 >
                     {diagnostics.map((diag, idx) => (
                         <div
@@ -929,7 +929,7 @@ const EldritchCodeEditor: React.FC<EldritchCodeEditorProps> = ({
                                 ) : (
                                     <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                                 )}
-                                <span className="font-mono text-[11px] text-gray-400 shrink-0">
+                                <span className="font-mono text-xs text-gray-400 shrink-0">
                                     L{diag.line + 1}:
                                 </span>
                                 <span
@@ -947,9 +947,9 @@ const EldritchCodeEditor: React.FC<EldritchCodeEditorProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => applyQuickFix(diag)}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-gray-200 text-[11px] font-mono shrink-0 transition-colors"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 text-xs font-mono shrink-0 transition-colors"
                                 >
-                                    <Wand2 className="w-3 h-3 text-gray-400" />
+                                    <Wand2 className="w-3.5 h-3.5 text-gray-400" />
                                     {diag.replacement.label}
                                 </button>
                             )}

@@ -75,7 +75,7 @@ const HostRow: React.FC<{
                     onClick={() => onEditHost(host)}
                     title={`Edit ${host.name}`}
                     data-testid={`edit-host-${host.id}`}
-                    className="text-[11px] text-gray-400 hover:text-gray-200 px-1.5 py-0.5 rounded hover:bg-gray-800 transition-colors"
+                    className="text-xs text-gray-400 hover:text-gray-200 px-2 py-1 rounded-md hover:bg-gray-800 transition-colors"
                 >
                     Edit
                 </button>
@@ -83,7 +83,7 @@ const HostRow: React.FC<{
                     <button
                         type="button"
                         onClick={() => onOpenSshWithTarget(`${targetAddr}:${defaultPort}`)}
-                        className="text-[11px] text-gray-200 hover:text-white px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 shrink-0 transition-colors"
+                        className="text-xs font-medium text-gray-200 hover:text-white px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 shrink-0 transition-colors"
                     >
                         Pivot
                     </button>
@@ -115,10 +115,10 @@ export const GraphHostsSection: React.FC<GraphHostsSectionProps> = ({
     };
 
     return (
-        <div className="px-4 py-3 border-b border-gray-800" data-testid="graph-hosts-section">
+        <div className="px-3 py-3 border-b border-gray-800" data-testid="graph-hosts-section">
             <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">
-                    Adjacent Hosts ({adjacentHosts.length})
+                <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
+                    Discovered Hosts ({adjacentHosts.length})
                 </span>
                 <button
                     type="button"
@@ -126,13 +126,13 @@ export const GraphHostsSection: React.FC<GraphHostsSectionProps> = ({
                     aria-label="Add host"
                     title="Document reachable host"
                     data-testid="add-host-button"
-                    className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                    className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                 >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                 </button>
             </div>
             {adjacentHosts.length === 0 ? (
-                <div className="py-2 text-xs text-gray-500">No adjacent hosts discovered yet.</div>
+                <div className="py-2 text-xs text-gray-500">No discovered hosts yet.</div>
             ) : (
                 <div className="divide-y divide-gray-800/60">
                     {adjacentHosts.map((host) => (

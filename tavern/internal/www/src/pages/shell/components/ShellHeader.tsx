@@ -5,6 +5,8 @@ import {
   createLucideIcon,
   History,
   Home,
+  LogIn,
+  LogOut,
   Terminal,
   User,
 } from "lucide-react";
@@ -32,7 +34,7 @@ export const GraphStar = createLucideIcon("graph-star", [
 export const TOOLBAR_BUTTON_BASE =
   "relative inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors";
 export const TOOLBAR_BUTTON_INACTIVE =
-  "bg-transparent hover:bg-[#282f42] text-gray-300 hover:text-white";
+  "bg-transparent hover:bg-gray-800 text-gray-400 hover:text-white";
 export const TOOLBAR_BUTTON_ACTIVE =
   "bg-purple-600 text-white shadow-sm";
 
@@ -40,6 +42,8 @@ interface ShellHeaderProps {
   shellData: any;
   activeUsers?: any[];
   portalId: number | null;
+  sidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
   onExport: () => void;
   onNewPortal: () => void;
   onSshConnect: (target: string) => void;
@@ -76,6 +80,8 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   shellData,
   activeUsers,
   portalId,
+  sidebarOpen = false,
+  onToggleSidebar,
   onExport,
   onNewPortal,
   onSshConnect,
@@ -107,15 +113,39 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   actionsMenuTourOpen = false,
 }) => {
   return (
-    <div className="relative z-30 bg-[#181b24] px-3 py-1.5 border-b border-[#262b38] flex flex-wrap justify-between items-center gap-2 text-xs text-gray-200">
-      {/* Left: Breadcrumbs & Context */}
+    <div className="relative z-30 bg-gray-900 px-3 py-1 border-b border-gray-800 flex flex-wrap justify-between items-center gap-2 text-xs text-gray-200">
+      {/* Left: Sidebar Toggle, Breadcrumbs & Context */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        <button
+          type="button"
+          data-tour="shell-sidebar-toggle"
+          data-testid="status-bar-sidebar-toggle"
+          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          aria-expanded={sidebarOpen}
+          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          onClick={onToggleSidebar}
+          className={`inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors ${
+            sidebarOpen
+              ? "bg-gray-800 text-white"
+              : "text-gray-400 hover:bg-gray-800 hover:text-white"
+          }`}
+        >
+          {sidebarOpen ? (
+            <LogIn
+              data-testid="sidebar-toggle-login-icon"
+              className="w-4 h-4 -scale-x-100"
+            />
+          ) : (
+            <LogOut data-testid="sidebar-toggle-logout-icon" className="w-4 h-4" />
+          )}
+        </button>
+
         <Link
           to="/"
-          className="inline-flex items-center justify-center p-1.5 rounded-md hover:bg-[#272e3f] text-gray-300 hover:text-white transition-colors"
+          className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
           title="Return Home"
         >
-          <Home size={15} />
+          <Home className="w-4 h-4" />
         </Link>
 
         {shellData?.node?.beacon?.host && (
@@ -134,7 +164,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   </span>
                 </div>
               }
-              bg="#1f2430"
+              bg="#111827"
               color="white"
               borderRadius="md"
               border="1px solid #374151"
@@ -142,9 +172,9 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             >
               <Link
                 to={`/hosts/${shellData.node.beacon.host.id}`}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-[#272e3f] text-purple-300 font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-800 text-purple-300 font-semibold transition-colors"
               >
-                <BugAntIcon className="w-3.5 h-3.5" />
+                <BugAntIcon className="w-4 h-4 shrink-0" />
                 <span>{shellData.node.beacon.host.name}</span>
               </Link>
             </Tooltip>
@@ -164,14 +194,14 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   </span>
                 </div>
               }
-              bg="#1f2430"
+              bg="#111827"
               color="white"
               borderRadius="md"
               border="1px solid #374151"
               hasArrow
             >
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-200 cursor-default">
-                <Terminal size={13} className="text-gray-400" />
+                <Terminal className="w-4 h-4 text-gray-400 shrink-0" />
                 <span>{shellData.node.beacon.name}</span>
               </div>
             </Tooltip>
@@ -180,7 +210,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
               <>
                 <span className="text-gray-600">/</span>
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-200 cursor-default">
-                  <User size={13} className="text-gray-400" />
+                  <User className="w-4 h-4 text-gray-400 shrink-0" />
                   <span>{shellData.node.beacon.principal}</span>
                 </div>
               </>
@@ -197,7 +227,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
               {activeUsers.map((user: any) => (
                 <Tooltip key={user.id} label={user.name} hasArrow>
                   <img
-                    className="inline-block h-6 w-6 rounded-full ring-2 ring-[#11131a]"
+                    className="inline-block h-6 w-6 rounded-full ring-2 ring-gray-900"
                     src={user.photoURL || PlaceholderUser}
                     alt={user.name}
                     onError={(e) => {
@@ -209,7 +239,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             </div>
             <div
               data-testid="shell-header-users-divider"
-              className="h-4 w-px bg-[#262b38]"
+              className="h-4 w-px bg-gray-800"
               aria-hidden="true"
             />
           </>
@@ -223,7 +253,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           {onToggleKnowledge && (
             <Tooltip
               label="Context"
-              bg="#1f2430"
+              bg="#111827"
               color="white"
               borderRadius="md"
               border="1px solid #374151"
@@ -238,9 +268,9 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   knowledgeOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
                 }`}
               >
-                <GraphStar size={15} />
+                <GraphStar className="w-4 h-4" />
                 {(pivotCount > 0 || credentialCount > 0) && (
-                  <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-purple-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
                     {pivotCount > 0 && !onTogglePivots ? pivotCount : credentialCount}
                   </span>
                 )}
@@ -252,7 +282,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           {onTogglePivots && (
             <Tooltip
               label="Pivots"
-              bg="#1f2430"
+              bg="#111827"
               color="white"
               borderRadius="md"
               border="1px solid #374151"
@@ -267,9 +297,9 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   pivotsOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
                 }`}
               >
-                <GraphStar size={15} />
+                <GraphStar className="w-4 h-4" />
                 {pivotCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-emerald-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center leading-none">
                     {pivotCount}
                   </span>
                 )}
@@ -281,7 +311,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           {onToggleHistory && (
             <Tooltip
               label="History"
-              bg="#1f2430"
+              bg="#111827"
               color="white"
               borderRadius="md"
               border="1px solid #374151"
@@ -296,9 +326,9 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   historyOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
                 }`}
               >
-                <History size={15} />
+                <History className="w-4 h-4" />
                 {activeQueueCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-amber-500 text-gray-950 text-[9px] font-bold flex items-center justify-center leading-none">
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-gray-900 text-[10px] font-bold flex items-center justify-center leading-none">
                     {activeQueueCount}
                   </span>
                 )}

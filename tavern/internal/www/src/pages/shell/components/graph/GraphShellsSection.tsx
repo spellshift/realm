@@ -12,13 +12,13 @@ const ShellRowAction: React.FC<{ shellId: string; isCurrent: boolean }> = ({
     isCurrent,
 }) => {
     if (isCurrent) {
-        return <span className="text-[11px] text-gray-500">Current</span>;
+        return <span className="text-xs text-gray-500">Current</span>;
     }
 
     return (
         <Link
             to={`/shells/${shellId}`}
-            className="text-[11px] text-gray-200 hover:text-white px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+            className="text-xs font-medium text-gray-200 hover:text-white px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 transition-colors"
         >
             Switch
         </Link>
@@ -66,9 +66,9 @@ export const GraphShellsSection: React.FC<GraphShellsSectionProps> = ({
     currentShellId,
 }) => {
     return (
-        <div className="px-4 py-3 border-b border-gray-800" data-testid="graph-shells-section">
+        <div className="px-3 py-3 border-b border-gray-800" data-testid="graph-shells-section">
             <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">
+                <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
                     Shells ({shells.length})
                 </span>
             </div>

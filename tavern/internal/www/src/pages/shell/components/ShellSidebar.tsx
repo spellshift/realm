@@ -102,7 +102,7 @@ const ShellSidebar: React.FC<ShellSidebarProps> = ({ isOpen, currNavItem }) => {
     <aside
       data-testid="shell-sidebar"
       aria-label="Navigation sidebar"
-      className="w-12 shrink-0 bg-gray-900 border-r border-[#262b38] flex flex-col justify-between items-center py-3 select-none z-20"
+      className="w-12 shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col justify-between items-center py-3 select-none z-20"
     >
       <nav className="flex flex-1 flex-col items-center w-full overflow-y-auto no-scrollbar">
         <ul className="flex flex-col items-center space-y-1.5 w-full px-1.5">
@@ -119,7 +119,7 @@ const ShellSidebar: React.FC<ShellSidebarProps> = ({ isOpen, currNavItem }) => {
                 <Tooltip
                   label={item.name}
                   placement="right"
-                  bg="#1f2430"
+                  bg="#111827"
                   color="white"
                   borderRadius="md"
                   border="1px solid #374151"
@@ -151,7 +151,7 @@ const ShellSidebar: React.FC<ShellSidebarProps> = ({ isOpen, currNavItem }) => {
         <Tooltip
           label={user?.name ? `Profile (${user.name})` : "Profile"}
           placement="right"
-          bg="#1f2430"
+          bg="#111827"
           color="white"
           borderRadius="md"
           border="1px solid #374151"
@@ -174,7 +174,7 @@ const ShellSidebar: React.FC<ShellSidebarProps> = ({ isOpen, currNavItem }) => {
         <Tooltip
           label="Realm"
           placement="right"
-          bg="#1f2430"
+          bg="#111827"
           color="white"
           borderRadius="md"
           border="1px solid #374151"

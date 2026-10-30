@@ -29,6 +29,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -118,6 +119,7 @@ func checkColumn(table, column string) error {
 			network.Table:        network.ValidColumn,
 			networkhost.Table:    networkhost.ValidColumn,
 			notification.Table:   notification.ValidColumn,
+			operatornote.Table:   operatornote.ValidColumn,
 			portal.Table:         portal.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,

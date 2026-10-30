@@ -233,17 +233,17 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                         leaveFrom="opacity-100 scale-100"
                         leaveTo="opacity-0 scale-95"
                     >
-                        <Dialog.Panel className="w-full max-w-lg rounded-lg bg-[#1c202b] border border-[#343b4d] shadow-2xl">
-                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#2e3444]">
-                                <Dialog.Title className="text-white font-semibold text-base flex items-center gap-2">
-                                    <Terminal size={17} className="text-purple-400" />
+                        <Dialog.Panel className="w-full max-w-lg rounded-lg bg-gray-900 border border-gray-700 shadow-2xl">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+                                <Dialog.Title className="text-white font-semibold text-sm flex items-center gap-2">
+                                    <Terminal className="w-4 h-4 text-purple-400" />
                                     SSH Connection
                                 </Dialog.Title>
                                 <button
                                     onClick={handleClose}
                                     className="text-gray-400 hover:text-white transition-colors"
                                 >
-                                    <XMarkIcon className="h-5 w-5" />
+                                    <XMarkIcon className="h-4 w-4" />
                                 </button>
                             </div>
 

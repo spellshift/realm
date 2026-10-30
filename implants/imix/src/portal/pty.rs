@@ -1,9 +1,29 @@
 use anyhow::Result;
 use pb::portal::{BytesPayload, BytesPayloadKind, Mote, mote::Payload};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
+
+#[derive(Deserialize)]
+struct PtyResizeMessage {
+    kind: String,
+    rows: u16,
+    cols: u16,
+}
+
+fn parse_resize_message(data: &[u8]) -> Option<(u16, u16)> {
+    if !data.starts_with(b"{") {
+        return None;
+    }
+    let msg: PtyResizeMessage = serde_json::from_slice(data).ok()?;
+    if msg.kind == "resize" && msg.rows > 0 && msg.cols > 0 {
+        Some((msg.rows, msg.cols))
+    } else {
+        None
+    }
+}
 
 #[cfg(not(target_os = "solaris"))]
 use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
@@ -87,31 +107,24 @@ impl PtyManager {
         &mut self,
         stream_id: String,
         data: Vec<u8>,
-        rows: u32,
-        cols: u32,
         out_tx: mpsc::Sender<Mote>,
     ) -> Result<()> {
-        let initial_rows = u16::try_from(rows).unwrap_or(0);
-        let initial_cols = u16::try_from(cols).unwrap_or(0);
+        let resize = parse_resize_message(&data);
 
         let is_new_session = !self.sessions.contains_key(&stream_id);
         if is_new_session {
+            let (rows, cols) = resize.unwrap_or((48, 160));
             // Spawn a new PTY session
-            let session = spawn_pty_session(
-                stream_id.clone(),
-                if initial_rows > 0 { initial_rows } else { 48 },
-                if initial_cols > 0 { initial_cols } else { 160 },
-                out_tx.clone(),
-            )?;
+            let session = spawn_pty_session(stream_id.clone(), rows, cols, out_tx.clone())?;
             self.sessions.insert(stream_id.clone(), session);
         }
 
         if let Some(session) = self.sessions.get(&stream_id) {
-            if !is_new_session && initial_rows > 0 && initial_cols > 0 {
-                session.resize(initial_rows, initial_cols);
-            }
-            // Write input data to the PTY (skip empty data which is just the init/resize mote)
-            if !data.is_empty()
+            if let Some((rows, cols)) = resize {
+                if !is_new_session {
+                    session.resize(rows, cols);
+                }
+            } else if !data.is_empty()
                 && let Ok(mut writer) = session.writer.lock()
             {
                 let _ = writer.write_all(&data);
@@ -199,8 +212,6 @@ fn spawn_pty_session(
                 payload: Some(Payload::Bytes(BytesPayload {
                     data: buffer[..n].to_vec(),
                     kind: BytesPayloadKind::Pty as i32,
-                    rows: 0,
-                    cols: 0,
                 })),
             };
 
@@ -216,8 +227,6 @@ fn spawn_pty_session(
             payload: Some(Payload::Bytes(BytesPayload {
                 data: b"PTY session ended".to_vec(),
                 kind: BytesPayloadKind::Close as i32,
-                rows: 0,
-                cols: 0,
             })),
         };
         let _ = rt.block_on(out_tx_clone.send(close_mote));
@@ -376,8 +385,6 @@ fn spawn_pty_session(
                 payload: Some(Payload::Bytes(BytesPayload {
                     data: buffer[..n].to_vec(),
                     kind: BytesPayloadKind::Pty as i32,
-                    rows: 0,
-                    cols: 0,
                 })),
             };
 
@@ -393,8 +400,6 @@ fn spawn_pty_session(
             payload: Some(Payload::Bytes(BytesPayload {
                 data: b"PTY session ended".to_vec(),
                 kind: BytesPayloadKind::Close as i32,
-                rows: 0,
-                cols: 0,
             })),
         };
         let _ = rt.block_on(out_tx_clone.send(close_mote));
@@ -406,4 +411,27 @@ fn spawn_pty_session(
         _child_pid: pid,
         _cancel_tx: cancel_tx,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_resize_message() {
+        assert_eq!(
+            parse_resize_message(br#"{"kind":"resize","rows":24,"cols":80}"#),
+            Some((24, 80))
+        );
+        assert_eq!(parse_resize_message(b""), None);
+        assert_eq!(parse_resize_message(b"ls -la\n"), None);
+        assert_eq!(
+            parse_resize_message(br#"{"kind":"input","rows":24,"cols":80}"#),
+            None
+        );
+        assert_eq!(
+            parse_resize_message(br#"{"kind":"resize","rows":0,"cols":80}"#),
+            None
+        );
+    }
 }

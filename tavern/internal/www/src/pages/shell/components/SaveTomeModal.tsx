@@ -869,14 +869,14 @@ const SaveTomeModal: React.FC<SaveTomeModalProps> = ({
                     >
                         <Dialog.Panel
                             data-testid="save-tome-modal"
-                            className="w-full max-w-2xl rounded-lg bg-[#1c202b] border border-[#343b4d] shadow-2xl overflow-hidden"
+                            className="w-full max-w-2xl rounded-lg bg-gray-900 border border-gray-700 shadow-2xl overflow-hidden"
                         >
                             {/* Modal Header */}
-                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#2e3444]">
-                                <Dialog.Title className="text-white font-semibold text-base flex items-center gap-2">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+                                <Dialog.Title className="text-white font-semibold text-sm flex items-center gap-2">
                                     <span className="relative inline-flex items-center justify-center text-purple-400">
                                         <BookOpenIcon className="w-4 h-4" />
-                                        <Plus className="w-2.5 h-2.5 absolute -top-1 -right-1 bg-[#1c202b] rounded-full stroke-[2.5]" />
+                                        <Plus className="w-2.5 h-2.5 absolute -top-1 -right-1 bg-gray-900 rounded-full stroke-[2.5]" />
                                     </span>
                                     <span>Save as Tome</span>
                                 </Dialog.Title>
@@ -886,7 +886,7 @@ const SaveTomeModal: React.FC<SaveTomeModalProps> = ({
                                     onClick={onClose}
                                     className="text-gray-400 hover:text-white transition-colors"
                                 >
-                                    <XMarkIcon className="h-5 w-5" />
+                                    <XMarkIcon className="h-4 w-4" />
                                 </button>
                             </div>
 

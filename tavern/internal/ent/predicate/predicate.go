@@ -57,6 +57,9 @@ type NetworkHost func(*sql.Selector)
 // Notification is the predicate function for notification builders.
 type Notification func(*sql.Selector)
 
+// OperatorNote is the predicate function for operatornote builders.
+type OperatorNote func(*sql.Selector)
+
 // Portal is the predicate function for portal builders.
 type Portal func(*sql.Selector)
 

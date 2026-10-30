@@ -71,11 +71,11 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                 data-tour="shell-actions-button"
                                 className={
                                     buttonClassName ||
-                                    "relative inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors bg-transparent hover:bg-[#282f42] text-gray-300 hover:text-white focus:outline-none"
+                                    "relative inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors bg-transparent hover:bg-gray-800 text-gray-400 hover:text-white focus:outline-none"
                                 }
                                 aria-label="Shell actions"
                             >
-                                <Ellipsis className="w-[15px] h-[15px]" />
+                                <Ellipsis className="w-4 h-4" />
                             </Menu.Button>
                             <Transition
                                 show={isMenuOpen}
@@ -89,7 +89,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                             >
                                 <Menu.Items
                                     static
-                                    className="absolute right-0 mt-2 w-60 origin-top-right rounded-md bg-[#1f2430] border border-[#343b4d] shadow-xl focus:outline-none z-50"
+                                    className="absolute right-0 mt-2 w-60 origin-top-right rounded-md bg-gray-900 border border-gray-700 shadow-xl focus:outline-none z-50"
                                 >
                                     <div className="px-1.5 py-1.5 space-y-0.5">
                                         <Menu.Item>
@@ -97,7 +97,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                 <Button
                                                     buttonVariant="ghost"
                                                     buttonStyle={{ color: "gray", size: "sm" }}
-                                                    className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                    className="w-full justify-start text-white hover:bg-gray-800"
                                                     leftIcon={<Share className="w-4 h-4" />}
                                                     onClick={onExport}
                                                 >
@@ -112,7 +112,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                     <Button
                                                         buttonVariant="ghost"
                                                         buttonStyle={{ color: "gray", size: "sm" }}
-                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                        className="w-full justify-start text-white hover:bg-gray-800"
                                                         leftIcon={<RefreshCw className="w-4 h-4" />}
                                                         onClick={onSpawnFreshShell}
                                                     >
@@ -128,7 +128,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                     <Button
                                                         buttonVariant="ghost"
                                                         buttonStyle={{ color: "gray", size: "sm" }}
-                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                        className="w-full justify-start text-white hover:bg-gray-800"
                                                         leftIcon={<StopCircle className="w-4 h-4" />}
                                                         onClick={onSendCtrlC}
                                                     >
@@ -144,7 +144,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                     <Button
                                                         buttonVariant="ghost"
                                                         buttonStyle={{ color: "gray", size: "sm" }}
-                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                        className="w-full justify-start text-white hover:bg-gray-800"
                                                         leftIcon={<Search className="w-4 h-4" />}
                                                         onClick={onSendCtrlR}
                                                     >
@@ -154,7 +154,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                             </Menu.Item>
                                         )}
 
-                                        <div className="border-t border-[#343b4d] my-1" />
+                                        <div className="border-t border-gray-800 my-1" />
 
                                         <div data-tour="shell-guide" className="space-y-0.5">
                                             {onReplayTutorial && (
@@ -163,7 +163,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                         <Button
                                                             buttonVariant="ghost"
                                                             buttonStyle={{ color: "gray", size: "sm" }}
-                                                            className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                            className="w-full justify-start text-white hover:bg-gray-800"
                                                             leftIcon={<Compass className="w-4 h-4" />}
                                                             onClick={onReplayTutorial}
                                                         >
@@ -185,7 +185,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                         <Button
                                                             buttonVariant="ghost"
                                                             buttonStyle={{ color: "gray", size: "sm" }}
-                                                            className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                            className="w-full justify-start text-white hover:bg-gray-800"
                                                             leftIcon={<BookOpen className="w-4 h-4" />}
                                                         >
                                                             Documentation
@@ -208,7 +208,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                     <Button
                                                         buttonVariant="ghost"
                                                         buttonStyle={{ color: "gray", size: "sm" }}
-                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                        className="w-full justify-start text-white hover:bg-gray-800"
                                                         leftIcon={<Bug className="w-4 h-4" />}
                                                     >
                                                         Report a Bug

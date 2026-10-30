@@ -33,6 +33,13 @@ type WebsocketControlMessage struct {
 	Cols  uint32 `json:"cols"`
 }
 
+// PTYResizeMessage represents a PTY resize payload marshaled as JSON inside a BytesPayload.
+type PTYResizeMessage struct {
+	Kind string `json:"kind"`
+	Rows uint32 `json:"rows"`
+	Cols uint32 `json:"cols"`
+}
+
 // PivotSession represents an active PTY session that can be shared among multiple websockets.
 type PivotSession struct {
 	PivotID       int
@@ -393,16 +400,25 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
+		initData := []byte{}
+		if initRows > 0 && initCols > 0 {
+			if b, err := json.Marshal(PTYResizeMessage{
+				Kind: "resize",
+				Rows: initRows,
+				Cols: initCols,
+			}); err == nil {
+				initData = b
+			}
+		}
+
 		// Send initial PTY request mote to the agent to spawn the PTY
 		initMote := &portalpb.Mote{
 			StreamId: streamID,
 			SeqId:    0,
 			Payload: &portalpb.Mote_Bytes{
 				Bytes: &portalpb.BytesPayload{
-					Data: []byte{},
+					Data: initData,
 					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
-					Rows: initRows,
-					Cols: initCols,
 				},
 			},
 		}
@@ -443,15 +459,21 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					case "resize":
 						if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+							resizeData, err := json.Marshal(PTYResizeMessage{
+								Kind: "resize",
+								Rows: ctrlMsg.Rows,
+								Cols: ctrlMsg.Cols,
+							})
+							if err != nil {
+								continue
+							}
 							resizeMote := &portalpb.Mote{
 								StreamId: streamID,
 								SeqId:    pivotSession.nextSeqID(),
 								Payload: &portalpb.Mote_Bytes{
 									Bytes: &portalpb.BytesPayload{
-										Data: []byte{},
+										Data: resizeData,
 										Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
-										Rows: ctrlMsg.Rows,
-										Cols: ctrlMsg.Cols,
 									},
 								},
 							}
@@ -568,15 +590,21 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			case "resize":
 				if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+					resizeData, err := json.Marshal(PTYResizeMessage{
+						Kind: "resize",
+						Rows: ctrlMsg.Rows,
+						Cols: ctrlMsg.Cols,
+					})
+					if err != nil {
+						continue
+					}
 					resizeMote := &portalpb.Mote{
 						StreamId: pivotSession.StreamID,
 						SeqId:    pivotSession.nextSeqID(),
 						Payload: &portalpb.Mote_Bytes{
 							Bytes: &portalpb.BytesPayload{
-								Data: []byte{},
+								Data: resizeData,
 								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
-								Rows: ctrlMsg.Rows,
-								Cols: ctrlMsg.Cols,
 							},
 						},
 					}

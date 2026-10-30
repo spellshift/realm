@@ -31,6 +31,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
@@ -72,6 +73,7 @@ const (
 	TypeNetwork        = "Network"
 	TypeNetworkHost    = "NetworkHost"
 	TypeNotification   = "Notification"
+	TypeOperatorNote   = "OperatorNote"
 	TypePortal         = "Portal"
 	TypeQuest          = "Quest"
 	TypeRepository     = "Repository"
@@ -16691,6 +16693,614 @@ func (m *NotificationMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Notification edge %s", name)
 }
 
+// OperatorNoteMutation represents an operation that mutates the OperatorNote nodes in the graph.
+type OperatorNoteMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	content          *string
+	clearedFields    map[string]struct{}
+	author           *int
+	clearedauthor    bool
+	shells           map[int]struct{}
+	removedshells    map[int]struct{}
+	clearedshells    bool
+	done             bool
+	oldValue         func(context.Context) (*OperatorNote, error)
+	predicates       []predicate.OperatorNote
+}
+
+var _ ent.Mutation = (*OperatorNoteMutation)(nil)
+
+// operatornoteOption allows management of the mutation configuration using functional options.
+type operatornoteOption func(*OperatorNoteMutation)
+
+// newOperatorNoteMutation creates new mutation for the OperatorNote entity.
+func newOperatorNoteMutation(c config, op Op, opts ...operatornoteOption) *OperatorNoteMutation {
+	m := &OperatorNoteMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeOperatorNote,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withOperatorNoteID sets the ID field of the mutation.
+func withOperatorNoteID(id int) operatornoteOption {
+	return func(m *OperatorNoteMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *OperatorNote
+		)
+		m.oldValue = func(ctx context.Context) (*OperatorNote, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().OperatorNote.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withOperatorNote sets the old OperatorNote of the mutation.
+func withOperatorNote(node *OperatorNote) operatornoteOption {
+	return func(m *OperatorNoteMutation) {
+		m.oldValue = func(context.Context) (*OperatorNote, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m OperatorNoteMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m OperatorNoteMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *OperatorNoteMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *OperatorNoteMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().OperatorNote.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *OperatorNoteMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *OperatorNoteMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the OperatorNote entity.
+// If the OperatorNote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OperatorNoteMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *OperatorNoteMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *OperatorNoteMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *OperatorNoteMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the OperatorNote entity.
+// If the OperatorNote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OperatorNoteMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *OperatorNoteMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetContent sets the "content" field.
+func (m *OperatorNoteMutation) SetContent(s string) {
+	m.content = &s
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *OperatorNoteMutation) Content() (r string, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the OperatorNote entity.
+// If the OperatorNote object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OperatorNoteMutation) OldContent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ClearContent clears the value of the "content" field.
+func (m *OperatorNoteMutation) ClearContent() {
+	m.content = nil
+	m.clearedFields[operatornote.FieldContent] = struct{}{}
+}
+
+// ContentCleared returns if the "content" field was cleared in this mutation.
+func (m *OperatorNoteMutation) ContentCleared() bool {
+	_, ok := m.clearedFields[operatornote.FieldContent]
+	return ok
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *OperatorNoteMutation) ResetContent() {
+	m.content = nil
+	delete(m.clearedFields, operatornote.FieldContent)
+}
+
+// SetAuthorID sets the "author" edge to the User entity by id.
+func (m *OperatorNoteMutation) SetAuthorID(id int) {
+	m.author = &id
+}
+
+// ClearAuthor clears the "author" edge to the User entity.
+func (m *OperatorNoteMutation) ClearAuthor() {
+	m.clearedauthor = true
+}
+
+// AuthorCleared reports if the "author" edge to the User entity was cleared.
+func (m *OperatorNoteMutation) AuthorCleared() bool {
+	return m.clearedauthor
+}
+
+// AuthorID returns the "author" edge ID in the mutation.
+func (m *OperatorNoteMutation) AuthorID() (id int, exists bool) {
+	if m.author != nil {
+		return *m.author, true
+	}
+	return
+}
+
+// AuthorIDs returns the "author" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AuthorID instead. It exists only for internal usage by the builders.
+func (m *OperatorNoteMutation) AuthorIDs() (ids []int) {
+	if id := m.author; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAuthor resets all changes to the "author" edge.
+func (m *OperatorNoteMutation) ResetAuthor() {
+	m.author = nil
+	m.clearedauthor = false
+}
+
+// AddShellIDs adds the "shells" edge to the Shell entity by ids.
+func (m *OperatorNoteMutation) AddShellIDs(ids ...int) {
+	if m.shells == nil {
+		m.shells = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.shells[ids[i]] = struct{}{}
+	}
+}
+
+// ClearShells clears the "shells" edge to the Shell entity.
+func (m *OperatorNoteMutation) ClearShells() {
+	m.clearedshells = true
+}
+
+// ShellsCleared reports if the "shells" edge to the Shell entity was cleared.
+func (m *OperatorNoteMutation) ShellsCleared() bool {
+	return m.clearedshells
+}
+
+// RemoveShellIDs removes the "shells" edge to the Shell entity by IDs.
+func (m *OperatorNoteMutation) RemoveShellIDs(ids ...int) {
+	if m.removedshells == nil {
+		m.removedshells = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.shells, ids[i])
+		m.removedshells[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedShells returns the removed IDs of the "shells" edge to the Shell entity.
+func (m *OperatorNoteMutation) RemovedShellsIDs() (ids []int) {
+	for id := range m.removedshells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ShellsIDs returns the "shells" edge IDs in the mutation.
+func (m *OperatorNoteMutation) ShellsIDs() (ids []int) {
+	for id := range m.shells {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetShells resets all changes to the "shells" edge.
+func (m *OperatorNoteMutation) ResetShells() {
+	m.shells = nil
+	m.clearedshells = false
+	m.removedshells = nil
+}
+
+// Where appends a list predicates to the OperatorNoteMutation builder.
+func (m *OperatorNoteMutation) Where(ps ...predicate.OperatorNote) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the OperatorNoteMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *OperatorNoteMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.OperatorNote, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *OperatorNoteMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *OperatorNoteMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (OperatorNote).
+func (m *OperatorNoteMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *OperatorNoteMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, operatornote.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, operatornote.FieldLastModifiedAt)
+	}
+	if m.content != nil {
+		fields = append(fields, operatornote.FieldContent)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *OperatorNoteMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case operatornote.FieldCreatedAt:
+		return m.CreatedAt()
+	case operatornote.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case operatornote.FieldContent:
+		return m.Content()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *OperatorNoteMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case operatornote.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case operatornote.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case operatornote.FieldContent:
+		return m.OldContent(ctx)
+	}
+	return nil, fmt.Errorf("unknown OperatorNote field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OperatorNoteMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case operatornote.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case operatornote.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case operatornote.FieldContent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	}
+	return fmt.Errorf("unknown OperatorNote field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *OperatorNoteMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *OperatorNoteMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OperatorNoteMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown OperatorNote numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *OperatorNoteMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(operatornote.FieldContent) {
+		fields = append(fields, operatornote.FieldContent)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *OperatorNoteMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *OperatorNoteMutation) ClearField(name string) error {
+	switch name {
+	case operatornote.FieldContent:
+		m.ClearContent()
+		return nil
+	}
+	return fmt.Errorf("unknown OperatorNote nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *OperatorNoteMutation) ResetField(name string) error {
+	switch name {
+	case operatornote.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case operatornote.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case operatornote.FieldContent:
+		m.ResetContent()
+		return nil
+	}
+	return fmt.Errorf("unknown OperatorNote field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *OperatorNoteMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.author != nil {
+		edges = append(edges, operatornote.EdgeAuthor)
+	}
+	if m.shells != nil {
+		edges = append(edges, operatornote.EdgeShells)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *OperatorNoteMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case operatornote.EdgeAuthor:
+		if id := m.author; id != nil {
+			return []ent.Value{*id}
+		}
+	case operatornote.EdgeShells:
+		ids := make([]ent.Value, 0, len(m.shells))
+		for id := range m.shells {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *OperatorNoteMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedshells != nil {
+		edges = append(edges, operatornote.EdgeShells)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *OperatorNoteMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case operatornote.EdgeShells:
+		ids := make([]ent.Value, 0, len(m.removedshells))
+		for id := range m.removedshells {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *OperatorNoteMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedauthor {
+		edges = append(edges, operatornote.EdgeAuthor)
+	}
+	if m.clearedshells {
+		edges = append(edges, operatornote.EdgeShells)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *OperatorNoteMutation) EdgeCleared(name string) bool {
+	switch name {
+	case operatornote.EdgeAuthor:
+		return m.clearedauthor
+	case operatornote.EdgeShells:
+		return m.clearedshells
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *OperatorNoteMutation) ClearEdge(name string) error {
+	switch name {
+	case operatornote.EdgeAuthor:
+		m.ClearAuthor()
+		return nil
+	}
+	return fmt.Errorf("unknown OperatorNote unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *OperatorNoteMutation) ResetEdge(name string) error {
+	switch name {
+	case operatornote.EdgeAuthor:
+		m.ResetAuthor()
+		return nil
+	case operatornote.EdgeShells:
+		m.ResetShells()
+		return nil
+	}
+	return fmt.Errorf("unknown OperatorNote edge %s", name)
+}
+
 // PortalMutation represents an operation that mutates the Portal nodes in the graph.
 type PortalMutation struct {
 	config
@@ -21391,35 +22001,38 @@ func (m *ScreenshotMutation) ResetEdge(name string) error {
 // ShellMutation represents an operation that mutates the Shell nodes in the graph.
 type ShellMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *int
-	created_at          *time.Time
-	last_modified_at    *time.Time
-	closed_at           *time.Time
-	data                *[]byte
-	clearedFields       map[string]struct{}
-	task                *int
-	clearedtask         bool
-	beacon              *int
-	clearedbeacon       bool
-	owner               *int
-	clearedowner        bool
-	portals             map[int]struct{}
-	removedportals      map[int]struct{}
-	clearedportals      bool
-	active_users        map[int]struct{}
-	removedactive_users map[int]struct{}
-	clearedactive_users bool
-	shell_tasks         map[int]struct{}
-	removedshell_tasks  map[int]struct{}
-	clearedshell_tasks  bool
-	pivots              map[int]struct{}
-	removedpivots       map[int]struct{}
-	clearedpivots       bool
-	done                bool
-	oldValue            func(context.Context) (*Shell, error)
-	predicates          []predicate.Shell
+	op                    Op
+	typ                   string
+	id                    *int
+	created_at            *time.Time
+	last_modified_at      *time.Time
+	closed_at             *time.Time
+	data                  *[]byte
+	clearedFields         map[string]struct{}
+	task                  *int
+	clearedtask           bool
+	beacon                *int
+	clearedbeacon         bool
+	owner                 *int
+	clearedowner          bool
+	portals               map[int]struct{}
+	removedportals        map[int]struct{}
+	clearedportals        bool
+	active_users          map[int]struct{}
+	removedactive_users   map[int]struct{}
+	clearedactive_users   bool
+	shell_tasks           map[int]struct{}
+	removedshell_tasks    map[int]struct{}
+	clearedshell_tasks    bool
+	pivots                map[int]struct{}
+	removedpivots         map[int]struct{}
+	clearedpivots         bool
+	operator_notes        map[int]struct{}
+	removedoperator_notes map[int]struct{}
+	clearedoperator_notes bool
+	done                  bool
+	oldValue              func(context.Context) (*Shell, error)
+	predicates            []predicate.Shell
 }
 
 var _ ent.Mutation = (*ShellMutation)(nil)
@@ -22010,6 +22623,60 @@ func (m *ShellMutation) ResetPivots() {
 	m.removedpivots = nil
 }
 
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by ids.
+func (m *ShellMutation) AddOperatorNoteIDs(ids ...int) {
+	if m.operator_notes == nil {
+		m.operator_notes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.operator_notes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOperatorNotes clears the "operator_notes" edge to the OperatorNote entity.
+func (m *ShellMutation) ClearOperatorNotes() {
+	m.clearedoperator_notes = true
+}
+
+// OperatorNotesCleared reports if the "operator_notes" edge to the OperatorNote entity was cleared.
+func (m *ShellMutation) OperatorNotesCleared() bool {
+	return m.clearedoperator_notes
+}
+
+// RemoveOperatorNoteIDs removes the "operator_notes" edge to the OperatorNote entity by IDs.
+func (m *ShellMutation) RemoveOperatorNoteIDs(ids ...int) {
+	if m.removedoperator_notes == nil {
+		m.removedoperator_notes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.operator_notes, ids[i])
+		m.removedoperator_notes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOperatorNotes returns the removed IDs of the "operator_notes" edge to the OperatorNote entity.
+func (m *ShellMutation) RemovedOperatorNotesIDs() (ids []int) {
+	for id := range m.removedoperator_notes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OperatorNotesIDs returns the "operator_notes" edge IDs in the mutation.
+func (m *ShellMutation) OperatorNotesIDs() (ids []int) {
+	for id := range m.operator_notes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOperatorNotes resets all changes to the "operator_notes" edge.
+func (m *ShellMutation) ResetOperatorNotes() {
+	m.operator_notes = nil
+	m.clearedoperator_notes = false
+	m.removedoperator_notes = nil
+}
+
 // Where appends a list predicates to the ShellMutation builder.
 func (m *ShellMutation) Where(ps ...predicate.Shell) {
 	m.predicates = append(m.predicates, ps...)
@@ -22203,7 +22870,7 @@ func (m *ShellMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ShellMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.task != nil {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -22224,6 +22891,9 @@ func (m *ShellMutation) AddedEdges() []string {
 	}
 	if m.pivots != nil {
 		edges = append(edges, shell.EdgePivots)
+	}
+	if m.operator_notes != nil {
+		edges = append(edges, shell.EdgeOperatorNotes)
 	}
 	return edges
 }
@@ -22268,13 +22938,19 @@ func (m *ShellMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case shell.EdgeOperatorNotes:
+		ids := make([]ent.Value, 0, len(m.operator_notes))
+		for id := range m.operator_notes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ShellMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removedportals != nil {
 		edges = append(edges, shell.EdgePortals)
 	}
@@ -22286,6 +22962,9 @@ func (m *ShellMutation) RemovedEdges() []string {
 	}
 	if m.removedpivots != nil {
 		edges = append(edges, shell.EdgePivots)
+	}
+	if m.removedoperator_notes != nil {
+		edges = append(edges, shell.EdgeOperatorNotes)
 	}
 	return edges
 }
@@ -22318,13 +22997,19 @@ func (m *ShellMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case shell.EdgeOperatorNotes:
+		ids := make([]ent.Value, 0, len(m.removedoperator_notes))
+		for id := range m.removedoperator_notes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ShellMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearedtask {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -22345,6 +23030,9 @@ func (m *ShellMutation) ClearedEdges() []string {
 	}
 	if m.clearedpivots {
 		edges = append(edges, shell.EdgePivots)
+	}
+	if m.clearedoperator_notes {
+		edges = append(edges, shell.EdgeOperatorNotes)
 	}
 	return edges
 }
@@ -22367,6 +23055,8 @@ func (m *ShellMutation) EdgeCleared(name string) bool {
 		return m.clearedshell_tasks
 	case shell.EdgePivots:
 		return m.clearedpivots
+	case shell.EdgeOperatorNotes:
+		return m.clearedoperator_notes
 	}
 	return false
 }
@@ -22412,6 +23102,9 @@ func (m *ShellMutation) ResetEdge(name string) error {
 		return nil
 	case shell.EdgePivots:
 		m.ResetPivots()
+		return nil
+	case shell.EdgeOperatorNotes:
+		m.ResetOperatorNotes()
 		return nil
 	}
 	return fmt.Errorf("unknown Shell edge %s", name)
@@ -27723,6 +28416,9 @@ type UserMutation struct {
 	events                 map[int]struct{}
 	removedevents          map[int]struct{}
 	clearedevents          bool
+	operator_notes         map[int]struct{}
+	removedoperator_notes  map[int]struct{}
+	clearedoperator_notes  bool
 	done                   bool
 	oldValue               func(context.Context) (*User, error)
 	predicates             []predicate.User
@@ -28456,6 +29152,60 @@ func (m *UserMutation) ResetEvents() {
 	m.removedevents = nil
 }
 
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by ids.
+func (m *UserMutation) AddOperatorNoteIDs(ids ...int) {
+	if m.operator_notes == nil {
+		m.operator_notes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.operator_notes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOperatorNotes clears the "operator_notes" edge to the OperatorNote entity.
+func (m *UserMutation) ClearOperatorNotes() {
+	m.clearedoperator_notes = true
+}
+
+// OperatorNotesCleared reports if the "operator_notes" edge to the OperatorNote entity was cleared.
+func (m *UserMutation) OperatorNotesCleared() bool {
+	return m.clearedoperator_notes
+}
+
+// RemoveOperatorNoteIDs removes the "operator_notes" edge to the OperatorNote entity by IDs.
+func (m *UserMutation) RemoveOperatorNoteIDs(ids ...int) {
+	if m.removedoperator_notes == nil {
+		m.removedoperator_notes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.operator_notes, ids[i])
+		m.removedoperator_notes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOperatorNotes returns the removed IDs of the "operator_notes" edge to the OperatorNote entity.
+func (m *UserMutation) RemovedOperatorNotesIDs() (ids []int) {
+	for id := range m.removedoperator_notes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OperatorNotesIDs returns the "operator_notes" edge IDs in the mutation.
+func (m *UserMutation) OperatorNotesIDs() (ids []int) {
+	for id := range m.operator_notes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOperatorNotes resets all changes to the "operator_notes" edge.
+func (m *UserMutation) ResetOperatorNotes() {
+	m.operator_notes = nil
+	m.clearedoperator_notes = false
+	m.removedoperator_notes = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -28691,7 +29441,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.notifications != nil {
 		edges = append(edges, user.EdgeNotifications)
 	}
@@ -28712,6 +29462,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.events != nil {
 		edges = append(edges, user.EdgeEvents)
+	}
+	if m.operator_notes != nil {
+		edges = append(edges, user.EdgeOperatorNotes)
 	}
 	return edges
 }
@@ -28762,13 +29515,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeOperatorNotes:
+		ids := make([]ent.Value, 0, len(m.operator_notes))
+		for id := range m.operator_notes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removednotifications != nil {
 		edges = append(edges, user.EdgeNotifications)
 	}
@@ -28789,6 +29548,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedevents != nil {
 		edges = append(edges, user.EdgeEvents)
+	}
+	if m.removedoperator_notes != nil {
+		edges = append(edges, user.EdgeOperatorNotes)
 	}
 	return edges
 }
@@ -28839,13 +29601,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeOperatorNotes:
+		ids := make([]ent.Value, 0, len(m.removedoperator_notes))
+		for id := range m.removedoperator_notes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearednotifications {
 		edges = append(edges, user.EdgeNotifications)
 	}
@@ -28866,6 +29634,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedevents {
 		edges = append(edges, user.EdgeEvents)
+	}
+	if m.clearedoperator_notes {
+		edges = append(edges, user.EdgeOperatorNotes)
 	}
 	return edges
 }
@@ -28888,6 +29659,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedsubscribedHosts
 	case user.EdgeEvents:
 		return m.clearedevents
+	case user.EdgeOperatorNotes:
+		return m.clearedoperator_notes
 	}
 	return false
 }
@@ -28924,6 +29697,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeEvents:
 		m.ResetEvents()
+		return nil
+	case user.EdgeOperatorNotes:
+		m.ResetOperatorNotes()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

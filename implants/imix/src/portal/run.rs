@@ -181,10 +181,8 @@ async fn handle_incoming_mote(
     {
         let stream_id = mote.stream_id.clone();
         let data = bytes_payload.data.clone();
-        let rows = bytes_payload.rows;
-        let cols = bytes_payload.cols;
         pty_manager
-            .handle_mote(stream_id, data, rows, cols, out_tx.clone())
+            .handle_mote(stream_id, data, out_tx.clone())
             .await?;
         return Ok(());
     }

@@ -5,6 +5,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        gray: {
+          950: '#030712',
+        },
+      },
       minWidth: {
         '128': '32rem',
       }

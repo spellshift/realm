@@ -583,3 +583,74 @@ export const CREATE_TOME_MUTATION = gql`
   }
 `;
 
+export const GET_OPERATOR_NOTES = gql`
+  query GetOperatorNotes {
+    operatorNotes {
+      edges {
+        node {
+          id
+          content
+          createdAt
+          lastModifiedAt
+          author {
+            id
+            name
+          }
+          shells {
+            edges {
+              node {
+                id
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const CREATE_OPERATOR_NOTE_MUTATION = gql`
+  mutation CreateOperatorNoteFromShell($input: CreateOperatorNoteInput!) {
+    createOperatorNote(input: $input) {
+      id
+      content
+      createdAt
+      lastModifiedAt
+      author {
+        id
+        name
+      }
+      shells {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_OPERATOR_NOTE_MUTATION = gql`
+  mutation UpdateOperatorNoteFromShell($operatorNoteID: ID!, $input: UpdateOperatorNoteInput!) {
+    updateOperatorNote(operatorNoteID: $operatorNoteID, input: $input) {
+      id
+      content
+      createdAt
+      lastModifiedAt
+      author {
+        id
+        name
+      }
+      shells {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
+
+

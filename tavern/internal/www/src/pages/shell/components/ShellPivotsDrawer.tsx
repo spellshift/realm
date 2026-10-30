@@ -65,15 +65,17 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
     return (
         <div
             data-testid="shell-pivots-drawer"
-            className="w-full md:w-[400px] shrink-0 border-l border-[#262b38] bg-[#141720] text-gray-200 flex flex-col h-full overflow-hidden shadow-2xl z-20"
+            className="w-full md:w-96 max-w-full shrink-0 border-l border-gray-800 bg-gray-900 text-gray-200 flex flex-col h-full overflow-hidden shadow-2xl z-20"
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#262b38] bg-[#181c27]">
-                <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800 bg-gray-900">
+                <div className="flex items-center gap-1.5">
                     <Network className="w-4 h-4 text-gray-400" />
-                    <h2 className="text-sm font-semibold text-white">Pivots</h2>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-200">
+                        Pivots
+                    </h2>
                     {pivots.length > 0 && (
-                        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-gray-400">
+                        <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">
                             {pivots.length}
                         </span>
                     )}
@@ -82,14 +84,14 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                     type="button"
                     onClick={onClose}
                     aria-label="Close pivots drawer"
-                    className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                    className="p-1 rounded-md hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
                 >
                     <X className="w-4 h-4" />
                 </button>
             </div>
 
             {/* Active Portal Controls */}
-            <div className="p-3 border-b border-[#262b38] bg-[#151924] space-y-2.5">
+            <div className="p-3 border-b border-gray-800 bg-gray-900 space-y-2.5">
                 {portalId ? (
                     <>
                         <div className="flex items-center justify-between text-xs">
@@ -100,9 +102,9 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                             <button
                                 type="button"
                                 onClick={onClosePortal}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-red-300 hover:bg-red-950/40 border border-red-500/30 shadow-sm transition-colors"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-red-300 hover:bg-red-900/40 border border-red-500/30 shadow-sm transition-colors"
                             >
-                                <PowerOff className="w-3 h-3" />
+                                <PowerOff className="w-3.5 h-3.5" />
                                 Close Portal
                             </button>
                         </div>
@@ -110,17 +112,17 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                             <button
                                 type="button"
                                 onClick={onOpenPty}
-                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-gray-200 hover:text-white text-xs font-semibold shadow-sm transition-colors"
+                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 hover:text-white text-xs font-semibold shadow-sm transition-colors"
                             >
-                                <SquareTerminal className="w-3.5 h-3.5 text-gray-400" />
+                                <SquareTerminal className="w-4 h-4 text-gray-400" />
                                 PTY
                             </button>
                             <button
                                 type="button"
                                 onClick={onOpenSshModal}
-                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-gray-200 hover:text-white text-xs font-semibold shadow-sm transition-colors"
+                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 hover:text-white text-xs font-semibold shadow-sm transition-colors"
                             >
-                                <Terminal className="w-3.5 h-3.5 text-gray-400" />
+                                <Terminal className="w-4 h-4 text-gray-400" />
                                 SSH
                             </button>
                         </div>
@@ -133,9 +135,9 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                         <button
                             type="button"
                             onClick={handleCreatePortal}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] border border-[#2f364a] text-white text-xs font-semibold shrink-0 shadow-sm transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-xs font-semibold shrink-0 shadow-sm transition-colors"
                         >
-                            <Shell className="w-3.5 h-3.5 text-gray-400" />
+                            <Shell className="w-4 h-4 text-gray-400" />
                             Open Portal
                         </button>
                     </div>
@@ -143,15 +145,15 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
             </div>
 
             {/* Search & Status Filters */}
-            <div className="p-3 border-b border-[#262b38] bg-[#161922] space-y-2">
+            <div className="p-3 border-b border-gray-800 bg-gray-900 space-y-2">
                 <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search PTY or SSH pivots..."
-                        className="w-full pl-8 pr-3 py-1.5 rounded-md bg-[#0f1117] border border-[#2a3040] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                        className="w-full pl-8 pr-3 py-1.5 rounded-md bg-gray-800 border border-gray-700 text-xs text-gray-200 placeholder-gray-400 focus:outline-none focus:border-purple-500"
                     />
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
@@ -163,7 +165,7 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                             className={`px-2.5 py-1 rounded-md capitalize font-semibold border transition-colors ${
                                 statusFilter === f
                                     ? "bg-purple-600 text-white border-purple-500 shadow-sm"
-                                    : "bg-[#1e222d] text-gray-400 hover:text-gray-200 border-[#2f364a]"
+                                    : "bg-gray-800 text-gray-400 hover:text-gray-200 border-gray-700"
                             }`}
                         >
                             {f === "active" ? `Active (${activeCount})` : f}
@@ -187,14 +189,14 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                         return (
                             <div
                                 key={pivot.id}
-                                className="rounded border border-[#262b38] bg-[#181c26] p-2.5 space-y-2"
+                                className="rounded-lg border border-gray-800 bg-gray-800/40 p-2.5 space-y-2"
                             >
                                 <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 min-w-0">
                                         {isPty ? (
-                                            <SquareTerminal className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                            <SquareTerminal className="w-4 h-4 text-gray-400 shrink-0" />
                                         ) : (
-                                            <Terminal className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                            <Terminal className="w-4 h-4 text-gray-400 shrink-0" />
                                         )}
                                         <span className="text-xs font-mono font-semibold text-gray-200 truncate">
                                             {isPty ? `PTY #${pivot.id}` : `SSH • ${pivot.destination}`}
@@ -211,7 +213,7 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1 border-t border-white/5">
+                                <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-800">
                                     <span>Pivot ID #{pivot.id}</span>
                                     <button
                                         type="button"
@@ -222,7 +224,7 @@ const ShellPivotsDrawer: React.FC<ShellPivotsDrawerProps> = ({
                                                 pivot.id
                                             )
                                         }
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#1e222d] hover:bg-[#272d3d] text-gray-200 hover:text-white border border-[#2f364a] text-xs font-semibold shadow-sm transition-colors"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white border border-gray-700 text-xs font-semibold shadow-sm transition-colors"
                                     >
                                         {isClosed ? "View Saved Transcript" : "Switch to Active Tab"}
                                     </button>

@@ -32,6 +32,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -6703,6 +6704,356 @@ func (n *Notification) ToEdge(order *NotificationOrder) *NotificationEdge {
 	return &NotificationEdge{
 		Node:   n,
 		Cursor: order.Field.toCursor(n),
+	}
+}
+
+// OperatorNoteEdge is the edge representation of OperatorNote.
+type OperatorNoteEdge struct {
+	Node   *OperatorNote `json:"node"`
+	Cursor Cursor        `json:"cursor"`
+}
+
+// OperatorNoteConnection is the connection containing edges to OperatorNote.
+type OperatorNoteConnection struct {
+	Edges      []*OperatorNoteEdge `json:"edges"`
+	PageInfo   PageInfo            `json:"pageInfo"`
+	TotalCount int                 `json:"totalCount"`
+}
+
+func (c *OperatorNoteConnection) build(nodes []*OperatorNote, pager *operatornotePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *OperatorNote
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *OperatorNote {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *OperatorNote {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*OperatorNoteEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &OperatorNoteEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// OperatorNotePaginateOption enables pagination customization.
+type OperatorNotePaginateOption func(*operatornotePager) error
+
+// WithOperatorNoteOrder configures pagination ordering.
+func WithOperatorNoteOrder(order []*OperatorNoteOrder) OperatorNotePaginateOption {
+	return func(pager *operatornotePager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithOperatorNoteFilter configures pagination filter.
+func WithOperatorNoteFilter(filter func(*OperatorNoteQuery) (*OperatorNoteQuery, error)) OperatorNotePaginateOption {
+	return func(pager *operatornotePager) error {
+		if filter == nil {
+			return errors.New("OperatorNoteQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type operatornotePager struct {
+	reverse bool
+	order   []*OperatorNoteOrder
+	filter  func(*OperatorNoteQuery) (*OperatorNoteQuery, error)
+}
+
+func newOperatorNotePager(opts []OperatorNotePaginateOption, reverse bool) (*operatornotePager, error) {
+	pager := &operatornotePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *operatornotePager) applyFilter(query *OperatorNoteQuery) (*OperatorNoteQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *operatornotePager) toCursor(on *OperatorNote) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(on).Value)
+	}
+	return Cursor{ID: on.ID, Value: cs_}
+}
+
+func (p *operatornotePager) applyCursors(query *OperatorNoteQuery, after, before *Cursor) (*OperatorNoteQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultOperatorNoteOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *operatornotePager) applyOrder(query *OperatorNoteQuery) *OperatorNoteQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultOperatorNoteOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultOperatorNoteOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *operatornotePager) orderExpr(query *OperatorNoteQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultOperatorNoteOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to OperatorNote.
+func (on *OperatorNoteQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...OperatorNotePaginateOption,
+) (*OperatorNoteConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newOperatorNotePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if on, err = pager.applyFilter(on); err != nil {
+		return nil, err
+	}
+	conn := &OperatorNoteConnection{Edges: []*OperatorNoteEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := on.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if on, err = pager.applyCursors(on, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		on.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := on.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	on = pager.applyOrder(on)
+	nodes, err := on.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// OperatorNoteOrderFieldCreatedAt orders OperatorNote by created_at.
+	OperatorNoteOrderFieldCreatedAt = &OperatorNoteOrderField{
+		Value: func(on *OperatorNote) (ent.Value, error) {
+			return on.CreatedAt, nil
+		},
+		column: operatornote.FieldCreatedAt,
+		toTerm: operatornote.ByCreatedAt,
+		toCursor: func(on *OperatorNote) Cursor {
+			return Cursor{
+				ID:    on.ID,
+				Value: on.CreatedAt,
+			}
+		},
+	}
+	// OperatorNoteOrderFieldLastModifiedAt orders OperatorNote by last_modified_at.
+	OperatorNoteOrderFieldLastModifiedAt = &OperatorNoteOrderField{
+		Value: func(on *OperatorNote) (ent.Value, error) {
+			return on.LastModifiedAt, nil
+		},
+		column: operatornote.FieldLastModifiedAt,
+		toTerm: operatornote.ByLastModifiedAt,
+		toCursor: func(on *OperatorNote) Cursor {
+			return Cursor{
+				ID:    on.ID,
+				Value: on.LastModifiedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f OperatorNoteOrderField) String() string {
+	var str string
+	switch f.column {
+	case OperatorNoteOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case OperatorNoteOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f OperatorNoteOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *OperatorNoteOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("OperatorNoteOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *OperatorNoteOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *OperatorNoteOrderFieldLastModifiedAt
+	default:
+		return fmt.Errorf("%s is not a valid OperatorNoteOrderField", str)
+	}
+	return nil
+}
+
+// OperatorNoteOrderField defines the ordering field of OperatorNote.
+type OperatorNoteOrderField struct {
+	// Value extracts the ordering value from the given OperatorNote.
+	Value    func(*OperatorNote) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) operatornote.OrderOption
+	toCursor func(*OperatorNote) Cursor
+}
+
+// OperatorNoteOrder defines the ordering of OperatorNote.
+type OperatorNoteOrder struct {
+	Direction OrderDirection          `json:"direction"`
+	Field     *OperatorNoteOrderField `json:"field"`
+}
+
+// DefaultOperatorNoteOrder is the default ordering of OperatorNote.
+var DefaultOperatorNoteOrder = &OperatorNoteOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &OperatorNoteOrderField{
+		Value: func(on *OperatorNote) (ent.Value, error) {
+			return on.ID, nil
+		},
+		column: operatornote.FieldID,
+		toTerm: operatornote.ByID,
+		toCursor: func(on *OperatorNote) Cursor {
+			return Cursor{ID: on.ID}
+		},
+	},
+}
+
+// ToEdge converts OperatorNote into OperatorNoteEdge.
+func (on *OperatorNote) ToEdge(order *OperatorNoteOrder) *OperatorNoteEdge {
+	if order == nil {
+		order = DefaultOperatorNoteOrder
+	}
+	return &OperatorNoteEdge{
+		Node:   on,
+		Cursor: order.Field.toCursor(on),
 	}
 }
 

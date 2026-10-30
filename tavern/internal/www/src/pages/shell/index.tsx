@@ -17,6 +17,7 @@ import MultiLineComposer, {
   markShellExecutedRc,
 } from "./components/MultiLineComposer";
 import SessionSettings from "./components/SessionSettings";
+import ShellScratchpad from "./components/ShellScratchpad";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
 import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
 import ShellSidebar from "./components/ShellSidebar";
@@ -64,7 +65,7 @@ const PortalTabIcon: React.FC<{
     return (
       <Tooltip label="Terminal session ended" hasArrow>
         <span className="text-red-400 flex items-center gap-1">
-          <WifiOff size={13} />
+          <WifiOff className="w-3.5 h-3.5" />
         </span>
       </Tooltip>
     );
@@ -72,15 +73,13 @@ const PortalTabIcon: React.FC<{
   if (isSsh) {
     return (
       <Terminal
-        size={13}
-        className={isConnecting ? "text-amber-400 animate-pulse" : "text-purple-400"}
+        className={`w-3.5 h-3.5 ${isConnecting ? "text-amber-400 animate-pulse" : "text-purple-400"}`}
       />
     );
   }
   return (
     <SquareTerminal
-      size={13}
-      className={isConnecting ? "text-amber-400 animate-pulse" : "text-emerald-400"}
+      className={`w-3.5 h-3.5 ${isConnecting ? "text-amber-400 animate-pulse" : "text-emerald-400"}`}
     />
   );
 };
@@ -137,6 +136,7 @@ const ShellContent = () => {
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
+  const [scratchpadOpen, setScratchpadOpen] = useState(false);
   const [composerCode, setComposerCode] = useState<string>("");
   const [rcCode, setRcCode] = useState<string>(() => loadRcScript());
   const [rcEnabled, setRcEnabled] = useState<boolean>(() => loadRcEnabled());
@@ -464,10 +464,10 @@ const ShellContent = () => {
   useTabHotkeys(totalTabs, setTabIndex);
 
   useEffect(() => {
-    if (tabIndex === 0 && !composerOpen) {
+    if (tabIndex === 0 && !composerOpen && !scratchpadOpen) {
       setTimeout(() => focusTerminal(), 0);
     }
-  }, [tabIndex, composerOpen, focusTerminal]);
+  }, [tabIndex, composerOpen, scratchpadOpen, focusTerminal]);
 
   const [closePortalMutation] = useMutation(CLOSE_PORTAL_MUTATION);
   const [createShellMutation, { loading: isSpawningShell }] = useMutation(CREATE_SHELL_MUTATION);
@@ -581,6 +581,8 @@ const ShellContent = () => {
     setTabIndex(0);
     setComposerCode(code);
     setComposerOpen(true);
+    setSessionSettingsOpen(false);
+    setScratchpadOpen(false);
   }, []);
 
   const handleRunCodeFromDrawer = useCallback(
@@ -617,6 +619,7 @@ const ShellContent = () => {
           onOpenComposer={() => {
             setComposerOpen(true);
             setSessionSettingsOpen(false);
+            setScratchpadOpen(false);
           }}
           onCloseComposer={() => {
             setComposerOpen(false);
@@ -624,6 +627,7 @@ const ShellContent = () => {
           onOpenSessionSettings={() => {
             setSessionSettingsOpen(true);
             setComposerOpen(false);
+            setScratchpadOpen(false);
           }}
           onCloseSessionSettings={() => {
             setSessionSettingsOpen(false);
@@ -642,6 +646,8 @@ const ShellContent = () => {
           shellData={shellData}
           activeUsers={activeUsers}
           portalId={portalId}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
           onExport={handleExport}
           onNewPortal={handleNewPortal}
           onClosePortal={handleClosePortal}
@@ -676,7 +682,10 @@ const ShellContent = () => {
           onToggleComposer={() => {
             setComposerOpen((prev) => {
               const next = !prev;
-              if (next) setSessionSettingsOpen(false);
+              if (next) {
+                setSessionSettingsOpen(false);
+                setScratchpadOpen(false);
+              }
               return next;
             });
           }}
@@ -721,18 +730,19 @@ const ShellContent = () => {
               overflow="hidden"
             >
               <TabList
-                borderBottomColor="#2b303c"
+                bg="#111827"
+                borderBottomColor="#1f2937"
                 display={useTabs ? "flex" : "none"}
                 overflowX="auto"
                 overflowY="hidden"
-                className="gap-1 pb-0.5"
+                className="bg-gray-900 border-b border-gray-800 gap-1 px-2 pt-1 pb-0"
               >
                 <Tab
                   onMouseDown={(e) => e.preventDefault()}
                   _selected={{
                     color: "white",
-                    bg: "#1e222d",
-                    borderColor: "#343b4d",
+                    bg: "#1f2937",
+                    borderColor: "#374151",
                     borderBottomColor: "transparent",
                   }}
                   color="#9ca3af"
@@ -762,8 +772,8 @@ const ShellContent = () => {
                       onMouseDown={(e) => e.preventDefault()}
                       _selected={{
                         color: "white",
-                        bg: "#1e222d",
-                        borderColor: "#343b4d",
+                        bg: "#1f2937",
+                        borderColor: "#374151",
                         borderBottomColor: "transparent",
                       }}
                       color="#9ca3af"
@@ -798,9 +808,9 @@ const ShellContent = () => {
                               handleClosePortalTab(tab.id);
                             }
                           }}
-                          className="ml-1 p-0.5 rounded hover:bg-[#343b4d] text-gray-400 hover:text-white transition-colors"
+                          className="ml-1 p-0.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
                         >
-                          <Minus size={12} />
+                          <Minus className="w-3.5 h-3.5" />
                         </span>
                       </span>
                     </Tab>
@@ -854,7 +864,7 @@ const ShellContent = () => {
                         pivotId={tab.pivotId ? parseInt(tab.pivotId, 10) : undefined}
                         shellId={shellId || ""}
                         isActive={tabIndex === idx + 1}
-                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${shellFontSize}`}
+                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${scratchpadOpen}:${shellFontSize}`}
                         fontSize={shellFontSize}
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
@@ -871,7 +881,7 @@ const ShellContent = () => {
                         pivotId={tab.pivotId ? parseInt(tab.pivotId, 10) : undefined}
                         shellId={shellId || ""}
                         isActive={tabIndex === idx + 1}
-                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${shellFontSize}`}
+                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${scratchpadOpen}:${shellFontSize}`}
                         fontSize={shellFontSize}
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
@@ -922,6 +932,12 @@ const ShellContent = () => {
               onRcEnabledChange={setRcEnabled}
               fontSize={shellFontSize}
               onFontSizeChange={setShellFontSize}
+            />
+            <ShellScratchpad
+              isOpen={scratchpadOpen}
+              onToggle={() => setScratchpadOpen((prev) => !prev)}
+              shellId={shellId}
+              fontSize={shellFontSize}
             />
           </div>
 
@@ -1003,13 +1019,14 @@ const ShellContent = () => {
           queuedTasks={activeQueuedTasks}
           runningTasks={activeRunningTasks}
           queueTourOpen={queueTourOpen}
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
           sessionSettingsOpen={sessionSettingsOpen}
           onToggleSessionSettings={() => {
             setSessionSettingsOpen((prev) => {
               const next = !prev;
-              if (next) setComposerOpen(false);
+              if (next) {
+                setComposerOpen(false);
+                setScratchpadOpen(false);
+              }
               return next;
             });
           }}
@@ -1017,7 +1034,21 @@ const ShellContent = () => {
           onToggleComposer={() => {
             setComposerOpen((prev) => {
               const next = !prev;
-              if (next) setSessionSettingsOpen(false);
+              if (next) {
+                setSessionSettingsOpen(false);
+                setScratchpadOpen(false);
+              }
+              return next;
+            });
+          }}
+          scratchpadOpen={scratchpadOpen}
+          onToggleScratchpad={() => {
+            setScratchpadOpen((prev) => {
+              const next = !prev;
+              if (next) {
+                setSessionSettingsOpen(false);
+                setComposerOpen(false);
+              }
               return next;
             });
           }}

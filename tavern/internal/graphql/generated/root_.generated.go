@@ -459,6 +459,7 @@ type ComplexityRoot struct {
 		CreateLink                  func(childComplexity int, input ent.CreateLinkInput) int
 		CreateNetwork               func(childComplexity int, input ent.CreateNetworkInput) int
 		CreateNetworkHost           func(childComplexity int, input ent.CreateNetworkHostInput) int
+		CreateOperatorNote          func(childComplexity int, input ent.CreateOperatorNoteInput) int
 		CreateQuest                 func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
 		CreateRepository            func(childComplexity int, input ent.CreateRepositoryInput) int
 		CreateScheduledTask         func(childComplexity int, input ent.CreateScheduledTaskInput) int
@@ -471,6 +472,7 @@ type ComplexityRoot struct {
 		DeleteBuilder               func(childComplexity int, builderID int) int
 		DeleteNetwork               func(childComplexity int, networkID int) int
 		DeleteNetworkHost           func(childComplexity int, networkHostID int) int
+		DeleteOperatorNote          func(childComplexity int, operatorNoteID int) int
 		DeleteTome                  func(childComplexity int, tomeID int) int
 		DisableLink                 func(childComplexity int, linkID int) int
 		DisableScheduledTask        func(childComplexity int, scheduledTaskID int) int
@@ -490,6 +492,7 @@ type ComplexityRoot struct {
 		UpdateLink                  func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
 		UpdateNetwork               func(childComplexity int, networkID int, input ent.UpdateNetworkInput) int
 		UpdateNetworkHost           func(childComplexity int, networkHostID int, input ent.UpdateNetworkHostInput) int
+		UpdateOperatorNote          func(childComplexity int, operatorNoteID int, input ent.UpdateOperatorNoteInput) int
 		UpdateTag                   func(childComplexity int, tagID int, input ent.UpdateTagInput) int
 		UpdateTome                  func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
 		UpdateUser                  func(childComplexity int, userID int, input ent.UpdateUserInput) int
@@ -563,6 +566,26 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	OperatorNote struct {
+		Author         func(childComplexity int) int
+		Content        func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Shells         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+	}
+
+	OperatorNoteConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	OperatorNoteEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	PageInfo struct {
 		EndCursor       func(childComplexity int) int
 		HasNextPage     func(childComplexity int) int
@@ -608,6 +631,7 @@ type ComplexityRoot struct {
 		Node                   func(childComplexity int, id int) int
 		Nodes                  func(childComplexity int, ids []int) int
 		OnlineBuilderPlatforms func(childComplexity int) int
+		OperatorNotes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) int
 		Portals                func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
 		Quests                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
@@ -746,6 +770,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
+		OperatorNotes  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) int
 		Owner          func(childComplexity int) int
 		Pivots         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellPivotOrder, where *ent.ShellPivotWhereInput) int
 		Portals        func(childComplexity int) int
@@ -925,6 +950,7 @@ type ComplexityRoot struct {
 		IsAdmin         func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Notifications   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
+		OperatorNotes   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) int
 		PhotoURL        func(childComplexity int) int
 		SubscribedHosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Tomes           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
@@ -3005,6 +3031,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.CreateNetworkHost(childComplexity, args["input"].(ent.CreateNetworkHostInput)), true
 
+	case "Mutation.createOperatorNote":
+		if e.ComplexityRoot.Mutation.CreateOperatorNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createOperatorNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateOperatorNote(childComplexity, args["input"].(ent.CreateOperatorNoteInput)), true
+
 	case "Mutation.createQuest":
 		if e.ComplexityRoot.Mutation.CreateQuest == nil {
 			break
@@ -3143,6 +3181,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteNetworkHost(childComplexity, args["networkHostID"].(int)), true
+
+	case "Mutation.deleteOperatorNote":
+		if e.ComplexityRoot.Mutation.DeleteOperatorNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteOperatorNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteOperatorNote(childComplexity, args["operatorNoteID"].(int)), true
 
 	case "Mutation.deleteTome":
 		if e.ComplexityRoot.Mutation.DeleteTome == nil {
@@ -3361,6 +3411,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateNetworkHost(childComplexity, args["networkHostID"].(int), args["input"].(ent.UpdateNetworkHostInput)), true
+
+	case "Mutation.updateOperatorNote":
+		if e.ComplexityRoot.Mutation.UpdateOperatorNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateOperatorNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateOperatorNote(childComplexity, args["operatorNoteID"].(int), args["input"].(ent.UpdateOperatorNoteInput)), true
 
 	case "Mutation.updateTag":
 		if e.ComplexityRoot.Mutation.UpdateTag == nil {
@@ -3700,6 +3762,88 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.NotificationEdge.Node(childComplexity), true
 
+	case "OperatorNote.author":
+		if e.ComplexityRoot.OperatorNote.Author == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.Author(childComplexity), true
+
+	case "OperatorNote.content":
+		if e.ComplexityRoot.OperatorNote.Content == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.Content(childComplexity), true
+
+	case "OperatorNote.createdAt":
+		if e.ComplexityRoot.OperatorNote.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.CreatedAt(childComplexity), true
+
+	case "OperatorNote.id":
+		if e.ComplexityRoot.OperatorNote.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.ID(childComplexity), true
+
+	case "OperatorNote.lastModifiedAt":
+		if e.ComplexityRoot.OperatorNote.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.LastModifiedAt(childComplexity), true
+
+	case "OperatorNote.shells":
+		if e.ComplexityRoot.OperatorNote.Shells == nil {
+			break
+		}
+
+		args, err := ec.field_OperatorNote_shells_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.OperatorNote.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
+
+	case "OperatorNoteConnection.edges":
+		if e.ComplexityRoot.OperatorNoteConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteConnection.Edges(childComplexity), true
+
+	case "OperatorNoteConnection.pageInfo":
+		if e.ComplexityRoot.OperatorNoteConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteConnection.PageInfo(childComplexity), true
+
+	case "OperatorNoteConnection.totalCount":
+		if e.ComplexityRoot.OperatorNoteConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteConnection.TotalCount(childComplexity), true
+
+	case "OperatorNoteEdge.cursor":
+		if e.ComplexityRoot.OperatorNoteEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteEdge.Cursor(childComplexity), true
+
+	case "OperatorNoteEdge.node":
+		if e.ComplexityRoot.OperatorNoteEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteEdge.Node(childComplexity), true
+
 	case "PageInfo.endCursor":
 		if e.ComplexityRoot.PageInfo.EndCursor == nil {
 			break
@@ -3983,6 +4127,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.OnlineBuilderPlatforms(childComplexity), true
+
+	case "Query.operatorNotes":
+		if e.ComplexityRoot.Query.OperatorNotes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_operatorNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.OperatorNotes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.OperatorNoteOrder), args["where"].(*ent.OperatorNoteWhereInput)), true
 
 	case "Query.portals":
 		if e.ComplexityRoot.Query.Portals == nil {
@@ -4698,6 +4854,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Shell.LastModifiedAt(childComplexity), true
+
+	case "Shell.operatorNotes":
+		if e.ComplexityRoot.Shell.OperatorNotes == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_operatorNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Shell.OperatorNotes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.OperatorNoteOrder), args["where"].(*ent.OperatorNoteWhereInput)), true
 
 	case "Shell.owner":
 		if e.ComplexityRoot.Shell.Owner == nil {
@@ -5602,6 +5770,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.User.Notifications(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NotificationOrder), args["where"].(*ent.NotificationWhereInput)), true
 
+	case "User.operatorNotes":
+		if e.ComplexityRoot.User.OperatorNotes == nil {
+			break
+		}
+
+		args, err := ec.field_User_operatorNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.User.OperatorNotes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.OperatorNoteOrder), args["where"].(*ent.OperatorNoteWhereInput)), true
+
 	case "User.photoURL":
 		if e.ComplexityRoot.User.PhotoURL == nil {
 			break
@@ -5703,6 +5883,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateNetworkHostInput,
 		ec.unmarshalInputCreateNetworkInput,
+		ec.unmarshalInputCreateOperatorNoteInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateScheduledTaskInput,
@@ -5731,6 +5912,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputNetworkWhereInput,
 		ec.unmarshalInputNotificationOrder,
 		ec.unmarshalInputNotificationWhereInput,
+		ec.unmarshalInputOperatorNoteOrder,
+		ec.unmarshalInputOperatorNoteWhereInput,
 		ec.unmarshalInputPortalOrder,
 		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
@@ -5762,6 +5945,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateNetworkHostInput,
 		ec.unmarshalInputUpdateNetworkInput,
 		ec.unmarshalInputUpdateNotificationInput,
+		ec.unmarshalInputUpdateOperatorNoteInput,
 		ec.unmarshalInputUpdateScheduledTaskInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
@@ -7868,6 +8052,18 @@ input CreateNetworkInput {
   """
   description: String
   networkHostIDs: [ID!]
+}
+"""
+CreateOperatorNoteInput is used for create OperatorNote object.
+Input was generated by ent.
+"""
+input CreateOperatorNoteInput {
+  """
+  Content of the operator note.
+  """
+  content: String
+  authorID: ID
+  shellIDs: [ID!]
 }
 """
 CreateQuestInput is used for create Quest object.
@@ -10693,6 +10889,176 @@ input NotificationWhereInput {
   hasEvent: Boolean
   hasEventWith: [EventWhereInput!]
 }
+type OperatorNote implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Content of the operator note.
+  """
+  content: String
+  """
+  User who authored the note.
+  """
+  author: User
+  shells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
+}
+"""
+A connection to a list of items.
+"""
+type OperatorNoteConnection {
+  """
+  A list of edges.
+  """
+  edges: [OperatorNoteEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type OperatorNoteEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: OperatorNote
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for OperatorNote connections
+"""
+input OperatorNoteOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order OperatorNotes.
+  """
+  field: OperatorNoteOrderField!
+}
+"""
+Properties by which OperatorNote connections can be ordered.
+"""
+enum OperatorNoteOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+OperatorNoteWhereInput is used for filtering OperatorNote objects.
+Input was generated by ent.
+"""
+input OperatorNoteWhereInput {
+  not: OperatorNoteWhereInput
+  and: [OperatorNoteWhereInput!]
+  or: [OperatorNoteWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  content field predicates
+  """
+  content: String
+  contentNEQ: String
+  contentIn: [String!]
+  contentNotIn: [String!]
+  contentGT: String
+  contentGTE: String
+  contentLT: String
+  contentLTE: String
+  contentContains: String
+  contentHasPrefix: String
+  contentHasSuffix: String
+  contentIsNil: Boolean
+  contentNotNil: Boolean
+  contentEqualFold: String
+  contentContainsFold: String
+  """
+  author edge predicates
+  """
+  hasAuthor: Boolean
+  hasAuthorWith: [UserWhereInput!]
+  """
+  shells edge predicates
+  """
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
+}
 """
 Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.
 """
@@ -12105,6 +12471,37 @@ type Shell implements Node {
     """
     where: ShellPivotWhereInput
   ): ShellPivotConnection!
+  operatorNotes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for OperatorNotes returned from the connection.
+    """
+    orderBy: [OperatorNoteOrder!]
+
+    """
+    Filtering options for OperatorNotes returned from the connection.
+    """
+    where: OperatorNoteWhereInput
+  ): OperatorNoteConnection!
 }
 """
 A connection to a list of items.
@@ -12799,6 +13196,11 @@ input ShellWhereInput {
   """
   hasPivots: Boolean
   hasPivotsWith: [ShellPivotWhereInput!]
+  """
+  operator_notes edge predicates
+  """
+  hasOperatorNotes: Boolean
+  hasOperatorNotesWith: [OperatorNoteWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -13355,6 +13757,8 @@ input TaskWhereInput {
   hasScreenshots: Boolean
   hasScreenshotsWith: [ScreenshotWhereInput!]
 }
+"""
+"""
 type Tome implements Node {
   id: ID!
   """
@@ -13869,6 +14273,26 @@ input UpdateNotificationInput {
   eventID: ID
 }
 """
+UpdateOperatorNoteInput is used for update OperatorNote object.
+Input was generated by ent.
+"""
+input UpdateOperatorNoteInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Content of the operator note.
+  """
+  content: String
+  clearContent: Boolean
+  authorID: ID
+  clearAuthor: Boolean
+  addShellIDs: [ID!]
+  removeShellIDs: [ID!]
+  clearShells: Boolean
+}
+"""
 UpdateScheduledTaskInput is used for update ScheduledTask object.
 Input was generated by ent.
 """
@@ -14011,6 +14435,9 @@ input UpdateUserInput {
   addEventIDs: [ID!]
   removeEventIDs: [ID!]
   clearEvents: Boolean
+  addOperatorNoteIDs: [ID!]
+  removeOperatorNoteIDs: [ID!]
+  clearOperatorNotes: Boolean
 }
 type User implements Node {
   id: ID!
@@ -14247,6 +14674,37 @@ type User implements Node {
     """
     where: EventWhereInput
   ): EventConnection!
+  operatorNotes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for OperatorNotes returned from the connection.
+    """
+    orderBy: [OperatorNoteOrder!]
+
+    """
+    Filtering options for OperatorNotes returned from the connection.
+    """
+    where: OperatorNoteWhereInput
+  ): OperatorNoteConnection!
 }
 """
 A connection to a list of items.
@@ -14393,6 +14851,11 @@ input UserWhereInput {
   """
   hasEvents: Boolean
   hasEventsWith: [EventWhereInput!]
+  """
+  operator_notes edge predicates
+  """
+  hasOperatorNotes: Boolean
+  hasOperatorNotesWith: [OperatorNoteWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -14743,6 +15206,25 @@ scalar Uint64
     """Filtering options for NetworkHosts returned from the connection."""
     where: NetworkHostWhereInput
   ): NetworkHostConnection! @requireRole(role: USER)
+  operatorNotes(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for OperatorNotes returned from the connection."""
+    orderBy: [OperatorNoteOrder!]
+
+    """Filtering options for OperatorNotes returned from the connection."""
+    where: OperatorNoteWhereInput
+  ): OperatorNoteConnection! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},
@@ -14867,6 +15349,13 @@ scalar Uint64
     createNetworkHost(input: CreateNetworkHostInput!): NetworkHost! @requireRole(role: USER)
     updateNetworkHost(networkHostID: ID!, input: UpdateNetworkHostInput!): NetworkHost! @requireRole(role: USER)
     deleteNetworkHost(networkHostID: ID!): ID! @requireRole(role: USER)
+
+    ###
+    # OperatorNote
+    ###
+    createOperatorNote(input: CreateOperatorNoteInput!): OperatorNote! @requireRole(role: USER)
+    updateOperatorNote(operatorNoteID: ID!, input: UpdateOperatorNoteInput!): OperatorNote! @requireRole(role: USER)
+    deleteOperatorNote(operatorNoteID: ID!): ID! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

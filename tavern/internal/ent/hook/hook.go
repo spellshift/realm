@@ -213,6 +213,18 @@ func (f NotificationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotificationMutation", m)
 }
 
+// The OperatorNoteFunc type is an adapter to allow the use of ordinary
+// function as OperatorNote mutator.
+type OperatorNoteFunc func(context.Context, *ent.OperatorNoteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OperatorNoteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OperatorNoteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OperatorNoteMutation", m)
+}
+
 // The PortalFunc type is an adapter to allow the use of ordinary
 // function as Portal mutator.
 type PortalFunc func(context.Context, *ent.PortalMutation) (ent.Value, error)

@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -36,6 +37,7 @@ type UserQuery struct {
 	withFavoriteHosts        *HostQuery
 	withSubscribedHosts      *HostQuery
 	withEvents               *EventQuery
+	withOperatorNotes        *OperatorNoteQuery
 	withFKs                  bool
 	modifiers                []func(*sql.Selector)
 	loadTotal                []func(context.Context, []*User) error
@@ -46,6 +48,7 @@ type UserQuery struct {
 	withNamedFavoriteHosts   map[string]*HostQuery
 	withNamedSubscribedHosts map[string]*HostQuery
 	withNamedEvents          map[string]*EventQuery
+	withNamedOperatorNotes   map[string]*OperatorNoteQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -229,6 +232,28 @@ func (uq *UserQuery) QueryEvents() *EventQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(event.Table, event.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.EventsTable, user.EventsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOperatorNotes chains the current query on the "operator_notes" edge.
+func (uq *UserQuery) QueryOperatorNotes() *OperatorNoteQuery {
+	query := (&OperatorNoteClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(operatornote.Table, operatornote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.OperatorNotesTable, user.OperatorNotesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -435,6 +460,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		withFavoriteHosts:   uq.withFavoriteHosts.Clone(),
 		withSubscribedHosts: uq.withSubscribedHosts.Clone(),
 		withEvents:          uq.withEvents.Clone(),
+		withOperatorNotes:   uq.withOperatorNotes.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -518,6 +544,17 @@ func (uq *UserQuery) WithEvents(opts ...func(*EventQuery)) *UserQuery {
 	return uq
 }
 
+// WithOperatorNotes tells the query-builder to eager-load the nodes that are connected to
+// the "operator_notes" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithOperatorNotes(opts ...func(*OperatorNoteQuery)) *UserQuery {
+	query := (&OperatorNoteClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withOperatorNotes = query
+	return uq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -597,7 +634,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			uq.withNotifications != nil,
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
@@ -605,6 +642,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			uq.withFavoriteHosts != nil,
 			uq.withSubscribedHosts != nil,
 			uq.withEvents != nil,
+			uq.withOperatorNotes != nil,
 		}
 	)
 	if withFKs {
@@ -680,6 +718,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withOperatorNotes; query != nil {
+		if err := uq.loadOperatorNotes(ctx, query, nodes,
+			func(n *User) { n.Edges.OperatorNotes = []*OperatorNote{} },
+			func(n *User, e *OperatorNote) { n.Edges.OperatorNotes = append(n.Edges.OperatorNotes, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedNotifications {
 		if err := uq.loadNotifications(ctx, query, nodes,
 			func(n *User) { n.appendNamedNotifications(name) },
@@ -726,6 +771,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadEvents(ctx, query, nodes,
 			func(n *User) { n.appendNamedEvents(name) },
 			func(n *User, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedOperatorNotes {
+		if err := uq.loadOperatorNotes(ctx, query, nodes,
+			func(n *User) { n.appendNamedOperatorNotes(name) },
+			func(n *User, e *OperatorNote) { n.appendNamedOperatorNotes(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1044,6 +1096,37 @@ func (uq *UserQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []
 	}
 	return nil
 }
+func (uq *UserQuery) loadOperatorNotes(ctx context.Context, query *OperatorNoteQuery, nodes []*User, init func(*User), assign func(*User, *OperatorNote)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.OperatorNote(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.OperatorNotesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.operator_note_author
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "operator_note_author" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "operator_note_author" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (uq *UserQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := uq.querySpec()
@@ -1224,6 +1307,20 @@ func (uq *UserQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *Us
 		uq.withNamedEvents = make(map[string]*EventQuery)
 	}
 	uq.withNamedEvents[name] = query
+	return uq
+}
+
+// WithNamedOperatorNotes tells the query-builder to eager-load the nodes that are connected to the "operator_notes"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedOperatorNotes(name string, opts ...func(*OperatorNoteQuery)) *UserQuery {
+	query := (&OperatorNoteClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedOperatorNotes == nil {
+		uq.withNamedOperatorNotes = make(map[string]*OperatorNoteQuery)
+	}
+	uq.withNamedOperatorNotes[name] = query
 	return uq
 }
 

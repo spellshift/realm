@@ -46,6 +46,8 @@ type Tx struct {
 	NetworkHost *NetworkHostClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// OperatorNote is the client for interacting with the OperatorNote builders.
+	OperatorNote *OperatorNoteClient
 	// Portal is the client for interacting with the Portal builders.
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
@@ -218,6 +220,7 @@ func (tx *Tx) init() {
 	tx.Network = NewNetworkClient(tx.config)
 	tx.NetworkHost = NewNetworkHostClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
+	tx.OperatorNote = NewOperatorNoteClient(tx.config)
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)

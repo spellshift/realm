@@ -52,7 +52,7 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
     <>
       <div
         style={{ top: pos.y, left: pos.x }}
-        className="absolute z-[1000] max-h-[200px] overflow-y-auto rounded-md bg-[#161a26] border border-[#2f364a] shadow-lg text-gray-200 font-mono text-sm"
+        className="absolute z-[1000] max-h-[200px] overflow-y-auto rounded-md bg-gray-900 border border-gray-700 shadow-lg text-gray-200 font-mono text-xs"
       >
         <ul ref={completionsListRef} className="list-none m-0 p-0.5">
           {completions.map((c, i) => {
@@ -60,7 +60,7 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
             const isSelected = i === index;
             const rowClass = isSelected
               ? "bg-purple-600/30 text-purple-100"
-              : "hover:bg-white/5 text-gray-300";
+              : "hover:bg-gray-800 text-gray-300";
 
             return (
               <li

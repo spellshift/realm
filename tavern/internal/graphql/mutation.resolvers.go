@@ -28,6 +28,7 @@ import (
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
@@ -62,6 +63,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Portal.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete portals: %w", err))
+	}
+	if _, err := client.OperatorNote.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete operator notes: %w", err))
 	}
 	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
@@ -1015,6 +1019,69 @@ func (r *mutationResolver) DeleteNetworkHost(ctx context.Context, networkHostID 
 		return 0, err
 	}
 	return networkHostID, nil
+}
+
+// CreateOperatorNote is the resolver for the createOperatorNote field.
+func (r *mutationResolver) CreateOperatorNote(ctx context.Context, input ent.CreateOperatorNoteInput) (*ent.OperatorNote, error) {
+	if len(input.ShellIDs) > 1 {
+		seen := make(map[int]bool, len(input.ShellIDs))
+		deduped := make([]int, 0, len(input.ShellIDs))
+		for _, id := range input.ShellIDs {
+			if !seen[id] {
+				seen[id] = true
+				deduped = append(deduped, id)
+			}
+		}
+		input.ShellIDs = deduped
+	}
+	creator := r.client.OperatorNote.Create().SetInput(input)
+	if input.AuthorID == nil {
+		if author := auth.UserFromContext(ctx); author != nil {
+			creator.SetAuthorID(author.ID)
+		}
+	}
+	return creator.Save(ctx)
+}
+
+// UpdateOperatorNote is the resolver for the updateOperatorNote field.
+func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteID int, input ent.UpdateOperatorNoteInput) (*ent.OperatorNote, error) {
+	if len(input.AddShellIDs) > 0 {
+		existingSet := make(map[int]bool)
+		if !input.ClearShells {
+			existingShellIDs, err := r.client.OperatorNote.Query().
+				Where(operatornote.ID(operatorNoteID)).
+				QueryShells().
+				IDs(ctx)
+			if err == nil {
+				removedSet := make(map[int]bool, len(input.RemoveShellIDs))
+				for _, id := range input.RemoveShellIDs {
+					removedSet[id] = true
+				}
+				for _, id := range existingShellIDs {
+					if !removedSet[id] {
+						existingSet[id] = true
+					}
+				}
+			}
+		}
+		filtered := make([]int, 0, len(input.AddShellIDs))
+		for _, id := range input.AddShellIDs {
+			if !existingSet[id] {
+				existingSet[id] = true
+				filtered = append(filtered, id)
+			}
+		}
+		input.AddShellIDs = filtered
+	}
+	return r.client.OperatorNote.UpdateOneID(operatorNoteID).SetInput(input).Save(ctx)
+}
+
+// DeleteOperatorNote is the resolver for the deleteOperatorNote field.
+func (r *mutationResolver) DeleteOperatorNote(ctx context.Context, operatorNoteID int) (int, error) {
+	if err := r.client.OperatorNote.DeleteOneID(operatorNoteID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return operatorNoteID, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

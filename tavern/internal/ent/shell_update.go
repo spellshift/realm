@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -167,6 +168,21 @@ func (su *ShellUpdate) AddPivots(s ...*ShellPivot) *ShellUpdate {
 	return su.AddPivotIDs(ids...)
 }
 
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by IDs.
+func (su *ShellUpdate) AddOperatorNoteIDs(ids ...int) *ShellUpdate {
+	su.mutation.AddOperatorNoteIDs(ids...)
+	return su
+}
+
+// AddOperatorNotes adds the "operator_notes" edges to the OperatorNote entity.
+func (su *ShellUpdate) AddOperatorNotes(o ...*OperatorNote) *ShellUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return su.AddOperatorNoteIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (su *ShellUpdate) Mutation() *ShellMutation {
 	return su.mutation
@@ -272,6 +288,27 @@ func (su *ShellUpdate) RemovePivots(s ...*ShellPivot) *ShellUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.RemovePivotIDs(ids...)
+}
+
+// ClearOperatorNotes clears all "operator_notes" edges to the OperatorNote entity.
+func (su *ShellUpdate) ClearOperatorNotes() *ShellUpdate {
+	su.mutation.ClearOperatorNotes()
+	return su
+}
+
+// RemoveOperatorNoteIDs removes the "operator_notes" edge to OperatorNote entities by IDs.
+func (su *ShellUpdate) RemoveOperatorNoteIDs(ids ...int) *ShellUpdate {
+	su.mutation.RemoveOperatorNoteIDs(ids...)
+	return su
+}
+
+// RemoveOperatorNotes removes "operator_notes" edges to OperatorNote entities.
+func (su *ShellUpdate) RemoveOperatorNotes(o ...*OperatorNote) *ShellUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return su.RemoveOperatorNoteIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -612,6 +649,51 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   shell.OperatorNotesTable,
+			Columns: shell.OperatorNotesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedOperatorNotesIDs(); len(nodes) > 0 && !su.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   shell.OperatorNotesTable,
+			Columns: shell.OperatorNotesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.OperatorNotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   shell.OperatorNotesTable,
+			Columns: shell.OperatorNotesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{shell.Label}
@@ -765,6 +847,21 @@ func (suo *ShellUpdateOne) AddPivots(s ...*ShellPivot) *ShellUpdateOne {
 	return suo.AddPivotIDs(ids...)
 }
 
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by IDs.
+func (suo *ShellUpdateOne) AddOperatorNoteIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.AddOperatorNoteIDs(ids...)
+	return suo
+}
+
+// AddOperatorNotes adds the "operator_notes" edges to the OperatorNote entity.
+func (suo *ShellUpdateOne) AddOperatorNotes(o ...*OperatorNote) *ShellUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return suo.AddOperatorNoteIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (suo *ShellUpdateOne) Mutation() *ShellMutation {
 	return suo.mutation
@@ -870,6 +967,27 @@ func (suo *ShellUpdateOne) RemovePivots(s ...*ShellPivot) *ShellUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return suo.RemovePivotIDs(ids...)
+}
+
+// ClearOperatorNotes clears all "operator_notes" edges to the OperatorNote entity.
+func (suo *ShellUpdateOne) ClearOperatorNotes() *ShellUpdateOne {
+	suo.mutation.ClearOperatorNotes()
+	return suo
+}
+
+// RemoveOperatorNoteIDs removes the "operator_notes" edge to OperatorNote entities by IDs.
+func (suo *ShellUpdateOne) RemoveOperatorNoteIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.RemoveOperatorNoteIDs(ids...)
+	return suo
+}
+
+// RemoveOperatorNotes removes "operator_notes" edges to OperatorNote entities.
+func (suo *ShellUpdateOne) RemoveOperatorNotes(o ...*OperatorNote) *ShellUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return suo.RemoveOperatorNoteIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellUpdate builder.
@@ -1233,6 +1351,51 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   shell.OperatorNotesTable,
+			Columns: shell.OperatorNotesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedOperatorNotesIDs(); len(nodes) > 0 && !suo.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   shell.OperatorNotesTable,
+			Columns: shell.OperatorNotesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.OperatorNotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   shell.OperatorNotesTable,
+			Columns: shell.OperatorNotesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

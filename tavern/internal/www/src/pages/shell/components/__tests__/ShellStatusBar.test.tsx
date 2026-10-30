@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ShellStatusBar from "../ShellStatusBar";
+import ShellHeader from "../ShellHeader";
 import ShellSidebar from "../ShellSidebar";
 import { ConnectionStatus } from "../../../../lib/browser-adapter";
 import React from "react";
@@ -43,6 +44,7 @@ describe("ShellStatusBar", () => {
 
     it("displays portal active message when portalId is present without showing portal ID, and opens Close Portal warning dialog when clicked", () => {
         const onClosePortal = vi.fn();
+        const onToggleScratchpad = vi.fn();
         render(
             <ShellStatusBar
                 {...defaultProps}
@@ -50,23 +52,28 @@ describe("ShellStatusBar", () => {
                 onClosePortal={onClosePortal}
                 onToggleComposer={vi.fn()}
                 composerOpen={true}
+                onToggleScratchpad={onToggleScratchpad}
+                scratchpadOpen={false}
             />
         );
         expect(screen.getByText("Portal Active")).toBeInTheDocument();
         expect(screen.queryByText("(ID: 123)")).not.toBeInTheDocument();
-        const sidebarToggleEl = screen.getByTestId("status-bar-sidebar-toggle");
         const bellEl = screen.getByTestId("notification-bell");
         const settingsEl = screen.getByTestId("session-settings-toggle");
         const composerEl = screen.getByTestId("status-bar-composer-toggle");
-        expect(sidebarToggleEl).toBeInTheDocument();
+        const scratchpadEl = screen.getByTestId("status-bar-scratchpad-toggle");
         expect(bellEl).toBeInTheDocument();
         expect(settingsEl).toBeInTheDocument();
         expect(composerEl).toBeInTheDocument();
+        expect(scratchpadEl).toBeInTheDocument();
 
-        // Verify left-toolbar DOM order: Sidebar Toggle -> Notification Bell -> Settings -> Composer
-        expect(sidebarToggleEl.compareDocumentPosition(bellEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        // Verify left-toolbar DOM order: Notification Bell -> Settings -> Composer -> Scratchpad
         expect(bellEl.compareDocumentPosition(settingsEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(settingsEl.compareDocumentPosition(composerEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(composerEl.compareDocumentPosition(scratchpadEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+        fireEvent.click(scratchpadEl);
+        expect(onToggleScratchpad).toHaveBeenCalledTimes(1);
 
         fireEvent.click(screen.getByTestId("status-bar-portal-active-button"));
         const closeDialog = screen.getByTestId("close-portal-dialog");
@@ -181,7 +188,7 @@ describe("ShellStatusBar", () => {
         expect(popover).toHaveTextContent("process.list()");
     });
 
-    it("renders sidebar toggle as leftmost icon with LogOut when hidden by default and LogIn when expanded, and toggles icon-only ShellSidebar", () => {
+    it("renders sidebar toggle in top bar to the left of Home icon with LogOut when hidden by default and mirrored LogIn when expanded, and toggles icon-only ShellSidebar", () => {
         const StatefulShellSidebarWrapper = () => {
             const [sidebarOpen, setSidebarOpen] = React.useState(false);
             return (
@@ -202,11 +209,20 @@ describe("ShellStatusBar", () => {
                         }}
                     >
                         <ShellSidebar isOpen={sidebarOpen} />
-                        <ShellStatusBar
-                            {...defaultProps}
+                        <ShellHeader
+                            shellData={null}
+                            portalId={null}
+                            onExport={vi.fn()}
+                            onNewPortal={vi.fn()}
+                            onSshConnect={vi.fn()}
+                            onPtyOpen={vi.fn()}
+                            onSendCtrlC={vi.fn()}
+                            onSendCtrlR={vi.fn()}
+                            onClosePortal={vi.fn()}
                             sidebarOpen={sidebarOpen}
                             onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
                         />
+                        <ShellStatusBar {...defaultProps} />
                     </AuthorizationContext.Provider>
                 </BrowserRouter>
             );
@@ -227,7 +243,9 @@ describe("ShellStatusBar", () => {
         expect(sidebar).toBeInTheDocument();
         expect(sidebar).toHaveClass("w-12");
         expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
-        expect(screen.getByTestId("sidebar-toggle-login-icon")).toBeInTheDocument();
+        const loginIcon = screen.getByTestId("sidebar-toggle-login-icon");
+        expect(loginIcon).toBeInTheDocument();
+        expect(loginIcon).toHaveClass("-scale-x-100");
         expect(screen.queryByTestId("sidebar-toggle-logout-icon")).not.toBeInTheDocument();
 
         // Verify navigation items match the rest of the UI

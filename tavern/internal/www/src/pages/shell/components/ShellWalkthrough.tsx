@@ -424,7 +424,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         aria-modal="false"
         aria-label={currentStep.title}
         style={getPopoverStyle()}
-        className="fixed w-96 max-w-[calc(100vw-32px)] rounded-xl bg-[#161922] border border-purple-500/40 shadow-2xl p-4 text-xs text-gray-200 pointer-events-auto transition-all duration-300 ease-out"
+        className="fixed w-96 max-w-[calc(100vw-32px)] rounded-xl bg-gray-900 border border-purple-500/40 shadow-2xl p-4 text-xs text-gray-200 pointer-events-auto transition-all duration-300 ease-out"
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -449,7 +449,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
             onClick={handleDismiss}
             aria-label="Dismiss welcome guide"
             title="Skip walkthrough"
-            className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+            className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex-shrink-0"
           >
             <X size={14} />
           </button>
@@ -462,14 +462,14 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
 
         {/* Tip Box */}
         {currentStep.tip && (
-          <div className="px-2.5 py-1.5 rounded-md bg-[#10131a] border border-[#262b38] text-[11px] text-gray-400 mb-3">
+          <div className="px-2.5 py-1.5 rounded-md bg-gray-800/70 border border-gray-700 text-[11px] text-gray-400 mb-3">
             <span className="text-purple-300 font-medium">Tip: </span>
             {currentStep.tip}
           </div>
         )}
 
         {/* Footer Controls */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#262b38]">
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-800">
           {/* Step Dots */}
           <div className="flex items-center gap-1 min-w-0">
             {WALKTHROUGH_STEPS.map((s, idx) => (
@@ -499,7 +499,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
               <button
                 type="button"
                 onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
-                className="inline-flex items-center gap-0.5 px-2 py-1 rounded bg-[#232836] hover:bg-[#2d3344] text-gray-200 font-medium transition-colors"
+                className="inline-flex items-center gap-0.5 px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium transition-colors"
               >
                 <ChevronLeft size={13} />
                 Back

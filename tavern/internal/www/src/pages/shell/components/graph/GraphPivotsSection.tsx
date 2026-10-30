@@ -28,7 +28,7 @@ const ActivePivotActions: React.FC<{
                     String(pivot.id)
                 )
             }
-            className="text-[11px] text-gray-200 hover:text-white px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+            className="text-xs font-medium text-gray-200 hover:text-white px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 transition-colors"
         >
             Switch
         </button>
@@ -57,7 +57,7 @@ const ClosedPivotActions: React.FC<{
             <button
                 type="button"
                 onClick={handleReopen}
-                className="text-[11px] text-gray-200 hover:text-white px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+                className="text-xs font-medium text-gray-200 hover:text-white px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 transition-colors"
             >
                 Reopen
             </button>
@@ -71,7 +71,7 @@ const ClosedPivotActions: React.FC<{
                             String(pivot.id)
                         )
                     }
-                    className="text-[11px] text-gray-400 hover:text-gray-200 px-1.5 py-0.5 transition-colors"
+                    className="text-xs text-gray-400 hover:text-gray-200 px-1.5 py-1 transition-colors"
                 >
                     Transcript
                 </button>
@@ -101,7 +101,7 @@ const PivotRow: React.FC<{
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
                     <span>{pivotLabel}</span>
                 </div>
-                <div className="text-[11px] text-gray-500 pl-3 truncate">
+                <div className="text-xs text-gray-500 pl-3 truncate">
                     {kindLabel}
                     {pivot.hostName ? ` • ${pivot.hostName}` : ""}
                 </div>
@@ -129,9 +129,9 @@ export const GraphPivotsSection: React.FC<GraphPivotsSectionProps> = ({
     onOpenPivotTab,
 }) => {
     return (
-        <div className="px-4 py-3 border-b border-gray-800" data-testid="graph-pivots-section">
+        <div className="px-3 py-3 border-b border-gray-800" data-testid="graph-pivots-section">
             <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">
+                <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
                     Pivots ({pivots.length})
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -140,7 +140,7 @@ export const GraphPivotsSection: React.FC<GraphPivotsSectionProps> = ({
                             type="button"
                             onClick={onOpenPty}
                             disabled={!portalId}
-                            className="px-2 py-0.5 text-[11px] rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none text-gray-200 transition-colors"
+                            className="px-2.5 py-1 text-xs font-medium rounded-md bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none text-gray-200 transition-colors"
                         >
                             PTY
                         </button>
@@ -150,7 +150,7 @@ export const GraphPivotsSection: React.FC<GraphPivotsSectionProps> = ({
                             type="button"
                             onClick={onOpenSshModal}
                             disabled={!portalId}
-                            className="px-2 py-0.5 text-[11px] rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none text-gray-200 transition-colors"
+                            className="px-2.5 py-1 text-xs font-medium rounded-md bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none text-gray-200 transition-colors"
                         >
                             SSH
                         </button>

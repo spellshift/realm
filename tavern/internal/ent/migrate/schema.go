@@ -536,6 +536,28 @@ var (
 			},
 		},
 	}
+	// OperatorNotesColumns holds the columns for the "operator_notes" table.
+	OperatorNotesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "content", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: "", SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "operator_note_author", Type: field.TypeInt, Nullable: true},
+	}
+	// OperatorNotesTable holds the schema information for the "operator_notes" table.
+	OperatorNotesTable = &schema.Table{
+		Name:       "operator_notes",
+		Columns:    OperatorNotesColumns,
+		PrimaryKey: []*schema.Column{OperatorNotesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "operator_notes_users_author",
+				Columns:    []*schema.Column{OperatorNotesColumns[4]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// PortalsColumns holds the columns for the "portals" table.
 	PortalsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -1035,6 +1057,31 @@ var (
 			},
 		},
 	}
+	// OperatorNoteShellsColumns holds the columns for the "operator_note_shells" table.
+	OperatorNoteShellsColumns = []*schema.Column{
+		{Name: "operator_note_id", Type: field.TypeInt},
+		{Name: "shell_id", Type: field.TypeInt},
+	}
+	// OperatorNoteShellsTable holds the schema information for the "operator_note_shells" table.
+	OperatorNoteShellsTable = &schema.Table{
+		Name:       "operator_note_shells",
+		Columns:    OperatorNoteShellsColumns,
+		PrimaryKey: []*schema.Column{OperatorNoteShellsColumns[0], OperatorNoteShellsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "operator_note_shells_operator_note_id",
+				Columns:    []*schema.Column{OperatorNoteShellsColumns[0]},
+				RefColumns: []*schema.Column{OperatorNotesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "operator_note_shells_shell_id",
+				Columns:    []*schema.Column{OperatorNoteShellsColumns[1]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// ShellActiveUsersColumns holds the columns for the "shell_active_users" table.
 	ShellActiveUsersColumns = []*schema.Column{
 		{Name: "shell_id", Type: field.TypeInt},
@@ -1154,6 +1201,7 @@ var (
 		NetworksTable,
 		NetworkHostsTable,
 		NotificationsTable,
+		OperatorNotesTable,
 		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
@@ -1169,6 +1217,7 @@ var (
 		HostTagsTable,
 		NetworkHostNetworksTable,
 		NetworkHostCredentialsTable,
+		OperatorNoteShellsTable,
 		ShellActiveUsersTable,
 		TomeAssetsTable,
 		UserFavoriteHostsTable,
@@ -1254,6 +1303,10 @@ func init() {
 	NotificationsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	OperatorNotesTable.ForeignKeys[0].RefTable = UsersTable
+	OperatorNotesTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable
 	PortalsTable.ForeignKeys[1].RefTable = ShellTasksTable
 	PortalsTable.ForeignKeys[2].RefTable = BeaconsTable
@@ -1323,6 +1376,8 @@ func init() {
 	NetworkHostNetworksTable.ForeignKeys[1].RefTable = NetworksTable
 	NetworkHostCredentialsTable.ForeignKeys[0].RefTable = NetworkHostsTable
 	NetworkHostCredentialsTable.ForeignKeys[1].RefTable = HostCredentialsTable
+	OperatorNoteShellsTable.ForeignKeys[0].RefTable = OperatorNotesTable
+	OperatorNoteShellsTable.ForeignKeys[1].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
 	TomeAssetsTable.ForeignKeys[0].RefTable = TomesTable

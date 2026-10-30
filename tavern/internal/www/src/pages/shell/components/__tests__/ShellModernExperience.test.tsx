@@ -19,15 +19,22 @@ import MultiLineComposer, {
 import {
     CREATE_CREDENTIAL_MUTATION,
     CREATE_NETWORK_HOST_MUTATION,
+    CREATE_OPERATOR_NOTE_MUTATION,
     CREATE_TOME_MUTATION,
+    GET_OPERATOR_NOTES,
     GET_SHELL_TOMES,
     UPDATE_NETWORK_HOST_MUTATION,
+    UPDATE_OPERATOR_NOTE_MUTATION,
 } from "../../graphql";
 import { parseComposerScriptForTome } from "../../utils/tomeComposerUtils";
 import SessionSettings from "../SessionSettings";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
 import ShellPivotsDrawer from "../ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "../ShellKnowledgeDrawer";
+import ShellScratchpad, {
+    SCRATCHPAD_STORAGE_KEY,
+    loadScratchpadState,
+} from "../ShellScratchpad";
 import ShellTerminal from "../ShellTerminal";
 import ShellWalkthrough from "../ShellWalkthrough";
 import SshConnectionModal from "../SshConnectionModal";
@@ -1341,6 +1348,17 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         const closePortalBtn = screen.getByLabelText("Close portal");
         expect(closePortalBtn).toHaveClass("text-red-400");
 
+        // Verify Context drawer tab order: Pivots -> Shells -> Hosts -> Creds -> Files
+        const pivotsTab = screen.getByRole("button", { name: "Pivots" });
+        const shellsTab = screen.getByRole("button", { name: "Shells" });
+        const hostsTab = screen.getByRole("button", { name: "Hosts" });
+        const credsTab = screen.getByRole("button", { name: "Creds" });
+        const filesTab = screen.getByRole("button", { name: "Files" });
+        expect(pivotsTab.compareDocumentPosition(shellsTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(shellsTab.compareDocumentPosition(hostsTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(hostsTab.compareDocumentPosition(credsTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(credsTab.compareDocumentPosition(filesTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
         // Default tab is Pivots: displays tab-formatted pivot names and supports reopen/transcript
         expect(screen.getByText("10.0.0.20")).toBeInTheDocument();
         expect(screen.getByText("cat /etc/shadow && grep ...")).toBeInTheDocument();
@@ -1789,16 +1807,19 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             </MockedProvider>
         );
 
-        // 1. Switch to Hosts tab and click the right-aligned + button next to "Adjacent Hosts"
+        // 1. Switch to Hosts tab and click the right-aligned + button next to "Discovered Hosts"
         fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
-        const adjacentHeader = screen.getByText(/Adjacent Hosts \(1\)/i);
+        const discoveredHeader = screen.getByText(/Discovered Hosts \(1\)/i);
         const addHostBtn = screen.getByTestId("add-host-button");
-        expect(adjacentHeader.parentElement).toContainElement(addHostBtn);
-        expect(adjacentHeader.parentElement).toHaveClass("justify-between");
+        expect(discoveredHeader.parentElement).toContainElement(addHostBtn);
+        expect(discoveredHeader.parentElement).toHaveClass("justify-between");
 
         fireEvent.click(addHostBtn);
         expect(screen.getByTestId("host-modal")).toBeInTheDocument();
         expect(screen.getByText("New Host")).toBeInTheDocument();
+        const hostSubmitBtn = screen.getByTestId("host-modal-submit");
+        expect(hostSubmitBtn).toHaveTextContent("Create");
+        expect(hostSubmitBtn).toHaveClass("bg-purple-600");
 
         fireEvent.change(screen.getByLabelText("IP Address"), {
             target: { value: "10.0.0.30" },
@@ -1859,6 +1880,11 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         fireEvent.click(addCredBtn);
         expect(screen.getByTestId("credential-modal")).toBeInTheDocument();
         expect(screen.getByText("New Credential")).toBeInTheDocument();
+        const credSubmitBtn = screen.getByTestId("credential-modal-submit");
+        expect(credSubmitBtn).toHaveTextContent("Create");
+        expect(credSubmitBtn).toHaveClass("bg-purple-600");
+        expect(screen.getByLabelText("Kind / Type")).toHaveClass("appearance-none", "pr-8");
+        expect(screen.getByLabelText("Host")).toHaveClass("appearance-none", "pr-8");
 
         fireEvent.change(screen.getByLabelText("Principal / Username"), {
             target: { value: "deploy" },
@@ -1936,5 +1962,263 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         expect(transformClearAnsiForScrollback(normalClear, 24, 3, false)).toBe(
             "\x1b[24;1H\n\n\n\x1b[H\x1b[J"
         );
+    });
+});
+
+describe("ShellScratchpad", () => {
+    it("loads existing OperatorNote across shells and adds shellId only when not already present on modification", async () => {
+        localStorage.removeItem(SCRATCHPAD_STORAGE_KEY);
+        const onToggle = vi.fn();
+        let updateAddedShellOnce = false;
+        let updateWithoutShellOnce = false;
+
+        const mocks = [
+            {
+                request: {
+                    query: GET_OPERATOR_NOTES,
+                },
+                result: {
+                    data: {
+                        operatorNotes: {
+                            edges: [
+                                {
+                                    node: {
+                                        id: "note-1",
+                                        content: "Initial shared note",
+                                        createdAt: "2025-01-01T00:00:00Z",
+                                        lastModifiedAt: "2025-01-01T00:00:00Z",
+                                        author: {
+                                            id: "u-1",
+                                            name: "op",
+                                        },
+                                        shells: {
+                                            edges: [
+                                                {
+                                                    node: {
+                                                        id: "shell-1",
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+            {
+                request: {
+                    query: UPDATE_OPERATOR_NOTE_MUTATION,
+                    variables: {
+                        operatorNoteID: "note-1",
+                        input: {
+                            content: "Updated from shell-2",
+                            addShellIDs: ["shell-2"],
+                        },
+                    },
+                },
+                result: () => {
+                    updateAddedShellOnce = true;
+                    return {
+                        data: {
+                            updateOperatorNote: {
+                                id: "note-1",
+                                content: "Updated from shell-2",
+                                createdAt: "2025-01-01T00:00:00Z",
+                                lastModifiedAt: "2025-01-01T00:01:00Z",
+                                author: {
+                                    id: "u-1",
+                                    name: "op",
+                                },
+                                shells: {
+                                    edges: [
+                                        { node: { id: "shell-1" } },
+                                        { node: { id: "shell-2" } },
+                                    ],
+                                },
+                            },
+                        },
+                    };
+                },
+            },
+            {
+                request: {
+                    query: UPDATE_OPERATOR_NOTE_MUTATION,
+                    variables: {
+                        operatorNoteID: "note-1",
+                        input: {
+                            content: "Updated again in shell-2",
+                        },
+                    },
+                },
+                result: () => {
+                    updateWithoutShellOnce = true;
+                    return {
+                        data: {
+                            updateOperatorNote: {
+                                id: "note-1",
+                                content: "Updated again in shell-2",
+                                createdAt: "2025-01-01T00:00:00Z",
+                                lastModifiedAt: "2025-01-01T00:02:00Z",
+                                author: {
+                                    id: "u-1",
+                                    name: "op",
+                                },
+                                shells: {
+                                    edges: [
+                                        { node: { id: "shell-1" } },
+                                        { node: { id: "shell-2" } },
+                                    ],
+                                },
+                            },
+                        },
+                    };
+                },
+            },
+        ];
+
+        render(
+            <MockedProvider mocks={mocks} addTypename={false}>
+                <ShellScratchpad
+                    isOpen={true}
+                    onToggle={onToggle}
+                    shellId="shell-2"
+                    fontSize={13}
+                />
+            </MockedProvider>
+        );
+
+        const textarea = screen.getByTestId("scratchpad-textarea") as HTMLTextAreaElement;
+        await waitFor(() => {
+            expect(textarea.value).toBe("Initial shared note");
+        });
+
+        // Modify the note in shell-2 (which is not yet in shells) -> should send addShellIDs: ["shell-2"]
+        fireEvent.change(textarea, { target: { value: "Updated from shell-2" } });
+        fireEvent.blur(textarea);
+
+        await waitFor(() => {
+            expect(updateAddedShellOnce).toBe(true);
+        });
+
+        // Modify the note again in shell-2 -> shell-2 is already in shells, so addShellIDs is omitted
+        fireEvent.change(textarea, { target: { value: "Updated again in shell-2" } });
+        fireEvent.blur(textarea);
+
+        await waitFor(() => {
+            expect(updateWithoutShellOnce).toBe(true);
+        });
+    });
+
+    it("supports offline mode when loading fails and syncs the note the next time the backend is available", async () => {
+        localStorage.removeItem(SCRATCHPAD_STORAGE_KEY);
+        let createCalled = false;
+
+        const offlineMocks = [
+            {
+                request: {
+                    query: GET_OPERATOR_NOTES,
+                },
+                error: new Error("Network unavailable"),
+            },
+        ];
+
+        const { unmount } = render(
+            <MockedProvider mocks={offlineMocks} addTypename={false}>
+                <ShellScratchpad
+                    isOpen={true}
+                    onToggle={vi.fn()}
+                    shellId="shell-offline-1"
+                />
+            </MockedProvider>
+        );
+
+        // Wait for offline badge to appear after query failure
+        await waitFor(() => {
+            expect(screen.getByTestId("scratchpad-offline-badge")).toBeInTheDocument();
+        });
+
+        const textarea = screen.getByTestId("scratchpad-textarea") as HTMLTextAreaElement;
+        fireEvent.change(textarea, {
+            target: { value: "Saved while offline in shell-offline-1" },
+        });
+
+        const savedOffline = loadScratchpadState();
+        expect(savedOffline.content).toBe("Saved while offline in shell-offline-1");
+        expect(savedOffline.pendingSync).toBe(true);
+        expect(savedOffline.pendingShellIds).toEqual(["shell-offline-1"]);
+
+        unmount();
+
+        // Next time the scratchpad opens when the backend is available, it automatically syncs the offline note
+        const onlineMocks = [
+            {
+                request: {
+                    query: GET_OPERATOR_NOTES,
+                },
+                result: {
+                    data: {
+                        operatorNotes: {
+                            edges: [],
+                        },
+                    },
+                },
+            },
+            {
+                request: {
+                    query: CREATE_OPERATOR_NOTE_MUTATION,
+                    variables: {
+                        input: {
+                            content: "Saved while offline in shell-offline-1",
+                            shellIDs: ["shell-offline-1"],
+                        },
+                    },
+                },
+                result: () => {
+                    createCalled = true;
+                    return {
+                        data: {
+                            createOperatorNote: {
+                                id: "note-99",
+                                content: "Saved while offline in shell-offline-1",
+                                createdAt: "2025-01-01T00:00:00Z",
+                                lastModifiedAt: "2025-01-01T00:00:00Z",
+                                author: {
+                                    id: "u-1",
+                                    name: "op",
+                                },
+                                shells: {
+                                    edges: [{ node: { id: "shell-offline-1" } }],
+                                },
+                            },
+                        },
+                    };
+                },
+            },
+        ];
+
+        render(
+            <MockedProvider mocks={onlineMocks} addTypename={false}>
+                <ShellScratchpad
+                    isOpen={true}
+                    onToggle={vi.fn()}
+                    shellId="shell-offline-2"
+                />
+            </MockedProvider>
+        );
+
+        const syncedTextarea = screen.getByTestId("scratchpad-textarea") as HTMLTextAreaElement;
+        expect(syncedTextarea.value).toBe("Saved while offline in shell-offline-1");
+
+        await waitFor(() => {
+            expect(createCalled).toBe(true);
+        });
+
+        await waitFor(() => {
+            expect(loadScratchpadState().pendingSync).toBe(false);
+            expect(loadScratchpadState().noteId).toBe("note-99");
+        });
+        expect(screen.queryByTestId("scratchpad-offline-badge")).not.toBeInTheDocument();
     });
 });

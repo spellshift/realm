@@ -32,6 +32,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -85,6 +86,8 @@ type Client struct {
 	NetworkHost *NetworkHostClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// OperatorNote is the client for interacting with the OperatorNote builders.
+	OperatorNote *OperatorNoteClient
 	// Portal is the client for interacting with the Portal builders.
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
@@ -139,6 +142,7 @@ func (c *Client) init() {
 	c.Network = NewNetworkClient(c.config)
 	c.NetworkHost = NewNetworkHostClient(c.config)
 	c.Notification = NewNotificationClient(c.config)
+	c.OperatorNote = NewOperatorNoteClient(c.config)
 	c.Portal = NewPortalClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
@@ -260,6 +264,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Network:        NewNetworkClient(cfg),
 		NetworkHost:    NewNetworkHostClient(cfg),
 		Notification:   NewNotificationClient(cfg),
+		OperatorNote:   NewOperatorNoteClient(cfg),
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
@@ -308,6 +313,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Network:        NewNetworkClient(cfg),
 		NetworkHost:    NewNetworkHostClient(cfg),
 		Notification:   NewNotificationClient(cfg),
+		OperatorNote:   NewOperatorNoteClient(cfg),
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
@@ -351,9 +357,9 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
 		c.Builder, c.DeviceAuth, c.Event, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Network, c.NetworkHost, c.Notification, c.Portal,
-		c.Quest, c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot,
-		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.HostProcess, c.Link, c.Network, c.NetworkHost, c.Notification,
+		c.OperatorNote, c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot,
+		c.Shell, c.ShellPivot, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -365,9 +371,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
 		c.Builder, c.DeviceAuth, c.Event, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Network, c.NetworkHost, c.Notification, c.Portal,
-		c.Quest, c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot,
-		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.HostProcess, c.Link, c.Network, c.NetworkHost, c.Notification,
+		c.OperatorNote, c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot,
+		c.Shell, c.ShellPivot, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -410,6 +416,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.NetworkHost.mutate(ctx, m)
 	case *NotificationMutation:
 		return c.Notification.mutate(ctx, m)
+	case *OperatorNoteMutation:
+		return c.OperatorNote.mutate(ctx, m)
 	case *PortalMutation:
 		return c.Portal.mutate(ctx, m)
 	case *QuestMutation:
@@ -3504,6 +3512,171 @@ func (c *NotificationClient) mutate(ctx context.Context, m *NotificationMutation
 	}
 }
 
+// OperatorNoteClient is a client for the OperatorNote schema.
+type OperatorNoteClient struct {
+	config
+}
+
+// NewOperatorNoteClient returns a client for the OperatorNote from the given config.
+func NewOperatorNoteClient(c config) *OperatorNoteClient {
+	return &OperatorNoteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `operatornote.Hooks(f(g(h())))`.
+func (c *OperatorNoteClient) Use(hooks ...Hook) {
+	c.hooks.OperatorNote = append(c.hooks.OperatorNote, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `operatornote.Intercept(f(g(h())))`.
+func (c *OperatorNoteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OperatorNote = append(c.inters.OperatorNote, interceptors...)
+}
+
+// Create returns a builder for creating a OperatorNote entity.
+func (c *OperatorNoteClient) Create() *OperatorNoteCreate {
+	mutation := newOperatorNoteMutation(c.config, OpCreate)
+	return &OperatorNoteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OperatorNote entities.
+func (c *OperatorNoteClient) CreateBulk(builders ...*OperatorNoteCreate) *OperatorNoteCreateBulk {
+	return &OperatorNoteCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OperatorNoteClient) MapCreateBulk(slice any, setFunc func(*OperatorNoteCreate, int)) *OperatorNoteCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OperatorNoteCreateBulk{err: fmt.Errorf("calling to OperatorNoteClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OperatorNoteCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OperatorNoteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OperatorNote.
+func (c *OperatorNoteClient) Update() *OperatorNoteUpdate {
+	mutation := newOperatorNoteMutation(c.config, OpUpdate)
+	return &OperatorNoteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OperatorNoteClient) UpdateOne(on *OperatorNote) *OperatorNoteUpdateOne {
+	mutation := newOperatorNoteMutation(c.config, OpUpdateOne, withOperatorNote(on))
+	return &OperatorNoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OperatorNoteClient) UpdateOneID(id int) *OperatorNoteUpdateOne {
+	mutation := newOperatorNoteMutation(c.config, OpUpdateOne, withOperatorNoteID(id))
+	return &OperatorNoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OperatorNote.
+func (c *OperatorNoteClient) Delete() *OperatorNoteDelete {
+	mutation := newOperatorNoteMutation(c.config, OpDelete)
+	return &OperatorNoteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OperatorNoteClient) DeleteOne(on *OperatorNote) *OperatorNoteDeleteOne {
+	return c.DeleteOneID(on.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OperatorNoteClient) DeleteOneID(id int) *OperatorNoteDeleteOne {
+	builder := c.Delete().Where(operatornote.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OperatorNoteDeleteOne{builder}
+}
+
+// Query returns a query builder for OperatorNote.
+func (c *OperatorNoteClient) Query() *OperatorNoteQuery {
+	return &OperatorNoteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOperatorNote},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OperatorNote entity by its id.
+func (c *OperatorNoteClient) Get(ctx context.Context, id int) (*OperatorNote, error) {
+	return c.Query().Where(operatornote.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OperatorNoteClient) GetX(ctx context.Context, id int) *OperatorNote {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAuthor queries the author edge of a OperatorNote.
+func (c *OperatorNoteClient) QueryAuthor(on *OperatorNote) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := on.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(operatornote.Table, operatornote.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, operatornote.AuthorTable, operatornote.AuthorColumn),
+		)
+		fromV = sqlgraph.Neighbors(on.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShells queries the shells edge of a OperatorNote.
+func (c *OperatorNoteClient) QueryShells(on *OperatorNote) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := on.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(operatornote.Table, operatornote.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, operatornote.ShellsTable, operatornote.ShellsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(on.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OperatorNoteClient) Hooks() []Hook {
+	return c.hooks.OperatorNote
+}
+
+// Interceptors returns the client interceptors.
+func (c *OperatorNoteClient) Interceptors() []Interceptor {
+	return c.inters.OperatorNote
+}
+
+func (c *OperatorNoteClient) mutate(ctx context.Context, m *OperatorNoteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OperatorNoteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OperatorNoteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OperatorNoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OperatorNoteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OperatorNote mutation op: %q", m.Op())
+	}
+}
+
 // PortalClient is a client for the Portal schema.
 type PortalClient struct {
 	config
@@ -4743,6 +4916,22 @@ func (c *ShellClient) QueryPivots(s *Shell) *ShellPivotQuery {
 	return query
 }
 
+// QueryOperatorNotes queries the operator_notes edge of a Shell.
+func (c *ShellClient) QueryOperatorNotes(s *Shell) *OperatorNoteQuery {
+	query := (&OperatorNoteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(operatornote.Table, operatornote.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, shell.OperatorNotesTable, shell.OperatorNotesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellClient) Hooks() []Hook {
 	return c.hooks.Shell
@@ -5975,6 +6164,22 @@ func (c *UserClient) QueryEvents(u *User) *EventQuery {
 	return query
 }
 
+// QueryOperatorNotes queries the operator_notes edge of a User.
+func (c *UserClient) QueryOperatorNotes(u *User) *OperatorNoteQuery {
+	query := (&OperatorNoteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(operatornote.Table, operatornote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.OperatorNotesTable, user.OperatorNotesColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -6005,14 +6210,15 @@ type (
 	hooks struct {
 		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
 		DeviceAuth, Event, Host, HostCredential, HostFile, HostProcess, Link, Network,
-		NetworkHost, Notification, Portal, Quest, Repository, ScheduledTask,
-		Screenshot, Shell, ShellPivot, ShellTask, Tag, Task, Tome, User []ent.Hook
+		NetworkHost, Notification, OperatorNote, Portal, Quest, Repository,
+		ScheduledTask, Screenshot, Shell, ShellPivot, ShellTask, Tag, Task, Tome,
+		User []ent.Hook
 	}
 	inters struct {
 		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
 		DeviceAuth, Event, Host, HostCredential, HostFile, HostProcess, Link, Network,
-		NetworkHost, Notification, Portal, Quest, Repository, ScheduledTask,
-		Screenshot, Shell, ShellPivot, ShellTask, Tag, Task, Tome,
+		NetworkHost, Notification, OperatorNote, Portal, Quest, Repository,
+		ScheduledTask, Screenshot, Shell, ShellPivot, ShellTask, Tag, Task, Tome,
 		User []ent.Interceptor
 	}
 )

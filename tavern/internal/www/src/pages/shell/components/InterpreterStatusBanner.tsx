@@ -44,7 +44,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
         return (
             <div
                 data-testid="shell-closed-banner"
-                className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-red-500/40 bg-red-950/40 text-red-200 text-xs"
+                className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-red-500/40 bg-red-900/30 text-red-200 text-xs"
             >
                 <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
@@ -75,7 +75,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
         return (
             <div
                 data-testid="shell-ws-banner"
-                className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-yellow-500/40 bg-yellow-950/30 text-yellow-200 text-xs"
+                className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-yellow-500/40 bg-yellow-900/30 text-yellow-200 text-xs"
             >
                 <div className="flex items-center gap-2">
                     <RefreshCw className="w-3.5 h-3.5 text-yellow-400 animate-spin shrink-0" />
@@ -104,7 +104,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
         return (
             <div
                 data-testid="stuck-interpreter-banner"
-                className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-amber-500/50 bg-amber-950/40 text-amber-100 text-xs"
+                className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-amber-500/50 bg-amber-900/30 text-amber-100 text-xs"
             >
                 <div className="flex items-start sm:items-center gap-2 min-w-0">
                     <Flame className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />

@@ -84,6 +84,14 @@ func (Shell) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Pivots associated with this shell"),
+		edge.From("operator_notes", OperatorNote.Type).
+			Ref("shells").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Operator notes modified from this shell"),
 	}
 }
 

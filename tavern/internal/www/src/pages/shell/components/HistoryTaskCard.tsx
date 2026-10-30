@@ -214,7 +214,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
     const getTabClassName = (tab: HistoryCardTab) => {
         const base = "flex flex-row gap-1 items-center py-1.5 px-2.5 text-xs transition-colors";
         if (activeTab === tab) {
-            return `${base} bg-gray-950 text-gray-100 rounded-t border-t-2 border-gray-700`;
+            return `${base} bg-gray-800 text-gray-100 rounded-t border-t-2 border-purple-500`;
         }
         return `${base} text-gray-400 hover:text-gray-200`;
     };
@@ -222,16 +222,16 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
     return (
         <div
             data-testid="history-task-card"
-            className="rounded-lg border border-gray-800 bg-gray-900/30 w-full text-gray-200 overflow-hidden"
+            className="rounded-lg border border-gray-800 bg-gray-900 w-full text-gray-200 overflow-hidden"
         >
             {/* Header row modeled after TaskCard header */}
-            <div className="flex flex-row items-center justify-between gap-2 px-3 py-2 bg-gray-900/50">
+            <div className="flex flex-row items-center justify-between gap-2 px-3 py-2 bg-gray-900">
                 <div className="flex flex-row items-center gap-2 min-w-0">
                     <HistoryTaskStatusIcon status={task.status} />
 
                     {task.creator?.name && (
                         <div className="flex flex-row gap-1 items-center text-xs text-gray-300 min-w-0">
-                            <CircleUser className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                            <CircleUser className="w-4 h-4 text-gray-500 shrink-0" />
                             <span className="truncate">{task.creator.name}</span>
                         </div>
                     )}
@@ -241,7 +241,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                             {formattedTime && (
                                 <span
                                     data-testid="history-task-time"
-                                    className="text-[11px] text-gray-500 whitespace-nowrap"
+                                    className="text-xs text-gray-500 whitespace-nowrap"
                                 >
                                     {formattedTime}
                                 </span>
@@ -260,7 +260,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                     )}
 
                     {isOtherSession && (
-                        <span className="px-1.5 py-0.5 rounded bg-gray-800/80 text-gray-400 font-mono text-[10px] leading-none shrink-0">
+                        <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 font-mono text-[10px] leading-none shrink-0">
                             Shell #{task.shellId}
                         </span>
                     )}
@@ -272,31 +272,31 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                         type="button"
                         data-testid="history-card-run"
                         onClick={() => onRunCode(task.cleanedInput)}
-                        className="inline-flex items-center justify-center p-1 rounded text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                        className="inline-flex items-center justify-center p-1 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                         title="Re-run command"
                         aria-label="Re-run"
                     >
-                        <Play className="w-3.5 h-3.5" />
+                        <Play className="w-4 h-4" />
                     </button>
                     <button
                         type="button"
                         data-testid="history-card-copy"
                         onClick={() => navigator.clipboard?.writeText(activeTextContent)}
-                        className="inline-flex items-center justify-center p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+                        className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
                         title="Copy"
                         aria-label="Copy"
                     >
-                        <Copy className="w-3.5 h-3.5" />
+                        <Copy className="w-4 h-4" />
                     </button>
                     <button
                         type="button"
                         data-testid="history-card-edit"
                         onClick={() => onLoadIntoComposer(task.cleanedInput)}
-                        className="inline-flex items-center justify-center p-1 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+                        className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
                         title="Edit in Composer"
                         aria-label="Edit in Composer"
                     >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -316,7 +316,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                             onClick={() => setActiveTab("input")}
                             className={getTabClassName("input")}
                         >
-                            <BookOpenIcon className="w-3.5 h-3.5" />
+                            <BookOpenIcon className="w-4 h-4" />
                             <span>Input</span>
                         </button>
 
@@ -328,7 +328,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                                 onClick={() => setActiveTab("output")}
                                 className={getTabClassName("output")}
                             >
-                                <DocumentTextIcon className="w-3.5 h-3.5" />
+                                <DocumentTextIcon className="w-4 h-4" />
                                 <span>Output</span>
                             </button>
                         )}
@@ -341,7 +341,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                                 onClick={() => setActiveTab("error")}
                                 className={getTabClassName("error")}
                             >
-                                <NoSymbolIcon className="w-3.5 h-3.5" />
+                                <NoSymbolIcon className="w-4 h-4" />
                                 <span>Error</span>
                             </button>
                         )}
@@ -354,7 +354,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                                 onClick={() => setActiveTab("processes")}
                                 className={getTabClassName("processes")}
                             >
-                                <ListVideo className="w-3.5 h-3.5" />
+                                <ListVideo className="w-4 h-4" />
                                 <span>Processes ({group.processCount})</span>
                             </button>
                         )}
@@ -367,7 +367,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                                 onClick={() => setActiveTab("files")}
                                 className={getTabClassName("files")}
                             >
-                                <FileText className="w-3.5 h-3.5" />
+                                <FileText className="w-4 h-4" />
                                 <span>Files ({group.fileCount})</span>
                             </button>
                         )}
@@ -380,7 +380,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                                 onClick={() => setActiveTab("creds")}
                                 className={getTabClassName("creds")}
                             >
-                                <KeyRound className="w-3.5 h-3.5" />
+                                <KeyRound className="w-4 h-4" />
                                 <span>Creds ({group.credCount})</span>
                             </button>
                         )}
@@ -391,7 +391,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                             type="button"
                             data-testid="history-toggle-full"
                             onClick={() => setIsFullExpanded((prev) => !prev)}
-                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] text-gray-400 hover:text-gray-200 shrink-0 transition-colors"
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-gray-400 hover:text-gray-200 shrink-0 transition-colors"
                         >
                             <ExpandToggleIcon isExpanded={isFullExpanded} />
                         </button>
@@ -399,7 +399,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                 </div>
 
                 {/* TabPanels */}
-                <div className="bg-gray-950">
+                <div className="bg-gray-800/50">
                     {isTextTab && (
                         <pre
                             className={`text-xs font-mono p-2.5 text-gray-200 overflow-x-auto whitespace-pre-wrap break-words ${

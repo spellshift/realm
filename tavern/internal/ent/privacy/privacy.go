@@ -518,6 +518,30 @@ func (f NotificationMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mu
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.NotificationMutation", m)
 }
 
+// The OperatorNoteQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type OperatorNoteQueryRuleFunc func(context.Context, *ent.OperatorNoteQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f OperatorNoteQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.OperatorNoteQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.OperatorNoteQuery", q)
+}
+
+// The OperatorNoteMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type OperatorNoteMutationRuleFunc func(context.Context, *ent.OperatorNoteMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f OperatorNoteMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.OperatorNoteMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.OperatorNoteMutation", m)
+}
+
 // The PortalQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type PortalQueryRuleFunc func(context.Context, *ent.PortalQuery) error

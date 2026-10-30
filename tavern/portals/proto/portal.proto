@@ -17,8 +17,6 @@ enum BytesPayloadKind {
 message BytesPayload {
     bytes data = 1;
     BytesPayloadKind kind = 2;
-    uint32 rows = 3;
-    uint32 cols = 4;
 }
 message TCPPayload {
     bytes data = 1;

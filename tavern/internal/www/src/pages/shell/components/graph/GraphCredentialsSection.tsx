@@ -22,9 +22,9 @@ export interface GraphCredentialsSectionProps {
 
 const SecretToggleIcon: React.FC<{ isRevealed: boolean }> = ({ isRevealed }) => {
     if (isRevealed) {
-        return <EyeSlashIcon className="w-3.5 h-3.5" />;
+        return <EyeSlashIcon className="w-4 h-4" />;
     }
-    return <EyeIcon className="w-3.5 h-3.5" />;
+    return <EyeIcon className="w-4 h-4" />;
 };
 
 const CredentialRow: React.FC<{
@@ -49,7 +49,7 @@ const CredentialRow: React.FC<{
                     <span className="font-medium">{cred.principal}</span>
                     <span className="text-gray-500">@{cred.hostName}</span>
                 </div>
-                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-gray-400 font-mono">
+                <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-400 font-mono">
                     <span className="truncate max-w-[180px]">
                         {isRevealed ? cred.secret : "••••••••"}
                     </span>
@@ -67,14 +67,14 @@ const CredentialRow: React.FC<{
                         aria-label="Copy secret"
                         className="text-gray-400 hover:text-gray-200 p-0.5 transition-colors"
                     >
-                        <ClipboardIcon className="w-3.5 h-3.5" />
+                        <ClipboardIcon className="w-4 h-4" />
                     </button>
                 </div>
             </div>
             <button
                 type="button"
                 onClick={() => onOpenSshWithTarget(sshTarget)}
-                className="text-[11px] text-gray-200 hover:text-white px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 shrink-0 transition-colors"
+                className="text-xs font-medium text-gray-200 hover:text-white px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 shrink-0 transition-colors"
             >
                 SSH Pivot
             </button>
@@ -94,9 +94,9 @@ export const GraphCredentialsSection: React.FC<GraphCredentialsSectionProps> = (
     const [modalOpen, setModalOpen] = useState(false);
 
     return (
-        <div className="px-4 py-3 border-b border-gray-800" data-testid="graph-credentials-section">
+        <div className="px-3 py-3 border-b border-gray-800" data-testid="graph-credentials-section">
             <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">
+                <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
                     Credentials ({credentials.length})
                 </span>
                 <button
@@ -105,9 +105,9 @@ export const GraphCredentialsSection: React.FC<GraphCredentialsSectionProps> = (
                     aria-label="Add credential"
                     title="Create credential"
                     data-testid="add-credential-button"
-                    className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                    className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
                 >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                 </button>
             </div>
             {credentials.length === 0 ? (

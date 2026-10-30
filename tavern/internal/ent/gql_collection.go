@@ -27,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -4575,6 +4576,215 @@ func newNotificationPaginateArgs(rv map[string]any) *notificationPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (on *OperatorNoteQuery) CollectFields(ctx context.Context, satisfies ...string) (*OperatorNoteQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return on, nil
+	}
+	if err := on.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return on, nil
+}
+
+func (on *OperatorNoteQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(operatornote.Columns))
+		selectedFields = []string{operatornote.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "author":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: on.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			on.withAuthor = query
+
+		case "shells":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: on.config}).Query()
+			)
+			args := newShellPaginateArgs(fieldArgs(ctx, new(ShellWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newShellPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					on.loadTotal = append(on.loadTotal, func(ctx context.Context, nodes []*OperatorNote) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"operator_note_id"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							joinT := sql.Table(operatornote.ShellsTable)
+							s.Join(joinT).On(s.C(shell.FieldID), joinT.C(operatornote.ShellsPrimaryKey[1]))
+							s.Where(sql.InValues(joinT.C(operatornote.ShellsPrimaryKey[0]), ids...))
+							s.Select(joinT.C(operatornote.ShellsPrimaryKey[0]), sql.Count("*"))
+							s.GroupBy(joinT.C(operatornote.ShellsPrimaryKey[0]))
+						})
+						if err := query.Select().Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[1] == nil {
+								nodes[i].Edges.totalCount[1] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[1][alias] = n
+						}
+						return nil
+					})
+				} else {
+					on.loadTotal = append(on.loadTotal, func(_ context.Context, nodes []*OperatorNote) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Shells)
+							if nodes[i].Edges.totalCount[1] == nil {
+								nodes[i].Edges.totalCount[1] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[1][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, shellImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(operatornote.ShellsPrimaryKey[0], limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			on.WithNamedShells(alias, func(wq *ShellQuery) {
+				*wq = *query
+			})
+		case "createdAt":
+			if _, ok := fieldSeen[operatornote.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, operatornote.FieldCreatedAt)
+				fieldSeen[operatornote.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[operatornote.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, operatornote.FieldLastModifiedAt)
+				fieldSeen[operatornote.FieldLastModifiedAt] = struct{}{}
+			}
+		case "content":
+			if _, ok := fieldSeen[operatornote.FieldContent]; !ok {
+				selectedFields = append(selectedFields, operatornote.FieldContent)
+				fieldSeen[operatornote.FieldContent] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		on.Select(selectedFields...)
+	}
+	return nil
+}
+
+type operatornotePaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []OperatorNotePaginateOption
+}
+
+func newOperatorNotePaginateArgs(rv map[string]any) *operatornotePaginateArgs {
+	args := &operatornotePaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*OperatorNoteOrder:
+			args.opts = append(args.opts, WithOperatorNoteOrder(v))
+		case []any:
+			var orders []*OperatorNoteOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &OperatorNoteOrder{Field: &OperatorNoteOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithOperatorNoteOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*OperatorNoteWhereInput); ok {
+		args.opts = append(args.opts, WithOperatorNoteFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (po *PortalQuery) CollectFields(ctx context.Context, satisfies ...string) (*PortalQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -6288,6 +6498,99 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				query = pager.applyOrder(query)
 			}
 			s.WithNamedPivots(alias, func(wq *ShellPivotQuery) {
+				*wq = *query
+			})
+
+		case "operatorNotes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&OperatorNoteClient{config: s.config}).Query()
+			)
+			args := newOperatorNotePaginateArgs(fieldArgs(ctx, new(OperatorNoteWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newOperatorNotePager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Shell) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_id"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							joinT := sql.Table(shell.OperatorNotesTable)
+							s.Join(joinT).On(s.C(operatornote.FieldID), joinT.C(shell.OperatorNotesPrimaryKey[0]))
+							s.Where(sql.InValues(joinT.C(shell.OperatorNotesPrimaryKey[1]), ids...))
+							s.Select(joinT.C(shell.OperatorNotesPrimaryKey[1]), sql.Count("*"))
+							s.GroupBy(joinT.C(shell.OperatorNotesPrimaryKey[1]))
+						})
+						if err := query.Select().Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				} else {
+					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.OperatorNotes)
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, operatornoteImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shell.OperatorNotesPrimaryKey[1], limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			s.WithNamedOperatorNotes(alias, func(wq *OperatorNoteQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -8445,6 +8748,95 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				query = pager.applyOrder(query)
 			}
 			u.WithNamedEvents(alias, func(wq *EventQuery) {
+				*wq = *query
+			})
+
+		case "operatorNotes":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&OperatorNoteClient{config: u.config}).Query()
+			)
+			args := newOperatorNotePaginateArgs(fieldArgs(ctx, new(OperatorNoteWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newOperatorNotePager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					u.loadTotal = append(u.loadTotal, func(ctx context.Context, nodes []*User) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"operator_note_author"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(user.OperatorNotesColumn), ids...))
+						})
+						if err := query.GroupBy(user.OperatorNotesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				} else {
+					u.loadTotal = append(u.loadTotal, func(_ context.Context, nodes []*User) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.OperatorNotes)
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, operatornoteImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(user.OperatorNotesColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			u.WithNamedOperatorNotes(alias, func(wq *OperatorNoteQuery) {
 				*wq = *query
 			})
 		case "name":

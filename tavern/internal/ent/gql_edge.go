@@ -711,6 +711,35 @@ func (n *Notification) Event(ctx context.Context) (*Event, error) {
 	return result, err
 }
 
+func (on *OperatorNote) Author(ctx context.Context) (*User, error) {
+	result, err := on.Edges.AuthorOrErr()
+	if IsNotLoaded(err) {
+		result, err = on.QueryAuthor().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (on *OperatorNote) Shells(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellOrder, where *ShellWhereInput,
+) (*ShellConnection, error) {
+	opts := []ShellPaginateOption{
+		WithShellOrder(orderBy),
+		WithShellFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := on.Edges.totalCount[1][alias]
+	if nodes, err := on.NamedShells(alias); err == nil || hasTotalCount {
+		pager, err := newShellPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ShellConnection{Edges: []*ShellEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return on.QueryShells().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (po *Portal) Task(ctx context.Context) (*Task, error) {
 	result, err := po.Edges.TaskOrErr()
 	if IsNotLoaded(err) {
@@ -1075,6 +1104,27 @@ func (s *Shell) Pivots(
 		return conn, nil
 	}
 	return s.QueryPivots().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (s *Shell) OperatorNotes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*OperatorNoteOrder, where *OperatorNoteWhereInput,
+) (*OperatorNoteConnection, error) {
+	opts := []OperatorNotePaginateOption{
+		WithOperatorNoteOrder(orderBy),
+		WithOperatorNoteFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[7][alias]
+	if nodes, err := s.NamedOperatorNotes(alias); err == nil || hasTotalCount {
+		pager, err := newOperatorNotePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &OperatorNoteConnection{Edges: []*OperatorNoteEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return s.QueryOperatorNotes().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (sp *ShellPivot) Shell(ctx context.Context) (*Shell, error) {
@@ -1489,4 +1539,25 @@ func (u *User) Events(
 		return conn, nil
 	}
 	return u.QueryEvents().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) OperatorNotes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*OperatorNoteOrder, where *OperatorNoteWhereInput,
+) (*OperatorNoteConnection, error) {
+	opts := []OperatorNotePaginateOption{
+		WithOperatorNoteOrder(orderBy),
+		WithOperatorNoteFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[7][alias]
+	if nodes, err := u.NamedOperatorNotes(alias); err == nil || hasTotalCount {
+		pager, err := newOperatorNotePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &OperatorNoteConnection{Edges: []*OperatorNoteEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryOperatorNotes().Paginate(ctx, after, first, before, last, opts...)
 }

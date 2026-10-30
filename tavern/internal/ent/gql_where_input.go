@@ -27,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
@@ -8422,6 +8423,304 @@ func (i *NotificationWhereInput) P() (predicate.Notification, error) {
 	}
 }
 
+// OperatorNoteWhereInput represents a where input for filtering OperatorNote queries.
+type OperatorNoteWhereInput struct {
+	Predicates []predicate.OperatorNote  `json:"-"`
+	Not        *OperatorNoteWhereInput   `json:"not,omitempty"`
+	Or         []*OperatorNoteWhereInput `json:"or,omitempty"`
+	And        []*OperatorNoteWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "content" field predicates.
+	Content             *string  `json:"content,omitempty"`
+	ContentNEQ          *string  `json:"contentNEQ,omitempty"`
+	ContentIn           []string `json:"contentIn,omitempty"`
+	ContentNotIn        []string `json:"contentNotIn,omitempty"`
+	ContentGT           *string  `json:"contentGT,omitempty"`
+	ContentGTE          *string  `json:"contentGTE,omitempty"`
+	ContentLT           *string  `json:"contentLT,omitempty"`
+	ContentLTE          *string  `json:"contentLTE,omitempty"`
+	ContentContains     *string  `json:"contentContains,omitempty"`
+	ContentHasPrefix    *string  `json:"contentHasPrefix,omitempty"`
+	ContentHasSuffix    *string  `json:"contentHasSuffix,omitempty"`
+	ContentIsNil        bool     `json:"contentIsNil,omitempty"`
+	ContentNotNil       bool     `json:"contentNotNil,omitempty"`
+	ContentEqualFold    *string  `json:"contentEqualFold,omitempty"`
+	ContentContainsFold *string  `json:"contentContainsFold,omitempty"`
+
+	// "author" edge predicates.
+	HasAuthor     *bool             `json:"hasAuthor,omitempty"`
+	HasAuthorWith []*UserWhereInput `json:"hasAuthorWith,omitempty"`
+
+	// "shells" edge predicates.
+	HasShells     *bool              `json:"hasShells,omitempty"`
+	HasShellsWith []*ShellWhereInput `json:"hasShellsWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *OperatorNoteWhereInput) AddPredicates(predicates ...predicate.OperatorNote) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the OperatorNoteWhereInput filter on the OperatorNoteQuery builder.
+func (i *OperatorNoteWhereInput) Filter(q *OperatorNoteQuery) (*OperatorNoteQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyOperatorNoteWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyOperatorNoteWhereInput is returned in case the OperatorNoteWhereInput is empty.
+var ErrEmptyOperatorNoteWhereInput = errors.New("ent: empty predicate OperatorNoteWhereInput")
+
+// P returns a predicate for filtering operatornotes.
+// An error is returned if the input is empty or invalid.
+func (i *OperatorNoteWhereInput) P() (predicate.OperatorNote, error) {
+	var predicates []predicate.OperatorNote
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, operatornote.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.OperatorNote, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, operatornote.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.OperatorNote, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, operatornote.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, operatornote.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, operatornote.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, operatornote.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, operatornote.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, operatornote.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, operatornote.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, operatornote.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, operatornote.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, operatornote.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, operatornote.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, operatornote.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, operatornote.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, operatornote.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, operatornote.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, operatornote.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, operatornote.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, operatornote.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, operatornote.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Content != nil {
+		predicates = append(predicates, operatornote.ContentEQ(*i.Content))
+	}
+	if i.ContentNEQ != nil {
+		predicates = append(predicates, operatornote.ContentNEQ(*i.ContentNEQ))
+	}
+	if len(i.ContentIn) > 0 {
+		predicates = append(predicates, operatornote.ContentIn(i.ContentIn...))
+	}
+	if len(i.ContentNotIn) > 0 {
+		predicates = append(predicates, operatornote.ContentNotIn(i.ContentNotIn...))
+	}
+	if i.ContentGT != nil {
+		predicates = append(predicates, operatornote.ContentGT(*i.ContentGT))
+	}
+	if i.ContentGTE != nil {
+		predicates = append(predicates, operatornote.ContentGTE(*i.ContentGTE))
+	}
+	if i.ContentLT != nil {
+		predicates = append(predicates, operatornote.ContentLT(*i.ContentLT))
+	}
+	if i.ContentLTE != nil {
+		predicates = append(predicates, operatornote.ContentLTE(*i.ContentLTE))
+	}
+	if i.ContentContains != nil {
+		predicates = append(predicates, operatornote.ContentContains(*i.ContentContains))
+	}
+	if i.ContentHasPrefix != nil {
+		predicates = append(predicates, operatornote.ContentHasPrefix(*i.ContentHasPrefix))
+	}
+	if i.ContentHasSuffix != nil {
+		predicates = append(predicates, operatornote.ContentHasSuffix(*i.ContentHasSuffix))
+	}
+	if i.ContentIsNil {
+		predicates = append(predicates, operatornote.ContentIsNil())
+	}
+	if i.ContentNotNil {
+		predicates = append(predicates, operatornote.ContentNotNil())
+	}
+	if i.ContentEqualFold != nil {
+		predicates = append(predicates, operatornote.ContentEqualFold(*i.ContentEqualFold))
+	}
+	if i.ContentContainsFold != nil {
+		predicates = append(predicates, operatornote.ContentContainsFold(*i.ContentContainsFold))
+	}
+
+	if i.HasAuthor != nil {
+		p := operatornote.HasAuthor()
+		if !*i.HasAuthor {
+			p = operatornote.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasAuthorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasAuthorWith))
+		for _, w := range i.HasAuthorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasAuthorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, operatornote.HasAuthorWith(with...))
+	}
+	if i.HasShells != nil {
+		p := operatornote.HasShells()
+		if !*i.HasShells {
+			p = operatornote.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellsWith) > 0 {
+		with := make([]predicate.Shell, 0, len(i.HasShellsWith))
+		for _, w := range i.HasShellsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, operatornote.HasShellsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyOperatorNoteWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return operatornote.And(predicates...), nil
+	}
+}
+
 // PortalWhereInput represents a where input for filtering Portal queries.
 type PortalWhereInput struct {
 	Predicates []predicate.Portal  `json:"-"`
@@ -10778,6 +11077,10 @@ type ShellWhereInput struct {
 	// "pivots" edge predicates.
 	HasPivots     *bool                   `json:"hasPivots,omitempty"`
 	HasPivotsWith []*ShellPivotWhereInput `json:"hasPivotsWith,omitempty"`
+
+	// "operator_notes" edge predicates.
+	HasOperatorNotes     *bool                     `json:"hasOperatorNotes,omitempty"`
+	HasOperatorNotesWith []*OperatorNoteWhereInput `json:"hasOperatorNotesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -11079,6 +11382,24 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, shell.HasPivotsWith(with...))
+	}
+	if i.HasOperatorNotes != nil {
+		p := shell.HasOperatorNotes()
+		if !*i.HasOperatorNotes {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOperatorNotesWith) > 0 {
+		with := make([]predicate.OperatorNote, 0, len(i.HasOperatorNotesWith))
+		for _, w := range i.HasOperatorNotesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOperatorNotesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasOperatorNotesWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -13845,6 +14166,10 @@ type UserWhereInput struct {
 	// "events" edge predicates.
 	HasEvents     *bool              `json:"hasEvents,omitempty"`
 	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
+
+	// "operator_notes" edge predicates.
+	HasOperatorNotes     *bool                     `json:"hasOperatorNotes,omitempty"`
+	HasOperatorNotesWith []*OperatorNoteWhereInput `json:"hasOperatorNotesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -14197,6 +14522,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasEventsWith(with...))
+	}
+	if i.HasOperatorNotes != nil {
+		p := user.HasOperatorNotes()
+		if !*i.HasOperatorNotes {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOperatorNotesWith) > 0 {
+		with := make([]predicate.OperatorNote, 0, len(i.HasOperatorNotesWith))
+		for _, w := range i.HasOperatorNotesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOperatorNotesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasOperatorNotesWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

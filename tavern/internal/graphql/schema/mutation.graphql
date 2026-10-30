@@ -119,4 +119,11 @@ type Mutation {
     createNetworkHost(input: CreateNetworkHostInput!): NetworkHost! @requireRole(role: USER)
     updateNetworkHost(networkHostID: ID!, input: UpdateNetworkHostInput!): NetworkHost! @requireRole(role: USER)
     deleteNetworkHost(networkHostID: ID!): ID! @requireRole(role: USER)
+
+    ###
+    # OperatorNote
+    ###
+    createOperatorNote(input: CreateOperatorNoteInput!): OperatorNote! @requireRole(role: USER)
+    updateOperatorNote(operatorNoteID: ID!, input: UpdateOperatorNoteInput!): OperatorNote! @requireRole(role: USER)
+    deleteOperatorNote(operatorNoteID: ID!): ID! @requireRole(role: USER)
 }

@@ -437,7 +437,7 @@ export const HostModal: React.FC<HostModalProps> = ({
     }
 
     const modalTitle = isEditMode ? "Edit Host" : "New Host";
-    const submitLabel = isEditMode ? "Save Host" : "Add Host";
+    const submitLabel = isEditMode ? "Save Host" : "Create";
 
     return (
         <Transition show={isOpen} as={Fragment}>
@@ -466,9 +466,9 @@ export const HostModal: React.FC<HostModalProps> = ({
                     >
                         <Dialog.Panel
                             data-testid="host-modal"
-                            className="w-full max-w-md rounded-lg bg-[#1c202b] border border-[#343b4d] shadow-2xl"
+                            className="w-full max-w-md rounded-lg bg-gray-900 border border-gray-700 shadow-2xl"
                         >
-                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#2e3444]">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
                                 <Dialog.Title className="text-white font-semibold text-sm flex items-center gap-2">
                                     <BugAntIcon className="h-4 w-4 text-gray-400" />
                                     <span>{modalTitle}</span>
@@ -587,7 +587,7 @@ export const HostModal: React.FC<HostModalProps> = ({
                                         type="submit"
                                         data-testid="host-modal-submit"
                                         disabled={!ipAddress.trim() || isSubmitting}
-                                        className="text-xs font-semibold py-1.5 px-3.5 rounded-md bg-gray-100 text-gray-900 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        className="text-xs font-semibold py-1.5 px-3.5 rounded-md bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                     >
                                         {submitLabel}
                                     </button>

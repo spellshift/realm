@@ -198,7 +198,10 @@ describe("ShellHeader", () => {
         const toolbar = screen.getByTestId("shell-header-toolbar");
         expect(toolbar).toBeInTheDocument();
         expect(screen.getByTestId("shell-header-users-divider")).toBeInTheDocument();
+        const sidebarToggleBtn = screen.getByTestId("status-bar-sidebar-toggle");
         const homeLink = screen.getByTitle("Return Home");
+        expect(sidebarToggleBtn).toBeInTheDocument();
+        expect(sidebarToggleBtn.compareDocumentPosition(homeLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(homeLink).not.toHaveClass("border");
 
         const knowledgeBtn = screen.getByLabelText("Toggle knowledge graph");

@@ -2,7 +2,7 @@ import React, { Fragment, useEffect, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useMutation } from "@apollo/client";
-import { KeyRound } from "lucide-react";
+import { ChevronDown, KeyRound } from "lucide-react";
 import { CREATE_CREDENTIAL_MUTATION } from "../../graphql";
 import {
     KnowledgeCredentialItem,
@@ -188,11 +188,11 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
                     >
                         <Dialog.Panel
                             data-testid="credential-modal"
-                            className="w-full max-w-md rounded-lg bg-[#1c202b] border border-[#343b4d] shadow-2xl"
+                            className="w-full max-w-md rounded-lg bg-gray-900 border border-gray-700 shadow-2xl"
                         >
-                            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#2e3444]">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
                                 <Dialog.Title className="text-white font-semibold text-sm flex items-center gap-2">
-                                    <KeyRound size={15} className="text-gray-400" />
+                                    <KeyRound className="w-4 h-4 text-gray-400" />
                                     <span>New Credential</span>
                                 </Dialog.Title>
                                 <button
@@ -249,18 +249,24 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
                                         >
                                             Kind / Type
                                         </label>
-                                        <select
-                                            id="cred-kind"
-                                            value={kind}
-                                            onChange={(e) => setKind(e.target.value)}
-                                            className="w-full px-2.5 py-1.5 bg-[#12151c] border border-[#343b4d] rounded-md text-xs text-white focus:outline-none focus:border-gray-500"
-                                        >
-                                            {CREDENTIAL_KIND_OPTIONS.map((opt) => (
-                                                <option key={opt.value} value={opt.value}>
-                                                    {opt.label}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <div className="relative">
+                                            <select
+                                                id="cred-kind"
+                                                value={kind}
+                                                onChange={(e) => setKind(e.target.value)}
+                                                className="w-full appearance-none pl-2.5 pr-8 py-1.5 bg-[#12151c] border border-[#343b4d] rounded-md text-xs text-white focus:outline-none focus:border-gray-500"
+                                            >
+                                                {CREDENTIAL_KIND_OPTIONS.map((opt) => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown
+                                                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"
+                                                aria-hidden="true"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div>
@@ -270,23 +276,29 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
                                         >
                                             Host
                                         </label>
-                                        <select
-                                            id="cred-host"
-                                            value={selectedHostKey}
-                                            onChange={(e) => setSelectedHostKey(e.target.value)}
-                                            className="w-full px-2.5 py-1.5 bg-[#12151c] border border-[#343b4d] rounded-md text-xs text-white focus:outline-none focus:border-gray-500"
-                                        >
-                                            <option value="">{currentHostOptionLabel}</option>
-                                            {adjacentHosts.map((h) => {
-                                                const ip = h.ipAddress || h.primaryIP;
-                                                return (
-                                                    <option key={h.id} value={h.id}>
-                                                        {h.name}
-                                                        {ip && ip !== h.name ? ` (${ip})` : ""}
-                                                    </option>
-                                                );
-                                            })}
-                                        </select>
+                                        <div className="relative">
+                                            <select
+                                                id="cred-host"
+                                                value={selectedHostKey}
+                                                onChange={(e) => setSelectedHostKey(e.target.value)}
+                                                className="w-full appearance-none pl-2.5 pr-8 py-1.5 bg-[#12151c] border border-[#343b4d] rounded-md text-xs text-white focus:outline-none focus:border-gray-500"
+                                            >
+                                                <option value="">{currentHostOptionLabel}</option>
+                                                {adjacentHosts.map((h) => {
+                                                    const ip = h.ipAddress || h.primaryIP;
+                                                    return (
+                                                        <option key={h.id} value={h.id}>
+                                                            {h.name}
+                                                            {ip && ip !== h.name ? ` (${ip})` : ""}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                            <ChevronDown
+                                                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"
+                                                aria-hidden="true"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -311,9 +323,9 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
                                         type="submit"
                                         data-testid="credential-modal-submit"
                                         disabled={!principal.trim() || !secret.trim() || isSubmitting}
-                                        className="text-xs font-semibold py-1.5 px-3.5 rounded-md bg-gray-100 text-gray-900 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                        className="text-xs font-semibold py-1.5 px-3.5 rounded-md bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                     >
-                                        Create Credential
+                                        Create
                                     </button>
                                 </div>
                             </form>
