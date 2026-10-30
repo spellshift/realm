@@ -7,6 +7,7 @@ import {
     RefreshCw,
 } from "lucide-react";
 import { ConnectionStatus } from "../../../lib/browser-adapter";
+import { stripInternalMacro } from "../hooks/shellUtils";
 import { ShellTaskItem } from "../hooks/useShellData";
 
 export interface InterpreterStatusBannerProps {
@@ -24,7 +25,8 @@ export interface InterpreterStatusBannerProps {
 }
 
 const truncateCmd = (cmd: string, max = 56): string => {
-    const firstLine = cmd.trim().split("\n")[0] || "";
+    const cleaned = stripInternalMacro(cmd);
+    const firstLine = cleaned.trim().split("\n")[0] || "";
     if (firstLine.length <= max) return firstLine;
     return `${firstLine.slice(0, max)}...`;
 };

@@ -80,14 +80,14 @@ const ShellSidebar: React.FC<ShellSidebarProps> = ({ isOpen, currNavItem }) => {
         name: PageNavItem.documentation,
         href: "https://docs.realm.pub/",
         icon: DocumentDuplicateIcon,
-        target: "__blank",
+        target: "_blank",
         internal: false,
       },
       {
         name: PageNavItem.playground,
         href: "/playground",
         icon: WrenchScrewdriverIcon,
-        target: "__blank",
+        target: "_blank",
         internal: false,
       },
     ],
@@ -133,7 +133,7 @@ const ShellSidebar: React.FC<ShellSidebarProps> = ({ isOpen, currNavItem }) => {
                     <a
                       aria-label={item.name}
                       href={item.href}
-                      target={item.target ? "__blank" : undefined}
+                      target={item.target}
                       rel={item.target ? "noopener noreferrer" : undefined}
                       className={itemClasses}
                     >

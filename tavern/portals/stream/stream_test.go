@@ -2,6 +2,8 @@ package stream
 
 import (
 	"errors"
+	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -187,4 +189,88 @@ func TestOrderedReader_DuplicateHandling(t *testing.T) {
 	m1, err := r.Read()
 	require.NoError(t, err)
 	assert.Equal(t, uint64(1), m1.SeqId)
+}
+
+func TestOrderedReader_ConcurrentDeadlineUpdate(t *testing.T) {
+	inCh := make(chan *portalpb.Mote, 1)
+	r := NewOrderedReader(func() (*portalpb.Mote, error) {
+		m, ok := <-inCh
+		if !ok {
+			return nil, errors.New("EOF")
+		}
+		return m, nil
+	})
+	defer func() {
+		close(inCh)
+		_ = r.Close()
+	}()
+
+	// 1. Start Read() with a 50ms deadline, then concurrently clear the deadline before it fires.
+	r.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
+
+	readDone := make(chan error, 1)
+	go func() {
+		_, err := r.Read()
+		readDone <- err
+	}()
+
+	time.Sleep(15 * time.Millisecond)
+	r.SetReadDeadline(time.Time{}) // clear deadline while Read() is blocked
+
+	// Wait past the original 50ms deadline and deliver a mote
+	time.Sleep(60 * time.Millisecond)
+	inCh <- &portalpb.Mote{SeqId: 0, StreamId: "s1"}
+
+	select {
+	case err := <-readDone:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for Read after clearing deadline")
+	}
+
+	// 2. Start Read() with no deadline, then concurrently set an expired deadline to unblock it.
+	go func() {
+		_, err := r.Read()
+		readDone <- err
+	}()
+
+	time.Sleep(15 * time.Millisecond)
+	r.SetReadDeadline(time.Now().Add(-time.Second))
+
+	select {
+	case err := <-readDone:
+		assert.ErrorIs(t, err, os.ErrDeadlineExceeded)
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for Read to unblock on expired deadline")
+	}
+}
+
+func TestOrderedWriter_ConcurrentDeadlineUpdate(t *testing.T) {
+	w := NewOrderedWriter("s1", func(m *portalpb.Mote) error {
+		return nil
+	})
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			if i%2 == 0 {
+				w.SetWriteDeadline(time.Now().Add(time.Hour))
+			} else {
+				w.SetWriteDeadline(time.Time{})
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			err := w.WriteTCP([]byte("ping"), "127.0.0.1", 22)
+			assert.NoError(t, err)
+		}
+	}()
+
+	wg.Wait()
 }

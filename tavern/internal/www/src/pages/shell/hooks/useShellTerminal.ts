@@ -431,14 +431,25 @@ export const useShellTerminal = (
         completionsRef.current = { list, start, show, index };
 
         if (show && termInstance.current) {
-            // Calculate position
-            const cursorX = termInstance.current.buffer.active.cursorX;
-            const cursorY = termInstance.current.buffer.active.cursorY;
-            const charWidth = 9;
-            const charHeight = 17;
+            const term = termInstance.current;
+            const cursorX = term.buffer.active.cursorX;
+            const cursorY = term.buffer.active.cursorY;
+            const rows = Math.max(1, term.rows || 24);
+            const cols = Math.max(1, term.cols || 80);
+            let charHeight = fontSizeRef.current * 1.35;
+            let charWidth = fontSizeRef.current * 0.6;
+            const container = termNodeRef.current;
+            const screenEl = container?.querySelector(".xterm-screen") as HTMLElement | null;
+            if (screenEl) {
+                const screenRect = screenEl.getBoundingClientRect();
+                if (screenRect.width > 0 && screenRect.height > 0) {
+                    charHeight = screenRect.height / rows;
+                    charWidth = screenRect.width / cols;
+                }
+            }
             setCompletionPos({
-                x: cursorX * charWidth + 20, // + padding
-                y: cursorY * charHeight + 40 // + header/padding
+                x: Math.round(cursorX * charWidth + 20), // + padding
+                y: Math.round(cursorY * charHeight + 40), // + header/padding
             });
         }
     }, []);
@@ -1445,14 +1456,17 @@ export const useShellTerminal = (
     }, [fontSize, updatePromptPos]);
 
     const getSessionInputs = useCallback(() => {
-        if (shellTasksRef.current.length > 0) {
-            return shellTasksRef.current
+        const currentSessionTasks = shellTasksRef.current.filter(
+            (t) => !t.shellId || String(t.shellId) === String(shellId)
+        );
+        if (currentSessionTasks.length > 0) {
+            return currentSessionTasks
                 .map((t) => stripInternalMacro(t.input || ""))
                 .filter(Boolean)
                 .join("\n");
         }
         return sessionInputs.current.join("\n");
-    }, []);
+    }, [shellId]);
 
     const setShellInput = useCallback((text: string) => {
         const term = termInstance.current;

@@ -6,7 +6,10 @@ import { ConnectionStatus } from "../../../../lib/browser-adapter";
 import React from "react";
 import { expect, describe, it, vi } from "vitest";
 import { BrowserRouter } from "react-router-dom";
+import { MockedProvider } from "@apollo/client/testing";
+import { ChakraProvider } from "@chakra-ui/react";
 import { AuthorizationContext } from "../../../../context/AuthorizationContext";
+import { GET_NOTIFICATIONS } from "../../../../lib/notifications";
 import "@testing-library/jest-dom";
 
 // Mock NotificationBell to avoid requiring ApolloProvider in ShellStatusBar tests
@@ -50,6 +53,8 @@ describe("ShellStatusBar", () => {
                 {...defaultProps}
                 portalId={123}
                 onClosePortal={onClosePortal}
+                sessionSettingsOpen={true}
+                onToggleSessionSettings={vi.fn()}
                 onToggleComposer={vi.fn()}
                 composerOpen={true}
                 onToggleScratchpad={onToggleScratchpad}
@@ -64,7 +69,9 @@ describe("ShellStatusBar", () => {
         const scratchpadEl = screen.getByTestId("status-bar-scratchpad-toggle");
         expect(bellEl).toBeInTheDocument();
         expect(settingsEl).toBeInTheDocument();
+        expect(settingsEl).toHaveClass("text-white", "bg-purple-600");
         expect(composerEl).toBeInTheDocument();
+        expect(composerEl).toHaveClass("text-white", "bg-purple-600");
         expect(scratchpadEl).toBeInTheDocument();
 
         // Verify left-toolbar DOM order: Notification Bell -> Settings -> Composer -> Scratchpad
@@ -242,6 +249,13 @@ describe("ShellStatusBar", () => {
         const sidebar = screen.getByTestId("shell-sidebar");
         expect(sidebar).toBeInTheDocument();
         expect(sidebar).toHaveClass("w-12");
+        expect(sidebar).toHaveClass("z-20");
+
+        // Status bar stacks above the sidebar so notification popover is not hidden behind the sidebar
+        const statusBar = document.querySelector('[data-tour="shell-status-bar"]');
+        expect(statusBar).toHaveClass("relative", "z-30");
+        expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
+
         expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
         const loginIcon = screen.getByTestId("sidebar-toggle-login-icon");
         expect(loginIcon).toBeInTheDocument();
@@ -264,5 +278,79 @@ describe("ShellStatusBar", () => {
         fireEvent.click(toggleBtn);
         expect(screen.queryByTestId("shell-sidebar")).not.toBeInTheDocument();
         expect(screen.getByTestId("sidebar-toggle-logout-icon")).toBeInTheDocument();
+    });
+
+    it("renders NotificationBell popover positioner above the open sidebar so notifications can be viewed", async () => {
+        const { default: ActualNotificationBell } = await vi.importActual<{
+            default: React.ComponentType<any>;
+        }>("../../../../components/notifications/NotificationBell");
+
+        const mocks = [
+            {
+                request: {
+                    query: GET_NOTIFICATIONS,
+                    variables: { first: 100 },
+                },
+                result: {
+                    data: {
+                        me: {
+                            id: "u1",
+                            notifications: {
+                                totalCount: 0,
+                                pageInfo: {
+                                    hasNextPage: false,
+                                    hasPreviousPage: false,
+                                    startCursor: null,
+                                    endCursor: null,
+                                },
+                                edges: [],
+                            },
+                        },
+                    },
+                },
+            },
+        ];
+
+        const { container } = render(
+            <BrowserRouter>
+                <ChakraProvider>
+                    <MockedProvider mocks={mocks} addTypename={false}>
+                        <AuthorizationContext.Provider
+                            value={{
+                                data: {
+                                    me: {
+                                        id: "u1",
+                                        name: "admin-op",
+                                        photoURL: "",
+                                        isActivated: true,
+                                        isAdmin: true,
+                                    },
+                                },
+                                isLoading: false,
+                                error: undefined,
+                            }}
+                        >
+                            <ShellSidebar isOpen={true} />
+                            <div className="relative z-30">
+                                <ActualNotificationBell
+                                    placement="top-start"
+                                    buttonClassName="relative inline-flex items-center justify-center p-1 rounded-md"
+                                    iconClassName="w-4 h-4"
+                                />
+                            </div>
+                        </AuthorizationContext.Provider>
+                    </MockedProvider>
+                </ChakraProvider>
+            </BrowserRouter>
+        );
+
+        expect(screen.getByTestId("shell-sidebar")).toBeInTheDocument();
+        const bellButton = screen.getByRole("button", { name: "Notifications" });
+        fireEvent.click(bellButton);
+
+        expect(screen.getByText("Notifications")).toBeInTheDocument();
+        const popperEl = container.querySelector(".chakra-popover__popper") as HTMLElement;
+        expect(popperEl).toBeInTheDocument();
+        expect(popperEl.style.zIndex).toBe("1500");
     });
 });

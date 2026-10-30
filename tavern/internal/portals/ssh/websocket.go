@@ -49,6 +49,7 @@ type PivotSession struct {
 	seqID         uint64
 
 	mu            sync.Mutex
+	closed        bool
 	connected     bool
 	history       []byte
 	dirty         bool
@@ -156,6 +157,14 @@ func (ps *PivotSession) FlushHistory(ctx context.Context, graph *ent.Client) {
 }
 
 func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
+	ps.mu.Lock()
+	if ps.closed {
+		ps.mu.Unlock()
+		return
+	}
+	ps.closed = true
+	ps.mu.Unlock()
+
 	cacheMu.Lock()
 	delete(sessionCache, ps.PivotID)
 	cacheMu.Unlock()
@@ -704,6 +713,19 @@ func upsertNetworkHost(
 		return updater.Save(ctx)
 	}
 
+	if existing == nil {
+		if ipAddr == "" {
+			if hostname != "" {
+				ipAddr = hostname
+			} else if name != "" {
+				ipAddr = name
+			}
+		}
+		if ipAddr == "" {
+			return nil, nil
+		}
+	}
+
 	creator := graph.NetworkHost.Create().
 		SetName(name).
 		SetHostname(hostname).
@@ -781,7 +803,15 @@ func recordSuccessfulPivotNetworkHost(ctx context.Context, graph *ent.Client, po
 		return
 	}
 
-	srcSubnet := deriveSubnetFromIP(srcHost.PrimaryIP)
+	srcIP := strings.TrimSpace(srcHost.PrimaryIP)
+	if srcIP == "" && srcHost.ExternalIP != "" && srcHost.ExternalIP != "NOOP" {
+		srcIP = strings.TrimSpace(srcHost.ExternalIP)
+	}
+	if srcIP == "" {
+		return
+	}
+
+	srcSubnet := deriveSubnetFromIP(srcIP)
 	srcNet, err := findOrCreateNetwork(
 		ctx,
 		graph,
@@ -794,13 +824,13 @@ func recordSuccessfulPivotNetworkHost(ctx context.Context, graph *ent.Client, po
 
 	srcName := srcHost.Name
 	if srcName == "" {
-		srcName = srcHost.PrimaryIP
+		srcName = srcIP
 	}
 	if srcName == "" {
 		srcName = fmt.Sprintf("host-%d", srcHost.ID)
 	}
 
-	if _, err := upsertNetworkHost(ctx, graph, srcName, srcName, srcHost.PrimaryIP, srcSubnet, 0, srcHost, srcNet, targetNet); err != nil {
+	if _, err := upsertNetworkHost(ctx, graph, srcName, srcName, srcIP, srcSubnet, 0, srcHost, srcNet, targetNet); err != nil {
 		slog.Error("failed to upsert source network host for pivot", "host", srcHost.Name, "error", err)
 	}
 }

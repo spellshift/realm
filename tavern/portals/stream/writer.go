@@ -2,6 +2,7 @@ package stream
 
 import (
 	"os"
+	"sync"
 	"time"
 
 	"realm.pub/tavern/portals/portalpb"
@@ -15,6 +16,7 @@ type SenderFunc func(*portalpb.Mote) error
 type OrderedWriter struct {
 	sequencer     *payloadSequencer
 	sender        SenderFunc
+	deadlineMu    sync.RWMutex
 	writeDeadline time.Time
 }
 
@@ -28,11 +30,17 @@ func NewOrderedWriter(streamID string, sender SenderFunc) *OrderedWriter {
 
 // SetWriteDeadline sets the deadline for future Write calls.
 func (w *OrderedWriter) SetWriteDeadline(t time.Time) {
+	w.deadlineMu.Lock()
 	w.writeDeadline = t
+	w.deadlineMu.Unlock()
 }
 
 func (w *OrderedWriter) checkDeadline() error {
-	if !w.writeDeadline.IsZero() && time.Now().After(w.writeDeadline) {
+	w.deadlineMu.RLock()
+	deadline := w.writeDeadline
+	w.deadlineMu.RUnlock()
+
+	if !deadline.IsZero() && time.Now().After(deadline) {
 		return os.ErrDeadlineExceeded
 	}
 	return nil

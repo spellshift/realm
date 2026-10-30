@@ -347,6 +347,7 @@ func (h *Handler) readMessagesFromWebsocket(ctx context.Context, conn *websocket
 			var msg WebsocketTaskInputMessage
 			if err := json.Unmarshal(msgData, &msg); err != nil {
 				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to decode message from client: %w", err))
+				continue
 			}
 
 			// Send Message
@@ -423,6 +424,7 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 		case controlMsg, ok := <-controlCh:
 			if err := writeJSONMessage("shell_control", controlMsg, ok); err != nil {
 				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				return
 			}
 		case <-keepAliveTimer.C:
 			conn.SetWriteDeadline(time.Now().Add(h.writeWaitTimeout))

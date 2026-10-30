@@ -86,7 +86,11 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                     setSelectedPort(parsed.hostPort.slice(lastColon + 1) || "22");
                 } else {
                     setSelectedHostIp(parsed.hostPort);
+                    setSelectedPort("22");
                 }
+            } else {
+                setSelectedHostIp("");
+                setSelectedPort("22");
             }
         }
     }, [isOpen, initialTarget]);
@@ -129,6 +133,18 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         setUsername(parsed.username);
         setPassword(parsed.password);
         setHostPort(parsed.hostPort);
+        if (parsed.hostPort) {
+            const lastColon = parsed.hostPort.lastIndexOf(":");
+            if (lastColon > 0) {
+                setSelectedHostIp(parsed.hostPort.slice(0, lastColon));
+                setSelectedPort(parsed.hostPort.slice(lastColon + 1) || "22");
+            } else {
+                setSelectedHostIp(parsed.hostPort);
+                setSelectedPort("22");
+            }
+        } else {
+            setSelectedHostIp("");
+        }
     };
 
     const handleUsernameChange = (nextUsername: string) => {
@@ -147,7 +163,8 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
 
     const applySelection = (credId: string, hostIp: string, port: string) => {
         const cred = relevantCreds.find((c) => c.id === credId);
-        const ip = hostIp || "127.0.0.1";
+        const fallbackHost = hostPort.split(":")[0] || "";
+        const ip = hostIp || fallbackHost || "127.0.0.1";
         const p = port || "22";
         const nextHostPort = `${ip}:${p}`;
         setHostPort(nextHostPort);
@@ -155,7 +172,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
             setUsername(cred.principal);
             setPassword(cred.secret);
             setTarget(buildSshTarget(cred.principal, cred.secret, nextHostPort));
-        } else if (hostIp) {
+        } else if (hostIp || fallbackHost) {
             setTarget(buildSshTarget(username || "root", password, nextHostPort));
         }
     };
@@ -203,6 +220,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         setHostPort("");
         setSelectedCredId("");
         setSelectedHostIp("");
+        setSelectedPort("22");
         onClose();
     };
 
@@ -318,7 +336,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                                                     {hosts.map((h) => {
-                                                        const ip = h.primaryIP || h.name;
+                                                        const ip = h.ipAddress || h.primaryIP || h.name;
                                                         const isSelected = selectedHostIp === ip;
                                                         return (
                                                             <button

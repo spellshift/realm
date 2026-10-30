@@ -29,6 +29,7 @@ import (
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/operatornote"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
@@ -1023,28 +1024,54 @@ func (r *mutationResolver) DeleteNetworkHost(ctx context.Context, networkHostID 
 
 // CreateOperatorNote is the resolver for the createOperatorNote field.
 func (r *mutationResolver) CreateOperatorNote(ctx context.Context, input ent.CreateOperatorNoteInput) (*ent.OperatorNote, error) {
-	if len(input.ShellIDs) > 1 {
-		seen := make(map[int]bool, len(input.ShellIDs))
-		deduped := make([]int, 0, len(input.ShellIDs))
-		for _, id := range input.ShellIDs {
-			if !seen[id] {
-				seen[id] = true
-				deduped = append(deduped, id)
-			}
+	if len(input.ShellIDs) > 0 {
+		validShellIDs, err := r.client.Shell.Query().
+			Where(shell.IDIn(input.ShellIDs...)).
+			IDs(ctx)
+		if err == nil {
+			input.ShellIDs = validShellIDs
+		} else {
+			input.ShellIDs = nil
 		}
-		input.ShellIDs = deduped
 	}
 	creator := r.client.OperatorNote.Create().SetInput(input)
-	if input.AuthorID == nil {
-		if author := auth.UserFromContext(ctx); author != nil {
-			creator.SetAuthorID(author.ID)
-		}
+	if author := auth.UserFromContext(ctx); author != nil {
+		creator.SetAuthorID(author.ID)
 	}
 	return creator.Save(ctx)
 }
 
 // UpdateOperatorNote is the resolver for the updateOperatorNote field.
 func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteID int, input ent.UpdateOperatorNoteInput) (*ent.OperatorNote, error) {
+	exists, err := r.client.OperatorNote.Query().
+		Where(operatornote.ID(operatorNoteID)).
+		Exist(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return r.CreateOperatorNote(ctx, ent.CreateOperatorNoteInput{
+			Content:  input.Content,
+			ShellIDs: input.AddShellIDs,
+		})
+	}
+	if author := auth.UserFromContext(ctx); author != nil {
+		owned, err := r.client.OperatorNote.Query().
+			Where(
+				operatornote.ID(operatorNoteID),
+				operatornote.Or(
+					operatornote.HasAuthorWith(user.ID(author.ID)),
+					operatornote.Not(operatornote.HasAuthor()),
+				),
+			).
+			Exist(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !owned {
+			return nil, errors.New("unauthorized")
+		}
+	}
 	if len(input.AddShellIDs) > 0 {
 		existingSet := make(map[int]bool)
 		if !input.ClearShells {
@@ -1071,6 +1098,16 @@ func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteI
 				filtered = append(filtered, id)
 			}
 		}
+		if len(filtered) > 0 {
+			validShellIDs, err := r.client.Shell.Query().
+				Where(shell.IDIn(filtered...)).
+				IDs(ctx)
+			if err == nil {
+				filtered = validShellIDs
+			} else {
+				filtered = nil
+			}
+		}
 		input.AddShellIDs = filtered
 	}
 	return r.client.OperatorNote.UpdateOneID(operatorNoteID).SetInput(input).Save(ctx)
@@ -1078,6 +1115,20 @@ func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteI
 
 // DeleteOperatorNote is the resolver for the deleteOperatorNote field.
 func (r *mutationResolver) DeleteOperatorNote(ctx context.Context, operatorNoteID int) (int, error) {
+	if author := auth.UserFromContext(ctx); author != nil {
+		owned, err := r.client.OperatorNote.Query().
+			Where(
+				operatornote.ID(operatorNoteID),
+				operatornote.HasAuthorWith(user.ID(author.ID)),
+			).
+			Exist(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if !owned {
+			return 0, errors.New("unauthorized")
+		}
+	}
 	if err := r.client.OperatorNote.DeleteOneID(operatorNoteID).Exec(ctx); err != nil {
 		return 0, err
 	}

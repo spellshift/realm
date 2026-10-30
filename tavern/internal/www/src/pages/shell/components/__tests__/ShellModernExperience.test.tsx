@@ -39,7 +39,16 @@ import ShellTerminal from "../ShellTerminal";
 import ShellWalkthrough from "../ShellWalkthrough";
 import SshConnectionModal from "../SshConnectionModal";
 import { formatPivotTabLabel } from "../../index";
-import { analyzeEldritchCode, completeEldritchCode } from "../../utils/eldritchLsp";
+import {
+    DEPRECATED_STDLIB_FUNCTIONS,
+    ELDRITCH_BOOLEANS,
+    ELDRITCH_BUILTINS,
+    ELDRITCH_KEYWORDS,
+    ELDRITCH_MODULES,
+    analyzeEldritchCode,
+    completeEldritchCode,
+    stdlibRegistry,
+} from "../../utils/eldritchLsp";
 import {
     buildUnifiedGraphData,
     extractPivotTargetHost,
@@ -573,9 +582,12 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect(scriptTextarea.value).toContain('file.list(input_params["path"])');
         expect(scriptTextarea.value).not.toContain("process.list()");
 
-        // SessionSettings drawer renders radio toggle and initial chooser with "Setup Aliases" above "Load RC Tome" or "or custom"
+        // SessionSettings drawer renders radio toggle in the left settings panel above Font Size with label "Enable RC", and initial chooser with "Setup Aliases" above "Load RC Tome" or "or custom"
         expect(screen.getByTestId("session-settings-drawer")).toBeInTheDocument();
+        const leftSettingsPanel = screen.getByTestId("session-settings-left-panel");
         const rcToggle = screen.getByTestId("session-settings-rc-toggle");
+        expect(leftSettingsPanel).toContainElement(rcToggle);
+        expect(leftSettingsPanel).toHaveTextContent(/Enable RC.*Font Size/s);
         expect(rcToggle).toHaveAttribute("aria-checked", "false");
         expect(rcToggle).not.toHaveClass("bg-purple-600");
 
@@ -1026,6 +1038,52 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
 
         expect(textarea.value).toBe(`file.${secondOption.insertText}`);
         expect(firstOption.insertText).not.toBe(secondOption.insertText);
+    });
+
+    it("dynamically derives modules, functions, builtins, value methods, deprecations, and return-type completions from Rust Eldritch sources", () => {
+        // Active modules exclude deprecated compatibility modules (crypto, pivot), while allModules includes them
+        expect(Object.keys(ELDRITCH_MODULES)).toContain("file");
+        expect(Object.keys(ELDRITCH_MODULES)).toContain("process");
+        expect(Object.keys(ELDRITCH_MODULES)).toContain("linux");
+        expect(Object.keys(ELDRITCH_MODULES)).not.toContain("crypto");
+        expect(Object.keys(ELDRITCH_MODULES)).not.toContain("pivot");
+        expect(stdlibRegistry.allModules.has("crypto")).toBe(true);
+        expect(stdlibRegistry.allModules.has("pivot")).toBe(true);
+
+        // Functions extracted directly from Rust #[eldritch_method] traits (including ones missing from markdown docs)
+        const sigSym = stdlibRegistry.functions.get("process.signal");
+        expect(sigSym).toBeDefined();
+        expect(sigSym!.minArgs).toBe(2);
+        expect(sigSym!.maxArgs).toBe(2);
+
+        const resetSym = stdlibRegistry.functions.get("agent.reset_transport");
+        expect(resetSym).toBeDefined();
+        expect(resetSym!.minArgs).toBe(0);
+
+        // Builtins, keywords, and booleans extracted from eldritch-core
+        expect(ELDRITCH_BUILTINS.eval).toBeDefined();
+        expect(ELDRITCH_BUILTINS.builtins).toBeDefined();
+        expect(ELDRITCH_KEYWORDS).toContain("def");
+        expect(ELDRITCH_KEYWORDS).toContain("lambda");
+        expect(ELDRITCH_BOOLEANS).toEqual(expect.arrayContaining(["True", "False", "None"]));
+
+        // Deprecations extracted from #[eldritch_deprecated] and migration rules
+        expect(DEPRECATED_STDLIB_FUNCTIONS["sys.get_os"]).toBe("sys.info");
+        expect(DEPRECATED_STDLIB_FUNCTIONS["crypto.md5"]).toBe("hash.md5");
+        expect(DEPRECATED_STDLIB_FUNCTIONS["process.netstat"]).toBe("net.conns");
+
+        // Dynamic return-type inference for value methods (Bytes, Dict, str, List)
+        const bytesComp = completeEldritchCode('raw = assets.read("bin")\nraw.', 29);
+        expect(bytesComp).not.toBeNull();
+        expect(bytesComp!.items.some((i) => i.label === "bytes.decode")).toBe(true);
+
+        const dictComp = completeEldritchCode("u = linux.uname()\nu.", 20);
+        expect(dictComp).not.toBeNull();
+        expect(dictComp!.items.some((i) => i.label === "dict.keys")).toBe(true);
+
+        const strComp = completeEldritchCode("s = random.uuid()\ns.", 20);
+        expect(strComp).not.toBeNull();
+        expect(strComp!.items.some((i) => i.label === "str.encode")).toBe(true);
     });
 });
 
@@ -2235,6 +2293,98 @@ describe("ShellScratchpad", () => {
         await waitFor(() => {
             expect(loadScratchpadState().pendingSync).toBe(false);
             expect(loadScratchpadState().noteId).toBe("note-99");
+        });
+        expect(screen.queryByTestId("scratchpad-offline-badge")).not.toBeInTheDocument();
+    });
+
+    it("recovers from stale noteId and stale pendingShellIds in localStorage after a server reset without showing Offline", async () => {
+        localStorage.setItem(
+            SCRATCHPAD_STORAGE_KEY,
+            JSON.stringify({
+                content: "Note from previous server session",
+                noteId: "stale-note-id-123",
+                shellIds: ["stale-shell-1"],
+                pendingShellIds: ["stale-shell-2"],
+                pendingSync: true,
+            })
+        );
+
+        let fallbackCreateWithoutShellIdsCalled = false;
+
+        const mocks = [
+            {
+                request: {
+                    query: GET_OPERATOR_NOTES,
+                },
+                result: {
+                    data: {
+                        operatorNotes: {
+                            edges: [],
+                        },
+                    },
+                },
+            },
+            {
+                request: {
+                    query: CREATE_OPERATOR_NOTE_MUTATION,
+                    variables: {
+                        input: {
+                            content: "Note from previous server session",
+                            shellIDs: ["stale-shell-2"],
+                        },
+                    },
+                },
+                error: new Error("FOREIGN KEY constraint failed"),
+            },
+            {
+                request: {
+                    query: CREATE_OPERATOR_NOTE_MUTATION,
+                    variables: {
+                        input: {
+                            content: "Note from previous server session",
+                        },
+                    },
+                },
+                result: () => {
+                    fallbackCreateWithoutShellIdsCalled = true;
+                    return {
+                        data: {
+                            createOperatorNote: {
+                                id: "fresh-note-100",
+                                content: "Note from previous server session",
+                                createdAt: "2025-01-01T00:00:00Z",
+                                lastModifiedAt: "2025-01-01T00:00:00Z",
+                                author: {
+                                    id: "u-1",
+                                    name: "op",
+                                },
+                                shells: {
+                                    edges: [],
+                                },
+                            },
+                        },
+                    };
+                },
+            },
+        ];
+
+        render(
+            <MockedProvider mocks={mocks} addTypename={false}>
+                <ShellScratchpad
+                    isOpen={true}
+                    onToggle={vi.fn()}
+                    shellId="active-shell-10"
+                />
+            </MockedProvider>
+        );
+
+        await waitFor(() => {
+            expect(fallbackCreateWithoutShellIdsCalled).toBe(true);
+        });
+
+        await waitFor(() => {
+            expect(loadScratchpadState().pendingSync).toBe(false);
+            expect(loadScratchpadState().noteId).toBe("fresh-note-100");
         });
         expect(screen.queryByTestId("scratchpad-offline-badge")).not.toBeInTheDocument();
     });

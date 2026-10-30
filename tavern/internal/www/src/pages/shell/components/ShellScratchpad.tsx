@@ -98,9 +98,7 @@ function selectOperatorNoteForUser(edges: any[], currentUserId?: string): any | 
                 edge?.node?.author?.id &&
                 String(edge.node.author.id) === String(currentUserId)
         );
-        if (matched?.node) {
-            return matched.node;
-        }
+        return matched?.node ?? null;
     }
     return edges[0]?.node ?? null;
 }
@@ -184,17 +182,26 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
                 if (shellsToAdd.length > 0) {
                     input.addShellIDs = shellsToAdd;
                 }
-                const response = await updateOperatorNoteMutation({
-                    variables: {
-                        operatorNoteID: targetNoteId,
-                        input,
-                    },
-                });
-                savedNote = response.data?.updateOperatorNote;
-                for (const sId of shellsToAdd) {
-                    knownShellIdsRef.current.add(String(sId));
+                try {
+                    const response = await updateOperatorNoteMutation({
+                        variables: {
+                            operatorNoteID: targetNoteId,
+                            input,
+                        },
+                    });
+                    savedNote = response.data?.updateOperatorNote;
+                    for (const sId of shellsToAdd) {
+                        knownShellIdsRef.current.add(String(sId));
+                    }
+                } catch {
+                    // Stale noteId or stale shellIDs in localStorage (e.g., after server DB restart):
+                    // clear noteId and fall back to creating a fresh note below.
+                    noteIdRef.current = null;
+                    knownShellIdsRef.current = new Set();
                 }
-            } else {
+            }
+
+            if (!savedNote) {
                 const uniqueShells = Array.from(
                     new Set(pendingShellsSnapshot.filter(Boolean).map(String))
                 );
@@ -204,14 +211,31 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
                 if (uniqueShells.length > 0) {
                     input.shellIDs = uniqueShells;
                 }
-                const response = await createOperatorNoteMutation({
-                    variables: {
-                        input,
-                    },
-                });
-                savedNote = response.data?.createOperatorNote;
-                for (const sId of uniqueShells) {
-                    knownShellIdsRef.current.add(String(sId));
+                try {
+                    const response = await createOperatorNoteMutation({
+                        variables: {
+                            input,
+                        },
+                    });
+                    savedNote = response.data?.createOperatorNote;
+                    for (const sId of uniqueShells) {
+                        knownShellIdsRef.current.add(String(sId));
+                    }
+                } catch (createErr) {
+                    if (uniqueShells.length > 0) {
+                        // Retry without potentially stale shellIDs from an older server session
+                        pendingShellIdsRef.current = [];
+                        const retryResponse = await createOperatorNoteMutation({
+                            variables: {
+                                input: {
+                                    content: contentToSave,
+                                },
+                            },
+                        });
+                        savedNote = retryResponse.data?.createOperatorNote;
+                    } else {
+                        throw createErr;
+                    }
                 }
             }
 
@@ -276,9 +300,15 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
                 }
                 const serverShells = extractShellIdsFromNote(serverNote);
                 knownShellIdsRef.current = new Set(serverShells);
+            } else {
+                // Server returned no note for this user: clear any stale noteId/shellIds cached from previous DB sessions
+                noteIdRef.current = null;
+                knownShellIdsRef.current = new Set();
             }
 
             initialLoadDoneRef.current = true;
+            isOfflineRef.current = false;
+            setIsOffline(false);
 
             if (pendingSyncRef.current) {
                 if (!inFlightRef.current) {
@@ -286,9 +316,6 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
                 }
                 return;
             }
-
-            isOfflineRef.current = false;
-            setIsOffline(false);
 
             if (serverNote) {
                 const nextContent =
@@ -320,8 +347,16 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
     });
 
     const handleRetrySync = useCallback(async () => {
+        if (pendingSyncRef.current && noteIdRef.current) {
+            await syncNoteToBackend();
+            return;
+        }
         try {
             const res = await refetch();
+            if (pendingSyncRef.current) {
+                await syncNoteToBackend();
+                return;
+            }
             if (res?.data?.operatorNotes?.edges !== undefined) {
                 applyServerNodes(res.data.operatorNotes.edges);
                 return;

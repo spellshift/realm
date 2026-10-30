@@ -1,8 +1,24 @@
 import docsData from "../../../assets/eldritch-docs.json";
 
+export interface EldritchDocParamEntry {
+    name: string;
+    type: string;
+    defaultValue?: string;
+}
+
 export interface EldritchDocEntry {
     signature: string;
     description: string;
+    kind?: "module" | "function" | "builtin" | "method";
+    module?: string;
+    params?: EldritchDocParamEntry[];
+    returnType?: string;
+    deprecated?: boolean;
+    deprecatedOnly?: boolean;
+    replacement?: string;
+    removedFunctions?: Record<string, string>;
+    keywords?: string[];
+    booleans?: string[];
 }
 
 export interface EldritchParamInfo {
@@ -98,176 +114,92 @@ export interface HighlightToken {
 
 const rawDocs = docsData as Record<string, EldritchDocEntry>;
 
-export const ELDRITCH_MODULES: Record<string, string> = {
-    aes: "AES encryption and decryption for bytes and files",
-    agent: "Agent metadata and runtime control",
-    assets: "Embedded tome asset access",
-    base64: "Base64 encoding and decoding",
-    chain: "Multi-agent C2 chaining",
-    dns: "DNS resolution and lookups",
-    file: "File system operations",
-    gzip: "Gzip compression and decompression",
-    hash: "Cryptographic hashing (md5, sha1, sha256, file)",
-    http: "HTTP/HTTPS client requests",
-    json: "JSON encoding, decoding, and validation",
-    linux: "Linux-specific system operations (uname)",
-    net: "Network interfaces, connections, and TCP/UDP clients",
-    portal: "Bi-directional interactive portal streams",
-    process: "Process management, PID, cwd, and environment variables",
-    random: "Cryptographically secure random generation",
-    regex: "Regular expression operations",
-    registry: "Windows Registry reading and writing",
-    report: "Structured Knowledge Graph reporting to Tavern",
-    scan: "Network discovery and port scanning (arp, ports)",
-    ssh: "SSH command execution, file copy, and deployment",
-    sys: "System OS info, hostname, and command execution",
-    template: "Jinja2 template rendering from strings and files",
-    time: "Time formatting, epoch conversion, and sleep delays",
-    user: "Current user info and user account enumeration",
-    windows: "Windows-specific DLL injection/reflection and tokens",
-};
+export const ELDRITCH_MODULES: Record<string, string> = {};
+export const DEPRECATED_STDLIB_FUNCTIONS: Record<string, string> = {};
+export const REMOVED_STDLIB_FUNCTIONS: Record<string, string> = {};
+export const ELDRITCH_BUILTINS: Record<string, { signature: string; description: string }> = {};
 
-export const DEPRECATED_STDLIB_FUNCTIONS: Record<string, string> = {
-    "file.temp_file": "file.tmp",
-    "file.pwd": "process.cwd",
-    "file.template": "template.render_file",
-    "file.template_str": "template.render",
-    "file.read_binary": "file.read",
-    "file.write_binary": "file.write",
-    "file.append_binary": "file.append",
-    "file.compress": "gzip.compress_file",
-    "file.decompress": "gzip.decompress_file",
-    "assets.read_binary": "assets.read",
-    "time.format_to_epoch": "time.to_epoch",
-    "time.format_to_readable": "time.format",
-    "agent.get_config": "agent.config",
-    "agent.get_transport": "agent.transport",
-    "agent.get_callback_interval": "agent.callback_interval",
-    "crypto.aes_decrypt": "aes.decrypt",
-    "crypto.aes_decrypt_file": "aes.decrypt_file",
-    "crypto.aes_encrypt": "aes.encrypt",
-    "crypto.aes_encrypt_file": "aes.encrypt_file",
-    "crypto.decode_b64": "base64.decode",
-    "crypto.encode_b64": "base64.encode",
-    "crypto.from_json": "json.decode",
-    "crypto.hash_file": "hash.file",
-    "crypto.is_json": "json.is_valid",
-    "crypto.md5": "hash.md5",
-    "crypto.sha1": "hash.sha1",
-    "crypto.sha256": "hash.sha256",
-    "crypto.to_json": "json.encode",
-    "pivot.arp_scan": "scan.arp",
-    "pivot.create_portal": "portal.create",
-    "pivot.ncat": "net.tcp",
-    "pivot.port_scan": "scan.ports",
-    "pivot.ssh_copy": "ssh.copy",
-    "pivot.ssh_deploy": "ssh.deploy",
-    "pivot.ssh_exec": "ssh.exec",
-    "process.netstat": "net.conns",
-    "sys.dll_inject": "windows.dll_inject",
-    "sys.dll_reflect": "windows.dll_reflect",
-    "sys.get_env": "process.env",
-    "sys.get_ip": "net.interfaces",
-    "sys.get_os": "sys.info",
-    "sys.get_pid": "process.pid",
-    "sys.get_reg": "registry.read",
-    "sys.get_user": "user.info",
-    "sys.impersonate": "windows.impersonate",
-    "sys.list_users": "user.list",
-    "sys.tokens": "windows.tokens",
-    "sys.use_token": "windows.use_token",
-    "sys.whereis": "file.which",
-    "sys.write_reg": "registry.write",
-};
+for (const [key, entry] of Object.entries(rawDocs)) {
+    if (entry.kind === "module") {
+        if (!entry.deprecated) {
+            ELDRITCH_MODULES[key] = entry.description.split("\n")[0].trim();
+        }
+        if (entry.removedFunctions) {
+            for (const [remFn, remMsg] of Object.entries(entry.removedFunctions)) {
+                REMOVED_STDLIB_FUNCTIONS[remFn] = remMsg;
+            }
+        }
+        continue;
+    }
+    if (entry.kind === "builtin") {
+        ELDRITCH_BUILTINS[key] = {
+            signature: entry.signature,
+            description: entry.description,
+        };
+        continue;
+    }
+    if (entry.deprecated && entry.replacement) {
+        DEPRECATED_STDLIB_FUNCTIONS[key] = entry.replacement;
+    }
+}
 
-export const REMOVED_STDLIB_FUNCTIONS: Record<string, string> = {
-    "file.moveto": "'file.moveto' does not exist in Eldritch v0.4.1. Use 'file.move(src, dst)' to move/rename files.",
-    "pivot.bind_proxy": "'pivot.bind_proxy' was an unimplemented proposal and has been removed.",
-    "pivot.port_forward": "'pivot.port_forward' was an unimplemented proposal and has been removed.",
-    "pivot.smb_exec": "'pivot.smb_exec' was an unimplemented proposal and has been removed.",
-};
-
-export const ELDRITCH_KEYWORDS = [
-    "def",
-    "return",
-    "if",
-    "elif",
-    "else",
-    "for",
-    "in",
-    "and",
-    "or",
-    "not",
-    "break",
-    "continue",
-    "pass",
-    "lambda",
-];
-
-export const ELDRITCH_BOOLEANS = ["True", "False", "None"];
-
-export const ELDRITCH_BUILTINS: Record<string, { signature: string; description: string }> = {
-    print: { signature: "print(*args)", description: "Prints values to standard output." },
-    eprint: { signature: "eprint(*args)", description: "Prints values to standard error." },
-    pprint: { signature: "pprint(value, indent=2)", description: "Pretty-prints a dictionary or list." },
-    tprint: { signature: "tprint(rows)", description: "Formats and prints a list of dictionaries as an aligned table." },
-    len: { signature: "len(collection) -> int", description: "Returns the number of elements in a collection or string." },
-    range: { signature: "range(start, stop=None, step=1) -> list[int]", description: "Generates a sequence of integers." },
-    str: { signature: "str(value='') -> str", description: "Converts a value (including Bytes) to a UTF-8 string." },
-    int: { signature: "int(value, base=10) -> int", description: "Converts a string or number to an integer." },
-    float: { signature: "float(value) -> float", description: "Converts a string or number to a floating-point number." },
-    bool: { signature: "bool(value=False) -> bool", description: "Converts a value to a boolean." },
-    bytes: { signature: "bytes(value='') -> Bytes", description: "Converts a UTF-8 string or integer list into Bytes." },
-    list: { signature: "list(iterable=None) -> list", description: "Creates a list from an iterable." },
-    dict: { signature: "dict(**kwargs) -> dict", description: "Creates a dictionary." },
-    tuple: { signature: "tuple(iterable=None) -> tuple", description: "Creates an immutable tuple." },
-    set: { signature: "set(iterable=None) -> set", description: "Creates a set of unique values." },
-    type: { signature: "type(value) -> str", description: "Returns the type name of the given value." },
-    dir: { signature: "dir(value=None) -> list[str]", description: "Lists attributes and methods on an object or in scope." },
-    enumerate: { signature: "enumerate(iterable, start=0) -> list", description: "Returns (index, item) pairs for an iterable." },
-    zip: { signature: "zip(*iterables) -> list", description: "Combines elements from multiple iterables into tuples." },
-    sorted: { signature: "sorted(iterable, key=None, reverse=False) -> list", description: "Returns a new sorted list." },
-    reversed: { signature: "reversed(iterable) -> list", description: "Returns a reversed list." },
-    min: { signature: "min(*args)", description: "Returns the smallest item." },
-    max: { signature: "max(*args)", description: "Returns the largest item." },
-    abs: { signature: "abs(number) -> number", description: "Returns the absolute value of a number." },
-    all: { signature: "all(iterable) -> bool", description: "Returns True if all elements in the iterable are truthy." },
-    any: { signature: "any(iterable) -> bool", description: "Returns True if any element in the iterable is truthy." },
-    chr: { signature: "chr(codepoint) -> str", description: "Returns the character for a Unicode codepoint." },
-    ord: { signature: "ord(char) -> int", description: "Returns the Unicode codepoint for a single character." },
-    hex: { signature: "hex(number) -> str", description: "Formats an integer as a lowercase hexadecimal string." },
-    repr: { signature: "repr(value) -> str", description: "Returns the debug string representation of a value." },
-    fail: { signature: "fail(message)", description: "Aborts execution immediately with the given error message." },
-    assert: { signature: "assert(condition, message=None)", description: "Fails execution if condition is falsy." },
-    assert_eq: { signature: "assert_eq(left, right, message=None)", description: "Fails execution if left != right." },
-    map: { signature: "map(func, iterable) -> list", description: "Applies func to every item of iterable." },
-    filter: { signature: "filter(func, iterable) -> list", description: "Filters items of iterable where func(item) is truthy." },
-    reduce: { signature: "reduce(func, iterable, initial=None)", description: "Reduces iterable cumulatively using func." },
-    eval: { signature: "eval(script) -> Any", description: "Evaluates an Eldritch code string." },
-    libs: { signature: "libs() -> list[str]", description: "Returns the list of available standard library modules." },
-    builtins: { signature: "builtins() -> list[str]", description: "Returns the list of built-in functions." },
-};
+export const ELDRITCH_KEYWORDS: string[] = rawDocs.builtins?.keywords || [];
+export const ELDRITCH_BOOLEANS: string[] = rawDocs.builtins?.booleans || [];
 
 export function parseFunctionSignature(
     qualifiedName: string,
     signature: string,
-    description: string
+    description: string,
+    docEntry?: EldritchDocEntry
 ): EldritchFunctionSymbol {
     const dotIdx = qualifiedName.indexOf(".");
-    const moduleName = dotIdx !== -1 ? qualifiedName.slice(0, dotIdx) : undefined;
+    const moduleName =
+        docEntry?.module || (dotIdx !== -1 ? qualifiedName.slice(0, dotIdx) : undefined);
     const name = dotIdx !== -1 ? qualifiedName.slice(dotIdx + 1) : qualifiedName;
 
     const openParen = signature.indexOf("(");
     const closeParen = signature.lastIndexOf(")");
     const returnMatch = signature.slice(closeParen + 1).match(/->\s*(.+)$/);
-    const returnType = returnMatch ? returnMatch[1].trim() : undefined;
+    const returnType =
+        docEntry?.returnType || (returnMatch ? returnMatch[1].trim() : undefined);
 
     const params: EldritchParamInfo[] = [];
     let minArgs = 0;
     let maxArgs: number | null = 0;
     let hasKwargs = false;
 
-    if (openParen !== -1 && closeParen > openParen) {
+    if (docEntry?.params && docEntry.params.length > 0) {
+        for (const p of docEntry.params) {
+            const isKwargs = p.name.startsWith("**");
+            const isVariadic = !isKwargs && p.name.startsWith("*");
+            const hasDefault =
+                p.defaultValue !== undefined ||
+                Boolean(p.type && (p.type.startsWith("Optional<") || p.type.startsWith("Option<")));
+            const paramName = p.name.replace(/^\*{1,2}/, "").trim();
+            if (!paramName) continue;
+
+            params.push({
+                name: paramName,
+                typeHint: p.type || undefined,
+                hasDefault,
+                isVariadic,
+                isKwargs,
+            });
+
+            if (isKwargs) {
+                hasKwargs = true;
+            } else if (isVariadic) {
+                maxArgs = null;
+            } else {
+                if (!hasDefault) {
+                    minArgs++;
+                }
+                if (maxArgs !== null) {
+                    maxArgs++;
+                }
+            }
+        }
+    } else if (openParen !== -1 && closeParen > openParen) {
         const rawParamStr = signature.slice(openParen + 1, closeParen).trim();
         if (rawParamStr.length > 0) {
             // Split top-level commas (ignoring commas inside nested brackets/parens)
@@ -275,8 +207,9 @@ export function parseFunctionSignature(
             let current = "";
             let depth = 0;
             for (const ch of rawParamStr) {
-                if (ch === "[" || ch === "(" || ch === "{") depth++;
-                else if (ch === "]" || ch === ")" || ch === "}") depth = Math.max(0, depth - 1);
+                if (ch === "[" || ch === "(" || ch === "{" || ch === "<") depth++;
+                else if (ch === "]" || ch === ")" || ch === "}" || ch === ">")
+                    depth = Math.max(0, depth - 1);
                 if (ch === "," && depth === 0) {
                     parts.push(current.trim());
                     current = "";
@@ -332,11 +265,13 @@ export function parseFunctionSignature(
         maxArgs,
         hasKwargs,
         returnType,
-        deprecatedReplacement: DEPRECATED_STDLIB_FUNCTIONS[qualifiedName],
+        deprecatedReplacement:
+            docEntry?.replacement || DEPRECATED_STDLIB_FUNCTIONS[qualifiedName],
     };
 }
 
 class StdlibRegistry {
+    public allModules = new Set<string>();
     public functions = new Map<string, EldritchFunctionSymbol>();
     public byModule = new Map<string, EldritchFunctionSymbol[]>();
     public builtins = new Map<string, EldritchFunctionSymbol>();
@@ -344,24 +279,31 @@ class StdlibRegistry {
 
     constructor() {
         for (const [key, entry] of Object.entries(rawDocs)) {
-            const sym = parseFunctionSignature(key, entry.signature, entry.description);
-            if (sym.moduleName && ["str", "list", "dict", "set", "bytes"].includes(sym.moduleName)) {
+            if (entry.kind === "module") {
+                this.allModules.add(key);
+                continue;
+            }
+            if (entry.deprecatedOnly) {
+                continue;
+            }
+            const sym = parseFunctionSignature(key, entry.signature, entry.description, entry);
+            if (entry.kind === "builtin") {
+                this.builtins.set(key, sym);
+                continue;
+            }
+            if (entry.kind === "method" && sym.moduleName) {
                 const arr = this.valueMethods.get(sym.moduleName) || [];
                 arr.push(sym);
                 this.valueMethods.set(sym.moduleName, arr);
                 continue;
             }
-            this.functions.set(key, sym);
             if (sym.moduleName) {
+                this.allModules.add(sym.moduleName);
+                this.functions.set(key, sym);
                 const list = this.byModule.get(sym.moduleName) || [];
                 list.push(sym);
                 this.byModule.set(sym.moduleName, list);
             }
-        }
-
-        for (const [name, entry] of Object.entries(ELDRITCH_BUILTINS)) {
-            const sym = parseFunctionSignature(name, entry.signature, entry.description);
-            this.builtins.set(name, sym);
         }
     }
 }
@@ -393,6 +335,7 @@ function suggestClosestMember(moduleName: string, funcName: string): string | nu
     let best: string | null = null;
     let bestDist = Infinity;
     for (const m of members) {
+        if (m.deprecatedReplacement) continue;
         const d = levenshteinDistance(funcName, m.name);
         if (d < bestDist && d <= 3) {
             bestDist = d;
@@ -885,7 +828,7 @@ export function analyzeEldritchCode(code: string): EldritchDiagnostic[] {
             }
 
             // Check unknown function on a known stdlib module
-            if (modName && (ELDRITCH_MODULES[modName] || modName === "crypto" || modName === "pivot")) {
+            if (modName && stdlibRegistry.allModules.has(modName)) {
                 if (
                     !stdlibRegistry.functions.has(qualified) &&
                     !DEPRECATED_STDLIB_FUNCTIONS[qualified]
@@ -1224,16 +1167,43 @@ export function completeEldritchCode(
     };
 }
 
+function normalizeReturnTypeToValueType(returnType?: string): string | null {
+    if (!returnType) return null;
+    const cleaned = returnType.trim();
+    if (/^(?:Optional<)?str>?$/i.test(cleaned) || cleaned === "String") return "str";
+    if (/^(?:Optional<)?Bytes>?$/i.test(cleaned) || cleaned === "bytes") return "bytes";
+    if (/^(?:List|list)\b/.test(cleaned)) return "list";
+    if (/^(?:Dict|dict)\b/.test(cleaned)) return "dict";
+    if (/^(?:Set|set)\b/.test(cleaned)) return "set";
+    return null;
+}
+
 function inferVariableType(code: string, varName: string): string | null {
     const escaped = varName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const assignRegex = new RegExp(`^\\s*${escaped}\\s*=\\s*(.+)$`, "m");
-    const match = code.match(assignRegex);
-    if (!match) return null;
-    const rhs = match[1].trim();
-    if (/^(f|r)?["']/.test(rhs) || rhs.startsWith("str(")) return "str";
-    if (/^b["']/.test(rhs) || rhs.startsWith("bytes(") || rhs.startsWith("file.read(")) return "bytes";
-    if (rhs.startsWith("[") || rhs.startsWith("list(") || rhs.startsWith("file.list(") || rhs.startsWith("process.list(")) return "list";
-    if (rhs.startsWith("{") || rhs.startsWith("dict(") || rhs.startsWith("sys.info(") || rhs.startsWith("user.info(")) return "dict";
+    const assignRegex = new RegExp(`^\\s*${escaped}\\s*=\\s*(.+)$`, "gm");
+    let lastRhs: string | null = null;
+    let m: RegExpExecArray | null;
+    while ((m = assignRegex.exec(code)) !== null) {
+        lastRhs = m[1].trim();
+    }
+    if (!lastRhs) return null;
+    if (/^(?:f|r|fr|rf)?["']/i.test(lastRhs)) return "str";
+    if (/^(?:b|br|rb)["']/i.test(lastRhs)) return "bytes";
+    if (lastRhs.startsWith("[")) return "list";
+    if (lastRhs.startsWith("{")) return "dict";
+
+    const callMatch = lastRhs.match(/^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(/);
+    if (callMatch) {
+        const target = callMatch[1];
+        const sym =
+            stdlibRegistry.functions.get(target) ||
+            stdlibRegistry.builtins.get(target) ||
+            (DEPRECATED_STDLIB_FUNCTIONS[target]
+                ? stdlibRegistry.functions.get(DEPRECATED_STDLIB_FUNCTIONS[target])
+                : undefined);
+        const mapped = normalizeReturnTypeToValueType(sym?.returnType);
+        if (mapped) return mapped;
+    }
     return null;
 }
 

@@ -93,20 +93,38 @@ func HookDeriveNetworkHost() ent.Hook {
 				return val, nil
 			}
 
-			nhExists, err := client.NetworkHost.Query().
-				Where(networkhost.HasHostWith(host.ID(id))).
-				Exist(ctx)
-			if err != nil {
-				slog.ErrorContext(ctx, "failed to check for existing network host", "host_id", id, "err", err)
-				return val, nil
-			}
-			if nhExists {
-				return val, nil
-			}
-
 			name, _ := mut.Name()
 			if name == "" && h != nil {
 				name = h.Name
+			}
+
+			existingNH, err := client.NetworkHost.Query().
+				Where(
+					networkhost.Or(
+						networkhost.HasHostWith(host.ID(id)),
+						networkhost.IPAddress(ipAddr),
+					),
+				).
+				First(ctx)
+			if err != nil && !IsNotFound(err) {
+				slog.ErrorContext(ctx, "failed to check for existing network host", "host_id", id, "err", err)
+				return val, nil
+			}
+			if existingNH != nil {
+				updater := existingNH.Update().SetHostID(id)
+				if existingNH.Name == "" && name != "" {
+					updater.SetName(name)
+				}
+				if existingNH.Hostname == "" && name != "" {
+					updater.SetHostname(name)
+				}
+				if credIDs := mut.CredentialsIDs(); len(credIDs) > 0 {
+					updater.AddCredentialIDs(credIDs...)
+				}
+				if _, err := updater.Save(ctx); err != nil {
+					slog.ErrorContext(ctx, "failed to link existing network host to host", "host_id", id, "err", err)
+				}
+				return val, nil
 			}
 
 			nhCreate := client.NetworkHost.Create().

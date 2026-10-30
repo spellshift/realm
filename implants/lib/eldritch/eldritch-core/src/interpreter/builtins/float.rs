@@ -5,7 +5,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
-/// `float(x)`: Converts a number or string to a floating point number.
+/// `float(x=0.0)`: Converts a number or string to a floating point number.
 ///
 /// **Parameters**
 /// - `x` (Int | Float | String): The value to convert.

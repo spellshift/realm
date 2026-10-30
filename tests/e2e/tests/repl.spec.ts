@@ -32,8 +32,8 @@ test('End-to-end shell repl test', async ({ page, context }) => {
   console.log('Waiting for terminal');
   await expect(shellPage.locator('.xterm-rows')).toBeVisible({ timeout: 20000 });
 
-  // Wait for "Connected to Tavern" which indicates the WebSocket is ready
-  await expect(shellPage.locator('.xterm-rows')).toContainText('Connected to Tavern', { timeout: 20000 });
+  // Wait for "Connected to <beacon-name>" which indicates the WebSocket is ready
+  await expect(shellPage.locator('.xterm-rows')).toContainText(/Connected to \S+/, { timeout: 20000 });
 
   // Wait for the initial prompt
   await expect(shellPage.locator('.xterm-rows')).toContainText('>>>', { timeout: 10000 });

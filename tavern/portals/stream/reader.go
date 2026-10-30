@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"realm.pub/tavern/portals/portalpb"
@@ -22,10 +23,13 @@ type OrderedReader struct {
 	firstBufferedAt time.Time
 	receiver        ReceiverFunc
 
-	moteCh       chan *portalpb.Mote
-	errCh        chan error
-	stopCh       chan struct{}
-	readDeadline time.Time
+	moteCh            chan *portalpb.Mote
+	errCh             chan error
+	stopCh            chan struct{}
+	closeOnce         sync.Once
+	deadlineMu        sync.Mutex
+	readDeadline      time.Time
+	deadlineUpdatedCh chan struct{}
 }
 
 // WithMaxBufferedMessages sets the maximum number of out-of-order messages to buffer.
@@ -47,14 +51,15 @@ func WithStaleBufferTimeout(d time.Duration) func(*OrderedReader) {
 // staleTimeout is the duration to wait for the next expected sequence ID before erroring if other messages are arriving.
 func NewOrderedReader(receiver ReceiverFunc, options ...func(*OrderedReader)) *OrderedReader {
 	reader := &OrderedReader{
-		nextSeqID:    0,
-		buffer:       make(map[uint64]*portalpb.Mote),
-		maxBuffer:    1024,
-		staleTimeout: 5 * time.Second,
-		receiver:     receiver,
-		moteCh:       make(chan *portalpb.Mote),
-		errCh:        make(chan error, 1),
-		stopCh:       make(chan struct{}),
+		nextSeqID:         0,
+		buffer:            make(map[uint64]*portalpb.Mote),
+		maxBuffer:         1024,
+		staleTimeout:      5 * time.Second,
+		receiver:          receiver,
+		moteCh:            make(chan *portalpb.Mote),
+		errCh:             make(chan error, 1),
+		stopCh:            make(chan struct{}),
+		deadlineUpdatedCh: make(chan struct{}, 1),
 	}
 	for _, opt := range options {
 		opt(reader)
@@ -83,18 +88,22 @@ func NewOrderedReader(receiver ReceiverFunc, options ...func(*OrderedReader)) *O
 
 // Close gracefully stops the background receiver goroutine.
 func (r *OrderedReader) Close() error {
-	select {
-	case <-r.stopCh:
-	default:
+	r.closeOnce.Do(func() {
 		close(r.stopCh)
-	}
+	})
 	return nil
 }
 
-// SetReadDeadline sets the deadline for future Read calls.
+// SetReadDeadline sets the deadline for future Read calls and any currently-blocked Read call.
 // A zero value for t means Read will not time out.
 func (r *OrderedReader) SetReadDeadline(t time.Time) {
+	r.deadlineMu.Lock()
 	r.readDeadline = t
+	select {
+	case r.deadlineUpdatedCh <- struct{}{}:
+	default:
+	}
+	r.deadlineMu.Unlock()
 }
 
 // Read returns the next ordered Mote.
@@ -123,11 +132,20 @@ func (r *OrderedReader) Read() (*portalpb.Mote, error) {
 		var mote *portalpb.Mote
 		var err error
 
-		if !r.readDeadline.IsZero() {
-			if time.Now().After(r.readDeadline) {
+		r.deadlineMu.Lock()
+		deadline := r.readDeadline
+		select {
+		case <-r.deadlineUpdatedCh:
+		default:
+		}
+		r.deadlineMu.Unlock()
+
+		if !deadline.IsZero() {
+			remaining := time.Until(deadline)
+			if remaining <= 0 {
 				return nil, os.ErrDeadlineExceeded
 			}
-			timer := time.NewTimer(time.Until(r.readDeadline))
+			timer := time.NewTimer(remaining)
 			select {
 			case mote = <-r.moteCh:
 				timer.Stop()
@@ -135,6 +153,9 @@ func (r *OrderedReader) Read() (*portalpb.Mote, error) {
 				timer.Stop()
 			case <-timer.C:
 				return nil, os.ErrDeadlineExceeded
+			case <-r.deadlineUpdatedCh:
+				timer.Stop()
+				continue
 			case <-r.stopCh:
 				timer.Stop()
 				return nil, errors.New("reader closed")
@@ -143,6 +164,8 @@ func (r *OrderedReader) Read() (*portalpb.Mote, error) {
 			select {
 			case mote = <-r.moteCh:
 			case err = <-r.errCh:
+			case <-r.deadlineUpdatedCh:
+				continue
 			case <-r.stopCh:
 				return nil, errors.New("reader closed")
 			}

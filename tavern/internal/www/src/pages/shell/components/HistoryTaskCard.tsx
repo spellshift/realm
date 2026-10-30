@@ -196,8 +196,20 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
     const hasOutput = Boolean(task.output && task.output.trim());
     const hasError = Boolean(task.error && task.error.trim());
 
-    const reportedCreds = group.occurrences.flatMap((t) => t.reportedCredentials || []);
-    const reportedFiles = group.occurrences.flatMap((t) => t.reportedFiles || []);
+    const reportedCreds = Array.from(
+        new Map(
+            group.occurrences
+                .flatMap((t) => t.reportedCredentials || [])
+                .map((c) => [c.id, c])
+        ).values()
+    );
+    const reportedFiles = Array.from(
+        new Map(
+            group.occurrences
+                .flatMap((t) => t.reportedFiles || [])
+                .map((f) => [f.id, f])
+        ).values()
+    );
 
     const isTextTab = activeTab === "input" || activeTab === "output" || activeTab === "error";
     const activeTextContent = getActiveTextContent(activeTab, task);
@@ -281,7 +293,9 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                     <button
                         type="button"
                         data-testid="history-card-copy"
-                        onClick={() => navigator.clipboard?.writeText(activeTextContent)}
+                        onClick={() => {
+                            void navigator.clipboard?.writeText(activeTextContent)?.catch?.(() => {});
+                        }}
                         className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
                         title="Copy"
                         aria-label="Copy"

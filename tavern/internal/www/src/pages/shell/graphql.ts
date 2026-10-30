@@ -465,12 +465,6 @@ export const UPDATE_NETWORK_HOST_MUTATION = gql`
   }
 `;
 
-export const DELETE_NETWORK_HOST_MUTATION = gql`
-  mutation DeleteNetworkHostFromShell($networkHostID: ID!) {
-    deleteNetworkHost(networkHostID: $networkHostID)
-  }
-`;
-
 export const CREATE_CREDENTIAL_MUTATION = gql`
   mutation CreateHostCredentialFromShell($input: CreateHostCredentialInput!) {
     createCredential(input: $input) {

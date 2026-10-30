@@ -210,6 +210,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                 )}
             </PopoverTrigger>
             <PopoverContent
+                rootProps={{ zIndex: 1500, style: { zIndex: 1500 } }}
                 bg="gray.900"
                 borderColor="gray.700"
                 color="white"

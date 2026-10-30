@@ -379,8 +379,7 @@ export const buildUnifiedGraphData = ({
                 sharesNetwork ||
                 Boolean(isPivotedTarget) ||
                 sharedTags.length > 0 ||
-                !currentSubnetPrefix ||
-                true,
+                !currentSubnetPrefix,
         });
     }
 
@@ -432,16 +431,17 @@ export const buildUnifiedGraphData = ({
                 inReachableSubnet ||
                 Boolean(isPivotedTarget) ||
                 sharedTags.length > 0 ||
-                !currentSubnetPrefix ||
-                true,
+                !currentSubnetPrefix,
         });
     }
 
-    // Filter to adjacent/reachable hosts (or all hosts if none match subnet filter so view isn't empty in small environments)
-    const reachableOnly = unifiedHosts.filter((h) => h.isReachable);
-    const sortedHosts = (reachableOnly.length > 0 ? reachableOnly : unifiedHosts).sort((a, b) => {
+    // Sort hosts prioritizing adjacent/reachable hosts and same-subnet hosts with open ports
+    const sortedHosts = [...unifiedHosts].sort((a, b) => {
         if (a.isCurrentHost !== b.isCurrentHost) {
             return a.isCurrentHost ? 1 : -1;
+        }
+        if (Boolean(a.isReachable) !== Boolean(b.isReachable)) {
+            return a.isReachable ? -1 : 1;
         }
         const aScore = (a.sameSubnet ? 2 : 0) + ((a.openPorts?.length || 0) > 0 ? 1 : 0);
         const bScore = (b.sameSubnet ? 2 : 0) + ((b.openPorts?.length || 0) > 0 ? 1 : 0);

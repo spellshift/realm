@@ -26,6 +26,8 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
     onLastCommandChange,
 }) => {
     const inputLineBufferRef = useRef<string>("");
+    const portalIdRef = useRef<number>(portalId);
+    portalIdRef.current = portalId;
 
     const handleTerminalData = useCallback(
         (data: string) => {
@@ -62,7 +64,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
         layoutKey,
         fontSize,
         closedBannerLabel: "PTY Closed (Read-Only)",
-        dependencyKey: `pty:${portalId}:${shellId}`,
+        dependencyKey: `pty:${shellId}`,
         buildWsUrl: (scheme, host, activePivotId, dims) => {
             if (activePivotId) {
                 return `${scheme}://${host}/portals/pty/ws?pivot_id=${activePivotId}`;
@@ -71,14 +73,14 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
                 dims && dims.rows > 0 && dims.cols > 0
                     ? `&rows=${dims.rows}&cols=${dims.cols}`
                     : "";
-            return `${scheme}://${host}/portals/pty/ws?portal_id=${portalId}&shell_id=${shellId}${sizeParams}`;
+            return `${scheme}://${host}/portals/pty/ws?portal_id=${portalIdRef.current}&shell_id=${shellId}${sizeParams}`;
         },
         onSocketOpen: ({ term, ws, isAutoRetry, targetPivotId, sendResize, reportStatus }) => {
             if (!targetPivotId) {
                 reportStatus("connected");
                 term.options.cursorBlink = true;
                 if (!isAutoRetry) {
-                    term.write(`\x1b[90m[*] PTY Active (Portal #${portalId})\x1b[0m\r\n`);
+                    term.write(`\x1b[90m[*] PTY Active (Portal #${portalIdRef.current})\x1b[0m\r\n`);
                 }
             }
             sendResize(ws, true);

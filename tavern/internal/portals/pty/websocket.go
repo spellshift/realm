@@ -48,6 +48,7 @@ type PivotSession struct {
 	seqID         uint64
 
 	mu            sync.Mutex
+	closed        bool
 	history       []byte
 	dirty         bool
 	activeSockets map[*websocket.Conn]chan interface{}
@@ -138,6 +139,14 @@ func (ps *PivotSession) FlushHistory(ctx context.Context, graph *ent.Client) {
 }
 
 func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
+	ps.mu.Lock()
+	if ps.closed {
+		ps.mu.Unlock()
+		return
+	}
+	ps.closed = true
+	ps.mu.Unlock()
+
 	cacheMu.Lock()
 	delete(sessionCache, ps.PivotID)
 	cacheMu.Unlock()

@@ -63,6 +63,11 @@ export function useResizableEditorHeight(initialHeight: number = DEFAULT_EDITOR_
         return () => {
             window.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mouseup", handleMouseUp);
+            if (isResizingRef.current) {
+                isResizingRef.current = false;
+                document.body.style.cursor = "";
+                document.body.style.userSelect = "";
+            }
         };
     }, []);
 
@@ -590,22 +595,22 @@ const EldritchCodeEditor: React.FC<EldritchCodeEditorProps> = ({
             return;
         }
 
-        // 5. VSCode-style inline autocomplete keyboard handling when completions are available
-        if (activeCompletions.length > 0 && start === end) {
+        // 5. VSCode-style inline autocomplete keyboard handling when inline ghost text is visible
+        if (inlineGhostInfo && start === end) {
             const visibleCount = Math.min(8, activeCompletions.length);
-            if ((e.key === "Tab" && !e.shiftKey) || (e.key === "Enter" && !isMod && !e.shiftKey)) {
+            if (e.key === "Tab" && !e.shiftKey) {
                 e.preventDefault();
                 applyCompletionItem(activeCompletions[selectedCompletionIdx] || activeCompletions[0]);
                 return;
             }
-            if (!isMod && !e.altKey && !e.shiftKey && (e.key === "ArrowRight" || e.key === "ArrowDown")) {
+            if (!isMod && !e.altKey && !e.shiftKey && e.key === "ArrowDown") {
                 e.preventDefault();
                 setSelectedCompletionIdx((idx) => (idx + 1) % visibleCount);
                 return;
             }
             if (
                 (e.key === "Tab" && e.shiftKey) ||
-                (!isMod && !e.altKey && !e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowUp"))
+                (!isMod && !e.altKey && !e.shiftKey && e.key === "ArrowUp")
             ) {
                 e.preventDefault();
                 setSelectedCompletionIdx((idx) => (idx - 1 + visibleCount) % visibleCount);

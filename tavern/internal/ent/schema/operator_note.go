@@ -33,6 +33,9 @@ func (OperatorNote) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("author", User.Type).
 			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
 			Comment("User who authored the note."),
 		edge.To("shells", Shell.Type).
 			Annotations(

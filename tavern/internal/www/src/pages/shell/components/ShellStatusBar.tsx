@@ -16,6 +16,7 @@ import {
 import NotificationBell from "../../../components/notifications/NotificationBell";
 import { ShellTaskItem } from "../hooks/useShellData";
 import { CallbackStats, computeCallbackStats } from "../hooks/useCallbackTimer";
+import { stripInternalMacro } from "../hooks/shellUtils";
 
 interface ShellStatusBarProps {
   portalId: number | null;
@@ -47,7 +48,8 @@ interface ShellStatusBarProps {
 }
 
 const truncateCommand = (cmd: string, maxLen = 72): string => {
-  const firstLine = cmd.trim().split("\n")[0] || "";
+  const cleaned = stripInternalMacro(cmd);
+  const firstLine = cleaned.trim().split("\n")[0] || "";
   if (firstLine.length <= maxLen) return firstLine;
   return `${firstLine.slice(0, maxLen)}...`;
 };
@@ -313,7 +315,7 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
     <>
       <div
         data-tour="shell-status-bar"
-        className="bg-gray-900 px-3 py-1 border-t border-gray-800 text-xs text-gray-400 flex justify-between items-center select-none"
+        className="relative z-30 bg-gray-900 px-3 py-1 border-t border-gray-800 text-xs text-gray-400 flex justify-between items-center select-none"
       >
         {/* Left side: Notification Bell, Session Settings, Composer */}
         <div className="flex items-center gap-1.5">
@@ -333,7 +335,7 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
             onClick={onToggleSessionSettings}
             className={`inline-flex items-center justify-center p-1 rounded-md transition-colors ${
               sessionSettingsOpen
-                ? "text-white bg-gray-800"
+                ? "text-white bg-purple-600"
                 : "text-gray-400 hover:text-white hover:bg-gray-800"
             }`}
           >

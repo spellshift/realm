@@ -17,6 +17,8 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/operatornote"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Assets is the resolver for the assets field.
@@ -341,6 +343,9 @@ func (r *queryResolver) OperatorNotes(ctx context.Context, after *entgql.Cursor[
 	query, err := r.client.OperatorNote.Query().CollectFields(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if authUser := auth.UserFromContext(ctx); authUser != nil {
+		query = query.Where(operatornote.HasAuthorWith(user.ID(authUser.ID)))
 	}
 	if where != nil {
 		query, err := where.Filter(query)

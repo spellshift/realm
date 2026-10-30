@@ -8062,7 +8062,6 @@ input CreateOperatorNoteInput {
   Content of the operator note.
   """
   content: String
-  authorID: ID
   shellIDs: [ID!]
 }
 """
@@ -13757,8 +13756,6 @@ input TaskWhereInput {
   hasScreenshots: Boolean
   hasScreenshotsWith: [ScreenshotWhereInput!]
 }
-"""
-"""
 type Tome implements Node {
   id: ID!
   """
@@ -14286,8 +14283,6 @@ input UpdateOperatorNoteInput {
   """
   content: String
   clearContent: Boolean
-  authorID: ID
-  clearAuthor: Boolean
   addShellIDs: [ID!]
   removeShellIDs: [ID!]
   clearShells: Boolean

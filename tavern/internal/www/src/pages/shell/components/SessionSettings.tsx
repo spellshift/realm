@@ -48,6 +48,8 @@ export interface SessionSettingsProps {
 }
 
 interface SessionGeneralSettingsPanelProps {
+    rcEnabled: boolean;
+    onToggleRcEnabled: () => void;
     fontSize: number;
     onDecreaseFontSize: () => void;
     onIncreaseFontSize: () => void;
@@ -55,6 +57,8 @@ interface SessionGeneralSettingsPanelProps {
 }
 
 const SessionGeneralSettingsPanel: React.FC<SessionGeneralSettingsPanelProps> = ({
+    rcEnabled,
+    onToggleRcEnabled,
     fontSize,
     onDecreaseFontSize,
     onIncreaseFontSize,
@@ -64,6 +68,36 @@ const SessionGeneralSettingsPanel: React.FC<SessionGeneralSettingsPanelProps> = 
         data-testid="session-settings-left-panel"
         className="w-44 shrink-0 border-r border-gray-800 bg-gray-900 p-2.5 flex flex-col gap-2 text-xs text-gray-300"
     >
+        <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-gray-400">Enable RC</span>
+            <button
+                type="button"
+                role="switch"
+                aria-checked={rcEnabled}
+                aria-label="Auto-run RC script on new shells"
+                data-testid="session-settings-rc-toggle"
+                onClick={onToggleRcEnabled}
+                title={
+                    rcEnabled
+                        ? "RC enabled (click to disable)"
+                        : "RC disabled (click to enable)"
+                }
+                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border transition-colors ${
+                    rcEnabled
+                        ? "bg-purple-600 border-purple-500"
+                        : "bg-gray-800 border-gray-700"
+                }`}
+            >
+                <span
+                    className={`pointer-events-none inline-block h-3 w-3 transform rounded-full transition-transform mt-0.25 ${
+                        rcEnabled
+                            ? "translate-x-3 bg-white"
+                            : "translate-x-0.5 bg-gray-400"
+                    }`}
+                />
+            </button>
+        </div>
+
         <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-400">Font Size</span>
             <span
@@ -221,6 +255,9 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
     useEffect(() => {
         if (controlledRcCode !== undefined) {
             setInternalRcCode(controlledRcCode);
+            if (controlledRcCode.trim().length > 0) {
+                setIsEditingScript(true);
+            }
         }
     }, [controlledRcCode]);
 
@@ -401,34 +438,6 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
                         <Settings className="w-4 h-4" />
                     </span>
 
-                    {/* Radio Switch Toggle to enable/disable RC */}
-                    <button
-                        type="button"
-                        role="switch"
-                        aria-checked={effectiveRcEnabled}
-                        aria-label="Auto-run RC script on new shells"
-                        data-testid="session-settings-rc-toggle"
-                        onClick={handleToggleRcEnabled}
-                        title={
-                            effectiveRcEnabled
-                                ? "RC enabled (click to disable)"
-                                : "RC disabled (click to enable)"
-                        }
-                        className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border transition-colors ${
-                            effectiveRcEnabled
-                                ? "bg-purple-600 border-purple-500"
-                                : "bg-gray-800 border-gray-700"
-                        }`}
-                    >
-                        <span
-                            className={`pointer-events-none inline-block h-3 w-3 transform rounded-full transition-transform mt-0.25 ${
-                                effectiveRcEnabled
-                                    ? "translate-x-3 bg-white"
-                                    : "translate-x-0.5 bg-gray-400"
-                            }`}
-                        />
-                    </button>
-
                     {isEditingScript && (
                         <EldritchLspStatusButton
                             diagnostics={diagnostics}
@@ -526,6 +535,8 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
             {/* Vertically Split Body: Left General Settings Panel + Right RC Script Pane */}
             <div className="flex min-w-0">
                 <SessionGeneralSettingsPanel
+                    rcEnabled={effectiveRcEnabled}
+                    onToggleRcEnabled={handleToggleRcEnabled}
                     fontSize={effectiveFontSize}
                     onDecreaseFontSize={handleDecreaseFontSize}
                     onIncreaseFontSize={handleIncreaseFontSize}

@@ -28334,7 +28334,7 @@ func (ec *executionContext) unmarshalInputCreateOperatorNoteInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"content", "authorID", "shellIDs"}
+	fieldsInOrder := [...]string{"content", "shellIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28348,13 +28348,6 @@ func (ec *executionContext) unmarshalInputCreateOperatorNoteInput(ctx context.Co
 				return it, err
 			}
 			it.Content = data
-		case "authorID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorID"))
-			data, err := ec.unmarshalOID2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AuthorID = data
 		case "shellIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shellIDs"))
 			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
@@ -43445,7 +43438,7 @@ func (ec *executionContext) unmarshalInputUpdateOperatorNoteInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "content", "clearContent", "authorID", "clearAuthor", "addShellIDs", "removeShellIDs", "clearShells"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "content", "clearContent", "addShellIDs", "removeShellIDs", "clearShells"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -43473,20 +43466,6 @@ func (ec *executionContext) unmarshalInputUpdateOperatorNoteInput(ctx context.Co
 				return it, err
 			}
 			it.ClearContent = data
-		case "authorID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorID"))
-			data, err := ec.unmarshalOID2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AuthorID = data
-		case "clearAuthor":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearAuthor"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearAuthor = data
 		case "addShellIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addShellIDs"))
 			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)

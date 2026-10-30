@@ -704,7 +704,6 @@ func (c *NotificationUpdateOne) SetInput(i UpdateNotificationInput) *Notificatio
 // CreateOperatorNoteInput represents a mutation input for creating operatornotes.
 type CreateOperatorNoteInput struct {
 	Content  *string
-	AuthorID *int
 	ShellIDs []int
 }
 
@@ -712,9 +711,6 @@ type CreateOperatorNoteInput struct {
 func (i *CreateOperatorNoteInput) Mutate(m *OperatorNoteMutation) {
 	if v := i.Content; v != nil {
 		m.SetContent(*v)
-	}
-	if v := i.AuthorID; v != nil {
-		m.SetAuthorID(*v)
 	}
 	if v := i.ShellIDs; len(v) > 0 {
 		m.AddShellIDs(v...)
@@ -732,8 +728,6 @@ type UpdateOperatorNoteInput struct {
 	LastModifiedAt *time.Time
 	ClearContent   bool
 	Content        *string
-	ClearAuthor    bool
-	AuthorID       *int
 	ClearShells    bool
 	AddShellIDs    []int
 	RemoveShellIDs []int
@@ -749,12 +743,6 @@ func (i *UpdateOperatorNoteInput) Mutate(m *OperatorNoteMutation) {
 	}
 	if v := i.Content; v != nil {
 		m.SetContent(*v)
-	}
-	if i.ClearAuthor {
-		m.ClearAuthor()
-	}
-	if v := i.AuthorID; v != nil {
-		m.SetAuthorID(*v)
 	}
 	if i.ClearShells {
 		m.ClearShells()
