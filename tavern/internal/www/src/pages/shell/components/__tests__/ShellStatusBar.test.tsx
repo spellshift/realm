@@ -1,8 +1,11 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ShellStatusBar from "../ShellStatusBar";
+import ShellSidebar from "../ShellSidebar";
 import { ConnectionStatus } from "../../../../lib/browser-adapter";
 import React from "react";
 import { expect, describe, it, vi } from "vitest";
+import { BrowserRouter } from "react-router-dom";
+import { AuthorizationContext } from "../../../../context/AuthorizationContext";
 import "@testing-library/jest-dom";
 
 // Mock NotificationBell to avoid requiring ApolloProvider in ShellStatusBar tests
@@ -51,14 +54,17 @@ describe("ShellStatusBar", () => {
         );
         expect(screen.getByText("Portal Active")).toBeInTheDocument();
         expect(screen.queryByText("(ID: 123)")).not.toBeInTheDocument();
+        const sidebarToggleEl = screen.getByTestId("status-bar-sidebar-toggle");
         const bellEl = screen.getByTestId("notification-bell");
         const settingsEl = screen.getByTestId("session-settings-toggle");
         const composerEl = screen.getByTestId("status-bar-composer-toggle");
+        expect(sidebarToggleEl).toBeInTheDocument();
         expect(bellEl).toBeInTheDocument();
         expect(settingsEl).toBeInTheDocument();
         expect(composerEl).toBeInTheDocument();
 
-        // Verify left-toolbar DOM order: Notification Bell -> Settings -> Composer
+        // Verify left-toolbar DOM order: Sidebar Toggle -> Notification Bell -> Settings -> Composer
+        expect(sidebarToggleEl.compareDocumentPosition(bellEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(bellEl.compareDocumentPosition(settingsEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(settingsEl.compareDocumentPosition(composerEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
@@ -173,5 +179,72 @@ describe("ShellStatusBar", () => {
         expect(popover).toHaveTextContent('sys.shell("uname -a")');
         expect(popover).toHaveTextContent('file.list("/etc")');
         expect(popover).toHaveTextContent("process.list()");
+    });
+
+    it("renders sidebar toggle as leftmost icon with LogOut when hidden by default and LogIn when expanded, and toggles icon-only ShellSidebar", () => {
+        const StatefulShellSidebarWrapper = () => {
+            const [sidebarOpen, setSidebarOpen] = React.useState(false);
+            return (
+                <BrowserRouter>
+                    <AuthorizationContext.Provider
+                        value={{
+                            data: {
+                                me: {
+                                    id: "u1",
+                                    name: "admin-op",
+                                    photoURL: "",
+                                    isActivated: true,
+                                    isAdmin: true,
+                                },
+                            },
+                            isLoading: false,
+                            error: undefined,
+                        }}
+                    >
+                        <ShellSidebar isOpen={sidebarOpen} />
+                        <ShellStatusBar
+                            {...defaultProps}
+                            sidebarOpen={sidebarOpen}
+                            onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+                        />
+                    </AuthorizationContext.Provider>
+                </BrowserRouter>
+            );
+        };
+
+        render(<StatefulShellSidebarWrapper />);
+
+        // Sidebar is hidden by default and toggle shows LogOut icon
+        expect(screen.queryByTestId("shell-sidebar")).not.toBeInTheDocument();
+        const toggleBtn = screen.getByTestId("status-bar-sidebar-toggle");
+        expect(toggleBtn).toHaveAttribute("aria-expanded", "false");
+        expect(screen.getByTestId("sidebar-toggle-logout-icon")).toBeInTheDocument();
+        expect(screen.queryByTestId("sidebar-toggle-login-icon")).not.toBeInTheDocument();
+
+        // Click to expand sidebar from the left
+        fireEvent.click(toggleBtn);
+        const sidebar = screen.getByTestId("shell-sidebar");
+        expect(sidebar).toBeInTheDocument();
+        expect(sidebar).toHaveClass("w-12");
+        expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByTestId("sidebar-toggle-login-icon")).toBeInTheDocument();
+        expect(screen.queryByTestId("sidebar-toggle-logout-icon")).not.toBeInTheDocument();
+
+        // Verify navigation items match the rest of the UI
+        expect(screen.getByLabelText("Dashboard")).toHaveAttribute("href", "/dashboard");
+        expect(screen.getByLabelText("Hosts")).toHaveAttribute("href", "/hosts");
+        expect(screen.getByLabelText("Quests")).toHaveAttribute("href", "/quests");
+        expect(screen.getByLabelText("Tomes")).toHaveAttribute("href", "/tomes");
+        expect(screen.getByLabelText("Assets")).toHaveAttribute("href", "/assets");
+        expect(screen.getByLabelText("Admin")).toHaveAttribute("href", "/admin");
+        expect(screen.getByLabelText("Documentation")).toHaveAttribute("href", "https://docs.realm.pub/");
+        expect(screen.getByLabelText("API Playground")).toHaveAttribute("href", "/playground");
+        expect(screen.getByLabelText("Profile")).toHaveAttribute("href", "/profile");
+        expect(screen.getByLabelText("Realm")).toHaveAttribute("href", "/");
+
+        // Click again to collapse sidebar
+        fireEvent.click(toggleBtn);
+        expect(screen.queryByTestId("shell-sidebar")).not.toBeInTheDocument();
+        expect(screen.getByTestId("sidebar-toggle-logout-icon")).toBeInTheDocument();
     });
 });

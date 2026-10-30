@@ -539,7 +539,9 @@ func (hu *HostUpdate) RemoveNetworkHosts(n ...*NetworkHost) *HostUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (hu *HostUpdate) Save(ctx context.Context) (int, error) {
-	hu.defaults()
+	if err := hu.defaults(); err != nil {
+		return 0, err
+	}
 	return withHooks(ctx, hu.sqlSave, hu.mutation, hu.hooks)
 }
 
@@ -566,11 +568,15 @@ func (hu *HostUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (hu *HostUpdate) defaults() {
+func (hu *HostUpdate) defaults() error {
 	if _, ok := hu.mutation.LastModifiedAt(); !ok {
+		if host.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized host.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := host.UpdateDefaultLastModifiedAt()
 		hu.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -1628,7 +1634,9 @@ func (huo *HostUpdateOne) Select(field string, fields ...string) *HostUpdateOne 
 
 // Save executes the query and returns the updated Host entity.
 func (huo *HostUpdateOne) Save(ctx context.Context) (*Host, error) {
-	huo.defaults()
+	if err := huo.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, huo.sqlSave, huo.mutation, huo.hooks)
 }
 
@@ -1655,11 +1663,15 @@ func (huo *HostUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (huo *HostUpdateOne) defaults() {
+func (huo *HostUpdateOne) defaults() error {
 	if _, ok := huo.mutation.LastModifiedAt(); !ok {
+		if host.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized host.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := host.UpdateDefaultLastModifiedAt()
 		huo.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

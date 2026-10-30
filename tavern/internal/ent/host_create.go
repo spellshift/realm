@@ -299,7 +299,9 @@ func (hc *HostCreate) Mutation() *HostMutation {
 
 // Save creates the Host in the database.
 func (hc *HostCreate) Save(ctx context.Context) (*Host, error) {
-	hc.defaults()
+	if err := hc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, hc.sqlSave, hc.mutation, hc.hooks)
 }
 
@@ -326,15 +328,22 @@ func (hc *HostCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (hc *HostCreate) defaults() {
+func (hc *HostCreate) defaults() error {
 	if _, ok := hc.mutation.CreatedAt(); !ok {
+		if host.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized host.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := host.DefaultCreatedAt()
 		hc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := hc.mutation.LastModifiedAt(); !ok {
+		if host.DefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized host.DefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := host.DefaultLastModifiedAt()
 		hc.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

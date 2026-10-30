@@ -5,6 +5,7 @@ import { DocTooltip } from "./DocTooltip";
 
 interface ShellTerminalProps {
   termRef: RefObject<HTMLDivElement>;
+  fontSize?: number;
   isConnecting?: boolean;
   isPromptBusy?: boolean;
   isMissedCallback?: boolean;
@@ -35,6 +36,7 @@ interface ShellTerminalProps {
 
 const ShellTerminal: React.FC<ShellTerminalProps> = ({
   termRef,
+  fontSize,
   isConnecting = false,
   isPromptBusy = false,
   isMissedCallback = false,
@@ -53,6 +55,7 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
   return (
     <div
       data-tour="shell-terminal"
+      data-font-size={fontSize}
       className="flex-grow overflow-hidden relative bg-[#11131a]"
     >
       {isConnecting && (
@@ -91,7 +94,7 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
             style={{
               fontFamily:
                 "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
-              fontSize: "13.5px",
+              fontSize: `${fontSize ?? 13.5}px`,
               lineHeight: 1,
             }}
           >

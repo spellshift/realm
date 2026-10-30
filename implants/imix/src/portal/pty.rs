@@ -17,10 +17,39 @@ struct PtySession {
     // Keep the master PTY handle alive for the lifetime of the session.
     // Dropping it closes the PTY fd, which would kill the shell process.
     #[cfg(not(target_os = "solaris"))]
-    _master: Box<dyn MasterPty + Send>,
+    master: Box<dyn MasterPty + Send>,
+    #[cfg(target_os = "solaris")]
+    master_fd: std::os::unix::io::RawFd,
     #[cfg(target_os = "solaris")]
     _child_pid: libc::pid_t,
     _cancel_tx: mpsc::Sender<()>,
+}
+
+impl PtySession {
+    fn resize(&self, rows: u16, cols: u16) {
+        if rows == 0 || cols == 0 {
+            return;
+        }
+        #[cfg(not(target_os = "solaris"))]
+        {
+            let _ = self.master.resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            });
+        }
+        #[cfg(target_os = "solaris")]
+        unsafe {
+            let ws = libc::winsize {
+                ws_row: rows,
+                ws_col: cols,
+                ws_xpixel: 0,
+                ws_ypixel: 0,
+            };
+            let _ = libc::ioctl(self.master_fd, libc::TIOCSWINSZ, &ws);
+        }
+    }
 }
 
 #[cfg(target_os = "solaris")]
@@ -58,16 +87,30 @@ impl PtyManager {
         &mut self,
         stream_id: String,
         data: Vec<u8>,
+        rows: u32,
+        cols: u32,
         out_tx: mpsc::Sender<Mote>,
     ) -> Result<()> {
-        if !self.sessions.contains_key(&stream_id) {
+        let initial_rows = u16::try_from(rows).unwrap_or(0);
+        let initial_cols = u16::try_from(cols).unwrap_or(0);
+
+        let is_new_session = !self.sessions.contains_key(&stream_id);
+        if is_new_session {
             // Spawn a new PTY session
-            let session = spawn_pty_session(stream_id.clone(), out_tx.clone())?;
+            let session = spawn_pty_session(
+                stream_id.clone(),
+                if initial_rows > 0 { initial_rows } else { 48 },
+                if initial_cols > 0 { initial_cols } else { 160 },
+                out_tx.clone(),
+            )?;
             self.sessions.insert(stream_id.clone(), session);
         }
 
         if let Some(session) = self.sessions.get(&stream_id) {
-            // Write input data to the PTY (skip empty data which is just the init mote)
+            if !is_new_session && initial_rows > 0 && initial_cols > 0 {
+                session.resize(initial_rows, initial_cols);
+            }
+            // Write input data to the PTY (skip empty data which is just the init/resize mote)
             if !data.is_empty()
                 && let Ok(mut writer) = session.writer.lock()
             {
@@ -81,12 +124,17 @@ impl PtyManager {
 
 /// Spawn a new PTY process using portable-pty (Linux, macOS, Windows).
 #[cfg(not(target_os = "solaris"))]
-fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<PtySession> {
+fn spawn_pty_session(
+    stream_id: String,
+    rows: u16,
+    cols: u16,
+    out_tx: mpsc::Sender<Mote>,
+) -> Result<PtySession> {
     let pty_system = native_pty_system();
 
     let pair = pty_system.openpty(PtySize {
-        rows: 48,
-        cols: 160,
+        rows: if rows > 0 { rows } else { 48 },
+        cols: if cols > 0 { cols } else { 160 },
         pixel_width: 0,
         pixel_height: 0,
     })?;
@@ -151,6 +199,8 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                 payload: Some(Payload::Bytes(BytesPayload {
                     data: buffer[..n].to_vec(),
                     kind: BytesPayloadKind::Pty as i32,
+                    rows: 0,
+                    cols: 0,
                 })),
             };
 
@@ -166,6 +216,8 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
             payload: Some(Payload::Bytes(BytesPayload {
                 data: b"PTY session ended".to_vec(),
                 kind: BytesPayloadKind::Close as i32,
+                rows: 0,
+                cols: 0,
             })),
         };
         let _ = rt.block_on(out_tx_clone.send(close_mote));
@@ -173,16 +225,21 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
 
     Ok(PtySession {
         writer,
-        _master: pair.master,
+        master: pair.master,
         _cancel_tx: cancel_tx,
     })
 }
 
 /// Spawn a native POSIX + STREAMS PTY session on Solaris / illumos.
 #[cfg(target_os = "solaris")]
-fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<PtySession> {
+fn spawn_pty_session(
+    stream_id: String,
+    rows: u16,
+    cols: u16,
+    out_tx: mpsc::Sender<Mote>,
+) -> Result<PtySession> {
     use std::fs::File;
-    use std::os::unix::io::FromRawFd;
+    use std::os::unix::io::{AsRawFd, FromRawFd};
 
     const PTEM: &[u8] = b"ptem\0";
     const LDTERM: &[u8] = b"ldterm\0";
@@ -221,8 +278,8 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
         }
 
         let ws = libc::winsize {
-            ws_row: 48,
-            ws_col: 160,
+            ws_row: if rows > 0 { rows } else { 48 },
+            ws_col: if cols > 0 { cols } else { 160 },
             ws_xpixel: 0,
             ws_ypixel: 0,
         };
@@ -281,6 +338,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
 
     let master_file = unsafe { File::from_raw_fd(master_fd) };
     let writer_file = master_file.try_clone()?;
+    let resize_fd = writer_file.as_raw_fd();
     let writer: Arc<Mutex<Box<dyn Write + Send>>> = Arc::new(Mutex::new(Box::new(writer_file)));
 
     let (cancel_tx, _cancel_rx) = mpsc::channel::<()>(1);
@@ -318,6 +376,8 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                 payload: Some(Payload::Bytes(BytesPayload {
                     data: buffer[..n].to_vec(),
                     kind: BytesPayloadKind::Pty as i32,
+                    rows: 0,
+                    cols: 0,
                 })),
             };
 
@@ -333,6 +393,8 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
             payload: Some(Payload::Bytes(BytesPayload {
                 data: b"PTY session ended".to_vec(),
                 kind: BytesPayloadKind::Close as i32,
+                rows: 0,
+                cols: 0,
             })),
         };
         let _ = rt.block_on(out_tx_clone.send(close_mote));
@@ -340,6 +402,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
 
     Ok(PtySession {
         writer,
+        master_fd: resize_fd,
         _child_pid: pid,
         _cancel_tx: cancel_tx,
     })

@@ -1,7 +1,7 @@
-import React, { Fragment, useContext, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { getApolloContext } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import { KeyRound } from "lucide-react";
 import { CREATE_CREDENTIAL_MUTATION } from "../../graphql";
 import {
@@ -37,8 +37,7 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
     hosts = [],
     onCredentialCreated,
 }) => {
-    const apolloContext = useContext(getApolloContext());
-    const apolloClient = apolloContext?.client;
+    const [createCredential] = useMutation(CREATE_CREDENTIAL_MUTATION);
 
     const [principal, setPrincipal] = useState("");
     const [secret, setSecret] = useState("");
@@ -109,50 +108,40 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
                 isCurrentHost: isCurrHost,
             };
 
-            if (apolloClient) {
-                try {
-                    const input: Record<string, any> = {
-                        principal: cleanPrincipal,
-                        secret,
-                        kind,
-                    };
-                    if (matchedHost) {
-                        if (
-                            matchedHost.networkHostId &&
-                            !matchedHost.networkHostId.startsWith("nh-custom-")
-                        ) {
-                            input.networkHostIDs = [matchedHost.networkHostId];
-                        }
-                        if (
-                            matchedHost.hostId &&
-                            !matchedHost.hostId.startsWith("nh-")
-                        ) {
-                            input.hostID = matchedHost.hostId;
-                        }
-                    } else if (currentHostId) {
-                        input.hostID = currentHostId;
-                    }
-                    const res = await apolloClient.mutate({
-                        mutation: CREATE_CREDENTIAL_MUTATION,
-                        variables: { input },
-                    });
-                    const node = res.data?.createCredential;
-                    if (node) {
-                        createdCred = {
-                            ...createdCred,
-                            id: String(node.id),
-                            principal: node.principal || createdCred.principal,
-                            kind: node.kind || createdCred.kind,
-                            secret: node.secret || createdCred.secret,
-                            createdAt: node.createdAt || createdCred.createdAt,
-                        };
-                    }
-                } catch (err: any) {
-                    const msg = String(err?.message || "");
-                    if (!msg.includes("No more mocked responses")) {
-                        throw err;
-                    }
+            const input: Record<string, any> = {
+                principal: cleanPrincipal,
+                secret,
+                kind,
+            };
+            if (matchedHost) {
+                if (
+                    matchedHost.networkHostId &&
+                    !matchedHost.networkHostId.startsWith("nh-custom-")
+                ) {
+                    input.networkHostIDs = [matchedHost.networkHostId];
                 }
+                if (
+                    matchedHost.hostId &&
+                    !matchedHost.hostId.startsWith("nh-")
+                ) {
+                    input.hostID = matchedHost.hostId;
+                }
+            } else if (currentHostId) {
+                input.hostID = currentHostId;
+            }
+            const res = await createCredential({
+                variables: { input },
+            });
+            const node = res.data?.createCredential;
+            if (node) {
+                createdCred = {
+                    ...createdCred,
+                    id: String(node.id),
+                    principal: node.principal || createdCred.principal,
+                    kind: node.kind || createdCred.kind,
+                    secret: node.secret || createdCred.secret,
+                    createdAt: node.createdAt || createdCred.createdAt,
+                };
             }
 
             onCredentialCreated?.(createdCred, matchedHost?.id);

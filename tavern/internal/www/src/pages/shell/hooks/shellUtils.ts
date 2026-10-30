@@ -41,6 +41,36 @@ export const stripInternalMacro = (input: string): string => {
 };
 
 /**
+ * Returns true if the terminal container element is actually visible in the layout
+ * (not inside a hidden TabPanel / `display: none` ancestor).
+ *
+ * When an element or ancestor has `display: none` (such as an inactive Chakra `<TabPanel hidden>`),
+ * `getComputedStyle(el).getPropertyValue("height")` returns the raw CSS value `"100%"`, which
+ * `xterm-addon-fit` parses via `parseInt("100%") === 100` (100px!), corrupting the terminal dimensions
+ * to ~4 rows x 9 cols and wiping the buffer.
+ */
+export const isTerminalElementVisible = (el: HTMLElement | null): boolean => {
+    if (!el) return false;
+    if (typeof el.closest === "function" && el.closest("[hidden]") !== null) {
+        return false;
+    }
+    if (el.clientWidth === 0 && el.clientHeight === 0) {
+        if (typeof window !== "undefined" && typeof window.getComputedStyle === "function") {
+            const style = window.getComputedStyle(el);
+            if (
+                style.display === "none" ||
+                style.visibility === "hidden" ||
+                style.height.endsWith("%") ||
+                style.width.endsWith("%")
+            ) {
+                return false;
+            }
+        }
+    }
+    return true;
+};
+
+/**
  * Counts how many rows from the top of the current viewport contain non-empty text.
  */
 export const getViewportNonEmptyLineCount = (term: {
@@ -102,11 +132,16 @@ export const buildScrollbackPreservingClearSequence = (
  * Transforms ANSI clear-screen / clear-scrollback sequences (\x1b[2J, \x1b[3J)
  * in terminal output so existing viewport lines are scrolled into scrollback
  * instead of being erased in-place.
+ *
+ * Full-screen TUI applications (such as `htop`, `top`, `vim`, `less`) operate in the
+ * alternate screen buffer or position the cursor directly across rows; their `\x1b[2J`
+ * redraw sequences must never be converted into newline scrolls.
  */
 export const transformClearAnsiForScrollback = (
     data: string,
     rows: number,
-    viewportNonEmptyLines: number
+    viewportNonEmptyLines: number,
+    isAlternateBuffer: boolean = false
 ): string => {
     if (!data || !data.includes("\x1b[")) return data;
 
@@ -117,6 +152,16 @@ export const transformClearAnsiForScrollback = (
         return result;
     }
 
+    // Do not inject scroll newlines when in the alternate screen buffer (e.g. htop, vim, less)
+    // or when the chunk itself switches to the alternate buffer or defines scroll regions.
+    if (
+        isAlternateBuffer ||
+        /\x1b\[\?(?:1049|1047|47)h/.test(result) ||
+        /\x1b\[\d+;\d+r/.test(result)
+    ) {
+        return result;
+    }
+
     const safeRows = Math.max(1, rows || 24);
     const linesToScroll = Math.max(0, Math.min(safeRows, viewportNonEmptyLines));
     const scrollSeq =
@@ -124,7 +169,10 @@ export const transformClearAnsiForScrollback = (
             ? `\x1b[${safeRows};1H` + "\n".repeat(linesToScroll) + "\x1b[H\x1b[J"
             : "\x1b[H\x1b[J";
 
-    result = result.replace(/\x1b\[(?:H|\d*;\d*H)?\x1b\[2J(?:\x1b\[(?:H|\d*;\d*H))?/g, scrollSeq);
+    result = result.replace(
+        /\x1b\[(?:H|;H|1;1H)?\x1b\[2J(?:\x1b\[(?:H|;H|1;1H))?/g,
+        scrollSeq
+    );
     return result;
 };
 
@@ -671,12 +719,14 @@ const COLOR_COMMENT = "\x1b[90m";
 const COLOR_NUMBER = "\x1b[33m";
 const RESET = "\x1b[0m";
 
-export const highlightPythonSyntax = (input: string): string => {
-    const builtins = Object.keys(docsData).sort((a, b) => b.length - a.length).map(k => k.replace(/\./g, "\\."));
-    const builtinsPattern = builtins.join("|");
+const BUILTINS_PATTERN = Object.keys(docsData)
+    .sort((a, b) => b.length - a.length)
+    .map((k) => k.replace(/\./g, "\\."))
+    .join("|");
 
-    // Order matters for regex capture groups
-    const regex = new RegExp([
+// Pre-compiled once at module load; order matters for regex capture groups
+const PYTHON_SYNTAX_REGEX = new RegExp(
+    [
         // 1. f-Strings (f"..." or f'...')
         /(f(?:(["'])(?:\\.|[^\\])*?\2))/.source,
         // 3. Strings (single/double quoted)
@@ -684,26 +734,50 @@ export const highlightPythonSyntax = (input: string): string => {
         // 5. Comments (#...)
         /(#.*)/.source,
         // 6. Keywords
-        /(\b(?:def|class|import|from|return|if|else|elif|while|for|try|except|finally|with|as|pass|break|continue|lambda|yield|global|nonlocal|assert|del|raise)\b)/.source,
+        /(\b(?:def|class|import|from|return|if|else|elif|while|for|try|except|finally|with|as|pass|break|continue|lambda|yield|global|nonlocal|assert|del|raise)\b)/
+            .source,
         // 7. Operands
         /(\b(?:is|not|in|and|or|True|False|None)\b)/.source,
         // 8. Built-ins / Methods
-        `(\\b(?:${builtinsPattern})\\b)`,
+        `(\\b(?:${BUILTINS_PATTERN})\\b)`,
         // 9. Numbers
         /(\b\d+\b)/.source,
         // 10. Punctuation
-        /([()[\]{}])/.source
-    ].join("|"), "g");
+        /([()[\]{}])/.source,
+    ].join("|"),
+    "g"
+);
 
+export const findReverseHistoryMatch = (
+    history: string[],
+    query: string,
+    skipMatches: number = 0
+): string => {
+    if (!query || history.length === 0) return "";
+    const matching: string[] = [];
+    for (let i = history.length - 1; i >= 0; i--) {
+        const item = history[i];
+        if (item.includes(query) && !matching.includes(item)) {
+            matching.push(item);
+        }
+    }
+    if (matching.length === 0) return "";
+    const idx = Math.max(0, skipMatches) % matching.length;
+    return matching[idx];
+};
+
+export const highlightPythonSyntax = (input: string): string => {
     let lastIndex = 0;
     let result = "";
-    let match;
     let depth = 0;
 
-    while ((match = regex.exec(input)) !== null) {
+    const matches = Array.from(input.matchAll(PYTHON_SYNTAX_REGEX));
+    for (let idx = 0; idx < matches.length; idx++) {
+        const match = matches[idx];
+        const matchIndex = match.index ?? 0;
         // Add plain text before match
-        if (match.index > lastIndex) {
-            result += input.slice(lastIndex, match.index);
+        if (matchIndex > lastIndex) {
+            result += input.slice(lastIndex, matchIndex);
         }
 
         const text = match[0];
@@ -749,7 +823,7 @@ export const highlightPythonSyntax = (input: string): string => {
             result += text;
         }
 
-        lastIndex = regex.lastIndex;
+        lastIndex = matchIndex + text.length;
     }
 
     // Add remaining text

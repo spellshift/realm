@@ -5,6 +5,7 @@ import {
     GET_PORTAL_STATUS,
     GET_SHELL,
     GET_SHELL_ACTIVE_USERS,
+    GET_SHELL_CROSS_SESSION_HISTORY,
     GET_SHELL_HISTORY,
     GET_SHELL_KNOWLEDGE_GRAPH,
     GET_SHELL_TOMES,
@@ -132,7 +133,17 @@ export const STUCK_TASK_THRESHOLD_MS = 15_000;
 
 export const MAX_SHELL_LOAD_RETRIES = 5;
 
-export const useShellData = (shellId: string | undefined) => {
+export interface UseShellDataOptions {
+    historyOpen?: boolean;
+    knowledgeOpen?: boolean;
+}
+
+export const useShellData = (
+    shellId: string | undefined,
+    options?: UseShellDataOptions
+) => {
+    const historyOpen = Boolean(options?.historyOpen);
+    const knowledgeOpen = Boolean(options?.knowledgeOpen);
     const [portalId, setPortalId] = useState<number | null>(null);
     const [nowTick, setNowTick] = useState<number>(() => Date.now());
     const [shellRetryCount, setShellRetryCount] = useState<number>(0);
@@ -173,13 +184,39 @@ export const useShellData = (shellId: string | undefined) => {
     const loading = rawLoading || shouldRetryShellLoad;
     const error = shouldRetryShellLoad ? undefined : rawError;
 
-    // Fetch shell history (tasks & pivots)
-    const { data: historyData, refetch: refetchHistory } = useQuery(GET_SHELL_HISTORY, {
+    // Fetch shell history (current session tasks & pivots)
+    const { data: historyData, refetch: refetchCurrentHistory } = useQuery(GET_SHELL_HISTORY, {
         variables: { id: shellId },
         skip: !shellId,
         fetchPolicy: "cache-and-network",
         pollInterval: 3000,
     });
+
+    // Fetch cross-session shell history (fetched once on load, polled only while History drawer is open)
+    const { data: crossSessionHistoryData, refetch: refetchCrossSessionHistory } = useQuery(
+        GET_SHELL_CROSS_SESSION_HISTORY,
+        {
+            skip: !shellId,
+            fetchPolicy: "cache-and-network",
+            pollInterval: historyOpen ? 5000 : 0,
+        }
+    );
+
+    const refetchHistory = useMemo(
+        () => () => {
+            refetchCurrentHistory();
+            if (historyOpen) {
+                refetchCrossSessionHistory();
+            }
+        },
+        [refetchCurrentHistory, refetchCrossSessionHistory, historyOpen]
+    );
+
+    useEffect(() => {
+        if (historyOpen && shellId) {
+            refetchCrossSessionHistory();
+        }
+    }, [historyOpen, shellId, refetchCrossSessionHistory]);
 
     // Fetch beacon status
     const beaconId = shellData?.node?.beacon?.id;
@@ -189,15 +226,27 @@ export const useShellData = (shellId: string | undefined) => {
         pollInterval: 2000
     });
 
-    // Fetch knowledge graph context for the current host & network with fast real-time polling
+    // Fetch knowledge graph context for the current host & network (fetched on load & artifact updates, polled continuously)
     const hostId = shellData?.node?.beacon?.host?.id;
     const [lastKnowledgeSyncAt, setLastKnowledgeSyncAt] = useState<number>(() => Date.now());
     const { data: knowledgeData, refetch: refetchKnowledgeGraph } = useQuery(GET_SHELL_KNOWLEDGE_GRAPH, {
         variables: { hostId },
         skip: !hostId,
+        fetchPolicy: "cache-and-network",
         pollInterval: 3000,
-        onCompleted: () => setLastKnowledgeSyncAt(Date.now()),
     });
+
+    useEffect(() => {
+        if (knowledgeData) {
+            setLastKnowledgeSyncAt(Date.now());
+        }
+    }, [knowledgeData]);
+
+    useEffect(() => {
+        if (knowledgeOpen && hostId) {
+            refetchKnowledgeGraph();
+        }
+    }, [knowledgeOpen, hostId, refetchKnowledgeGraph]);
 
     // Fetch portal status
     const { data: portalData } = useQuery(GET_PORTAL_STATUS, {
@@ -217,14 +266,6 @@ export const useShellData = (shellId: string | undefined) => {
     const { data: tomesData, refetch: refetchTomes } = useQuery(GET_SHELL_TOMES, {
         skip: !shellId,
     });
-
-    // Tick every second when there are running tasks so stuckTask elapsed time updates smoothly
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setNowTick(Date.now());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
 
     // Reset portalId when switching shells
     useEffect(() => {
@@ -289,7 +330,7 @@ export const useShellData = (shellId: string | undefined) => {
         for (const t of shellTasks) {
             byId.set(String(t.id), t);
         }
-        const shellEdges = historyData?.crossSessionShells?.edges || [];
+        const shellEdges = crossSessionHistoryData?.crossSessionShells?.edges || [];
         for (const se of shellEdges) {
             const sNode = se?.node;
             if (!sNode) continue;
@@ -314,7 +355,7 @@ export const useShellData = (shellId: string | undefined) => {
         return Array.from(byId.values()).sort(
             (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
         );
-    }, [shellTasks, historyData]);
+    }, [shellTasks, crossSessionHistoryData]);
 
     const totalTaskCount: number = historyData?.node?.shellTasks?.totalCount ?? shellTasks.length;
 
@@ -359,6 +400,17 @@ export const useShellData = (shellId: string | undefined) => {
             ),
         [shellTasks]
     );
+
+    // Tick every second only when there are running tasks so stuckTask elapsed time updates smoothly
+    const hasRunningTasks = runningTasks.length > 0;
+    useEffect(() => {
+        if (!hasRunningTasks) return;
+        setNowTick(Date.now());
+        const timer = setInterval(() => {
+            setNowTick(Date.now());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [hasRunningTasks]);
 
     const stuckTaskInfo = useMemo(() => {
         for (const task of runningTasks) {

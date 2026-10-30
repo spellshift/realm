@@ -320,6 +320,7 @@ export const buildUnifiedGraphData = ({
             Boolean(currentIdStr && linkedHostId === currentIdStr) ||
             Boolean(currentPrimaryIp && ipAddr && ipAddr === currentPrimaryIp);
         const sameSubnet = Boolean(currentSubnetPrefix && prefix && currentSubnetPrefix === prefix);
+        const inReachableSubnet = Boolean(prefix && reachableSubnets.has(prefix));
 
         const networks = (nh.networks?.edges || [])
             .map((ne: any) => ne?.node)
@@ -371,7 +372,15 @@ export const buildUnifiedGraphData = ({
             isCurrentHost,
             sharedTags,
             sameSubnet,
-            isReachable: isCurrentHost || sameSubnet || sharesNetwork || Boolean(isPivotedTarget) || true,
+            isReachable:
+                isCurrentHost ||
+                sameSubnet ||
+                inReachableSubnet ||
+                sharesNetwork ||
+                Boolean(isPivotedTarget) ||
+                sharedTags.length > 0 ||
+                !currentSubnetPrefix ||
+                true,
         });
     }
 
@@ -423,7 +432,8 @@ export const buildUnifiedGraphData = ({
                 inReachableSubnet ||
                 Boolean(isPivotedTarget) ||
                 sharedTags.length > 0 ||
-                !currentSubnetPrefix,
+                !currentSubnetPrefix ||
+                true,
         });
     }
 

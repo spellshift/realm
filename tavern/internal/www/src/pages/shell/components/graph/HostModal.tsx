@@ -1,7 +1,7 @@
-import React, { Fragment, useContext, useEffect, useMemo, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { BugAntIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { getApolloContext } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import { KeyRound } from "lucide-react";
 import {
     CREATE_NETWORK_HOST_MUTATION,
@@ -151,8 +151,8 @@ export const HostModal: React.FC<HostModalProps> = ({
     availableCredentials = [],
     onHostSaved,
 }) => {
-    const apolloContext = useContext(getApolloContext());
-    const apolloClient = apolloContext?.client;
+    const [createNetworkHost] = useMutation(CREATE_NETWORK_HOST_MUTATION);
+    const [updateNetworkHost] = useMutation(UPDATE_NETWORK_HOST_MUTATION);
 
     const isEditMode = Boolean(initialHost);
 
@@ -295,83 +295,72 @@ export const HostModal: React.FC<HostModalProps> = ({
                     credentialCount: associatedCreds.length,
                 };
 
-                if (apolloClient) {
-                    try {
-                        if (initialHost.networkHostId) {
-                            const input: Record<string, any> = {
-                                name: cleanName,
-                                ipAddress: cleanIp,
-                                openPorts,
-                            };
-                            if (cleanHostname) {
-                                input.hostname = cleanHostname;
-                            }
-                            if (openPorts.length === 0) {
-                                input.clearOpenPorts = true;
-                            }
-                            if (addCredentialIDs.length > 0) {
-                                input.addCredentialIDs = addCredentialIDs;
-                            }
-                            if (removeCredentialIDs.length > 0) {
-                                input.removeCredentialIDs = removeCredentialIDs;
-                            }
-                            const res = await apolloClient.mutate({
-                                mutation: UPDATE_NETWORK_HOST_MUTATION,
-                                variables: {
-                                    networkHostID: initialHost.networkHostId,
-                                    input,
-                                },
-                            });
-                            const node = res.data?.updateNetworkHost;
-                            if (node) {
-                                updatedHost = {
-                                    ...updatedHost,
-                                    networkHostId: String(node.id),
-                                    name: node.name || updatedHost.name,
-                                    hostname: node.hostname ?? updatedHost.hostname,
-                                    ipAddress: node.ipAddress || updatedHost.ipAddress,
-                                    primaryIP: node.ipAddress || updatedHost.primaryIP,
-                                    subnet: node.subnet || updatedHost.subnet,
-                                    openPorts: Array.isArray(node.openPorts)
-                                        ? node.openPorts
-                                        : updatedHost.openPorts,
-                                };
-                            }
-                        } else {
-                            const input: Record<string, any> = {
-                                name: cleanName,
-                                ipAddress: cleanIp,
-                                openPorts,
-                            };
-                            if (cleanHostname) {
-                                input.hostname = cleanHostname;
-                            }
-                            if (subnet) {
-                                input.subnet = subnet;
-                            }
-                            if (initialHost.hostId) {
-                                input.hostID = initialHost.hostId;
-                            }
-                            if (credIdList.length > 0) {
-                                input.credentialIDs = credIdList;
-                            }
-                            const res = await apolloClient.mutate({
-                                mutation: CREATE_NETWORK_HOST_MUTATION,
-                                variables: { input },
-                            });
-                            const node = res.data?.createNetworkHost;
-                            if (node) {
-                                updatedHost = {
-                                    ...updatedHost,
-                                    networkHostId: String(node.id),
-                                };
-                            }
-                        }
-                    } catch (err: any) {
-                        const msg = String(err?.message || "");
-                        if (!msg.includes("No more mocked responses")) {
-                            throw err;
-                        }
+                if (initialHost.networkHostId) {
+                    const input: Record<string, any> = {
+                        name: cleanName,
+                        ipAddress: cleanIp,
+                        openPorts,
+                    };
+                    if (cleanHostname) {
+                        input.hostname = cleanHostname;
+                    }
+                    if (openPorts.length === 0) {
+                        input.clearOpenPorts = true;
+                    }
+                    if (addCredentialIDs.length > 0) {
+                        input.addCredentialIDs = addCredentialIDs;
+                    }
+                    if (removeCredentialIDs.length > 0) {
+                        input.removeCredentialIDs = removeCredentialIDs;
+                    }
+                    const res = await updateNetworkHost({
+                        variables: {
+                            networkHostID: initialHost.networkHostId,
+                            input,
+                        },
+                    });
+                    const node = res.data?.updateNetworkHost;
+                    if (node) {
+                        updatedHost = {
+                            ...updatedHost,
+                            networkHostId: String(node.id),
+                            name: node.name || updatedHost.name,
+                            hostname: node.hostname ?? updatedHost.hostname,
+                            ipAddress: node.ipAddress || updatedHost.ipAddress,
+                            primaryIP: node.ipAddress || updatedHost.primaryIP,
+                            subnet: node.subnet || updatedHost.subnet,
+                            openPorts: Array.isArray(node.openPorts)
+                                ? node.openPorts
+                                : updatedHost.openPorts,
+                        };
+                    }
+                } else {
+                    const input: Record<string, any> = {
+                        name: cleanName,
+                        ipAddress: cleanIp,
+                        openPorts,
+                    };
+                    if (cleanHostname) {
+                        input.hostname = cleanHostname;
+                    }
+                    if (subnet) {
+                        input.subnet = subnet;
+                    }
+                    if (initialHost.hostId) {
+                        input.hostID = initialHost.hostId;
+                    }
+                    if (credIdList.length > 0) {
+                        input.credentialIDs = credIdList;
+                    }
+                    const res = await createNetworkHost({
+                        variables: { input },
+                    });
+                    const node = res.data?.createNetworkHost;
+                    if (node) {
+                        updatedHost = {
+                            ...updatedHost,
+                            networkHostId: String(node.id),
+                        };
                     }
                 }
 
@@ -399,49 +388,39 @@ export const HostModal: React.FC<HostModalProps> = ({
                 isReachable: true,
             };
 
-            if (apolloClient) {
-                try {
-                    const input: Record<string, any> = {
-                        name: cleanName,
-                        ipAddress: cleanIp,
-                        openPorts,
-                    };
-                    if (cleanHostname) {
-                        input.hostname = cleanHostname;
-                    }
-                    if (subnet) {
-                        input.subnet = subnet;
-                    }
-                    if (credIdList.length > 0) {
-                        input.credentialIDs = credIdList;
-                    }
-                    const res = await apolloClient.mutate({
-                        mutation: CREATE_NETWORK_HOST_MUTATION,
-                        variables: { input },
-                    });
-                    const node = res.data?.createNetworkHost;
-                    if (node) {
-                        createdHost = {
-                            ...createdHost,
-                            id: node.host?.id ? String(node.host.id) : `nh-${node.id}`,
-                            hostId: node.host?.id ? String(node.host.id) : undefined,
-                            networkHostId: String(node.id),
-                            name: node.name || createdHost.name,
-                            hostname: node.hostname || createdHost.hostname,
-                            ipAddress: node.ipAddress || createdHost.ipAddress,
-                            primaryIP: node.ipAddress || createdHost.primaryIP,
-                            subnet: node.subnet || createdHost.subnet,
-                            openPorts: Array.isArray(node.openPorts)
-                                ? node.openPorts
-                                : createdHost.openPorts,
-                        };
-                    }
-                } catch (err: any) {
-                    const msg = String(err?.message || "");
-                    if (!msg.includes("No more mocked responses")) {
-                        throw err;
-                    }
-                }
+            const input: Record<string, any> = {
+                name: cleanName,
+                ipAddress: cleanIp,
+                openPorts,
+            };
+            if (cleanHostname) {
+                input.hostname = cleanHostname;
+            }
+            if (subnet) {
+                input.subnet = subnet;
+            }
+            if (credIdList.length > 0) {
+                input.credentialIDs = credIdList;
+            }
+            const res = await createNetworkHost({
+                variables: { input },
+            });
+            const node = res.data?.createNetworkHost;
+            if (node) {
+                createdHost = {
+                    ...createdHost,
+                    id: node.host?.id ? String(node.host.id) : `nh-${node.id}`,
+                    hostId: node.host?.id ? String(node.host.id) : undefined,
+                    networkHostId: String(node.id),
+                    name: node.name || createdHost.name,
+                    hostname: node.hostname || createdHost.hostname,
+                    ipAddress: node.ipAddress || createdHost.ipAddress,
+                    primaryIP: node.ipAddress || createdHost.primaryIP,
+                    subnet: node.subnet || createdHost.subnet,
+                    openPorts: Array.isArray(node.openPorts)
+                        ? node.openPorts
+                        : createdHost.openPorts,
+                };
             }
 
             onHostSaved?.(createdHost, "create");

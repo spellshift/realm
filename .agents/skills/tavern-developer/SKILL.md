@@ -2,6 +2,9 @@
 description: Developer skills for working on the Tavern backend and the react frontend.
 ---
 
+# General
+- Do not default to just changing a test when tests are broken, instead do your best to determine if the broken test indicates something needs to be fixed.
+
 # UI
 
 - Try to be minimalist with initial implementations unless asked not to. For example don't add cards within cards or excess buttons for features that weren't asked for.

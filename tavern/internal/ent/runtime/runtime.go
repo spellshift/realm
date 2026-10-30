@@ -325,6 +325,8 @@ func init() {
 	// event.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	event.UpdateDefaultLastModifiedAt = eventDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	hostMixin := schema.Host{}.Mixin()
+	hostHooks := schema.Host{}.Hooks()
+	host.Hooks[0] = hostHooks[0]
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0
 	hostFields := schema.Host{}.Fields()

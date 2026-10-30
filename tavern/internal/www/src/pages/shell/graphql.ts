@@ -131,6 +131,11 @@ export const GET_SHELL_HISTORY = gql`
         }
       }
     }
+  }
+`;
+
+export const GET_SHELL_CROSS_SESSION_HISTORY = gql`
+  query GetShellCrossSessionHistory {
     crossSessionShells: shells(last: 20, where: { hasShellTasks: true }) {
       edges {
         node {
@@ -418,34 +423,6 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
         }
       }
     }
-  }
-`;
-
-export const CREATE_NETWORK_MUTATION = gql`
-  mutation CreateNetworkFromShell($input: CreateNetworkInput!) {
-    createNetwork(input: $input) {
-      id
-      name
-      subnet
-      description
-    }
-  }
-`;
-
-export const UPDATE_NETWORK_MUTATION = gql`
-  mutation UpdateNetworkFromShell($networkID: ID!, $input: UpdateNetworkInput!) {
-    updateNetwork(networkID: $networkID, input: $input) {
-      id
-      name
-      subnet
-      description
-    }
-  }
-`;
-
-export const DELETE_NETWORK_MUTATION = gql`
-  mutation DeleteNetworkFromShell($networkID: ID!) {
-    deleteNetwork(networkID: $networkID)
   }
 `;
 

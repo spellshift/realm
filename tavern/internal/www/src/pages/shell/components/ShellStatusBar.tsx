@@ -7,6 +7,8 @@ import {
   Clock,
   Code2,
   Loader2,
+  LogIn,
+  LogOut,
   Settings,
   Shell,
   Unplug,
@@ -31,6 +33,8 @@ interface ShellStatusBarProps {
   queuedTasks?: ShellTaskItem[];
   runningTasks?: ShellTaskItem[];
   queueTourOpen?: boolean;
+  sidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
   sessionSettingsOpen?: boolean;
   onToggleSessionSettings?: () => void;
   composerOpen?: boolean;
@@ -252,6 +256,8 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
   queuedTasks = [],
   runningTasks = [],
   queueTourOpen = false,
+  sidebarOpen = false,
+  onToggleSidebar,
   sessionSettingsOpen = false,
   onToggleSessionSettings,
   composerOpen = false,
@@ -306,8 +312,29 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
         data-tour="shell-status-bar"
         className="bg-[#161922] px-3 py-1 border-t border-[#262b38] text-xs text-gray-400 flex justify-between items-center select-none"
       >
-        {/* Left side: Notification Bell, Session Settings, Composer */}
+        {/* Left side: Sidebar Toggle, Notification Bell, Session Settings, Composer */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            data-tour="shell-sidebar-toggle"
+            data-testid="status-bar-sidebar-toggle"
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-expanded={sidebarOpen}
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            onClick={onToggleSidebar}
+            className={`inline-flex items-center justify-center p-1 rounded transition-colors ${
+              sidebarOpen
+                ? "text-gray-100 bg-white/10"
+                : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+            }`}
+          >
+            {sidebarOpen ? (
+              <LogIn data-testid="sidebar-toggle-login-icon" className="w-3.5 h-3.5" />
+            ) : (
+              <LogOut data-testid="sidebar-toggle-logout-icon" className="w-3.5 h-3.5" />
+            )}
+          </button>
+
           <NotificationBell
             placement="top-start"
             buttonClassName="relative inline-flex items-center justify-center p-1 rounded transition-colors text-gray-400 hover:text-gray-200 hover:bg-white/5"

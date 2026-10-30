@@ -374,11 +374,11 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                                                                     </span>
                                                                 </span>
                                                                 <span className="flex items-center gap-1.5 flex-shrink-0">
-                                                                    <span className="px-1.5 py-0.2 rounded bg-[#12151c] text-gray-400 text-[10px] font-mono">
+                                                                    <span className="px-1.5 py-0.5 rounded bg-[#12151c] text-gray-400 text-[10px] font-mono">
                                                                         {formatCredKind(c.kind)}
                                                                     </span>
                                                                     <span
-                                                                        className={`px-1.5 py-0.2 rounded text-[10px] ${
+                                                                        className={`px-1.5 py-0.5 rounded text-[10px] ${
                                                                             c.isCurrentHost
                                                                                 ? "bg-emerald-500/20 text-emerald-300"
                                                                                 : "bg-gray-700/60 text-gray-300"

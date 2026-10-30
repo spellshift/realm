@@ -50,34 +50,22 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
 
   return (
     <>
-      <div style={{
-        position: "absolute",
-        top: pos.y,
-        left: pos.x,
-        background: "#252526",
-        border: "1px solid #454545",
-        zIndex: 1000,
-        maxHeight: "200px",
-        overflowY: "auto",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-        color: "#cccccc",
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-        fontSize: "14px"
-      }}>
-        <ul ref={completionsListRef} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+      <div
+        style={{ top: pos.y, left: pos.x }}
+        className="absolute z-[1000] max-h-[200px] overflow-y-auto rounded-md bg-[#161a26] border border-[#2f364a] shadow-lg text-gray-200 font-mono text-sm"
+      >
+        <ul ref={completionsListRef} className="list-none m-0 p-0.5">
           {completions.map((c, i) => {
             const doc = findDoc(c);
+            const isSelected = i === index;
+            const rowClass = isSelected
+              ? "bg-purple-600/30 text-purple-100"
+              : "hover:bg-white/5 text-gray-300";
+
             return (
               <li
                 key={i}
-                style={{
-                  padding: "4px 8px",
-                  background: i === index ? "#094771" : "transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between"
-                }}
+                className={`px-2 py-1 rounded cursor-pointer flex items-center justify-between transition-colors ${rowClass}`}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   if (onCompletionSelect) {
@@ -109,7 +97,7 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
                 }}
               >
                 <span>{c}</span>
-                {doc && <Info size={14} style={{ marginLeft: 8 }} />}
+                {doc && <Info size={14} className="ml-2 text-gray-400" />}
               </li>
             );
           })}

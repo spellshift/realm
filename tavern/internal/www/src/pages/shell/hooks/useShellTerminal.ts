@@ -5,6 +5,7 @@ import "@xterm/xterm/css/xterm.css";
 import {
     BrowserWasmAdapter,
     ConnectionStatus,
+    DEFAULT_ELDRITCH_VERSION,
     WEBSOCKET_CONNECT_TIMEOUT_MS,
     normalizeMultilineScript,
 } from "../../../lib/browser-adapter";
@@ -13,10 +14,12 @@ import docsData from "../../../assets/eldritch-docs.json";
 import {
     moveWordLeft,
     moveWordRight,
+    findReverseHistoryMatch,
     highlightPythonSyntax,
     loadHistory,
     saveHistory,
     stripInternalMacro,
+    isTerminalElementVisible,
     getViewportNonEmptyLineCount,
     buildScrollbackPreservingClearSequence,
     transformClearAnsiForScrollback,
@@ -117,6 +120,7 @@ interface ShellState {
     prompt: string;
     isSearching: boolean;
     searchQuery: string;
+    searchMatchIndex: number;
     currentBlock: string;
 }
 
@@ -131,7 +135,8 @@ export const useShellTerminal = (
     isLateCheckin: boolean,
     onOpenPortalTab?: (type: string, target: string, pivotId?: string) => void,
     onCommandSubmitted?: () => void,
-    shellTasks: ShellTaskItem[] = []
+    shellTasks: ShellTaskItem[] = [],
+    fontSize: number = 13
 ) => {
     const termNodeRef = useRef<HTMLDivElement | null>(null);
     const [termMounted, setTermMounted] = useState<boolean>(false);
@@ -152,6 +157,8 @@ export const useShellTerminal = (
         return refObj as React.RefObject<HTMLDivElement>;
     }, []);
     const termInstance = useRef<Terminal | null>(null);
+    const fitAddonRef = useRef<FitAddon | null>(null);
+    const fontSizeRef = useRef<number>(fontSize);
     const adapter = useRef<BrowserWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
@@ -187,6 +194,7 @@ export const useShellTerminal = (
         prompt: ">>> ",
         isSearching: false,
         searchQuery: "",
+        searchMatchIndex: 0,
         currentBlock: ""
     });
 
@@ -272,16 +280,19 @@ export const useShellTerminal = (
 
     const shellNodeId = shellData?.node?.id;
     const shellClosedAt = shellData?.node?.closedAt;
+    const beaconName = shellData?.node?.beacon?.name;
 
-    // Ref for late checkin to access in event handlers
+    // Ref for late checkin and beacon name to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
     const shellClosedAtRef = useRef(shellClosedAt);
+    const beaconNameRef = useRef<string>(beaconName || "");
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         connectionStatusRef.current = connectionStatus;
         shellClosedAtRef.current = shellClosedAt;
+        beaconNameRef.current = beaconName || "";
         if (termInstance.current) {
             const isDimmed = connectionStatus !== "connected" || !!shellClosedAt;
             termInstance.current.options.theme = {
@@ -292,7 +303,7 @@ export const useShellTerminal = (
                 selectionBackground: "rgba(148, 163, 184, 0.28)",
             };
         }
-    }, [isLateCheckin, connectionStatus, shellClosedAt]);
+    }, [isLateCheckin, connectionStatus, shellClosedAt, beaconName]);
 
     const updatePromptPos = useCallback(() => {
         const term = termInstance.current;
@@ -319,8 +330,8 @@ export const useShellTerminal = (
 
         let offsetX = 6;
         let offsetY = 6;
-        let cellHeight = 13.5 * 1.35;
-        let cellWidth = 8.1;
+        let cellHeight = fontSizeRef.current * 1.35;
+        let cellWidth = fontSizeRef.current * 0.6;
 
         const screenEl = container.querySelector(".xterm-screen") as HTMLElement | null;
         if (screenEl) {
@@ -374,15 +385,11 @@ export const useShellTerminal = (
 
         if (state.isSearching) {
             const prompt = `(reverse-i-search)'${state.searchQuery}': `;
-            let match = "";
-            if (state.searchQuery) {
-                for (let i = state.history.length - 1; i >= 0; i--) {
-                    if (state.history[i].includes(state.searchQuery)) {
-                        match = state.history[i];
-                        break;
-                    }
-                }
-            }
+            const match = findReverseHistoryMatch(
+                state.history,
+                state.searchQuery,
+                state.searchMatchIndex
+            );
             contentToWrite = prompt + match;
             contentToDisplay = contentToWrite;
             cursorIndex = contentToWrite.length;
@@ -599,6 +606,7 @@ export const useShellTerminal = (
         shellState.current.prompt = ">>> ";
         shellState.current.isSearching = false;
         shellState.current.searchQuery = "";
+        shellState.current.searchMatchIndex = 0;
 
         // Initialize terminal
         termInstance.current = new Terminal({
@@ -612,7 +620,7 @@ export const useShellTerminal = (
                 selectionBackground: "rgba(148, 163, 184, 0.28)",
             },
             fontFamily: "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace",
-            fontSize: 13.5,
+            fontSize: fontSizeRef.current,
             lineHeight: 1.35,
             scrollback: 10_000_000,
         });
@@ -623,9 +631,12 @@ export const useShellTerminal = (
         });
 
         const fitAddon = new FitAddon();
+        fitAddonRef.current = fitAddon;
         termInstance.current.loadAddon(fitAddon);
         termInstance.current.open(termNodeRef.current);
-        fitAddon.fit();
+        if (isTerminalElementVisible(termNodeRef.current)) {
+            fitAddon.fit();
+        }
 
         termInstance.current.onWriteParsed?.(() => updatePromptPos());
         termInstance.current.onCursorMove?.(() => updatePromptPos());
@@ -633,19 +644,27 @@ export const useShellTerminal = (
         termInstance.current.onRender?.(() => updatePromptPos());
 
         const handleResize = () => {
+            if (!isTerminalElementVisible(termNodeRef.current)) {
+                return;
+            }
             fitAddon.fit();
+            termInstance.current?.refresh?.(0, Math.max(0, (termInstance.current?.rows || 1) - 1));
             updatePromptPos();
         };
         window.addEventListener("resize", handleResize);
 
         // Also observe container size changes (e.g. tab switches)
         const resizeObserver = new ResizeObserver(() => {
+            if (!isTerminalElementVisible(termNodeRef.current)) {
+                return;
+            }
             fitAddon.fit();
+            termInstance.current?.refresh?.(0, Math.max(0, (termInstance.current?.rows || 1) - 1));
             updatePromptPos();
         });
         resizeObserver.observe(termNodeRef.current);
 
-        termInstance.current.write("Eldritch v0.4.1\r\n");
+        termInstance.current.write(`Eldritch v${DEFAULT_ELDRITCH_VERSION}\r\n`);
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const url = `${scheme}://${window.location.host}/shell/ws?shell_id=${shellId}`;
@@ -738,7 +757,8 @@ export const useShellTerminal = (
                     const formatted = transformClearAnsiForScrollback(
                         content.replace(/\n/g, "\r\n"),
                         term.rows,
-                        getViewportNonEmptyLineCount(term)
+                        getViewportNonEmptyLineCount(term),
+                        term.buffer?.active?.type === "alternate"
                     );
                     if (color) {
                         term.write(color + formatted + "\x1b[0m");
@@ -758,7 +778,8 @@ export const useShellTerminal = (
                 redrawLine();
             },
             () => {
-                termInstance.current?.write("Connected to Tavern.\r\n>>> ");
+                const targetBeaconName = beaconNameRef.current || "Beacon";
+                termInstance.current?.write(`Connected to ${targetBeaconName}\r\n>>> `);
                 lastBufferHeight.current = 0;
                 lastCursorRow.current = 0;
                 isReplReadyRef.current = true;
@@ -858,41 +879,41 @@ export const useShellTerminal = (
 
             if (state.isSearching) {
                 if (data === "\x12") { // Ctrl+R (Next match)
-                    // Logic to find next match (skipping current index?)
+                    state.searchMatchIndex += 1;
+                    redrawLine();
                     return;
                 }
-                if (data === "\x03" || data === "\x07") { // Ctrl+C / Ctrl+G
+                if (data === "\x03" || data === "\x07" || code === 27) { // Ctrl+C / Ctrl+G / Esc
                     state.isSearching = false;
                     state.searchQuery = "";
+                    state.searchMatchIndex = 0;
                     redrawLine();
                     return;
                 }
                 if (code === 13) { // Enter
-                    // Use the match
+                    const match = findReverseHistoryMatch(
+                        state.history,
+                        state.searchQuery,
+                        state.searchMatchIndex
+                    );
                     state.isSearching = false;
-                    let match = "";
-                    if (state.searchQuery) {
-                        for (let i = state.history.length - 1; i >= 0; i--) {
-                            if (state.history[i].includes(state.searchQuery)) {
-                                match = state.history[i];
-                                break;
-                            }
-                        }
-                    }
                     state.inputBuffer = match;
                     state.cursorPos = match.length;
                     state.preferredCol = null;
                     state.searchQuery = "";
+                    state.searchMatchIndex = 0;
                     redrawLine();
                     return;
                 }
                 if (code === 127 || code === 8) { // Backspace
                     state.searchQuery = state.searchQuery.slice(0, -1);
+                    state.searchMatchIndex = 0;
                     redrawLine();
                     return;
                 }
                 if (code >= 32) {
                     state.searchQuery += data;
+                    state.searchMatchIndex = 0;
                     redrawLine();
                     return;
                 }
@@ -929,6 +950,7 @@ export const useShellTerminal = (
             if (data === "\x12") { // Ctrl+R
                 state.isSearching = true;
                 state.searchQuery = "";
+                state.searchMatchIndex = 0;
                 redrawLine();
                 return;
             }
@@ -1403,11 +1425,24 @@ export const useShellTerminal = (
             resizeObserver.disconnect();
             adapter.current?.close();
             adapter.current = null;
+            fitAddonRef.current = null;
             termInstance.current?.dispose();
             termInstance.current = null;
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
     }, [shellId, shellNodeId, termMounted, reconnectInitTick, setPortalId, redrawLine, updatePromptPos, markCommandAwaiting, clearCommandAwaiting, updateCompletionsUI, applyCompletion]);
+
+    useEffect(() => {
+        fontSizeRef.current = fontSize;
+        const term = termInstance.current;
+        if (!term) return;
+        term.options.fontSize = fontSize;
+        if (isTerminalElementVisible(termNodeRef.current)) {
+            fitAddonRef.current?.fit();
+            term.refresh?.(0, Math.max(0, (term.rows || 1) - 1));
+        }
+        updatePromptPos();
+    }, [fontSize, updatePromptPos]);
 
     const getSessionInputs = useCallback(() => {
         if (shellTasksRef.current.length > 0) {
@@ -1453,7 +1488,7 @@ export const useShellTerminal = (
         // Render the executed code block with syntax highlighting
         const lines = trimmedCode.split("\n");
         lines.forEach((line, idx) => {
-            const linePrompt = idx === 0 ? ">>> " : ".. ";
+            const linePrompt = idx === 0 ? ">>> " : "... ";
             term.write(`${linePrompt}${highlightPythonSyntax(line)}\r\n`);
         });
 
@@ -1584,8 +1619,13 @@ export const useShellTerminal = (
         const term = termInstance.current;
         if (!term) return;
         const state = shellState.current;
-        state.isSearching = true;
-        state.searchQuery = "";
+        if (state.isSearching) {
+            state.searchMatchIndex += 1;
+        } else {
+            state.isSearching = true;
+            state.searchQuery = "";
+            state.searchMatchIndex = 0;
+        }
         redrawLine();
     }, [redrawLine]);
 

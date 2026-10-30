@@ -20,6 +20,7 @@ import {
     buildScrollbackPreservingClearSequence,
     transformClearAnsiForScrollback,
     getViewportNonEmptyLineCount,
+    findReverseHistoryMatch,
     HISTORY_KEY,
     MAX_HISTORY,
 } from './shellUtils';
@@ -81,6 +82,22 @@ describe('History Persistence', () => {
         // Should keep the last MAX_HISTORY items
         expect(stored[0]).toBe('cmd10');
         expect(stored[MAX_HISTORY - 1]).toBe(`cmd${MAX_HISTORY + 9}`);
+    });
+
+    it('findReverseHistoryMatch cycles through older reverse-i-search matches', () => {
+        const history = [
+            'file.list("/etc")',
+            'process.list()',
+            'file.list("/var/log")',
+            'sys.info()',
+            'file.list("/tmp")',
+        ];
+        expect(findReverseHistoryMatch(history, 'file.list', 0)).toBe('file.list("/tmp")');
+        expect(findReverseHistoryMatch(history, 'file.list', 1)).toBe('file.list("/var/log")');
+        expect(findReverseHistoryMatch(history, 'file.list', 2)).toBe('file.list("/etc")');
+        // Wraps around when skipMatches reaches total matches
+        expect(findReverseHistoryMatch(history, 'file.list', 3)).toBe('file.list("/tmp")');
+        expect(findReverseHistoryMatch(history, 'nonexistent', 0)).toBe('');
     });
 });
 
@@ -331,10 +348,10 @@ describe('Multi-line terminal buffer editing', () => {
         const sim = createTerminalSimulator(cols);
 
         // Seed terminal with existing history output above the active prompt
-        sim.write('Eldritch v0.4.1\r\nConnected to Tavern.\r\n>>> !whoami\r\nroot\r\n>>> ');
+        sim.write('Eldritch v0.4.1\r\nConnected to test-beacon\r\n>>> !whoami\r\nroot\r\n>>> ');
         expect(sim.lines.slice(0, 4)).toEqual([
             'Eldritch v0.4.1',
-            'Connected to Tavern.',
+            'Connected to test-beacon',
             '>>> !whoami',
             'root',
         ]);
@@ -361,7 +378,7 @@ describe('Multi-line terminal buffer editing', () => {
 
         expect(sim.lines).toEqual([
             'Eldritch v0.4.1',
-            'Connected to Tavern.',
+            'Connected to test-beacon',
             '>>> !whoami',
             'root',
             '>>> def calc(x):',
@@ -387,7 +404,7 @@ describe('Multi-line terminal buffer editing', () => {
         // History lines above prompt must NOT be overwritten
         expect(sim.lines.slice(0, 4)).toEqual([
             'Eldritch v0.4.1',
-            'Connected to Tavern.',
+            'Connected to test-beacon',
             '>>> !whoami',
             'root',
         ]);
@@ -409,7 +426,7 @@ describe('Multi-line terminal buffer editing', () => {
         redrawBuffer(buffer, cursorPos);
         expect(sim.lines).toEqual([
             'Eldritch v0.4.1',
-            'Connected to Tavern.',
+            'Connected to test-beacon',
             '>>> !whoami',
             'root',
             '>>> def compute(x):',
@@ -424,7 +441,7 @@ describe('Multi-line terminal buffer editing', () => {
         redrawBuffer(buffer, cursorPos);
         expect(sim.lines).toEqual([
             'Eldritch v0.4.1',
-            'Connected to Tavern.',
+            'Connected to test-beacon',
             '>>> !whoami',
             'root',
             '>>> !id',
@@ -615,7 +632,7 @@ describe('Scrollback-Preserving Terminal Clear', () => {
     });
 
     it('counts non-empty viewport lines from the active terminal buffer', () => {
-        const lines = ['Eldritch v0.4.1', 'Connected to Tavern.', '>>> !whoami', 'root', '', ''];
+        const lines = ['Eldritch v0.4.1', 'Connected to test-beacon', '>>> !whoami', 'root', '', ''];
         const mockTerm = {
             rows: 6,
             buffer: {

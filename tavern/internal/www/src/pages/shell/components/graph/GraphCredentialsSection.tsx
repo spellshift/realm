@@ -125,15 +125,17 @@ export const GraphCredentialsSection: React.FC<GraphCredentialsSectionProps> = (
                 </div>
             )}
 
-            <CredentialModal
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                currentHostId={currentHostId}
-                currentHostName={currentHostName}
-                currentHostIp={currentHostIp}
-                hosts={hosts}
-                onCredentialCreated={onCredentialCreated}
-            />
+            {modalOpen && (
+                <CredentialModal
+                    isOpen={modalOpen}
+                    onClose={() => setModalOpen(false)}
+                    currentHostId={currentHostId}
+                    currentHostName={currentHostName}
+                    currentHostIp={currentHostIp}
+                    hosts={hosts}
+                    onCredentialCreated={onCredentialCreated}
+                />
+            )}
         </div>
     );
 };

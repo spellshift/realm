@@ -1,7 +1,7 @@
-import React, { Fragment, useContext, useEffect, useMemo, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { BookOpenIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { getApolloContext } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import {
     AlertCircle,
     AlertTriangle,
@@ -57,6 +57,16 @@ const PARAM_TYPE_OPTIONS = [
 const DARK_INPUT_CLASS =
     "w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500";
 
+const getStepStatus = (currStep: number, targetStep: number): StepStatus => {
+    if (currStep > targetStep) {
+        return StepStatus.Complete;
+    }
+    if (currStep === targetStep) {
+        return StepStatus.Current;
+    }
+    return StepStatus.Upcoming;
+};
+
 const SaveTomeVerticalSteps: React.FC<{ currStep: number; steps: VerticalStepItem[] }> = ({
     currStep,
     steps,
@@ -64,12 +74,7 @@ const SaveTomeVerticalSteps: React.FC<{ currStep: number; steps: VerticalStepIte
     <nav aria-label="Progress">
         <ol className="overflow-hidden">
             {steps.map((s, stepIdx) => {
-                const status =
-                    currStep > s.step
-                        ? StepStatus.Complete
-                        : currStep === s.step
-                          ? StepStatus.Current
-                          : StepStatus.Upcoming;
+                const status = getStepStatus(currStep, s.step);
                 const isLast = stepIdx === steps.length - 1;
 
                 if (status === StepStatus.Complete) {
@@ -474,6 +479,34 @@ const StepTomeParameters: React.FC<StepTomeParametersProps> = ({
     </div>
 );
 
+const ReviewLspStatusBadge: React.FC<{ errorCount: number; warningCount: number }> = ({
+    errorCount,
+    warningCount,
+}) => {
+    if (errorCount > 0) {
+        return (
+            <span className="inline-flex items-center gap-1 text-red-400">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {errorCount} {errorCount === 1 ? "error" : "errors"}
+            </span>
+        );
+    }
+    if (warningCount > 0) {
+        return (
+            <span className="inline-flex items-center gap-1 text-amber-300">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                {warningCount} {warningCount === 1 ? "warning" : "warnings"}
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1 text-emerald-400">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Syntax OK
+        </span>
+    );
+};
+
 interface StepTomeReviewProps {
     name: string;
     description: string;
@@ -574,22 +607,10 @@ const StepTomeReview: React.FC<StepTomeReviewProps> = ({
                         data-testid="save-tome-lsp-status"
                         className="inline-flex items-center gap-1 text-[11px] font-mono"
                     >
-                        {errorCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-red-400">
-                                <AlertCircle className="w-3.5 h-3.5" />
-                                {errorCount} {errorCount === 1 ? "error" : "errors"}
-                            </span>
-                        ) : warningCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-amber-300">
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                {warningCount} {warningCount === 1 ? "warning" : "warnings"}
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1 text-emerald-400">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                Syntax OK
-                            </span>
-                        )}
+                        <ReviewLspStatusBadge
+                            errorCount={errorCount}
+                            warningCount={warningCount}
+                        />
                     </span>
                 </div>
                 <textarea
@@ -641,8 +662,7 @@ const SaveTomeModal: React.FC<SaveTomeModalProps> = ({
     defaultAuthor = "operator",
     onTomeCreated,
 }) => {
-    const apolloContext = useContext(getApolloContext());
-    const apolloClient = apolloContext?.client;
+    const [createTome] = useMutation(CREATE_TOME_MUTATION);
 
     const [step, setStep] = useState<number>(0);
     const [name, setName] = useState<string>("");
@@ -748,18 +768,15 @@ const SaveTomeModal: React.FC<SaveTomeModalProps> = ({
                 eldritch: input.eldritch,
             };
 
-            if (apolloClient) {
-                const response = await apolloClient.mutate({
-                    mutation: CREATE_TOME_MUTATION,
-                    variables: { input },
-                    refetchQueries: [{ query: GET_SHELL_TOMES }],
-                });
-                if (response.data?.createTome) {
-                    createdTome = {
-                        ...createdTome,
-                        ...response.data.createTome,
-                    };
-                }
+            const response = await createTome({
+                variables: { input },
+                refetchQueries: [{ query: GET_SHELL_TOMES }],
+            });
+            if (response.data?.createTome) {
+                createdTome = {
+                    ...createdTome,
+                    ...response.data.createTome,
+                };
             }
 
             onTomeCreated?.(createdTome);

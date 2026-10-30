@@ -89,10 +89,12 @@ export const useCallbackTimer = (beaconData: any, fallbackIntervalSeconds?: numb
     const [isMissedCallback, setIsMissedCallback] = useState(false);
     const [isLateCheckin, setIsLateCheckin] = useState(false);
 
+    const nextSeenAt = beaconData?.node?.nextSeenAt;
+
     useEffect(() => {
+        if (!nextSeenAt) return;
         const updateTimer = () => {
-            if (!beaconData?.node?.nextSeenAt) return;
-            const next = moment(beaconData.node.nextSeenAt);
+            const next = moment(nextSeenAt);
             const now = moment();
             const diff = next.diff(now, 'seconds');
 
@@ -121,7 +123,7 @@ export const useCallbackTimer = (beaconData: any, fallbackIntervalSeconds?: numb
         updateTimer(); // Initial call
         const intervalId = setInterval(updateTimer, 1000);
         return () => clearInterval(intervalId);
-    }, [beaconData]);
+    }, [nextSeenAt]);
 
     const callbackStats = useMemo(
         () => computeCallbackStats(beaconData?.node, fallbackIntervalSeconds),

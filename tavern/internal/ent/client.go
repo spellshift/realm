@@ -2260,7 +2260,8 @@ func (c *HostClient) QueryNetworkHosts(h *Host) *NetworkHostQuery {
 
 // Hooks returns the client hooks.
 func (c *HostClient) Hooks() []Hook {
-	return c.hooks.Host
+	hooks := c.hooks.Host
+	return append(hooks[:len(hooks):len(hooks)], host.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.

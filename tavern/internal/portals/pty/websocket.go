@@ -25,6 +25,14 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+// WebsocketControlMessage represents a message from the websocket client (input, resize, or close).
+type WebsocketControlMessage struct {
+	Kind  string `json:"kind"`
+	Input string `json:"input"`
+	Rows  uint32 `json:"rows"`
+	Cols  uint32 `json:"cols"`
+}
+
 // PivotSession represents an active PTY session that can be shared among multiple websockets.
 type PivotSession struct {
 	PivotID       int
@@ -188,6 +196,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pivotIDStr := r.URL.Query().Get("pivot_id")
 	portalIDStr := r.URL.Query().Get("portal_id")
 	shellIDStr := r.URL.Query().Get("shell_id")
+	var initRows, initCols uint32
+	if rStr := r.URL.Query().Get("rows"); rStr != "" {
+		if rVal, err := strconv.ParseUint(rStr, 10, 32); err == nil {
+			initRows = uint32(rVal)
+		}
+	}
+	if cStr := r.URL.Query().Get("cols"); cStr != "" {
+		if cVal, err := strconv.ParseUint(cStr, 10, 32); err == nil {
+			initCols = uint32(cVal)
+		}
+	}
 
 	var pivotSession *PivotSession
 
@@ -382,6 +401,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Bytes: &portalpb.BytesPayload{
 					Data: []byte{},
 					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+					Rows: initRows,
+					Cols: initCols,
 				},
 			},
 		}
@@ -401,11 +422,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						errCh <- err
 						return
 					}
-					var inputMsg shell.WebsocketTaskInputMessage
-					if err := json.Unmarshal(msg, &inputMsg); err != nil {
+					var ctrlMsg WebsocketControlMessage
+					if err := json.Unmarshal(msg, &ctrlMsg); err != nil {
 						continue
 					}
-					if inputMsg.Kind == "close" {
+					switch ctrlMsg.Kind {
+					case "close":
 						closeMote := &portalpb.Mote{
 							StreamId: streamID,
 							SeqId:    pivotSession.nextSeqID(),
@@ -419,23 +441,40 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						closePivot()
 						errCh <- fmt.Errorf("closed")
 						return
-					}
-					if inputMsg.Kind != shell.WebsocketMessageKindInput {
-						continue
-					}
-					mote := &portalpb.Mote{
-						StreamId: streamID,
-						SeqId:    pivotSession.nextSeqID(),
-						Payload: &portalpb.Mote_Bytes{
-							Bytes: &portalpb.BytesPayload{
-								Data: []byte(inputMsg.Input),
-								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+					case "resize":
+						if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+							resizeMote := &portalpb.Mote{
+								StreamId: streamID,
+								SeqId:    pivotSession.nextSeqID(),
+								Payload: &portalpb.Mote_Bytes{
+									Bytes: &portalpb.BytesPayload{
+										Data: []byte{},
+										Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+										Rows: ctrlMsg.Rows,
+										Cols: ctrlMsg.Cols,
+									},
+								},
+							}
+							if err := h.mux.Publish(sessionCtx, topicIn, resizeMote); err != nil {
+								errCh <- err
+								return
+							}
+						}
+					case string(shell.WebsocketMessageKindInput):
+						mote := &portalpb.Mote{
+							StreamId: streamID,
+							SeqId:    pivotSession.nextSeqID(),
+							Payload: &portalpb.Mote_Bytes{
+								Bytes: &portalpb.BytesPayload{
+									Data: []byte(ctrlMsg.Input),
+									Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+								},
 							},
-						},
-					}
-					if err := h.mux.Publish(sessionCtx, topicIn, mote); err != nil {
-						errCh <- err
-						return
+						}
+						if err := h.mux.Publish(sessionCtx, topicIn, mote); err != nil {
+							errCh <- err
+							return
+						}
 					}
 				}
 			}()
@@ -508,11 +547,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				errCh <- err
 				return
 			}
-			var inputMsg shell.WebsocketTaskInputMessage
-			if err := json.Unmarshal(msg, &inputMsg); err != nil {
+			var ctrlMsg WebsocketControlMessage
+			if err := json.Unmarshal(msg, &ctrlMsg); err != nil {
 				continue
 			}
-			if inputMsg.Kind == "close" {
+			switch ctrlMsg.Kind {
+			case "close":
 				closeMote := &portalpb.Mote{
 					StreamId: pivotSession.StreamID,
 					SeqId:    pivotSession.nextSeqID(),
@@ -526,23 +566,38 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				pivotSession.Close(context.Background(), h.graph)
 				errCh <- fmt.Errorf("closed")
 				return
-			}
-			if inputMsg.Kind != shell.WebsocketMessageKindInput {
-				continue
-			}
-
-			mote := &portalpb.Mote{
-				StreamId: pivotSession.StreamID,
-				SeqId:    pivotSession.nextSeqID(),
-				Payload: &portalpb.Mote_Bytes{
-					Bytes: &portalpb.BytesPayload{
-						Data: []byte(inputMsg.Input),
-						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+			case "resize":
+				if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+					resizeMote := &portalpb.Mote{
+						StreamId: pivotSession.StreamID,
+						SeqId:    pivotSession.nextSeqID(),
+						Payload: &portalpb.Mote_Bytes{
+							Bytes: &portalpb.BytesPayload{
+								Data: []byte{},
+								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+								Rows: ctrlMsg.Rows,
+								Cols: ctrlMsg.Cols,
+							},
+						},
+					}
+					if err := h.mux.Publish(ctx, topicIn, resizeMote); err != nil {
+						slog.ErrorContext(ctx, "failed to publish pty resize", "error", err)
+					}
+				}
+			case string(shell.WebsocketMessageKindInput):
+				mote := &portalpb.Mote{
+					StreamId: pivotSession.StreamID,
+					SeqId:    pivotSession.nextSeqID(),
+					Payload: &portalpb.Mote_Bytes{
+						Bytes: &portalpb.BytesPayload{
+							Data: []byte(ctrlMsg.Input),
+							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+						},
 					},
-				},
-			}
-			if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
-				slog.ErrorContext(ctx, "failed to publish pty input", "error", err)
+				}
+				if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
+					slog.ErrorContext(ctx, "failed to publish pty input", "error", err)
+				}
 			}
 		}
 	}()

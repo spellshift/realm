@@ -8,8 +8,13 @@ import "@testing-library/jest-dom";
 import InterpreterStatusBanner from "../InterpreterStatusBanner";
 import MultiLineComposer, {
     DEFAULT_RC_ALIASES_SCRIPT,
+    DEFAULT_SHELL_FONT_SIZE,
+    MAX_SHELL_FONT_SIZE,
+    MIN_SHELL_FONT_SIZE,
+    clampShellFontSize,
     loadRcEnabled,
     loadRcScript,
+    loadShellFontSize,
 } from "../MultiLineComposer";
 import {
     CREATE_CREDENTIAL_MUTATION,
@@ -52,6 +57,10 @@ import {
     ShellTaskItem,
     ShellTomeItem,
 } from "../../hooks/useShellData";
+import {
+    isTerminalElementVisible,
+    transformClearAnsiForScrollback,
+} from "../../hooks/shellUtils";
 
 describe("ShellWalkthrough & InterpreterStatusBanner", () => {
     const baseProps = {
@@ -495,8 +504,16 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         render(<StatefulComposerAndSessionSettings />);
 
         expect(screen.getByTestId("composer-syntax-highlight")).toBeInTheDocument();
-        expect(screen.getByTestId("eldritch-lsp-status")).toBeInTheDocument();
-        expect(screen.getByTestId("eldritch-lsp-status")).not.toHaveTextContent("eldritch-lsp");
+        const lspStatusBtn = screen.getByTestId("eldritch-lsp-status");
+        expect(lspStatusBtn).toBeInTheDocument();
+        expect(lspStatusBtn).not.toHaveTextContent("eldritch-lsp");
+        expect(screen.queryByTestId("eldritch-lsp-status-popover")).not.toBeInTheDocument();
+        fireEvent.mouseEnter(lspStatusBtn);
+        const noErrorsPopover = screen.getByTestId("eldritch-lsp-status-popover");
+        expect(noErrorsPopover).toBeInTheDocument();
+        expect(noErrorsPopover).toHaveTextContent("No errors");
+        fireEvent.mouseLeave(lspStatusBtn);
+        expect(screen.queryByTestId("eldritch-lsp-status-popover")).not.toBeInTheDocument();
         expect(screen.getByTestId("composer-resize-handle")).toBeInTheDocument();
         expect(screen.queryByTestId("composer-rc-tab")).not.toBeInTheDocument();
 
@@ -573,6 +590,119 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
 
         const diagnostics = analyzeEldritchCode(normalizeMultilineScript(rcTextarea.value));
         expect(diagnostics).toHaveLength(0);
+    });
+
+    it("splits the RC pane vertically with a left settings panel to increase, decrease, and reset terminal and Eldritch editor font sizes between min 6 and max 28", () => {
+        window.localStorage.clear();
+        expect(MIN_SHELL_FONT_SIZE).toBe(6);
+        expect(MAX_SHELL_FONT_SIZE).toBe(28);
+        expect(clampShellFontSize(2)).toBe(6);
+        expect(clampShellFontSize(40)).toBe(28);
+        expect(loadShellFontSize()).toBe(DEFAULT_SHELL_FONT_SIZE);
+
+        const StatefulFontSizeShellUI = () => {
+            const [fontSize, setFontSize] = React.useState(() => loadShellFontSize());
+            const [code, setCode] = React.useState("file.list('/tmp')");
+            const termRef = React.useRef<HTMLDivElement>(null);
+            return (
+                <div className="shell-font-onest">
+                    <ShellTerminal
+                        termRef={termRef}
+                        fontSize={fontSize}
+                        isConnecting={false}
+                        isPromptBusy={true}
+                        promptPos={{ top: 6, left: 6, width: 24, height: 18, visible: true }}
+                        completions={[]}
+                        showCompletions={false}
+                        completionPos={{ x: 0, y: 0 }}
+                        completionIndex={0}
+                        onMouseMove={vi.fn()}
+                        tooltipState={{ visible: false, x: 0, y: 0, signature: "", description: "" }}
+                        handleCompletionSelect={vi.fn()}
+                    />
+                    <MultiLineComposer
+                        isOpen={true}
+                        onToggle={vi.fn()}
+                        code={code}
+                        onChange={setCode}
+                        onRunCode={vi.fn()}
+                        fontSize={fontSize}
+                    />
+                    <SessionSettings
+                        isOpen={true}
+                        rcCode={DEFAULT_RC_ALIASES_SCRIPT}
+                        fontSize={fontSize}
+                        onFontSizeChange={setFontSize}
+                        tomes={sampleTomes}
+                    />
+                </div>
+            );
+        };
+
+        render(<StatefulFontSizeShellUI />);
+
+        const leftPanel = screen.getByTestId("session-settings-left-panel");
+        const decreaseBtn = screen.getByTestId("session-settings-font-decrease");
+        const increaseBtn = screen.getByTestId("session-settings-font-increase");
+        const resetBtn = screen.getByTestId("session-settings-font-reset");
+
+        expect(leftPanel).toContainElement(decreaseBtn);
+        expect(leftPanel).toContainElement(increaseBtn);
+        expect(leftPanel).toContainElement(resetBtn);
+        expect(decreaseBtn).toHaveAttribute("aria-label", "Decrease font size");
+        expect(increaseBtn).toHaveAttribute("aria-label", "Increase font size");
+        expect(resetBtn).toHaveAttribute("aria-label", "Reset font size");
+        expect(decreaseBtn.querySelector("svg.lucide-a-arrow-down")).toBeInTheDocument();
+        expect(increaseBtn.querySelector("svg.lucide-a-arrow-up")).toBeInTheDocument();
+        expect(resetBtn).toBeDisabled();
+
+        const rcEditor = screen.getByLabelText(
+            "Shared Eldritch RC script editor"
+        ) as HTMLTextAreaElement;
+        const composerEditor = screen.getByLabelText(
+            "Multi-line Eldritch script editor"
+        ) as HTMLTextAreaElement;
+        const promptSpinner = screen.getByTestId("shell-prompt-spinner");
+
+        expect(rcEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
+        expect(composerEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
+        expect((promptSpinner.lastElementChild as HTMLElement).style.fontSize).toBe(
+            `${DEFAULT_SHELL_FONT_SIZE}px`
+        );
+
+        // Increase font size up to MAX_SHELL_FONT_SIZE (28)
+        for (let size = DEFAULT_SHELL_FONT_SIZE; size < MAX_SHELL_FONT_SIZE; size++) {
+            expect(increaseBtn).not.toBeDisabled();
+            fireEvent.click(increaseBtn);
+        }
+        expect(rcEditor.style.fontSize).toBe("28px");
+        expect(composerEditor.style.fontSize).toBe("28px");
+        expect((promptSpinner.lastElementChild as HTMLElement).style.fontSize).toBe("28px");
+        expect(loadShellFontSize()).toBe(28);
+        expect(increaseBtn).toBeDisabled();
+        expect(resetBtn).not.toBeDisabled();
+
+        // Decrease font size down to MIN_SHELL_FONT_SIZE (6)
+        for (let size = MAX_SHELL_FONT_SIZE; size > MIN_SHELL_FONT_SIZE; size--) {
+            expect(decreaseBtn).not.toBeDisabled();
+            fireEvent.click(decreaseBtn);
+        }
+        expect(rcEditor.style.fontSize).toBe("6px");
+        expect(composerEditor.style.fontSize).toBe("6px");
+        expect((promptSpinner.lastElementChild as HTMLElement).style.fontSize).toBe("6px");
+        expect(loadShellFontSize()).toBe(6);
+        expect(decreaseBtn).toBeDisabled();
+        expect(resetBtn).not.toBeDisabled();
+
+        // Reset font size back to DEFAULT_SHELL_FONT_SIZE (13)
+        fireEvent.click(resetBtn);
+        expect(rcEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
+        expect(composerEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
+        expect((promptSpinner.lastElementChild as HTMLElement).style.fontSize).toBe(
+            `${DEFAULT_SHELL_FONT_SIZE}px`
+        );
+        expect(loadShellFontSize()).toBe(DEFAULT_SHELL_FONT_SIZE);
+        expect(resetBtn).toBeDisabled();
     });
 
     it("renders Save Tome button with plus overlay next to Tome button and guides user through creating a Tome from the composer script", async () => {
@@ -1409,12 +1539,28 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
                                 networks: { edges: [] },
                             },
                         },
+                        {
+                            node: {
+                                id: "52",
+                                name: "unreachable-isolated",
+                                hostname: "isolated.local",
+                                ipAddress: "192.168.99.99",
+                                subnet: "192.168.99.0/24",
+                                openPorts: [80],
+                                host: null,
+                                credentials: { edges: [] },
+                                networks: { edges: [] },
+                            },
+                        },
                     ],
                 },
             },
         });
 
-        expect(result.networkHosts).toHaveLength(2);
+        expect(result.networkHosts).toHaveLength(3);
+        expect(result.networkHosts.some((h) => h.name === "unreachable-isolated")).toBe(true);
+        // Same-subnet hosts with open ports sort ahead of isolated hosts on other subnets
+        expect(result.networkHosts[2].name).toBe("unreachable-isolated");
         const internalDbHost = result.networkHosts.find((h) => h.name === "internal-db");
         expect(internalDbHost?.openPorts).toEqual([22, 5432]);
         expect(internalDbHost?.hostId).toBe("2");
@@ -1753,5 +1899,42 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         // Verify the NetworkHost in the Hosts tab also shows the newly associated credential
         fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
         expect(screen.getByText("creds: postgres")).toBeInTheDocument();
+    });
+
+    it("prevents hidden TabPanels from corrupting PTY dimensions and preserves htop alternate-screen redraws", () => {
+        const tabPanel = document.createElement("div");
+        const termDiv = document.createElement("div");
+        termDiv.style.height = "100%";
+        termDiv.style.width = "100%";
+        tabPanel.appendChild(termDiv);
+        document.body.appendChild(tabPanel);
+
+        try {
+            // When TabPanel has `hidden` attribute (inactive tab), isTerminalElementVisible must return false
+            // so xterm-addon-fit never parses `height: "100%"` as 100px (4 rows x 9 cols)
+            tabPanel.setAttribute("hidden", "");
+            expect(isTerminalElementVisible(termDiv)).toBe(false);
+
+            // When TabPanel is active and has layout dimensions, isTerminalElementVisible returns true
+            tabPanel.removeAttribute("hidden");
+            Object.defineProperty(termDiv, "clientWidth", { value: 1280, configurable: true });
+            Object.defineProperty(termDiv, "clientHeight", { value: 720, configurable: true });
+            expect(isTerminalElementVisible(termDiv)).toBe(true);
+        } finally {
+            document.body.removeChild(tabPanel);
+        }
+
+        // Full-screen TUIs (htop, vim, less) in alternate screen buffer must not have \x1b[2J converted into newline scrolls
+        const htopRedraw = "\x1b[H\x1b[2J\x1b[2d  1  [||||12.5%]\x1b[24;1HF1Help  F10Quit";
+        expect(transformClearAnsiForScrollback(htopRedraw, 24, 24, true)).toBe(htopRedraw);
+
+        const htopEnterAlt = "\x1b[?1049h\x1b[H\x1b[2J  1  [||||12.5%]";
+        expect(transformClearAnsiForScrollback(htopEnterAlt, 24, 10, false)).toBe(htopEnterAlt);
+
+        // Normal buffer `clear` (\x1b[H\x1b[2J\x1b[3J) strips \x1b[3J and scrolls non-empty lines into scrollback
+        const normalClear = "\x1b[H\x1b[2J\x1b[3J";
+        expect(transformClearAnsiForScrollback(normalClear, 24, 3, false)).toBe(
+            "\x1b[24;1H\n\n\n\x1b[H\x1b[J"
+        );
     });
 });

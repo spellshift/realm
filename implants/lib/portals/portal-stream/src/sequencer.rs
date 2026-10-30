@@ -29,6 +29,8 @@ impl PayloadSequencer {
             payload: Some(Payload::Bytes(BytesPayload {
                 data,
                 kind: kind.into(),
+                rows: 0,
+                cols: 0,
             })),
         }
     }

@@ -146,13 +146,15 @@ export const GraphHostsSection: React.FC<GraphHostsSectionProps> = ({
                 </div>
             )}
 
-            <HostModal
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                initialHost={editingHost}
-                availableCredentials={availableCredentials}
-                onHostSaved={onHostSaved}
-            />
+            {modalOpen && (
+                <HostModal
+                    isOpen={modalOpen}
+                    onClose={() => setModalOpen(false)}
+                    initialHost={editingHost}
+                    availableCredentials={availableCredentials}
+                    onHostSaved={onHostSaved}
+                />
+            )}
         </div>
     );
 };

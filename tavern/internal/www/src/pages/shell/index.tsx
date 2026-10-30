@@ -13,11 +13,13 @@ import MultiLineComposer, {
   hasShellExecutedRc,
   loadRcEnabled,
   loadRcScript,
+  loadShellFontSize,
   markShellExecutedRc,
 } from "./components/MultiLineComposer";
 import SessionSettings from "./components/SessionSettings";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
 import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
+import ShellSidebar from "./components/ShellSidebar";
 import ShellWalkthrough from "./components/ShellWalkthrough";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast, Tooltip } from "@chakra-ui/react";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -40,10 +42,58 @@ export interface PortalTab {
 const NUX_STORAGE_KEY = "tavern_shell_nux_dismissed_v1";
 const PIVOT_TARGETS_STORAGE_KEY = "tavern_shell_pivot_targets_v1";
 
+const getMainTabIndicatorClass = (
+  connectionStatus: string,
+  isConnecting: boolean
+): string => {
+  if (connectionStatus === "connected") {
+    return "bg-emerald-400";
+  }
+  if (isConnecting || connectionStatus === "reconnecting") {
+    return "bg-amber-400 animate-pulse";
+  }
+  return "bg-red-500";
+};
+
+const PortalTabIcon: React.FC<{
+  isDisconnected: boolean;
+  isConnecting: boolean;
+  isSsh: boolean;
+}> = ({ isDisconnected, isConnecting, isSsh }) => {
+  if (isDisconnected) {
+    return (
+      <Tooltip label="Terminal session ended" hasArrow>
+        <span className="text-red-400 flex items-center gap-1">
+          <WifiOff size={13} />
+        </span>
+      </Tooltip>
+    );
+  }
+  if (isSsh) {
+    return (
+      <Terminal
+        size={13}
+        className={isConnecting ? "text-amber-400 animate-pulse" : "text-purple-400"}
+      />
+    );
+  }
+  return (
+    <SquareTerminal
+      size={13}
+      className={isConnecting ? "text-amber-400 animate-pulse" : "text-emerald-400"}
+    />
+  );
+};
+
 const ShellContent = () => {
   const { shellId } = useParams<{ shellId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+
+  // Workspace drawers & composer state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
 
   const {
     loading,
@@ -72,7 +122,7 @@ const ShellContent = () => {
     refetchHistory,
     refetchKnowledgeGraph,
     refetchShell,
-  } = useShellData(shellId);
+  } = useShellData(shellId, { historyOpen, knowledgeOpen });
 
   const { timeUntilCallback, isMissedCallback, isLateCheckin, callbackStats } = useCallbackTimer(
     beaconData,
@@ -85,14 +135,12 @@ const ShellContent = () => {
     Record<string, "connecting" | "connected" | "disconnected">
   >({});
 
-  // Workspace drawers & composer state
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
   const [composerCode, setComposerCode] = useState<string>("");
   const [rcCode, setRcCode] = useState<string>(() => loadRcScript());
   const [rcEnabled, setRcEnabled] = useState<boolean>(() => loadRcEnabled());
+  const [shellFontSize, setShellFontSize] = useState<number>(() => loadShellFontSize());
   const [actionsMenuTourOpen, setActionsMenuTourOpen] = useState(false);
   const [queueTourOpen, setQueueTourOpen] = useState(false);
   const [sshModalOpenExternal, setSshModalOpenExternal] = useState(false);
@@ -374,8 +422,10 @@ const ShellContent = () => {
     (type, target, pivotId) => handleOpenPortalTab(type, target, pivotId, true),
     () => {
       refetchHistory();
+      refetchKnowledgeGraph();
     },
-    allShellTasks.length > 0 ? allShellTasks : shellTasks
+    allShellTasks.length > 0 ? allShellTasks : shellTasks,
+    shellFontSize
   );
 
   const completedTaskIdSet = new Set(completedTaskIds);
@@ -561,11 +611,7 @@ const ShellContent = () => {
 
   return (
     <div className="shell-font-onest flex flex-col h-screen w-full overflow-hidden bg-[#11131a] text-[#d4d4d4]">
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap"
-      />
-        <ShellWalkthrough
+      <ShellWalkthrough
           isOpen={showNuxBanner && !isConnecting && !shellData?.node?.closedAt}
           onDismiss={handleDismissNuxBanner}
           onOpenComposer={() => {
@@ -663,6 +709,7 @@ const ShellContent = () => {
 
         {/* Main Workspace Row: Terminal/Pivots + Optional History or Guide Drawer */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
+          <ShellSidebar isOpen={sidebarOpen} />
           <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
             <Tabs
               index={tabIndex}
@@ -694,13 +741,10 @@ const ShellContent = () => {
                 >
                   <span className="flex items-center gap-1.5">
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        connectionStatus === "connected"
-                          ? "bg-emerald-400"
-                          : isConnecting || connectionStatus === "reconnecting"
-                          ? "bg-amber-400 animate-pulse"
-                          : "bg-red-500"
-                      }`}
+                      className={`w-2 h-2 rounded-full ${getMainTabIndicatorClass(
+                        connectionStatus,
+                        isConnecting
+                      )}`}
                     />
                     <span>{shellData?.node?.beacon?.name ?? "Eldritch Shell"}</span>
                   </span>
@@ -709,7 +753,7 @@ const ShellContent = () => {
                 {portalTabs.map((tab) => {
                   const status = tabStatuses[tab.id];
                   const isDisconnected = status === "disconnected";
-                  const isConnecting = status === "connecting";
+                  const isTabConnecting = status === "connecting";
                   const isSsh = tab.type.toLowerCase() === "ssh";
 
                   return (
@@ -727,34 +771,18 @@ const ShellContent = () => {
                       className="text-xs font-medium px-3 py-1.5 rounded-t-md group"
                     >
                       <span className="flex items-center gap-1.5">
-                        {isDisconnected ? (
-                          <Tooltip label="Terminal session ended" hasArrow>
-                            <span className="text-red-400 flex items-center gap-1">
-                              <WifiOff size={13} />
-                            </span>
-                          </Tooltip>
-                        ) : isSsh ? (
-                          <Terminal
-                            size={13}
-                            className={
-                              isConnecting ? "text-amber-400 animate-pulse" : "text-purple-400"
-                            }
-                          />
-                        ) : (
-                          <SquareTerminal
-                            size={13}
-                            className={
-                              isConnecting ? "text-amber-400 animate-pulse" : "text-emerald-400"
-                            }
-                          />
-                        )}
+                        <PortalTabIcon
+                          isDisconnected={isDisconnected}
+                          isConnecting={isTabConnecting}
+                          isSsh={isSsh}
+                        />
 
                         <span className={isDisconnected ? "line-through text-gray-400" : ""}>
                           {formatPivotTabLabel(tab)}
                         </span>
 
                         {isDisconnected && (
-                          <span className="px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 text-[10px] font-semibold">
+                          <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-semibold">
                             Ended
                           </span>
                         )}
@@ -781,9 +809,17 @@ const ShellContent = () => {
               </TabList>
 
               <TabPanels flex="1" display="flex" flexDirection="column" overflow="hidden">
-                <TabPanel flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
+                <TabPanel
+                  flex="1"
+                  p={0}
+                  display="flex"
+                  flexDirection="column"
+                  overflow="hidden"
+                  _hidden={{ display: "none" }}
+                >
                   <ShellTerminal
                     termRef={termRef}
+                    fontSize={shellFontSize}
                     isConnecting={isConnecting}
                     isPromptBusy={isPromptBusy}
                     isMissedCallback={isMissedCallback}
@@ -809,6 +845,7 @@ const ShellContent = () => {
                     display="flex"
                     flexDirection="column"
                     overflow="hidden"
+                    _hidden={{ display: "none" }}
                   >
                     {tab.type === "ssh" && (portalId || tab.pivotId) && (
                       <SshTerminal
@@ -817,6 +854,8 @@ const ShellContent = () => {
                         pivotId={tab.pivotId ? parseInt(tab.pivotId, 10) : undefined}
                         shellId={shellId || ""}
                         isActive={tabIndex === idx + 1}
+                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${shellFontSize}`}
+                        fontSize={shellFontSize}
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
                         }
@@ -832,6 +871,8 @@ const ShellContent = () => {
                         pivotId={tab.pivotId ? parseInt(tab.pivotId, 10) : undefined}
                         shellId={shellId || ""}
                         isActive={tabIndex === idx + 1}
+                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${shellFontSize}`}
+                        fontSize={shellFontSize}
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
                         }
@@ -857,6 +898,7 @@ const ShellContent = () => {
               }}
               disabled={!!shellData?.node?.closedAt}
               tomes={tomes}
+              fontSize={shellFontSize}
               defaultAuthor={shellData?.node?.owner?.name}
               onTomeCreated={(createdTome) => {
                 refetchTomes?.();
@@ -878,6 +920,8 @@ const ShellContent = () => {
               onRcCodeChange={setRcCode}
               rcEnabled={rcEnabled}
               onRcEnabledChange={setRcEnabled}
+              fontSize={shellFontSize}
+              onFontSizeChange={setShellFontSize}
             />
           </div>
 
@@ -959,6 +1003,8 @@ const ShellContent = () => {
           queuedTasks={activeQueuedTasks}
           runningTasks={activeRunningTasks}
           queueTourOpen={queueTourOpen}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
           sessionSettingsOpen={sessionSettingsOpen}
           onToggleSessionSettings={() => {
             setSessionSettingsOpen((prev) => {

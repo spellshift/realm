@@ -9,6 +9,8 @@ export interface ExecutionResult {
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
 
+export const DEFAULT_ELDRITCH_VERSION = "0.4.1";
+
 export const WEBSOCKET_CONNECT_TIMEOUT_MS = 4_000;
 export const WEBSOCKET_INITIAL_BACKOFF_MS = 250;
 export const WEBSOCKET_MAX_BACKOFF_MS = 5_000;
@@ -81,7 +83,7 @@ export class BrowserWasmAdapter {
     private shouldInitRepl: boolean = false;
     private handleWindowOnline: () => void;
     private handleVisibilityChange: () => void;
-    public version: string = "";
+    public version: string = DEFAULT_ELDRITCH_VERSION;
 
     constructor(
         url: string,
@@ -273,7 +275,7 @@ export class BrowserWasmAdapter {
             try {
                 const resp = await fetch("/wasm/package.json");
                 const pkg = await resp.json();
-                this.version = pkg.version || "";
+                this.version = pkg.version || DEFAULT_ELDRITCH_VERSION;
             } catch {
                 // Version display is non-critical; silently ignore failures
             }
