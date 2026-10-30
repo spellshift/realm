@@ -29,6 +29,8 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
@@ -5543,6 +5545,814 @@ func (l *Link) ToEdge(order *LinkOrder) *LinkEdge {
 	return &LinkEdge{
 		Node:   l,
 		Cursor: order.Field.toCursor(l),
+	}
+}
+
+// NetworkEdge is the edge representation of Network.
+type NetworkEdge struct {
+	Node   *Network `json:"node"`
+	Cursor Cursor   `json:"cursor"`
+}
+
+// NetworkConnection is the connection containing edges to Network.
+type NetworkConnection struct {
+	Edges      []*NetworkEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (c *NetworkConnection) build(nodes []*Network, pager *networkPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Network
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Network {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Network {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*NetworkEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &NetworkEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// NetworkPaginateOption enables pagination customization.
+type NetworkPaginateOption func(*networkPager) error
+
+// WithNetworkOrder configures pagination ordering.
+func WithNetworkOrder(order []*NetworkOrder) NetworkPaginateOption {
+	return func(pager *networkPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithNetworkFilter configures pagination filter.
+func WithNetworkFilter(filter func(*NetworkQuery) (*NetworkQuery, error)) NetworkPaginateOption {
+	return func(pager *networkPager) error {
+		if filter == nil {
+			return errors.New("NetworkQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type networkPager struct {
+	reverse bool
+	order   []*NetworkOrder
+	filter  func(*NetworkQuery) (*NetworkQuery, error)
+}
+
+func newNetworkPager(opts []NetworkPaginateOption, reverse bool) (*networkPager, error) {
+	pager := &networkPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *networkPager) applyFilter(query *NetworkQuery) (*NetworkQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *networkPager) toCursor(n *Network) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(n).Value)
+	}
+	return Cursor{ID: n.ID, Value: cs_}
+}
+
+func (p *networkPager) applyCursors(query *NetworkQuery, after, before *Cursor) (*NetworkQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultNetworkOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *networkPager) applyOrder(query *NetworkQuery) *NetworkQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultNetworkOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultNetworkOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *networkPager) orderExpr(query *NetworkQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultNetworkOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Network.
+func (n *NetworkQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...NetworkPaginateOption,
+) (*NetworkConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newNetworkPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if n, err = pager.applyFilter(n); err != nil {
+		return nil, err
+	}
+	conn := &NetworkConnection{Edges: []*NetworkEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := n.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if n, err = pager.applyCursors(n, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		n.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := n.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	n = pager.applyOrder(n)
+	nodes, err := n.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// NetworkOrderFieldCreatedAt orders Network by created_at.
+	NetworkOrderFieldCreatedAt = &NetworkOrderField{
+		Value: func(n *Network) (ent.Value, error) {
+			return n.CreatedAt, nil
+		},
+		column: network.FieldCreatedAt,
+		toTerm: network.ByCreatedAt,
+		toCursor: func(n *Network) Cursor {
+			return Cursor{
+				ID:    n.ID,
+				Value: n.CreatedAt,
+			}
+		},
+	}
+	// NetworkOrderFieldLastModifiedAt orders Network by last_modified_at.
+	NetworkOrderFieldLastModifiedAt = &NetworkOrderField{
+		Value: func(n *Network) (ent.Value, error) {
+			return n.LastModifiedAt, nil
+		},
+		column: network.FieldLastModifiedAt,
+		toTerm: network.ByLastModifiedAt,
+		toCursor: func(n *Network) Cursor {
+			return Cursor{
+				ID:    n.ID,
+				Value: n.LastModifiedAt,
+			}
+		},
+	}
+	// NetworkOrderFieldName orders Network by name.
+	NetworkOrderFieldName = &NetworkOrderField{
+		Value: func(n *Network) (ent.Value, error) {
+			return n.Name, nil
+		},
+		column: network.FieldName,
+		toTerm: network.ByName,
+		toCursor: func(n *Network) Cursor {
+			return Cursor{
+				ID:    n.ID,
+				Value: n.Name,
+			}
+		},
+	}
+	// NetworkOrderFieldSubnet orders Network by subnet.
+	NetworkOrderFieldSubnet = &NetworkOrderField{
+		Value: func(n *Network) (ent.Value, error) {
+			return n.Subnet, nil
+		},
+		column: network.FieldSubnet,
+		toTerm: network.BySubnet,
+		toCursor: func(n *Network) Cursor {
+			return Cursor{
+				ID:    n.ID,
+				Value: n.Subnet,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f NetworkOrderField) String() string {
+	var str string
+	switch f.column {
+	case NetworkOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case NetworkOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case NetworkOrderFieldName.column:
+		str = "NAME"
+	case NetworkOrderFieldSubnet.column:
+		str = "SUBNET"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f NetworkOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *NetworkOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("NetworkOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *NetworkOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *NetworkOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *NetworkOrderFieldName
+	case "SUBNET":
+		*f = *NetworkOrderFieldSubnet
+	default:
+		return fmt.Errorf("%s is not a valid NetworkOrderField", str)
+	}
+	return nil
+}
+
+// NetworkOrderField defines the ordering field of Network.
+type NetworkOrderField struct {
+	// Value extracts the ordering value from the given Network.
+	Value    func(*Network) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) network.OrderOption
+	toCursor func(*Network) Cursor
+}
+
+// NetworkOrder defines the ordering of Network.
+type NetworkOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *NetworkOrderField `json:"field"`
+}
+
+// DefaultNetworkOrder is the default ordering of Network.
+var DefaultNetworkOrder = &NetworkOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &NetworkOrderField{
+		Value: func(n *Network) (ent.Value, error) {
+			return n.ID, nil
+		},
+		column: network.FieldID,
+		toTerm: network.ByID,
+		toCursor: func(n *Network) Cursor {
+			return Cursor{ID: n.ID}
+		},
+	},
+}
+
+// ToEdge converts Network into NetworkEdge.
+func (n *Network) ToEdge(order *NetworkOrder) *NetworkEdge {
+	if order == nil {
+		order = DefaultNetworkOrder
+	}
+	return &NetworkEdge{
+		Node:   n,
+		Cursor: order.Field.toCursor(n),
+	}
+}
+
+// NetworkHostEdge is the edge representation of NetworkHost.
+type NetworkHostEdge struct {
+	Node   *NetworkHost `json:"node"`
+	Cursor Cursor       `json:"cursor"`
+}
+
+// NetworkHostConnection is the connection containing edges to NetworkHost.
+type NetworkHostConnection struct {
+	Edges      []*NetworkHostEdge `json:"edges"`
+	PageInfo   PageInfo           `json:"pageInfo"`
+	TotalCount int                `json:"totalCount"`
+}
+
+func (c *NetworkHostConnection) build(nodes []*NetworkHost, pager *networkhostPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *NetworkHost
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *NetworkHost {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *NetworkHost {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*NetworkHostEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &NetworkHostEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// NetworkHostPaginateOption enables pagination customization.
+type NetworkHostPaginateOption func(*networkhostPager) error
+
+// WithNetworkHostOrder configures pagination ordering.
+func WithNetworkHostOrder(order []*NetworkHostOrder) NetworkHostPaginateOption {
+	return func(pager *networkhostPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithNetworkHostFilter configures pagination filter.
+func WithNetworkHostFilter(filter func(*NetworkHostQuery) (*NetworkHostQuery, error)) NetworkHostPaginateOption {
+	return func(pager *networkhostPager) error {
+		if filter == nil {
+			return errors.New("NetworkHostQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type networkhostPager struct {
+	reverse bool
+	order   []*NetworkHostOrder
+	filter  func(*NetworkHostQuery) (*NetworkHostQuery, error)
+}
+
+func newNetworkHostPager(opts []NetworkHostPaginateOption, reverse bool) (*networkhostPager, error) {
+	pager := &networkhostPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *networkhostPager) applyFilter(query *NetworkHostQuery) (*NetworkHostQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *networkhostPager) toCursor(nh *NetworkHost) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(nh).Value)
+	}
+	return Cursor{ID: nh.ID, Value: cs_}
+}
+
+func (p *networkhostPager) applyCursors(query *NetworkHostQuery, after, before *Cursor) (*NetworkHostQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultNetworkHostOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *networkhostPager) applyOrder(query *NetworkHostQuery) *NetworkHostQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultNetworkHostOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultNetworkHostOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *networkhostPager) orderExpr(query *NetworkHostQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultNetworkHostOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to NetworkHost.
+func (nh *NetworkHostQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...NetworkHostPaginateOption,
+) (*NetworkHostConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newNetworkHostPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if nh, err = pager.applyFilter(nh); err != nil {
+		return nil, err
+	}
+	conn := &NetworkHostConnection{Edges: []*NetworkHostEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := nh.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if nh, err = pager.applyCursors(nh, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		nh.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := nh.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	nh = pager.applyOrder(nh)
+	nodes, err := nh.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// NetworkHostOrderFieldCreatedAt orders NetworkHost by created_at.
+	NetworkHostOrderFieldCreatedAt = &NetworkHostOrderField{
+		Value: func(nh *NetworkHost) (ent.Value, error) {
+			return nh.CreatedAt, nil
+		},
+		column: networkhost.FieldCreatedAt,
+		toTerm: networkhost.ByCreatedAt,
+		toCursor: func(nh *NetworkHost) Cursor {
+			return Cursor{
+				ID:    nh.ID,
+				Value: nh.CreatedAt,
+			}
+		},
+	}
+	// NetworkHostOrderFieldLastModifiedAt orders NetworkHost by last_modified_at.
+	NetworkHostOrderFieldLastModifiedAt = &NetworkHostOrderField{
+		Value: func(nh *NetworkHost) (ent.Value, error) {
+			return nh.LastModifiedAt, nil
+		},
+		column: networkhost.FieldLastModifiedAt,
+		toTerm: networkhost.ByLastModifiedAt,
+		toCursor: func(nh *NetworkHost) Cursor {
+			return Cursor{
+				ID:    nh.ID,
+				Value: nh.LastModifiedAt,
+			}
+		},
+	}
+	// NetworkHostOrderFieldName orders NetworkHost by name.
+	NetworkHostOrderFieldName = &NetworkHostOrderField{
+		Value: func(nh *NetworkHost) (ent.Value, error) {
+			return nh.Name, nil
+		},
+		column: networkhost.FieldName,
+		toTerm: networkhost.ByName,
+		toCursor: func(nh *NetworkHost) Cursor {
+			return Cursor{
+				ID:    nh.ID,
+				Value: nh.Name,
+			}
+		},
+	}
+	// NetworkHostOrderFieldHostname orders NetworkHost by hostname.
+	NetworkHostOrderFieldHostname = &NetworkHostOrderField{
+		Value: func(nh *NetworkHost) (ent.Value, error) {
+			return nh.Hostname, nil
+		},
+		column: networkhost.FieldHostname,
+		toTerm: networkhost.ByHostname,
+		toCursor: func(nh *NetworkHost) Cursor {
+			return Cursor{
+				ID:    nh.ID,
+				Value: nh.Hostname,
+			}
+		},
+	}
+	// NetworkHostOrderFieldIPAddress orders NetworkHost by ip_address.
+	NetworkHostOrderFieldIPAddress = &NetworkHostOrderField{
+		Value: func(nh *NetworkHost) (ent.Value, error) {
+			return nh.IPAddress, nil
+		},
+		column: networkhost.FieldIPAddress,
+		toTerm: networkhost.ByIPAddress,
+		toCursor: func(nh *NetworkHost) Cursor {
+			return Cursor{
+				ID:    nh.ID,
+				Value: nh.IPAddress,
+			}
+		},
+	}
+	// NetworkHostOrderFieldSubnet orders NetworkHost by subnet.
+	NetworkHostOrderFieldSubnet = &NetworkHostOrderField{
+		Value: func(nh *NetworkHost) (ent.Value, error) {
+			return nh.Subnet, nil
+		},
+		column: networkhost.FieldSubnet,
+		toTerm: networkhost.BySubnet,
+		toCursor: func(nh *NetworkHost) Cursor {
+			return Cursor{
+				ID:    nh.ID,
+				Value: nh.Subnet,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f NetworkHostOrderField) String() string {
+	var str string
+	switch f.column {
+	case NetworkHostOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case NetworkHostOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case NetworkHostOrderFieldName.column:
+		str = "NAME"
+	case NetworkHostOrderFieldHostname.column:
+		str = "HOSTNAME"
+	case NetworkHostOrderFieldIPAddress.column:
+		str = "IP_ADDRESS"
+	case NetworkHostOrderFieldSubnet.column:
+		str = "SUBNET"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f NetworkHostOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *NetworkHostOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("NetworkHostOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *NetworkHostOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *NetworkHostOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *NetworkHostOrderFieldName
+	case "HOSTNAME":
+		*f = *NetworkHostOrderFieldHostname
+	case "IP_ADDRESS":
+		*f = *NetworkHostOrderFieldIPAddress
+	case "SUBNET":
+		*f = *NetworkHostOrderFieldSubnet
+	default:
+		return fmt.Errorf("%s is not a valid NetworkHostOrderField", str)
+	}
+	return nil
+}
+
+// NetworkHostOrderField defines the ordering field of NetworkHost.
+type NetworkHostOrderField struct {
+	// Value extracts the ordering value from the given NetworkHost.
+	Value    func(*NetworkHost) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) networkhost.OrderOption
+	toCursor func(*NetworkHost) Cursor
+}
+
+// NetworkHostOrder defines the ordering of NetworkHost.
+type NetworkHostOrder struct {
+	Direction OrderDirection         `json:"direction"`
+	Field     *NetworkHostOrderField `json:"field"`
+}
+
+// DefaultNetworkHostOrder is the default ordering of NetworkHost.
+var DefaultNetworkHostOrder = &NetworkHostOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &NetworkHostOrderField{
+		Value: func(nh *NetworkHost) (ent.Value, error) {
+			return nh.ID, nil
+		},
+		column: networkhost.FieldID,
+		toTerm: networkhost.ByID,
+		toCursor: func(nh *NetworkHost) Cursor {
+			return Cursor{ID: nh.ID}
+		},
+	},
+}
+
+// ToEdge converts NetworkHost into NetworkHostEdge.
+func (nh *NetworkHost) ToEdge(order *NetworkHostOrder) *NetworkHostEdge {
+	if order == nil {
+		order = DefaultNetworkHostOrder
+	}
+	return &NetworkHostEdge{
+		Node:   nh,
+		Cursor: order.Field.toCursor(nh),
 	}
 }
 

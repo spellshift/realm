@@ -9,9 +9,9 @@ export interface ExecutionResult {
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
 
-export const WEBSOCKET_CONNECT_TIMEOUT_MS = 10_000;
-export const WEBSOCKET_INITIAL_BACKOFF_MS = 1_000;
-export const WEBSOCKET_MAX_BACKOFF_MS = 30_000;
+export const WEBSOCKET_CONNECT_TIMEOUT_MS = 4_000;
+export const WEBSOCKET_INITIAL_BACKOFF_MS = 250;
+export const WEBSOCKET_MAX_BACKOFF_MS = 5_000;
 
 export function getExponentialBackoffDelay(
     attempt: number,
@@ -77,6 +77,8 @@ export class BrowserWasmAdapter {
     private connectTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
     private isClosedExplicitly: boolean = false;
     private reconnectAttempts: number = 0;
+    private isInitializingRepl: boolean = false;
+    private shouldInitRepl: boolean = false;
     private handleWindowOnline: () => void;
     private handleVisibilityChange: () => void;
     public version: string = "";
@@ -92,8 +94,15 @@ export class BrowserWasmAdapter {
         this.onReadyCallback = onReady;
         this.onStatusChangeCallback = onStatusChange;
 
+        const isSocketActiveOrConnecting = () =>
+            Boolean(
+                this.ws &&
+                    (this.ws.readyState === WebSocket.OPEN ||
+                        this.ws.readyState === WebSocket.CONNECTING)
+            );
+
         this.handleWindowOnline = () => {
-            if (!this.isClosedExplicitly && !this.isWsOpen) {
+            if (!this.isClosedExplicitly && !this.isWsOpen && !isSocketActiveOrConnecting()) {
                 this.reconnect();
             }
         };
@@ -103,7 +112,8 @@ export class BrowserWasmAdapter {
                 typeof document !== "undefined" &&
                 document.visibilityState === "visible" &&
                 !this.isClosedExplicitly &&
-                (!this.isWsOpen || !this.ws || this.ws.readyState !== WebSocket.OPEN)
+                (!this.isWsOpen || !this.ws || this.ws.readyState !== WebSocket.OPEN) &&
+                !isSocketActiveOrConnecting()
             ) {
                 this.reconnect();
             }
@@ -179,6 +189,9 @@ export class BrowserWasmAdapter {
             this.clearTimers();
             this.isWsOpen = true;
             this.reconnectAttempts = 0;
+            if (this.shouldInitRepl && !this.repl && !this.isInitializingRepl) {
+                void this.init();
+            }
             this.checkReady();
             this.onStatusChangeCallback?.("connected");
         };
@@ -235,10 +248,19 @@ export class BrowserWasmAdapter {
         if (this.isClosedExplicitly) return;
         this.reconnectAttempts = 0;
         this.onStatusChangeCallback?.("reconnecting");
+        if (this.shouldInitRepl && !this.repl && !this.isInitializingRepl) {
+            void this.init();
+        }
         this.connect();
     }
 
     async init() {
+        this.shouldInitRepl = true;
+        if (this.repl || this.isInitializingRepl) {
+            this.checkReady();
+            return;
+        }
+        this.isInitializingRepl = true;
         try {
             // Load the WASM module dynamically from public folder
             const wasmJsPath = "/wasm/eldritch_wasm.js";
@@ -259,6 +281,8 @@ export class BrowserWasmAdapter {
             this.checkReady();
         } catch (e) {
             console.error("Failed to initialize WASM module", e);
+        } finally {
+            this.isInitializingRepl = false;
         }
     }
 

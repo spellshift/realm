@@ -24,6 +24,8 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	portalssh "realm.pub/tavern/internal/portals/ssh"
@@ -468,4 +470,22 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 	defer wsReconnect.Close()
 
 	waitForWSOutput(wsReconnect, "Welcome to Test SSH")
+
+	// 9. Verify that a successful SSH pivot recorded NetworkHost and Network entities
+	createdNetwork, err := env.EntClient.Network.Query().
+		Where(network.Subnet("127.0.0.0/24")).
+		Only(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "127.0.0.0/24", createdNetwork.Subnet)
+
+	createdNetworkHost, err := env.EntClient.NetworkHost.Query().
+		Where(networkhost.IPAddress("127.0.0.1")).
+		WithNetworks().
+		Only(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "127.0.0.1", createdNetworkHost.IPAddress)
+	assert.Equal(t, "127.0.0.0/24", createdNetworkHost.Subnet)
+	assert.Contains(t, createdNetworkHost.OpenPorts, pivot.Port)
+	require.NotEmpty(t, createdNetworkHost.Edges.Networks)
+	assert.Equal(t, createdNetwork.ID, createdNetworkHost.Edges.Networks[0].ID)
 }

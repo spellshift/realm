@@ -928,3 +928,28 @@ func TestShellActiveUsers(t *testing.T) {
 		return len(users) == 0
 	}, 5*time.Second, 100*time.Millisecond)
 }
+
+func TestRetryOnLock(t *testing.T) {
+	ctx := context.Background()
+	attempts := 0
+
+	res, err := shell.RetryOnLock(ctx, func() (int, error) {
+		attempts++
+		if attempts < 3 {
+			return 0, fmt.Errorf("sqlite3: database table is locked")
+		}
+		return 42, nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, 42, res)
+	require.Equal(t, 3, attempts)
+
+	// Non-lock errors should fail immediately without retrying
+	nonLockAttempts := 0
+	_, err = shell.RetryOnLock(ctx, func() (int, error) {
+		nonLockAttempts++
+		return 0, fmt.Errorf("some permanent error")
+	})
+	require.Error(t, err)
+	require.Equal(t, 1, nonLockAttempts)
+}

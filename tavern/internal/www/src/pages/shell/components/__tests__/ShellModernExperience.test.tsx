@@ -15,12 +15,18 @@ import SessionSettings from "../SessionSettings";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
 import ShellPivotsDrawer from "../ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "../ShellKnowledgeDrawer";
-import ShellNuxDrawer from "../ShellNuxDrawer";
 import ShellTerminal from "../ShellTerminal";
 import ShellWalkthrough from "../ShellWalkthrough";
 import SshConnectionModal from "../SshConnectionModal";
 import { formatPivotTabLabel } from "../../index";
 import { analyzeEldritchCode, completeEldritchCode } from "../../utils/eldritchLsp";
+import {
+    buildUnifiedGraphData,
+    extractPivotTargetHost,
+    formatFileSize,
+    formatSubnetCidr,
+    getIpv4SubnetPrefix,
+} from "../../utils/networkGraphUtils";
 import {
     BrowserWasmAdapter,
     WEBSOCKET_CONNECT_TIMEOUT_MS,
@@ -81,12 +87,29 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(screen.getByText("RC Script")).toBeInTheDocument();
         expect(onOpenSessionSettings).not.toHaveBeenCalled();
 
-        // Step 3: Setup Aliases (opens SessionSettings drawer and highlights Setup Aliases button)
+        // Step 3: Set Default Aliases (opens SessionSettings drawer and highlights Set Default Aliases button)
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Setup Aliases")).toBeInTheDocument();
+        expect(screen.getByText("Set Default Aliases")).toBeInTheDocument();
         expect(onOpenSessionSettings).toHaveBeenCalledTimes(1);
 
-        // Step 4: Async Mode (positioned above bottom status bar element without overlapping)
+        // Step 4: Eldritch Composer (opens composer on bottom-left bar)
+        onCloseComposer.mockClear();
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Eldritch Composer")).toBeInTheDocument();
+        expect(onOpenComposer).toHaveBeenCalledTimes(1);
+        expect(onCloseComposer).not.toHaveBeenCalled();
+
+        // Step 5: Agent Callback (closes composer and highlights Next on bottom-right bar)
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Agent Callback")).toBeInTheDocument();
+        expect(onCloseComposer).toHaveBeenCalledTimes(1);
+
+        // Step 6: Queued & Executing Tasks
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Queued & Executing Tasks")).toBeInTheDocument();
+        expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
+
+        // Step 7: Async Mode (positioned above bottom status bar element without overlapping)
         const nonInteractiveEl = document.createElement("span");
         nonInteractiveEl.setAttribute("data-tour", "shell-non-interactive");
         nonInteractiveEl.getBoundingClientRect = () =>
@@ -108,48 +131,28 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(dialog).toBeInTheDocument();
         expect(dialog.style.bottom).toBe(`${window.innerHeight - 760 + 14}px`);
         expect(dialog.style.top).toBe("");
+        expect(onQueueStepChange).toHaveBeenLastCalledWith(false);
         document.body.removeChild(nonInteractiveEl);
 
-        // Step 5: Agent Callback
+        // Step 8: Context
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Agent Callback")).toBeInTheDocument();
+        expect(screen.getByText("Context")).toBeInTheDocument();
 
-        // Step 6: Queued & Executing Tasks (after Agent Callback)
+        // Step 9: Going Interactive (Portal in Context drawer / status bar)
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Queued & Executing Tasks")).toBeInTheDocument();
-        expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
-
-        // Step 7: Eldritch Composer (after Queued Tasks, before Knowledge Graph; opens composer)
-        onCloseComposer.mockClear();
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Eldritch Composer")).toBeInTheDocument();
-        expect(onOpenComposer).toHaveBeenCalledTimes(1);
-        expect(onCloseComposer).not.toHaveBeenCalled();
-        expect(onQueueStepChange).toHaveBeenLastCalledWith(false);
-
-        // Step 8: Knowledge Graph (closes composer when moving on to the next NUX)
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
-        expect(onCloseComposer).toHaveBeenCalledTimes(1);
-
-        // Step 9: Pivots
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Pivots")).toBeInTheDocument();
+        expect(screen.getByText("Going Interactive")).toBeInTheDocument();
+        expect(onPortalStepChange).toHaveBeenLastCalledWith(false);
 
         // Step 10: Command Queue & History
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Command Queue & History")).toBeInTheDocument();
 
-        // Step 11: Operator Guide & Stdlib Reference
+        // Step 11: Eldritch Documentation (opens ... actions menu)
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Operator Guide & Stdlib Reference")).toBeInTheDocument();
-
-        // Step 12: Going Interactive (opens New Portal menu option)
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Going Interactive")).toBeInTheDocument();
+        expect(screen.getByText("Eldritch Documentation")).toBeInTheDocument();
         expect(onPortalStepChange).toHaveBeenLastCalledWith(true);
 
-        // Step 13: Feedback & Bug Reports (last two are portal and report a bug)
+        // Step 12: Feedback & Bug Reports (in ... actions menu)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Feedback & Bug Reports")).toBeInTheDocument();
         expect(onPortalStepChange).toHaveBeenLastCalledWith(true);
@@ -244,14 +247,14 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(onSpawnFreshShell).toHaveBeenCalled();
     });
 
-    it("enforces a 10s WebSocket connection timeout and retries with exponential backoff", () => {
-        expect(WEBSOCKET_CONNECT_TIMEOUT_MS).toBe(10_000);
-        expect(getExponentialBackoffDelay(0)).toBe(1_000);
-        expect(getExponentialBackoffDelay(1)).toBe(2_000);
-        expect(getExponentialBackoffDelay(2)).toBe(4_000);
-        expect(getExponentialBackoffDelay(3)).toBe(8_000);
-        expect(getExponentialBackoffDelay(4)).toBe(16_000);
-        expect(getExponentialBackoffDelay(5)).toBe(30_000);
+    it("enforces a 4s WebSocket connection timeout, fast exponential backoff, and preserves CONNECTING sockets on visibilitychange", () => {
+        expect(WEBSOCKET_CONNECT_TIMEOUT_MS).toBe(4_000);
+        expect(getExponentialBackoffDelay(0)).toBe(250);
+        expect(getExponentialBackoffDelay(1)).toBe(500);
+        expect(getExponentialBackoffDelay(2)).toBe(1_000);
+        expect(getExponentialBackoffDelay(3)).toBe(2_000);
+        expect(getExponentialBackoffDelay(4)).toBe(4_000);
+        expect(getExponentialBackoffDelay(5)).toBe(5_000);
 
         vi.useFakeTimers();
         const OriginalWebSocket = globalThis.WebSocket;
@@ -288,31 +291,37 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
                 (s) => statuses.push(s)
             );
 
-            // Initial socket created; does not time out at 5s
+            // Initial socket created; visibilitychange / online while CONNECTING must NOT abort the socket
             expect(createdSockets).toHaveLength(1);
-            vi.advanceTimersByTime(5_000);
+            document.dispatchEvent(new Event("visibilitychange"));
+            window.dispatchEvent(new Event("online"));
+            expect(createdSockets).toHaveLength(1);
+
+            // Does not time out at 2s
+            vi.advanceTimersByTime(2_000);
             expect(createdSockets).toHaveLength(1);
             expect(statuses).toEqual([]);
 
-            // At 10s, initial connection attempt times out and schedules retry #1 (1s backoff)
-            vi.advanceTimersByTime(5_000);
+            // At 4s, initial connection attempt times out and schedules retry #1 (250ms backoff)
+            vi.advanceTimersByTime(2_000);
             expect(statuses).toContain("reconnecting");
             expect(createdSockets).toHaveLength(1);
 
-            vi.advanceTimersByTime(1_000);
+            vi.advanceTimersByTime(250);
             expect(createdSockets).toHaveLength(2);
 
-            // Second attempt also hangs for 10s -> schedules retry #2 (2s backoff)
-            vi.advanceTimersByTime(10_000);
+            // Second attempt also hangs for 4s -> schedules retry #2 (500ms backoff)
+            vi.advanceTimersByTime(4_000);
             expect(createdSockets).toHaveLength(2);
-            vi.advanceTimersByTime(1_999);
+            vi.advanceTimersByTime(499);
             expect(createdSockets).toHaveLength(2);
             vi.advanceTimersByTime(1);
             expect(createdSockets).toHaveLength(3);
 
-            // Third attempt fails immediately via onclose -> schedules retry #3 (4s backoff)
+            // Third attempt fails immediately via onclose -> schedules retry #3 (1s backoff)
+            createdSockets[2].readyState = MockWebSocket.CLOSED;
             createdSockets[2].onclose?.({ reason: "network error" });
-            vi.advanceTimersByTime(3_999);
+            vi.advanceTimersByTime(999);
             expect(createdSockets).toHaveLength(3);
             vi.advanceTimersByTime(1);
             expect(createdSockets).toHaveLength(4);
@@ -441,7 +450,7 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
 
         expect(screen.getByTestId("session-settings-initial-chooser")).toBeInTheDocument();
         const setupAliasesBtn = screen.getByTestId("session-settings-shell-aliases-setup");
-        expect(setupAliasesBtn).toHaveTextContent("Setup Aliases");
+        expect(setupAliasesBtn).toHaveTextContent("Set Default Aliases");
         expect(setupAliasesBtn).toHaveClass("bg-purple-600");
         expect(setupAliasesBtn).not.toHaveTextContent(/click setup/i);
         expect(screen.getByTestId("session-settings-load-tome-button")).toHaveTextContent("RC Tome");
@@ -618,11 +627,15 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         );
 
         expect(screen.getByText("History")).toBeInTheDocument();
-        expect(screen.getByText(/1 Cred Reported/i)).toBeInTheDocument();
+        expect(screen.getByRole("tab", { name: /Creds \(1\)/i })).toBeInTheDocument();
 
-        // View output
-        fireEvent.click(screen.getByText("View Output"));
+        // Switch to Output tab
+        fireEvent.click(screen.getByRole("tab", { name: /Output/i }));
         expect(screen.getByText("Reported credential")).toBeInTheDocument();
+
+        // Switch to Creds tab
+        fireEvent.click(screen.getByRole("tab", { name: /Creds \(1\)/i }));
+        expect(screen.getByText("admin")).toBeInTheDocument();
 
         // Re-run command
         fireEvent.click(screen.getByText("Re-run"));
@@ -740,8 +753,8 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         expect(screen.getByText("Shell #99")).toBeInTheDocument();
 
         // Switch to Output tab on the long-output task and verify truncation + Show full toggle
-        const viewOutputButtons = screen.getAllByText("View Output");
-        fireEvent.click(viewOutputButtons[0]);
+        const outputTabs = screen.getAllByRole("tab", { name: /Output/i });
+        fireEvent.click(outputTabs[0]);
         expect(screen.queryByText(/line 5/)).not.toBeInTheDocument();
 
         const toggleFullBtn = screen.getByTestId("history-toggle-full");
@@ -776,8 +789,14 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
     const sampleHosts: KnowledgeHostItem[] = [
         {
             id: "h-2",
+            hostId: "h-2",
+            networkHostId: "nh-2",
             name: "db-01",
+            hostname: "db-01.corp.local",
             primaryIP: "10.0.0.20",
+            ipAddress: "10.0.0.20",
+            subnet: "10.0.0.0/24",
+            openPorts: [22, 5432],
             platform: "LINUX",
             tags: [{ id: "t1", name: "prod", kind: "GROUP" }],
             beaconCount: 1,
@@ -797,12 +816,17 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             permissions: "-rw-------",
             owner: "root",
             createdAt: "2025-01-01T12:00:00Z",
+            hostId: "h-2",
+            hostName: "db-01",
+            isCurrentHost: false,
         },
     ];
 
-    it("renders live Knowledge Graph drawer, stages credentials, and provides download links for reported files", () => {
+    it("renders unified minimalist Knowledge Graph & Pivots drawer with adjacent hosts, pivots, shells, credentials, and files", () => {
         const onOpenSshWithTarget = vi.fn();
-        const onLoadIntoComposer = vi.fn();
+        const onOpenPivotTab = vi.fn();
+        const onOpenPty = vi.fn();
+        const onOpenSshModal = vi.fn();
 
         render(
             <MockedProvider mocks={[]} addTypename={false}>
@@ -815,46 +839,234 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
                         currentHostName="web-01"
                         currentHostIp="10.0.0.10"
                         portalId={99}
+                        pivots={[
+                            {
+                                id: "piv-10",
+                                kind: "SSH",
+                                destination: "root@10.0.0.20:22",
+                                closedAt: "2025-01-01T12:15:00Z",
+                                hostName: "web-01",
+                            },
+                            {
+                                id: "piv-11",
+                                kind: "PTY",
+                                destination: "pty",
+                                activeTarget: "cat /etc/shadow && grep root /etc/passwd",
+                                closedAt: null,
+                                hostName: "web-01",
+                            },
+                        ]}
                         hostCredentials={sampleCreds}
                         allCredentials={sampleCreds}
                         networkHosts={sampleHosts}
                         hostFiles={sampleFiles}
                         hostProcessCount={42}
-                        hostShells={[]}
+                        hostShells={[
+                            {
+                                id: "1",
+                                createdAt: "2025-01-01T12:00:00Z",
+                                beaconId: "b-1",
+                                beaconName: "beacon-web",
+                                beaconPrincipal: "root",
+                                hostName: "web-01",
+                                isCurrentHost: true,
+                            },
+                            {
+                                id: "2",
+                                createdAt: "2025-01-01T12:05:00Z",
+                                beaconId: "b-2",
+                                beaconName: "beacon-db",
+                                beaconPrincipal: "postgres",
+                                hostName: "db-01",
+                                isCurrentHost: false,
+                            },
+                        ]}
                         lastKnowledgeSyncAt={Date.now()}
                         onRefetchKnowledgeGraph={vi.fn()}
+                        onOpenPty={onOpenPty}
+                        onOpenSshModal={onOpenSshModal}
+                        onOpenPivotTab={onOpenPivotTab}
                         onOpenSshWithTarget={onOpenSshWithTarget}
-                        onLoadIntoComposer={onLoadIntoComposer}
-                        onStageToPrompt={vi.fn()}
                     />
                 </BrowserRouter>
             </MockedProvider>
         );
 
-        expect(screen.getByText("Knowledge Graph")).toBeInTheDocument();
-        expect(screen.getByText("svc_backup")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Context" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "All" })).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Refresh knowledge graph")).not.toBeInTheDocument();
+        const closePortalBtn = screen.getByLabelText("Close portal");
+        expect(closePortalBtn).toHaveClass("text-red-400");
 
-        // Reveal secret
+        // Default tab is Pivots: displays tab-formatted pivot names and supports reopen/transcript
+        expect(screen.getByText("10.0.0.20")).toBeInTheDocument();
+        expect(screen.getByText("cat /etc/shadow && grep ...")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Reopen" }));
+        expect(onOpenSshWithTarget).toHaveBeenCalledWith("root@10.0.0.20:22");
+        fireEvent.click(screen.getByRole("button", { name: "Transcript" }));
+        expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.20:22", "piv-10");
+
+        // Switch to Hosts tab: adjacent host renders IP, subnet, open ports, link to /hosts/h-2, and Pivot button
+        fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
+        const hostLink = screen.getByRole("link", { name: "db-01" });
+        expect(hostLink).toHaveAttribute("href", "/hosts/h-2");
+        expect(screen.getByText("10.0.0.20")).toBeInTheDocument();
+        expect(screen.getByText("10.0.0.0/24")).toBeInTheDocument();
+        expect(screen.getByText("ports: :22, :5432")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Pivot" }));
+        expect(onOpenSshWithTarget).toHaveBeenCalledWith("10.0.0.20:22");
+
+        // Switch to Shells tab: displays beacon name and user@host subtext, and switches to other shell
+        fireEvent.click(screen.getByRole("button", { name: "Shells" }));
+        expect(screen.getByText("beacon-db")).toBeInTheDocument();
+        expect(screen.getByText("postgres@db-01")).toBeInTheDocument();
+        expect(screen.queryByText(/Shell #/i)).not.toBeInTheDocument();
+        const switchShellLink = screen.getByRole("link", { name: "Switch" });
+        expect(switchShellLink).toHaveAttribute("href", "/shells/2");
+
+        // Switch to Creds tab: reveal secret & launch SSH Pivot from credential
+        fireEvent.click(screen.getByRole("button", { name: "Creds" }));
+        expect(screen.getByText("svc_backup")).toBeInTheDocument();
         fireEvent.click(screen.getByLabelText("Reveal secret"));
         expect(screen.getByText("Winter2025!")).toBeInTheDocument();
-
-        // Stage ssh.exec in composer
-        fireEvent.click(screen.getByText("ssh.exec"));
-        expect(onLoadIntoComposer).toHaveBeenCalled();
-
-        // Launch SSH Pivot
         fireEvent.click(screen.getByText("SSH Pivot"));
         expect(onOpenSshWithTarget).toHaveBeenCalledWith("svc_backup:Winter2025!@10.0.0.10:22");
 
-        // Switch to Host Context tab and verify reported file download link
-        fireEvent.click(screen.getByText(/Host Context/i));
+        // Switch to Files tab: reported file download link
+        fireEvent.click(screen.getByRole("button", { name: "Files" }));
         const downloadLink = screen.getByLabelText("Download /etc/shadow.bak") as HTMLAnchorElement;
         expect(downloadLink).toBeInTheDocument();
         expect(downloadLink.getAttribute("href")).toBe("/cdn/hostfiles/file-77");
         expect(downloadLink.hasAttribute("download")).toBe(true);
     });
 
-    it("populates SshConnectionModal target from Knowledge Graph hosts and credentials", () => {
+    it("computes unified adjacent hosts, credentials, pivots, shells, and files in networkGraphUtils", () => {
+        expect(getIpv4SubnetPrefix("10.0.0.15")).toBe("10.0.0.");
+        expect(formatSubnetCidr("10.0.0.15")).toBe("10.0.0.0/24");
+        expect(extractPivotTargetHost("root:secret@10.0.0.25:22")).toBe("10.0.0.25");
+        expect(formatFileSize(2048)).toBe("2.0 KB");
+
+        const result = buildUnifiedGraphData({
+            currentHostNode: {
+                id: "1",
+                name: "jumpbox",
+                primaryIP: "10.0.0.5",
+                credentials: { edges: [] },
+                files: { edges: [] },
+                beacons: { edges: [] },
+            },
+            hostId: "1",
+            currentShellId: "10",
+            currentHostTags: [],
+            currentShellPivots: [
+                {
+                    id: "p-1",
+                    kind: "ssh",
+                    destination: "root@10.0.0.99:22",
+                },
+            ],
+            knowledgeData: {
+                hosts: {
+                    edges: [
+                        {
+                            node: {
+                                id: "2",
+                                name: "internal-db",
+                                primaryIP: "10.0.0.99",
+                                credentials: {
+                                    edges: [
+                                        {
+                                            node: {
+                                                id: "c-99",
+                                                principal: "dbadmin",
+                                                kind: "KIND_PASSWORD",
+                                                secret: "pgpass",
+                                                createdAt: "2025-01-01T00:00:00Z",
+                                            },
+                                        },
+                                    ],
+                                },
+                                files: {
+                                    edges: [
+                                        {
+                                            node: {
+                                                id: "f-99",
+                                                path: "/var/lib/pgsql/backup.sql",
+                                                size: 4096,
+                                                createdAt: "2025-01-01T00:00:00Z",
+                                            },
+                                        },
+                                    ],
+                                },
+                                beacons: {
+                                    edges: [
+                                        {
+                                            node: {
+                                                id: "b-99",
+                                                name: "db-beacon",
+                                                principal: "postgres",
+                                                shells: {
+                                                    edges: [
+                                                        {
+                                                            node: {
+                                                                id: "20",
+                                                                createdAt: "2025-01-01T00:00:00Z",
+                                                                closedAt: null,
+                                                                pivots: { edges: [] },
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                },
+                networkHosts: {
+                    edges: [
+                        {
+                            node: {
+                                id: "50",
+                                name: "internal-db",
+                                hostname: "internal-db.local",
+                                ipAddress: "10.0.0.99",
+                                subnet: "10.0.0.0/24",
+                                openPorts: [22, 5432],
+                                host: { id: "2", name: "internal-db", primaryIP: "10.0.0.99" },
+                                networks: {
+                                    edges: [
+                                        {
+                                            node: {
+                                                id: "net-1",
+                                                name: "10.0.0.0/24",
+                                                subnet: "10.0.0.0/24",
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        });
+
+        expect(result.networkHosts).toHaveLength(1);
+        expect(result.networkHosts[0].openPorts).toEqual([22, 5432]);
+        expect(result.networkHosts[0].hostId).toBe("2");
+        expect(result.allCredentials).toHaveLength(1);
+        expect(result.allCredentials[0].principal).toBe("dbadmin");
+        expect(result.hostFiles).toHaveLength(1);
+        expect(result.hostFiles[0].path).toBe("/var/lib/pgsql/backup.sql");
+        expect(result.hostShells).toHaveLength(1);
+        expect(result.hostShells[0].id).toBe("20");
+        expect(result.nearbyPivots).toHaveLength(1);
+    });
+
+    it("populates SshConnectionModal target from Quick Fill hosts and credentials", () => {
         const onConnect = vi.fn();
         render(
             <SshConnectionModal
@@ -866,44 +1078,59 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             />
         );
 
+        expect(screen.getByText("Quick Fill")).toBeInTheDocument();
+        expect(screen.queryByText("Quick Fill from Knowledge Graph")).not.toBeInTheDocument();
+
         // Select host db-01 (10.0.0.20) and credential svc_backup
         fireEvent.click(screen.getByText("db-01"));
         fireEvent.click(screen.getByText("svc_backup"));
 
         const input = screen.getByLabelText("Target") as HTMLInputElement;
+        const usernameInput = screen.getByLabelText("Username") as HTMLInputElement;
+        const passwordInput = screen.getByLabelText("Password") as HTMLInputElement;
         expect(input.value).toBe("svc_backup:Winter2025!@10.0.0.20:22");
+        expect(usernameInput.value).toBe("svc_backup");
+        expect(passwordInput.value).toBe("Winter2025!");
+
+        fireEvent.change(usernameInput, { target: { value: "operator" } });
+        fireEvent.change(passwordInput, { target: { value: "customPass" } });
+        expect(input.value).toBe("operator:customPass@10.0.0.20:22");
 
         fireEvent.click(screen.getByText("Connect"));
-        expect(onConnect).toHaveBeenCalledWith("svc_backup:Winter2025!@10.0.0.20:22");
+        expect(onConnect).toHaveBeenCalledWith("operator:customPass@10.0.0.20:22");
     });
-});
 
-describe("ShellNuxDrawer", () => {
-    it("renders Quick Start Guide with top documentation link and searchable Eldritch v0.4.1 reference", () => {
-        const onRunCode = vi.fn();
-        const onStageToPrompt = vi.fn();
-
-        render(
-            <ShellNuxDrawer
-                isOpen={true}
-                onClose={vi.fn()}
-                portalId={null}
-                onRunCode={onRunCode}
-                onStageToPrompt={onStageToPrompt}
-                onLoadIntoComposer={vi.fn()}
-                onSpawnFreshShell={vi.fn()}
+    it("does not close the Context drawer when ShellWalkthrough is closed or re-rendered", () => {
+        const onCloseContextDrawer = vi.fn();
+        const { rerender } = render(
+            <ShellWalkthrough
+                isOpen={false}
+                onDismiss={vi.fn()}
+                onOpenComposer={() => {}}
+                onCloseComposer={() => {}}
+                onOpenSessionSettings={() => {}}
+                onCloseSessionSettings={() => {}}
+                onOpenContextDrawer={() => {}}
+                onCloseContextDrawer={onCloseContextDrawer}
             />
         );
 
-        expect(screen.getByText("Read Full Documentation")).toBeInTheDocument();
-        expect(screen.getByText(/Interactive Portals/i)).toBeInTheDocument();
-        fireEvent.click(screen.getByText(/Run portal.create\(\)/i));
-        expect(onRunCode).toHaveBeenCalledWith("portal.create()");
+        expect(onCloseContextDrawer).not.toHaveBeenCalled();
 
-        // Switch to Eldritch v0.4.1 tab
-        fireEvent.click(screen.getByText("Eldritch v0.4.1"));
-        const searchInput = screen.getByPlaceholderText(/Search Eldritch functions/i);
-        fireEvent.change(searchInput, { target: { value: "file.list" } });
-        expect(screen.getByText("file.list")).toBeInTheDocument();
+        // Simulate parent re-render (e.g., clicking Context drawer toggle button) with fresh inline callbacks
+        rerender(
+            <ShellWalkthrough
+                isOpen={false}
+                onDismiss={vi.fn()}
+                onOpenComposer={() => {}}
+                onCloseComposer={() => {}}
+                onOpenSessionSettings={() => {}}
+                onCloseSessionSettings={() => {}}
+                onOpenContextDrawer={() => {}}
+                onCloseContextDrawer={onCloseContextDrawer}
+            />
+        );
+
+        expect(onCloseContextDrawer).not.toHaveBeenCalled();
     });
 });

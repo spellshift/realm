@@ -1,13 +1,10 @@
 import React from "react";
 import { Tooltip } from "@chakra-ui/react";
-import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
+import { BugAntIcon } from "@heroicons/react/24/outline";
 import {
-  Code2,
-  Database,
+  createLucideIcon,
   History,
   Home,
-  Network,
-  Server,
   Terminal,
   User,
 } from "lucide-react";
@@ -16,8 +13,21 @@ import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import { getEnumKey } from "../../../utils/utils";
 import { SupportedPlatforms, SupportedTransports } from "../../../utils/enums";
 import ShellActionsMenu from "./ShellActionsMenu";
-import NotificationBell from "../../../components/notifications/NotificationBell";
 import { KnowledgeCredentialItem, KnowledgeHostItem } from "../hooks/useShellData";
+
+export const GraphStar = createLucideIcon("graph-star", [
+  ["path", { d: "m12.342 9.316 1.764-3.527", key: "p1" }],
+  ["path", { d: "m12.59 14.545 2.35 3.759", key: "p2" }],
+  ["path", { d: "m13.982 12.332 4.03.447", key: "p3" }],
+  ["path", { d: "M5.414 17.586 8.88 14.12", key: "p4" }],
+  ["path", { d: "m8.966 9.47-3.08-2.64", key: "p5" }],
+  ["circle", { cx: "11", cy: "12", r: "3", key: "c0" }],
+  ["circle", { cx: "15", cy: "4", r: "2", key: "c1" }],
+  ["circle", { cx: "16", cy: "20", r: "2", key: "c2" }],
+  ["circle", { cx: "20", cy: "13", r: "2", key: "c3" }],
+  ["circle", { cx: "4", cy: "6", r: "2", key: "c4" }],
+  ["circle", { cx: "4", cy: "19", r: "2", key: "c5" }],
+]);
 
 export const TOOLBAR_BUTTON_BASE =
   "relative inline-flex items-center justify-center w-7 h-7 rounded-md transition-colors";
@@ -38,6 +48,7 @@ interface ShellHeaderProps {
   onSendCtrlR: () => void;
   onClosePortal: () => void;
   onSpawnFreshShell?: () => void;
+  onReplayTutorial?: () => void;
   onToggleHistory?: () => void;
   historyOpen?: boolean;
   historyCount?: number;
@@ -73,6 +84,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   onSendCtrlR,
   onClosePortal,
   onSpawnFreshShell,
+  onReplayTutorial,
   onToggleHistory,
   historyOpen = false,
   activeQueueCount = 0,
@@ -107,33 +119,36 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
         </Link>
 
         {shellData?.node?.beacon?.host && (
-          <Tooltip
-            label={
-              <div className="flex flex-col text-xs p-1">
-                <span>Host: {shellData.node.beacon.host.name}</span>
-                <span>Primary IP: {shellData.node.beacon.host.primaryIP || "N/A"}</span>
-                {shellData.node.beacon.host.externalIP && (
-                  <span>External IP: {shellData.node.beacon.host.externalIP}</span>
-                )}
-                <span>
-                  Platform: {getEnumKey(SupportedPlatforms, shellData.node.beacon.host.platform)}
-                </span>
-              </div>
-            }
-            bg="#1f2430"
-            color="white"
-            borderRadius="md"
-            border="1px solid #374151"
-            hasArrow
-          >
-            <Link
-              to={`/hosts/${shellData.node.beacon.host.id}`}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-[#272e3f] text-purple-300 font-semibold transition-colors"
+          <>
+            <span className="text-gray-600">/</span>
+            <Tooltip
+              label={
+                <div className="flex flex-col text-xs p-1">
+                  <span>Host: {shellData.node.beacon.host.name}</span>
+                  <span>Primary IP: {shellData.node.beacon.host.primaryIP || "N/A"}</span>
+                  {shellData.node.beacon.host.externalIP && (
+                    <span>External IP: {shellData.node.beacon.host.externalIP}</span>
+                  )}
+                  <span>
+                    Platform: {getEnumKey(SupportedPlatforms, shellData.node.beacon.host.platform)}
+                  </span>
+                </div>
+              }
+              bg="#1f2430"
+              color="white"
+              borderRadius="md"
+              border="1px solid #374151"
+              hasArrow
             >
-              <Server size={13} />
-              <span>{shellData.node.beacon.host.name}</span>
-            </Link>
-          </Tooltip>
+              <Link
+                to={`/hosts/${shellData.node.beacon.host.id}`}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-[#272e3f] text-purple-300 font-semibold transition-colors"
+              >
+                <BugAntIcon className="w-3.5 h-3.5" />
+                <span>{shellData.node.beacon.host.name}</span>
+              </Link>
+            </Tooltip>
+          </>
         )}
 
         {shellData?.node?.beacon && (
@@ -177,54 +192,37 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
       {/* Right: Unified Action Toolbar */}
       <div className="flex items-center gap-2 ml-auto">
         {activeUsers && activeUsers.length > 0 && (
-          <div className="flex -space-x-1.5 overflow-hidden">
-            {activeUsers.map((user: any) => (
-              <Tooltip key={user.id} label={user.name} hasArrow>
-                <img
-                  className="inline-block h-6 w-6 rounded-full ring-2 ring-[#11131a]"
-                  src={user.photoURL || PlaceholderUser}
-                  alt={user.name}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = PlaceholderUser;
-                  }}
-                />
-              </Tooltip>
-            ))}
-          </div>
+          <>
+            <div className="flex -space-x-1.5 overflow-hidden">
+              {activeUsers.map((user: any) => (
+                <Tooltip key={user.id} label={user.name} hasArrow>
+                  <img
+                    className="inline-block h-6 w-6 rounded-full ring-2 ring-[#11131a]"
+                    src={user.photoURL || PlaceholderUser}
+                    alt={user.name}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = PlaceholderUser;
+                    }}
+                  />
+                </Tooltip>
+              ))}
+            </div>
+            <div
+              data-testid="shell-header-users-divider"
+              className="h-4 w-px bg-[#262b38]"
+              aria-hidden="true"
+            />
+          </>
         )}
 
         <div
           data-testid="shell-header-toolbar"
           className="flex items-center gap-1"
         >
-          {/* Composer Toggle */}
-          {onToggleComposer && (
-            <Tooltip
-              label="Eldritch Composer"
-              bg="#1f2430"
-              color="white"
-              borderRadius="md"
-              border="1px solid #374151"
-              hasArrow
-            >
-              <button
-                type="button"
-                data-tour="shell-composer-toggle"
-                onClick={onToggleComposer}
-                aria-label="Toggle multi-line composer"
-                className={`${TOOLBAR_BUTTON_BASE} ${
-                  composerOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
-                }`}
-              >
-                <Code2 size={15} />
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Knowledge Graph Drawer Toggle */}
+          {/* Context Drawer Toggle */}
           {onToggleKnowledge && (
             <Tooltip
-              label="Knowledge Graph"
+              label="Context"
               bg="#1f2430"
               color="white"
               borderRadius="md"
@@ -240,10 +238,10 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   knowledgeOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
                 }`}
               >
-                <Database size={15} />
-                {credentialCount > 0 && (
+                <GraphStar size={15} />
+                {(pivotCount > 0 || credentialCount > 0) && (
                   <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-purple-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
-                    {credentialCount}
+                    {pivotCount > 0 && !onTogglePivots ? pivotCount : credentialCount}
                   </span>
                 )}
               </button>
@@ -269,7 +267,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
                   pivotsOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
                 }`}
               >
-                <Network size={15} />
+                <GraphStar size={15} />
                 {pivotCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-emerald-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">
                     {pivotCount}
@@ -308,36 +306,6 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             </Tooltip>
           )}
 
-          {/* Operator Guide & Eldritch Docs Toggle */}
-          {onToggleNux && (
-            <Tooltip
-              label="Operator Guide"
-              bg="#1f2430"
-              color="white"
-              borderRadius="md"
-              border="1px solid #374151"
-              hasArrow
-            >
-              <button
-                type="button"
-                data-tour="shell-guide"
-                onClick={onToggleNux}
-                aria-label="Toggle operator guide"
-                className={`${TOOLBAR_BUTTON_BASE} ${
-                  nuxOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
-                }`}
-              >
-                <DocumentDuplicateIcon className="w-[15px] h-[15px]" />
-              </button>
-            </Tooltip>
-          )}
-
-          {/* Notifications */}
-          <NotificationBell
-            buttonClassName={`${TOOLBAR_BUTTON_BASE} ${TOOLBAR_BUTTON_INACTIVE}`}
-            iconClassName="w-[15px] h-[15px]"
-          />
-
           {/* Shell Actions Menu */}
           <ShellActionsMenu
             portalId={portalId}
@@ -349,6 +317,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             onSendCtrlR={onSendCtrlR}
             onClosePortal={onClosePortal}
             onSpawnFreshShell={onSpawnFreshShell}
+            onReplayTutorial={onReplayTutorial}
             sshModalOpenExternal={sshModalOpenExternal}
             sshModalInitialTarget={sshModalInitialTarget}
             onCloseSshModalExternal={onCloseSshModalExternal}

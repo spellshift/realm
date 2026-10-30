@@ -24,6 +24,17 @@ export const GET_SHELL = gql`
             primaryIP
             externalIP
             platform
+            credentials {
+              edges {
+                node {
+                  id
+                  principal
+                  kind
+                  secret
+                  createdAt
+                }
+              }
+            }
             tags {
               edges {
                 node {
@@ -226,6 +237,18 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
                       id
                       name
                     }
+                    pivots {
+                      edges {
+                        node {
+                          id
+                          createdAt
+                          kind
+                          destination
+                          port
+                          closedAt
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -234,7 +257,7 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
         }
       }
     }
-    networkHosts: hosts(first: 50) {
+    hosts(first: 50) {
       totalCount
       edges {
         node {
@@ -255,6 +278,39 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
           }
           beacons {
             totalCount
+            edges {
+              node {
+                id
+                name
+                principal
+                lastSeenAt
+                shells {
+                  edges {
+                    node {
+                      id
+                      createdAt
+                      closedAt
+                      owner {
+                        id
+                        name
+                      }
+                      pivots {
+                        edges {
+                          node {
+                            id
+                            createdAt
+                            kind
+                            destination
+                            port
+                            closedAt
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
           credentials {
             totalCount
@@ -268,9 +324,161 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
               }
             }
           }
+          files(last: 15) {
+            totalCount
+            edges {
+              node {
+                id
+                path
+                size
+                owner
+                permissions
+                createdAt
+              }
+            }
+          }
         }
       }
     }
+    networkHosts(first: 100) {
+      totalCount
+      edges {
+        node {
+          id
+          name
+          hostname
+          ipAddress
+          subnet
+          openPorts
+          host {
+            id
+            name
+            primaryIP
+            externalIP
+            platform
+            lastSeenAt
+            credentials {
+              totalCount
+              edges {
+                node {
+                  id
+                  principal
+                  kind
+                  secret
+                  createdAt
+                }
+              }
+            }
+          }
+          networks {
+            edges {
+              node {
+                id
+                name
+                subnet
+                description
+              }
+            }
+          }
+        }
+      }
+    }
+    networks(first: 50) {
+      totalCount
+      edges {
+        node {
+          id
+          name
+          subnet
+          description
+          networkHosts {
+            edges {
+              node {
+                id
+                name
+                hostname
+                ipAddress
+                subnet
+                openPorts
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const CREATE_NETWORK_MUTATION = gql`
+  mutation CreateNetworkFromShell($input: CreateNetworkInput!) {
+    createNetwork(input: $input) {
+      id
+      name
+      subnet
+      description
+    }
+  }
+`;
+
+export const UPDATE_NETWORK_MUTATION = gql`
+  mutation UpdateNetworkFromShell($networkID: ID!, $input: UpdateNetworkInput!) {
+    updateNetwork(networkID: $networkID, input: $input) {
+      id
+      name
+      subnet
+      description
+    }
+  }
+`;
+
+export const DELETE_NETWORK_MUTATION = gql`
+  mutation DeleteNetworkFromShell($networkID: ID!) {
+    deleteNetwork(networkID: $networkID)
+  }
+`;
+
+export const CREATE_NETWORK_HOST_MUTATION = gql`
+  mutation CreateNetworkHostFromShell($input: CreateNetworkHostInput!) {
+    createNetworkHost(input: $input) {
+      id
+      name
+      hostname
+      ipAddress
+      subnet
+      openPorts
+      host {
+        id
+        name
+      }
+      networks {
+        edges {
+          node {
+            id
+            name
+            subnet
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_NETWORK_HOST_MUTATION = gql`
+  mutation UpdateNetworkHostFromShell($networkHostID: ID!, $input: UpdateNetworkHostInput!) {
+    updateNetworkHost(networkHostID: $networkHostID, input: $input) {
+      id
+      name
+      hostname
+      ipAddress
+      subnet
+      openPorts
+    }
+  }
+`;
+
+export const DELETE_NETWORK_HOST_MUTATION = gql`
+  mutation DeleteNetworkHostFromShell($networkHostID: ID!) {
+    deleteNetworkHost(networkHostID: $networkHostID)
   }
 `;
 

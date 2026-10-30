@@ -464,6 +464,47 @@ var (
 			},
 		},
 	}
+	// NetworksColumns holds the columns for the "networks" table.
+	NetworksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "subnet", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "description", Type: field.TypeString, Nullable: true, Default: ""},
+	}
+	// NetworksTable holds the schema information for the "networks" table.
+	NetworksTable = &schema.Table{
+		Name:       "networks",
+		Columns:    NetworksColumns,
+		PrimaryKey: []*schema.Column{NetworksColumns[0]},
+	}
+	// NetworkHostsColumns holds the columns for the "network_hosts" table.
+	NetworkHostsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "hostname", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "ip_address", Type: field.TypeString},
+		{Name: "subnet", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "open_ports", Type: field.TypeJSON, Nullable: true},
+		{Name: "network_host_host", Type: field.TypeInt, Nullable: true},
+	}
+	// NetworkHostsTable holds the schema information for the "network_hosts" table.
+	NetworkHostsTable = &schema.Table{
+		Name:       "network_hosts",
+		Columns:    NetworkHostsColumns,
+		PrimaryKey: []*schema.Column{NetworkHostsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "network_hosts_hosts_host",
+				Columns:    []*schema.Column{NetworkHostsColumns[8]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// NotificationsColumns holds the columns for the "notifications" table.
 	NotificationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -944,6 +985,31 @@ var (
 			},
 		},
 	}
+	// NetworkHostNetworksColumns holds the columns for the "network_host_networks" table.
+	NetworkHostNetworksColumns = []*schema.Column{
+		{Name: "network_host_id", Type: field.TypeInt},
+		{Name: "network_id", Type: field.TypeInt},
+	}
+	// NetworkHostNetworksTable holds the schema information for the "network_host_networks" table.
+	NetworkHostNetworksTable = &schema.Table{
+		Name:       "network_host_networks",
+		Columns:    NetworkHostNetworksColumns,
+		PrimaryKey: []*schema.Column{NetworkHostNetworksColumns[0], NetworkHostNetworksColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "network_host_networks_network_host_id",
+				Columns:    []*schema.Column{NetworkHostNetworksColumns[0]},
+				RefColumns: []*schema.Column{NetworkHostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "network_host_networks_network_id",
+				Columns:    []*schema.Column{NetworkHostNetworksColumns[1]},
+				RefColumns: []*schema.Column{NetworksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// ShellActiveUsersColumns holds the columns for the "shell_active_users" table.
 	ShellActiveUsersColumns = []*schema.Column{
 		{Name: "shell_id", Type: field.TypeInt},
@@ -1060,6 +1126,8 @@ var (
 		HostFilesTable,
 		HostProcessesTable,
 		LinksTable,
+		NetworksTable,
+		NetworkHostsTable,
 		NotificationsTable,
 		PortalsTable,
 		QuestsTable,
@@ -1074,6 +1142,7 @@ var (
 		TomesTable,
 		UsersTable,
 		HostTagsTable,
+		NetworkHostNetworksTable,
 		ShellActiveUsersTable,
 		TomeAssetsTable,
 		UserFavoriteHostsTable,
@@ -1147,6 +1216,13 @@ func init() {
 	LinksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	NetworksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	NetworkHostsTable.ForeignKeys[0].RefTable = HostsTable
+	NetworkHostsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	NotificationsTable.ForeignKeys[0].RefTable = UsersTable
 	NotificationsTable.ForeignKeys[1].RefTable = EventsTable
 	NotificationsTable.Annotation = &entsql.Annotation{
@@ -1217,6 +1293,8 @@ func init() {
 	}
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
+	NetworkHostNetworksTable.ForeignKeys[0].RefTable = NetworkHostsTable
+	NetworkHostNetworksTable.ForeignKeys[1].RefTable = NetworksTable
 	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
 	TomeAssetsTable.ForeignKeys[0].RefTable = TomesTable

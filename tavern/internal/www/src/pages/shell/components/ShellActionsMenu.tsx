@@ -1,7 +1,6 @@
 import React, { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Share, Terminal, Shell, SquareTerminal, Ellipsis, X, StopCircle, Search, RefreshCw, Bug } from "lucide-react";
-import { Tooltip } from "@chakra-ui/react";
+import { BookOpen, Compass, Share, Ellipsis, StopCircle, Search, RefreshCw, Bug } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
 import { KnowledgeCredentialItem, KnowledgeHostItem } from "../hooks/useShellData";
@@ -16,6 +15,7 @@ interface ShellActionsMenuProps {
     onSendCtrlC: () => void;
     onSendCtrlR: () => void;
     onSpawnFreshShell?: () => void;
+    onReplayTutorial?: () => void;
     sshModalOpenExternal?: boolean;
     sshModalInitialTarget?: string;
     onCloseSshModalExternal?: () => void;
@@ -26,18 +26,13 @@ interface ShellActionsMenuProps {
     forceOpen?: boolean;
 }
 
-const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using portal.create().";
-
 const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
-    portalId,
     onExport,
-    onNewPortal,
-    onClosePortal,
     onSshConnect,
-    onPtyOpen,
     onSendCtrlC,
     onSendCtrlR,
     onSpawnFreshShell,
+    onReplayTutorial,
     sshModalOpenExternal,
     sshModalInitialTarget,
     onCloseSshModalExternal,
@@ -49,7 +44,6 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
 }) => {
     const [sshModalOpenInternal, setSshModalOpenInternal] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    const hasPortal = portalId !== null;
 
     const isSshModalOpen = sshModalOpenExternal !== undefined ? (sshModalOpenExternal || sshModalOpenInternal) : sshModalOpenInternal;
     const closeSshModal = () => {
@@ -162,83 +156,43 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
 
                                         <div className="border-t border-[#343b4d] my-1" />
 
-                                        <Menu.Item>
-                                            {() => (
-                                                hasPortal ? (
+                                        {onReplayTutorial && (
+                                            <Menu.Item>
+                                                {() => (
                                                     <Button
-                                                        data-tour="shell-new-portal"
-                                                        buttonVariant="ghost"
-                                                        buttonStyle={{ color: "gray", size: "sm" }}
-                                                        className="w-full justify-start text-red-400 hover:bg-[#2b3242]"
-                                                        leftIcon={<X className="w-4 h-4" />}
-                                                        onClick={onClosePortal}
-                                                    >
-                                                        Close Portal
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        data-tour="shell-new-portal"
                                                         buttonVariant="ghost"
                                                         buttonStyle={{ color: "gray", size: "sm" }}
                                                         className="w-full justify-start text-white hover:bg-[#2b3242]"
-                                                        leftIcon={<Shell className="w-4 h-4" />}
-                                                        onClick={onNewPortal}
+                                                        leftIcon={<Compass className="w-4 h-4" />}
+                                                        onClick={onReplayTutorial}
                                                     >
-                                                        New Portal
+                                                        Replay Tutorial
                                                     </Button>
-                                                )
-                                            )}
-                                        </Menu.Item>
+                                                )}
+                                            </Menu.Item>
+                                        )}
 
                                         <Menu.Item>
                                             {() => (
-                                                <Tooltip
-                                                    label={!hasPortal ? PORTAL_REQUIRED_TOOLTIP : ""}
-                                                    isDisabled={hasPortal}
-                                                    placement="right"
-                                                    hasArrow
+                                                <a
+                                                    data-tour="shell-guide"
+                                                    href="https://docs.realm.pub/user-guide/eldritch"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    aria-label="Documentation"
+                                                    className="block w-full"
                                                 >
-                                                    <div>
-                                                        <Button
-                                                            buttonVariant="ghost"
-                                                            buttonStyle={{ color: "gray", size: "sm" }}
-                                                            className={`w-full justify-start ${hasPortal ? "text-white hover:bg-[#2b3242]" : "text-gray-600 cursor-not-allowed"}`}
-                                                            leftIcon={<Terminal className={`w-4 h-4 ${hasPortal ? "" : "opacity-40"}`} />}
-                                                            onClick={() => setSshModalOpenInternal(true)}
-                                                            disabled={!hasPortal}
-                                                        >
-                                                            SSH
-                                                        </Button>
-                                                    </div>
-                                                </Tooltip>
+                                                    <Button
+                                                        buttonVariant="ghost"
+                                                        buttonStyle={{ color: "gray", size: "sm" }}
+                                                        className="w-full justify-start text-white hover:bg-[#2b3242]"
+                                                        leftIcon={<BookOpen className="w-4 h-4" />}
+                                                    >
+                                                        Documentation
+                                                    </Button>
+                                                </a>
                                             )}
                                         </Menu.Item>
-
-                                        <Menu.Item>
-                                            {() => (
-                                                <Tooltip
-                                                    label={!hasPortal ? PORTAL_REQUIRED_TOOLTIP : ""}
-                                                    isDisabled={hasPortal}
-                                                    placement="right"
-                                                    hasArrow
-                                                >
-                                                    <div>
-                                                        <Button
-                                                            buttonVariant="ghost"
-                                                            buttonStyle={{ color: "gray", size: "sm" }}
-                                                            className={`w-full justify-start ${hasPortal ? "text-white hover:bg-[#2b3242]" : "text-gray-600 cursor-not-allowed"}`}
-                                                            leftIcon={<SquareTerminal className={`w-4 h-4 ${hasPortal ? "" : "opacity-40"}`} />}
-                                                            onClick={onPtyOpen}
-                                                            disabled={!hasPortal}
-                                                        >
-                                                            PTY
-                                                        </Button>
-                                                    </div>
-                                                </Tooltip>
-                                            )}
-                                        </Menu.Item>
-
-                                        <div className="border-t border-[#343b4d] my-1" />
 
                                         <Menu.Item>
                                             {() => (

@@ -16,6 +16,9 @@ import (
 
 	"github.com/gorilla/websocket"
 	"realm.pub/tavern/internal/ent"
+	enthost "realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
@@ -236,7 +239,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if !ok {
 			// If session is no longer active in memory, serve any persisted history from DB and report closed status
-			if pivotEnt, err := h.graph.ShellPivot.Get(ctx, pivotID); err == nil {
+			pivotEnt, err := shell.RetryOnLock(ctx, func() (*ent.ShellPivot, error) {
+				return h.graph.ShellPivot.Get(ctx, pivotID)
+			})
+			if err == nil {
 				if pivotEnt.Data != "" {
 					_ = wsConn.WriteJSON(shell.WebsocketTaskOutputMessage{
 						Kind:   shell.WebsocketMessageKindOutput,
@@ -314,7 +320,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Verify Portal
-		p, err := h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+		p, err := shell.RetryOnLock(ctx, func() (*ent.Portal, error) {
+			return h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+		})
 		if err != nil {
 			sendWsError("portal not found")
 			return
@@ -344,20 +352,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create ShellPivot Ent
-		createReq := h.graph.ShellPivot.Create().
-			SetStreamID(streamID).
-			SetKind("ssh").
-			SetDestination(hostPortStr).
-			SetPort(int(dstPort)).
-			SetPortalID(portalID)
+		pivotEnt, err := shell.RetryOnLock(ctx, func() (*ent.ShellPivot, error) {
+			createReq := h.graph.ShellPivot.Create().
+				SetStreamID(streamID).
+				SetKind("ssh").
+				SetDestination(hostPortStr).
+				SetPort(int(dstPort)).
+				SetPortalID(portalID)
 
-		if shellIDStr != "" {
-			if shellID, err := strconv.Atoi(shellIDStr); err == nil {
-				createReq = createReq.SetShellID(shellID)
+			if shellIDStr != "" {
+				if shellID, err := strconv.Atoi(shellIDStr); err == nil {
+					createReq = createReq.SetShellID(shellID)
+				}
 			}
-		}
 
-		pivotEnt, err := createReq.Save(ctx)
+			return createReq.Save(ctx)
+		})
 		if err != nil {
 			sendWsError(fmt.Sprintf("Failed to create shell pivot: %v", err))
 			cleanupPortal()
@@ -408,6 +418,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						switch sshPayload.Kind {
 						case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA:
 							if pivotSession.MarkConnected() {
+								recordSuccessfulPivotNetworkHost(sessionCtx, h.graph, portalID, host, int(dstPort))
 								pivotSession.Broadcast(shell.WebsocketStatusMessage{
 									Kind:    shell.WebsocketMessageKindStatus,
 									Status:  "connected",
@@ -582,4 +593,214 @@ func (h *Handler) serveSocketIO(
 
 	// Wait for websocket to disconnect or session to close
 	<-errCh
+}
+
+func deriveSubnetFromIP(ipStr string) string {
+	parsedIP := net.ParseIP(strings.TrimSpace(ipStr))
+	if parsedIP == nil {
+		return ""
+	}
+	if ip4 := parsedIP.To4(); ip4 != nil {
+		return fmt.Sprintf("%d.%d.%d.0/24", ip4[0], ip4[1], ip4[2])
+	}
+	mask := net.CIDRMask(64, 128)
+	ipNet := &net.IPNet{IP: parsedIP.Mask(mask), Mask: mask}
+	return ipNet.String()
+}
+
+func mergeUniquePort(ports []int, port int) []int {
+	if port <= 0 {
+		return ports
+	}
+	for _, existing := range ports {
+		if existing == port {
+			return ports
+		}
+	}
+	return append(ports, port)
+}
+
+func findOrCreateNetwork(ctx context.Context, graph *ent.Client, subnet string, description string) (*ent.Network, error) {
+	if subnet == "" {
+		return nil, nil
+	}
+	existing, err := graph.Network.Query().
+		Where(network.Subnet(subnet)).
+		First(ctx)
+	if err == nil {
+		return existing, nil
+	}
+	if !ent.IsNotFound(err) {
+		return nil, err
+	}
+	return graph.Network.Create().
+		SetName(subnet).
+		SetSubnet(subnet).
+		SetDescription(description).
+		Save(ctx)
+}
+
+func upsertNetworkHost(
+	ctx context.Context,
+	graph *ent.Client,
+	name string,
+	hostname string,
+	ipAddr string,
+	subnet string,
+	openPort int,
+	matchedHost *ent.Host,
+	networks ...*ent.Network,
+) (*ent.NetworkHost, error) {
+	var existing *ent.NetworkHost
+	var err error
+
+	if matchedHost != nil {
+		existing, err = graph.NetworkHost.Query().
+			Where(networkhost.HasHostWith(enthost.ID(matchedHost.ID))).
+			First(ctx)
+	}
+	if existing == nil && ipAddr != "" {
+		existing, err = graph.NetworkHost.Query().
+			Where(networkhost.IPAddress(ipAddr)).
+			First(ctx)
+	}
+	if existing == nil && hostname != "" {
+		existing, err = graph.NetworkHost.Query().
+			Where(networkhost.Or(networkhost.Hostname(hostname), networkhost.Name(name))).
+			First(ctx)
+	}
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, err
+	}
+
+	validNetworks := make([]*ent.Network, 0, len(networks))
+	for _, n := range networks {
+		if n != nil {
+			validNetworks = append(validNetworks, n)
+		}
+	}
+
+	if existing != nil {
+		updater := existing.Update().
+			SetOpenPorts(mergeUniquePort(existing.OpenPorts, openPort))
+		if existing.Name == "" && name != "" {
+			updater.SetName(name)
+		}
+		if existing.Hostname == "" && hostname != "" {
+			updater.SetHostname(hostname)
+		}
+		if existing.IPAddress == "" && ipAddr != "" {
+			updater.SetIPAddress(ipAddr)
+		}
+		if existing.Subnet == "" && subnet != "" {
+			updater.SetSubnet(subnet)
+		}
+		if matchedHost != nil {
+			updater.SetHost(matchedHost)
+		}
+		if len(validNetworks) > 0 {
+			updater.AddNetworks(validNetworks...)
+		}
+		return updater.Save(ctx)
+	}
+
+	creator := graph.NetworkHost.Create().
+		SetName(name).
+		SetHostname(hostname).
+		SetIPAddress(ipAddr).
+		SetSubnet(subnet).
+		SetOpenPorts(mergeUniquePort([]int{}, openPort))
+	if matchedHost != nil {
+		creator.SetHost(matchedHost)
+	}
+	if len(validNetworks) > 0 {
+		creator.AddNetworks(validNetworks...)
+	}
+	return creator.Save(ctx)
+}
+
+func recordSuccessfulPivotNetworkHost(ctx context.Context, graph *ent.Client, portalID int, targetHost string, targetPort int) {
+	if graph == nil || targetHost == "" {
+		return
+	}
+
+	var ipAddr string
+	hostname := targetHost
+	name := targetHost
+
+	if parsedIP := net.ParseIP(targetHost); parsedIP != nil {
+		ipAddr = parsedIP.String()
+	}
+
+	var matchedHost *ent.Host
+	if ipAddr != "" {
+		matchedHost, _ = graph.Host.Query().
+			Where(enthost.Or(
+				enthost.PrimaryIP(ipAddr),
+				enthost.ExternalIP(ipAddr),
+				enthost.Name(targetHost),
+			)).
+			First(ctx)
+	} else {
+		matchedHost, _ = graph.Host.Query().
+			Where(enthost.Name(targetHost)).
+			First(ctx)
+	}
+
+	if matchedHost != nil {
+		if matchedHost.Name != "" {
+			name = matchedHost.Name
+			hostname = matchedHost.Name
+		}
+		if ipAddr == "" && matchedHost.PrimaryIP != "" {
+			ipAddr = matchedHost.PrimaryIP
+		}
+	}
+
+	subnet := deriveSubnetFromIP(ipAddr)
+	targetNet, err := findOrCreateNetwork(
+		ctx,
+		graph,
+		subnet,
+		fmt.Sprintf("Discovered via SSH pivot to %s", targetHost),
+	)
+	if err != nil {
+		slog.Error("failed to find or create target network for pivot", "target", targetHost, "error", err)
+	}
+
+	if _, err := upsertNetworkHost(ctx, graph, name, hostname, ipAddr, subnet, targetPort, matchedHost, targetNet); err != nil {
+		slog.Error("failed to upsert target network host for pivot", "target", targetHost, "error", err)
+	}
+
+	srcHost, err := graph.Portal.Query().
+		Where(portal.ID(portalID)).
+		QueryBeacon().
+		QueryHost().
+		First(ctx)
+	if err != nil || srcHost == nil {
+		return
+	}
+
+	srcSubnet := deriveSubnetFromIP(srcHost.PrimaryIP)
+	srcNet, err := findOrCreateNetwork(
+		ctx,
+		graph,
+		srcSubnet,
+		fmt.Sprintf("Network for host %s", srcHost.Name),
+	)
+	if err != nil {
+		slog.Error("failed to find or create source network for pivot", "host", srcHost.Name, "error", err)
+	}
+
+	srcName := srcHost.Name
+	if srcName == "" {
+		srcName = srcHost.PrimaryIP
+	}
+	if srcName == "" {
+		srcName = fmt.Sprintf("host-%d", srcHost.ID)
+	}
+
+	if _, err := upsertNetworkHost(ctx, graph, srcName, srcName, srcHost.PrimaryIP, srcSubnet, 0, srcHost, srcNet, targetNet); err != nil {
+		slog.Error("failed to upsert source network host for pivot", "host", srcHost.Name, "error", err)
+	}
 }

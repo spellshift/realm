@@ -17,9 +17,7 @@ import MultiLineComposer, {
 } from "./components/MultiLineComposer";
 import SessionSettings from "./components/SessionSettings";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
-import ShellPivotsDrawer from "./components/ShellPivotsDrawer";
 import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
-import ShellNuxDrawer from "./components/ShellNuxDrawer";
 import ShellWalkthrough from "./components/ShellWalkthrough";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast, Tooltip } from "@chakra-ui/react";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -27,7 +25,10 @@ import { useMutation } from "@apollo/client";
 import SshTerminal from "./components/SshTerminal";
 import PtyTerminal from "./components/PtyTerminal";
 import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
+import { formatPivotTabLabel } from "./utils/networkGraphUtils";
 import { SquareTerminal, Terminal, WifiOff, X } from "lucide-react";
+
+export { formatPivotTabLabel };
 
 export interface PortalTab {
   id: string;
@@ -36,22 +37,9 @@ export interface PortalTab {
   pivotId?: string;
 }
 
-export function formatPivotTabLabel(tab: Pick<PortalTab, "type" | "target">): string {
-  if (tab.type.toLowerCase() === "ssh") {
-    const raw = (tab.target || "").trim();
-    if (!raw) return "SSH";
-    const afterAt = raw.includes("@") ? raw.slice(raw.lastIndexOf("@") + 1) : raw;
-    const hostOnly = afterAt.replace(/:\d+$/, "");
-    return hostOnly || afterAt || raw;
-  }
-  const cleaned = (tab.target || "PTY").replace(/^PTY\s*#\d+$/i, "PTY").trim();
-  if (!cleaned || cleaned.toLowerCase() === "exit") return "PTY";
-  return cleaned.length > 24 ? `${cleaned.slice(0, 24)}...` : cleaned;
-}
-
 const NUX_STORAGE_KEY = "tavern_shell_nux_dismissed_v1";
 
-const Shell = () => {
+const ShellContent = () => {
   const { shellId } = useParams<{ shellId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
@@ -81,6 +69,7 @@ const Shell = () => {
     lastKnowledgeSyncAt,
     refetchHistory,
     refetchKnowledgeGraph,
+    refetchShell,
   } = useShellData(shellId);
 
   const { timeUntilCallback, isMissedCallback, isLateCheckin } = useCallbackTimer(beaconData);
@@ -93,9 +82,7 @@ const Shell = () => {
 
   // Workspace drawers & composer state
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [pivotsOpen, setPivotsOpen] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
-  const [nuxOpen, setNuxOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
   const [composerCode, setComposerCode] = useState<string>("");
@@ -141,18 +128,23 @@ const Shell = () => {
     knownPivotIdsRef.current = new Set();
   }, [shellId]);
 
-  const handleBindTabPivotId = useCallback((tabId: string, createdPivotId: string) => {
-    knownPivotIdsRef.current.add(createdPivotId);
-    setPortalTabs((prev) =>
-      prev.map((t) => {
-        if (t.id !== tabId) return t;
-        return {
-          ...t,
-          pivotId: createdPivotId,
-        };
-      })
-    );
-  }, []);
+  const handleBindTabPivotId = useCallback(
+    (tabId: string, createdPivotId: string) => {
+      knownPivotIdsRef.current.add(createdPivotId);
+      setPortalTabs((prev) =>
+        prev.map((t) => {
+          if (t.id !== tabId) return t;
+          return {
+            ...t,
+            pivotId: createdPivotId,
+          };
+        })
+      );
+      refetchHistory();
+      refetchKnowledgeGraph();
+    },
+    [refetchHistory, refetchKnowledgeGraph]
+  );
 
   const handleUpdateTabTarget = useCallback((tabId: string, nextTarget: string) => {
     if (nextTarget.trim().toLowerCase() === "exit") return;
@@ -463,6 +455,13 @@ const Shell = () => {
     [submitShellCode]
   );
 
+  const handleReconnect = useCallback(() => {
+    if (!shellData?.node?.id) {
+      refetchShell().catch(() => {});
+    }
+    reconnect();
+  }, [shellData?.node?.id, refetchShell, reconnect]);
+
   if (connectionError) {
     return (
       <div style={{ padding: "20px" }}>
@@ -475,12 +474,11 @@ const Shell = () => {
   const useTabs = portalTabs.length > 0;
 
   return (
-    <AccessGate>
-      <div className="shell-font-onest flex flex-col h-screen w-full overflow-hidden bg-[#11131a] text-[#d4d4d4]">
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap"
-        />
+    <div className="shell-font-onest flex flex-col h-screen w-full overflow-hidden bg-[#11131a] text-[#d4d4d4]">
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap"
+      />
         <ShellWalkthrough
           isOpen={showNuxBanner && !isConnecting && !shellData?.node?.closedAt}
           onDismiss={handleDismissNuxBanner}
@@ -498,14 +496,15 @@ const Shell = () => {
           onCloseSessionSettings={() => {
             setSessionSettingsOpen(false);
           }}
-          onPortalStepChange={setActionsMenuTourOpen}
-          onQueueStepChange={setQueueTourOpen}
-          onOpenGuideDrawer={() => {
-            setNuxOpen(true);
+          onOpenContextDrawer={() => {
+            setKnowledgeOpen(true);
             setHistoryOpen(false);
-            setPivotsOpen(false);
+          }}
+          onCloseContextDrawer={() => {
             setKnowledgeOpen(false);
           }}
+          onPortalStepChange={setActionsMenuTourOpen}
+          onQueueStepChange={setQueueTourOpen}
         />
         <ShellHeader
           shellData={shellData}
@@ -521,26 +520,15 @@ const Shell = () => {
           historyOpen={historyOpen}
           onToggleHistory={() => {
             setHistoryOpen((prev) => !prev);
-            setPivotsOpen(false);
             setKnowledgeOpen(false);
-            setNuxOpen(false);
           }}
           historyCount={shellTasks.length}
           activeQueueCount={queuedTasks.length + runningTasks.length}
-          pivotsOpen={pivotsOpen}
-          onTogglePivots={() => {
-            setPivotsOpen((prev) => !prev);
-            setHistoryOpen(false);
-            setKnowledgeOpen(false);
-            setNuxOpen(false);
-          }}
           pivotCount={pivots.filter((p) => !p.closedAt).length}
           knowledgeOpen={knowledgeOpen}
           onToggleKnowledge={() => {
             setKnowledgeOpen((prev) => !prev);
             setHistoryOpen(false);
-            setPivotsOpen(false);
-            setNuxOpen(false);
           }}
           credentialCount={hostCredentials.length || allCredentials.length}
           credentials={allCredentials}
@@ -560,14 +548,12 @@ const Shell = () => {
               return next;
             });
           }}
-          nuxOpen={nuxOpen}
-          onToggleNux={() => {
-            setNuxOpen((prev) => !prev);
-            setHistoryOpen(false);
-            setPivotsOpen(false);
-            setKnowledgeOpen(false);
-          }}
           onSpawnFreshShell={handleSpawnFreshShell}
+          onReplayTutorial={() => {
+            setHistoryOpen(false);
+            setKnowledgeOpen(false);
+            setShowNuxBanner(true);
+          }}
           actionsMenuTourOpen={actionsMenuTourOpen}
         />
 
@@ -584,7 +570,7 @@ const Shell = () => {
           timeUntilCallback={timeUntilCallback}
           onSpawnFreshShell={handleSpawnFreshShell}
           isSpawningShell={isSpawningShell}
-          onReconnect={reconnect}
+          onReconnect={handleReconnect}
         />
 
         {/* Main Workspace Row: Terminal/Pivots + Optional History or Guide Drawer */}
@@ -722,25 +708,6 @@ const Shell = () => {
                     onTooltipMouseEnter={handleTooltipMouseEnter}
                     onTooltipMouseLeave={handleTooltipMouseLeave}
                   />
-                  <MultiLineComposer
-                    isOpen={composerOpen}
-                    onToggle={() => setComposerOpen((prev) => !prev)}
-                    code={composerCode}
-                    onChange={setComposerCode}
-                    onRunCode={(code) => submitShellCode(code)}
-                    disabled={!!shellData?.node?.closedAt}
-                    tomes={tomes}
-                  />
-                  <SessionSettings
-                    isOpen={sessionSettingsOpen}
-                    onToggle={() => setSessionSettingsOpen((prev) => !prev)}
-                    disabled={!!shellData?.node?.closedAt}
-                    tomes={tomes}
-                    rcCode={rcCode}
-                    onRcCodeChange={setRcCode}
-                    rcEnabled={rcEnabled}
-                    onRcEnabledChange={setRcEnabled}
-                  />
                 </TabPanel>
 
                 {portalTabs.map((tab, idx) => (
@@ -788,6 +755,28 @@ const Shell = () => {
                 ))}
               </TabPanels>
             </Tabs>
+            <MultiLineComposer
+              isOpen={composerOpen}
+              onToggle={() => setComposerOpen((prev) => !prev)}
+              code={composerCode}
+              onChange={setComposerCode}
+              onRunCode={(code) => {
+                setTabIndex(0);
+                submitShellCode(code);
+              }}
+              disabled={!!shellData?.node?.closedAt}
+              tomes={tomes}
+            />
+            <SessionSettings
+              isOpen={sessionSettingsOpen}
+              onToggle={() => setSessionSettingsOpen((prev) => !prev)}
+              disabled={!!shellData?.node?.closedAt}
+              tomes={tomes}
+              rcCode={rcCode}
+              onRcCodeChange={setRcCode}
+              rcEnabled={rcEnabled}
+              onRcEnabledChange={setRcEnabled}
+            />
           </div>
 
           <ShellKnowledgeDrawer
@@ -798,6 +787,17 @@ const Shell = () => {
             currentHostName={shellData?.node?.beacon?.host?.name}
             currentHostIp={shellData?.node?.beacon?.host?.primaryIP}
             portalId={portalId}
+            pivots={pivots.map((p) => {
+              const matchingTab =
+                portalTabs.find((t) => t.pivotId && String(t.pivotId) === String(p.id)) ||
+                (!p.closedAt && String(p.kind || "").toLowerCase() === "pty"
+                  ? portalTabs.find((t) => !t.pivotId && t.type === "pty")
+                  : undefined);
+              if (matchingTab?.target) {
+                return { ...p, activeTarget: matchingTab.target };
+              }
+              return p;
+            })}
             hostCredentials={hostCredentials}
             allCredentials={allCredentials}
             networkHosts={networkHosts}
@@ -806,18 +806,6 @@ const Shell = () => {
             hostShells={hostShells}
             lastKnowledgeSyncAt={lastKnowledgeSyncAt}
             onRefetchKnowledgeGraph={() => refetchKnowledgeGraph()}
-            onOpenSshWithTarget={(target) => {
-              setSshModalInitialTarget(target);
-              setSshModalOpenExternal(true);
-            }}
-            onLoadIntoComposer={handleLoadIntoComposer}
-          />
-
-          <ShellPivotsDrawer
-            isOpen={pivotsOpen}
-            onClose={() => setPivotsOpen(false)}
-            portalId={portalId}
-            pivots={pivots}
             onNewPortal={handleNewPortal}
             onClosePortal={handleClosePortal}
             onOpenPty={handlePtyOpen}
@@ -828,6 +816,11 @@ const Shell = () => {
             onOpenPivotTab={(type, target, pivotId) =>
               handleOpenPortalTab(type, target, pivotId, true)
             }
+            onOpenSshWithTarget={(target) => {
+              setSshModalInitialTarget(target);
+              setSshModalOpenExternal(true);
+            }}
+            onLoadIntoComposer={handleLoadIntoComposer}
           />
 
           <ShellHistoryDrawer
@@ -838,22 +831,6 @@ const Shell = () => {
             currentShellId={shellId}
             onRunCode={handleRunCodeFromDrawer}
             onLoadIntoComposer={handleLoadIntoComposer}
-          />
-
-          <ShellNuxDrawer
-            isOpen={nuxOpen}
-            onClose={() => setNuxOpen(false)}
-            portalId={portalId}
-            onRunCode={handleRunCodeFromDrawer}
-            onLoadIntoComposer={handleLoadIntoComposer}
-            onSpawnFreshShell={handleSpawnFreshShell}
-            onStartWalkthrough={() => {
-              setNuxOpen(false);
-              setHistoryOpen(false);
-              setPivotsOpen(false);
-              setKnowledgeOpen(false);
-              setShowNuxBanner(true);
-            }}
           />
         </div>
 
@@ -878,11 +855,26 @@ const Shell = () => {
               return next;
             });
           }}
-          onReconnect={reconnect}
+          composerOpen={composerOpen}
+          onToggleComposer={() => {
+            setComposerOpen((prev) => {
+              const next = !prev;
+              if (next) setSessionSettingsOpen(false);
+              return next;
+            });
+          }}
+          onNewPortal={handleNewPortal}
+          onClosePortal={handleClosePortal}
+          onReconnect={handleReconnect}
         />
       </div>
-    </AccessGate>
   );
 };
+
+const Shell = () => (
+  <AccessGate>
+    <ShellContent />
+  </AccessGate>
+);
 
 export default Shell;

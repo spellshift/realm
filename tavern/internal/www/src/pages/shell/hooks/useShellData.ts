@@ -1,5 +1,5 @@
 import { useQuery } from "@apollo/client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     GET_BEACON_STATUS,
     GET_PORTAL_STATUS,
@@ -9,6 +9,7 @@ import {
     GET_SHELL_KNOWLEDGE_GRAPH,
     GET_SHELL_TOMES,
 } from "../graphql";
+import { buildUnifiedGraphData } from "../utils/networkGraphUtils";
 
 export interface ShellTaskItem {
     id: string;
@@ -47,8 +48,13 @@ export interface ShellPivotItem {
     createdAt?: string;
     kind: string;
     destination: string;
+    activeTarget?: string;
     port?: number;
     closedAt?: string | null;
+    shellId?: string;
+    hostId?: string;
+    hostName?: string;
+    isCurrentHost?: boolean;
 }
 
 export interface ShellTomeItem {
@@ -80,6 +86,9 @@ export interface KnowledgeFileItem {
     owner?: string;
     permissions?: string;
     createdAt: string;
+    hostId?: string;
+    hostName?: string;
+    isCurrentHost?: boolean;
 }
 
 export interface KnowledgeShellItem {
@@ -90,12 +99,22 @@ export interface KnowledgeShellItem {
     beaconName: string;
     beaconPrincipal?: string;
     ownerName?: string;
+    hostId?: string;
+    hostName?: string;
+    isCurrentHost?: boolean;
 }
 
 export interface KnowledgeHostItem {
     id: string;
+    hostId?: string;
+    networkHostId?: string;
     name: string;
+    hostname?: string;
     primaryIP?: string;
+    ipAddress?: string;
+    subnet?: string;
+    openPorts?: number[];
+    networks?: { id: string; name: string; subnet: string; description?: string }[];
     externalIP?: string;
     platform?: string;
     lastSeenAt?: string;
@@ -106,27 +125,53 @@ export interface KnowledgeHostItem {
     isCurrentHost: boolean;
     sharedTags: string[];
     sameSubnet: boolean;
+    isReachable?: boolean;
 }
 
 export const STUCK_TASK_THRESHOLD_MS = 15_000;
 
-const getIpv4SubnetPrefix = (ip?: string | null): string | null => {
-    if (!ip) return null;
-    const parts = ip.trim().split(".");
-    if (parts.length !== 4) return null;
-    return `${parts[0]}.${parts[1]}.${parts[2]}.`;
-};
+export const MAX_SHELL_LOAD_RETRIES = 5;
 
 export const useShellData = (shellId: string | undefined) => {
     const [portalId, setPortalId] = useState<number | null>(null);
     const [nowTick, setNowTick] = useState<number>(() => Date.now());
+    const [shellRetryCount, setShellRetryCount] = useState<number>(0);
 
     // Fetch shell details first
-    const { loading, error, data: shellData } = useQuery(GET_SHELL, {
+    const {
+        loading: rawLoading,
+        error: rawError,
+        data: shellData,
+        refetch: refetchShell,
+    } = useQuery(GET_SHELL, {
         variables: { id: shellId },
         skip: !shellId,
-        fetchPolicy: "network-only"
+        fetchPolicy: "network-only",
     });
+
+    // Reset retry counter when shellId changes or shell loads successfully
+    useEffect(() => {
+        setShellRetryCount(0);
+    }, [shellId, shellData?.node?.id]);
+
+    // Automatically retry GET_SHELL on transient database lock / network errors
+    const shouldRetryShellLoad = Boolean(
+        shellId && !rawLoading && rawError && !shellData?.node?.id && shellRetryCount < MAX_SHELL_LOAD_RETRIES
+    );
+    useEffect(() => {
+        if (!shouldRetryShellLoad) return;
+        const delayMs = 250 * (shellRetryCount + 1);
+        const timer = setTimeout(() => {
+            setShellRetryCount((c) => c + 1);
+            refetchShell().catch(() => {
+                // Handled by subsequent retry or final error state
+            });
+        }, delayMs);
+        return () => clearTimeout(timer);
+    }, [shouldRetryShellLoad, shellRetryCount, refetchShell]);
+
+    const loading = rawLoading || shouldRetryShellLoad;
+    const error = shouldRetryShellLoad ? undefined : rawError;
 
     // Fetch shell history (tasks & pivots)
     const { data: historyData, refetch: refetchHistory } = useQuery(GET_SHELL_HISTORY, {
@@ -274,6 +319,7 @@ export const useShellData = (shellId: string | undefined) => {
     const totalTaskCount: number = historyData?.node?.shellTasks?.totalCount ?? shellTasks.length;
 
     // Immediately refresh Knowledge Graph whenever shell tasks report new credentials, files, or processes
+    // (skipping the initial hostId load since useQuery(GET_SHELL_KNOWLEDGE_GRAPH) already executes on mount)
     const reportedArtifactSignature = useMemo(() => {
         return shellTasks
             .map(
@@ -283,8 +329,16 @@ export const useShellData = (shellId: string | undefined) => {
             .join("|");
     }, [shellTasks]);
 
+    const prevArtifactSyncRef = useRef<{ hostId?: string; sig: string }>({
+        hostId: undefined,
+        sig: "",
+    });
     useEffect(() => {
-        if (hostId && reportedArtifactSignature) {
+        if (!hostId) return;
+        const hostIdStr = String(hostId);
+        const prev = prevArtifactSyncRef.current;
+        prevArtifactSyncRef.current = { hostId: hostIdStr, sig: reportedArtifactSignature };
+        if (prev.hostId === hostIdStr && prev.sig !== reportedArtifactSignature && reportedArtifactSignature) {
             refetchKnowledgeGraph();
             setLastKnowledgeSyncAt(Date.now());
         }
@@ -324,11 +378,6 @@ export const useShellData = (shellId: string | undefined) => {
     const stuckTask: ShellTaskItem | null = stuckTaskInfo?.task ?? null;
     const stuckElapsedSeconds: number = stuckTaskInfo?.elapsedSeconds ?? 0;
 
-    const pivots: ShellPivotItem[] = useMemo(() => {
-        const edges = historyData?.node?.pivots?.edges || shellData?.node?.pivots?.edges || [];
-        return edges.map((e: any) => e.node).filter(Boolean);
-    }, [historyData, shellData]);
-
     const tomes: ShellTomeItem[] = useMemo(() => {
         const edges = tomesData?.tomes?.edges || [];
         return edges
@@ -336,146 +385,38 @@ export const useShellData = (shellId: string | undefined) => {
             .filter((t: any) => t && t.eldritch);
     }, [tomesData]);
 
-    // Knowledge Graph derived state
+    // Knowledge Graph & Pivots unified derived state
     const currentHostNode = knowledgeData?.currentHost || shellData?.node?.beacon?.host;
     const currentHostTags: string[] = useMemo(() => {
         const edges = shellData?.node?.beacon?.host?.tags?.edges || [];
         return edges.map((e: any) => e.node?.name).filter(Boolean);
     }, [shellData]);
-    const currentSubnetPrefix = useMemo(
-        () => getIpv4SubnetPrefix(shellData?.node?.beacon?.host?.primaryIP),
-        [shellData]
+
+    const currentShellPivots: ShellPivotItem[] = useMemo(() => {
+        const edges = historyData?.node?.pivots?.edges || shellData?.node?.pivots?.edges || [];
+        return edges.map((e: any) => e.node).filter(Boolean);
+    }, [historyData, shellData]);
+
+    const unifiedGraph = useMemo(
+        () =>
+            buildUnifiedGraphData({
+                currentHostNode,
+                hostId: hostId ? String(hostId) : undefined,
+                currentShellId: shellId ? String(shellId) : undefined,
+                currentHostTags,
+                currentShellPivots,
+                knowledgeData,
+            }),
+        [currentHostNode, hostId, shellId, currentHostTags, currentShellPivots, knowledgeData]
     );
 
-    const hostCredentials: KnowledgeCredentialItem[] = useMemo(() => {
-        const edges = currentHostNode?.credentials?.edges || [];
-        const hId = String(currentHostNode?.id || hostId || "");
-        const hName = currentHostNode?.name || "Current Host";
-        const hIp = currentHostNode?.primaryIP;
-        return edges
-            .map((e: any) => e.node)
-            .filter(Boolean)
-            .map((c: any) => ({
-                id: String(c.id),
-                principal: c.principal,
-                kind: c.kind,
-                secret: c.secret,
-                createdAt: c.createdAt,
-                hostId: hId,
-                hostName: hName,
-                hostPrimaryIP: hIp,
-                isCurrentHost: true,
-            }));
-    }, [currentHostNode, hostId]);
-
-    const networkHosts: KnowledgeHostItem[] = useMemo(() => {
-        const edges = knowledgeData?.networkHosts?.edges || [];
-        const currentIdStr = String(hostId || "");
-        const items: KnowledgeHostItem[] = edges
-            .map((e: any) => e.node)
-            .filter(Boolean)
-            .map((h: any) => {
-                const hId = String(h.id);
-                const isCurrentHost = hId === currentIdStr;
-                const tags = (h.tags?.edges || []).map((te: any) => te.node).filter(Boolean);
-                const sharedTags = tags
-                    .map((t: any) => t.name)
-                    .filter((name: string) => currentHostTags.includes(name));
-                const subnet = getIpv4SubnetPrefix(h.primaryIP);
-                const sameSubnet = !!(currentSubnetPrefix && subnet && currentSubnetPrefix === subnet);
-                const creds: KnowledgeCredentialItem[] = (h.credentials?.edges || [])
-                    .map((ce: any) => ce.node)
-                    .filter(Boolean)
-                    .map((c: any) => ({
-                        id: String(c.id),
-                        principal: c.principal,
-                        kind: c.kind,
-                        secret: c.secret,
-                        createdAt: c.createdAt,
-                        hostId: hId,
-                        hostName: h.name,
-                        hostPrimaryIP: h.primaryIP,
-                        isCurrentHost,
-                    }));
-
-                return {
-                    id: hId,
-                    name: h.name,
-                    primaryIP: h.primaryIP,
-                    externalIP: h.externalIP,
-                    platform: h.platform,
-                    lastSeenAt: h.lastSeenAt,
-                    tags,
-                    beaconCount: h.beacons?.totalCount ?? 0,
-                    credentialCount: h.credentials?.totalCount ?? creds.length,
-                    credentials: creds,
-                    isCurrentHost,
-                    sharedTags,
-                    sameSubnet,
-                };
-            });
-
-        // Sort: non-current hosts with shared tags or same subnet first, then credential count, then name
-        return items.sort((a, b) => {
-            if (a.isCurrentHost !== b.isCurrentHost) return a.isCurrentHost ? 1 : -1;
-            const aRel = (a.sharedTags.length > 0 ? 2 : 0) + (a.sameSubnet ? 1 : 0);
-            const bRel = (b.sharedTags.length > 0 ? 2 : 0) + (b.sameSubnet ? 1 : 0);
-            if (aRel !== bRel) return bRel - aRel;
-            if (a.credentialCount !== b.credentialCount) return b.credentialCount - a.credentialCount;
-            return a.name.localeCompare(b.name);
-        });
-    }, [knowledgeData, hostId, currentHostTags, currentSubnetPrefix]);
-
-    const allCredentials: KnowledgeCredentialItem[] = useMemo(() => {
-        const seen = new Set<string>();
-        const list: KnowledgeCredentialItem[] = [];
-        for (const cred of hostCredentials) {
-            seen.add(cred.id);
-            list.push(cred);
-        }
-        for (const h of networkHosts) {
-            for (const cred of h.credentials) {
-                if (!seen.has(cred.id)) {
-                    seen.add(cred.id);
-                    list.push(cred);
-                }
-            }
-        }
-        return list;
-    }, [hostCredentials, networkHosts]);
-
-    const hostFiles: KnowledgeFileItem[] = useMemo(() => {
-        const edges = currentHostNode?.files?.edges || [];
-        return edges.map((e: any) => e.node).filter(Boolean);
-    }, [currentHostNode]);
-
+    const pivots = unifiedGraph.nearbyPivots;
+    const hostCredentials = unifiedGraph.hostCredentials;
+    const allCredentials = unifiedGraph.allCredentials;
+    const networkHosts = unifiedGraph.networkHosts;
+    const hostFiles = unifiedGraph.hostFiles;
+    const hostShells = unifiedGraph.hostShells;
     const hostProcessCount: number = currentHostNode?.processes?.totalCount ?? 0;
-
-    const hostShells: KnowledgeShellItem[] = useMemo(() => {
-        const beaconEdges = currentHostNode?.beacons?.edges || [];
-        const shells: KnowledgeShellItem[] = [];
-        beaconEdges.forEach((be: any) => {
-            const b = be.node;
-            if (!b) return;
-            const sEdges = b.shells?.edges || [];
-            sEdges.forEach((se: any) => {
-                const s = se.node;
-                if (!s) return;
-                shells.push({
-                    id: String(s.id),
-                    createdAt: s.createdAt,
-                    closedAt: s.closedAt,
-                    beaconId: String(b.id),
-                    beaconName: b.name,
-                    beaconPrincipal: b.principal,
-                    ownerName: s.owner?.name,
-                });
-            });
-        });
-        return shells.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-    }, [currentHostNode]);
 
     return {
         loading,
@@ -504,5 +445,6 @@ export const useShellData = (shellId: string | undefined) => {
         hostShells,
         lastKnowledgeSyncAt,
         refetchKnowledgeGraph,
+        refetchShell,
     };
 };

@@ -204,7 +204,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cacheMu.Unlock()
 
 		if !ok {
-			if pivotEnt, err := h.graph.ShellPivot.Get(ctx, pivotID); err == nil {
+			pivotEnt, err := shell.RetryOnLock(ctx, func() (*ent.ShellPivot, error) {
+				return h.graph.ShellPivot.Get(ctx, pivotID)
+			})
+			if err == nil {
 				if pivotEnt.Data != "" {
 					_ = wsConn.WriteJSON(shell.WebsocketTaskOutputMessage{
 						Kind:   shell.WebsocketMessageKindOutput,
@@ -245,7 +248,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Verify Portal
-		p, err := h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+		p, err := shell.RetryOnLock(ctx, func() (*ent.Portal, error) {
+			return h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+		})
 		if err != nil {
 			sendWsError("portal not found")
 			return
@@ -269,20 +274,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		streamID := fmt.Sprintf("pty-ws-%d", time.Now().UnixNano())
 
 		// Create ShellPivot Ent
-		createReq := h.graph.ShellPivot.Create().
-			SetStreamID(streamID).
-			SetKind("pty").
-			SetDestination("pty").
-			SetPort(0).
-			SetPortalID(portalID)
+		pivotEnt, err := shell.RetryOnLock(ctx, func() (*ent.ShellPivot, error) {
+			createReq := h.graph.ShellPivot.Create().
+				SetStreamID(streamID).
+				SetKind("pty").
+				SetDestination("pty").
+				SetPort(0).
+				SetPortalID(portalID)
 
-		if shellIDStr != "" {
-			if shellID, err := strconv.Atoi(shellIDStr); err == nil {
-				createReq = createReq.SetShellID(shellID)
+			if shellIDStr != "" {
+				if shellID, err := strconv.Atoi(shellIDStr); err == nil {
+					createReq = createReq.SetShellID(shellID)
+				}
 			}
-		}
 
-		pivotEnt, err := createReq.Save(ctx)
+			return createReq.Save(ctx)
+		})
 		if err != nil {
 			sendWsError(fmt.Sprintf("Failed to create shell pivot: %v", err))
 			cleanupPortal()

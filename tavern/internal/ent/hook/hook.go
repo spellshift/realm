@@ -177,6 +177,30 @@ func (f LinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LinkMutation", m)
 }
 
+// The NetworkFunc type is an adapter to allow the use of ordinary
+// function as Network mutator.
+type NetworkFunc func(context.Context, *ent.NetworkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NetworkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NetworkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NetworkMutation", m)
+}
+
+// The NetworkHostFunc type is an adapter to allow the use of ordinary
+// function as NetworkHost mutator.
+type NetworkHostFunc func(context.Context, *ent.NetworkHostMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NetworkHostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NetworkHostMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NetworkHostMutation", m)
+}
+
 // The NotificationFunc type is an adapter to allow the use of ordinary
 // function as Notification mutator.
 type NotificationFunc func(context.Context, *ent.NotificationMutation) (ent.Value, error)

@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/user"
@@ -274,6 +275,21 @@ func (hc *HostCreate) AddSubscribers(u ...*User) *HostCreate {
 		ids[i] = u[i].ID
 	}
 	return hc.AddSubscriberIDs(ids...)
+}
+
+// AddNetworkHostIDs adds the "network_hosts" edge to the NetworkHost entity by IDs.
+func (hc *HostCreate) AddNetworkHostIDs(ids ...int) *HostCreate {
+	hc.mutation.AddNetworkHostIDs(ids...)
+	return hc
+}
+
+// AddNetworkHosts adds the "network_hosts" edges to the NetworkHost entity.
+func (hc *HostCreate) AddNetworkHosts(n ...*NetworkHost) *HostCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return hc.AddNetworkHostIDs(ids...)
 }
 
 // Mutation returns the HostMutation object of the builder.
@@ -550,6 +566,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.NetworkHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.NetworkHostsTable,
+			Columns: []string{host.NetworkHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

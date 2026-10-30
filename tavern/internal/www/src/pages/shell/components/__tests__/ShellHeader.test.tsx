@@ -120,7 +120,6 @@ describe("ShellHeader", () => {
 
         // Redundant toolbar items should not appear in the ... menu
         expect(screen.queryByText("Knowledge Graph")).not.toBeInTheDocument();
-        expect(screen.queryByText("Pivots")).not.toBeInTheDocument();
         expect(screen.queryByText("History")).not.toBeInTheDocument();
         expect(screen.queryByText("Composer")).not.toBeInTheDocument();
         expect(screen.queryByText("Operator Guide & Docs")).not.toBeInTheDocument();
@@ -130,14 +129,16 @@ describe("ShellHeader", () => {
         expect(onExport).toHaveBeenCalled();
     });
 
-    it("renders New Interpreter and New Portal options in white in the actions menu while Close Portal remains red", () => {
+    it("renders New Interpreter, Replay Tutorial, Documentation link, and Report a Bug in the actions menu while omitting portal/pty/ssh options", () => {
         const onSpawnFreshShell = vi.fn();
+        const onReplayTutorial = vi.fn();
         const onNewPortal = vi.fn();
-        const { rerender } = render(
+        render(
             <BrowserRouter>
                 <ShellHeader
                     {...defaultProps}
                     onSpawnFreshShell={onSpawnFreshShell}
+                    onReplayTutorial={onReplayTutorial}
                     onNewPortal={onNewPortal}
                     actionsMenuTourOpen={true}
                 />
@@ -145,29 +146,29 @@ describe("ShellHeader", () => {
         );
 
         const newInterpreterBtn = screen.getByText("New Interpreter").closest("button")!;
-        const newPortalBtn = screen.getByText("New Portal").closest("button")!;
+        const replayTutorialBtn = screen.getByText("Replay Tutorial").closest("button")!;
+        const docsLink = screen.getByLabelText("Documentation");
         const reportBugLink = screen.getByLabelText("Report a bug");
         expect(newInterpreterBtn).toHaveClass("text-white");
-        expect(newPortalBtn).toHaveClass("text-white");
+        expect(replayTutorialBtn).toHaveClass("text-white");
+        fireEvent.click(replayTutorialBtn);
+        expect(onReplayTutorial).toHaveBeenCalledTimes(1);
+        expect(docsLink).toHaveAttribute(
+            "href",
+            "https://docs.realm.pub/user-guide/eldritch"
+        );
+        expect(screen.getByText("Documentation")).toBeInTheDocument();
         expect(reportBugLink).toHaveAttribute(
             "href",
             "https://github.com/spellshift/realm/issues/new?template=bug_report.md"
         );
         expect(screen.getByText("Report a Bug")).toBeInTheDocument();
 
-        rerender(
-            <BrowserRouter>
-                <ShellHeader
-                    {...defaultProps}
-                    portalId={7}
-                    onSpawnFreshShell={onSpawnFreshShell}
-                    actionsMenuTourOpen={true}
-                />
-            </BrowserRouter>
-        );
-
-        const closePortalBtn = screen.getByText("Close Portal").closest("button")!;
-        expect(closePortalBtn).toHaveClass("text-red-400");
+        // Redundant portal, pty, and ssh options should not appear in the ... menu
+        expect(screen.queryByText("New Portal")).not.toBeInTheDocument();
+        expect(screen.queryByText("Close Portal")).not.toBeInTheDocument();
+        expect(screen.queryByText("SSH")).not.toBeInTheDocument();
+        expect(screen.queryByText("PTY")).not.toBeInTheDocument();
     });
 
     it("renders unified toolbar background, active button highlight, and badges only for active pivots and active queue", () => {
@@ -175,12 +176,12 @@ describe("ShellHeader", () => {
         const onToggleKnowledge = vi.fn();
         const onTogglePivots = vi.fn();
         const onToggleHistory = vi.fn();
-        const onToggleNux = vi.fn();
 
         const { rerender } = render(
             <BrowserRouter>
                 <ShellHeader
                     {...defaultProps}
+                    activeUsers={[{ id: "u1", name: "operator1" }]}
                     composerOpen={true}
                     onToggleComposer={onToggleComposer}
                     onToggleKnowledge={onToggleKnowledge}
@@ -190,20 +191,15 @@ describe("ShellHeader", () => {
                     onToggleHistory={onToggleHistory}
                     historyCount={12}
                     activeQueueCount={0}
-                    onToggleNux={onToggleNux}
                 />
             </BrowserRouter>
         );
 
         const toolbar = screen.getByTestId("shell-header-toolbar");
         expect(toolbar).toBeInTheDocument();
+        expect(screen.getByTestId("shell-header-users-divider")).toBeInTheDocument();
         const homeLink = screen.getByTitle("Return Home");
         expect(homeLink).not.toHaveClass("border");
-
-        const composerBtn = screen.getByLabelText("Toggle multi-line composer");
-        expect(composerBtn).toHaveClass("bg-purple-600", "text-white");
-        fireEvent.click(composerBtn);
-        expect(onToggleComposer).toHaveBeenCalled();
 
         const knowledgeBtn = screen.getByLabelText("Toggle knowledge graph");
         expect(knowledgeBtn).toHaveClass("bg-transparent");
@@ -221,10 +217,8 @@ describe("ShellHeader", () => {
         expect(onToggleHistory).toHaveBeenCalled();
         // Completed history count (12) should NOT display when activeQueueCount is 0
         expect(screen.queryByText("12")).not.toBeInTheDocument();
-
-        const guideBtn = screen.getByLabelText("Toggle operator guide");
-        fireEvent.click(guideBtn);
-        expect(onToggleNux).toHaveBeenCalled();
+        expect(screen.queryByLabelText("Toggle operator guide")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Toggle multi-line composer")).not.toBeInTheDocument();
 
         // When activeQueueCount > 0, History button displays the active queue badge
         rerender(

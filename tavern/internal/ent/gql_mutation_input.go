@@ -202,6 +202,9 @@ type UpdateHostInput struct {
 	ClearSubscribers     bool
 	AddSubscriberIDs     []int
 	RemoveSubscriberIDs  []int
+	ClearNetworkHosts    bool
+	AddNetworkHostIDs    []int
+	RemoveNetworkHostIDs []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -286,6 +289,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveSubscriberIDs; len(v) > 0 {
 		m.RemoveSubscriberIDs(v...)
+	}
+	if i.ClearNetworkHosts {
+		m.ClearNetworkHosts()
+	}
+	if v := i.AddNetworkHostIDs; len(v) > 0 {
+		m.AddNetworkHostIDs(v...)
+	}
+	if v := i.RemoveNetworkHostIDs; len(v) > 0 {
+		m.RemoveNetworkHostIDs(v...)
 	}
 }
 
@@ -411,6 +423,214 @@ func (c *LinkUpdate) SetInput(i UpdateLinkInput) *LinkUpdate {
 
 // SetInput applies the change-set in the UpdateLinkInput on the LinkUpdateOne builder.
 func (c *LinkUpdateOne) SetInput(i UpdateLinkInput) *LinkUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateNetworkInput represents a mutation input for creating networks.
+type CreateNetworkInput struct {
+	Name           string
+	Subnet         *string
+	Description    *string
+	NetworkHostIDs []int
+}
+
+// Mutate applies the CreateNetworkInput on the NetworkMutation builder.
+func (i *CreateNetworkInput) Mutate(m *NetworkMutation) {
+	m.SetName(i.Name)
+	if v := i.Subnet; v != nil {
+		m.SetSubnet(*v)
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if v := i.NetworkHostIDs; len(v) > 0 {
+		m.AddNetworkHostIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateNetworkInput on the NetworkCreate builder.
+func (c *NetworkCreate) SetInput(i CreateNetworkInput) *NetworkCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateNetworkInput represents a mutation input for updating networks.
+type UpdateNetworkInput struct {
+	LastModifiedAt       *time.Time
+	Name                 *string
+	ClearSubnet          bool
+	Subnet               *string
+	ClearDescription     bool
+	Description          *string
+	ClearNetworkHosts    bool
+	AddNetworkHostIDs    []int
+	RemoveNetworkHostIDs []int
+}
+
+// Mutate applies the UpdateNetworkInput on the NetworkMutation builder.
+func (i *UpdateNetworkInput) Mutate(m *NetworkMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if i.ClearSubnet {
+		m.ClearSubnet()
+	}
+	if v := i.Subnet; v != nil {
+		m.SetSubnet(*v)
+	}
+	if i.ClearDescription {
+		m.ClearDescription()
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if i.ClearNetworkHosts {
+		m.ClearNetworkHosts()
+	}
+	if v := i.AddNetworkHostIDs; len(v) > 0 {
+		m.AddNetworkHostIDs(v...)
+	}
+	if v := i.RemoveNetworkHostIDs; len(v) > 0 {
+		m.RemoveNetworkHostIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateNetworkInput on the NetworkUpdate builder.
+func (c *NetworkUpdate) SetInput(i UpdateNetworkInput) *NetworkUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateNetworkInput on the NetworkUpdateOne builder.
+func (c *NetworkUpdateOne) SetInput(i UpdateNetworkInput) *NetworkUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateNetworkHostInput represents a mutation input for creating networkhosts.
+type CreateNetworkHostInput struct {
+	Name       *string
+	Hostname   *string
+	IPAddress  string
+	Subnet     *string
+	OpenPorts  []int
+	HostID     *int
+	NetworkIDs []int
+}
+
+// Mutate applies the CreateNetworkHostInput on the NetworkHostMutation builder.
+func (i *CreateNetworkHostInput) Mutate(m *NetworkHostMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Hostname; v != nil {
+		m.SetHostname(*v)
+	}
+	m.SetIPAddress(i.IPAddress)
+	if v := i.Subnet; v != nil {
+		m.SetSubnet(*v)
+	}
+	if v := i.OpenPorts; v != nil {
+		m.SetOpenPorts(v)
+	}
+	if v := i.HostID; v != nil {
+		m.SetHostID(*v)
+	}
+	if v := i.NetworkIDs; len(v) > 0 {
+		m.AddNetworkIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateNetworkHostInput on the NetworkHostCreate builder.
+func (c *NetworkHostCreate) SetInput(i CreateNetworkHostInput) *NetworkHostCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateNetworkHostInput represents a mutation input for updating networkhosts.
+type UpdateNetworkHostInput struct {
+	LastModifiedAt   *time.Time
+	ClearName        bool
+	Name             *string
+	ClearHostname    bool
+	Hostname         *string
+	IPAddress        *string
+	ClearSubnet      bool
+	Subnet           *string
+	ClearOpenPorts   bool
+	OpenPorts        []int
+	AppendOpenPorts  []int
+	ClearHost        bool
+	HostID           *int
+	ClearNetworks    bool
+	AddNetworkIDs    []int
+	RemoveNetworkIDs []int
+}
+
+// Mutate applies the UpdateNetworkHostInput on the NetworkHostMutation builder.
+func (i *UpdateNetworkHostInput) Mutate(m *NetworkHostMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if i.ClearName {
+		m.ClearName()
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if i.ClearHostname {
+		m.ClearHostname()
+	}
+	if v := i.Hostname; v != nil {
+		m.SetHostname(*v)
+	}
+	if v := i.IPAddress; v != nil {
+		m.SetIPAddress(*v)
+	}
+	if i.ClearSubnet {
+		m.ClearSubnet()
+	}
+	if v := i.Subnet; v != nil {
+		m.SetSubnet(*v)
+	}
+	if i.ClearOpenPorts {
+		m.ClearOpenPorts()
+	}
+	if v := i.OpenPorts; v != nil {
+		m.SetOpenPorts(v)
+	}
+	if i.AppendOpenPorts != nil {
+		m.AppendOpenPorts(i.OpenPorts)
+	}
+	if i.ClearHost {
+		m.ClearHost()
+	}
+	if v := i.HostID; v != nil {
+		m.SetHostID(*v)
+	}
+	if i.ClearNetworks {
+		m.ClearNetworks()
+	}
+	if v := i.AddNetworkIDs; len(v) > 0 {
+		m.AddNetworkIDs(v...)
+	}
+	if v := i.RemoveNetworkIDs; len(v) > 0 {
+		m.RemoveNetworkIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateNetworkHostInput on the NetworkHostUpdate builder.
+func (c *NetworkHostUpdate) SetInput(i UpdateNetworkHostInput) *NetworkHostUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateNetworkHostInput on the NetworkHostUpdateOne builder.
+func (c *NetworkHostUpdateOne) SetInput(i UpdateNetworkHostInput) *NetworkHostUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }

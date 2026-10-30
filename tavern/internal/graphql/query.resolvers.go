@@ -304,6 +304,38 @@ func (r *queryResolver) ScheduledTasks(ctx context.Context, after *entgql.Cursor
 	return query.Paginate(ctx, after, first, before, last, ent.WithScheduledTaskOrder(orderBy))
 }
 
+// Networks is the resolver for the networks field.
+func (r *queryResolver) Networks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkOrder, where *ent.NetworkWhereInput) (*ent.NetworkConnection, error) {
+	query, err := r.client.Network.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithNetworkOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithNetworkOrder(orderBy))
+}
+
+// NetworkHosts is the resolver for the networkHosts field.
+func (r *queryResolver) NetworkHosts(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkHostOrder, where *ent.NetworkHostWhereInput) (*ent.NetworkHostConnection, error) {
+	query, err := r.client.NetworkHost.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithNetworkHostOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithNetworkHostOrder(orderBy))
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	if authUser := auth.UserFromContext(ctx); authUser != nil {

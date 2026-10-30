@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   BookMarked,
   Bug,
@@ -10,7 +10,6 @@ import {
   Database,
   History,
   Loader2,
-  Network,
   Settings,
   Shell,
   Sparkles,
@@ -50,18 +49,19 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: "setup-aliases",
     selector: '[data-tour="shell-setup-aliases"]',
     fallbackSelector: '[data-tour="shell-session-settings"]',
-    title: "Setup Aliases",
+    title: "Set Default Aliases",
     description:
-      "Click Setup Aliases to enable common shell helper functions (like ls, ps, cat, and whoami) across your shells in one click, or load another RC tome or custom script.",
+      "Click Set Default Aliases to enable common shell helper functions (like ls, ps, cat, and whoami) across your shells in one click, or load another RC tome or custom script.",
     icon: <BookMarked size={16} className="text-purple-400" />,
   },
   {
-    id: "non-interactive",
-    selector: '[data-tour="shell-non-interactive"]',
-    title: "Async Mode",
+    id: "composer",
+    selector: '[data-tour="shell-composer-toggle"]',
+    fallbackSelector: '[data-tour="shell-composer"]',
+    title: "Eldritch Composer",
     description:
-      "All code runs on the agent, but in async mode we queue it for the agent to retrieve during its next callback. This means you'll need to wait for agent callbacks before you'll see any output from your Eldritch, but it's typically more stealthy to operate in this mode.",
-    icon: <Clock size={16} className="text-yellow-400" />,
+      "For more complex scripts, it may be easier to write them in the Composer view.",
+    icon: <Code2 size={16} className="text-purple-400" />,
   },
   {
     id: "callback",
@@ -82,30 +82,31 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <Loader2 size={16} className="text-amber-400" />,
   },
   {
-    id: "composer",
-    selector: '[data-tour="shell-composer-toggle"]',
-    fallbackSelector: '[data-tour="shell-composer"]',
-    title: "Eldritch Composer",
+    id: "non-interactive",
+    selector: '[data-tour="shell-non-interactive"]',
+    title: "Async Mode",
     description:
-      "For more complex scripts, it may be easier to write them in the Composer view.",
-    icon: <Code2 size={16} className="text-purple-400" />,
+      "All code runs on the agent, but in async mode we queue it for the agent to retrieve during its next callback. Click this status indicator anytime to open or close an interactive portal.",
+    icon: <Clock size={16} className="text-yellow-400" />,
   },
   {
-    id: "knowledge",
+    id: "context",
     selector: '[data-tour="shell-knowledge"]',
-    title: "Knowledge Graph",
+    title: "Context",
     description:
-      "View credentials, hosts, and files reported across your engagement, and quickly use them to stage commands or launch pivots.",
-    tip: "Items reported via the Eldritch report module appear here automatically.",
+      "Explore active and past pivots, nearby hosts, shells, credentials, and reported files in one unified drawer.",
+    tip: "Items reported via the Eldritch report module and successful pivots appear here automatically.",
     icon: <Database size={16} className="text-emerald-400" />,
   },
   {
-    id: "pivots",
-    selector: '[data-tour="shell-pivots"]',
-    title: "Pivots",
+    id: "portal",
+    selector: '[data-tour="shell-new-portal"]',
+    fallbackSelector: '[data-tour="shell-non-interactive"]',
+    title: "Going Interactive",
     description:
-      "Launch interactive PTY or SSH sessions through an active portal and review saved transcripts from past pivots.",
-    icon: <Network size={16} className="text-purple-400" />,
+      'For real-time interaction with the agent, you can open a "Portal" from the Context drawer or the bottom status bar. This creates an established connection for low-latency operations and interactive PTY or SSH pivots.',
+    tip: "You can always close a portal when you're finished and open one later. Doing so will terminate your active pivots.",
+    icon: <Shell size={16} className="text-emerald-400" />,
   },
   {
     id: "history",
@@ -119,21 +120,11 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
   {
     id: "guide",
     selector: '[data-tour="shell-guide"]',
-    title: "Operator Guide & Stdlib Reference",
-    description:
-      "Search the Eldritch standard library documentation, review keyboard shortcuts, or replay this walkthrough anytime.",
-    tip: "Load any standard library function directly into the Composer from the reference tab.",
-    icon: <Compass size={16} className="text-amber-400" />,
-  },
-  {
-    id: "portal",
-    selector: '[data-tour="shell-new-portal"]',
     fallbackSelector: '[data-tour="shell-actions-button"]',
-    title: "Going Interactive",
+    title: "Eldritch Documentation",
     description:
-      'For real-time interaction with the agent, you can open a "Portal" on it. This creates an established connection which can be used for low-latency operations and to establish pivots (e.g. SSH).',
-    tip: "You can always close a portal when you're finished and open one later. But be warned, doing so will terminate your active pivots.",
-    icon: <Shell size={16} className="text-emerald-400" />,
+      "Open the Eldritch user guide and standard library reference, or replay this tutorial anytime from the actions menu.",
+    icon: <Compass size={16} className="text-amber-400" />,
   },
   {
     id: "feedback",
@@ -154,6 +145,8 @@ interface ShellWalkthroughProps {
   onCloseComposer?: () => void;
   onOpenSessionSettings?: () => void;
   onCloseSessionSettings?: () => void;
+  onOpenContextDrawer?: () => void;
+  onCloseContextDrawer?: () => void;
   onPortalStepChange?: (isActive: boolean) => void;
   onQueueStepChange?: (isActive: boolean) => void;
 }
@@ -173,25 +166,49 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   onCloseComposer,
   onOpenSessionSettings,
   onCloseSessionSettings,
+  onOpenContextDrawer,
+  onCloseContextDrawer,
   onPortalStepChange,
   onQueueStepChange,
 }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
 
+  const callbacksRef = useRef({
+    onOpenComposer,
+    onCloseComposer,
+    onOpenSessionSettings,
+    onCloseSessionSettings,
+    onOpenContextDrawer,
+    onCloseContextDrawer,
+    onPortalStepChange,
+    onQueueStepChange,
+  });
+  callbacksRef.current = {
+    onOpenComposer,
+    onCloseComposer,
+    onOpenSessionSettings,
+    onCloseSessionSettings,
+    onOpenContextDrawer,
+    onCloseContextDrawer,
+    onPortalStepChange,
+    onQueueStepChange,
+  };
+
   const currentStep = WALKTHROUGH_STEPS[stepIndex] || WALKTHROUGH_STEPS[0];
 
   useEffect(() => {
+    const cb = callbacksRef.current;
     if (!isOpen) {
       setStepIndex(0);
-      onPortalStepChange?.(false);
-      onQueueStepChange?.(false);
+      cb.onPortalStepChange?.(false);
+      cb.onQueueStepChange?.(false);
       return;
     }
 
     if (currentStep.id === "composer") {
-      if (onOpenComposer) {
-        onOpenComposer();
+      if (cb.onOpenComposer) {
+        cb.onOpenComposer();
       } else if (!document.querySelector('[data-tour="shell-composer"]')) {
         const toggleBtn = document.querySelector<HTMLElement>(
           '[data-tour="shell-composer-toggle"]'
@@ -199,20 +216,26 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         toggleBtn?.click();
       }
     } else {
-      onCloseComposer?.();
+      cb.onCloseComposer?.();
     }
 
     if (currentStep.id === "setup-aliases") {
-      if (onOpenSessionSettings) {
-        onOpenSessionSettings();
+      if (cb.onOpenSessionSettings) {
+        cb.onOpenSessionSettings();
       } else if (!document.querySelector('[data-tour="shell-session-settings"]')) {
         const toggleBtn = document.querySelector<HTMLElement>(
           '[data-tour="shell-session-settings-toggle"]'
         );
         toggleBtn?.click();
       }
-    } else if (currentStep.id === "session-settings" || currentStep.id === "non-interactive") {
-      onCloseSessionSettings?.();
+    } else {
+      cb.onCloseSessionSettings?.();
+    }
+
+    if (currentStep.id === "portal") {
+      cb.onOpenContextDrawer?.();
+    } else if (currentStep.id === "context" || currentStep.id === "history") {
+      cb.onCloseContextDrawer?.();
     }
 
     const handleTargetClick = (e: MouseEvent) => {
@@ -233,8 +256,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
 
     document.addEventListener("click", handleTargetClick, true);
 
-    onPortalStepChange?.(currentStep.id === "portal" || currentStep.id === "feedback");
-    onQueueStepChange?.(currentStep.id === "queue-status");
+    cb.onPortalStepChange?.(currentStep.id === "guide" || currentStep.id === "feedback");
+    cb.onQueueStepChange?.(currentStep.id === "queue-status");
 
     const updateRect = (allowClear = false) => {
       const el =
@@ -285,22 +308,31 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     currentStep.id,
     currentStep.selector,
     currentStep.fallbackSelector,
-    onOpenComposer,
-    onOpenSessionSettings,
-    onPortalStepChange,
-    onQueueStepChange,
   ]);
 
   useEffect(() => {
     return () => {
-      onPortalStepChange?.(false);
-      onQueueStepChange?.(false);
+      callbacksRef.current.onPortalStepChange?.(false);
+      callbacksRef.current.onQueueStepChange?.(false);
     };
-  }, [onPortalStepChange, onQueueStepChange]);
+  }, []);
 
   if (!isOpen) return null;
 
   const isLastStep = stepIndex === WALKTHROUGH_STEPS.length - 1;
+
+  const handleDismiss = () => {
+    if (currentStep.id === "portal") {
+      onCloseContextDrawer?.();
+    }
+    if (currentStep.id === "composer") {
+      onCloseComposer?.();
+    }
+    if (currentStep.id === "setup-aliases") {
+      onCloseSessionSettings?.();
+    }
+    onDismiss();
+  };
 
   // Compute popover position near the highlighted element
   const getPopoverStyle = (): React.CSSProperties => {
@@ -324,8 +356,13 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       };
     }
 
-    // If highlighting "New Portal" inside the right-aligned actions menu, position popover to the left of the menu
-    if (currentStep.id === "portal" && targetRect.left > popoverW + 32) {
+    // If highlighting an element inside the right-aligned actions menu or Context drawer, position popover to the left
+    if (
+      (currentStep.id === "portal" ||
+        currentStep.id === "guide" ||
+        currentStep.id === "feedback") &&
+      targetRect.left > popoverW + 32
+    ) {
       return {
         top: `${Math.max(56, Math.min(targetRect.top - 12, viewportH - popoverEstH - 16))}px`,
         left: `${Math.max(16, targetRect.left - popoverW - 20)}px`,
@@ -406,7 +443,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
           </div>
           <button
             type="button"
-            onClick={onDismiss}
+            onClick={handleDismiss}
             aria-label="Dismiss welcome guide"
             title="Skip walkthrough"
             className="p-1 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
@@ -450,7 +487,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={onDismiss}
+              onClick={handleDismiss}
               className="px-2 py-1 rounded text-gray-400 hover:text-gray-200 transition-colors"
             >
               Skip
@@ -480,7 +517,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onDismiss();
+                  handleDismiss();
                   onOpenGuideDrawer?.();
                 }}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors"

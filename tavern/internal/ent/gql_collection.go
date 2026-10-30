@@ -24,6 +24,8 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
@@ -2963,6 +2965,95 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			h.WithNamedSubscribers(alias, func(wq *UserQuery) {
 				*wq = *query
 			})
+
+		case "networkHosts":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&NetworkHostClient{config: h.config}).Query()
+			)
+			args := newNetworkHostPaginateArgs(fieldArgs(ctx, new(NetworkHostWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newNetworkHostPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					h.loadTotal = append(h.loadTotal, func(ctx context.Context, nodes []*Host) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"network_host_host"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(host.NetworkHostsColumn), ids...))
+						})
+						if err := query.GroupBy(host.NetworkHostsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[9] == nil {
+								nodes[i].Edges.totalCount[9] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[9][alias] = n
+						}
+						return nil
+					})
+				} else {
+					h.loadTotal = append(h.loadTotal, func(_ context.Context, nodes []*Host) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.NetworkHosts)
+							if nodes[i].Edges.totalCount[9] == nil {
+								nodes[i].Edges.totalCount[9] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[9][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, networkhostImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(host.NetworkHostsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			h.WithNamedNetworkHosts(alias, func(wq *NetworkHostQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[host.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, host.FieldCreatedAt)
@@ -3719,6 +3810,443 @@ func newLinkPaginateArgs(rv map[string]any) *linkPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*LinkWhereInput); ok {
 		args.opts = append(args.opts, WithLinkFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (n *NetworkQuery) CollectFields(ctx context.Context, satisfies ...string) (*NetworkQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return n, nil
+	}
+	if err := n.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return n, nil
+}
+
+func (n *NetworkQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(network.Columns))
+		selectedFields = []string{network.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "networkHosts":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&NetworkHostClient{config: n.config}).Query()
+			)
+			args := newNetworkHostPaginateArgs(fieldArgs(ctx, new(NetworkHostWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newNetworkHostPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					n.loadTotal = append(n.loadTotal, func(ctx context.Context, nodes []*Network) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"network_id"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							joinT := sql.Table(network.NetworkHostsTable)
+							s.Join(joinT).On(s.C(networkhost.FieldID), joinT.C(network.NetworkHostsPrimaryKey[0]))
+							s.Where(sql.InValues(joinT.C(network.NetworkHostsPrimaryKey[1]), ids...))
+							s.Select(joinT.C(network.NetworkHostsPrimaryKey[1]), sql.Count("*"))
+							s.GroupBy(joinT.C(network.NetworkHostsPrimaryKey[1]))
+						})
+						if err := query.Select().Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[0] == nil {
+								nodes[i].Edges.totalCount[0] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[0][alias] = n
+						}
+						return nil
+					})
+				} else {
+					n.loadTotal = append(n.loadTotal, func(_ context.Context, nodes []*Network) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.NetworkHosts)
+							if nodes[i].Edges.totalCount[0] == nil {
+								nodes[i].Edges.totalCount[0] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[0][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, networkhostImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(network.NetworkHostsPrimaryKey[1], limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			n.WithNamedNetworkHosts(alias, func(wq *NetworkHostQuery) {
+				*wq = *query
+			})
+		case "createdAt":
+			if _, ok := fieldSeen[network.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, network.FieldCreatedAt)
+				fieldSeen[network.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[network.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, network.FieldLastModifiedAt)
+				fieldSeen[network.FieldLastModifiedAt] = struct{}{}
+			}
+		case "name":
+			if _, ok := fieldSeen[network.FieldName]; !ok {
+				selectedFields = append(selectedFields, network.FieldName)
+				fieldSeen[network.FieldName] = struct{}{}
+			}
+		case "subnet":
+			if _, ok := fieldSeen[network.FieldSubnet]; !ok {
+				selectedFields = append(selectedFields, network.FieldSubnet)
+				fieldSeen[network.FieldSubnet] = struct{}{}
+			}
+		case "description":
+			if _, ok := fieldSeen[network.FieldDescription]; !ok {
+				selectedFields = append(selectedFields, network.FieldDescription)
+				fieldSeen[network.FieldDescription] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		n.Select(selectedFields...)
+	}
+	return nil
+}
+
+type networkPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []NetworkPaginateOption
+}
+
+func newNetworkPaginateArgs(rv map[string]any) *networkPaginateArgs {
+	args := &networkPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*NetworkOrder:
+			args.opts = append(args.opts, WithNetworkOrder(v))
+		case []any:
+			var orders []*NetworkOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &NetworkOrder{Field: &NetworkOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithNetworkOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*NetworkWhereInput); ok {
+		args.opts = append(args.opts, WithNetworkFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (nh *NetworkHostQuery) CollectFields(ctx context.Context, satisfies ...string) (*NetworkHostQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return nh, nil
+	}
+	if err := nh.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return nh, nil
+}
+
+func (nh *NetworkHostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(networkhost.Columns))
+		selectedFields = []string{networkhost.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: nh.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostImplementors)...); err != nil {
+				return err
+			}
+			nh.withHost = query
+
+		case "networks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&NetworkClient{config: nh.config}).Query()
+			)
+			args := newNetworkPaginateArgs(fieldArgs(ctx, new(NetworkWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newNetworkPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					nh.loadTotal = append(nh.loadTotal, func(ctx context.Context, nodes []*NetworkHost) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"network_host_id"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							joinT := sql.Table(networkhost.NetworksTable)
+							s.Join(joinT).On(s.C(network.FieldID), joinT.C(networkhost.NetworksPrimaryKey[1]))
+							s.Where(sql.InValues(joinT.C(networkhost.NetworksPrimaryKey[0]), ids...))
+							s.Select(joinT.C(networkhost.NetworksPrimaryKey[0]), sql.Count("*"))
+							s.GroupBy(joinT.C(networkhost.NetworksPrimaryKey[0]))
+						})
+						if err := query.Select().Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[1] == nil {
+								nodes[i].Edges.totalCount[1] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[1][alias] = n
+						}
+						return nil
+					})
+				} else {
+					nh.loadTotal = append(nh.loadTotal, func(_ context.Context, nodes []*NetworkHost) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Networks)
+							if nodes[i].Edges.totalCount[1] == nil {
+								nodes[i].Edges.totalCount[1] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[1][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, networkImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(networkhost.NetworksPrimaryKey[0], limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			nh.WithNamedNetworks(alias, func(wq *NetworkQuery) {
+				*wq = *query
+			})
+		case "createdAt":
+			if _, ok := fieldSeen[networkhost.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, networkhost.FieldCreatedAt)
+				fieldSeen[networkhost.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[networkhost.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, networkhost.FieldLastModifiedAt)
+				fieldSeen[networkhost.FieldLastModifiedAt] = struct{}{}
+			}
+		case "name":
+			if _, ok := fieldSeen[networkhost.FieldName]; !ok {
+				selectedFields = append(selectedFields, networkhost.FieldName)
+				fieldSeen[networkhost.FieldName] = struct{}{}
+			}
+		case "hostname":
+			if _, ok := fieldSeen[networkhost.FieldHostname]; !ok {
+				selectedFields = append(selectedFields, networkhost.FieldHostname)
+				fieldSeen[networkhost.FieldHostname] = struct{}{}
+			}
+		case "ipAddress":
+			if _, ok := fieldSeen[networkhost.FieldIPAddress]; !ok {
+				selectedFields = append(selectedFields, networkhost.FieldIPAddress)
+				fieldSeen[networkhost.FieldIPAddress] = struct{}{}
+			}
+		case "subnet":
+			if _, ok := fieldSeen[networkhost.FieldSubnet]; !ok {
+				selectedFields = append(selectedFields, networkhost.FieldSubnet)
+				fieldSeen[networkhost.FieldSubnet] = struct{}{}
+			}
+		case "openPorts":
+			if _, ok := fieldSeen[networkhost.FieldOpenPorts]; !ok {
+				selectedFields = append(selectedFields, networkhost.FieldOpenPorts)
+				fieldSeen[networkhost.FieldOpenPorts] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		nh.Select(selectedFields...)
+	}
+	return nil
+}
+
+type networkhostPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []NetworkHostPaginateOption
+}
+
+func newNetworkHostPaginateArgs(rv map[string]any) *networkhostPaginateArgs {
+	args := &networkhostPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*NetworkHostOrder:
+			args.opts = append(args.opts, WithNetworkHostOrder(v))
+		case []any:
+			var orders []*NetworkHostOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &NetworkHostOrder{Field: &NetworkHostOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithNetworkHostOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*NetworkHostWhereInput); ok {
+		args.opts = append(args.opts, WithNetworkHostFilter(v.Filter))
 	}
 	return args
 }

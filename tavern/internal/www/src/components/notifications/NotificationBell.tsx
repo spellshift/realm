@@ -30,9 +30,14 @@ import { formatDistanceToNow } from 'date-fns';
 interface NotificationBellProps {
     buttonClassName?: string;
     iconClassName?: string;
+    placement?: "bottom-end" | "top-start" | "top-end";
 }
 
-const NotificationBell: React.FC<NotificationBellProps> = ({ buttonClassName, iconClassName }) => {
+const NotificationBell: React.FC<NotificationBellProps> = ({
+    buttonClassName,
+    iconClassName,
+    placement = "bottom-end",
+}) => {
     const { data, refetch } = useQuery(GET_NOTIFICATIONS, {
         variables: { first: 100 },
         pollInterval: 5000, // Poll every 5 seconds
@@ -161,7 +166,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ buttonClassName, ic
 
     return (
         <Popover
-            placement="bottom-end"
+            placement={placement}
             onClose={handleClose}
         >
             <PopoverTrigger>

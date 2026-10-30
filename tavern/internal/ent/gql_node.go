@@ -29,6 +29,8 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
@@ -118,6 +120,16 @@ var linkImplementors = []string{"Link", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Link) IsNode() {}
+
+var networkImplementors = []string{"Network", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Network) IsNode() {}
+
+var networkhostImplementors = []string{"NetworkHost", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*NetworkHost) IsNode() {}
 
 var notificationImplementors = []string{"Notification", "Node"}
 
@@ -364,6 +376,24 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(link.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, linkImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case network.Table:
+		query := c.Network.Query().
+			Where(network.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, networkImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case networkhost.Table:
+		query := c.NetworkHost.Query().
+			Where(networkhost.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, networkhostImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -770,6 +800,38 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Link.Query().
 			Where(link.IDIn(ids...))
 		query, err := query.CollectFields(ctx, linkImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case network.Table:
+		query := c.Network.Query().
+			Where(network.IDIn(ids...))
+		query, err := query.CollectFields(ctx, networkImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case networkhost.Table:
+		query := c.NetworkHost.Query().
+			Where(networkhost.IDIn(ids...))
+		query, err := query.CollectFields(ctx, networkhostImplementors...)
 		if err != nil {
 			return nil, err
 		}

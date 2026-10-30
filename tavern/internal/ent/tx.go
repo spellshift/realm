@@ -40,6 +40,10 @@ type Tx struct {
 	HostProcess *HostProcessClient
 	// Link is the client for interacting with the Link builders.
 	Link *LinkClient
+	// Network is the client for interacting with the Network builders.
+	Network *NetworkClient
+	// NetworkHost is the client for interacting with the NetworkHost builders.
+	NetworkHost *NetworkHostClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
 	// Portal is the client for interacting with the Portal builders.
@@ -211,6 +215,8 @@ func (tx *Tx) init() {
 	tx.HostFile = NewHostFileClient(tx.config)
 	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Link = NewLinkClient(tx.config)
+	tx.Network = NewNetworkClient(tx.config)
+	tx.NetworkHost = NewNetworkHostClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)

@@ -20,6 +20,8 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
@@ -449,6 +451,64 @@ func init() {
 	link.DefaultDownloads = linkDescDownloads.Default.(int)
 	// link.DownloadsValidator is a validator for the "downloads" field. It is called by the builders before save.
 	link.DownloadsValidator = linkDescDownloads.Validators[0].(func(int) error)
+	networkMixin := schema.Network{}.Mixin()
+	networkMixinFields0 := networkMixin[0].Fields()
+	_ = networkMixinFields0
+	networkFields := schema.Network{}.Fields()
+	_ = networkFields
+	// networkDescCreatedAt is the schema descriptor for created_at field.
+	networkDescCreatedAt := networkMixinFields0[0].Descriptor()
+	// network.DefaultCreatedAt holds the default value on creation for the created_at field.
+	network.DefaultCreatedAt = networkDescCreatedAt.Default.(func() time.Time)
+	// networkDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	networkDescLastModifiedAt := networkMixinFields0[1].Descriptor()
+	// network.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	network.DefaultLastModifiedAt = networkDescLastModifiedAt.Default.(func() time.Time)
+	// network.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	network.UpdateDefaultLastModifiedAt = networkDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// networkDescName is the schema descriptor for name field.
+	networkDescName := networkFields[0].Descriptor()
+	// network.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	network.NameValidator = networkDescName.Validators[0].(func(string) error)
+	// networkDescSubnet is the schema descriptor for subnet field.
+	networkDescSubnet := networkFields[1].Descriptor()
+	// network.DefaultSubnet holds the default value on creation for the subnet field.
+	network.DefaultSubnet = networkDescSubnet.Default.(string)
+	// networkDescDescription is the schema descriptor for description field.
+	networkDescDescription := networkFields[2].Descriptor()
+	// network.DefaultDescription holds the default value on creation for the description field.
+	network.DefaultDescription = networkDescDescription.Default.(string)
+	networkhostMixin := schema.NetworkHost{}.Mixin()
+	networkhostMixinFields0 := networkhostMixin[0].Fields()
+	_ = networkhostMixinFields0
+	networkhostFields := schema.NetworkHost{}.Fields()
+	_ = networkhostFields
+	// networkhostDescCreatedAt is the schema descriptor for created_at field.
+	networkhostDescCreatedAt := networkhostMixinFields0[0].Descriptor()
+	// networkhost.DefaultCreatedAt holds the default value on creation for the created_at field.
+	networkhost.DefaultCreatedAt = networkhostDescCreatedAt.Default.(func() time.Time)
+	// networkhostDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	networkhostDescLastModifiedAt := networkhostMixinFields0[1].Descriptor()
+	// networkhost.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	networkhost.DefaultLastModifiedAt = networkhostDescLastModifiedAt.Default.(func() time.Time)
+	// networkhost.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	networkhost.UpdateDefaultLastModifiedAt = networkhostDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// networkhostDescName is the schema descriptor for name field.
+	networkhostDescName := networkhostFields[0].Descriptor()
+	// networkhost.DefaultName holds the default value on creation for the name field.
+	networkhost.DefaultName = networkhostDescName.Default.(string)
+	// networkhostDescHostname is the schema descriptor for hostname field.
+	networkhostDescHostname := networkhostFields[1].Descriptor()
+	// networkhost.DefaultHostname holds the default value on creation for the hostname field.
+	networkhost.DefaultHostname = networkhostDescHostname.Default.(string)
+	// networkhostDescIPAddress is the schema descriptor for ip_address field.
+	networkhostDescIPAddress := networkhostFields[2].Descriptor()
+	// networkhost.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
+	networkhost.IPAddressValidator = networkhostDescIPAddress.Validators[0].(func(string) error)
+	// networkhostDescSubnet is the schema descriptor for subnet field.
+	networkhostDescSubnet := networkhostFields[3].Descriptor()
+	// networkhost.DefaultSubnet holds the default value on creation for the subnet field.
+	networkhost.DefaultSubnet = networkhostDescSubnet.Default.(string)
 	notificationMixin := schema.Notification{}.Mixin()
 	notificationMixinFields0 := notificationMixin[0].Fields()
 	_ = notificationMixinFields0

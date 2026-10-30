@@ -1,9 +1,14 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ShellStatusBar from "../ShellStatusBar";
 import { ConnectionStatus } from "../../../../lib/browser-adapter";
 import React from "react";
-import { expect, describe, it } from "vitest";
+import { expect, describe, it, vi } from "vitest";
 import "@testing-library/jest-dom";
+
+// Mock NotificationBell to avoid requiring ApolloProvider in ShellStatusBar tests
+vi.mock("../../../../components/notifications/NotificationBell", () => ({
+    default: () => <div data-testid="notification-bell" />,
+}));
 
 describe("ShellStatusBar", () => {
     const defaultProps = {
@@ -33,17 +38,44 @@ describe("ShellStatusBar", () => {
         expect(reconnectingIcon).toBeInTheDocument();
     });
 
-    it("displays portal active message when portalId is present without showing portal ID, and renders cogwheel toggle", () => {
-        render(<ShellStatusBar {...defaultProps} portalId={123} />);
+    it("displays portal active message when portalId is present without showing portal ID, and opens Close Portal warning dialog when clicked", () => {
+        const onClosePortal = vi.fn();
+        render(
+            <ShellStatusBar
+                {...defaultProps}
+                portalId={123}
+                onClosePortal={onClosePortal}
+                onToggleComposer={vi.fn()}
+                composerOpen={true}
+            />
+        );
         expect(screen.getByText("Portal Active")).toBeInTheDocument();
         expect(screen.queryByText("(ID: 123)")).not.toBeInTheDocument();
         expect(screen.getByTestId("session-settings-toggle")).toBeInTheDocument();
+        expect(screen.getByTestId("status-bar-composer-toggle")).toBeInTheDocument();
+        expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTestId("status-bar-portal-active-button"));
+        const closeDialog = screen.getByTestId("close-portal-dialog");
+        expect(closeDialog).toBeInTheDocument();
+        expect(closeDialog).toHaveTextContent(/close all associated pivots/i);
+
+        fireEvent.click(screen.getByRole("button", { name: "Close Portal" }));
+        expect(onClosePortal).toHaveBeenCalledTimes(1);
     });
 
-    it("displays async message when portalId is null", () => {
-        render(<ShellStatusBar {...defaultProps} portalId={null} />);
+    it("displays async message when portalId is null and opens Open Portal dialog when clicked", () => {
+        const onNewPortal = vi.fn();
+        render(<ShellStatusBar {...defaultProps} portalId={null} onNewPortal={onNewPortal} />);
         expect(screen.getByText("async")).toBeInTheDocument();
         expect(screen.getByTestId("session-settings-toggle")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTestId("status-bar-async-button"));
+        const openDialog = screen.getByTestId("open-portal-dialog");
+        expect(openDialog).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Open Portal" }));
+        expect(onNewPortal).toHaveBeenCalledTimes(1);
     });
 
     it("displays callback timer with 'Next' label", () => {

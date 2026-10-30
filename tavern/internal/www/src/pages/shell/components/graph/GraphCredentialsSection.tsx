@@ -1,0 +1,104 @@
+import React, { useState } from "react";
+import { ClipboardIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { KnowledgeCredentialItem } from "../../hooks/useShellData";
+
+export interface GraphCredentialsSectionProps {
+    credentials: KnowledgeCredentialItem[];
+    currentHostIp?: string;
+    onOpenSshWithTarget: (target: string) => void;
+}
+
+const SecretToggleIcon: React.FC<{ isRevealed: boolean }> = ({ isRevealed }) => {
+    if (isRevealed) {
+        return <EyeSlashIcon className="w-3.5 h-3.5" />;
+    }
+    return <EyeIcon className="w-3.5 h-3.5" />;
+};
+
+const CredentialRow: React.FC<{
+    cred: KnowledgeCredentialItem;
+    currentHostIp?: string;
+    onOpenSshWithTarget: (target: string) => void;
+}> = ({ cred, currentHostIp, onOpenSshWithTarget }) => {
+    const [isRevealed, setIsRevealed] = useState(false);
+    const targetIp = cred.hostPrimaryIP || currentHostIp || "127.0.0.1";
+    const sshTarget = `${cred.principal}:${cred.secret}@${targetIp}:22`;
+
+    const handleCopy = () => {
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(cred.secret).catch(() => {});
+        }
+    };
+
+    return (
+        <div className="py-2 flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 text-xs text-gray-200 font-mono truncate">
+                    <span className="font-medium">{cred.principal}</span>
+                    <span className="text-gray-500">@{cred.hostName}</span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-gray-400 font-mono">
+                    <span className="truncate max-w-[180px]">
+                        {isRevealed ? cred.secret : "••••••••"}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setIsRevealed((prev) => !prev)}
+                        aria-label={isRevealed ? "Hide secret" : "Reveal secret"}
+                        className="text-gray-400 hover:text-gray-200 p-0.5 transition-colors"
+                    >
+                        <SecretToggleIcon isRevealed={isRevealed} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleCopy}
+                        aria-label="Copy secret"
+                        className="text-gray-400 hover:text-gray-200 p-0.5 transition-colors"
+                    >
+                        <ClipboardIcon className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            </div>
+            <button
+                type="button"
+                onClick={() => onOpenSshWithTarget(sshTarget)}
+                className="text-[11px] text-gray-200 hover:text-white px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 shrink-0 transition-colors"
+            >
+                SSH Pivot
+            </button>
+        </div>
+    );
+};
+
+export const GraphCredentialsSection: React.FC<GraphCredentialsSectionProps> = ({
+    credentials,
+    currentHostIp,
+    onOpenSshWithTarget,
+}) => {
+    return (
+        <div className="px-4 py-3 border-b border-gray-800" data-testid="graph-credentials-section">
+            <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] uppercase tracking-wider text-gray-400 font-medium">
+                    Credentials ({credentials.length})
+                </span>
+            </div>
+            {credentials.length === 0 ? (
+                <div className="py-2 text-xs text-gray-500">No credentials reported nearby.</div>
+            ) : (
+                <div className="divide-y divide-gray-800/60">
+                    {credentials.map((cred) => (
+                        <CredentialRow
+                            key={cred.id}
+                            cred={cred}
+                            currentHostIp={currentHostIp}
+                            onOpenSshWithTarget={onOpenSshWithTarget}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default GraphCredentialsSection;
+

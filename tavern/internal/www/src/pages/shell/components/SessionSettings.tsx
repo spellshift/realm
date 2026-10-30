@@ -893,7 +893,7 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
                                 onClick={handleSetupShellAliases}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 border border-purple-500 text-xs text-white font-medium transition-colors"
                             >
-                                <span>Setup Aliases</span>
+                                <span>Set Default Aliases</span>
                                 <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                         )}

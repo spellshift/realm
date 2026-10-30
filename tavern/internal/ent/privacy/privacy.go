@@ -446,6 +446,54 @@ func (f LinkMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) 
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.LinkMutation", m)
 }
 
+// The NetworkQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type NetworkQueryRuleFunc func(context.Context, *ent.NetworkQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f NetworkQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.NetworkQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.NetworkQuery", q)
+}
+
+// The NetworkMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type NetworkMutationRuleFunc func(context.Context, *ent.NetworkMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f NetworkMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.NetworkMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.NetworkMutation", m)
+}
+
+// The NetworkHostQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type NetworkHostQueryRuleFunc func(context.Context, *ent.NetworkHostQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f NetworkHostQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.NetworkHostQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.NetworkHostQuery", q)
+}
+
+// The NetworkHostMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type NetworkHostMutationRuleFunc func(context.Context, *ent.NetworkHostMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f NetworkHostMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.NetworkHostMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.NetworkHostMutation", m)
+}
+
 // The NotificationQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type NotificationQueryRuleFunc func(context.Context, *ent.NotificationQuery) error

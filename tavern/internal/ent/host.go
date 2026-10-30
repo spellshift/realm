@@ -63,21 +63,24 @@ type HostEdges struct {
 	Events []*Event `json:"events,omitempty"`
 	// Users who are subscribed to this host.
 	Subscribers []*User `json:"subscribers,omitempty"`
+	// NetworkHost entries linked to this host.
+	NetworkHosts []*NetworkHost `json:"network_hosts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [9]bool
+	loadedTypes [10]bool
 	// totalCount holds the count of the edges above.
-	totalCount [9]map[string]int
+	totalCount [10]map[string]int
 
-	namedTags        map[string][]*Tag
-	namedBeacons     map[string][]*Beacon
-	namedFiles       map[string][]*HostFile
-	namedProcesses   map[string][]*HostProcess
-	namedCredentials map[string][]*HostCredential
-	namedScreenshots map[string][]*Screenshot
-	namedFavoritedBy map[string][]*User
-	namedEvents      map[string][]*Event
-	namedSubscribers map[string][]*User
+	namedTags         map[string][]*Tag
+	namedBeacons      map[string][]*Beacon
+	namedFiles        map[string][]*HostFile
+	namedProcesses    map[string][]*HostProcess
+	namedCredentials  map[string][]*HostCredential
+	namedScreenshots  map[string][]*Screenshot
+	namedFavoritedBy  map[string][]*User
+	namedEvents       map[string][]*Event
+	namedSubscribers  map[string][]*User
+	namedNetworkHosts map[string][]*NetworkHost
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -159,6 +162,15 @@ func (e HostEdges) SubscribersOrErr() ([]*User, error) {
 		return e.Subscribers, nil
 	}
 	return nil, &NotLoadedError{edge: "subscribers"}
+}
+
+// NetworkHostsOrErr returns the NetworkHosts value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) NetworkHostsOrErr() ([]*NetworkHost, error) {
+	if e.loadedTypes[9] {
+		return e.NetworkHosts, nil
+	}
+	return nil, &NotLoadedError{edge: "network_hosts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -314,6 +326,11 @@ func (h *Host) QueryEvents() *EventQuery {
 // QuerySubscribers queries the "subscribers" edge of the Host entity.
 func (h *Host) QuerySubscribers() *UserQuery {
 	return NewHostClient(h.config).QuerySubscribers(h)
+}
+
+// QueryNetworkHosts queries the "network_hosts" edge of the Host entity.
+func (h *Host) QueryNetworkHosts() *NetworkHostQuery {
+	return NewHostClient(h.config).QueryNetworkHosts(h)
 }
 
 // Update returns a builder for updating this Host.
@@ -582,6 +599,30 @@ func (h *Host) appendNamedSubscribers(name string, edges ...*User) {
 		h.Edges.namedSubscribers[name] = []*User{}
 	} else {
 		h.Edges.namedSubscribers[name] = append(h.Edges.namedSubscribers[name], edges...)
+	}
+}
+
+// NamedNetworkHosts returns the NetworkHosts named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedNetworkHosts(name string) ([]*NetworkHost, error) {
+	if h.Edges.namedNetworkHosts == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedNetworkHosts[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedNetworkHosts(name string, edges ...*NetworkHost) {
+	if h.Edges.namedNetworkHosts == nil {
+		h.Edges.namedNetworkHosts = make(map[string][]*NetworkHost)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedNetworkHosts[name] = []*NetworkHost{}
+	} else {
+		h.Edges.namedNetworkHosts[name] = append(h.Edges.namedNetworkHosts[name], edges...)
 	}
 }
 

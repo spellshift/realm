@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
@@ -116,6 +116,8 @@ interface ShellState {
     currentBlock: string;
 }
 
+export const INITIAL_SPINNER_TIMEOUT_MS = 1_500;
+
 export const useShellTerminal = (
     shellId: string | undefined,
     loading: boolean,
@@ -127,7 +129,24 @@ export const useShellTerminal = (
     onCommandSubmitted?: () => void,
     shellTasks: ShellTaskItem[] = []
 ) => {
-    const termRef = useRef<HTMLDivElement>(null);
+    const termNodeRef = useRef<HTMLDivElement | null>(null);
+    const [termMounted, setTermMounted] = useState<boolean>(false);
+    const [reconnectInitTick, setReconnectInitTick] = useState<number>(0);
+    const termRef = useMemo<React.RefObject<HTMLDivElement>>(() => {
+        const refObj = {
+            get current() {
+                return termNodeRef.current;
+            },
+            set current(node: HTMLDivElement | null) {
+                const prev = termNodeRef.current;
+                termNodeRef.current = node;
+                if (Boolean(prev) !== Boolean(node)) {
+                    setTermMounted(Boolean(node));
+                }
+            },
+        };
+        return refObj as React.RefObject<HTMLDivElement>;
+    }, []);
     const termInstance = useRef<Terminal | null>(null);
     const adapter = useRef<BrowserWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -372,11 +391,11 @@ export const useShellTerminal = (
     }, []);
 
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        if (!termInstance.current || !termRef.current) return;
+        if (!termInstance.current || !termNodeRef.current) return;
 
         // Simple debounce could be added here if performance is an issue
 
-        const rect = termRef.current.getBoundingClientRect();
+        const rect = termNodeRef.current.getBoundingClientRect();
         const cols = termInstance.current.cols;
         const rows = termInstance.current.rows;
 
@@ -474,7 +493,7 @@ export const useShellTerminal = (
     }, [shellId, loading, error, shellNodeId]);
 
     useEffect(() => {
-        if (!termRef.current || !shellId || !shellNodeId) return;
+        if (!termNodeRef.current || !shellId || !shellNodeId) return;
 
         portalIdRef.current = null;
         isReplReadyRef.current = false;
@@ -486,7 +505,7 @@ export const useShellTerminal = (
         initialConnectTimeoutRef.current = setTimeout(() => {
             initialConnectTimeoutRef.current = null;
             setIsInitialConnecting(false);
-        }, WEBSOCKET_CONNECT_TIMEOUT_MS);
+        }, Math.min(INITIAL_SPINNER_TIMEOUT_MS, WEBSOCKET_CONNECT_TIMEOUT_MS));
         seenTaskIdsRef.current.clear();
         seenBeforeReconnectRef.current.clear();
         hasConnectedOnceRef.current = false;
@@ -523,7 +542,7 @@ export const useShellTerminal = (
 
         const fitAddon = new FitAddon();
         termInstance.current.loadAddon(fitAddon);
-        termInstance.current.open(termRef.current);
+        termInstance.current.open(termNodeRef.current);
         fitAddon.fit();
 
         const handleResize = () => {
@@ -535,7 +554,7 @@ export const useShellTerminal = (
         const resizeObserver = new ResizeObserver(() => {
             fitAddon.fit();
         });
-        resizeObserver.observe(termRef.current);
+        resizeObserver.observe(termNodeRef.current);
 
         termInstance.current.write("Eldritch v0.4.1\r\n");
 
@@ -1206,10 +1225,12 @@ export const useShellTerminal = (
             window.removeEventListener("resize", handleResize);
             resizeObserver.disconnect();
             adapter.current?.close();
+            adapter.current = null;
             termInstance.current?.dispose();
+            termInstance.current = null;
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
-    }, [shellId, shellNodeId, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
+    }, [shellId, shellNodeId, termMounted, reconnectInitTick, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
     const getSessionInputs = useCallback(() => {
         if (shellTasksRef.current.length > 0) {
@@ -1377,7 +1398,11 @@ export const useShellTerminal = (
             initialConnectTimeoutRef.current = null;
         }
         setIsInitialConnecting(false);
-        adapter.current?.reconnect();
+        if (adapter.current) {
+            adapter.current.reconnect();
+        } else {
+            setReconnectInitTick((t) => t + 1);
+        }
     }, []);
 
     return {

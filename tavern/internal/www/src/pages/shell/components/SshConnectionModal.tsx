@@ -19,6 +19,42 @@ const formatCredKind = (kind?: string) => {
     return kind.replace(/^KIND_/, "");
 };
 
+const parseSshTarget = (raw: string): { username: string; password: string; hostPort: string } => {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return { username: "", password: "", hostPort: "" };
+    }
+    const atIdx = trimmed.lastIndexOf("@");
+    if (atIdx === -1) {
+        return { username: "", password: "", hostPort: trimmed };
+    }
+    const userPass = trimmed.slice(0, atIdx);
+    const hostPort = trimmed.slice(atIdx + 1);
+    const colonIdx = userPass.indexOf(":");
+    if (colonIdx === -1) {
+        return { username: userPass, password: "", hostPort };
+    }
+    return {
+        username: userPass.slice(0, colonIdx),
+        password: userPass.slice(colonIdx + 1),
+        hostPort,
+    };
+};
+
+const buildSshTarget = (username: string, password: string, hostPort: string): string => {
+    const hp = hostPort.trim();
+    const user = username.trim();
+    if (!user && !password) {
+        return hp;
+    }
+    const effectiveUser = user || "root";
+    const authPart = password ? `${effectiveUser}:${password}` : effectiveUser;
+    if (!hp) {
+        return `${authPart}@`;
+    }
+    return `${authPart}@${hp}`;
+};
+
 const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     isOpen,
     onClose,
@@ -29,34 +65,98 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     onLoadIntoComposer,
 }) => {
     const [target, setTarget] = useState(initialTarget);
+    const [username, setUsername] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [hostPort, setHostPort] = useState<string>("");
     const [selectedHostIp, setSelectedHostIp] = useState<string>("");
     const [selectedPort, setSelectedPort] = useState<string>("22");
     const [selectedCredId, setSelectedCredId] = useState<string>("");
 
     useEffect(() => {
-        if (isOpen && initialTarget) {
+        if (isOpen) {
+            const parsed = parseSshTarget(initialTarget);
             setTarget(initialTarget);
+            setUsername(parsed.username);
+            setPassword(parsed.password);
+            setHostPort(parsed.hostPort);
+            if (parsed.hostPort) {
+                const lastColon = parsed.hostPort.lastIndexOf(":");
+                if (lastColon > 0) {
+                    setSelectedHostIp(parsed.hostPort.slice(0, lastColon));
+                    setSelectedPort(parsed.hostPort.slice(lastColon + 1) || "22");
+                } else {
+                    setSelectedHostIp(parsed.hostPort);
+                }
+            }
         }
     }, [isOpen, initialTarget]);
 
-    const passwordCreds = useMemo(
-        () =>
-            credentials.filter(
-                (c) => !c.kind || c.kind === "KIND_PASSWORD" || c.kind === "PASSWORD"
-            ),
-        [credentials]
-    );
+    const relevantCreds = useMemo(() => {
+        const byId = new Map<string, KnowledgeCredentialItem>();
+        for (const c of credentials) {
+            if (c?.id) {
+                byId.set(String(c.id), c);
+            }
+        }
+        for (const h of hosts) {
+            for (const c of h.credentials || []) {
+                if (c?.id && !byId.has(String(c.id))) {
+                    byId.set(String(c.id), c);
+                }
+            }
+        }
+        const activeHost = selectedHostIp || hostPort.split(":")[0] || "";
+        return Array.from(byId.values()).sort((a, b) => {
+            const aMatchesHost = Boolean(
+                activeHost && (a.hostPrimaryIP === activeHost || a.hostName === activeHost)
+            );
+            const bMatchesHost = Boolean(
+                activeHost && (b.hostPrimaryIP === activeHost || b.hostName === activeHost)
+            );
+            if (aMatchesHost !== bMatchesHost) {
+                return aMatchesHost ? -1 : 1;
+            }
+            if (Boolean(a.isCurrentHost) !== Boolean(b.isCurrentHost)) {
+                return a.isCurrentHost ? -1 : 1;
+            }
+            return (a.principal || "").localeCompare(b.principal || "");
+        });
+    }, [credentials, hosts, selectedHostIp, hostPort]);
+
+    const handleTargetChange = (nextTarget: string) => {
+        setTarget(nextTarget);
+        const parsed = parseSshTarget(nextTarget);
+        setUsername(parsed.username);
+        setPassword(parsed.password);
+        setHostPort(parsed.hostPort);
+    };
+
+    const handleUsernameChange = (nextUsername: string) => {
+        setUsername(nextUsername);
+        const effectiveHostPort =
+            hostPort || (selectedHostIp ? `${selectedHostIp}:${selectedPort || "22"}` : "");
+        setTarget(buildSshTarget(nextUsername, password, effectiveHostPort));
+    };
+
+    const handlePasswordChange = (nextPassword: string) => {
+        setPassword(nextPassword);
+        const effectiveHostPort =
+            hostPort || (selectedHostIp ? `${selectedHostIp}:${selectedPort || "22"}` : "");
+        setTarget(buildSshTarget(username, nextPassword, effectiveHostPort));
+    };
 
     const applySelection = (credId: string, hostIp: string, port: string) => {
-        const cred = credentials.find((c) => c.id === credId);
+        const cred = relevantCreds.find((c) => c.id === credId);
         const ip = hostIp || "127.0.0.1";
         const p = port || "22";
+        const nextHostPort = `${ip}:${p}`;
+        setHostPort(nextHostPort);
         if (cred) {
-            setTarget(`${cred.principal}:${cred.secret}@${ip}:${p}`);
+            setUsername(cred.principal);
+            setPassword(cred.secret);
+            setTarget(buildSshTarget(cred.principal, cred.secret, nextHostPort));
         } else if (hostIp) {
-            const atIdx = target.lastIndexOf("@");
-            const prefix = atIdx !== -1 ? target.slice(0, atIdx + 1) : "root@";
-            setTarget(`${prefix}${ip}:${p}`);
+            setTarget(buildSshTarget(username || "root", password, nextHostPort));
         }
     };
 
@@ -70,42 +170,43 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     };
 
     const handleSelectHost = (host: KnowledgeHostItem) => {
-        const ip = host.primaryIP || host.name;
+        const ip = host.ipAddress || host.primaryIP || host.name;
         setSelectedHostIp(ip);
         applySelection(selectedCredId, ip, selectedPort);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (target.trim()) {
-            onConnect(target.trim());
-            setTarget("");
-            setSelectedCredId("");
-            setSelectedHostIp("");
-            onClose();
+        const finalTarget = target.trim();
+        if (finalTarget) {
+            onConnect(finalTarget);
+            handleClose();
         }
     };
 
     const handleStageSshExec = () => {
         if (!onLoadIntoComposer) return;
-        const cred = credentials.find((c) => c.id === selectedCredId);
-        const ip = selectedHostIp || cred?.hostPrimaryIP || "127.0.0.1";
+        const cred = relevantCreds.find((c) => c.id === selectedCredId);
+        const ip = selectedHostIp || cred?.hostPrimaryIP || hostPort.split(":")[0] || "127.0.0.1";
         const portNum = parseInt(selectedPort, 10) || 22;
-        const principal = cred?.principal || "root";
-        const password = cred?.secret || "";
-        const snippet = `res = ssh.exec(\n    "${ip}",\n    "${principal}",\n    "id && hostname",\n    password=${JSON.stringify(password)},\n    port=${portNum}\n)\nprint(res)`;
+        const principal = username || cred?.principal || "root";
+        const secret = password || cred?.secret || "";
+        const snippet = `res = ssh.exec(\n    "${ip}",\n    "${principal}",\n    "id && hostname",\n    password=${JSON.stringify(secret)},\n    port=${portNum}\n)\nprint(res)`;
         onLoadIntoComposer(snippet);
         handleClose();
     };
 
     const handleClose = () => {
         setTarget("");
+        setUsername("");
+        setPassword("");
+        setHostPort("");
         setSelectedCredId("");
         setSelectedHostIp("");
         onClose();
     };
 
-    const hasKnowledgeGraphSuggestions = passwordCreds.length > 0 || hosts.length > 0;
+    const hasKnowledgeGraphSuggestions = relevantCreds.length > 0 || hosts.length > 0;
 
     return (
         <Transition show={isOpen} as={Fragment}>
@@ -155,20 +256,46 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                                         id="ssh-target"
                                         type="text"
                                         value={target}
-                                        onChange={(e) => setTarget(e.target.value)}
-                                        placeholder="user:password@host:port"
+                                        onChange={(e) => handleTargetChange(e.target.value)}
+                                        placeholder="host:port or user:password@host:port"
                                         className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                                         autoFocus
                                     />
-                                    <p className="mt-1 text-xs text-gray-400">
-                                        Negotiates SSH from the gRPC Tavern instance over the active portal stream.
-                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label htmlFor="ssh-username" className="block text-xs font-medium text-gray-300 mb-1.5">
+                                            Username
+                                        </label>
+                                        <input
+                                            id="ssh-username"
+                                            type="text"
+                                            value={username}
+                                            onChange={(e) => handleUsernameChange(e.target.value)}
+                                            placeholder="root"
+                                            className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="ssh-password" className="block text-xs font-medium text-gray-300 mb-1.5">
+                                            Password
+                                        </label>
+                                        <input
+                                            id="ssh-password"
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => handlePasswordChange(e.target.value)}
+                                            placeholder="••••••••"
+                                            className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                        />
+                                    </div>
                                 </div>
 
                                 {hasKnowledgeGraphSuggestions && (
                                     <div className="rounded-md bg-[#151821] border border-[#2a3040] p-3 space-y-3">
                                         <div className="text-xs font-semibold text-purple-300 flex items-center justify-between">
-                                            <span>Quick Fill from Knowledge Graph</span>
+                                            <span>Quick Fill</span>
                                             <div className="flex items-center gap-1.5 font-normal text-gray-400">
                                                 <span>Port:</span>
                                                 <input
@@ -220,14 +347,14 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                                             </div>
                                         )}
 
-                                        {passwordCreds.length > 0 && (
+                                        {relevantCreds.length > 0 && (
                                             <div className="space-y-1.5">
                                                 <div className="text-[11px] text-gray-400 flex items-center gap-1">
                                                     <KeyRound size={11} className="text-amber-400" />
-                                                    <span>Captured Credentials ({passwordCreds.length})</span>
+                                                    <span>Credentials ({relevantCreds.length})</span>
                                                 </div>
                                                 <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
-                                                    {passwordCreds.map((c) => {
+                                                    {relevantCreds.map((c) => {
                                                         const isSelected = selectedCredId === c.id;
                                                         return (
                                                             <button

@@ -87,6 +87,12 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	if _, err := client.Link.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete links: %w", err))
 	}
+	if _, err := client.NetworkHost.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete network hosts: %w", err))
+	}
+	if _, err := client.Network.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete networks: %w", err))
+	}
 	if _, err := client.Host.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
 	}
@@ -973,6 +979,42 @@ func (r *mutationResolver) DeleteAllNotifications(ctx context.Context) (bool, er
 		return false, fmt.Errorf("failed to delete notifications: %w", err)
 	}
 	return true, nil
+}
+
+// CreateNetwork is the resolver for the createNetwork field.
+func (r *mutationResolver) CreateNetwork(ctx context.Context, input ent.CreateNetworkInput) (*ent.Network, error) {
+	return r.client.Network.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateNetwork is the resolver for the updateNetwork field.
+func (r *mutationResolver) UpdateNetwork(ctx context.Context, networkID int, input ent.UpdateNetworkInput) (*ent.Network, error) {
+	return r.client.Network.UpdateOneID(networkID).SetInput(input).Save(ctx)
+}
+
+// DeleteNetwork is the resolver for the deleteNetwork field.
+func (r *mutationResolver) DeleteNetwork(ctx context.Context, networkID int) (int, error) {
+	if err := r.client.Network.DeleteOneID(networkID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return networkID, nil
+}
+
+// CreateNetworkHost is the resolver for the createNetworkHost field.
+func (r *mutationResolver) CreateNetworkHost(ctx context.Context, input ent.CreateNetworkHostInput) (*ent.NetworkHost, error) {
+	return r.client.NetworkHost.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateNetworkHost is the resolver for the updateNetworkHost field.
+func (r *mutationResolver) UpdateNetworkHost(ctx context.Context, networkHostID int, input ent.UpdateNetworkHostInput) (*ent.NetworkHost, error) {
+	return r.client.NetworkHost.UpdateOneID(networkHostID).SetInput(input).Save(ctx)
+}
+
+// DeleteNetworkHost is the resolver for the deleteNetworkHost field.
+func (r *mutationResolver) DeleteNetworkHost(ctx context.Context, networkHostID int) (int, error) {
+	if err := r.client.NetworkHost.DeleteOneID(networkHostID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return networkHostID, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
