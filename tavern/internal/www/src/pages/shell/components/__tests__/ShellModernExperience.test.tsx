@@ -87,6 +87,8 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         const onOpenGuideDrawer = vi.fn();
         const onOpenComposer = vi.fn();
         const onCloseComposer = vi.fn();
+        const onOpenScratchpad = vi.fn();
+        const onCloseScratchpad = vi.fn();
         const onOpenSessionSettings = vi.fn();
         const onPortalStepChange = vi.fn();
         const onQueueStepChange = vi.fn();
@@ -98,6 +100,8 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
                 onOpenGuideDrawer={onOpenGuideDrawer}
                 onOpenComposer={onOpenComposer}
                 onCloseComposer={onCloseComposer}
+                onOpenScratchpad={onOpenScratchpad}
+                onCloseScratchpad={onCloseScratchpad}
                 onOpenSessionSettings={onOpenSessionSettings}
                 onPortalStepChange={onPortalStepChange}
                 onQueueStepChange={onQueueStepChange}
@@ -126,10 +130,23 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(onOpenComposer).toHaveBeenCalledTimes(1);
         expect(onCloseComposer).not.toHaveBeenCalled();
 
-        // Step 5: Agent Callback (closes composer and highlights Next on bottom-right bar)
+        // Step 5: Scratchpad (closes composer and opens scratchpad right after composer)
+        onCloseScratchpad.mockClear();
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByText("Scratchpad")).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                "A place for you to store notes, which persists across sessions for easy access."
+            )
+        ).toBeInTheDocument();
+        expect(onCloseComposer).toHaveBeenCalledTimes(1);
+        expect(onOpenScratchpad).toHaveBeenCalledTimes(1);
+        expect(onCloseScratchpad).not.toHaveBeenCalled();
+
+        // Step 6: Agent Callback (closes scratchpad and highlights Next on bottom-right bar)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Agent Callback")).toBeInTheDocument();
-        expect(onCloseComposer).toHaveBeenCalledTimes(1);
+        expect(onCloseScratchpad).toHaveBeenCalledTimes(1);
 
         // Step 6: Queued & Executing Tasks
         fireEvent.click(screen.getByText("Next"));

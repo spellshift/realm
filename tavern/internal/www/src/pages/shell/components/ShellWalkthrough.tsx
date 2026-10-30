@@ -10,6 +10,7 @@ import {
   Database,
   History,
   Loader2,
+  NotebookPen,
   Settings,
   Shell,
   Sparkles,
@@ -62,6 +63,15 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     description:
       "For more complex scripts, it may be easier to write them in the Composer view.",
     icon: <Code2 size={16} className="text-purple-400" />,
+  },
+  {
+    id: "scratchpad",
+    selector: '[data-tour="shell-scratchpad-toggle"]',
+    fallbackSelector: '[data-tour="shell-scratchpad"]',
+    title: "Scratchpad",
+    description:
+      "A place for you to store notes, which persists across sessions for easy access.",
+    icon: <NotebookPen size={16} className="text-purple-400" />,
   },
   {
     id: "callback",
@@ -142,6 +152,8 @@ interface ShellWalkthroughProps {
   onOpenGuideDrawer?: () => void;
   onOpenComposer?: () => void;
   onCloseComposer?: () => void;
+  onOpenScratchpad?: () => void;
+  onCloseScratchpad?: () => void;
   onOpenSessionSettings?: () => void;
   onCloseSessionSettings?: () => void;
   onOpenContextDrawer?: () => void;
@@ -163,6 +175,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   onOpenGuideDrawer,
   onOpenComposer,
   onCloseComposer,
+  onOpenScratchpad,
+  onCloseScratchpad,
   onOpenSessionSettings,
   onCloseSessionSettings,
   onOpenContextDrawer,
@@ -176,6 +190,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   const callbacksRef = useRef({
     onOpenComposer,
     onCloseComposer,
+    onOpenScratchpad,
+    onCloseScratchpad,
     onOpenSessionSettings,
     onCloseSessionSettings,
     onOpenContextDrawer,
@@ -186,6 +202,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   callbacksRef.current = {
     onOpenComposer,
     onCloseComposer,
+    onOpenScratchpad,
+    onCloseScratchpad,
     onOpenSessionSettings,
     onCloseSessionSettings,
     onOpenContextDrawer,
@@ -216,6 +234,19 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       }
     } else {
       cb.onCloseComposer?.();
+    }
+
+    if (currentStep.id === "scratchpad") {
+      if (cb.onOpenScratchpad) {
+        cb.onOpenScratchpad();
+      } else if (!document.querySelector('[data-tour="shell-scratchpad"]')) {
+        const toggleBtn = document.querySelector<HTMLElement>(
+          '[data-tour="shell-scratchpad-toggle"]'
+        );
+        toggleBtn?.click();
+      }
+    } else {
+      cb.onCloseScratchpad?.();
     }
 
     if (currentStep.id === "setup-aliases") {
@@ -330,6 +361,9 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     }
     if (currentStep.id === "composer") {
       onCloseComposer?.();
+    }
+    if (currentStep.id === "scratchpad") {
+      onCloseScratchpad?.();
     }
     if (currentStep.id === "setup-aliases") {
       onCloseSessionSettings?.();

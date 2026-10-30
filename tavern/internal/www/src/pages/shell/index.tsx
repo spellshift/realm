@@ -624,6 +624,14 @@ const ShellContent = () => {
           onCloseComposer={() => {
             setComposerOpen(false);
           }}
+          onOpenScratchpad={() => {
+            setScratchpadOpen(true);
+            setComposerOpen(false);
+            setSessionSettingsOpen(false);
+          }}
+          onCloseScratchpad={() => {
+            setScratchpadOpen(false);
+          }}
           onOpenSessionSettings={() => {
             setSessionSettingsOpen(true);
             setComposerOpen(false);
