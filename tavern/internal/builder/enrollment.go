@@ -51,7 +51,9 @@ func GenerateCSR(dir string) error {
 		}
 	}()
 	if _, err := keyFile.Write(pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER})); err != nil {
-		keyFile.Close()
+		if closeErr := keyFile.Close(); closeErr != nil {
+			return fmt.Errorf("write builder key: %v; close builder key: %w", err, closeErr)
+		}
 		return err
 	}
 	if err := keyFile.Close(); err != nil {
@@ -62,7 +64,10 @@ func GenerateCSR(dir string) error {
 		return fmt.Errorf("create builder CSR: %w", err)
 	}
 	if _, err := csrFile.Write(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDER})); err != nil {
-		csrFile.Close()
+		if closeErr := csrFile.Close(); closeErr != nil {
+			os.Remove(csrPath)
+			return fmt.Errorf("write builder CSR: %v; close builder CSR: %w", err, closeErr)
+		}
 		os.Remove(csrPath)
 		return err
 	}
