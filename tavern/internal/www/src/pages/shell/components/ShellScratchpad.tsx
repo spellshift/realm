@@ -499,14 +499,14 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
                 value={content}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="Write notes here (shared across all shells)..."
+                placeholder="Write notes here..."
                 style={{
                     height: `${editorHeight}px`,
                     ...(fontSize !== undefined
                         ? {
-                              fontSize: `${fontSize}px`,
-                              lineHeight: `${Math.max(10, Math.round(fontSize * 1.5))}px`,
-                          }
+                            fontSize: `${fontSize}px`,
+                            lineHeight: `${Math.max(10, Math.round(fontSize * 1.5))}px`,
+                        }
                         : {}),
                 }}
                 className="w-full bg-[#0f1118] text-gray-100 placeholder-gray-500 font-mono text-xs px-3 py-2 focus:outline-none resize-none overflow-y-auto shell-scrollbar"
