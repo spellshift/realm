@@ -20,12 +20,16 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 	var shellTask *ent.ShellTask
 
 	if tc := req.GetTaskContext(); tc != nil {
-		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
+		beaconID, err := srv.ValidateJWT(tc.GetJwt())
+		if err != nil {
 			return nil, err
 		}
 		t, err := srv.graph.Task.Get(ctx, int(tc.GetTaskId()))
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "task not found: %v", err)
+		}
+		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
+			return nil, err
 		}
 		task = t
 		h, err := t.QueryBeacon().QueryHost().Only(ctx)
@@ -34,12 +38,16 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		}
 		host = h
 	} else if stc := req.GetShellTaskContext(); stc != nil {
-		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
+		beaconID, err := srv.ValidateJWT(stc.GetJwt())
+		if err != nil {
 			return nil, err
 		}
 		st, err := srv.graph.ShellTask.Get(ctx, int(stc.GetShellTaskId()))
 		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "shell task not found: %v", err)
+		}
+		if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
+			return nil, err
 		}
 		shellTask = st
 		h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)

@@ -19,13 +19,20 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if taskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing task context")
 		}
-		if err := srv.ValidateJWT(taskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(taskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
 		output := taskOutputMsg.Output
-		if output == nil || output.Id == 0 {
+		if output == nil || output.Id <= 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
+		}
+		// When the context references a task, it must be the same task the
+		// output reports on, so a valid token cannot be paired with an
+		// unrelated task id.
+		if taskOutputMsg.Context.TaskId != 0 && taskOutputMsg.Context.TaskId != output.Id {
+			return nil, status.Errorf(codes.InvalidArgument, "task context id does not match output task id")
 		}
 
 		var (
@@ -50,6 +57,9 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to submit task result (id=%d): %v", output.Id, err)
 		}
+		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
+			return nil, err
+		}
 
 		if output.Error != nil {
 			e := fmt.Sprintf("%s%s", t.Error, output.Error.Msg)
@@ -73,13 +83,20 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if shellTaskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing shell task context")
 		}
-		if err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
 		output := shellTaskOutputMsg.Output
-		if output == nil || output.Id == 0 {
+		if output == nil || output.Id <= 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "must provide shell task id")
+		}
+		// When the context references a shell task, it must be the same shell
+		// task the output reports on, so a valid token cannot be paired with
+		// an unrelated shell task id.
+		if shellTaskOutputMsg.Context.ShellTaskId != 0 && shellTaskOutputMsg.Context.ShellTaskId != output.Id {
+			return nil, status.Errorf(codes.InvalidArgument, "shell task context id does not match output shell task id")
 		}
 
 		var (
@@ -104,6 +121,9 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		}
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to submit shell task result (id=%d): %v", output.Id, err)
+		}
+		if err := srv.authorizeShellTaskForBeacon(ctx, t, beaconID); err != nil {
+			return nil, err
 		}
 
 		if output.Error != nil {

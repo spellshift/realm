@@ -13,11 +13,9 @@ import (
 )
 
 func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
+	ctx := stream.Context()
 
 	var (
-		taskID      int64
-		shellTaskID int64
-		jwtToken    string
 		path        string
 		owner       string
 		group       string
@@ -26,10 +24,12 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		hash        string
 		kind        c2pb.ReportFileKind
 
+		host      *ent.Host
+		task      *ent.Task
+		shellTask *ent.ShellTask
+
 		content []byte
 	)
-
-	ctx := stream.Context()
 
 	// Loop Input Stream
 	for {
@@ -41,19 +41,65 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			return status.Errorf(codes.Internal, "failed to receive report_file request: %v", err)
 		}
 
+		// The initial message must carry the context so the stream can be
+		// validated and authorized before any chunk data is buffered.
+		if host == nil {
+			if tc := req.GetTaskContext(); tc != nil {
+				if tc.TaskId <= 0 {
+					return status.Errorf(codes.InvalidArgument, "invalid task id")
+				}
+				beaconID, err := srv.ValidateJWT(tc.Jwt)
+				if err != nil {
+					return err
+				}
+				t, err := srv.graph.Task.Get(ctx, int(tc.TaskId))
+				if ent.IsNotFound(err) {
+					return status.Errorf(codes.NotFound, "failed to find related task")
+				}
+				if err != nil {
+					return status.Errorf(codes.Internal, "failed to load task: %v", err)
+				}
+				if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
+					return err
+				}
+				task = t
+				h, err := t.QueryBeacon().QueryHost().Only(ctx)
+				if err != nil {
+					return status.Errorf(codes.Internal, "failed to load host from task: %v", err)
+				}
+				host = h
+			} else if stc := req.GetShellTaskContext(); stc != nil {
+				if stc.ShellTaskId <= 0 {
+					return status.Errorf(codes.InvalidArgument, "invalid shell task id")
+				}
+				beaconID, err := srv.ValidateJWT(stc.Jwt)
+				if err != nil {
+					return err
+				}
+				st, err := srv.graph.ShellTask.Get(ctx, int(stc.ShellTaskId))
+				if ent.IsNotFound(err) {
+					return status.Errorf(codes.NotFound, "failed to find related shell task")
+				}
+				if err != nil {
+					return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
+				}
+				if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
+					return err
+				}
+				shellTask = st
+				h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)
+				if err != nil {
+					return status.Errorf(codes.Internal, "failed to load host from shell task: %v", err)
+				}
+				host = h
+			} else {
+				return status.Errorf(codes.InvalidArgument, "missing task context on initial message")
+			}
+		}
+
 		// Collect args
 		if kind == c2pb.ReportFileKind_REPORT_FILE_KIND_UNSPECIFIED {
 			kind = req.GetKind()
-		}
-
-		if taskID == 0 && shellTaskID == 0 {
-			if tc := req.GetTaskContext(); tc != nil {
-				taskID = tc.TaskId
-				jwtToken = tc.Jwt
-			} else if stc := req.GetShellTaskContext(); stc != nil {
-				shellTaskID = stc.ShellTaskId
-				jwtToken = stc.Jwt
-			}
 		}
 
 		if req.Chunk != nil {
@@ -70,50 +116,8 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	}
 
 	// Input Validation
-	if taskID == 0 && shellTaskID == 0 {
-		return status.Errorf(codes.InvalidArgument, "must provide valid task id or shell task id")
-	}
 	if path == "" {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
-	}
-
-	err := srv.ValidateJWT(jwtToken)
-	if err != nil {
-		return err
-	}
-
-	var host *ent.Host
-	var task *ent.Task
-	var shellTask *ent.ShellTask
-
-	if taskID != 0 {
-		t, err := srv.graph.Task.Get(ctx, int(taskID))
-		if ent.IsNotFound(err) {
-			return status.Errorf(codes.NotFound, "failed to find related task")
-		}
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load task: %v", err)
-		}
-		task = t
-		h, err := t.QueryBeacon().QueryHost().Only(ctx)
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load host from task: %v", err)
-		}
-		host = h
-	} else {
-		st, err := srv.graph.ShellTask.Get(ctx, int(shellTaskID))
-		if ent.IsNotFound(err) {
-			return status.Errorf(codes.NotFound, "failed to find related shell task")
-		}
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
-		}
-		shellTask = st
-		h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load host from shell task: %v", err)
-		}
-		host = h
 	}
 
 	isScreenshot := kind == c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT
@@ -121,6 +125,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	// Load Existing Files (only for HostFile)
 	var existingFiles []*ent.HostFile
 	if !isScreenshot {
+		var err error
 		existingFiles, err = host.QueryFiles().
 			Where(
 				hostfile.Path(path),
@@ -152,13 +157,6 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			SetSize(size).
 			SetHash(hash).
 			SetContent(content)
-
-		if task != nil {
-			builder.SetTaskID(task.ID)
-		}
-		if shellTask != nil {
-			builder.SetShellTaskID(shellTask.ID)
-		}
 
 		if task != nil {
 			builder.SetTaskID(task.ID)

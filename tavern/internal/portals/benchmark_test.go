@@ -143,7 +143,7 @@ func BenchmarkPortalThroughput(b *testing.B) {
 		Context: &c2pb.CreatePortalRequest_TaskContext{
 			TaskContext: &c2pb.TaskContext{
 				TaskId: int64(taskEnt.ID),
-				Jwt:    generateJWT(b, testPrivKey),
+				Jwt:    generateJWT(b, testPrivKey, beacon.ID),
 			},
 		},
 	})

@@ -39,21 +39,45 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	var taskID int
 	var shellTaskID int
 	if tc := registerMsg.GetTaskContext(); tc != nil {
-		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
+		beaconID, err := srv.ValidateJWT(tc.GetJwt())
+		if err != nil {
 			return err
+		}
+		if tc.GetTaskId() <= 0 {
+			return status.Errorf(codes.InvalidArgument, "invalid task id")
 		}
 		taskID = int(tc.GetTaskId())
-	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
-		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
+		t, err := srv.graph.Task.Get(ctx, taskID)
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "task not found: %v", err)
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load task: %v", err)
+		}
+		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
 			return err
 		}
+	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
+		beaconID, err := srv.ValidateJWT(stc.GetJwt())
+		if err != nil {
+			return err
+		}
+		if stc.GetShellTaskId() <= 0 {
+			return status.Errorf(codes.InvalidArgument, "invalid shell task id")
+		}
 		shellTaskID = int(stc.GetShellTaskId())
+		st, err := srv.graph.ShellTask.Get(ctx, shellTaskID)
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "shell task not found: %v", err)
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
+		}
+		if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
+			return err
+		}
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
-	}
-
-	if taskID <= 0 && shellTaskID <= 0 {
-		return status.Errorf(codes.InvalidArgument, "invalid task ID or shell task ID")
 	}
 
 	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID)
