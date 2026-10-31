@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -30,10 +31,8 @@ func BuilderHealthy(lastSeen time.Time, interval int, now time.Time) bool {
 // Config represents the YAML configuration for a builder.
 type Config struct {
 	PollInterval     int      `yaml:"poll_interval"`
-	ID               string   `yaml:"id"`
 	SupportedTargets []string `yaml:"supported_targets"`
-	MTLSCert         string   `yaml:"mtls_cert"`
-	MTLSKeyFile      string   `yaml:"mtls_key_file"`
+	IdentityFile     string   `yaml:"identity_file"`
 	Upstream         string   `yaml:"upstream"`
 	Executor         string   `yaml:"executor"`
 }
@@ -48,11 +47,8 @@ func ParseConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !filepath.IsAbs(cfg.MTLSKeyFile) {
-		cfg.MTLSKeyFile = filepath.Join(filepath.Dir(path), cfg.MTLSKeyFile)
-	}
-	if _, err := NewCredentialsFromConfig(cfg); err != nil {
-		return nil, fmt.Errorf("invalid builder credentials: %w", err)
+	if !filepath.IsAbs(cfg.IdentityFile) {
+		cfg.IdentityFile = filepath.Join(filepath.Dir(path), cfg.IdentityFile)
 	}
 	return cfg, nil
 }
@@ -78,11 +74,8 @@ func (cfg *Config) validate() error {
 	if cfg.PollInterval < 1 || cfg.PollInterval > 86400 {
 		return fmt.Errorf("poll_interval must be between 1 and 86400 seconds")
 	}
-	if cfg.ID == "" {
-		return fmt.Errorf("config must specify a builder id")
-	}
-	if cfg.MTLSCert == "" || cfg.MTLSKeyFile == "" {
-		return fmt.Errorf("config must specify mtls_cert and mtls_key_file")
+	if cfg.IdentityFile == "" {
+		return fmt.Errorf("config must specify identity_file")
 	}
 	if len(cfg.SupportedTargets) == 0 {
 		return fmt.Errorf("config must specify at least one supported_target")
@@ -98,6 +91,9 @@ func (cfg *Config) validate() error {
 	if cfg.Upstream == "" {
 		return fmt.Errorf("config must specify an upstream server address")
 	}
+	if err := validateUpstream(cfg.Upstream); err != nil {
+		return err
+	}
 	if cfg.Executor == "" {
 		cfg.Executor = "docker"
 	}
@@ -106,6 +102,26 @@ func (cfg *Config) validate() error {
 		// valid
 	default:
 		return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cfg.Executor)
+	}
+	return nil
+}
+
+// Validate exposes validate for callers outside this package, such as the
+// enrollment handler that validates builder-supplied settings before
+// consuming an enrollment token.
+func (cfg *Config) Validate() error { return cfg.validate() }
+
+// validateUpstream checks that upstream is an http or https URL with a host.
+func validateUpstream(upstream string) error {
+	u, err := url.Parse(upstream)
+	if err != nil {
+		return fmt.Errorf("invalid upstream server address %q: %w", upstream, err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("upstream server address %q must use http or https", upstream)
+	}
+	if u.Host == "" {
+		return fmt.Errorf("upstream server address %q must include a host", upstream)
 	}
 	return nil
 }

@@ -8,7 +8,9 @@ package graphql
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -18,7 +20,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
@@ -518,66 +519,16 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 		Save(ctx)
 }
 
-// RegisterBuilder is the resolver for the registerBuilder field.
-func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput, csr string) (*models.RegisterBuilderOutput, error) {
-	if input.PollInterval != nil && (*input.PollInterval < 1 || *input.PollInterval > builder.MaxPollInterval) {
-		return nil, fmt.Errorf("poll_interval value out of range")
+// CreateBuilderEnrollmentToken is the resolver for the createBuilderEnrollmentToken field.
+func (r *mutationResolver) CreateBuilderEnrollmentToken(ctx context.Context) (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
 	}
-	identifier := uuid.NewString()
-	certPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, identifier, csr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
-	}
-	mtlsCert := string(certPEM)
-	targetNames := make([]string, len(input.SupportedTargets))
-	for i, t := range input.SupportedTargets {
-		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
-	}
-
-	configData := struct {
-		PollInterval     int      `yaml:"poll_interval"`
-		ID               string   `yaml:"id"`
-		SupportedTargets []string `yaml:"supported_targets"`
-		MTLSCert         string   `yaml:"mtls_cert"`
-		MTLSKeyFile      string   `yaml:"mtls_key_file"`
-		Upstream         string   `yaml:"upstream"`
-		Executor         string   `yaml:"executor"`
-	}{
-		PollInterval:     5,
-		ID:               identifier,
-		SupportedTargets: targetNames,
-		MTLSCert:         mtlsCert,
-		MTLSKeyFile:      "builder.key",
-		Upstream:         "http://127.0.0.1:8000",
-		Executor:         "docker",
-	}
-	if input.PollInterval != nil {
-		configData.PollInterval = *input.PollInterval
-	}
-	if input.Upstream != nil {
-		configData.Upstream = *input.Upstream
-	}
-	if input.Executor != nil {
-		configData.Executor = string(*input.Executor)
-	}
-
-	configBytes, err := yaml.Marshal(configData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal builder config: %w", err)
-	}
-	if _, err := builder.ParseConfigBytes(configBytes); err != nil {
-		return nil, fmt.Errorf("invalid builder config: %w", err)
-	}
-	b, err := r.client.Builder.Create().SetInput(input).SetIdentifier(identifier).Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create builder: %w", err)
-	}
-
-	return &models.RegisterBuilderOutput{
-		Builder:  b,
-		MtlsCert: mtlsCert,
-		Config:   string(configBytes),
-	}, nil
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	hash := sha256.Sum256([]byte(token))
+	_, err := r.client.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
+	return token, err
 }
 
 // DeleteBuilder is the resolver for the deleteBuilder field.

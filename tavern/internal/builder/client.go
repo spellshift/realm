@@ -11,7 +11,6 @@ import (
 	"io"
 	"log/slog"
 	"net/url"
-	"os"
 	"time"
 
 	"golang.org/x/sync/semaphore"
@@ -60,11 +59,11 @@ func (c *builderCredentials) RequireTransportSecurity() bool {
 
 // NewCredentialsFromConfig creates gRPC per-RPC credentials from a builder config.
 func NewCredentialsFromConfig(cfg *Config) (credentials.PerRPCCredentials, error) {
-	keyPEM, err := os.ReadFile(cfg.MTLSKeyFile)
+	identity, err := LoadIdentity(cfg.IdentityFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read builder key: %w", err)
+		return nil, err
 	}
-	return parseMTLSCredentials(cfg.MTLSCert, keyPEM)
+	return parseMTLSCredentials(identity.Certificate, []byte(identity.PrivateKey))
 }
 
 func parseMTLSCredentials(certPEM string, keyPEM []byte) (*builderCredentials, error) {
@@ -112,8 +111,12 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	if err := cfg.validate(); err != nil {
 		return err
 	}
+	identity, err := EnsureIdentity(ctx, cfg)
+	if err != nil {
+		return err
+	}
 	slog.InfoContext(ctx, "builder started",
-		"id", cfg.ID,
+		"id", identity.ID,
 		"supported_targets", cfg.SupportedTargets,
 		"upstream", cfg.Upstream,
 	)

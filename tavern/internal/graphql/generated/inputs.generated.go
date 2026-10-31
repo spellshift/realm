@@ -598,115 +598,6 @@ func (ec *executionContext) fieldContext_BuildTomeSnapshot_params(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _RegisterBuilderOutput_builder(ctx context.Context, field graphql.CollectedField, obj *models.RegisterBuilderOutput) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_RegisterBuilderOutput_builder,
-		func(ctx context.Context) (any, error) {
-			return obj.Builder, nil
-		},
-		nil,
-		ec.marshalNBuilder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilder,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RegisterBuilderOutput",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Builder_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Builder_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_Builder_lastModifiedAt(ctx, field)
-			case "identifier":
-				return ec.fieldContext_Builder_identifier(ctx, field)
-			case "supportedTargets":
-				return ec.fieldContext_Builder_supportedTargets(ctx, field)
-			case "upstream":
-				return ec.fieldContext_Builder_upstream(ctx, field)
-			case "pollInterval":
-				return ec.fieldContext_Builder_pollInterval(ctx, field)
-			case "executor":
-				return ec.fieldContext_Builder_executor(ctx, field)
-			case "lastSeenAt":
-				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
-			case "buildtasks":
-				return ec.fieldContext_Builder_buildtasks(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Builder", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RegisterBuilderOutput_mtlsCert(ctx context.Context, field graphql.CollectedField, obj *models.RegisterBuilderOutput) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_RegisterBuilderOutput_mtlsCert,
-		func(ctx context.Context) (any, error) {
-			return obj.MtlsCert, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_RegisterBuilderOutput_mtlsCert(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RegisterBuilderOutput",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RegisterBuilderOutput_config(ctx context.Context, field graphql.CollectedField, obj *models.RegisterBuilderOutput) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_RegisterBuilderOutput_config,
-		func(ctx context.Context) (any, error) {
-			return obj.Config, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_RegisterBuilderOutput_config(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RegisterBuilderOutput",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -1499,55 +1390,6 @@ func (ec *executionContext) _BuildTomeSnapshot(ctx context.Context, sel ast.Sele
 	return out
 }
 
-var registerBuilderOutputImplementors = []string{"RegisterBuilderOutput"}
-
-func (ec *executionContext) _RegisterBuilderOutput(ctx context.Context, sel ast.SelectionSet, obj *models.RegisterBuilderOutput) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, registerBuilderOutputImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("RegisterBuilderOutput")
-		case "builder":
-			out.Values[i] = ec._RegisterBuilderOutput_builder(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "mtlsCert":
-			out.Values[i] = ec._RegisterBuilderOutput_mtlsCert(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "config":
-			out.Values[i] = ec._RegisterBuilderOutput_config(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
@@ -1614,20 +1456,6 @@ func (ec *executionContext) unmarshalNCreateBuildProfileInput2realmᚗpubᚋtave
 func (ec *executionContext) unmarshalNCreateBuildTaskInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildTaskInput(ctx context.Context, v any) (models.CreateBuildTaskInput, error) {
 	res, err := ec.unmarshalInputCreateBuildTaskInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNRegisterBuilderOutput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRegisterBuilderOutput(ctx context.Context, sel ast.SelectionSet, v models.RegisterBuilderOutput) graphql.Marshaler {
-	return ec._RegisterBuilderOutput(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNRegisterBuilderOutput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRegisterBuilderOutput(ctx context.Context, sel ast.SelectionSet, v *models.RegisterBuilderOutput) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._RegisterBuilderOutput(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUpdateBuildProfileInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐUpdateBuildProfileInput(ctx context.Context, v any) (models.UpdateBuildProfileInput, error) {

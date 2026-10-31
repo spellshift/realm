@@ -78,7 +78,7 @@ type Mutation {
     ###
     # Builder
     ###
-    registerBuilder(input: CreateBuilderInput!, csr: String!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    createBuilderEnrollmentToken: String! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###

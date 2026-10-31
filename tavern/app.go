@@ -156,17 +156,6 @@ func newApp(ctx context.Context) (app *cli.App) {
 		{
 			Name:  "builder",
 			Usage: "Run a builder that compiles agents for target platforms",
-			Subcommands: []cli.Command{{
-				Name:  "generate-csr",
-				Usage: "Generate a builder key and CSR locally",
-				Flags: []cli.Flag{cli.StringFlag{Name: "output-dir", Usage: "Existing directory for builder.key and builder.csr"}},
-				Action: func(c *cli.Context) error {
-					if c.String("output-dir") == "" {
-						return fmt.Errorf("--output-dir flag is required")
-					}
-					return builder.GenerateCSR(c.String("output-dir"))
-				},
-			}},
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "config",
@@ -499,9 +488,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/graphql": tavernhttp.Endpoint{
-			Handler:          gqlHandler,
-			AllowUnactivated: true,
+		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler, AllowUnactivated: true},
+		"/auth/builder/enroll": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewBuilderEnrollHandler(client, builderCACert, builderCAKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
 			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
