@@ -133,6 +133,30 @@ impl PtyManager {
 
         Ok(())
     }
+
+    /// Process an incoming PTYResize mote. If no session exists for the stream_id,
+    /// a new PTY is spawned with the requested dimensions; otherwise the existing
+    /// PTY session is resized.
+    pub async fn handle_resize(
+        &mut self,
+        stream_id: String,
+        rows: u16,
+        cols: u16,
+        out_tx: mpsc::Sender<Mote>,
+    ) -> Result<()> {
+        if rows == 0 || cols == 0 {
+            return Ok(());
+        }
+
+        if let Some(session) = self.sessions.get(&stream_id) {
+            session.resize(rows, cols);
+        } else {
+            let session = spawn_pty_session(stream_id.clone(), rows, cols, out_tx)?;
+            self.sessions.insert(stream_id, session);
+        }
+
+        Ok(())
+    }
 }
 
 /// Spawn a new PTY process using portable-pty (Linux, macOS, Windows).

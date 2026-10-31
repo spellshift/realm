@@ -13,12 +13,19 @@ export interface GraphCredentialsSectionProps {
     currentHostName?: string;
     currentHostIp?: string;
     hosts?: KnowledgeHostItem[];
-    onOpenSshWithTarget: (target: string) => void;
+    onOpenSshWithTarget: (target: string, credentialId?: string) => void;
     onCredentialCreated?: (
         credential: KnowledgeCredentialItem,
         targetHostId?: string
     ) => void;
 }
+
+const formatCredKind = (kind?: string): string => {
+    if (!kind) {
+        return "PASSWORD";
+    }
+    return kind.replace(/^KIND_/, "");
+};
 
 const SecretToggleIcon: React.FC<{ isRevealed: boolean }> = ({ isRevealed }) => {
     if (isRevealed) {
@@ -30,11 +37,11 @@ const SecretToggleIcon: React.FC<{ isRevealed: boolean }> = ({ isRevealed }) => 
 const CredentialRow: React.FC<{
     cred: KnowledgeCredentialItem;
     currentHostIp?: string;
-    onOpenSshWithTarget: (target: string) => void;
+    onOpenSshWithTarget: (target: string, credentialId?: string) => void;
 }> = ({ cred, currentHostIp, onOpenSshWithTarget }) => {
     const [isRevealed, setIsRevealed] = useState(false);
     const targetIp = cred.hostPrimaryIP || currentHostIp || "127.0.0.1";
-    const sshTarget = `${cred.principal}:${cred.secret}@${targetIp}:22`;
+    const sshTarget = `${cred.principal}@${targetIp}:22`;
 
     const handleCopy = () => {
         if (navigator.clipboard?.writeText) {
@@ -48,6 +55,9 @@ const CredentialRow: React.FC<{
                 <div className="flex items-center gap-1.5 text-xs text-gray-200 font-mono truncate">
                     <span className="font-medium">{cred.principal}</span>
                     <span className="text-gray-500">@{cred.hostName}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px] font-mono">
+                        {formatCredKind(cred.kind)}
+                    </span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-400 font-mono">
                     <span className="truncate max-w-[180px]">
@@ -73,7 +83,7 @@ const CredentialRow: React.FC<{
             </div>
             <button
                 type="button"
-                onClick={() => onOpenSshWithTarget(sshTarget)}
+                onClick={() => onOpenSshWithTarget(sshTarget, cred.id)}
                 className="text-xs font-medium text-gray-200 hover:text-white px-2.5 py-1 rounded-md bg-gray-800 hover:bg-gray-700 shrink-0 transition-colors"
             >
                 SSH Pivot

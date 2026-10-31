@@ -114,6 +114,7 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
         show={showCompletions}
         pos={completionPos}
         index={completionIndex}
+        fontSize={fontSize}
         onCompletionSelect={handleCompletionSelect}
       />
       <DocTooltip

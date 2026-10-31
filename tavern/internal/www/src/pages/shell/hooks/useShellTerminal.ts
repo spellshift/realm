@@ -34,7 +34,14 @@ import {
     insertNewlineWithAutoIndent,
     formatMultilineTerminalBuffer,
     buildTerminalRedrawSequence,
+    handleTerminalCustomKeyEvent,
 } from "./shellUtils";
+import {
+    DEFAULT_RC_ALIASES_SCRIPT,
+    registerUserSymbolsFromCode,
+    stdlibRegistry,
+} from "../utils/eldritchLsp";
+import { loadRcScript } from "../components/MultiLineComposer";
 import { ShellTaskItem } from "./useShellData";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
@@ -198,6 +205,12 @@ export const useShellTerminal = (
         currentBlock: ""
     });
 
+    // Register user symbols from RC script on terminal initialization
+    useEffect(() => {
+        const rcScript = loadRcScript() || DEFAULT_RC_ALIASES_SCRIPT;
+        registerUserSymbolsFromCode(rcScript);
+    }, []);
+
     // Hydrate terminal history from GraphQL shellTasks when loaded
     useEffect(() => {
         shellTasksRef.current = shellTasks;
@@ -211,6 +224,7 @@ export const useShellTerminal = (
         const existing = shellState.current.history;
         const merged = [...existing];
         for (const cmd of gqlInputs) {
+            registerUserSymbolsFromCode(cmd);
             if (merged[merged.length - 1] !== cmd && !merged.includes(cmd)) {
                 merged.push(cmd);
             }
@@ -454,21 +468,69 @@ export const useShellTerminal = (
         }
     }, []);
 
-    const applyCompletion = useCallback((completion: string) => {
+    const applyCompletion = useCallback((completion: string, explicitStart?: number) => {
         if (completion === "no suggestions") {
             updateCompletionsUI([], 0, false, 0);
             return;
         }
 
         const state = shellState.current;
-        const start = completionsRef.current.start;
+        const start = explicitStart !== undefined ? explicitStart : completionsRef.current.start;
         // Replace from start to cursorPos with completion
         // Ensure start is valid
         if (start >= 0 && start <= state.cursorPos) {
             const prefix = state.inputBuffer.slice(0, start);
             const suffix = state.inputBuffer.slice(state.cursorPos);
-            state.inputBuffer = prefix + completion + suffix;
-            state.cursorPos = start + completion.length;
+
+            let completionText = completion;
+            let cursorOffset = completion.length;
+
+            if (
+                !suffix.trimStart().startsWith("(") &&
+                !completion.endsWith("=") &&
+                !completion.endsWith("(") &&
+                !completion.endsWith(")")
+            ) {
+                const userFn = stdlibRegistry.userFunctions.get(completion);
+                if (userFn) {
+                    if (userFn.minArgs === 0) {
+                        completionText = `${completion}()`;
+                        cursorOffset = completionText.length;
+                    } else {
+                        completionText = `${completion}(`;
+                        cursorOffset = completionText.length;
+                    }
+                } else {
+                    const builtinFn = stdlibRegistry.builtins.get(completion);
+                    if (builtinFn) {
+                        if (builtinFn.minArgs === 0) {
+                            completionText = `${completion}()`;
+                            cursorOffset = completionText.length;
+                        } else {
+                            completionText = `${completion}(`;
+                            cursorOffset = completionText.length;
+                        }
+                    } else {
+                        const receiverMatch = prefix.match(/([a-zA-Z_][a-zA-Z0-9_]*)\.$/);
+                        if (receiverMatch) {
+                            const modName = receiverMatch[1];
+                            const modFn = stdlibRegistry.functions.get(`${modName}.${completion}`);
+                            if (modFn) {
+                                if (modFn.minArgs === 0) {
+                                    completionText = `${completion}()`;
+                                    cursorOffset = completionText.length;
+                                } else {
+                                    completionText = `${completion}(`;
+                                    cursorOffset = completionText.length;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            state.inputBuffer = prefix + completionText + suffix;
+            state.cursorPos = start + cursorOffset;
             redrawLine();
         }
         updateCompletionsUI([], 0, false, 0);
@@ -1178,7 +1240,7 @@ export const useShellTerminal = (
                 if (res && res.suggestions.length > 0) {
                     if (res.suggestions.length === 1) {
                         updateCompletionsUI(res.suggestions, res.start, true, 0);
-                        applyCompletion(res.suggestions[0]);
+                        applyCompletion(res.suggestions[0], res.start);
                     } else {
                         updateCompletionsUI(res.suggestions, res.start, true, 0);
                     }
@@ -1252,6 +1314,9 @@ export const useShellTerminal = (
                 }
 
                 adapter.current?.reset();
+                if (finalizedCode.trim()) {
+                    registerUserSymbolsFromCode(finalizedCode.trimEnd());
+                }
                 const isMultiline = finalizedCode.includes("\n");
                 const res = isMultiline
                     ? adapter.current?.paste_input(finalizedCode + "\n")
@@ -1384,14 +1449,12 @@ export const useShellTerminal = (
             }
         };
 
-        // Allow Shift+Enter to insert a newline in place instead of submitting
+        // Custom key handler for copy/paste (Ctrl+C, Ctrl+Shift+C, Ctrl+V, etc.) and Shift+Enter
         termInstance.current.attachCustomKeyEventHandler((ev: KeyboardEvent) => {
-            if (ev.type === "keydown" && ev.key === "Enter" && ev.shiftKey) {
-                ev.preventDefault();
-                handleData("\n", false);
-                return false;
-            }
-            return true;
+            if (!termInstance.current) return true;
+            return handleTerminalCustomKeyEvent(ev, termInstance.current, {
+                onShiftEnter: () => handleData("\n", false),
+            });
         });
 
         termInstance.current.onData((data) => {
@@ -1489,6 +1552,8 @@ export const useShellTerminal = (
         const trimmedCode = normalizeMultilineScript(rawCode);
         if (!trimmedCode) return false;
 
+        registerUserSymbolsFromCode(trimmedCode);
+
         const state = shellState.current;
 
         // Clear any current partial input line from the prompt's top row
@@ -1508,6 +1573,7 @@ export const useShellTerminal = (
 
         const res = adapter.current.paste_input(trimmedCode);
         if (res?.status === "complete") {
+            registerUserSymbolsFromCode(trimmedCode);
             state.history.push(trimmedCode);
             sessionInputs.current.push(trimmedCode);
             saveHistory(state.history);

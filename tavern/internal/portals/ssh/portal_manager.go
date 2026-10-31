@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -205,6 +206,85 @@ func (s *portalSSHStream) Close(reason string) {
 	})
 }
 
+const handshakeIdleTimeout = 30 * time.Second
+
+type activityConn struct {
+	net.Conn
+	mu          sync.Mutex
+	idleTimeout time.Duration
+}
+
+func (c *activityConn) SetIdleTimeout(d time.Duration) {
+	c.mu.Lock()
+	c.idleTimeout = d
+	c.mu.Unlock()
+	if d <= 0 {
+		_ = c.Conn.SetDeadline(time.Time{})
+		return
+	}
+	_ = c.Conn.SetDeadline(time.Now().Add(d))
+}
+
+func (c *activityConn) getIdleTimeout() time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.idleTimeout
+}
+
+func (c *activityConn) Read(b []byte) (int, error) {
+	if d := c.getIdleTimeout(); d > 0 {
+		_ = c.Conn.SetReadDeadline(time.Now().Add(d))
+	}
+	n, err := c.Conn.Read(b)
+	if n > 0 {
+		if d := c.getIdleTimeout(); d > 0 {
+			_ = c.Conn.SetReadDeadline(time.Now().Add(d))
+		}
+	}
+	return n, err
+}
+
+func (c *activityConn) Write(b []byte) (int, error) {
+	if d := c.getIdleTimeout(); d > 0 {
+		_ = c.Conn.SetWriteDeadline(time.Now().Add(d))
+	}
+	n, err := c.Conn.Write(b)
+	if n > 0 {
+		if d := c.getIdleTimeout(); d > 0 {
+			_ = c.Conn.SetReadDeadline(time.Now().Add(d))
+			_ = c.Conn.SetWriteDeadline(time.Now().Add(d))
+		}
+	}
+	return n, err
+}
+
+func combineAlgorithms(supported, insecure []string) []string {
+	seen := make(map[string]struct{}, len(supported)+len(insecure))
+	out := make([]string, 0, len(supported)+len(insecure))
+	for _, alg := range supported {
+		if _, ok := seen[alg]; !ok {
+			seen[alg] = struct{}{}
+			out = append(out, alg)
+		}
+	}
+	for _, alg := range insecure {
+		if _, ok := seen[alg]; !ok {
+			seen[alg] = struct{}{}
+			out = append(out, alg)
+		}
+	}
+	return out
+}
+
+func normalizePrivateKeyBytes(raw []byte) []byte {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 {
+		return nil
+	}
+	normalized := bytes.ReplaceAll(trimmed, []byte("\r\n"), []byte("\n"))
+	return append(normalized, '\n')
+}
+
 func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 	defer s.Close("SSH session ended")
 
@@ -217,8 +297,11 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 	}
 
 	var authMethods []gossh.AuthMethod
-	if len(connectPayload.PrivateKey) > 0 {
-		signer, err := gossh.ParsePrivateKey(connectPayload.PrivateKey)
+	if keyBytes := normalizePrivateKeyBytes(connectPayload.PrivateKey); len(keyBytes) > 0 {
+		signer, err := gossh.ParsePrivateKey(keyBytes)
+		if err != nil && connectPayload.Password != "" {
+			signer, err = gossh.ParsePrivateKeyWithPassphrase(keyBytes, []byte(connectPayload.Password))
+		}
 		if err != nil {
 			s.Close(fmt.Sprintf("Invalid SSH private key: %v", err))
 			return
@@ -226,14 +309,33 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 		authMethods = append(authMethods, gossh.PublicKeys(signer))
 	}
 	if connectPayload.Password != "" {
-		authMethods = append(authMethods, gossh.Password(connectPayload.Password))
+		password := connectPayload.Password
+		authMethods = append(authMethods,
+			gossh.Password(password),
+			gossh.KeyboardInteractive(func(name, instruction string, questions []string, echos []bool) ([]string, error) {
+				answers := make([]string, len(questions))
+				for i := range questions {
+					answers[i] = password
+				}
+				return answers, nil
+			}),
+		)
 	}
 
+	supportedAlgs := gossh.SupportedAlgorithms()
+	insecureAlgs := gossh.InsecureAlgorithms()
+
 	sshConfig := &gossh.ClientConfig{
-		User:            user,
-		Auth:            authMethods,
-		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
-		Timeout:         30 * time.Second,
+		Config: gossh.Config{
+			KeyExchanges: combineAlgorithms(supportedAlgs.KeyExchanges, insecureAlgs.KeyExchanges),
+			Ciphers:      combineAlgorithms(supportedAlgs.Ciphers, insecureAlgs.Ciphers),
+			MACs:         combineAlgorithms(supportedAlgs.MACs, insecureAlgs.MACs),
+		},
+		User:              user,
+		Auth:              authMethods,
+		HostKeyCallback:   gossh.InsecureIgnoreHostKey(),
+		HostKeyAlgorithms: combineAlgorithms(supportedAlgs.HostKeys, insecureAlgs.HostKeys),
+		Timeout:           handshakeIdleTimeout,
 	}
 
 	hostPortStr := net.JoinHostPort(host, strconv.Itoa(port))
@@ -249,15 +351,16 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 		}
 	}
 
-	conn, err := pnet.Dial("tcp", hostPortStr, s.streamID, s.manager.sendToAgent, receiver)
+	rawConn, err := pnet.Dial("tcp", hostPortStr, s.streamID, s.manager.sendToAgent, receiver)
 	if err != nil {
 		s.Close(fmt.Sprintf("Failed to initialize portal TCP stream: %v", err))
 		return
 	}
-	defer conn.Close()
+	defer rawConn.Close()
 
-	// Enforce a strict deadline on the SSH handshake and session setup
-	_ = conn.SetDeadline(time.Now().Add(15 * time.Second))
+	// Enforce an activity-extending per-operation deadline during the SSH handshake and session setup
+	conn := &activityConn{Conn: rawConn}
+	conn.SetIdleTimeout(handshakeIdleTimeout)
 
 	c, chans, reqs, err := gossh.NewClientConn(conn, hostPortStr, sshConfig)
 	if err != nil {
@@ -315,7 +418,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 	}
 
 	// Handshake and shell startup succeeded; clear the handshake deadline and notify connected
-	_ = conn.SetDeadline(time.Time{})
+	conn.SetIdleTimeout(0)
 	s.sendConnected()
 
 	// Periodic SSH keepalive to detect stalled or dropped target connections

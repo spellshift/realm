@@ -46,7 +46,7 @@ interface ShellHeaderProps {
   onToggleSidebar?: () => void;
   onExport: () => void;
   onNewPortal: () => void;
-  onSshConnect: (target: string) => void;
+  onSshConnect: (target: string, credentialId?: string) => void;
   onPtyOpen: () => void;
   onSendCtrlC: () => void;
   onSendCtrlR: () => void;
@@ -69,6 +69,7 @@ interface ShellHeaderProps {
   composerOpen?: boolean;
   sshModalOpenExternal?: boolean;
   sshModalInitialTarget?: string;
+  sshModalInitialCredentialId?: string;
   onCloseSshModalExternal?: () => void;
   credentials?: KnowledgeCredentialItem[];
   hosts?: KnowledgeHostItem[];
@@ -106,6 +107,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   composerOpen = false,
   sshModalOpenExternal,
   sshModalInitialTarget,
+  sshModalInitialCredentialId,
   onCloseSshModalExternal,
   credentials,
   hosts,
@@ -210,7 +212,10 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
               <>
                 <span className="text-gray-600">/</span>
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-200 cursor-default">
-                  <User className="w-4 h-4 text-gray-400 shrink-0" />
+                  <User
+                    data-testid="shell-breadcrumb-user-icon"
+                    className="hidden sm:block w-4 h-4 text-gray-400 shrink-0"
+                  />
                   <span>{shellData.node.beacon.principal}</span>
                 </div>
               </>
@@ -350,6 +355,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             onReplayTutorial={onReplayTutorial}
             sshModalOpenExternal={sshModalOpenExternal}
             sshModalInitialTarget={sshModalInitialTarget}
+            sshModalInitialCredentialId={sshModalInitialCredentialId}
             onCloseSshModalExternal={onCloseSshModalExternal}
             credentials={credentials}
             hosts={hosts}

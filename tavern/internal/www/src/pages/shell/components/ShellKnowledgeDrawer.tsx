@@ -38,7 +38,7 @@ export interface ShellKnowledgeDrawerProps {
     onOpenPty?: () => void;
     onOpenSshModal?: () => void;
     onOpenPivotTab?: (type: "ssh" | "pty", target: string, pivotId: string) => void;
-    onOpenSshWithTarget: (target: string) => void;
+    onOpenSshWithTarget: (target: string, credentialId?: string) => void;
     onLoadIntoComposer?: (code: string) => void;
     onStageToPrompt?: (code: string) => void;
 }

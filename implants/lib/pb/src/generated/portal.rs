@@ -56,6 +56,13 @@ pub struct SshPayload {
     #[prost(bytes = "vec", tag = "9")]
     pub data: ::prost::alloc::vec::Vec<u8>,
 }
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct PtyResize {
+    #[prost(uint32, tag = "1")]
+    pub rows: u32,
+    #[prost(uint32, tag = "2")]
+    pub cols: u32,
+}
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Mote {
     /// Unique identifier used to route reply traffic back to original port
@@ -65,7 +72,7 @@ pub struct Mote {
     #[prost(uint64, tag = "2")]
     pub seq_id: u64,
     /// A payload
-    #[prost(oneof = "mote::Payload", tags = "3, 4, 5, 6, 7")]
+    #[prost(oneof = "mote::Payload", tags = "3, 4, 5, 6, 7, 8")]
     pub payload: ::core::option::Option<mote::Payload>,
 }
 /// Nested message and enum types in `Mote`.
@@ -83,6 +90,8 @@ pub mod mote {
         Shell(super::ShellPayload),
         #[prost(message, tag = "7")]
         Ssh(super::SshPayload),
+        #[prost(message, tag = "8")]
+        PtyResize(super::PtyResize),
     }
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
