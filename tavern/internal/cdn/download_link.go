@@ -6,8 +6,10 @@ import (
 	"strings"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/errors"
 )
 
@@ -15,7 +17,8 @@ import (
 // Assets are accessed using the link path. The Link's ExpiresAt and DownloadLimit determine if the Link can still be used for downloads.
 // - If the Link cannot be found at the path provided, 404 is returned
 // - If ExpiresAt <= now, 404 is returned
-// - If DownloadLimit is set and Downloads >= DownloadLimit, 404 is returned
+// - If DownloadLimit is set and Downloads >= DownloadLimit, 404 is returned (a DownloadLimit of 0 means the link can never be downloaded)
+// - If DownloadLimit is unset (nil), downloads are unlimited
 // - Otherwise, the Asset is returned
 func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 	return errors.WrapHandler(func(w http.ResponseWriter, req *http.Request) error {
@@ -51,10 +54,13 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 
 		// Reserve a download slot atomically. When a DownloadLimit is set, the
 		// conditional UPDATE (SET downloads = downloads + 1 WHERE id = ? AND
-		// downloads < limit) executes as a single statement, so concurrent
-		// requests cannot all observe the same stale count and exceed the
-		// limit. Zero affected rows means the limit has been reached
-		// (possibly by a concurrent request racing this one).
+		// downloads < download_limit) executes as a single statement, so
+		// concurrent requests cannot all observe the same stale count and
+		// exceed the limit. The limit is compared against the live
+		// download_limit column (not the value read above) so a concurrent
+		// change to the limit itself can't be raced either. Zero affected
+		// rows means the limit has been reached (possibly by a concurrent
+		// request racing this one, or because the limit was lowered).
 		if l.DownloadLimit != nil {
 			downloadLimit := *l.DownloadLimit
 
@@ -65,16 +71,21 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 				return ErrFileNotFound
 			}
 
-			n, err := graph.Link.Update().
-				Where(link.ID(l.ID), link.DownloadsLT(downloadLimit)).
+			affected, err := graph.Link.Update().
+				Where(
+					link.ID(l.ID),
+					predicate.Link(func(s *entsql.Selector) {
+						s.Where(entsql.ColumnsLT(link.FieldDownloads, link.FieldDownloadLimit))
+					}),
+				).
 				AddDownloads(1).
 				Save(ctx)
 			if err != nil {
-				slog.Error("failed to increment downloads for link", "path", linkPath, "downloads", l.Downloads, "err", err)
+				slog.Error("failed to increment downloads for link", "path", linkPath, "downloads", l.Downloads, "download_limit", downloadLimit, "err", err)
 				return ErrFileNotFound
 			}
-			if n == 0 {
-				slog.Info("Failed attempt to download link, maximum downloads reached", "path", linkPath, "download_limit", downloadLimit)
+			if affected == 0 {
+				slog.Info("Failed attempt to download link, maximum downloads reached", "path", linkPath, "downloads", l.Downloads, "download_limit", downloadLimit)
 				return ErrFileNotFound
 			}
 		} else {

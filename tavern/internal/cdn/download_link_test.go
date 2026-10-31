@@ -179,33 +179,101 @@ func TestDownloadLink(t *testing.T) {
 		// Regression test for #2410: concurrent requests must not be able to
 		// exceed DownloadLimit via a check-then-increment race.
 		raceAsset := newAsset(graph, "RaceAsset", []byte("race_content"))
-		limit := 1
+		limit := 5
 		raceLink := graph.Link.Create().
 			SetAsset(raceAsset).
 			SetExpiresAt(time.Now().Add(1 * time.Hour)).
 			SetDownloadLimit(limit).
 			SaveX(ctx)
 
-		const concurrency = 20
+		const concurrency = 50
 		var successCount atomic.Int64
+		var rejectedCount atomic.Int64
+		var unexpectedCount atomic.Int64
 		var wg sync.WaitGroup
+		// Release all goroutines at once (rather than staggering their
+		// startup) to maximize contention on the read-then-write window the
+		// atomic UPDATE is protecting.
+		start := make(chan struct{})
 		wg.Add(concurrency)
 		for i := 0; i < concurrency; i++ {
 			go func() {
 				defer wg.Done()
+				<-start
 				req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/download/%s", raceLink.Path), nil)
 				w := httptest.NewRecorder()
 				handler.ServeHTTP(w, req)
-				if w.Result().StatusCode == http.StatusOK {
+				switch w.Result().StatusCode {
+				case http.StatusOK:
 					successCount.Add(1)
+				case cdn.ErrFileNotFound.StatusCode:
+					rejectedCount.Add(1)
+				default:
+					// Anything other than a clean 200 or the expected 404
+					// (e.g. a 500 masked as a "rejection") must be surfaced
+					// rather than silently counted as a correct rejection.
+					unexpectedCount.Add(1)
 				}
 			}()
 		}
+		close(start)
 		wg.Wait()
 
+		assert.Equal(t, int64(0), unexpectedCount.Load(), "no request should return a status other than 200 or the expected 404")
 		assert.Equal(t, int64(limit), successCount.Load(), "exactly DownloadLimit requests should succeed, regardless of concurrency")
+		assert.Equal(t, int64(concurrency-limit), rejectedCount.Load(), "every request beyond DownloadLimit should be rejected with 404")
 
 		reloaded := graph.Link.GetX(ctx, raceLink.ID)
 		assert.Equal(t, limit, reloaded.Downloads, "Downloads counter must not exceed DownloadLimit")
+	})
+
+	t.Run("DownloadLimitSequentialAboveOne", func(t *testing.T) {
+		// Sanity check that limits above 1 allow exactly that many downloads
+		// before being rejected, i.e. the fix didn't collapse every limit to 1.
+		seqAsset := newAsset(graph, "SequentialLimitAsset", []byte("sequential_content"))
+		limit := 3
+		seqLink := graph.Link.Create().
+			SetAsset(seqAsset).
+			SetExpiresAt(time.Now().Add(1 * time.Hour)).
+			SetDownloadLimit(limit).
+			SaveX(ctx)
+
+		for i := 0; i < limit; i++ {
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/download/%s", seqLink.Path), nil)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+			require.Equal(t, http.StatusOK, w.Result().StatusCode, "download %d of %d should succeed", i+1, limit)
+		}
+
+		// The next download beyond the limit must be rejected.
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/download/%s", seqLink.Path), nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		assert.Equal(t, cdn.ErrFileNotFound.StatusCode, w.Result().StatusCode)
+
+		reloaded := graph.Link.GetX(ctx, seqLink.ID)
+		assert.Equal(t, limit, reloaded.Downloads)
+	})
+
+	t.Run("UnlimitedDownloadsIncrementCounter", func(t *testing.T) {
+		// A link with no DownloadLimit set is never rejected, but the
+		// Downloads counter should still be incremented atomically on every
+		// successful download (AddDownloads, not the old stale SetDownloads).
+		unlimitedAsset := newAsset(graph, "UnlimitedAsset", []byte("unlimited_content"))
+		unlimitedLink := graph.Link.Create().
+			SetAsset(unlimitedAsset).
+			SetExpiresAt(time.Now().Add(1 * time.Hour)).
+			SaveX(ctx)
+
+		const requests = 5
+		for i := 0; i < requests; i++ {
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/download/%s", unlimitedLink.Path), nil)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+			require.Equal(t, http.StatusOK, w.Result().StatusCode)
+		}
+
+		reloaded := graph.Link.GetX(ctx, unlimitedLink.ID)
+		assert.Equal(t, requests, reloaded.Downloads)
 	})
 }
