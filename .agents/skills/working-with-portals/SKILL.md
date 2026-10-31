@@ -70,6 +70,30 @@ Each portal uses two primary pubsub topics managed by `tavern/internal/portals/m
 - `PORTAL_IN_<portal_id>`: Input destined for the agent or the gRPC-side adapter (Tavern WebSocket/CLI -> gRPC Tavern).
 - `PORTAL_OUT_<portal_id>`: Output emitted by the agent or gRPC-side adapter (gRPC Tavern -> WebSocket/PubSub subscribers).
 
+### 2.3 Per-Stream Close vs Global Portal Termination
+`portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE` is used for **two distinct purposes**:
+1. **Per-Stream EOF**: When a specific TCP or UDP stream ends (e.g. client FIN/EOF), a close mote is sent with `stream_id = <target_stream_uuid>`.
+2. **Global Portal Shutdown**: When the entire portal session terminates (e.g. portal closed in Tavern or agent shutting down), a close mote is sent with `stream_id = ""`.
+
+> [!CAUTION]
+> **StreamId Check**: Any portal loop monitoring for portal termination (e.g. in `tavern/internal/portals/api_open_portal.go`, `tavern/internal/c2/api_create_portal.go`, `shell/handler.go`) **MUST check `mote.StreamId == ""`** before treating a `CLOSE` mote as portal-wide termination:
+> ```go
+> if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+>     if mote.StreamId == "" {
+>         // Entire portal closed
+>         return fmt.Errorf("portal closed")
+>     }
+> }
+> ```
+> Missing `mote.StreamId == ""` causes the very first finished TCP stream (e.g. an HTTP request through SOCKS5 closing) to abort the entire portal session.
+
+### 2.4 Application-Layer Crypto & Goroutine ID Inheritance (`cryptocodec`)
+gRPC in Realm uses custom application-layer cryptography (`StreamDecryptCodec` in `tavern/internal/cryptocodec/`). Because gRPC's `encoding.CodecV2` interface (`Marshal(v any)`) does not accept a `context.Context` parameter, `cryptocodec` maps client public keys to Goroutines via an internal LRU cache (`session_pub_keys`).
+
+- **Bidirectional Streams (`CreatePortal`)**: During `CreatePortal`, the initial `Recv()` registers the client public key for the main handler goroutine.
+- **Child Goroutines**: If child goroutines or asynchronous subsystems (such as `pnet.Dial`, `ssh.Mux`, or internal `golang.org/x/crypto/ssh` worker goroutines) call `gstream.Send` directly, `Marshal` -> `Encrypt` cannot locate the public key because grandchild goroutines are not in `session_pub_keys`. This emits `public key not found for id: 0`, sends unencrypted corrupt frames, and immediately terminates the agent's transport loop.
+- **Architecture Requirement**: `CreatePortal` must route all outgoing agent motes through a buffered channel (`agentSendCh`) drained exclusively by the primary `CreatePortal` handler goroutine (registered via `cryptocodec.RegisterCurrentGoroutine(clientPubKey)`). This guarantees both gRPC stream send serialization and seamless cryptographic encryption.
+
 ---
 
 ## 3. SSH Pivot Architecture (`tavern/internal/portals/ssh/`)
@@ -184,18 +208,24 @@ When modifying any portal or SSH pivoting code:
 1. **Decouple Stream IDs**: Never pass a WebSocket/operator `stream_id` directly to `pnet.Dial` or agent TCP calls. Always generate a dedicated UUID.
 2. **Handle Out-of-Order Packets**: Network transit or pubsub delivery can reorder motes. Maintain buffer queues (`pending`) where necessary.
 3. **Format Both Languages**:
-   - Go: `go vet ./tavern/internal/portals/...`
+   - Go: `go fmt ./tavern/... ./tests/...`
    - Rust: `cargo fmt --all --manifest-path implants/Cargo.toml` (Required by CI!)
 4. **Run Unit & Integration Tests**:
    ```bash
-   # Go portal SSH tests (covers stream decoupling, timeouts, credential parsing)
+   # Go portal SSH tests (covers stream decoupling, timeouts, credential parsing, multi-instance PubSub)
    go test -count=1 -v ./tavern/internal/portals/ssh/...
 
    # Go C2 stream tests
    go test -v ./tavern/internal/c2/...
 
+   # Full End-to-End Test (Real Imix, Real Tavern, GCP PubSub Emulator, Mock SSH Server)
+   go test -v -timeout 120s ./tests/e2e/pivot_ssh_e2e_test.go
+
    # Rust portal stream and agent tests
    cargo test -p portal-stream --manifest-path implants/Cargo.toml
    cargo test -p imix --manifest-path implants/Cargo.toml
    ```
-5. **Update This Skill**: If you add new mote kinds, alter the handshake flow, or change timeout values, update this document before concluding your task.
+5. **CI Workflow (`.github/workflows/e2e-pivots.yml`)**:
+   - Automated multi-protocol pivot validation pipeline.
+   - Builds `tavern`, `imix`, `sshecho`, and `pssh` binaries and runs the E2E test suite under GCP PubSub emulation.
+6. **Update This Skill**: If you add new mote kinds, alter the handshake flow, or change timeout values, update this document before concluding your task.
