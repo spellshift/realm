@@ -43,18 +43,8 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		if err != nil {
 			return err
 		}
-		if tc.GetTaskId() <= 0 {
-			return status.Errorf(codes.InvalidArgument, "invalid task id")
-		}
 		taskID = int(tc.GetTaskId())
-		t, err := srv.graph.Task.Get(ctx, taskID)
-		if ent.IsNotFound(err) {
-			return status.Errorf(codes.NotFound, "task not found: %v", err)
-		}
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load task: %v", err)
-		}
-		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
+		if _, err := srv.loadTaskForBeacon(ctx, taskID, beaconID); err != nil {
 			return err
 		}
 	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
@@ -62,18 +52,8 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		if err != nil {
 			return err
 		}
-		if stc.GetShellTaskId() <= 0 {
-			return status.Errorf(codes.InvalidArgument, "invalid shell task id")
-		}
 		shellTaskID = int(stc.GetShellTaskId())
-		st, err := srv.graph.ShellTask.Get(ctx, shellTaskID)
-		if ent.IsNotFound(err) {
-			return status.Errorf(codes.NotFound, "shell task not found: %v", err)
-		}
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
-		}
-		if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
+		if _, err := srv.loadShellTaskForBeacon(ctx, shellTaskID, beaconID); err != nil {
 			return err
 		}
 	} else {

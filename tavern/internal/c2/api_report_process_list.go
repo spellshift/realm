@@ -24,11 +24,8 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		if err != nil {
 			return nil, err
 		}
-		t, err := srv.graph.Task.Get(ctx, int(tc.GetTaskId()))
+		t, err := srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID)
 		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "task not found: %v", err)
-		}
-		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
 			return nil, err
 		}
 		task = t
@@ -42,11 +39,8 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		if err != nil {
 			return nil, err
 		}
-		st, err := srv.graph.ShellTask.Get(ctx, int(stc.GetShellTaskId()))
+		st, err := srv.loadShellTaskForBeacon(ctx, int(stc.GetShellTaskId()), beaconID)
 		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "shell task not found: %v", err)
-		}
-		if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
 			return nil, err
 		}
 		shellTask = st

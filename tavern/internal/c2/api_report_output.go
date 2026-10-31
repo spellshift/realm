@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
-	"realm.pub/tavern/internal/ent"
 )
 
 func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputRequest) (*c2pb.ReportOutputResponse, error) {
@@ -49,15 +48,9 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 			execFinishedAt = &timestamp
 		}
 
-		// Load Task
-		t, err := srv.graph.Task.Get(ctx, int(output.Id))
-		if ent.IsNotFound(err) {
-			return nil, status.Errorf(codes.NotFound, "no task found (id=%d): %v", output.Id, err)
-		}
+		// Load only a task owned by the JWT's beacon.
+		t, err := srv.loadTaskForBeacon(ctx, int(output.Id), beaconID)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to submit task result (id=%d): %v", output.Id, err)
-		}
-		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
 			return nil, err
 		}
 
@@ -114,15 +107,9 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 			execFinishedAt = &timestamp
 		}
 
-		// Load ShellTask
-		t, err := srv.graph.ShellTask.Get(ctx, int(output.Id))
-		if ent.IsNotFound(err) {
-			return nil, status.Errorf(codes.NotFound, "no shell task found (id=%d): %v", output.Id, err)
-		}
+		// Load only a shell task owned by the JWT's beacon.
+		t, err := srv.loadShellTaskForBeacon(ctx, int(output.Id), beaconID)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to submit shell task result (id=%d): %v", output.Id, err)
-		}
-		if err := srv.authorizeShellTaskForBeacon(ctx, t, beaconID); err != nil {
 			return nil, err
 		}
 

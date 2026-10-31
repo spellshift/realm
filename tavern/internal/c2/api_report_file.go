@@ -45,21 +45,12 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		// validated and authorized before any chunk data is buffered.
 		if host == nil {
 			if tc := req.GetTaskContext(); tc != nil {
-				if tc.TaskId <= 0 {
-					return status.Errorf(codes.InvalidArgument, "invalid task id")
-				}
 				beaconID, err := srv.ValidateJWT(tc.Jwt)
 				if err != nil {
 					return err
 				}
-				t, err := srv.graph.Task.Get(ctx, int(tc.TaskId))
-				if ent.IsNotFound(err) {
-					return status.Errorf(codes.NotFound, "failed to find related task")
-				}
+				t, err := srv.loadTaskForBeacon(ctx, int(tc.TaskId), beaconID)
 				if err != nil {
-					return status.Errorf(codes.Internal, "failed to load task: %v", err)
-				}
-				if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
 					return err
 				}
 				task = t
@@ -69,21 +60,12 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 				}
 				host = h
 			} else if stc := req.GetShellTaskContext(); stc != nil {
-				if stc.ShellTaskId <= 0 {
-					return status.Errorf(codes.InvalidArgument, "invalid shell task id")
-				}
 				beaconID, err := srv.ValidateJWT(stc.Jwt)
 				if err != nil {
 					return err
 				}
-				st, err := srv.graph.ShellTask.Get(ctx, int(stc.ShellTaskId))
-				if ent.IsNotFound(err) {
-					return status.Errorf(codes.NotFound, "failed to find related shell task")
-				}
+				st, err := srv.loadShellTaskForBeacon(ctx, int(stc.ShellTaskId), beaconID)
 				if err != nil {
-					return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
-				}
-				if err := srv.authorizeShellTaskForBeacon(ctx, st, beaconID); err != nil {
 					return err
 				}
 				shellTask = st

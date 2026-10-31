@@ -17,23 +17,13 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 
 	var task *ent.Task
 	if tc := req.GetTaskContext(); tc != nil {
-		if tc.GetTaskId() <= 0 {
-			return status.Errorf(codes.InvalidArgument, "invalid task id")
-		}
 		beaconID, err := srv.ValidateJWT(tc.GetJwt())
 		if err != nil {
 			return err
 		}
-		// The referenced task must exist and belong to the JWT's beacon,
-		// otherwise any valid token could fetch arbitrary tome assets.
-		t, err := srv.graph.Task.Get(ctx, int(tc.GetTaskId()))
-		if ent.IsNotFound(err) {
-			return status.Errorf(codes.NotFound, "task not found: %v", err)
-		}
+		// The referenced task must belong to the JWT's beacon.
+		t, err := srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID)
 		if err != nil {
-			return status.Errorf(codes.Internal, "failed to load task: %v", err)
-		}
-		if err := srv.authorizeTaskForBeacon(ctx, t, beaconID); err != nil {
 			return err
 		}
 		task = t

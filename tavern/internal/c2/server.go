@@ -18,6 +18,10 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
@@ -134,7 +138,7 @@ func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
 		}
 		// 2. Return the PUBLIC key for verification
 		return srv.jwtPublicKey, nil
-	})
+	}, jwt.WithJSONNumber())
 
 	if err != nil || !token.Valid {
 		return 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
@@ -153,55 +157,46 @@ func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
 	return beaconID, nil
 }
 
-// authorizeTaskForBeacon ensures the task belongs to the beacon bound to the JWT.
-func (srv *Server) authorizeTaskForBeacon(ctx context.Context, t *ent.Task, beaconID int) error {
-	ownerID, err := t.QueryBeacon().OnlyID(ctx)
+// loadTaskForBeacon loads a task only when it belongs to the JWT's beacon.
+// A foreign task and a nonexistent task have the same response.
+func (srv *Server) loadTaskForBeacon(ctx context.Context, taskID, beaconID int) (*ent.Task, error) {
+	if taskID <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "invalid task id")
+	}
+	t, err := srv.graph.Task.Query().
+		Where(task.ID(taskID), task.HasBeaconWith(beacon.ID(beaconID))).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, status.Error(codes.NotFound, "task not found")
+	}
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load task owner: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to load task: %v", err)
 	}
-	if ownerID != beaconID {
-		return status.Errorf(codes.PermissionDenied, "task %d does not belong to this beacon", t.ID)
-	}
-	return nil
+	return t, nil
 }
 
-// authorizeShellTaskForBeacon ensures the shell task belongs (via its shell) to the beacon bound to the JWT.
-func (srv *Server) authorizeShellTaskForBeacon(ctx context.Context, st *ent.ShellTask, beaconID int) error {
-	ownerID, err := st.QueryShell().QueryBeacon().OnlyID(ctx)
+// loadShellTaskForBeacon loads a shell task only when its shell belongs to
+// the JWT's beacon.
+func (srv *Server) loadShellTaskForBeacon(ctx context.Context, shellTaskID, beaconID int) (*ent.ShellTask, error) {
+	if shellTaskID <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "invalid shell task id")
+	}
+	st, err := srv.graph.ShellTask.Query().
+		Where(shelltask.ID(shellTaskID), shelltask.HasShellWith(shell.HasBeaconWith(beacon.ID(beaconID)))).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, status.Error(codes.NotFound, "shell task not found")
+	}
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load shell task owner: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to load shell task: %v", err)
 	}
-	if ownerID != beaconID {
-		return status.Errorf(codes.PermissionDenied, "shell task %d does not belong to this beacon", st.ID)
-	}
-	return nil
+	return st, nil
 }
 
 // parseBeaconIDClaim extracts the beacon ID from the JWT beacon_id claim.
-// Numeric JSON claims decode as float64, so accept float64, int variants,
-// json.Number, and strictly-numeric strings.
+// WithJSONNumber preserves integer precision when decoding a signed claim.
 func parseBeaconIDClaim(v any) (int, error) {
 	switch id := v.(type) {
-	case float64:
-		if id <= 0 || id != float64(int(id)) {
-			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
-		}
-		return int(id), nil
-	case float32:
-		if id <= 0 || id != float32(int(id)) {
-			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
-		}
-		return int(id), nil
-	case int:
-		if id <= 0 {
-			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
-		}
-		return id, nil
-	case int64:
-		if id <= 0 || int64(int(id)) != id {
-			return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
-		}
-		return int(id), nil
 	case json.Number:
 		return parseBeaconIDString(string(id))
 	case string:

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
@@ -189,7 +190,6 @@ func TestJWTValidate(t *testing.T) {
 	}
 	// Verify bound token succeeds and returns the beacon ID
 	beaconID, err := srv.ValidateJWT(tokenStr)
-	fmt.Println(err)
 	assert.Nil(t, err)
 	assert.Equal(t, 1234, beaconID)
 
@@ -234,5 +234,16 @@ func TestJWTValidate(t *testing.T) {
 		}
 		_, err = srv.ValidateJWT(badStr)
 		assert.NotNil(t, err, "expected rejection for beacon_id claim %q", bad)
+	}
+
+	for _, bad := range []json.Number{"1.5", "9223372036854775808"} {
+		badToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+			ClaimBeaconID: bad,
+			"exp":         time.Now().Add(time.Hour).Unix(),
+		})
+		badStr, err := badToken.SignedString(privKey)
+		assert.NoError(t, err)
+		_, err = srv.ValidateJWT(badStr)
+		assert.Error(t, err, "expected rejection for beacon_id claim %s", bad)
 	}
 }
