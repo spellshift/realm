@@ -28,7 +28,6 @@ import { useMutation } from "@apollo/client";
 import SshTerminal from "./components/SshTerminal";
 import PtyTerminal from "./components/PtyTerminal";
 import TabContextMenu from "./components/TabContextMenu";
-import RenameTabModal from "./components/RenameTabModal";
 import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
 import { formatPivotTabLabel } from "./utils/networkGraphUtils";
 import { DEFAULT_RC_ALIASES_SCRIPT, registerUserSymbolsFromCode } from "./utils/eldritchLsp";
@@ -220,7 +219,14 @@ const ShellContent = () => {
     tab: null,
   });
 
-  const [renameModalTab, setRenameModalTab] = useState<PortalTab | null>(null);
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTabTitle, setEditingTabTitle] = useState<string>("");
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  const startEditingTab = useCallback((tab: PortalTab) => {
+    setEditingTabId(tab.id);
+    setEditingTabTitle(tab.customTitle || formatPivotTabLabel(tab));
+  }, []);
 
   const handleRenameTab = useCallback(
     (tabId: string, newTitle: string) => {
@@ -255,6 +261,69 @@ const ShellContent = () => {
             ...t,
             customTitle: undefined,
           };
+        })
+      );
+    },
+    [recordCustomTitle]
+  );
+
+  const commitInlineRename = useCallback(
+    (tabId: string, newTitle: string) => {
+      const trimmed = newTitle.trim();
+      if (trimmed) {
+        handleRenameTab(tabId, trimmed);
+      } else {
+        handleResetTabName(tabId);
+      }
+      setEditingTabId(null);
+    },
+    [handleRenameTab, handleResetTabName]
+  );
+
+  const cancelInlineRename = useCallback(() => {
+    setEditingTabId(null);
+  }, []);
+
+  useEffect(() => {
+    if (editingTabId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingTabId]);
+
+  const handleRenamePivot = useCallback(
+    (pivotIdStr: string, newTitle: string) => {
+      const trimmed = newTitle.trim();
+      recordCustomTitle(pivotIdStr, trimmed || undefined);
+      setPortalTabs((prev) =>
+        prev.map((t) => {
+          if (t.pivotId && String(t.pivotId) === String(pivotIdStr)) {
+            recordCustomTitle(t.id, trimmed || undefined);
+            return {
+              ...t,
+              customTitle: trimmed || undefined,
+            };
+          }
+          return t;
+        })
+      );
+    },
+    [recordCustomTitle]
+  );
+
+  const handleResetPivotName = useCallback(
+    (pivotIdStr: string) => {
+      recordCustomTitle(pivotIdStr, undefined);
+      setPortalTabs((prev) =>
+        prev.map((t) => {
+          if (t.pivotId && String(t.pivotId) === String(pivotIdStr)) {
+            recordCustomTitle(t.id, undefined);
+            return {
+              ...t,
+              customTitle: undefined,
+            };
+          }
+          return t;
         })
       );
     },
@@ -887,11 +956,15 @@ const ShellContent = () => {
                   const isTabConnecting = status === "connecting";
                   const isSsh = tab.type.toLowerCase() === "ssh";
                   const tabLabel = formatPivotTabLabel(tab);
+                  const isEditing = editingTabId === tab.id;
 
                   return (
                     <Tab
                       key={tab.id}
-                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseDown={(e) => {
+                        if (isEditing) return;
+                        e.preventDefault();
+                      }}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -902,7 +975,11 @@ const ShellContent = () => {
                           tab,
                         });
                       }}
-                      onDoubleClick={() => setRenameModalTab(tab)}
+                      onDoubleClick={() => {
+                        if (!isEditing) {
+                          startEditingTab(tab);
+                        }
+                      }}
                       _selected={{
                         color: "white",
                         bg: "#1f2937",
@@ -920,9 +997,41 @@ const ShellContent = () => {
                           isSsh={isSsh}
                         />
 
-                        <span className={isDisconnected ? "line-through text-gray-400" : ""}>
-                          {tabLabel}
-                        </span>
+                        {isEditing ? (
+                          <input
+                            ref={editInputRef}
+                            type="text"
+                            data-testid="inline-rename-tab-input"
+                            aria-label={`Rename ${tabLabel} tab`}
+                            value={editingTabTitle}
+                            onChange={(e) => setEditingTabTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                commitInlineRename(tab.id, editingTabTitle);
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                cancelInlineRename();
+                              }
+                            }}
+                            onBlur={() => {
+                              commitInlineRename(tab.id, editingTabTitle);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onDoubleClick={(e) => e.stopPropagation()}
+                            className="bg-[#12151c] text-white text-xs px-1.5 py-0.5 rounded border border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 min-w-[70px] max-w-[140px]"
+                          />
+                        ) : (
+                          <span
+                            className={isDisconnected ? "line-through text-gray-400" : ""}
+                            title="Double-click to rename"
+                          >
+                            {tabLabel}
+                          </span>
+                        )}
 
                         {isDisconnected && (
                           <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-semibold">
@@ -933,7 +1042,8 @@ const ShellContent = () => {
                         <span
                           role="button"
                           tabIndex={0}
-                          aria-label={`Close ${tabLabel} tab`}
+                          aria-label={`Minimize ${tabLabel} tab`}
+                          title="Minimize"
                           onClick={(e) => handleClosePortalTab(tab.id, e)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
@@ -1107,10 +1217,13 @@ const ShellContent = () => {
                 (!p.closedAt && String(p.kind || "").toLowerCase() === "pty"
                   ? lastUnboundPtyTargetRef.current || undefined
                   : undefined);
-              if (activeTarget) {
-                return { ...p, activeTarget };
-              }
-              return p;
+              const customTitle =
+                matchingTab?.customTitle || customTitles[String(p.id)];
+              return {
+                ...p,
+                ...(activeTarget ? { activeTarget } : {}),
+                ...(customTitle ? { customTitle } : {}),
+              };
             })}
             hostCredentials={hostCredentials}
             allCredentials={allCredentials}
@@ -1136,6 +1249,8 @@ const ShellContent = () => {
               setSshModalInitialCredentialId(credentialId);
               setSshModalOpenExternal(true);
             }}
+            onRenamePivot={handleRenamePivot}
+            onResetPivotName={handleResetPivotName}
             onLoadIntoComposer={handleLoadIntoComposer}
           />
 
@@ -1191,7 +1306,7 @@ const ShellContent = () => {
           onClose={() => setContextMenu((prev) => ({ ...prev, isOpen: false }))}
           onRename={() => {
             if (contextMenu.tab) {
-              setRenameModalTab(contextMenu.tab);
+              startEditingTab(contextMenu.tab);
             }
           }}
           onResetName={() => {
@@ -1199,27 +1314,9 @@ const ShellContent = () => {
               handleResetTabName(contextMenu.tab.id);
             }
           }}
-          onCloseTab={() => {
+          onMinimize={() => {
             if (contextMenu.tab) {
               handleClosePortalTab(contextMenu.tab.id);
-            }
-          }}
-        />
-
-        <RenameTabModal
-          isOpen={Boolean(renameModalTab)}
-          onClose={() => setRenameModalTab(null)}
-          currentName={renameModalTab ? formatPivotTabLabel(renameModalTab) : ""}
-          tabType={renameModalTab?.type || "PTY"}
-          hasCustomName={Boolean(renameModalTab?.customTitle)}
-          onRename={(newName) => {
-            if (renameModalTab) {
-              handleRenameTab(renameModalTab.id, newName);
-            }
-          }}
-          onResetName={() => {
-            if (renameModalTab) {
-              handleResetTabName(renameModalTab.id);
             }
           }}
         />

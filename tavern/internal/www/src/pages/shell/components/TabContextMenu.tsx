@@ -10,6 +10,7 @@ export interface TabContextMenuProps {
     onClose: () => void;
     onRename: () => void;
     onResetName?: () => void;
+    onMinimize?: () => void;
     onCloseTab?: () => void;
 }
 
@@ -22,6 +23,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     onClose,
     onRename,
     onResetName,
+    onMinimize,
     onCloseTab,
 }) => {
     useEffect(() => {
@@ -39,6 +41,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
 
     if (!isOpen) return null;
 
+    const handleMinimizeAction = onMinimize ?? onCloseTab;
     const menuWidth = 160;
     const menuHeight = hasCustomName ? 120 : 90;
     const posX = Math.max(
@@ -94,7 +97,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
                     </button>
                 )}
 
-                {onCloseTab && (
+                {handleMinimizeAction && (
                     <>
                         <div className="border-t border-[#2d3345] my-1" />
                         <button
@@ -102,12 +105,12 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
                             role="menuitem"
                             onClick={() => {
                                 onClose();
-                                onCloseTab();
+                                handleMinimizeAction();
                             }}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left"
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-gray-300 hover:text-white hover:bg-gray-800 transition-colors text-left"
                         >
-                            <Minus className="w-3.5 h-3.5" />
-                            <span>Close Tab</span>
+                            <Minus className="w-3.5 h-3.5 text-gray-400" />
+                            <span>Minimize</span>
                         </button>
                     </>
                 )}
