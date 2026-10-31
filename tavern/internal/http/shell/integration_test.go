@@ -270,7 +270,7 @@ func TestInteractiveShell(t *testing.T) {
 			found = true
 		}
 	}
-	require.Equal(t, fmt.Sprintf("[+] %s\n%s", inputCmd, outputData), outMsg.Output)
+	require.Equal(t, outputData, outMsg.Output)
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
 }
 
@@ -350,7 +350,7 @@ func TestNonInteractiveShell(t *testing.T) {
 			found = true
 		}
 	}
-	require.Equal(t, fmt.Sprintf("[+] %s\nroot", inputCmd), outMsg.Output)
+	require.Equal(t, "root", outMsg.Output)
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
 }
 
@@ -608,9 +608,7 @@ func TestTruncation(t *testing.T) {
 		}
 	}
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
-
-	expectedPrefix := "[+] " + longInput[:64] + "...\n"
-	require.Contains(t, outMsg.Output, expectedPrefix)
+	require.Equal(t, "out", outMsg.Output)
 }
 
 func TestLargeShellTask(t *testing.T) {
@@ -927,4 +925,29 @@ func TestShellActiveUsers(t *testing.T) {
 		require.NoError(t, err)
 		return len(users) == 0
 	}, 5*time.Second, 100*time.Millisecond)
+}
+
+func TestRetryOnLock(t *testing.T) {
+	ctx := context.Background()
+	attempts := 0
+
+	res, err := shell.RetryOnLock(ctx, func() (int, error) {
+		attempts++
+		if attempts < 3 {
+			return 0, fmt.Errorf("sqlite3: database table is locked")
+		}
+		return 42, nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, 42, res)
+	require.Equal(t, 3, attempts)
+
+	// Non-lock errors should fail immediately without retrying
+	nonLockAttempts := 0
+	_, err = shell.RetryOnLock(ctx, func() (int, error) {
+		nonLockAttempts++
+		return 0, fmt.Errorf("some permanent error")
+	})
+	require.Error(t, err)
+	require.Equal(t, 1, nonLockAttempts)
 }

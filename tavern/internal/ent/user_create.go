@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -204,6 +205,21 @@ func (uc *UserCreate) AddEvents(e ...*Event) *UserCreate {
 		ids[i] = e[i].ID
 	}
 	return uc.AddEventIDs(ids...)
+}
+
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by IDs.
+func (uc *UserCreate) AddOperatorNoteIDs(ids ...int) *UserCreate {
+	uc.mutation.AddOperatorNoteIDs(ids...)
+	return uc
+}
+
+// AddOperatorNotes adds the "operator_notes" edges to the OperatorNote entity.
+func (uc *UserCreate) AddOperatorNotes(o ...*OperatorNote) *UserCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uc.AddOperatorNoteIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -457,6 +473,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.OperatorNotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.OperatorNotesTable,
+			Columns: []string{user.OperatorNotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

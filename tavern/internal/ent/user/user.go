@@ -40,6 +40,8 @@ const (
 	EdgeSubscribedHosts = "subscribedHosts"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
 	EdgeEvents = "events"
+	// EdgeOperatorNotes holds the string denoting the operator_notes edge name in mutations.
+	EdgeOperatorNotes = "operator_notes"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// NotificationsTable is the table that holds the notifications relation/edge.
@@ -85,6 +87,13 @@ const (
 	EventsInverseTable = "events"
 	// EventsColumn is the table column denoting the events relation/edge.
 	EventsColumn = "user_events"
+	// OperatorNotesTable is the table that holds the operator_notes relation/edge.
+	OperatorNotesTable = "operator_notes"
+	// OperatorNotesInverseTable is the table name for the OperatorNote entity.
+	// It exists in this package in order to avoid circular dependency with the "operatornote" package.
+	OperatorNotesInverseTable = "operator_notes"
+	// OperatorNotesColumn is the table column denoting the operator_notes relation/edge.
+	OperatorNotesColumn = "operator_note_author"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -289,6 +298,20 @@ func ByEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEventsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOperatorNotesCount orders the results by operator_notes count.
+func ByOperatorNotesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOperatorNotesStep(), opts...)
+	}
+}
+
+// ByOperatorNotes orders the results by operator_notes terms.
+func ByOperatorNotes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOperatorNotesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newNotificationsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -336,5 +359,12 @@ func newEventsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EventsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EventsTable, EventsColumn),
+	)
+}
+func newOperatorNotesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OperatorNotesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, OperatorNotesTable, OperatorNotesColumn),
 	)
 }

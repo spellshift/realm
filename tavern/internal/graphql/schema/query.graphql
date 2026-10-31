@@ -305,5 +305,62 @@ extend type Query {
     """Filtering options for ScheduledTasks returned from the connection."""
     where: ScheduledTaskWhereInput
   ): ScheduledTaskConnection! @requireRole(role: USER)
+  networks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Networks returned from the connection."""
+    orderBy: [NetworkOrder!]
+
+    """Filtering options for Networks returned from the connection."""
+    where: NetworkWhereInput
+  ): NetworkConnection! @requireRole(role: USER)
+  networkHosts(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for NetworkHosts returned from the connection."""
+    orderBy: [NetworkHostOrder!]
+
+    """Filtering options for NetworkHosts returned from the connection."""
+    where: NetworkHostWhereInput
+  ): NetworkHostConnection! @requireRole(role: USER)
+  operatorNotes(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for OperatorNotes returned from the connection."""
+    orderBy: [OperatorNoteOrder!]
+
+    """Filtering options for OperatorNotes returned from the connection."""
+    where: OperatorNoteWhereInput
+  ): OperatorNoteConnection! @requireRole(role: USER)
   me: User!
 }

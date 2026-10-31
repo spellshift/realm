@@ -33,6 +33,8 @@ const (
 	EdgeTask = "task"
 	// EdgeShellTask holds the string denoting the shell_task edge name in mutations.
 	EdgeShellTask = "shell_task"
+	// EdgeNetworkHosts holds the string denoting the network_hosts edge name in mutations.
+	EdgeNetworkHosts = "network_hosts"
 	// Table holds the table name of the hostcredential in the database.
 	Table = "host_credentials"
 	// HostTable is the table that holds the host relation/edge.
@@ -56,6 +58,11 @@ const (
 	ShellTaskInverseTable = "shell_tasks"
 	// ShellTaskColumn is the table column denoting the shell_task relation/edge.
 	ShellTaskColumn = "shell_task_reported_credentials"
+	// NetworkHostsTable is the table that holds the network_hosts relation/edge. The primary key declared below.
+	NetworkHostsTable = "network_host_credentials"
+	// NetworkHostsInverseTable is the table name for the NetworkHost entity.
+	// It exists in this package in order to avoid circular dependency with the "networkhost" package.
+	NetworkHostsInverseTable = "network_hosts"
 )
 
 // Columns holds all SQL columns for hostcredential fields.
@@ -75,6 +82,12 @@ var ForeignKeys = []string{
 	"shell_task_reported_credentials",
 	"task_reported_credentials",
 }
+
+var (
+	// NetworkHostsPrimaryKey and NetworkHostsColumn2 are the table columns denoting the
+	// primary key for the network_hosts relation (M2M).
+	NetworkHostsPrimaryKey = []string{"network_host_id", "host_credential_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -167,6 +180,20 @@ func ByShellTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newShellTaskStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByNetworkHostsCount orders the results by network_hosts count.
+func ByNetworkHostsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNetworkHostsStep(), opts...)
+	}
+}
+
+// ByNetworkHosts orders the results by network_hosts terms.
+func ByNetworkHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNetworkHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newHostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -186,6 +213,13 @@ func newShellTaskStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ShellTaskInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ShellTaskTable, ShellTaskColumn),
+	)
+}
+func newNetworkHostsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NetworkHostsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, NetworkHostsTable, NetworkHostsPrimaryKey...),
 	)
 }
 

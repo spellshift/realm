@@ -209,6 +209,7 @@ async fn handle_incoming_mote(
                 Payload::Tcp(t) => t.data.len(),
                 Payload::Udp(u) => u.data.len(),
                 Payload::Shell(s) => s.input.len(),
+                Payload::Ssh(s) => s.data.len(),
             });
             log::info!("new portal stream {stream_id} seq={seq_id} size={size}");
         }
@@ -298,6 +299,11 @@ async fn stream_handler(
             Payload::Shell(_) => {
                 #[cfg(feature = "print_debug")]
                 log::warn!("Shell payloads should have been intercepted before stream handler");
+                Ok(())
+            }
+            Payload::Ssh(_) => {
+                #[cfg(feature = "print_debug")]
+                log::warn!("SSH payloads should be negotiated by Tavern before reaching agent");
                 Ok(())
             }
         }

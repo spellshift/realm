@@ -53,11 +53,13 @@ type UserEdges struct {
 	SubscribedHosts []*Host `json:"subscribedHosts,omitempty"`
 	// Events associated with the user.
 	Events []*Event `json:"events,omitempty"`
+	// Notes authored by the user.
+	OperatorNotes []*OperatorNote `json:"operator_notes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 	// totalCount holds the count of the edges above.
-	totalCount [7]map[string]int
+	totalCount [8]map[string]int
 
 	namedNotifications   map[string][]*Notification
 	namedTomes           map[string][]*Tome
@@ -66,6 +68,7 @@ type UserEdges struct {
 	namedFavoriteHosts   map[string][]*Host
 	namedSubscribedHosts map[string][]*Host
 	namedEvents          map[string][]*Event
+	namedOperatorNotes   map[string][]*OperatorNote
 }
 
 // NotificationsOrErr returns the Notifications value or an error if the edge
@@ -129,6 +132,15 @@ func (e UserEdges) EventsOrErr() ([]*Event, error) {
 		return e.Events, nil
 	}
 	return nil, &NotLoadedError{edge: "events"}
+}
+
+// OperatorNotesOrErr returns the OperatorNotes value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) OperatorNotesOrErr() ([]*OperatorNote, error) {
+	if e.loadedTypes[7] {
+		return e.OperatorNotes, nil
+	}
+	return nil, &NotLoadedError{edge: "operator_notes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -260,6 +272,11 @@ func (u *User) QuerySubscribedHosts() *HostQuery {
 // QueryEvents queries the "events" edge of the User entity.
 func (u *User) QueryEvents() *EventQuery {
 	return NewUserClient(u.config).QueryEvents(u)
+}
+
+// QueryOperatorNotes queries the "operator_notes" edge of the User entity.
+func (u *User) QueryOperatorNotes() *OperatorNoteQuery {
+	return NewUserClient(u.config).QueryOperatorNotes(u)
 }
 
 // Update returns a builder for updating this User.
@@ -471,6 +488,30 @@ func (u *User) appendNamedEvents(name string, edges ...*Event) {
 		u.Edges.namedEvents[name] = []*Event{}
 	} else {
 		u.Edges.namedEvents[name] = append(u.Edges.namedEvents[name], edges...)
+	}
+}
+
+// NamedOperatorNotes returns the OperatorNotes named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedOperatorNotes(name string) ([]*OperatorNote, error) {
+	if u.Edges.namedOperatorNotes == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedOperatorNotes[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedOperatorNotes(name string, edges ...*OperatorNote) {
+	if u.Edges.namedOperatorNotes == nil {
+		u.Edges.namedOperatorNotes = make(map[string][]*OperatorNote)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedOperatorNotes[name] = []*OperatorNote{}
+	} else {
+		u.Edges.namedOperatorNotes[name] = append(u.Edges.namedOperatorNotes[name], edges...)
 	}
 }
 

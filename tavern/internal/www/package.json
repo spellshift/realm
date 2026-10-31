@@ -50,6 +50,7 @@
   "scripts": {
     "start": "node scripts/generate-docs.js && react-scripts start",
     "build": "node scripts/generate-docs.js && react-scripts build",
+    "pretest": "node scripts/generate-docs.js",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

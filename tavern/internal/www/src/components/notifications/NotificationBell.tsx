@@ -27,7 +27,17 @@ import useUrgentNotifications from '../../hooks/useUrgentNotifications';
 import { FileTerminal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-const NotificationBell = () => {
+interface NotificationBellProps {
+    buttonClassName?: string;
+    iconClassName?: string;
+    placement?: "bottom-end" | "top-start" | "top-end";
+}
+
+const NotificationBell: React.FC<NotificationBellProps> = ({
+    buttonClassName,
+    iconClassName,
+    placement = "bottom-end",
+}) => {
     const { data, refetch } = useQuery(GET_NOTIFICATIONS, {
         variables: { first: 100 },
         pollInterval: 5000, // Poll every 5 seconds
@@ -156,35 +166,60 @@ const NotificationBell = () => {
 
     return (
         <Popover
-            placement="bottom-end"
+            placement={placement}
             onClose={handleClose}
         >
             <PopoverTrigger>
-                <Box as="button" type="button" position="relative" cursor="pointer" p={2} borderRadius="md" _hover={{ bg: "gray.800" }} bg="transparent" border="none" outline="none" display="flex" alignItems="center">
-                    <BellIcon className="h-6 w-6 text-gray-400 hover:text-white" />
-                    {unreadCount > 0 && (
-                        <Box
-                            position="absolute"
-                            top="0"
-                            right="0"
-                            bg="purple.700"
-                            color="white"
-                            fontSize="10px"
-                            fontWeight="bold"
-                            borderRadius="full"
-                            w="18px"
-                            h="18px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            border="2px solid #111827"
-                        >
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                        </Box>
-                    )}
-                </Box>
+                {buttonClassName ? (
+                    <button
+                        type="button"
+                        aria-label="Notifications"
+                        className={buttonClassName}
+                    >
+                        <BellIcon className={iconClassName || "h-4 w-4"} />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                        )}
+                    </button>
+                ) : (
+                    <Box as="button" type="button" position="relative" cursor="pointer" p={2} borderRadius="md" _hover={{ bg: "gray.800" }} bg="transparent" border="none" outline="none" display="flex" alignItems="center">
+                        <BellIcon className="h-6 w-6 text-gray-400 hover:text-white" />
+                        {unreadCount > 0 && (
+                            <Box
+                                position="absolute"
+                                top="0"
+                                right="0"
+                                bg="purple.700"
+                                color="white"
+                                fontSize="10px"
+                                fontWeight="bold"
+                                borderRadius="full"
+                                w="18px"
+                                h="18px"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                border="2px solid #111827"
+                            >
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </Box>
+                        )}
+                    </Box>
+                )}
             </PopoverTrigger>
-            <PopoverContent bg="gray.900" borderColor="gray.700" color="white" w="350px" boxShadow="xl" _focus={{ outline: 'none' }}>
+            <PopoverContent
+                rootProps={{ zIndex: 1500, style: { zIndex: 1500 } }}
+                bg="gray.900"
+                borderColor="gray.700"
+                color="white"
+                w="350px"
+                boxShadow="xl"
+                zIndex={1500}
+                className="z-50"
+                _focus={{ outline: 'none' }}
+            >
                 <PopoverArrow bg="gray.900" />
                 <Box p={4} borderBottomWidth="1px" borderColor="gray.700">
                     <Text fontWeight="bold">Notifications</Text>

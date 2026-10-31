@@ -114,6 +114,13 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Events associated with the user."),
+		edge.From("operator_notes", OperatorNote.Type).
+			Ref("author").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Notes authored by the user."),
 	}
 }
 

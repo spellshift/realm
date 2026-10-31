@@ -48,11 +48,15 @@ type HostCredentialEdges struct {
 	Task *Task `json:"task,omitempty"`
 	// Shell Task that reported this credential.
 	ShellTask *ShellTask `json:"shell_task,omitempty"`
+	// Network hosts associated with this credential.
+	NetworkHosts []*NetworkHost `json:"network_hosts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
+
+	namedNetworkHosts map[string][]*NetworkHost
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -86,6 +90,15 @@ func (e HostCredentialEdges) ShellTaskOrErr() (*ShellTask, error) {
 		return nil, &NotFoundError{label: shelltask.Label}
 	}
 	return nil, &NotLoadedError{edge: "shell_task"}
+}
+
+// NetworkHostsOrErr returns the NetworkHosts value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostCredentialEdges) NetworkHostsOrErr() ([]*NetworkHost, error) {
+	if e.loadedTypes[3] {
+		return e.NetworkHosts, nil
+	}
+	return nil, &NotLoadedError{edge: "network_hosts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -207,6 +220,11 @@ func (hc *HostCredential) QueryShellTask() *ShellTaskQuery {
 	return NewHostCredentialClient(hc.config).QueryShellTask(hc)
 }
 
+// QueryNetworkHosts queries the "network_hosts" edge of the HostCredential entity.
+func (hc *HostCredential) QueryNetworkHosts() *NetworkHostQuery {
+	return NewHostCredentialClient(hc.config).QueryNetworkHosts(hc)
+}
+
 // Update returns a builder for updating this HostCredential.
 // Note that you need to call HostCredential.Unwrap() before calling this method if this HostCredential
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -246,6 +264,30 @@ func (hc *HostCredential) String() string {
 	builder.WriteString(fmt.Sprintf("%v", hc.Kind))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedNetworkHosts returns the NetworkHosts named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (hc *HostCredential) NamedNetworkHosts(name string) ([]*NetworkHost, error) {
+	if hc.Edges.namedNetworkHosts == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := hc.Edges.namedNetworkHosts[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (hc *HostCredential) appendNamedNetworkHosts(name string, edges ...*NetworkHost) {
+	if hc.Edges.namedNetworkHosts == nil {
+		hc.Edges.namedNetworkHosts = make(map[string][]*NetworkHost)
+	}
+	if len(edges) == 0 {
+		hc.Edges.namedNetworkHosts[name] = []*NetworkHost{}
+	} else {
+		hc.Edges.namedNetworkHosts[name] = append(hc.Edges.namedNetworkHosts[name], edges...)
+	}
 }
 
 // HostCredentials is a parsable slice of HostCredential.
