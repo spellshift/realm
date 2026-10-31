@@ -128,9 +128,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	}
 }
 
-// CreateTask creates a user, host, beacon, tome, quest, and a task assigned
-// to the beacon. It returns the task and beacon IDs.
-func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
+func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 	// Create user
 	u, err := client.User.Create().
 		SetOauthID("testuser").
@@ -138,7 +136,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
 		SetPhotoURL("http://example.com/photo.jpg"). // Required field
 		Save(ctx)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create user: %w", err)
+		return 0, fmt.Errorf("failed to create user: %w", err)
 	}
 
 	// Create Host (Required by Beacon)
@@ -149,7 +147,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
 		SetPlatform(c2pb.Host_PLATFORM_LINUX).
 		Save(ctx)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create host: %w", err)
+		return 0, fmt.Errorf("failed to create host: %w", err)
 	}
 
 	// Create beacon
@@ -159,7 +157,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
 		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).
 		Save(ctx)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create beacon: %w", err)
+		return 0, fmt.Errorf("failed to create beacon: %w", err)
 	}
 
 	// Create tome
@@ -171,7 +169,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
 		SetEldritch("print('hello')"). // Required field
 		Save(ctx)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create tome: %w", err)
+		return 0, fmt.Errorf("failed to create tome: %w", err)
 	}
 
 	// Create quest
@@ -181,7 +179,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
 		SetTome(tom).
 		Save(ctx)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create quest: %w", err)
+		return 0, fmt.Errorf("failed to create quest: %w", err)
 	}
 
 	// Create Task
@@ -191,10 +189,10 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, int, error) {
 		Save(ctx)
 
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to create task: %w", err)
+		return 0, fmt.Errorf("failed to create task: %w", err)
 	}
 
-	return t.ID, b.ID, nil
+	return t.ID, nil
 }
 
 func TestPortalIntegration(t *testing.T) {
@@ -204,8 +202,9 @@ func TestPortalIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Setup Data (Task)
-	taskID, beaconID, err := CreateTask(ctx, env.EntClient)
+	taskID, err := CreateTask(ctx, env.EntClient)
 	require.NoError(t, err)
+	beaconID := env.EntClient.Task.GetX(ctx, taskID).QueryBeacon().OnlyX(ctx).ID
 
 	// 2. Start C2.CreatePortal (Agent Side)
 	c2Stream, err := env.C2Client.CreatePortal(ctx)

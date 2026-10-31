@@ -26,7 +26,7 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		}
 		t, err := srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID)
 		if err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.NotFound, "task not found: %v", err)
 		}
 		task = t
 		h, err := t.QueryBeacon().QueryHost().Only(ctx)
@@ -41,7 +41,7 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		}
 		st, err := srv.loadShellTaskForBeacon(ctx, int(stc.GetShellTaskId()), beaconID)
 		if err != nil {
-			return nil, err
+			return nil, status.Errorf(codes.NotFound, "shell task not found: %v", err)
 		}
 		shellTask = st
 		h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)

@@ -15,33 +15,35 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
+	var jwt string
 	if tc := req.GetTaskContext(); tc != nil {
-		beaconID, err := srv.ValidateJWT(tc.GetJwt())
-		if err != nil {
-			return err
-		}
-		if _, err := srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID); err != nil {
-			return err
-		}
+		jwt = tc.GetJwt()
 	} else if stc := req.GetShellTaskContext(); stc != nil {
-		beaconID, err := srv.ValidateJWT(stc.GetJwt())
-		if err != nil {
-			return err
-		}
-		if _, err := srv.loadShellTaskForBeacon(ctx, int(stc.GetShellTaskId()), beaconID); err != nil {
-			return err
-		}
+		jwt = stc.GetJwt()
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	// Shell tasks can fetch assets too, so preserve the shared asset lookup.
+	beaconID, err := srv.ValidateJWT(jwt)
+	if err != nil {
+		return err
+	}
+	if tc := req.GetTaskContext(); tc != nil {
+		_, err = srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID)
+	} else {
+		_, err = srv.loadShellTaskForBeacon(ctx, int(req.GetShellTaskContext().GetShellTaskId()), beaconID)
+	}
+	if err != nil {
+		return status.Errorf(codes.NotFound, "%v", err)
+	}
+
+	// Load Asset
 	name := req.GetName()
 	a, err := srv.graph.Asset.Query().
 		Where(asset.Name(name)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
-		return status.Errorf(codes.NotFound, "asset %q not found", name)
+		return status.Errorf(codes.NotFound, "%v", err)
 	}
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to query asset (%q): %v", name, err)
@@ -78,7 +80,7 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 			Chunk: chunk,
 		})
 		if sendErr != nil {
-			return status.Errorf(codes.Internal, "failed to send file content: %v", sendErr)
+			return status.Errorf(codes.Internal, "failed to send file content: %v", err)
 		}
 	}
 }

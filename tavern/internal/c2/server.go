@@ -106,11 +106,9 @@ func GetClientIP(ctx context.Context) string {
 	return "unknown"
 }
 
-// ClaimBeaconID is the JWT claim carrying the beacon DB ID the token is bound to.
 const ClaimBeaconID = "beacon_id"
 
-// generateTaskJWT creates a signed JWT token bound to the given beacon ID.
-// Beacons may only use the token to report data for tasks owned by that beacon.
+// generateTaskJWT creates a signed JWT token containing the beacon ID
 func (srv *Server) generateTaskJWT(beaconID int) (string, error) {
 	claims := jwt.MapClaims{
 		ClaimBeaconID: beaconID,
@@ -127,9 +125,6 @@ func (srv *Server) generateTaskJWT(beaconID int) (string, error) {
 	return signedToken, nil
 }
 
-// ValidateJWT verifies the token signature + expiry and returns the beacon ID
-// the token is bound to. Tokens without a valid beacon_id claim are rejected so
-// a beacon can only report data attached to its own beacon.
 func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
 	token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (any, error) {
 		// 1. Verify the signing method is EdDSA
@@ -144,73 +139,26 @@ func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
 		return 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
+	beaconID, ok := token.Claims.(jwt.MapClaims)[ClaimBeaconID].(json.Number)
 	if !ok {
-		return 0, status.Errorf(codes.PermissionDenied, "invalid token claims")
+		return 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
 	}
-
-	beaconID, err := parseBeaconIDClaim(claims[ClaimBeaconID])
-	if err != nil {
-		return 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
+	id, err := strconv.Atoi(string(beaconID))
+	if err != nil || id <= 0 {
+		return 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
 	}
-
-	return beaconID, nil
+	slog.Info(fmt.Sprintf("received valid JWT: %s", jwttoken))
+	return id, nil
 }
 
-// loadTaskForBeacon loads a task only when it belongs to the JWT's beacon.
-// A foreign task and a nonexistent task have the same response.
 func (srv *Server) loadTaskForBeacon(ctx context.Context, taskID, beaconID int) (*ent.Task, error) {
-	if taskID <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "invalid task id")
-	}
-	t, err := srv.graph.Task.Query().
+	return srv.graph.Task.Query().
 		Where(task.ID(taskID), task.HasBeaconWith(beacon.ID(beaconID))).
 		Only(ctx)
-	if ent.IsNotFound(err) {
-		return nil, status.Error(codes.NotFound, "task not found")
-	}
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to load task: %v", err)
-	}
-	return t, nil
 }
 
-// loadShellTaskForBeacon loads a shell task only when its shell belongs to
-// the JWT's beacon.
 func (srv *Server) loadShellTaskForBeacon(ctx context.Context, shellTaskID, beaconID int) (*ent.ShellTask, error) {
-	if shellTaskID <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "invalid shell task id")
-	}
-	st, err := srv.graph.ShellTask.Query().
+	return srv.graph.ShellTask.Query().
 		Where(shelltask.ID(shellTaskID), shelltask.HasShellWith(shell.HasBeaconWith(beacon.ID(beaconID)))).
 		Only(ctx)
-	if ent.IsNotFound(err) {
-		return nil, status.Error(codes.NotFound, "shell task not found")
-	}
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to load shell task: %v", err)
-	}
-	return st, nil
-}
-
-// parseBeaconIDClaim extracts the beacon ID from the JWT beacon_id claim.
-// WithJSONNumber preserves integer precision when decoding a signed claim.
-func parseBeaconIDClaim(v any) (int, error) {
-	switch id := v.(type) {
-	case json.Number:
-		return parseBeaconIDString(string(id))
-	case string:
-		return parseBeaconIDString(id)
-	default:
-		return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
-	}
-}
-
-// parseBeaconIDString strictly parses a positive integer beacon ID from a string.
-func parseBeaconIDString(id string) (int, error) {
-	parsed, err := strconv.Atoi(id)
-	if err != nil || parsed <= 0 {
-		return 0, fmt.Errorf("missing or invalid %q claim", ClaimBeaconID)
-	}
-	return parsed, nil
 }

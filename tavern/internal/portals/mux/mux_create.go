@@ -15,19 +15,7 @@ import (
 )
 
 // CreatePortal sets up a new portal for a task.
-func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, shellTaskID int) (int, func(), error) {
-	return m.createPortal(ctx, client, taskID, shellTaskID, 0)
-}
-
-// CreatePortalForBeacon creates a portal only when the task belongs to beaconID.
-func (m *Mux) CreatePortalForBeacon(ctx context.Context, client *ent.Client, taskID int, shellTaskID int, beaconID int) (int, func(), error) {
-	if beaconID <= 0 {
-		return 0, nil, fmt.Errorf("invalid beacon ID")
-	}
-	return m.createPortal(ctx, client, taskID, shellTaskID, beaconID)
-}
-
-func (m *Mux) createPortal(ctx context.Context, client *ent.Client, taskID int, shellTaskID int, beaconID int) (int, func(), error) {
+func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, shellTaskID int, beaconID ...int) (int, func(), error) {
 	// 1. DB: Create ent.Portal record (State: Open)
 	var creator *ent.User
 	var beacon *ent.Beacon
@@ -38,8 +26,8 @@ func (m *Mux) createPortal(ctx context.Context, client *ent.Client, taskID int, 
 	if taskID > 0 {
 		// We need to fetch Task dependencies (Beacon, Owner/Creator) to satisfy Portal constraints.
 		q := client.Task.Query().Where(task.ID(taskID))
-		if beaconID > 0 {
-			q.Where(task.HasBeaconWith(entbeacon.ID(beaconID)))
+		if len(beaconID) > 0 {
+			q.Where(task.HasBeaconWith(entbeacon.ID(beaconID[0])))
 		}
 		t, err := q.
 			WithBeacon(func(bq *ent.BeaconQuery) {
@@ -58,8 +46,8 @@ func (m *Mux) createPortal(ctx context.Context, client *ent.Client, taskID int, 
 		pCreate.SetTaskID(taskID)
 	} else if shellTaskID > 0 {
 		q := client.ShellTask.Query().Where(shelltask.ID(shellTaskID))
-		if beaconID > 0 {
-			q.Where(shelltask.HasShellWith(entshell.HasBeaconWith(entbeacon.ID(beaconID))))
+		if len(beaconID) > 0 {
+			q.Where(shelltask.HasShellWith(entshell.HasBeaconWith(entbeacon.ID(beaconID[0]))))
 		}
 		st, err := q.
 			WithCreator().

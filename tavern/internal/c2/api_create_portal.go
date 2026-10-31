@@ -45,30 +45,22 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 			return err
 		}
 		taskID = int(tc.GetTaskId())
-		if taskID <= 0 {
-			return status.Error(codes.InvalidArgument, "invalid task id")
-		}
 	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
 		beaconID, err = srv.ValidateJWT(stc.GetJwt())
 		if err != nil {
 			return err
 		}
 		shellTaskID = int(stc.GetShellTaskId())
-		if shellTaskID <= 0 {
-			return status.Error(codes.InvalidArgument, "invalid shell task id")
-		}
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	portalID, cleanup, err := srv.portalMux.CreatePortalForBeacon(ctx, srv.graph, taskID, shellTaskID, beaconID)
+	if taskID <= 0 && shellTaskID <= 0 {
+		return status.Errorf(codes.InvalidArgument, "invalid task ID or shell task ID")
+	}
+
+	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID, beaconID)
 	if err != nil {
-		if ent.IsNotFound(err) {
-			if taskID > 0 {
-				return status.Error(codes.NotFound, "task not found")
-			}
-			return status.Error(codes.NotFound, "shell task not found")
-		}
 		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "shell_task_id", shellTaskID, "error", err)
 		return status.Errorf(codes.Internal, "failed to create portal: %v", err)
 	}

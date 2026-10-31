@@ -19,8 +19,9 @@ func TestPortalClose(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Setup Data (Task)
-	taskID, beaconID, err := CreateTask(ctx, env.EntClient)
+	taskID, err := CreateTask(ctx, env.EntClient)
 	require.NoError(t, err)
+	beaconID := env.EntClient.Task.GetX(ctx, taskID).QueryBeacon().OnlyX(ctx).ID
 
 	// 2. Start C2.CreatePortal (Agent Side)
 	c2Stream, err := env.C2Client.CreatePortal(ctx)
