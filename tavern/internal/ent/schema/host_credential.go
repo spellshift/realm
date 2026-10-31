@@ -41,7 +41,6 @@ func (HostCredential) Fields() []ent.Field {
 func (HostCredential) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("host", Host.Type).
-			Required().
 			Unique().
 			Annotations(
 				entsql.OnDelete(entsql.Cascade),
@@ -61,6 +60,13 @@ func (HostCredential) Edges() []ent.Edge {
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Shell Task that reported this credential."),
+		edge.From("network_hosts", NetworkHost.Type).
+			Ref("credentials").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Network hosts associated with this credential."),
 	}
 }
 

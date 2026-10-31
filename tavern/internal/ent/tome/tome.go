@@ -181,6 +181,7 @@ const (
 	TacticCOMMAND_AND_CONTROL  Tactic = "COMMAND_AND_CONTROL"
 	TacticEXFILTRATION         Tactic = "EXFILTRATION"
 	TacticIMPACT               Tactic = "IMPACT"
+	TacticSHELL_RC             Tactic = "SHELL_RC"
 )
 
 func (t Tactic) String() string {
@@ -190,7 +191,7 @@ func (t Tactic) String() string {
 // TacticValidator is a validator for the "tactic" field enum values. It is called by the builders before save.
 func TacticValidator(t Tactic) error {
 	switch t {
-	case TacticUNSPECIFIED, TacticRECON, TacticRESOURCE_DEVELOPMENT, TacticINITIAL_ACCESS, TacticEXECUTION, TacticPERSISTENCE, TacticPRIVILEGE_ESCALATION, TacticDEFENSE_EVASION, TacticCREDENTIAL_ACCESS, TacticDISCOVERY, TacticLATERAL_MOVEMENT, TacticCOLLECTION, TacticCOMMAND_AND_CONTROL, TacticEXFILTRATION, TacticIMPACT:
+	case TacticUNSPECIFIED, TacticRECON, TacticRESOURCE_DEVELOPMENT, TacticINITIAL_ACCESS, TacticEXECUTION, TacticPERSISTENCE, TacticPRIVILEGE_ESCALATION, TacticDEFENSE_EVASION, TacticCREDENTIAL_ACCESS, TacticDISCOVERY, TacticLATERAL_MOVEMENT, TacticCOLLECTION, TacticCOMMAND_AND_CONTROL, TacticEXFILTRATION, TacticIMPACT, TacticSHELL_RC:
 		return nil
 	default:
 		return fmt.Errorf("tome: invalid enum value for tactic field: %q", t)

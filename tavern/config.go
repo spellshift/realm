@@ -181,6 +181,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetConnMaxLifetime(maxConnLifetime)
 	client := ent.NewClient(append(options, ent.Driver(drv))...)
 	client.Host.Use(ent.HookDeriveHostEvents())
+	client.Host.Use(ent.HookDeriveNetworkHost())
 	client.Task.Use(ent.HookDeriveQuestEvents())
 	client.Event.Use(ent.HookDeriveNotifications())
 	client.User.Use(ent.HookDeriveUserRequestEvents())

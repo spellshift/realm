@@ -1,0 +1,6 @@
+name: Shell Aliases
+description: Define common shell command aliases (ls, whoami, ps, pwd, cat, netstat) in the Eldritch REPL.
+author: kcarretto
+support_model: FIRST_PARTY
+tactic: SHELL_RC
+

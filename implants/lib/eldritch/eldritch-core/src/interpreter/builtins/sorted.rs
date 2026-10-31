@@ -11,6 +11,15 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `sorted(iterable, key=None, reverse=False)`: Returns a new sorted list from the items in `iterable`.
+///
+/// **Parameters**
+/// - `iterable` (Iterable): The iterable to sort.
+/// - `key` (Callable | None): Optional function of one argument to extract a comparison key.
+/// - `reverse` (bool): If `True`, sorts in descending order.
+///
+/// **Returns**
+/// - `list`: A new sorted list.
 pub(crate) fn builtin_sorted(
     interp: &mut Interpreter,
     args: &[Argument],

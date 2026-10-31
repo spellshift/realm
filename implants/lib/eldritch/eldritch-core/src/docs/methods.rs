@@ -122,7 +122,7 @@
 //:
 //: **Parameters**
 //: - `iterable` (Iterable): The keys.
-//: - `value` (Any): The value to set. Defaults to None.
+//: - `value` (Option<Any>): The value to set. Defaults to None.
 //:
 //: **Returns**
 //: - `Dict`: The new dictionary.
@@ -132,7 +132,7 @@
 //:
 //: **Parameters**
 //: - `key` (Any): The key to search for.
-//: - `default` (Any): The value to return if key is not found. Defaults to None.
+//: - `default` (Option<Any>): The value to return if key is not found. Defaults to None.
 //:
 //: **Returns**
 //: - `Any`: The value or default.
@@ -173,7 +173,7 @@
 //:
 //: **Parameters**
 //: - `key` (Any): The key.
-//: - `default` (Any): The default value. Defaults to None.
+//: - `default` (Option<Any>): The default value. Defaults to None.
 //:
 //: **Returns**
 //: - `Any`: The value.
@@ -217,6 +217,15 @@
 //:
 //: **Returns**
 //: - `Set`: A shallow copy.
+
+//: set.contains
+//: Returns True if elem is a member of the set.
+//:
+//: **Parameters**
+//: - `elem` (Any): The element to check.
+//:
+//: **Returns**
+//: - `Bool`
 
 //: set.difference
 //: Return the difference of two or more sets as a new set.
@@ -370,7 +379,7 @@
 //:
 //: **Parameters**
 //: - `width` (Int): The total width.
-//: - `fillchar` (String): The padding character.
+//: - `fillchar` (Option<String>): The padding character.
 //:
 //: **Returns**
 //: - `String`
@@ -519,7 +528,7 @@
 //:
 //: **Parameters**
 //: - `width` (Int): The total width.
-//: - `fillchar` (String): The padding character.
+//: - `fillchar` (Option<String>): The padding character.
 //:
 //: **Returns**
 //: - `String`
@@ -611,7 +620,7 @@
 //:
 //: **Parameters**
 //: - `width` (Int): The total width.
-//: - `fillchar` (String): The padding character.
+//: - `fillchar` (Option<String>): The padding character.
 //:
 //: **Returns**
 //: - `String`
@@ -661,7 +670,7 @@
 //: Line breaks are not included in the resulting list unless keepends is given and true.
 //:
 //: **Parameters**
-//: - `keepends` (Bool): Whether to keep line breaks.
+//: - `keepends` (Option<Bool>): Whether to keep line breaks.
 //:
 //: **Returns**
 //: - `List<String>`
@@ -725,3 +734,26 @@
 //:
 //: **Returns**
 //: - `List<String>`
+
+//: str.encode
+//: Encodes the string into Bytes using the specified encoding ("utf8" or "utf16le").
+//:
+//: **Parameters**
+//: - `encoding` (Option<String>): The encoding to use ("utf8" (default) or "utf16le").
+//:
+//: **Returns**
+//: - `Bytes`
+
+
+// Bytes methods
+// =============
+
+//: bytes.decode
+//: Decodes the Bytes into a string using the specified encoding ("utf8" or "utf16le").
+//:
+//: **Parameters**
+//: - `encoding` (Option<String>): The encoding to use ("utf8" (default) or "utf16le").
+//:
+//: **Returns**
+//: - `String`
+

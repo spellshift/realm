@@ -5,6 +5,15 @@ use crate::interpreter::eval::functions::{call_value, evaluate_arg};
 use crate::interpreter::eval::utils::to_iterable;
 use crate::token::Span;
 
+/// `reduce(function, iterable, initial=...)`: Applies a function of two arguments cumulatively to the items of `iterable`.
+///
+/// **Parameters**
+/// - `function` (Callable): Function of two arguments `(accum, item)`.
+/// - `iterable` (Iterable): The sequence to reduce.
+/// - `initial` (Any): Optional initial accumulator value.
+///
+/// **Returns**
+/// - `Any`: The reduced value.
 pub(crate) fn builtin_reduce(
     interp: &mut Interpreter,
     args: &[Argument],

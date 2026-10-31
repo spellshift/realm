@@ -274,6 +274,8 @@ func (ec *executionContext) fieldContext_BeaconTimelineHostBucket_host(_ context
 				return ec.fieldContext_Host_events(ctx, field)
 			case "subscribers":
 				return ec.fieldContext_Host_subscribers(ctx, field)
+			case "networkHosts":
+				return ec.fieldContext_Host_networkHosts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},

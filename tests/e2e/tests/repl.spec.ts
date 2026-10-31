@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('End-to-end shellv2 repl test', async ({ page, context }) => {
+test('End-to-end shell repl test', async ({ page, context }) => {
   // 1. Navigate to /hosts and wait for the host list to load
   console.log('Navigating to /hosts');
   await page.goto('/hosts');
@@ -14,7 +14,7 @@ test('End-to-end shellv2 repl test', async ({ page, context }) => {
   console.log('Navigating to host details');
   await hostRow.click();
 
-  // 3. Click "Create Shell" button — this calls a mutation and opens /shellv2/:id in a new tab
+  // 3. Click "Create Shell" button — this calls a mutation and opens /shells/:id in a new tab
   console.log('Creating shell');
   const createShellButton = page.getByLabel('Create Shell');
   await expect(createShellButton).toBeVisible({ timeout: 15000 });
@@ -23,17 +23,17 @@ test('End-to-end shellv2 repl test', async ({ page, context }) => {
   const shellPagePromise = context.waitForEvent('page');
   await createShellButton.click();
 
-  // 4. Switch to the new shellv2 tab
+  // 4. Switch to the new shell tab
   const shellPage = await shellPagePromise;
   await shellPage.waitForLoadState();
-  console.log('Switched to shellv2 tab');
+  console.log('Switched to shell tab');
 
   // 5. Wait for the terminal to render and the connection to be established
   console.log('Waiting for terminal');
   await expect(shellPage.locator('.xterm-rows')).toBeVisible({ timeout: 20000 });
 
-  // Wait for "Connected to Tavern" which indicates the WebSocket is ready
-  await expect(shellPage.locator('.xterm-rows')).toContainText('Connected to Tavern', { timeout: 20000 });
+  // Wait for "Connected to <beacon-name>" which indicates the WebSocket is ready
+  await expect(shellPage.locator('.xterm-rows')).toContainText(/Connected to \S+/, { timeout: 20000 });
 
   // Wait for the initial prompt
   await expect(shellPage.locator('.xterm-rows')).toContainText('>>>', { timeout: 10000 });
@@ -47,8 +47,6 @@ test('End-to-end shellv2 repl test', async ({ page, context }) => {
 
   // 7. Verify the output — non-interactive shell queues and returns output
   // Expected output pattern:
-  //   [*] Task Queued for <beacon-name>
-  //   [+] print("Hello E2E")
   //   Hello E2E
   //   >>>
   console.log('Verifying output');
