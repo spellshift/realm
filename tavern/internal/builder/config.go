@@ -5,12 +5,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
-// DefaultPollInterval is the builder polling interval in seconds for legacy configurations.
+// DefaultPollInterval is the builder polling interval in seconds.
 const DefaultPollInterval = 5
 
 // MaxPollInterval is the largest poll_interval (in seconds) ParseConfig accepts.
@@ -37,13 +38,33 @@ type Config struct {
 	Executor         string   `yaml:"executor"`
 }
 
+// DefaultConfig returns the settings used when no builder configuration is provided.
+func DefaultConfig() *Config {
+	return &Config{
+		PollInterval:     DefaultPollInterval,
+		SupportedTargets: []string{"linux", "windows"},
+		IdentityFile:     "builder.identity",
+		Upstream:         "http://127.0.0.1:8000",
+		Executor:         "docker",
+	}
+}
+
 // ParseConfig reads and parses a builder YAML configuration file.
 func ParseConfig(path string) (*Config, error) {
+	return parseConfig(path, nil)
+}
+
+// ParseConfigWithExecutor reads a builder YAML file with a CLI executor override.
+func ParseConfigWithExecutor(path, executor string) (*Config, error) {
+	return parseConfig(path, &executor)
+}
+
+func parseConfig(path string, executor *string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %q: %w", path, err)
 	}
-	cfg, err := ParseConfigBytes(data)
+	cfg, err := parseConfigBytes(data, executor)
 	if err != nil {
 		return nil, err
 	}
@@ -55,19 +76,50 @@ func ParseConfig(path string) (*Config, error) {
 
 // ParseConfigBytes parses builder YAML configuration from bytes.
 func ParseConfigBytes(data []byte) (*Config, error) {
-	cfg := Config{
-		PollInterval: DefaultPollInterval,
-		Executor:     "docker",
+	return parseConfigBytes(data, nil)
+}
+
+func parseConfigBytes(data []byte, executor *string) (*Config, error) {
+	if executor != nil && *executor != "docker" && *executor != "local" {
+		return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", *executor)
 	}
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+	var fields map[string]interface{}
+	if err := yaml.Unmarshal(data, &fields); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+	for name := range fields {
+		switch name {
+		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval":
+		default:
+			return nil, fmt.Errorf("unknown builder config field %q", name)
+		}
+	}
+	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval"} {
+		if value, present := fields[name]; present && value == nil {
+			return nil, fmt.Errorf("%s must not be null", name)
+		}
+	}
+	if executor == nil {
+		if value, present := fields["executor"]; present && value == nil {
+			return nil, fmt.Errorf("executor must not be null")
+		}
+		if fields["executor"] == "" {
+			return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", "")
+		}
+	}
+	cfg := DefaultConfig()
+	if err := yaml.Unmarshal(data, cfg); err != nil {
+		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+	if executor != nil {
+		cfg.Executor = *executor
 	}
 
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 func (cfg *Config) validate() error {
@@ -122,6 +174,12 @@ func validateUpstream(upstream string) error {
 	}
 	if u.Host == "" {
 		return fmt.Errorf("upstream server address %q must include a host", upstream)
+	}
+	if u.RawQuery != "" || u.ForceQuery {
+		return fmt.Errorf("upstream server address %q must not include a query", upstream)
+	}
+	if strings.Contains(upstream, "#") {
+		return fmt.Errorf("upstream server address %q must not include a fragment", upstream)
 	}
 	return nil
 }
