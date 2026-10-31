@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	entbeacon "realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/portal"
+	entshell "realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -16,6 +19,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 	// 1. DB: Create ent.Portal record (State: Open)
 	var creator *ent.User
 	var beacon *ent.Beacon
+	var parentShell *ent.Shell
 
 	pCreate := client.Portal.Create()
 
@@ -51,7 +55,10 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 			return 0, nil, fmt.Errorf("failed to query shell task %d: %w", shellTaskID, err)
 		}
 		creator = st.Edges.Creator
-		beacon = st.Edges.Shell.Edges.Beacon
+		parentShell = st.Edges.Shell
+		if parentShell != nil {
+			beacon = parentShell.Edges.Beacon
+		}
 		pCreate.SetShellTaskID(shellTaskID)
 	} else {
 		return 0, nil, fmt.Errorf("either taskID or shellTaskID must be provided")
@@ -67,6 +74,37 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 	p, err := pCreate.Save(ctx)
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to create portal record: %w", err)
+	}
+
+	// Mark any older unclosed portals for this beacon as closed so stale portals are not selected
+	if beacon != nil {
+		if _, err := client.Portal.Update().
+			Where(
+				portal.HasBeaconWith(entbeacon.ID(beacon.ID)),
+				portal.IDNEQ(p.ID),
+				portal.ClosedAtIsNil(),
+			).
+			SetClosedAt(time.Now()).
+			Save(ctx); err != nil {
+			slog.WarnContext(ctx, "failed to close previous open portals for beacon", "beacon_id", beacon.ID, "portal_id", p.ID, "error", err)
+		}
+	}
+
+	// Link newly created portal to its parent shell (and any open shells on the beacon) so GraphQL shell queries reflect it immediately
+	if parentShell != nil {
+		if err := parentShell.Update().AddPortals(p).Exec(ctx); err != nil {
+			slog.WarnContext(ctx, "failed to associate portal with parent shell", "portal_id", p.ID, "shell_id", parentShell.ID, "error", err)
+		}
+	} else if beacon != nil {
+		if _, err := client.Shell.Update().
+			Where(
+				entshell.HasBeaconWith(entbeacon.ID(beacon.ID)),
+				entshell.ClosedAtIsNil(),
+			).
+			AddPortals(p).
+			Save(ctx); err != nil {
+			slog.WarnContext(ctx, "failed to associate portal with open beacon shells", "portal_id", p.ID, "beacon_id", beacon.ID, "error", err)
+		}
 	}
 
 	// Log portal creation with beacon and host info

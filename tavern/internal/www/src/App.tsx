@@ -9,8 +9,7 @@ import 'react-virtualized/styles.css';
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
-import Shell from "./pages/shell/Shell";
-import ShellV2 from "./pages/shellv2";
+import Shell from "./pages/shell";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import Assets from "./pages/assets/Assets";
@@ -71,10 +70,6 @@ const router = createBrowserRouter([
         element: <AgentBuilderWizardPage />,
       },
       {
-        path: "shells/:shellId",
-        element: <Shell />,
-      },
-      {
         path: "admin",
         element: <AdminPortal />,
       },
@@ -97,8 +92,16 @@ const router = createBrowserRouter([
     ]
   },
   {
+    path: "shells/:shellId",
+    element: <Shell />,
+  },
+  {
+    path: "shell/:shellId",
+    element: <Shell />,
+  },
+  {
     path: "shellv2/:shellId",
-    element: <ShellV2 />,
+    element: <Shell />,
   },
 ]);
 

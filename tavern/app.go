@@ -534,7 +534,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: cdn.NewUploadHandler(client),
 		},
 		"/shell/ws": tavernhttp.Endpoint{
-			Handler: stream.NewShellHandler(client, wsShellMux),
+			Handler: tavernshell.NewHandler(client, portalMux),
 		},
 		"/shellv2/ws": tavernhttp.Endpoint{
 			Handler: tavernshell.NewHandler(client, portalMux),

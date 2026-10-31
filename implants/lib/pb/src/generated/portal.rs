@@ -36,6 +36,34 @@ pub struct ShellPayload {
     pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SshPayload {
+    #[prost(enumeration = "SshPayloadKind", tag = "1")]
+    pub kind: i32,
+    #[prost(string, tag = "2")]
+    pub dst_addr: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "3")]
+    pub dst_port: u32,
+    #[prost(string, tag = "4")]
+    pub username: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub password: ::prost::alloc::string::String,
+    #[prost(bytes = "vec", tag = "6")]
+    pub private_key: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint32, tag = "7")]
+    pub rows: u32,
+    #[prost(uint32, tag = "8")]
+    pub cols: u32,
+    #[prost(bytes = "vec", tag = "9")]
+    pub data: ::prost::alloc::vec::Vec<u8>,
+}
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct PtyResize {
+    #[prost(uint32, tag = "1")]
+    pub rows: u32,
+    #[prost(uint32, tag = "2")]
+    pub cols: u32,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Mote {
     /// Unique identifier used to route reply traffic back to original port
     #[prost(string, tag = "1")]
@@ -44,7 +72,7 @@ pub struct Mote {
     #[prost(uint64, tag = "2")]
     pub seq_id: u64,
     /// A payload
-    #[prost(oneof = "mote::Payload", tags = "3, 4, 5, 6")]
+    #[prost(oneof = "mote::Payload", tags = "3, 4, 5, 6, 7, 8")]
     pub payload: ::core::option::Option<mote::Payload>,
 }
 /// Nested message and enum types in `Mote`.
@@ -60,6 +88,10 @@ pub mod mote {
         Bytes(super::BytesPayload),
         #[prost(message, tag = "6")]
         Shell(super::ShellPayload),
+        #[prost(message, tag = "7")]
+        Ssh(super::SshPayload),
+        #[prost(message, tag = "8")]
+        PtyResize(super::PtyResize),
     }
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -111,6 +143,41 @@ impl BytesPayloadKind {
             "BYTES_PAYLOAD_KIND_TRACE" => Some(Self::Trace),
             "BYTES_PAYLOAD_KIND_CLOSE" => Some(Self::Close),
             "BYTES_PAYLOAD_KIND_PTY" => Some(Self::Pty),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SshPayloadKind {
+    Unspecified = 0,
+    Connect = 1,
+    Data = 2,
+    Resize = 3,
+    Close = 4,
+}
+impl SshPayloadKind {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Unspecified => "SSH_PAYLOAD_KIND_UNSPECIFIED",
+            Self::Connect => "SSH_PAYLOAD_KIND_CONNECT",
+            Self::Data => "SSH_PAYLOAD_KIND_DATA",
+            Self::Resize => "SSH_PAYLOAD_KIND_RESIZE",
+            Self::Close => "SSH_PAYLOAD_KIND_CLOSE",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SSH_PAYLOAD_KIND_UNSPECIFIED" => Some(Self::Unspecified),
+            "SSH_PAYLOAD_KIND_CONNECT" => Some(Self::Connect),
+            "SSH_PAYLOAD_KIND_DATA" => Some(Self::Data),
+            "SSH_PAYLOAD_KIND_RESIZE" => Some(Self::Resize),
+            "SSH_PAYLOAD_KIND_CLOSE" => Some(Self::Close),
             _ => None,
         }
     }

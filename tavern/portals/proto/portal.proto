@@ -35,6 +35,31 @@ message ShellPayload {
     string error = 4;
 }
 
+enum SSHPayloadKind {
+    SSH_PAYLOAD_KIND_UNSPECIFIED = 0;
+    SSH_PAYLOAD_KIND_CONNECT = 1;
+    SSH_PAYLOAD_KIND_DATA = 2;
+    SSH_PAYLOAD_KIND_RESIZE = 3;
+    SSH_PAYLOAD_KIND_CLOSE = 4;
+}
+
+message SSHPayload {
+    SSHPayloadKind kind = 1;
+    string dst_addr = 2;
+    uint32 dst_port = 3;
+    string username = 4;
+    string password = 5;
+    bytes private_key = 6;
+    uint32 rows = 7;
+    uint32 cols = 8;
+    bytes data = 9;
+}
+
+message PTYResize {
+    uint32 rows = 1;
+    uint32 cols = 2;
+}
+
 message Mote {
     // Unique identifier used to route reply traffic back to original port
     string stream_id = 1;
@@ -48,6 +73,8 @@ message Mote {
         TCPPayload tcp = 4;
         BytesPayload bytes = 5;
         ShellPayload shell = 6;
+        SSHPayload ssh = 7;
+        PTYResize pty_resize = 8;
     }
 }
 

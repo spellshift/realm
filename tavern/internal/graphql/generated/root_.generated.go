@@ -319,6 +319,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		LastSeenAt     func(childComplexity int) int
 		Name           func(childComplexity int) int
+		NetworkHosts   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkHostOrder, where *ent.NetworkHostWhereInput) int
 		NextSeenAt     func(childComplexity int) int
 		Platform       func(childComplexity int) int
 		PrimaryIP      func(childComplexity int) int
@@ -340,6 +341,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		Kind           func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
+		NetworkHosts   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkHostOrder, where *ent.NetworkHostWhereInput) int
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
 		ShellTask      func(childComplexity int) int
@@ -455,6 +457,9 @@ type ComplexityRoot struct {
 		CreateBuildTask             func(childComplexity int, input models.CreateBuildTaskInput) int
 		CreateCredential            func(childComplexity int, input ent.CreateHostCredentialInput) int
 		CreateLink                  func(childComplexity int, input ent.CreateLinkInput) int
+		CreateNetwork               func(childComplexity int, input ent.CreateNetworkInput) int
+		CreateNetworkHost           func(childComplexity int, input ent.CreateNetworkHostInput) int
+		CreateOperatorNote          func(childComplexity int, input ent.CreateOperatorNoteInput) int
 		CreateQuest                 func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
 		CreateRepository            func(childComplexity int, input ent.CreateRepositoryInput) int
 		CreateScheduledTask         func(childComplexity int, input ent.CreateScheduledTaskInput) int
@@ -465,6 +470,9 @@ type ComplexityRoot struct {
 		DeleteAsset                 func(childComplexity int, assetID int) int
 		DeleteBuildProfile          func(childComplexity int, profileID int) int
 		DeleteBuilder               func(childComplexity int, builderID int) int
+		DeleteNetwork               func(childComplexity int, networkID int) int
+		DeleteNetworkHost           func(childComplexity int, networkHostID int) int
+		DeleteOperatorNote          func(childComplexity int, operatorNoteID int) int
 		DeleteTome                  func(childComplexity int, tomeID int) int
 		DisableLink                 func(childComplexity int, linkID int) int
 		DisableScheduledTask        func(childComplexity int, scheduledTaskID int) int
@@ -482,9 +490,58 @@ type ComplexityRoot struct {
 		UpdateBuildProfile          func(childComplexity int, profileID int, input models.UpdateBuildProfileInput) int
 		UpdateHost                  func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink                  func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateNetwork               func(childComplexity int, networkID int, input ent.UpdateNetworkInput) int
+		UpdateNetworkHost           func(childComplexity int, networkHostID int, input ent.UpdateNetworkHostInput) int
+		UpdateOperatorNote          func(childComplexity int, operatorNoteID int, input ent.UpdateOperatorNoteInput) int
 		UpdateTag                   func(childComplexity int, tagID int, input ent.UpdateTagInput) int
 		UpdateTome                  func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
 		UpdateUser                  func(childComplexity int, userID int, input ent.UpdateUserInput) int
+	}
+
+	Network struct {
+		CreatedAt      func(childComplexity int) int
+		Description    func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		NetworkHosts   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkHostOrder, where *ent.NetworkHostWhereInput) int
+		Subnet         func(childComplexity int) int
+	}
+
+	NetworkConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	NetworkEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	NetworkHost struct {
+		CreatedAt      func(childComplexity int) int
+		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		Host           func(childComplexity int) int
+		Hostname       func(childComplexity int) int
+		ID             func(childComplexity int) int
+		IPAddress      func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Networks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkOrder, where *ent.NetworkWhereInput) int
+		OpenPorts      func(childComplexity int) int
+		Subnet         func(childComplexity int) int
+	}
+
+	NetworkHostConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	NetworkHostEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Notification struct {
@@ -505,6 +562,26 @@ type ComplexityRoot struct {
 	}
 
 	NotificationEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	OperatorNote struct {
+		Author         func(childComplexity int) int
+		Content        func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Shells         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+	}
+
+	OperatorNoteConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	OperatorNoteEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -549,9 +626,12 @@ type ComplexityRoot struct {
 		Hosts                  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me                     func(childComplexity int) int
 		Metrics                func(childComplexity int) int
+		NetworkHosts           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkHostOrder, where *ent.NetworkHostWhereInput) int
+		Networks               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkOrder, where *ent.NetworkWhereInput) int
 		Node                   func(childComplexity int, id int) int
 		Nodes                  func(childComplexity int, ids []int) int
 		OnlineBuilderPlatforms func(childComplexity int) int
+		OperatorNotes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) int
 		Portals                func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
 		Quests                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		Repositories           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
@@ -690,6 +770,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
+		OperatorNotes  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) int
 		Owner          func(childComplexity int) int
 		Pivots         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellPivotOrder, where *ent.ShellPivotWhereInput) int
 		Portals        func(childComplexity int) int
@@ -869,6 +950,7 @@ type ComplexityRoot struct {
 		IsAdmin         func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Notifications   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
+		OperatorNotes   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) int
 		PhotoURL        func(childComplexity int) int
 		SubscribedHosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Tomes           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
@@ -2230,6 +2312,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Host.Name(childComplexity), true
 
+	case "Host.networkHosts":
+		if e.ComplexityRoot.Host.NetworkHosts == nil {
+			break
+		}
+
+		args, err := ec.field_Host_networkHosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Host.NetworkHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NetworkHostOrder), args["where"].(*ent.NetworkHostWhereInput)), true
+
 	case "Host.nextSeenAt":
 		if e.ComplexityRoot.Host.NextSeenAt == nil {
 			break
@@ -2354,6 +2448,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.HostCredential.LastModifiedAt(childComplexity), true
+
+	case "HostCredential.networkHosts":
+		if e.ComplexityRoot.HostCredential.NetworkHosts == nil {
+			break
+		}
+
+		args, err := ec.field_HostCredential_networkHosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.HostCredential.NetworkHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NetworkHostOrder), args["where"].(*ent.NetworkHostWhereInput)), true
 
 	case "HostCredential.principal":
 		if e.ComplexityRoot.HostCredential.Principal == nil {
@@ -2901,6 +3007,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.CreateLink(childComplexity, args["input"].(ent.CreateLinkInput)), true
 
+	case "Mutation.createNetwork":
+		if e.ComplexityRoot.Mutation.CreateNetwork == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createNetwork_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateNetwork(childComplexity, args["input"].(ent.CreateNetworkInput)), true
+
+	case "Mutation.createNetworkHost":
+		if e.ComplexityRoot.Mutation.CreateNetworkHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createNetworkHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateNetworkHost(childComplexity, args["input"].(ent.CreateNetworkHostInput)), true
+
+	case "Mutation.createOperatorNote":
+		if e.ComplexityRoot.Mutation.CreateOperatorNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createOperatorNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateOperatorNote(childComplexity, args["input"].(ent.CreateOperatorNoteInput)), true
+
 	case "Mutation.createQuest":
 		if e.ComplexityRoot.Mutation.CreateQuest == nil {
 			break
@@ -3015,6 +3157,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteBuilder(childComplexity, args["builderID"].(int)), true
+
+	case "Mutation.deleteNetwork":
+		if e.ComplexityRoot.Mutation.DeleteNetwork == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteNetwork_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteNetwork(childComplexity, args["networkID"].(int)), true
+
+	case "Mutation.deleteNetworkHost":
+		if e.ComplexityRoot.Mutation.DeleteNetworkHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteNetworkHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteNetworkHost(childComplexity, args["networkHostID"].(int)), true
+
+	case "Mutation.deleteOperatorNote":
+		if e.ComplexityRoot.Mutation.DeleteOperatorNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteOperatorNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteOperatorNote(childComplexity, args["operatorNoteID"].(int)), true
 
 	case "Mutation.deleteTome":
 		if e.ComplexityRoot.Mutation.DeleteTome == nil {
@@ -3210,6 +3388,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.UpdateLink(childComplexity, args["linkID"].(int), args["input"].(ent.UpdateLinkInput)), true
 
+	case "Mutation.updateNetwork":
+		if e.ComplexityRoot.Mutation.UpdateNetwork == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateNetwork_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateNetwork(childComplexity, args["networkID"].(int), args["input"].(ent.UpdateNetworkInput)), true
+
+	case "Mutation.updateNetworkHost":
+		if e.ComplexityRoot.Mutation.UpdateNetworkHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateNetworkHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateNetworkHost(childComplexity, args["networkHostID"].(int), args["input"].(ent.UpdateNetworkHostInput)), true
+
+	case "Mutation.updateOperatorNote":
+		if e.ComplexityRoot.Mutation.UpdateOperatorNote == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateOperatorNote_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateOperatorNote(childComplexity, args["operatorNoteID"].(int), args["input"].(ent.UpdateOperatorNoteInput)), true
+
 	case "Mutation.updateTag":
 		if e.ComplexityRoot.Mutation.UpdateTag == nil {
 			break
@@ -3245,6 +3459,217 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateUser(childComplexity, args["userID"].(int), args["input"].(ent.UpdateUserInput)), true
+
+	case "Network.createdAt":
+		if e.ComplexityRoot.Network.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Network.CreatedAt(childComplexity), true
+
+	case "Network.description":
+		if e.ComplexityRoot.Network.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Network.Description(childComplexity), true
+
+	case "Network.id":
+		if e.ComplexityRoot.Network.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Network.ID(childComplexity), true
+
+	case "Network.lastModifiedAt":
+		if e.ComplexityRoot.Network.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Network.LastModifiedAt(childComplexity), true
+
+	case "Network.name":
+		if e.ComplexityRoot.Network.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Network.Name(childComplexity), true
+
+	case "Network.networkHosts":
+		if e.ComplexityRoot.Network.NetworkHosts == nil {
+			break
+		}
+
+		args, err := ec.field_Network_networkHosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Network.NetworkHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NetworkHostOrder), args["where"].(*ent.NetworkHostWhereInput)), true
+
+	case "Network.subnet":
+		if e.ComplexityRoot.Network.Subnet == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Network.Subnet(childComplexity), true
+
+	case "NetworkConnection.edges":
+		if e.ComplexityRoot.NetworkConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkConnection.Edges(childComplexity), true
+
+	case "NetworkConnection.pageInfo":
+		if e.ComplexityRoot.NetworkConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkConnection.PageInfo(childComplexity), true
+
+	case "NetworkConnection.totalCount":
+		if e.ComplexityRoot.NetworkConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkConnection.TotalCount(childComplexity), true
+
+	case "NetworkEdge.cursor":
+		if e.ComplexityRoot.NetworkEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkEdge.Cursor(childComplexity), true
+
+	case "NetworkEdge.node":
+		if e.ComplexityRoot.NetworkEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkEdge.Node(childComplexity), true
+
+	case "NetworkHost.createdAt":
+		if e.ComplexityRoot.NetworkHost.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.CreatedAt(childComplexity), true
+
+	case "NetworkHost.credentials":
+		if e.ComplexityRoot.NetworkHost.Credentials == nil {
+			break
+		}
+
+		args, err := ec.field_NetworkHost_credentials_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.NetworkHost.Credentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
+
+	case "NetworkHost.host":
+		if e.ComplexityRoot.NetworkHost.Host == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.Host(childComplexity), true
+
+	case "NetworkHost.hostname":
+		if e.ComplexityRoot.NetworkHost.Hostname == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.Hostname(childComplexity), true
+
+	case "NetworkHost.id":
+		if e.ComplexityRoot.NetworkHost.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.ID(childComplexity), true
+
+	case "NetworkHost.ipAddress":
+		if e.ComplexityRoot.NetworkHost.IPAddress == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.IPAddress(childComplexity), true
+
+	case "NetworkHost.lastModifiedAt":
+		if e.ComplexityRoot.NetworkHost.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.LastModifiedAt(childComplexity), true
+
+	case "NetworkHost.name":
+		if e.ComplexityRoot.NetworkHost.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.Name(childComplexity), true
+
+	case "NetworkHost.networks":
+		if e.ComplexityRoot.NetworkHost.Networks == nil {
+			break
+		}
+
+		args, err := ec.field_NetworkHost_networks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.NetworkHost.Networks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NetworkOrder), args["where"].(*ent.NetworkWhereInput)), true
+
+	case "NetworkHost.openPorts":
+		if e.ComplexityRoot.NetworkHost.OpenPorts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.OpenPorts(childComplexity), true
+
+	case "NetworkHost.subnet":
+		if e.ComplexityRoot.NetworkHost.Subnet == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHost.Subnet(childComplexity), true
+
+	case "NetworkHostConnection.edges":
+		if e.ComplexityRoot.NetworkHostConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHostConnection.Edges(childComplexity), true
+
+	case "NetworkHostConnection.pageInfo":
+		if e.ComplexityRoot.NetworkHostConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHostConnection.PageInfo(childComplexity), true
+
+	case "NetworkHostConnection.totalCount":
+		if e.ComplexityRoot.NetworkHostConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHostConnection.TotalCount(childComplexity), true
+
+	case "NetworkHostEdge.cursor":
+		if e.ComplexityRoot.NetworkHostEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHostEdge.Cursor(childComplexity), true
+
+	case "NetworkHostEdge.node":
+		if e.ComplexityRoot.NetworkHostEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NetworkHostEdge.Node(childComplexity), true
 
 	case "Notification.archived":
 		if e.ComplexityRoot.Notification.Archived == nil {
@@ -3336,6 +3761,88 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.NotificationEdge.Node(childComplexity), true
+
+	case "OperatorNote.author":
+		if e.ComplexityRoot.OperatorNote.Author == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.Author(childComplexity), true
+
+	case "OperatorNote.content":
+		if e.ComplexityRoot.OperatorNote.Content == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.Content(childComplexity), true
+
+	case "OperatorNote.createdAt":
+		if e.ComplexityRoot.OperatorNote.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.CreatedAt(childComplexity), true
+
+	case "OperatorNote.id":
+		if e.ComplexityRoot.OperatorNote.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.ID(childComplexity), true
+
+	case "OperatorNote.lastModifiedAt":
+		if e.ComplexityRoot.OperatorNote.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNote.LastModifiedAt(childComplexity), true
+
+	case "OperatorNote.shells":
+		if e.ComplexityRoot.OperatorNote.Shells == nil {
+			break
+		}
+
+		args, err := ec.field_OperatorNote_shells_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.OperatorNote.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
+
+	case "OperatorNoteConnection.edges":
+		if e.ComplexityRoot.OperatorNoteConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteConnection.Edges(childComplexity), true
+
+	case "OperatorNoteConnection.pageInfo":
+		if e.ComplexityRoot.OperatorNoteConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteConnection.PageInfo(childComplexity), true
+
+	case "OperatorNoteConnection.totalCount":
+		if e.ComplexityRoot.OperatorNoteConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteConnection.TotalCount(childComplexity), true
+
+	case "OperatorNoteEdge.cursor":
+		if e.ComplexityRoot.OperatorNoteEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteEdge.Cursor(childComplexity), true
+
+	case "OperatorNoteEdge.node":
+		if e.ComplexityRoot.OperatorNoteEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.OperatorNoteEdge.Node(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.ComplexityRoot.PageInfo.EndCursor == nil {
@@ -3566,6 +4073,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.Metrics(childComplexity), true
 
+	case "Query.networkHosts":
+		if e.ComplexityRoot.Query.NetworkHosts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_networkHosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.NetworkHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NetworkHostOrder), args["where"].(*ent.NetworkHostWhereInput)), true
+
+	case "Query.networks":
+		if e.ComplexityRoot.Query.Networks == nil {
+			break
+		}
+
+		args, err := ec.field_Query_networks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Networks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NetworkOrder), args["where"].(*ent.NetworkWhereInput)), true
+
 	case "Query.node":
 		if e.ComplexityRoot.Query.Node == nil {
 			break
@@ -3596,6 +4127,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.OnlineBuilderPlatforms(childComplexity), true
+
+	case "Query.operatorNotes":
+		if e.ComplexityRoot.Query.OperatorNotes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_operatorNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.OperatorNotes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.OperatorNoteOrder), args["where"].(*ent.OperatorNoteWhereInput)), true
 
 	case "Query.portals":
 		if e.ComplexityRoot.Query.Portals == nil {
@@ -4311,6 +4854,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Shell.LastModifiedAt(childComplexity), true
+
+	case "Shell.operatorNotes":
+		if e.ComplexityRoot.Shell.OperatorNotes == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_operatorNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Shell.OperatorNotes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.OperatorNoteOrder), args["where"].(*ent.OperatorNoteWhereInput)), true
 
 	case "Shell.owner":
 		if e.ComplexityRoot.Shell.Owner == nil {
@@ -5215,6 +5770,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.User.Notifications(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NotificationOrder), args["where"].(*ent.NotificationWhereInput)), true
 
+	case "User.operatorNotes":
+		if e.ComplexityRoot.User.OperatorNotes == nil {
+			break
+		}
+
+		args, err := ec.field_User_operatorNotes_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.User.OperatorNotes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.OperatorNoteOrder), args["where"].(*ent.OperatorNoteWhereInput)), true
+
 	case "User.photoURL":
 		if e.ComplexityRoot.User.PhotoURL == nil {
 			break
@@ -5314,6 +5881,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateDeviceAuthInput,
 		ec.unmarshalInputCreateHostCredentialInput,
 		ec.unmarshalInputCreateLinkInput,
+		ec.unmarshalInputCreateNetworkHostInput,
+		ec.unmarshalInputCreateNetworkInput,
+		ec.unmarshalInputCreateOperatorNoteInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateScheduledTaskInput,
@@ -5336,8 +5906,14 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputImportRepositoryInput,
 		ec.unmarshalInputLinkOrder,
 		ec.unmarshalInputLinkWhereInput,
+		ec.unmarshalInputNetworkHostOrder,
+		ec.unmarshalInputNetworkHostWhereInput,
+		ec.unmarshalInputNetworkOrder,
+		ec.unmarshalInputNetworkWhereInput,
 		ec.unmarshalInputNotificationOrder,
 		ec.unmarshalInputNotificationWhereInput,
+		ec.unmarshalInputOperatorNoteOrder,
+		ec.unmarshalInputOperatorNoteWhereInput,
 		ec.unmarshalInputPortalOrder,
 		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
@@ -5366,7 +5942,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
+		ec.unmarshalInputUpdateNetworkHostInput,
+		ec.unmarshalInputUpdateNetworkInput,
 		ec.unmarshalInputUpdateNotificationInput,
+		ec.unmarshalInputUpdateOperatorNoteInput,
 		ec.unmarshalInputUpdateScheduledTaskInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
@@ -7398,9 +7977,10 @@ input CreateHostCredentialInput {
   Kind of credential.
   """
   kind: HostCredentialKind!
-  hostID: ID!
+  hostID: ID
   taskID: ID
   shellTaskID: ID
+  networkHostIDs: [ID!]
 }
 """
 CreateLinkInput is used for create Link object.
@@ -7424,6 +8004,65 @@ input CreateLinkInput {
   """
   downloads: Int
   assetID: ID!
+}
+"""
+CreateNetworkHostInput is used for create NetworkHost object.
+Input was generated by ent.
+"""
+input CreateNetworkHostInput {
+  """
+  Human readable name for the network host.
+  """
+  name: String
+  """
+  Hostname of the network host.
+  """
+  hostname: String
+  """
+  IP address of the network host.
+  """
+  ipAddress: String!
+  """
+  Subnet CIDR of the network host (e.g. 10.0.0.0/24).
+  """
+  subnet: String
+  """
+  List of open ports discovered on the network host.
+  """
+  openPorts: [Int!]
+  hostID: ID
+  networkIDs: [ID!]
+  credentialIDs: [ID!]
+}
+"""
+CreateNetworkInput is used for create Network object.
+Input was generated by ent.
+"""
+input CreateNetworkInput {
+  """
+  Human readable name for the network.
+  """
+  name: String!
+  """
+  Subnet CIDR for the network (e.g. 10.0.0.0/24).
+  """
+  subnet: String
+  """
+  Optional description or routing information for the network.
+  """
+  description: String
+  networkHostIDs: [ID!]
+}
+"""
+CreateOperatorNoteInput is used for create OperatorNote object.
+Input was generated by ent.
+"""
+input CreateOperatorNoteInput {
+  """
+  Content of the operator note.
+  """
+  content: String
+  shellIDs: [ID!]
 }
 """
 CreateQuestInput is used for create Quest object.
@@ -8270,6 +8909,37 @@ type Host implements Node {
     """
     where: UserWhereInput
   ): UserConnection!
+  networkHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for NetworkHosts returned from the connection.
+    """
+    orderBy: [NetworkHostOrder!]
+
+    """
+    Filtering options for NetworkHosts returned from the connection.
+    """
+    where: NetworkHostWhereInput
+  ): NetworkHostConnection!
 }
 """
 A connection to a list of items.
@@ -8313,7 +8983,7 @@ type HostCredential implements Node {
   """
   Host the credential was reported on.
   """
-  host: Host!
+  host: Host
   """
   Task that reported this credential.
   """
@@ -8322,6 +8992,37 @@ type HostCredential implements Node {
   Shell Task that reported this credential.
   """
   shellTask: ShellTask
+  networkHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for NetworkHosts returned from the connection.
+    """
+    orderBy: [NetworkHostOrder!]
+
+    """
+    Filtering options for NetworkHosts returned from the connection.
+    """
+    where: NetworkHostWhereInput
+  ): NetworkHostConnection!
 }
 """
 A connection to a list of items.
@@ -8478,6 +9179,11 @@ input HostCredentialWhereInput {
   """
   hasShellTask: Boolean
   hasShellTaskWith: [ShellTaskWhereInput!]
+  """
+  network_hosts edge predicates
+  """
+  hasNetworkHosts: Boolean
+  hasNetworkHostsWith: [NetworkHostWhereInput!]
 }
 """
 An edge in a connection.
@@ -9332,6 +10038,11 @@ input HostWhereInput {
   """
   hasSubscribers: Boolean
   hasSubscribersWith: [UserWhereInput!]
+  """
+  network_hosts edge predicates
+  """
+  hasNetworkHosts: Boolean
+  hasNetworkHostsWith: [NetworkHostWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -9525,6 +10236,489 @@ input LinkWhereInput {
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
 }
+type Network implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Human readable name for the network.
+  """
+  name: String!
+  """
+  Subnet CIDR for the network (e.g. 10.0.0.0/24).
+  """
+  subnet: String
+  """
+  Optional description or routing information for the network.
+  """
+  description: String
+  networkHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for NetworkHosts returned from the connection.
+    """
+    orderBy: [NetworkHostOrder!]
+
+    """
+    Filtering options for NetworkHosts returned from the connection.
+    """
+    where: NetworkHostWhereInput
+  ): NetworkHostConnection!
+}
+"""
+A connection to a list of items.
+"""
+type NetworkConnection {
+  """
+  A list of edges.
+  """
+  edges: [NetworkEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type NetworkEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Network
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+type NetworkHost implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Human readable name for the network host.
+  """
+  name: String
+  """
+  Hostname of the network host.
+  """
+  hostname: String
+  """
+  IP address of the network host.
+  """
+  ipAddress: String!
+  """
+  Subnet CIDR of the network host (e.g. 10.0.0.0/24).
+  """
+  subnet: String
+  """
+  List of open ports discovered on the network host.
+  """
+  openPorts: [Int!]
+  """
+  Optional link to the detailed Host entity.
+  """
+  host: Host
+  networks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Networks returned from the connection.
+    """
+    orderBy: [NetworkOrder!]
+
+    """
+    Filtering options for Networks returned from the connection.
+    """
+    where: NetworkWhereInput
+  ): NetworkConnection!
+  credentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
+}
+"""
+A connection to a list of items.
+"""
+type NetworkHostConnection {
+  """
+  A list of edges.
+  """
+  edges: [NetworkHostEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type NetworkHostEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: NetworkHost
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for NetworkHost connections
+"""
+input NetworkHostOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order NetworkHosts.
+  """
+  field: NetworkHostOrderField!
+}
+"""
+Properties by which NetworkHost connections can be ordered.
+"""
+enum NetworkHostOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+  HOSTNAME
+  IP_ADDRESS
+  SUBNET
+}
+"""
+NetworkHostWhereInput is used for filtering NetworkHost objects.
+Input was generated by ent.
+"""
+input NetworkHostWhereInput {
+  not: NetworkHostWhereInput
+  and: [NetworkHostWhereInput!]
+  or: [NetworkHostWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameIsNil: Boolean
+  nameNotNil: Boolean
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  hostname field predicates
+  """
+  hostname: String
+  hostnameNEQ: String
+  hostnameIn: [String!]
+  hostnameNotIn: [String!]
+  hostnameGT: String
+  hostnameGTE: String
+  hostnameLT: String
+  hostnameLTE: String
+  hostnameContains: String
+  hostnameHasPrefix: String
+  hostnameHasSuffix: String
+  hostnameIsNil: Boolean
+  hostnameNotNil: Boolean
+  hostnameEqualFold: String
+  hostnameContainsFold: String
+  """
+  ip_address field predicates
+  """
+  ipAddress: String
+  ipAddressNEQ: String
+  ipAddressIn: [String!]
+  ipAddressNotIn: [String!]
+  ipAddressGT: String
+  ipAddressGTE: String
+  ipAddressLT: String
+  ipAddressLTE: String
+  ipAddressContains: String
+  ipAddressHasPrefix: String
+  ipAddressHasSuffix: String
+  ipAddressEqualFold: String
+  ipAddressContainsFold: String
+  """
+  subnet field predicates
+  """
+  subnet: String
+  subnetNEQ: String
+  subnetIn: [String!]
+  subnetNotIn: [String!]
+  subnetGT: String
+  subnetGTE: String
+  subnetLT: String
+  subnetLTE: String
+  subnetContains: String
+  subnetHasPrefix: String
+  subnetHasSuffix: String
+  subnetIsNil: Boolean
+  subnetNotNil: Boolean
+  subnetEqualFold: String
+  subnetContainsFold: String
+  """
+  host edge predicates
+  """
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """
+  networks edge predicates
+  """
+  hasNetworks: Boolean
+  hasNetworksWith: [NetworkWhereInput!]
+  """
+  credentials edge predicates
+  """
+  hasCredentials: Boolean
+  hasCredentialsWith: [HostCredentialWhereInput!]
+}
+"""
+Ordering options for Network connections
+"""
+input NetworkOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Networks.
+  """
+  field: NetworkOrderField!
+}
+"""
+Properties by which Network connections can be ordered.
+"""
+enum NetworkOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+  SUBNET
+}
+"""
+NetworkWhereInput is used for filtering Network objects.
+Input was generated by ent.
+"""
+input NetworkWhereInput {
+  not: NetworkWhereInput
+  and: [NetworkWhereInput!]
+  or: [NetworkWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  subnet field predicates
+  """
+  subnet: String
+  subnetNEQ: String
+  subnetIn: [String!]
+  subnetNotIn: [String!]
+  subnetGT: String
+  subnetGTE: String
+  subnetLT: String
+  subnetLTE: String
+  subnetContains: String
+  subnetHasPrefix: String
+  subnetHasSuffix: String
+  subnetIsNil: Boolean
+  subnetNotNil: Boolean
+  subnetEqualFold: String
+  subnetContainsFold: String
+  """
+  description field predicates
+  """
+  description: String
+  descriptionNEQ: String
+  descriptionIn: [String!]
+  descriptionNotIn: [String!]
+  descriptionGT: String
+  descriptionGTE: String
+  descriptionLT: String
+  descriptionLTE: String
+  descriptionContains: String
+  descriptionHasPrefix: String
+  descriptionHasSuffix: String
+  descriptionIsNil: Boolean
+  descriptionNotNil: Boolean
+  descriptionEqualFold: String
+  descriptionContainsFold: String
+  """
+  network_hosts edge predicates
+  """
+  hasNetworkHosts: Boolean
+  hasNetworkHostsWith: [NetworkHostWhereInput!]
+}
 """
 An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
@@ -9693,6 +10887,176 @@ input NotificationWhereInput {
   """
   hasEvent: Boolean
   hasEventWith: [EventWhereInput!]
+}
+type OperatorNote implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Content of the operator note.
+  """
+  content: String
+  """
+  User who authored the note.
+  """
+  author: User
+  shells(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Shells returned from the connection.
+    """
+    orderBy: [ShellOrder!]
+
+    """
+    Filtering options for Shells returned from the connection.
+    """
+    where: ShellWhereInput
+  ): ShellConnection!
+}
+"""
+A connection to a list of items.
+"""
+type OperatorNoteConnection {
+  """
+  A list of edges.
+  """
+  edges: [OperatorNoteEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type OperatorNoteEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: OperatorNote
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for OperatorNote connections
+"""
+input OperatorNoteOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order OperatorNotes.
+  """
+  field: OperatorNoteOrderField!
+}
+"""
+Properties by which OperatorNote connections can be ordered.
+"""
+enum OperatorNoteOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+OperatorNoteWhereInput is used for filtering OperatorNote objects.
+Input was generated by ent.
+"""
+input OperatorNoteWhereInput {
+  not: OperatorNoteWhereInput
+  and: [OperatorNoteWhereInput!]
+  or: [OperatorNoteWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  content field predicates
+  """
+  content: String
+  contentNEQ: String
+  contentIn: [String!]
+  contentNotIn: [String!]
+  contentGT: String
+  contentGTE: String
+  contentLT: String
+  contentLTE: String
+  contentContains: String
+  contentHasPrefix: String
+  contentHasSuffix: String
+  contentIsNil: Boolean
+  contentNotNil: Boolean
+  contentEqualFold: String
+  contentContainsFold: String
+  """
+  author edge predicates
+  """
+  hasAuthor: Boolean
+  hasAuthorWith: [UserWhereInput!]
+  """
+  shells edge predicates
+  """
+  hasShells: Boolean
+  hasShellsWith: [ShellWhereInput!]
 }
 """
 Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.
@@ -11106,6 +12470,37 @@ type Shell implements Node {
     """
     where: ShellPivotWhereInput
   ): ShellPivotConnection!
+  operatorNotes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for OperatorNotes returned from the connection.
+    """
+    orderBy: [OperatorNoteOrder!]
+
+    """
+    Filtering options for OperatorNotes returned from the connection.
+    """
+    where: OperatorNoteWhereInput
+  ): OperatorNoteConnection!
 }
 """
 A connection to a list of items.
@@ -11800,6 +13195,11 @@ input ShellWhereInput {
   """
   hasPivots: Boolean
   hasPivotsWith: [ShellPivotWhereInput!]
+  """
+  operator_notes edge predicates
+  """
+  hasOperatorNotes: Boolean
+  hasOperatorNotesWith: [OperatorNoteWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -12512,6 +13912,7 @@ enum TomeTactic @goModel(model: "realm.pub/tavern/internal/ent/tome.Tactic") {
   COMMAND_AND_CONTROL
   EXFILTRATION
   IMPACT
+  SHELL_RC
 }
 """
 TomeWhereInput is used for filtering Tome objects.
@@ -12741,6 +14142,9 @@ input UpdateHostInput {
   addSubscriberIDs: [ID!]
   removeSubscriberIDs: [ID!]
   clearSubscribers: Boolean
+  addNetworkHostIDs: [ID!]
+  removeNetworkHostIDs: [ID!]
+  clearNetworkHosts: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.
@@ -12772,6 +14176,76 @@ input UpdateLinkInput {
   clearCreator: Boolean
 }
 """
+UpdateNetworkHostInput is used for update NetworkHost object.
+Input was generated by ent.
+"""
+input UpdateNetworkHostInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Human readable name for the network host.
+  """
+  name: String
+  clearName: Boolean
+  """
+  Hostname of the network host.
+  """
+  hostname: String
+  clearHostname: Boolean
+  """
+  IP address of the network host.
+  """
+  ipAddress: String
+  """
+  Subnet CIDR of the network host (e.g. 10.0.0.0/24).
+  """
+  subnet: String
+  clearSubnet: Boolean
+  """
+  List of open ports discovered on the network host.
+  """
+  openPorts: [Int!]
+  appendOpenPorts: [Int!]
+  clearOpenPorts: Boolean
+  hostID: ID
+  clearHost: Boolean
+  addNetworkIDs: [ID!]
+  removeNetworkIDs: [ID!]
+  clearNetworks: Boolean
+  addCredentialIDs: [ID!]
+  removeCredentialIDs: [ID!]
+  clearCredentials: Boolean
+}
+"""
+UpdateNetworkInput is used for update Network object.
+Input was generated by ent.
+"""
+input UpdateNetworkInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Human readable name for the network.
+  """
+  name: String
+  """
+  Subnet CIDR for the network (e.g. 10.0.0.0/24).
+  """
+  subnet: String
+  clearSubnet: Boolean
+  """
+  Optional description or routing information for the network.
+  """
+  description: String
+  clearDescription: Boolean
+  addNetworkHostIDs: [ID!]
+  removeNetworkHostIDs: [ID!]
+  clearNetworkHosts: Boolean
+}
+"""
 UpdateNotificationInput is used for update Notification object.
 Input was generated by ent.
 """
@@ -12794,6 +14268,24 @@ input UpdateNotificationInput {
   archived: Boolean
   userID: ID
   eventID: ID
+}
+"""
+UpdateOperatorNoteInput is used for update OperatorNote object.
+Input was generated by ent.
+"""
+input UpdateOperatorNoteInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Content of the operator note.
+  """
+  content: String
+  clearContent: Boolean
+  addShellIDs: [ID!]
+  removeShellIDs: [ID!]
+  clearShells: Boolean
 }
 """
 UpdateScheduledTaskInput is used for update ScheduledTask object.
@@ -12938,6 +14430,9 @@ input UpdateUserInput {
   addEventIDs: [ID!]
   removeEventIDs: [ID!]
   clearEvents: Boolean
+  addOperatorNoteIDs: [ID!]
+  removeOperatorNoteIDs: [ID!]
+  clearOperatorNotes: Boolean
 }
 type User implements Node {
   id: ID!
@@ -13174,6 +14669,37 @@ type User implements Node {
     """
     where: EventWhereInput
   ): EventConnection!
+  operatorNotes(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for OperatorNotes returned from the connection.
+    """
+    orderBy: [OperatorNoteOrder!]
+
+    """
+    Filtering options for OperatorNotes returned from the connection.
+    """
+    where: OperatorNoteWhereInput
+  ): OperatorNoteConnection!
 }
 """
 A connection to a list of items.
@@ -13320,6 +14846,11 @@ input UserWhereInput {
   """
   hasEvents: Boolean
   hasEventsWith: [EventWhereInput!]
+  """
+  operator_notes edge predicates
+  """
+  hasOperatorNotes: Boolean
+  hasOperatorNotesWith: [OperatorNoteWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -13632,6 +15163,63 @@ scalar Uint64
     """Filtering options for ScheduledTasks returned from the connection."""
     where: ScheduledTaskWhereInput
   ): ScheduledTaskConnection! @requireRole(role: USER)
+  networks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Networks returned from the connection."""
+    orderBy: [NetworkOrder!]
+
+    """Filtering options for Networks returned from the connection."""
+    where: NetworkWhereInput
+  ): NetworkConnection! @requireRole(role: USER)
+  networkHosts(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for NetworkHosts returned from the connection."""
+    orderBy: [NetworkHostOrder!]
+
+    """Filtering options for NetworkHosts returned from the connection."""
+    where: NetworkHostWhereInput
+  ): NetworkHostConnection! @requireRole(role: USER)
+  operatorNotes(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for OperatorNotes returned from the connection."""
+    orderBy: [OperatorNoteOrder!]
+
+    """Filtering options for OperatorNotes returned from the connection."""
+    where: OperatorNoteWhereInput
+  ): OperatorNoteConnection! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},
@@ -13742,6 +15330,27 @@ scalar Uint64
     markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
     markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
     deleteAllNotifications: Boolean! @requireRole(role: ADMIN)
+
+    ###
+    # Network
+    ###
+    createNetwork(input: CreateNetworkInput!): Network! @requireRole(role: USER)
+    updateNetwork(networkID: ID!, input: UpdateNetworkInput!): Network! @requireRole(role: USER)
+    deleteNetwork(networkID: ID!): ID! @requireRole(role: USER)
+
+    ###
+    # NetworkHost
+    ###
+    createNetworkHost(input: CreateNetworkHostInput!): NetworkHost! @requireRole(role: USER)
+    updateNetworkHost(networkHostID: ID!, input: UpdateNetworkHostInput!): NetworkHost! @requireRole(role: USER)
+    deleteNetworkHost(networkHostID: ID!): ID! @requireRole(role: USER)
+
+    ###
+    # OperatorNote
+    ###
+    createOperatorNote(input: CreateOperatorNoteInput!): OperatorNote! @requireRole(role: USER)
+    updateOperatorNote(operatorNoteID: ID!, input: UpdateOperatorNoteInput!): OperatorNote! @requireRole(role: USER)
+    deleteOperatorNote(operatorNoteID: ID!): ID! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

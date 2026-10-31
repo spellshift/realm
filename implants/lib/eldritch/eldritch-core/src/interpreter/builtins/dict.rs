@@ -6,7 +6,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
-/// `dict(**kwargs)` or `dict(iterable, **kwargs)`: Creates a dictionary.
+/// `dict(**kwargs)` or `dict(iterable=None, **kwargs)`: Creates a dictionary.
 ///
 /// **Parameters**
 /// - `iterable` (Iterable): An iterable of key-value pairs (tuples/lists of length 2).

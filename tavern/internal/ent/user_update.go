@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -222,6 +223,21 @@ func (uu *UserUpdate) AddEvents(e ...*Event) *UserUpdate {
 	return uu.AddEventIDs(ids...)
 }
 
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by IDs.
+func (uu *UserUpdate) AddOperatorNoteIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddOperatorNoteIDs(ids...)
+	return uu
+}
+
+// AddOperatorNotes adds the "operator_notes" edges to the OperatorNote entity.
+func (uu *UserUpdate) AddOperatorNotes(o ...*OperatorNote) *UserUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uu.AddOperatorNoteIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -372,6 +388,27 @@ func (uu *UserUpdate) RemoveEvents(e ...*Event) *UserUpdate {
 		ids[i] = e[i].ID
 	}
 	return uu.RemoveEventIDs(ids...)
+}
+
+// ClearOperatorNotes clears all "operator_notes" edges to the OperatorNote entity.
+func (uu *UserUpdate) ClearOperatorNotes() *UserUpdate {
+	uu.mutation.ClearOperatorNotes()
+	return uu
+}
+
+// RemoveOperatorNoteIDs removes the "operator_notes" edge to OperatorNote entities by IDs.
+func (uu *UserUpdate) RemoveOperatorNoteIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveOperatorNoteIDs(ids...)
+	return uu
+}
+
+// RemoveOperatorNotes removes "operator_notes" edges to OperatorNote entities.
+func (uu *UserUpdate) RemoveOperatorNotes(o ...*OperatorNote) *UserUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uu.RemoveOperatorNoteIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -766,6 +803,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.OperatorNotesTable,
+			Columns: []string{user.OperatorNotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedOperatorNotesIDs(); len(nodes) > 0 && !uu.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.OperatorNotesTable,
+			Columns: []string{user.OperatorNotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.OperatorNotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.OperatorNotesTable,
+			Columns: []string{user.OperatorNotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -975,6 +1057,21 @@ func (uuo *UserUpdateOne) AddEvents(e ...*Event) *UserUpdateOne {
 	return uuo.AddEventIDs(ids...)
 }
 
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by IDs.
+func (uuo *UserUpdateOne) AddOperatorNoteIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddOperatorNoteIDs(ids...)
+	return uuo
+}
+
+// AddOperatorNotes adds the "operator_notes" edges to the OperatorNote entity.
+func (uuo *UserUpdateOne) AddOperatorNotes(o ...*OperatorNote) *UserUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uuo.AddOperatorNoteIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -1125,6 +1222,27 @@ func (uuo *UserUpdateOne) RemoveEvents(e ...*Event) *UserUpdateOne {
 		ids[i] = e[i].ID
 	}
 	return uuo.RemoveEventIDs(ids...)
+}
+
+// ClearOperatorNotes clears all "operator_notes" edges to the OperatorNote entity.
+func (uuo *UserUpdateOne) ClearOperatorNotes() *UserUpdateOne {
+	uuo.mutation.ClearOperatorNotes()
+	return uuo
+}
+
+// RemoveOperatorNoteIDs removes the "operator_notes" edge to OperatorNote entities by IDs.
+func (uuo *UserUpdateOne) RemoveOperatorNoteIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveOperatorNoteIDs(ids...)
+	return uuo
+}
+
+// RemoveOperatorNotes removes "operator_notes" edges to OperatorNote entities.
+func (uuo *UserUpdateOne) RemoveOperatorNotes(o ...*OperatorNote) *UserUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uuo.RemoveOperatorNoteIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -1542,6 +1660,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.OperatorNotesTable,
+			Columns: []string{user.OperatorNotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedOperatorNotesIDs(); len(nodes) > 0 && !uuo.mutation.OperatorNotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.OperatorNotesTable,
+			Columns: []string{user.OperatorNotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.OperatorNotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.OperatorNotesTable,
+			Columns: []string{user.OperatorNotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

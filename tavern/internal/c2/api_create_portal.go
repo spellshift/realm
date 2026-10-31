@@ -3,6 +3,7 @@ package c2
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"realm.pub/tavern/internal/ent"
@@ -14,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/portals/tracepb"
 )
@@ -71,16 +73,28 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
 
+	var sendMu sync.Mutex
+	sendToAgent := func(mote *portalpb.Mote) error {
+		sendMu.Lock()
+		defer sendMu.Unlock()
+		return gstream.Send(&c2pb.CreatePortalResponse{
+			Mote: mote,
+		})
+	}
+
+	sshManager := ssh.NewPortalManager(portalID, srv.portalMux, sendToAgent)
+	defer sshManager.Close()
+
 	done := make(chan struct{}, 2)
 
 	go func() {
-		sendPortalInput(ctx, portalID, gstream, recv)
+		sendPortalInput(ctx, portalID, sendToAgent, sshManager, recv)
 		done <- struct{}{}
 	}()
 
 	// Send portal output from gRPC stream to portal output topic
 	go func() {
-		sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+		sendPortalOutput(ctx, portalID, gstream, srv.portalMux, sshManager)
 		done <- struct{}{}
 	}()
 
@@ -95,7 +109,7 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	return nil
 }
 
-func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux) {
+func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux, sshManager *ssh.PortalManager) {
 	portalOutTopic := mux.TopicOut(portalID)
 
 	for {
@@ -122,6 +136,11 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 			continue
 		}
 
+		// Route agent TCP/Close motes belonging to gRPC-side SSH sessions directly to the SSH manager
+		if sshManager != nil && sshManager.RouteAgentMote(mote) {
+			continue
+		}
+
 		// TRACE: Server Agent Recv
 		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV); err != nil {
 			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Recv)", "error", err)
@@ -142,7 +161,7 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 	}
 }
 
-func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, recv <-chan *portalpb.Mote) {
+func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSenderFunc, sshManager *ssh.PortalManager, recv <-chan *portalpb.Mote) {
 	ticker := time.NewTicker(keepAlivePingInterval)
 	defer ticker.Stop()
 
@@ -151,18 +170,26 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := gstream.Send(&c2pb.CreatePortalResponse{
-				Mote: &portalpb.Mote{
-					Payload: &portalpb.Mote_Bytes{
-						Bytes: &portalpb.BytesPayload{
-							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE,
-						},
+			if err := sendToAgent(&portalpb.Mote{
+				Payload: &portalpb.Mote_Bytes{
+					Bytes: &portalpb.BytesPayload{
+						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE,
 					},
 				},
 			}); err != nil {
 				slog.ErrorContext(ctx, "portal failed to send gRPC keep alive ping", "error", err)
 			}
 		case mote := <-recv:
+			if mote == nil {
+				continue
+			}
+
+			// Intercept SSH portal motes and negotiate/manage SSH on this gRPC Tavern instance
+			if mote.GetSsh() != nil && sshManager != nil {
+				sshManager.HandleMote(ctx, mote)
+				continue
+			}
+
 			// TRACE: Server Agent Sub
 			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Sub)", "error", err)
@@ -173,9 +200,7 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Send)", "error", err)
 			}
 
-			if err := gstream.Send(&c2pb.CreatePortalResponse{
-				Mote: mote,
-			}); err != nil {
+			if err := sendToAgent(mote); err != nil {
 				slog.ErrorContext(ctx, "failed to send portal input message",
 					"portal_id", portalID,
 					"error", err,

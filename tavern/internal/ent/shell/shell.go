@@ -36,6 +36,8 @@ const (
 	EdgeShellTasks = "shell_tasks"
 	// EdgePivots holds the string denoting the pivots edge name in mutations.
 	EdgePivots = "pivots"
+	// EdgeOperatorNotes holds the string denoting the operator_notes edge name in mutations.
+	EdgeOperatorNotes = "operator_notes"
 	// Table holds the table name of the shell in the database.
 	Table = "shells"
 	// TaskTable is the table that holds the task relation/edge.
@@ -85,6 +87,11 @@ const (
 	PivotsInverseTable = "shell_pivots"
 	// PivotsColumn is the table column denoting the pivots relation/edge.
 	PivotsColumn = "shell_pivot_shell"
+	// OperatorNotesTable is the table that holds the operator_notes relation/edge. The primary key declared below.
+	OperatorNotesTable = "operator_note_shells"
+	// OperatorNotesInverseTable is the table name for the OperatorNote entity.
+	// It exists in this package in order to avoid circular dependency with the "operatornote" package.
+	OperatorNotesInverseTable = "operator_notes"
 )
 
 // Columns holds all SQL columns for shell fields.
@@ -108,6 +115,9 @@ var (
 	// ActiveUsersPrimaryKey and ActiveUsersColumn2 are the table columns denoting the
 	// primary key for the active_users relation (M2M).
 	ActiveUsersPrimaryKey = []string{"shell_id", "user_id"}
+	// OperatorNotesPrimaryKey and OperatorNotesColumn2 are the table columns denoting the
+	// primary key for the operator_notes relation (M2M).
+	OperatorNotesPrimaryKey = []string{"operator_note_id", "shell_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -233,6 +243,20 @@ func ByPivots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPivotsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOperatorNotesCount orders the results by operator_notes count.
+func ByOperatorNotesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOperatorNotesStep(), opts...)
+	}
+}
+
+// ByOperatorNotes orders the results by operator_notes terms.
+func ByOperatorNotes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOperatorNotesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTaskStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -280,5 +304,12 @@ func newPivotsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PivotsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, PivotsTable, PivotsColumn),
+	)
+}
+func newOperatorNotesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OperatorNotesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, OperatorNotesTable, OperatorNotesPrimaryKey...),
 	)
 }

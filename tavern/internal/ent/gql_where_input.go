@@ -24,7 +24,10 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
@@ -4502,6 +4505,10 @@ type HostWhereInput struct {
 	// "subscribers" edge predicates.
 	HasSubscribers     *bool             `json:"hasSubscribers,omitempty"`
 	HasSubscribersWith []*UserWhereInput `json:"hasSubscribersWith,omitempty"`
+
+	// "network_hosts" edge predicates.
+	HasNetworkHosts     *bool                    `json:"hasNetworkHosts,omitempty"`
+	HasNetworkHostsWith []*NetworkHostWhereInput `json:"hasNetworkHostsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -5056,6 +5063,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 		}
 		predicates = append(predicates, host.HasSubscribersWith(with...))
 	}
+	if i.HasNetworkHosts != nil {
+		p := host.HasNetworkHosts()
+		if !*i.HasNetworkHosts {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNetworkHostsWith) > 0 {
+		with := make([]predicate.NetworkHost, 0, len(i.HasNetworkHostsWith))
+		for _, w := range i.HasNetworkHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNetworkHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasNetworkHostsWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyHostWhereInput
@@ -5150,6 +5175,10 @@ type HostCredentialWhereInput struct {
 	// "shell_task" edge predicates.
 	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
 	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
+
+	// "network_hosts" edge predicates.
+	HasNetworkHosts     *bool                    `json:"hasNetworkHosts,omitempty"`
+	HasNetworkHostsWith []*NetworkHostWhereInput `json:"hasNetworkHostsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -5439,6 +5468,24 @@ func (i *HostCredentialWhereInput) P() (predicate.HostCredential, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, hostcredential.HasShellTaskWith(with...))
+	}
+	if i.HasNetworkHosts != nil {
+		p := hostcredential.HasNetworkHosts()
+		if !*i.HasNetworkHosts {
+			p = hostcredential.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNetworkHostsWith) > 0 {
+		with := make([]predicate.NetworkHost, 0, len(i.HasNetworkHostsWith))
+		for _, w := range i.HasNetworkHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNetworkHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostcredential.HasNetworkHostsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -7212,6 +7259,896 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 	}
 }
 
+// NetworkWhereInput represents a where input for filtering Network queries.
+type NetworkWhereInput struct {
+	Predicates []predicate.Network  `json:"-"`
+	Not        *NetworkWhereInput   `json:"not,omitempty"`
+	Or         []*NetworkWhereInput `json:"or,omitempty"`
+	And        []*NetworkWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "subnet" field predicates.
+	Subnet             *string  `json:"subnet,omitempty"`
+	SubnetNEQ          *string  `json:"subnetNEQ,omitempty"`
+	SubnetIn           []string `json:"subnetIn,omitempty"`
+	SubnetNotIn        []string `json:"subnetNotIn,omitempty"`
+	SubnetGT           *string  `json:"subnetGT,omitempty"`
+	SubnetGTE          *string  `json:"subnetGTE,omitempty"`
+	SubnetLT           *string  `json:"subnetLT,omitempty"`
+	SubnetLTE          *string  `json:"subnetLTE,omitempty"`
+	SubnetContains     *string  `json:"subnetContains,omitempty"`
+	SubnetHasPrefix    *string  `json:"subnetHasPrefix,omitempty"`
+	SubnetHasSuffix    *string  `json:"subnetHasSuffix,omitempty"`
+	SubnetIsNil        bool     `json:"subnetIsNil,omitempty"`
+	SubnetNotNil       bool     `json:"subnetNotNil,omitempty"`
+	SubnetEqualFold    *string  `json:"subnetEqualFold,omitempty"`
+	SubnetContainsFold *string  `json:"subnetContainsFold,omitempty"`
+
+	// "description" field predicates.
+	Description             *string  `json:"description,omitempty"`
+	DescriptionNEQ          *string  `json:"descriptionNEQ,omitempty"`
+	DescriptionIn           []string `json:"descriptionIn,omitempty"`
+	DescriptionNotIn        []string `json:"descriptionNotIn,omitempty"`
+	DescriptionGT           *string  `json:"descriptionGT,omitempty"`
+	DescriptionGTE          *string  `json:"descriptionGTE,omitempty"`
+	DescriptionLT           *string  `json:"descriptionLT,omitempty"`
+	DescriptionLTE          *string  `json:"descriptionLTE,omitempty"`
+	DescriptionContains     *string  `json:"descriptionContains,omitempty"`
+	DescriptionHasPrefix    *string  `json:"descriptionHasPrefix,omitempty"`
+	DescriptionHasSuffix    *string  `json:"descriptionHasSuffix,omitempty"`
+	DescriptionIsNil        bool     `json:"descriptionIsNil,omitempty"`
+	DescriptionNotNil       bool     `json:"descriptionNotNil,omitempty"`
+	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
+	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
+
+	// "network_hosts" edge predicates.
+	HasNetworkHosts     *bool                    `json:"hasNetworkHosts,omitempty"`
+	HasNetworkHostsWith []*NetworkHostWhereInput `json:"hasNetworkHostsWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *NetworkWhereInput) AddPredicates(predicates ...predicate.Network) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the NetworkWhereInput filter on the NetworkQuery builder.
+func (i *NetworkWhereInput) Filter(q *NetworkQuery) (*NetworkQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyNetworkWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyNetworkWhereInput is returned in case the NetworkWhereInput is empty.
+var ErrEmptyNetworkWhereInput = errors.New("ent: empty predicate NetworkWhereInput")
+
+// P returns a predicate for filtering networks.
+// An error is returned if the input is empty or invalid.
+func (i *NetworkWhereInput) P() (predicate.Network, error) {
+	var predicates []predicate.Network
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, network.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Network, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, network.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Network, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, network.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, network.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, network.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, network.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, network.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, network.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, network.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, network.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, network.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, network.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, network.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, network.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, network.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, network.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, network.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, network.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, network.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, network.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, network.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, network.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, network.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, network.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, network.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, network.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, network.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, network.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, network.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, network.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, network.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, network.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, network.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, network.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, network.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, network.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, network.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, network.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, network.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, network.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Subnet != nil {
+		predicates = append(predicates, network.SubnetEQ(*i.Subnet))
+	}
+	if i.SubnetNEQ != nil {
+		predicates = append(predicates, network.SubnetNEQ(*i.SubnetNEQ))
+	}
+	if len(i.SubnetIn) > 0 {
+		predicates = append(predicates, network.SubnetIn(i.SubnetIn...))
+	}
+	if len(i.SubnetNotIn) > 0 {
+		predicates = append(predicates, network.SubnetNotIn(i.SubnetNotIn...))
+	}
+	if i.SubnetGT != nil {
+		predicates = append(predicates, network.SubnetGT(*i.SubnetGT))
+	}
+	if i.SubnetGTE != nil {
+		predicates = append(predicates, network.SubnetGTE(*i.SubnetGTE))
+	}
+	if i.SubnetLT != nil {
+		predicates = append(predicates, network.SubnetLT(*i.SubnetLT))
+	}
+	if i.SubnetLTE != nil {
+		predicates = append(predicates, network.SubnetLTE(*i.SubnetLTE))
+	}
+	if i.SubnetContains != nil {
+		predicates = append(predicates, network.SubnetContains(*i.SubnetContains))
+	}
+	if i.SubnetHasPrefix != nil {
+		predicates = append(predicates, network.SubnetHasPrefix(*i.SubnetHasPrefix))
+	}
+	if i.SubnetHasSuffix != nil {
+		predicates = append(predicates, network.SubnetHasSuffix(*i.SubnetHasSuffix))
+	}
+	if i.SubnetIsNil {
+		predicates = append(predicates, network.SubnetIsNil())
+	}
+	if i.SubnetNotNil {
+		predicates = append(predicates, network.SubnetNotNil())
+	}
+	if i.SubnetEqualFold != nil {
+		predicates = append(predicates, network.SubnetEqualFold(*i.SubnetEqualFold))
+	}
+	if i.SubnetContainsFold != nil {
+		predicates = append(predicates, network.SubnetContainsFold(*i.SubnetContainsFold))
+	}
+	if i.Description != nil {
+		predicates = append(predicates, network.DescriptionEQ(*i.Description))
+	}
+	if i.DescriptionNEQ != nil {
+		predicates = append(predicates, network.DescriptionNEQ(*i.DescriptionNEQ))
+	}
+	if len(i.DescriptionIn) > 0 {
+		predicates = append(predicates, network.DescriptionIn(i.DescriptionIn...))
+	}
+	if len(i.DescriptionNotIn) > 0 {
+		predicates = append(predicates, network.DescriptionNotIn(i.DescriptionNotIn...))
+	}
+	if i.DescriptionGT != nil {
+		predicates = append(predicates, network.DescriptionGT(*i.DescriptionGT))
+	}
+	if i.DescriptionGTE != nil {
+		predicates = append(predicates, network.DescriptionGTE(*i.DescriptionGTE))
+	}
+	if i.DescriptionLT != nil {
+		predicates = append(predicates, network.DescriptionLT(*i.DescriptionLT))
+	}
+	if i.DescriptionLTE != nil {
+		predicates = append(predicates, network.DescriptionLTE(*i.DescriptionLTE))
+	}
+	if i.DescriptionContains != nil {
+		predicates = append(predicates, network.DescriptionContains(*i.DescriptionContains))
+	}
+	if i.DescriptionHasPrefix != nil {
+		predicates = append(predicates, network.DescriptionHasPrefix(*i.DescriptionHasPrefix))
+	}
+	if i.DescriptionHasSuffix != nil {
+		predicates = append(predicates, network.DescriptionHasSuffix(*i.DescriptionHasSuffix))
+	}
+	if i.DescriptionIsNil {
+		predicates = append(predicates, network.DescriptionIsNil())
+	}
+	if i.DescriptionNotNil {
+		predicates = append(predicates, network.DescriptionNotNil())
+	}
+	if i.DescriptionEqualFold != nil {
+		predicates = append(predicates, network.DescriptionEqualFold(*i.DescriptionEqualFold))
+	}
+	if i.DescriptionContainsFold != nil {
+		predicates = append(predicates, network.DescriptionContainsFold(*i.DescriptionContainsFold))
+	}
+
+	if i.HasNetworkHosts != nil {
+		p := network.HasNetworkHosts()
+		if !*i.HasNetworkHosts {
+			p = network.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNetworkHostsWith) > 0 {
+		with := make([]predicate.NetworkHost, 0, len(i.HasNetworkHostsWith))
+		for _, w := range i.HasNetworkHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNetworkHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, network.HasNetworkHostsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyNetworkWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return network.And(predicates...), nil
+	}
+}
+
+// NetworkHostWhereInput represents a where input for filtering NetworkHost queries.
+type NetworkHostWhereInput struct {
+	Predicates []predicate.NetworkHost  `json:"-"`
+	Not        *NetworkHostWhereInput   `json:"not,omitempty"`
+	Or         []*NetworkHostWhereInput `json:"or,omitempty"`
+	And        []*NetworkHostWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameIsNil        bool     `json:"nameIsNil,omitempty"`
+	NameNotNil       bool     `json:"nameNotNil,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "hostname" field predicates.
+	Hostname             *string  `json:"hostname,omitempty"`
+	HostnameNEQ          *string  `json:"hostnameNEQ,omitempty"`
+	HostnameIn           []string `json:"hostnameIn,omitempty"`
+	HostnameNotIn        []string `json:"hostnameNotIn,omitempty"`
+	HostnameGT           *string  `json:"hostnameGT,omitempty"`
+	HostnameGTE          *string  `json:"hostnameGTE,omitempty"`
+	HostnameLT           *string  `json:"hostnameLT,omitempty"`
+	HostnameLTE          *string  `json:"hostnameLTE,omitempty"`
+	HostnameContains     *string  `json:"hostnameContains,omitempty"`
+	HostnameHasPrefix    *string  `json:"hostnameHasPrefix,omitempty"`
+	HostnameHasSuffix    *string  `json:"hostnameHasSuffix,omitempty"`
+	HostnameIsNil        bool     `json:"hostnameIsNil,omitempty"`
+	HostnameNotNil       bool     `json:"hostnameNotNil,omitempty"`
+	HostnameEqualFold    *string  `json:"hostnameEqualFold,omitempty"`
+	HostnameContainsFold *string  `json:"hostnameContainsFold,omitempty"`
+
+	// "ip_address" field predicates.
+	IPAddress             *string  `json:"ipAddress,omitempty"`
+	IPAddressNEQ          *string  `json:"ipAddressNEQ,omitempty"`
+	IPAddressIn           []string `json:"ipAddressIn,omitempty"`
+	IPAddressNotIn        []string `json:"ipAddressNotIn,omitempty"`
+	IPAddressGT           *string  `json:"ipAddressGT,omitempty"`
+	IPAddressGTE          *string  `json:"ipAddressGTE,omitempty"`
+	IPAddressLT           *string  `json:"ipAddressLT,omitempty"`
+	IPAddressLTE          *string  `json:"ipAddressLTE,omitempty"`
+	IPAddressContains     *string  `json:"ipAddressContains,omitempty"`
+	IPAddressHasPrefix    *string  `json:"ipAddressHasPrefix,omitempty"`
+	IPAddressHasSuffix    *string  `json:"ipAddressHasSuffix,omitempty"`
+	IPAddressEqualFold    *string  `json:"ipAddressEqualFold,omitempty"`
+	IPAddressContainsFold *string  `json:"ipAddressContainsFold,omitempty"`
+
+	// "subnet" field predicates.
+	Subnet             *string  `json:"subnet,omitempty"`
+	SubnetNEQ          *string  `json:"subnetNEQ,omitempty"`
+	SubnetIn           []string `json:"subnetIn,omitempty"`
+	SubnetNotIn        []string `json:"subnetNotIn,omitempty"`
+	SubnetGT           *string  `json:"subnetGT,omitempty"`
+	SubnetGTE          *string  `json:"subnetGTE,omitempty"`
+	SubnetLT           *string  `json:"subnetLT,omitempty"`
+	SubnetLTE          *string  `json:"subnetLTE,omitempty"`
+	SubnetContains     *string  `json:"subnetContains,omitempty"`
+	SubnetHasPrefix    *string  `json:"subnetHasPrefix,omitempty"`
+	SubnetHasSuffix    *string  `json:"subnetHasSuffix,omitempty"`
+	SubnetIsNil        bool     `json:"subnetIsNil,omitempty"`
+	SubnetNotNil       bool     `json:"subnetNotNil,omitempty"`
+	SubnetEqualFold    *string  `json:"subnetEqualFold,omitempty"`
+	SubnetContainsFold *string  `json:"subnetContainsFold,omitempty"`
+
+	// "host" edge predicates.
+	HasHost     *bool             `json:"hasHost,omitempty"`
+	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
+
+	// "networks" edge predicates.
+	HasNetworks     *bool                `json:"hasNetworks,omitempty"`
+	HasNetworksWith []*NetworkWhereInput `json:"hasNetworksWith,omitempty"`
+
+	// "credentials" edge predicates.
+	HasCredentials     *bool                       `json:"hasCredentials,omitempty"`
+	HasCredentialsWith []*HostCredentialWhereInput `json:"hasCredentialsWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *NetworkHostWhereInput) AddPredicates(predicates ...predicate.NetworkHost) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the NetworkHostWhereInput filter on the NetworkHostQuery builder.
+func (i *NetworkHostWhereInput) Filter(q *NetworkHostQuery) (*NetworkHostQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyNetworkHostWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyNetworkHostWhereInput is returned in case the NetworkHostWhereInput is empty.
+var ErrEmptyNetworkHostWhereInput = errors.New("ent: empty predicate NetworkHostWhereInput")
+
+// P returns a predicate for filtering networkhosts.
+// An error is returned if the input is empty or invalid.
+func (i *NetworkHostWhereInput) P() (predicate.NetworkHost, error) {
+	var predicates []predicate.NetworkHost
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, networkhost.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.NetworkHost, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, networkhost.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.NetworkHost, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, networkhost.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, networkhost.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, networkhost.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, networkhost.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, networkhost.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, networkhost.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, networkhost.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, networkhost.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, networkhost.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, networkhost.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, networkhost.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, networkhost.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, networkhost.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, networkhost.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, networkhost.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, networkhost.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, networkhost.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, networkhost.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, networkhost.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, networkhost.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, networkhost.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, networkhost.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, networkhost.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, networkhost.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, networkhost.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, networkhost.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, networkhost.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, networkhost.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, networkhost.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, networkhost.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, networkhost.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, networkhost.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, networkhost.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, networkhost.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, networkhost.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, networkhost.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameIsNil {
+		predicates = append(predicates, networkhost.NameIsNil())
+	}
+	if i.NameNotNil {
+		predicates = append(predicates, networkhost.NameNotNil())
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, networkhost.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, networkhost.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Hostname != nil {
+		predicates = append(predicates, networkhost.HostnameEQ(*i.Hostname))
+	}
+	if i.HostnameNEQ != nil {
+		predicates = append(predicates, networkhost.HostnameNEQ(*i.HostnameNEQ))
+	}
+	if len(i.HostnameIn) > 0 {
+		predicates = append(predicates, networkhost.HostnameIn(i.HostnameIn...))
+	}
+	if len(i.HostnameNotIn) > 0 {
+		predicates = append(predicates, networkhost.HostnameNotIn(i.HostnameNotIn...))
+	}
+	if i.HostnameGT != nil {
+		predicates = append(predicates, networkhost.HostnameGT(*i.HostnameGT))
+	}
+	if i.HostnameGTE != nil {
+		predicates = append(predicates, networkhost.HostnameGTE(*i.HostnameGTE))
+	}
+	if i.HostnameLT != nil {
+		predicates = append(predicates, networkhost.HostnameLT(*i.HostnameLT))
+	}
+	if i.HostnameLTE != nil {
+		predicates = append(predicates, networkhost.HostnameLTE(*i.HostnameLTE))
+	}
+	if i.HostnameContains != nil {
+		predicates = append(predicates, networkhost.HostnameContains(*i.HostnameContains))
+	}
+	if i.HostnameHasPrefix != nil {
+		predicates = append(predicates, networkhost.HostnameHasPrefix(*i.HostnameHasPrefix))
+	}
+	if i.HostnameHasSuffix != nil {
+		predicates = append(predicates, networkhost.HostnameHasSuffix(*i.HostnameHasSuffix))
+	}
+	if i.HostnameIsNil {
+		predicates = append(predicates, networkhost.HostnameIsNil())
+	}
+	if i.HostnameNotNil {
+		predicates = append(predicates, networkhost.HostnameNotNil())
+	}
+	if i.HostnameEqualFold != nil {
+		predicates = append(predicates, networkhost.HostnameEqualFold(*i.HostnameEqualFold))
+	}
+	if i.HostnameContainsFold != nil {
+		predicates = append(predicates, networkhost.HostnameContainsFold(*i.HostnameContainsFold))
+	}
+	if i.IPAddress != nil {
+		predicates = append(predicates, networkhost.IPAddressEQ(*i.IPAddress))
+	}
+	if i.IPAddressNEQ != nil {
+		predicates = append(predicates, networkhost.IPAddressNEQ(*i.IPAddressNEQ))
+	}
+	if len(i.IPAddressIn) > 0 {
+		predicates = append(predicates, networkhost.IPAddressIn(i.IPAddressIn...))
+	}
+	if len(i.IPAddressNotIn) > 0 {
+		predicates = append(predicates, networkhost.IPAddressNotIn(i.IPAddressNotIn...))
+	}
+	if i.IPAddressGT != nil {
+		predicates = append(predicates, networkhost.IPAddressGT(*i.IPAddressGT))
+	}
+	if i.IPAddressGTE != nil {
+		predicates = append(predicates, networkhost.IPAddressGTE(*i.IPAddressGTE))
+	}
+	if i.IPAddressLT != nil {
+		predicates = append(predicates, networkhost.IPAddressLT(*i.IPAddressLT))
+	}
+	if i.IPAddressLTE != nil {
+		predicates = append(predicates, networkhost.IPAddressLTE(*i.IPAddressLTE))
+	}
+	if i.IPAddressContains != nil {
+		predicates = append(predicates, networkhost.IPAddressContains(*i.IPAddressContains))
+	}
+	if i.IPAddressHasPrefix != nil {
+		predicates = append(predicates, networkhost.IPAddressHasPrefix(*i.IPAddressHasPrefix))
+	}
+	if i.IPAddressHasSuffix != nil {
+		predicates = append(predicates, networkhost.IPAddressHasSuffix(*i.IPAddressHasSuffix))
+	}
+	if i.IPAddressEqualFold != nil {
+		predicates = append(predicates, networkhost.IPAddressEqualFold(*i.IPAddressEqualFold))
+	}
+	if i.IPAddressContainsFold != nil {
+		predicates = append(predicates, networkhost.IPAddressContainsFold(*i.IPAddressContainsFold))
+	}
+	if i.Subnet != nil {
+		predicates = append(predicates, networkhost.SubnetEQ(*i.Subnet))
+	}
+	if i.SubnetNEQ != nil {
+		predicates = append(predicates, networkhost.SubnetNEQ(*i.SubnetNEQ))
+	}
+	if len(i.SubnetIn) > 0 {
+		predicates = append(predicates, networkhost.SubnetIn(i.SubnetIn...))
+	}
+	if len(i.SubnetNotIn) > 0 {
+		predicates = append(predicates, networkhost.SubnetNotIn(i.SubnetNotIn...))
+	}
+	if i.SubnetGT != nil {
+		predicates = append(predicates, networkhost.SubnetGT(*i.SubnetGT))
+	}
+	if i.SubnetGTE != nil {
+		predicates = append(predicates, networkhost.SubnetGTE(*i.SubnetGTE))
+	}
+	if i.SubnetLT != nil {
+		predicates = append(predicates, networkhost.SubnetLT(*i.SubnetLT))
+	}
+	if i.SubnetLTE != nil {
+		predicates = append(predicates, networkhost.SubnetLTE(*i.SubnetLTE))
+	}
+	if i.SubnetContains != nil {
+		predicates = append(predicates, networkhost.SubnetContains(*i.SubnetContains))
+	}
+	if i.SubnetHasPrefix != nil {
+		predicates = append(predicates, networkhost.SubnetHasPrefix(*i.SubnetHasPrefix))
+	}
+	if i.SubnetHasSuffix != nil {
+		predicates = append(predicates, networkhost.SubnetHasSuffix(*i.SubnetHasSuffix))
+	}
+	if i.SubnetIsNil {
+		predicates = append(predicates, networkhost.SubnetIsNil())
+	}
+	if i.SubnetNotNil {
+		predicates = append(predicates, networkhost.SubnetNotNil())
+	}
+	if i.SubnetEqualFold != nil {
+		predicates = append(predicates, networkhost.SubnetEqualFold(*i.SubnetEqualFold))
+	}
+	if i.SubnetContainsFold != nil {
+		predicates = append(predicates, networkhost.SubnetContainsFold(*i.SubnetContainsFold))
+	}
+
+	if i.HasHost != nil {
+		p := networkhost.HasHost()
+		if !*i.HasHost {
+			p = networkhost.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasHostWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasHostWith))
+		for _, w := range i.HasHostWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasHostWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, networkhost.HasHostWith(with...))
+	}
+	if i.HasNetworks != nil {
+		p := networkhost.HasNetworks()
+		if !*i.HasNetworks {
+			p = networkhost.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNetworksWith) > 0 {
+		with := make([]predicate.Network, 0, len(i.HasNetworksWith))
+		for _, w := range i.HasNetworksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNetworksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, networkhost.HasNetworksWith(with...))
+	}
+	if i.HasCredentials != nil {
+		p := networkhost.HasCredentials()
+		if !*i.HasCredentials {
+			p = networkhost.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCredentialsWith) > 0 {
+		with := make([]predicate.HostCredential, 0, len(i.HasCredentialsWith))
+		for _, w := range i.HasCredentialsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCredentialsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, networkhost.HasCredentialsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyNetworkHostWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return networkhost.And(predicates...), nil
+	}
+}
+
 // NotificationWhereInput represents a where input for filtering Notification queries.
 type NotificationWhereInput struct {
 	Predicates []predicate.Notification  `json:"-"`
@@ -7483,6 +8420,304 @@ func (i *NotificationWhereInput) P() (predicate.Notification, error) {
 		return predicates[0], nil
 	default:
 		return notification.And(predicates...), nil
+	}
+}
+
+// OperatorNoteWhereInput represents a where input for filtering OperatorNote queries.
+type OperatorNoteWhereInput struct {
+	Predicates []predicate.OperatorNote  `json:"-"`
+	Not        *OperatorNoteWhereInput   `json:"not,omitempty"`
+	Or         []*OperatorNoteWhereInput `json:"or,omitempty"`
+	And        []*OperatorNoteWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "content" field predicates.
+	Content             *string  `json:"content,omitempty"`
+	ContentNEQ          *string  `json:"contentNEQ,omitempty"`
+	ContentIn           []string `json:"contentIn,omitempty"`
+	ContentNotIn        []string `json:"contentNotIn,omitempty"`
+	ContentGT           *string  `json:"contentGT,omitempty"`
+	ContentGTE          *string  `json:"contentGTE,omitempty"`
+	ContentLT           *string  `json:"contentLT,omitempty"`
+	ContentLTE          *string  `json:"contentLTE,omitempty"`
+	ContentContains     *string  `json:"contentContains,omitempty"`
+	ContentHasPrefix    *string  `json:"contentHasPrefix,omitempty"`
+	ContentHasSuffix    *string  `json:"contentHasSuffix,omitempty"`
+	ContentIsNil        bool     `json:"contentIsNil,omitempty"`
+	ContentNotNil       bool     `json:"contentNotNil,omitempty"`
+	ContentEqualFold    *string  `json:"contentEqualFold,omitempty"`
+	ContentContainsFold *string  `json:"contentContainsFold,omitempty"`
+
+	// "author" edge predicates.
+	HasAuthor     *bool             `json:"hasAuthor,omitempty"`
+	HasAuthorWith []*UserWhereInput `json:"hasAuthorWith,omitempty"`
+
+	// "shells" edge predicates.
+	HasShells     *bool              `json:"hasShells,omitempty"`
+	HasShellsWith []*ShellWhereInput `json:"hasShellsWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *OperatorNoteWhereInput) AddPredicates(predicates ...predicate.OperatorNote) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the OperatorNoteWhereInput filter on the OperatorNoteQuery builder.
+func (i *OperatorNoteWhereInput) Filter(q *OperatorNoteQuery) (*OperatorNoteQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyOperatorNoteWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyOperatorNoteWhereInput is returned in case the OperatorNoteWhereInput is empty.
+var ErrEmptyOperatorNoteWhereInput = errors.New("ent: empty predicate OperatorNoteWhereInput")
+
+// P returns a predicate for filtering operatornotes.
+// An error is returned if the input is empty or invalid.
+func (i *OperatorNoteWhereInput) P() (predicate.OperatorNote, error) {
+	var predicates []predicate.OperatorNote
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, operatornote.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.OperatorNote, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, operatornote.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.OperatorNote, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, operatornote.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, operatornote.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, operatornote.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, operatornote.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, operatornote.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, operatornote.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, operatornote.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, operatornote.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, operatornote.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, operatornote.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, operatornote.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, operatornote.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, operatornote.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, operatornote.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, operatornote.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, operatornote.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, operatornote.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, operatornote.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, operatornote.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, operatornote.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Content != nil {
+		predicates = append(predicates, operatornote.ContentEQ(*i.Content))
+	}
+	if i.ContentNEQ != nil {
+		predicates = append(predicates, operatornote.ContentNEQ(*i.ContentNEQ))
+	}
+	if len(i.ContentIn) > 0 {
+		predicates = append(predicates, operatornote.ContentIn(i.ContentIn...))
+	}
+	if len(i.ContentNotIn) > 0 {
+		predicates = append(predicates, operatornote.ContentNotIn(i.ContentNotIn...))
+	}
+	if i.ContentGT != nil {
+		predicates = append(predicates, operatornote.ContentGT(*i.ContentGT))
+	}
+	if i.ContentGTE != nil {
+		predicates = append(predicates, operatornote.ContentGTE(*i.ContentGTE))
+	}
+	if i.ContentLT != nil {
+		predicates = append(predicates, operatornote.ContentLT(*i.ContentLT))
+	}
+	if i.ContentLTE != nil {
+		predicates = append(predicates, operatornote.ContentLTE(*i.ContentLTE))
+	}
+	if i.ContentContains != nil {
+		predicates = append(predicates, operatornote.ContentContains(*i.ContentContains))
+	}
+	if i.ContentHasPrefix != nil {
+		predicates = append(predicates, operatornote.ContentHasPrefix(*i.ContentHasPrefix))
+	}
+	if i.ContentHasSuffix != nil {
+		predicates = append(predicates, operatornote.ContentHasSuffix(*i.ContentHasSuffix))
+	}
+	if i.ContentIsNil {
+		predicates = append(predicates, operatornote.ContentIsNil())
+	}
+	if i.ContentNotNil {
+		predicates = append(predicates, operatornote.ContentNotNil())
+	}
+	if i.ContentEqualFold != nil {
+		predicates = append(predicates, operatornote.ContentEqualFold(*i.ContentEqualFold))
+	}
+	if i.ContentContainsFold != nil {
+		predicates = append(predicates, operatornote.ContentContainsFold(*i.ContentContainsFold))
+	}
+
+	if i.HasAuthor != nil {
+		p := operatornote.HasAuthor()
+		if !*i.HasAuthor {
+			p = operatornote.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasAuthorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasAuthorWith))
+		for _, w := range i.HasAuthorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasAuthorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, operatornote.HasAuthorWith(with...))
+	}
+	if i.HasShells != nil {
+		p := operatornote.HasShells()
+		if !*i.HasShells {
+			p = operatornote.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellsWith) > 0 {
+		with := make([]predicate.Shell, 0, len(i.HasShellsWith))
+		for _, w := range i.HasShellsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, operatornote.HasShellsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyOperatorNoteWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return operatornote.And(predicates...), nil
 	}
 }
 
@@ -9842,6 +11077,10 @@ type ShellWhereInput struct {
 	// "pivots" edge predicates.
 	HasPivots     *bool                   `json:"hasPivots,omitempty"`
 	HasPivotsWith []*ShellPivotWhereInput `json:"hasPivotsWith,omitempty"`
+
+	// "operator_notes" edge predicates.
+	HasOperatorNotes     *bool                     `json:"hasOperatorNotes,omitempty"`
+	HasOperatorNotesWith []*OperatorNoteWhereInput `json:"hasOperatorNotesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -10143,6 +11382,24 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, shell.HasPivotsWith(with...))
+	}
+	if i.HasOperatorNotes != nil {
+		p := shell.HasOperatorNotes()
+		if !*i.HasOperatorNotes {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOperatorNotesWith) > 0 {
+		with := make([]predicate.OperatorNote, 0, len(i.HasOperatorNotesWith))
+		for _, w := range i.HasOperatorNotesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOperatorNotesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasOperatorNotesWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -12909,6 +14166,10 @@ type UserWhereInput struct {
 	// "events" edge predicates.
 	HasEvents     *bool              `json:"hasEvents,omitempty"`
 	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
+
+	// "operator_notes" edge predicates.
+	HasOperatorNotes     *bool                     `json:"hasOperatorNotes,omitempty"`
+	HasOperatorNotesWith []*OperatorNoteWhereInput `json:"hasOperatorNotesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -13261,6 +14522,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasEventsWith(with...))
+	}
+	if i.HasOperatorNotes != nil {
+		p := user.HasOperatorNotes()
+		if !*i.HasOperatorNotes {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasOperatorNotesWith) > 0 {
+		with := make([]predicate.OperatorNote, 0, len(i.HasOperatorNotesWith))
+		for _, w := range i.HasOperatorNotesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasOperatorNotesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasOperatorNotesWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

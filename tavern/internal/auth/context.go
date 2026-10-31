@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/user"
@@ -71,11 +73,54 @@ func contextFromIdentity(ctx context.Context, id Identity) context.Context {
 	return context.WithValue(ctx, ctxKey{}, id)
 }
 
+// ContextFromUser returns a copy of parent context with the given user Identity associated with it.
+func ContextFromUser(ctx context.Context, u *ent.User) context.Context {
+	if u == nil {
+		return ctx
+	}
+	return contextFromIdentity(ctx, &userIdentity{true, u})
+}
+
+func isTransientDBError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "locked") || strings.Contains(msg, "busy")
+}
+
+func queryUserWithRetry(ctx context.Context, query func() (*ent.User, error)) (*ent.User, error) {
+	backoff := 10 * time.Millisecond
+	var lastErr error
+	for attempt := 0; attempt < 6; attempt++ {
+		u, err := query()
+		if err == nil {
+			return u, nil
+		}
+		if !isTransientDBError(err) {
+			return nil, err
+		}
+		lastErr = err
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(backoff):
+			backoff *= 2
+			if backoff > 150*time.Millisecond {
+				backoff = 150 * time.Millisecond
+			}
+		}
+	}
+	return nil, lastErr
+}
+
 // ContextFromSessionToken returns a copy of parent context with a user Identity associated with it (if it exists).
 func ContextFromSessionToken(ctx context.Context, graph *ent.Client, token string) (context.Context, error) {
-	u, err := graph.User.Query().
-		Where(user.SessionToken(token)).
-		Only(ctx)
+	u, err := queryUserWithRetry(ctx, func() (*ent.User, error) {
+		return graph.User.Query().
+			Where(user.SessionToken(token)).
+			Only(ctx)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -85,9 +130,11 @@ func ContextFromSessionToken(ctx context.Context, graph *ent.Client, token strin
 
 // ContextFromAccessToken returns a copy of parent context with a user Identity associated with it (if it exists).
 func ContextFromAccessToken(ctx context.Context, graph *ent.Client, token string) (context.Context, error) {
-	u, err := graph.User.Query().
-		Where(user.AccessToken(token)).
-		Only(ctx)
+	u, err := queryUserWithRetry(ctx, func() (*ent.User, error) {
+		return graph.User.Query().
+			Where(user.AccessToken(token)).
+			Only(ctx)
+	})
 	if err != nil {
 		return nil, err
 	}

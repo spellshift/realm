@@ -7,7 +7,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
-/// `min(iterable)` or `min(arg1, arg2, *args)`: Returns the smallest item.
+/// `min(iterable)` or `min(iterable, *args)`: Returns the smallest item.
 ///
 /// **Parameters**
 /// - `iterable` (Iterable): An iterable to search.

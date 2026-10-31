@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -24,16 +25,30 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+// WebsocketControlMessage represents a message from the websocket client (input, resize, or close).
+type WebsocketControlMessage struct {
+	Kind  string `json:"kind"`
+	Input string `json:"input"`
+	Rows  uint32 `json:"rows"`
+	Cols  uint32 `json:"cols"`
+}
+
 // PivotSession represents an active PTY session that can be shared among multiple websockets.
 type PivotSession struct {
 	PivotID       int
 	StreamID      string
 	CancelContext context.CancelFunc
+	seqID         uint64
 
 	mu            sync.Mutex
+	closed        bool
 	history       []byte
 	dirty         bool
 	activeSockets map[*websocket.Conn]chan interface{}
+}
+
+func (ps *PivotSession) nextSeqID() uint64 {
+	return atomic.AddUint64(&ps.seqID, 1)
 }
 
 // sessionCache maintains a map of active PivotSessions.
@@ -69,6 +84,16 @@ func (ps *PivotSession) AddSocket(wsConn *websocket.Conn, outCh chan interface{}
 	defer ps.mu.Unlock()
 
 	ps.activeSockets[wsConn] = outCh
+
+	// Notify socket of pivot ID and connected status
+	select {
+	case outCh <- shell.WebsocketStatusMessage{
+		Kind:    shell.WebsocketMessageKindStatus,
+		Status:  "connected",
+		PivotID: ps.PivotID,
+	}:
+	default:
+	}
 
 	// Send history to catch up
 	if len(ps.history) > 0 {
@@ -107,6 +132,14 @@ func (ps *PivotSession) FlushHistory(ctx context.Context, graph *ent.Client) {
 }
 
 func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
+	ps.mu.Lock()
+	if ps.closed {
+		ps.mu.Unlock()
+		return
+	}
+	ps.closed = true
+	ps.mu.Unlock()
+
 	cacheMu.Lock()
 	delete(sessionCache, ps.PivotID)
 	cacheMu.Unlock()
@@ -119,10 +152,16 @@ func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
 	ps.FlushHistory(ctx, graph)
 	_ = graph.ShellPivot.UpdateOneID(ps.PivotID).SetClosedAt(time.Now()).Exec(ctx)
 
-	// Close all websockets and channels
+	// Notify and close all active socket channels so writer goroutines flush before closing
 	ps.mu.Lock()
-	for ws, ch := range ps.activeSockets {
-		ws.Close()
+	for _, ch := range ps.activeSockets {
+		select {
+		case ch <- shell.WebsocketStatusMessage{
+			Kind:   shell.WebsocketMessageKindStatus,
+			Status: "closed",
+		}:
+		default:
+		}
 		close(ch)
 	}
 	ps.activeSockets = make(map[*websocket.Conn]chan interface{})
@@ -166,6 +205,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pivotIDStr := r.URL.Query().Get("pivot_id")
 	portalIDStr := r.URL.Query().Get("portal_id")
 	shellIDStr := r.URL.Query().Get("shell_id")
+	var initRows, initCols uint32
+	if rStr := r.URL.Query().Get("rows"); rStr != "" {
+		if rVal, err := strconv.ParseUint(rStr, 10, 32); err == nil {
+			initRows = uint32(rVal)
+		}
+	}
+	if cStr := r.URL.Query().Get("cols"); cStr != "" {
+		if cVal, err := strconv.ParseUint(cStr, 10, 32); err == nil {
+			initCols = uint32(cVal)
+		}
+	}
 
 	var pivotSession *PivotSession
 
@@ -182,7 +232,33 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cacheMu.Unlock()
 
 		if !ok {
-			sendWsError("pivot session not found or expired")
+			pivotEnt, err := shell.RetryOnLock(ctx, func() (*ent.ShellPivot, error) {
+				return h.graph.ShellPivot.Get(ctx, pivotID)
+			})
+			if err == nil {
+				if pivotEnt.Data != "" {
+					_ = wsConn.WriteJSON(shell.WebsocketTaskOutputMessage{
+						Kind:   shell.WebsocketMessageKindOutput,
+						Output: pivotEnt.Data,
+					})
+				}
+				if pivotEnt.ClosedAt.IsZero() {
+					_ = h.graph.ShellPivot.UpdateOneID(pivotID).SetClosedAt(time.Now()).Exec(ctx)
+				}
+				_ = wsConn.WriteJSON(shell.WebsocketStatusMessage{
+					Kind:   shell.WebsocketMessageKindStatus,
+					Status: "closed",
+				})
+			} else {
+				sendWsError("pivot session not found or expired")
+			}
+			_ = wsConn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+				time.Now().Add(time.Second),
+			)
+			_ = wsConn.SetReadDeadline(time.Now().Add(250 * time.Millisecond))
+			_, _, _ = wsConn.ReadMessage()
 			return
 		}
 		pivotSession = sess
@@ -200,7 +276,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Verify Portal
-		p, err := h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+		p, err := shell.RetryOnLock(ctx, func() (*ent.Portal, error) {
+			return h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+		})
 		if err != nil {
 			sendWsError("portal not found")
 			return
@@ -224,20 +302,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		streamID := fmt.Sprintf("pty-ws-%d", time.Now().UnixNano())
 
 		// Create ShellPivot Ent
-		createReq := h.graph.ShellPivot.Create().
-			SetStreamID(streamID).
-			SetKind("pty").
-			SetDestination("pty").
-			SetPort(0).
-			SetPortalID(portalID)
+		pivotEnt, err := shell.RetryOnLock(ctx, func() (*ent.ShellPivot, error) {
+			createReq := h.graph.ShellPivot.Create().
+				SetStreamID(streamID).
+				SetKind("pty").
+				SetDestination("pty").
+				SetPort(0).
+				SetPortalID(portalID)
 
-		if shellIDStr != "" {
-			if shellID, err := strconv.Atoi(shellIDStr); err == nil {
-				createReq = createReq.SetShellID(shellID)
+			if shellIDStr != "" {
+				if shellID, err := strconv.Atoi(shellIDStr); err == nil {
+					createReq = createReq.SetShellID(shellID)
+				}
 			}
-		}
 
-		pivotEnt, err := createReq.Save(ctx)
+			return createReq.Save(ctx)
+		})
 		if err != nil {
 			sendWsError(fmt.Sprintf("Failed to create shell pivot: %v", err))
 			cleanupPortal()
@@ -322,7 +402,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		// Send initial PTY request mote to the agent to spawn the PTY
+		// Send initial PTY request mote to the agent to spawn the PTY.
+		// Data is kept empty so agents that do not support PTYResize never write
+		// control metadata into PTY stdin.
 		initMote := &portalpb.Mote{
 			StreamId: streamID,
 			SeqId:    0,
@@ -339,35 +421,83 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if initRows > 0 && initCols > 0 {
+			initResizeMote := &portalpb.Mote{
+				StreamId: streamID,
+				SeqId:    0,
+				Payload: &portalpb.Mote_PtyResize{
+					PtyResize: &portalpb.PTYResize{
+						Rows: initRows,
+						Cols: initCols,
+					},
+				},
+			}
+			if err := h.mux.Publish(sessionCtx, topicIn, initResizeMote); err != nil {
+				slog.ErrorContext(sessionCtx, "failed to publish initial pty resize", "error", err)
+			}
+		}
+
 		// WebSocket -> Portal PTY Input goroutine (spawned below in the common path)
 		// needs access to topicIn and sessionCtx, so we wrap them in a closure
 		startInputForwarder := func(wsConn *websocket.Conn, errCh chan error) {
 			go func() {
-				var seqID uint64
 				for {
 					_, msg, err := wsConn.ReadMessage()
 					if err != nil {
 						errCh <- err
 						return
 					}
-					var inputMsg shell.WebsocketTaskInputMessage
-					if err := json.Unmarshal(msg, &inputMsg); err != nil || inputMsg.Kind != shell.WebsocketMessageKindInput {
+					var ctrlMsg WebsocketControlMessage
+					if err := json.Unmarshal(msg, &ctrlMsg); err != nil {
 						continue
 					}
-					seqID++
-					mote := &portalpb.Mote{
-						StreamId: streamID,
-						SeqId:    seqID,
-						Payload: &portalpb.Mote_Bytes{
-							Bytes: &portalpb.BytesPayload{
-								Data: []byte(inputMsg.Input),
-								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+					switch ctrlMsg.Kind {
+					case "close":
+						closeMote := &portalpb.Mote{
+							StreamId: streamID,
+							SeqId:    pivotSession.nextSeqID(),
+							Payload: &portalpb.Mote_Bytes{
+								Bytes: &portalpb.BytesPayload{
+									Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+								},
 							},
-						},
-					}
-					if err := h.mux.Publish(sessionCtx, topicIn, mote); err != nil {
-						errCh <- err
+						}
+						_ = h.mux.Publish(sessionCtx, topicIn, closeMote)
+						closePivot()
+						errCh <- fmt.Errorf("closed")
 						return
+					case "resize":
+						if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+							resizeMote := &portalpb.Mote{
+								StreamId: streamID,
+								SeqId:    0,
+								Payload: &portalpb.Mote_PtyResize{
+									PtyResize: &portalpb.PTYResize{
+										Rows: ctrlMsg.Rows,
+										Cols: ctrlMsg.Cols,
+									},
+								},
+							}
+							if err := h.mux.Publish(sessionCtx, topicIn, resizeMote); err != nil {
+								errCh <- err
+								return
+							}
+						}
+					case string(shell.WebsocketMessageKindInput):
+						mote := &portalpb.Mote{
+							StreamId: streamID,
+							SeqId:    pivotSession.nextSeqID(),
+							Payload: &portalpb.Mote_Bytes{
+								Bytes: &portalpb.BytesPayload{
+									Data: []byte(ctrlMsg.Input),
+									Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+								},
+							},
+						}
+						if err := h.mux.Publish(sessionCtx, topicIn, mote); err != nil {
+							errCh <- err
+							return
+						}
 					}
 				}
 			}()
@@ -388,6 +518,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+			errCh <- fmt.Errorf("closed")
 		}()
 
 		// Reader goroutine: websocket -> portal PTY input
@@ -413,6 +544,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		errCh <- fmt.Errorf("closed")
 	}()
 
 	// Reader goroutine - for reconnects we need the portal info
@@ -432,31 +564,61 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		topicIn := h.mux.TopicIn(portalEnt.ID)
 
-		var seqID uint64
 		for {
 			_, msg, err := wsConn.ReadMessage()
 			if err != nil {
 				errCh <- err
 				return
 			}
-			var inputMsg shell.WebsocketTaskInputMessage
-			if err := json.Unmarshal(msg, &inputMsg); err != nil || inputMsg.Kind != shell.WebsocketMessageKindInput {
+			var ctrlMsg WebsocketControlMessage
+			if err := json.Unmarshal(msg, &ctrlMsg); err != nil {
 				continue
 			}
-
-			seqID++
-			mote := &portalpb.Mote{
-				StreamId: pivotSession.StreamID,
-				SeqId:    seqID,
-				Payload: &portalpb.Mote_Bytes{
-					Bytes: &portalpb.BytesPayload{
-						Data: []byte(inputMsg.Input),
-						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+			switch ctrlMsg.Kind {
+			case "close":
+				closeMote := &portalpb.Mote{
+					StreamId: pivotSession.StreamID,
+					SeqId:    pivotSession.nextSeqID(),
+					Payload: &portalpb.Mote_Bytes{
+						Bytes: &portalpb.BytesPayload{
+							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+						},
 					},
-				},
-			}
-			if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
-				slog.ErrorContext(ctx, "failed to publish pty input", "error", err)
+				}
+				_ = h.mux.Publish(ctx, topicIn, closeMote)
+				pivotSession.Close(context.Background(), h.graph)
+				errCh <- fmt.Errorf("closed")
+				return
+			case "resize":
+				if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+					resizeMote := &portalpb.Mote{
+						StreamId: pivotSession.StreamID,
+						SeqId:    0,
+						Payload: &portalpb.Mote_PtyResize{
+							PtyResize: &portalpb.PTYResize{
+								Rows: ctrlMsg.Rows,
+								Cols: ctrlMsg.Cols,
+							},
+						},
+					}
+					if err := h.mux.Publish(ctx, topicIn, resizeMote); err != nil {
+						slog.ErrorContext(ctx, "failed to publish pty resize", "error", err)
+					}
+				}
+			case string(shell.WebsocketMessageKindInput):
+				mote := &portalpb.Mote{
+					StreamId: pivotSession.StreamID,
+					SeqId:    pivotSession.nextSeqID(),
+					Payload: &portalpb.Mote_Bytes{
+						Bytes: &portalpb.BytesPayload{
+							Data: []byte(ctrlMsg.Input),
+							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+						},
+					},
+				}
+				if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
+					slog.ErrorContext(ctx, "failed to publish pty input", "error", err)
+				}
 			}
 		}
 	}()
