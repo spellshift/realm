@@ -67,13 +67,16 @@ func main() {
 	}
 	defer c.Close()
 
-	// Setup Terminal in Raw Mode
+	// Setup Terminal in Raw Mode if running interactively
 	fd := int(os.Stdin.Fd())
-	oldState, err := term.MakeRaw(fd)
-	if err != nil {
-		log.Fatalf("Failed to set raw mode: %v", err)
+	var oldState *term.State
+	if term.IsTerminal(fd) {
+		var err error
+		oldState, err = term.MakeRaw(fd)
+		if err == nil {
+			defer term.Restore(fd, oldState)
+		}
 	}
-	defer term.Restore(fd, oldState)
 
 	// Receiver loop
 	go func() {
@@ -82,7 +85,9 @@ func main() {
 			if err != nil {
 				// We don't log cleanly because we are in raw mode, but a print is fine
 				fmt.Printf("\r\n[!] Disconnected: %v\r\n", err)
-				term.Restore(fd, oldState)
+				if oldState != nil {
+					term.Restore(fd, oldState)
+				}
 				os.Exit(0)
 				return
 			}

@@ -188,6 +188,36 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	return plaintext, client_pub_key_bytes
 }
 
+// RegisterCurrentGoroutine associates the current goroutine ID with client public key bytes.
+func RegisterCurrentGoroutine(clientPubKey []byte) {
+	if len(clientPubKey) == 0 {
+		return
+	}
+	ids, err := goAllIds()
+	if err != nil {
+		return
+	}
+	session_pub_keys.Store(ids.Id, clientPubKey)
+}
+
+// GetSessionPubKey attempts to retrieve the client public key for the current goroutine or its ancestors.
+func GetSessionPubKey() ([]byte, bool) {
+	ids, err := goAllIds()
+	if err != nil {
+		return nil, false
+	}
+	candidateIDs := append([]int{ids.Id, ids.ParentId}, ids.Others...)
+	for _, id := range candidateIDs {
+		if id == 0 {
+			continue
+		}
+		if pk, ok := session_pub_keys.Load(id); ok {
+			return pk, true
+		}
+	}
+	return nil, false
+}
+
 // TODO: Don't use [] ref.
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	ids, err := goAllIds()
@@ -196,18 +226,21 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 		return FAILURE_BYTES
 	}
 
-	var id int
 	var client_pub_key_bytes []byte
 	ok := false
-	for _, id := range []int{ids.Id, ids.ParentId} {
-		client_pub_key_bytes, ok = session_pub_keys.Load(id)
+	candidateIDs := append([]int{ids.Id, ids.ParentId}, ids.Others...)
+	for _, candID := range candidateIDs {
+		if candID == 0 {
+			continue
+		}
+		client_pub_key_bytes, ok = session_pub_keys.Load(candID)
 		if ok {
 			break
 		}
 	}
 
 	if !ok {
-		slog.Error(fmt.Sprintf("public key not found for id: %d", id))
+		slog.Error(fmt.Sprintf("public key not found for id: %d (parent: %d)", ids.Id, ids.ParentId))
 		return FAILURE_BYTES
 	}
 

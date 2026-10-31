@@ -242,11 +242,11 @@ func startTestSSHServer(t *testing.T, expectedUser, expectedPass string) (string
 }
 
 // TestSSHPortalNegotiationOnGRPCInstance verifies that:
-// 1. Connecting to the SSH WebSocket publishes an SSH_PAYLOAD_KIND_CONNECT mote on TopicIn
-//    (instead of negotiating SSH on the WebSocket handler side).
-// 2. The gRPC-side Mux intercepts SSHPayload motes, negotiates the SSH handshake
-//    over TCP motes with the agent, and publishes decrypted SSH_PAYLOAD_KIND_DATA motes to TopicOut.
-// 3. Input, resize, and close messages work end-to-end and closed pivot history is preserved on reconnect.
+//  1. Connecting to the SSH WebSocket publishes an SSH_PAYLOAD_KIND_CONNECT mote on TopicIn
+//     (instead of negotiating SSH on the WebSocket handler side).
+//  2. The gRPC-side Mux intercepts SSHPayload motes, negotiates the SSH handshake
+//     over TCP motes with the agent, and publishes decrypted SSH_PAYLOAD_KIND_DATA motes to TopicOut.
+//  3. Input, resize, and close messages work end-to-end and closed pivot history is preserved on reconnect.
 func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 	env := setupSSHTestEnv(t)
 	defer env.Close()
