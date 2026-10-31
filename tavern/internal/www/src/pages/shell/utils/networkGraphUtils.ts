@@ -52,7 +52,14 @@ export const extractPivotTargetHost = (destination?: string | null): string => {
     return afterAt;
 };
 
-export function formatPivotTabLabel(tab: { type: string; target: string }): string {
+export function formatPivotTabLabel(tab: {
+    type: string;
+    target: string;
+    customTitle?: string;
+}): string {
+    if (tab.customTitle && tab.customTitle.trim()) {
+        return tab.customTitle.trim();
+    }
     if (tab.type.toLowerCase() === "ssh") {
         const raw = (tab.target || "").trim();
         if (!raw) return "SSH";

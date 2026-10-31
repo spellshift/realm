@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Pencil, RotateCcw } from "lucide-react";
 import { ShellPivotItem } from "../../hooks/useShellData";
 import { formatPivotTabLabel } from "../../utils/networkGraphUtils";
 
@@ -11,6 +12,8 @@ export interface GraphPivotsSectionProps {
     onOpenSshModal?: () => void;
     onOpenSshWithTarget?: (target: string) => void;
     onOpenPivotTab?: (type: "ssh" | "pty", target: string, pivotId: string) => void;
+    onRenamePivot?: (pivotId: string, newTitle: string) => void;
+    onResetPivotName?: (pivotId: string) => void;
 }
 
 const ActivePivotActions: React.FC<{
@@ -85,21 +88,125 @@ const PivotRow: React.FC<{
     onOpenPty?: () => void;
     onOpenSshWithTarget?: (target: string) => void;
     onOpenPivotTab?: (type: "ssh" | "pty", target: string, pivotId: string) => void;
-}> = ({ pivot, onOpenPty, onOpenSshWithTarget, onOpenPivotTab }) => {
+    onRenamePivot?: (pivotId: string, newTitle: string) => void;
+    onResetPivotName?: (pivotId: string) => void;
+}> = ({
+    pivot,
+    onOpenPty,
+    onOpenSshWithTarget,
+    onOpenPivotTab,
+    onRenamePivot,
+    onResetPivotName,
+}) => {
     const isOpen = !pivot.closedAt;
     const kindLabel = String(pivot.kind || "SSH").toUpperCase();
     const dotClass = isOpen ? "bg-emerald-400" : "bg-gray-600";
     const pivotLabel = formatPivotTabLabel({
         type: pivot.kind || "ssh",
         target: pivot.activeTarget || pivot.destination,
+        customTitle: pivot.customTitle,
     });
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingTitle, setEditingTitle] = useState(pivot.customTitle || pivotLabel);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [isEditing]);
+
+    const startEditing = () => {
+        setEditingTitle(pivot.customTitle || pivotLabel);
+        setIsEditing(true);
+    };
+
+    const commitRename = () => {
+        const trimmed = editingTitle.trim();
+        if (trimmed) {
+            onRenamePivot?.(String(pivot.id), trimmed);
+        } else {
+            onResetPivotName?.(String(pivot.id));
+        }
+        setIsEditing(false);
+    };
+
+    const cancelRename = () => {
+        setIsEditing(false);
+    };
 
     return (
         <div className="py-2 flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-xs text-gray-200 font-mono truncate">
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
-                    <span>{pivotLabel}</span>
+                    {isEditing ? (
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            data-testid={`rename-pivot-input-${pivot.id}`}
+                            aria-label={`Rename pivot ${pivot.id}`}
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    commitRename();
+                                } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    cancelRename();
+                                }
+                            }}
+                            onBlur={commitRename}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-[#12151c] text-white text-xs px-1.5 py-0.5 rounded border border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 w-full"
+                        />
+                    ) : (
+                        <div className="flex items-center gap-1.5 group/label min-w-0">
+                            <span
+                                onDoubleClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditing();
+                                }}
+                                title="Double-click to rename"
+                                className="cursor-pointer hover:text-white truncate"
+                            >
+                                {pivotLabel}
+                            </span>
+                            {onRenamePivot && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        startEditing();
+                                    }}
+                                    aria-label={`Rename pivot ${pivotLabel}`}
+                                    title="Rename pivot"
+                                    className="opacity-0 group-hover/label:opacity-100 p-0.5 text-gray-500 hover:text-gray-200 transition-opacity shrink-0"
+                                >
+                                    <Pencil className="w-3 h-3" />
+                                </button>
+                            )}
+                            {pivot.customTitle && onResetPivotName && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onResetPivotName(String(pivot.id));
+                                    }}
+                                    aria-label={`Reset name for ${pivotLabel}`}
+                                    title="Reset to default name"
+                                    className="opacity-0 group-hover/label:opacity-100 p-0.5 text-gray-500 hover:text-amber-400 transition-opacity shrink-0"
+                                >
+                                    <RotateCcw className="w-3 h-3" />
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div className="text-xs text-gray-500 pl-3 truncate">
                     {kindLabel}
@@ -127,6 +234,8 @@ export const GraphPivotsSection: React.FC<GraphPivotsSectionProps> = ({
     onOpenSshModal,
     onOpenSshWithTarget,
     onOpenPivotTab,
+    onRenamePivot,
+    onResetPivotName,
 }) => {
     return (
         <div className="px-3 py-3 border-b border-gray-800" data-testid="graph-pivots-section">
@@ -169,6 +278,8 @@ export const GraphPivotsSection: React.FC<GraphPivotsSectionProps> = ({
                             onOpenPty={onOpenPty}
                             onOpenSshWithTarget={onOpenSshWithTarget}
                             onOpenPivotTab={onOpenPivotTab}
+                            onRenamePivot={onRenamePivot}
+                            onResetPivotName={onResetPivotName}
                         />
                     ))}
                 </div>

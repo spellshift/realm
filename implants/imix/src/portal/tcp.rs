@@ -7,7 +7,7 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 
 const BUF_SIZE: usize = 64 * 1024;
-const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub async fn handle_tcp(
     first_mote: Mote,
@@ -30,14 +30,14 @@ pub async fn handle_tcp(
     let stream = match tokio::time::timeout(CONNECT_TIMEOUT, TcpStream::connect(&addr)).await {
         Ok(Ok(s)) => s,
         Ok(Err(e)) => {
-            let err_msg = format!("Failed to connect TCP to {}: {}", addr, e);
+            let err_msg = format!("tcp connect failed {}: {}", addr, e);
             let close_mote =
                 sequencer.new_bytes_mote(err_msg.clone().into_bytes(), BytesPayloadKind::Close);
             let _ = out_tx.send(close_mote).await;
             return Err(anyhow::anyhow!(err_msg));
         }
         Err(_) => {
-            let err_msg = format!("TCP connection to {} timed out", addr);
+            let err_msg = format!("tcp connect timeout: {}", addr);
             let close_mote =
                 sequencer.new_bytes_mote(err_msg.clone().into_bytes(), BytesPayloadKind::Close);
             let _ = out_tx.send(close_mote).await;
@@ -63,7 +63,7 @@ pub async fn handle_tcp(
     if !initial_data.is_empty()
         && let Err(e) = write_half.write_all(&initial_data).await
     {
-        let err_msg = format!("Failed to write initial TCP data to {}: {}", addr, e);
+        let err_msg = format!("tcp write failed {}: {}", addr, e);
         let close_mote =
             sequencer.new_bytes_mote(err_msg.clone().into_bytes(), BytesPayloadKind::Close);
         let _ = out_tx.send(close_mote).await;

@@ -8,6 +8,9 @@ terraform {
       source = "hashicorp/google"
       version = "5.15.0"
     }
+    random = {
+      source = "hashicorp/random"
+    }
   }
 }
 
@@ -15,6 +18,17 @@ resource "random_password" "defaultmysql" {
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "builder_enrollment" {
+  length  = 43
+  special = false
+}
+
+output "builder_enrollment_token" {
+  description = "One-time builder enrollment token to hand to a builder. Rotate explicitly after use."
+  value       = random_password.builder_enrollment.result
+  sensitive   = true
 }
 
 variable "redirector_upstream" {
@@ -438,6 +452,10 @@ resource "google_cloud_run_service" "tavern" {
         env {
           name = "GCP_PROJECT_ID"
           value = var.gcp_project
+        }
+        env {
+          name  = "REALM_BUILDER_ENROLLMENT_TOKENS"
+          value = random_password.builder_enrollment.result
         }
 
         // Only configure GCP pubsub if it is not disabled
