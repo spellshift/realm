@@ -14,11 +14,13 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -242,7 +244,7 @@ func startTestSSHServer(t *testing.T, expectedUser, expectedPass string) (string
 // TestSSHPortalNegotiationOnGRPCInstance verifies that:
 // 1. Connecting to the SSH WebSocket publishes an SSH_PAYLOAD_KIND_CONNECT mote on TopicIn
 //    (instead of negotiating SSH on the WebSocket handler side).
-// 2. The gRPC-side PortalManager intercepts SSHPayload motes, negotiates the SSH handshake
+// 2. The gRPC-side Mux intercepts SSHPayload motes, negotiates the SSH handshake
 //    over TCP motes with the agent, and publishes decrypted SSH_PAYLOAD_KIND_DATA motes to TopicOut.
 // 3. Input, resize, and close messages work end-to-end and closed pivot history is preserved on reconnect.
 func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
@@ -267,12 +269,12 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 	// Track whether SSH_PAYLOAD_KIND_CONNECT was received on TopicIn
 	connectMoteSeen := make(chan *portalpb.SSHPayload, 1)
 
-	// Simulate the gRPC-side Tavern instance (CreatePortal + ssh.PortalManager)
+	// Simulate the gRPC-side Tavern instance (CreatePortal + ssh.Mux)
 	// and the connected agent TCP proxy.
 	var (
 		tcpConnsMu sync.Mutex
 		tcpConns   = make(map[string]net.Conn)
-		sshManager *portalssh.PortalManager
+		sshMux     *portalssh.Mux
 	)
 
 	// sendToAgent simulates sending a TCP mote over gRPC to the agent, which dials the target TCP address
@@ -286,12 +288,12 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 		tcpConnsMu.Lock()
 		conn, exists := tcpConns[streamID]
 		if !exists {
-			targetAddr := fmt.Sprintf("%s:%d", tcpPayload.DstAddr, tcpPayload.DstPort)
+			targetAddr := net.JoinHostPort(tcpPayload.DstAddr, strconv.Itoa(int(tcpPayload.DstPort)))
 			var err error
 			conn, err = net.DialTimeout("tcp", targetAddr, 5*time.Second)
 			if err != nil {
 				tcpConnsMu.Unlock()
-				_ = sshManager.RouteAgentMote(&portalpb.Mote{
+				_ = sshMux.RouteAgentMote(&portalpb.Mote{
 					StreamId: streamID,
 					Payload: &portalpb.Mote_Bytes{
 						Bytes: &portalpb.BytesPayload{
@@ -310,7 +312,7 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 					tcpConnsMu.Lock()
 					delete(tcpConns, sid)
 					tcpConnsMu.Unlock()
-					_ = sshManager.RouteAgentMote(&portalpb.Mote{
+					_ = sshMux.RouteAgentMote(&portalpb.Mote{
 						StreamId: sid,
 						Payload: &portalpb.Mote_Bytes{
 							Bytes: &portalpb.BytesPayload{
@@ -326,7 +328,7 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 					if n > 0 {
 						chunk := make([]byte, n)
 						copy(chunk, buf[:n])
-						_ = sshManager.RouteAgentMote(&portalpb.Mote{
+						_ = sshMux.RouteAgentMote(&portalpb.Mote{
 							StreamId: sid,
 							SeqId:    seq,
 							Payload: &portalpb.Mote_Tcp{
@@ -352,8 +354,8 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 		return nil
 	}
 
-	sshManager = portalssh.NewPortalManager(portalID, env.Mux, sendToAgent)
-	defer sshManager.Close()
+	sshMux = portalssh.New(portalID, env.Mux, sendToAgent)
+	defer sshMux.Close()
 
 	// gRPC-side TopicIn loop (mirrors sendPortalInput in api_create_portal.go)
 	go func() {
@@ -372,7 +374,7 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 						default:
 						}
 					}
-					sshManager.HandleMote(ctx, mote)
+					sshMux.HandleMote(ctx, mote)
 				}
 			}
 		}
@@ -646,7 +648,7 @@ func TestSSHPortalWithSSHKeyCredentialAndPortalUpgrade(t *testing.T) {
 	var (
 		tcpConnsMu sync.Mutex
 		tcpConns   = make(map[string]net.Conn)
-		sshManager *portalssh.PortalManager
+		sshMux     *portalssh.Mux
 	)
 
 	sendToAgent := func(mote *portalpb.Mote) error {
@@ -659,7 +661,7 @@ func TestSSHPortalWithSSHKeyCredentialAndPortalUpgrade(t *testing.T) {
 		tcpConnsMu.Lock()
 		conn, exists := tcpConns[streamID]
 		if !exists {
-			targetAddr := fmt.Sprintf("%s:%d", tcpPayload.DstAddr, tcpPayload.DstPort)
+			targetAddr := net.JoinHostPort(tcpPayload.DstAddr, strconv.Itoa(int(tcpPayload.DstPort)))
 			var err error
 			conn, err = net.DialTimeout("tcp", targetAddr, 5*time.Second)
 			if err != nil {
@@ -677,7 +679,7 @@ func TestSSHPortalWithSSHKeyCredentialAndPortalUpgrade(t *testing.T) {
 					if n > 0 {
 						chunk := make([]byte, n)
 						copy(chunk, buf[:n])
-						_ = sshManager.RouteAgentMote(&portalpb.Mote{
+						_ = sshMux.RouteAgentMote(&portalpb.Mote{
 							StreamId: sid,
 							SeqId:    seq,
 							Payload: &portalpb.Mote_Tcp{
@@ -703,8 +705,8 @@ func TestSSHPortalWithSSHKeyCredentialAndPortalUpgrade(t *testing.T) {
 		return nil
 	}
 
-	sshManager = portalssh.NewPortalManager(activePortalID, env.Mux, sendToAgent)
-	defer sshManager.Close()
+	sshMux = portalssh.New(activePortalID, env.Mux, sendToAgent)
+	defer sshMux.Close()
 
 	go func() {
 		for {
@@ -716,7 +718,7 @@ func TestSSHPortalWithSSHKeyCredentialAndPortalUpgrade(t *testing.T) {
 					return
 				}
 				if mote.GetSsh() != nil {
-					sshManager.HandleMote(ctx, mote)
+					sshMux.HandleMote(ctx, mote)
 				}
 			}
 		}
@@ -746,4 +748,235 @@ func TestSSHPortalWithSSHKeyCredentialAndPortalUpgrade(t *testing.T) {
 		}
 	}
 	assert.Contains(t, combined.String(), "Key Auth SSH Ready")
+}
+
+func TestSSHMuxDecoupledStreamIDsAndPreBuffering(t *testing.T) {
+	portalMux := mux.New()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sshAddr, cleanupSSH := startTestSSHServer(t, "user1", "pass1")
+	defer cleanupSSH()
+
+	host, portStr, err := net.SplitHostPort(sshAddr)
+	require.NoError(t, err)
+	port, err := strconv.Atoi(portStr)
+	require.NoError(t, err)
+
+	portalID := 99
+	topicIn := portalMux.TopicIn(portalID)
+	topicOut := portalMux.TopicOut(portalID)
+
+	outCh, cleanupOut := portalMux.Subscribe(topicOut)
+	defer cleanupOut()
+
+	var (
+		seenTCPStreamID string
+		tcpConnsMu      sync.Mutex
+		tcpConns        = make(map[string]net.Conn)
+		sshMux          *portalssh.Mux
+	)
+
+	sendToAgent := func(mote *portalpb.Mote) error {
+		tcpPayload := mote.GetTcp()
+		if tcpPayload == nil {
+			return nil
+		}
+		sid := mote.StreamId
+		tcpConnsMu.Lock()
+		if seenTCPStreamID == "" {
+			seenTCPStreamID = sid
+		}
+		conn, exists := tcpConns[sid]
+		if !exists {
+			targetAddr := net.JoinHostPort(tcpPayload.DstAddr, strconv.Itoa(int(tcpPayload.DstPort)))
+			var dialErr error
+			conn, dialErr = net.DialTimeout("tcp", targetAddr, 5*time.Second)
+			if dialErr != nil {
+				tcpConnsMu.Unlock()
+				return dialErr
+			}
+			tcpConns[sid] = conn
+
+			go func(c net.Conn, streamID string) {
+				defer func() {
+					c.Close()
+					tcpConnsMu.Lock()
+					delete(tcpConns, streamID)
+					tcpConnsMu.Unlock()
+					_ = sshMux.RouteAgentMote(&portalpb.Mote{
+						StreamId: streamID,
+						Payload: &portalpb.Mote_Bytes{
+							Bytes: &portalpb.BytesPayload{
+								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+							},
+						},
+					})
+				}()
+				buf := make([]byte, 4096)
+				var seq uint64
+				for {
+					n, rErr := c.Read(buf)
+					if n > 0 {
+						chunk := make([]byte, n)
+						copy(chunk, buf[:n])
+						_ = sshMux.RouteAgentMote(&portalpb.Mote{
+							StreamId: streamID,
+							SeqId:    seq,
+							Payload: &portalpb.Mote_Tcp{
+								Tcp: &portalpb.TCPPayload{
+									Data: chunk,
+								},
+							},
+						})
+						seq++
+					}
+					if rErr != nil {
+						return
+					}
+				}
+			}(conn, sid)
+		}
+		tcpConnsMu.Unlock()
+
+		if len(tcpPayload.Data) > 0 {
+			_, wErr := conn.Write(tcpPayload.Data)
+			return wErr
+		}
+		return nil
+	}
+
+	sshMux = portalssh.New(portalID, portalMux, sendToAgent)
+	defer sshMux.Close()
+
+	sshStreamID := "ssh-ws-test-12345"
+
+	// 1. Send out-of-order DATA payload BEFORE CONNECT payload arrives
+	sshMux.HandleMote(ctx, &portalpb.Mote{
+		StreamId: sshStreamID,
+		SeqId:    1,
+		Payload: &portalpb.Mote_Ssh{
+			Ssh: &portalpb.SSHPayload{
+				Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA,
+				Data: []byte("whoami\n"),
+			},
+		},
+	})
+
+	// 2. Now send the CONNECT payload
+	sshMux.HandleMote(ctx, &portalpb.Mote{
+		StreamId: sshStreamID,
+		SeqId:    0,
+		Payload: &portalpb.Mote_Ssh{
+			Ssh: &portalpb.SSHPayload{
+				Kind:     portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CONNECT,
+				DstAddr:  host,
+				DstPort:  uint32(port),
+				Username: "user1",
+				Password: "pass1",
+				Rows:     40,
+				Cols:     80,
+			},
+		},
+	})
+
+	// 3. Verify output arriving on TopicOut has StreamId = sshStreamID and contains the welcome + echo of whoami
+	var output strings.Builder
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		select {
+		case outMote := <-outCh:
+			if outMote.StreamId == sshStreamID && outMote.GetSsh() != nil {
+				output.Write(outMote.GetSsh().Data)
+				if strings.Contains(output.String(), "ECHO:whoami\n") {
+					goto Done
+				}
+			}
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
+Done:
+	assert.Contains(t, output.String(), "Welcome to Test SSH")
+	assert.Contains(t, output.String(), "ECHO:whoami\n")
+
+	// 4. Verify seenTCPStreamID is a valid fresh UUID and is NOT the sshStreamID
+	assert.NotEmpty(t, seenTCPStreamID)
+	assert.NotEqual(t, sshStreamID, seenTCPStreamID)
+	_, parseErr := uuid.Parse(seenTCPStreamID)
+	assert.NoError(t, parseErr, "TCP stream ID must be a valid UUID")
+	_ = topicIn
+}
+
+func TestSSHMuxSurfacesAgentConnectTimeout(t *testing.T) {
+	portalMux := mux.New()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	portalID := 100
+	topicOut := portalMux.TopicOut(portalID)
+	outCh, cleanupOut := portalMux.Subscribe(topicOut)
+	defer cleanupOut()
+
+	var (
+		seenTCPStreamID string
+		sshMux          *portalssh.Mux
+	)
+
+	// Simulate agent failing to connect and sending back a close mote with a timeout error
+	sendToAgent := func(mote *portalpb.Mote) error {
+		if mote.GetTcp() == nil {
+			return nil
+		}
+		seenTCPStreamID = mote.StreamId
+		go func(sid string) {
+			time.Sleep(50 * time.Millisecond)
+			_ = sshMux.RouteAgentMote(&portalpb.Mote{
+				StreamId: sid,
+				SeqId:    0,
+				Payload: &portalpb.Mote_Bytes{
+					Bytes: &portalpb.BytesPayload{
+						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+						Data: []byte("tcp connect timeout: 192.0.2.1:22"),
+					},
+				},
+			})
+		}(mote.StreamId)
+		return nil
+	}
+
+	sshMux = portalssh.New(portalID, portalMux, sendToAgent)
+	defer sshMux.Close()
+
+	sshStreamID := "ssh-ws-timeout-test"
+
+	sshMux.HandleMote(ctx, &portalpb.Mote{
+		StreamId: sshStreamID,
+		SeqId:    0,
+		Payload: &portalpb.Mote_Ssh{
+			Ssh: &portalpb.SSHPayload{
+				Kind:     portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CONNECT,
+				DstAddr:  "192.0.2.1",
+				DstPort:  22,
+				Username: "user",
+				Password: "password",
+			},
+		},
+	})
+
+	var closeReason string
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		select {
+		case outMote := <-outCh:
+			if outMote.StreamId == sshStreamID && outMote.GetSsh() != nil && outMote.GetSsh().Kind == portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE {
+				closeReason = string(outMote.GetSsh().Data)
+				goto TimeoutDone
+			}
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+TimeoutDone:
+	assert.Contains(t, closeReason, "tcp connect timeout: 192.0.2.1:22")
+	assert.NotEmpty(t, seenTCPStreamID)
+	assert.NotEqual(t, sshStreamID, seenTCPStreamID)
 }

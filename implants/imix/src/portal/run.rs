@@ -90,6 +90,9 @@ pub async fn run(
                                     log::info!("Received global close portal mote, shutting down portal loop");
                                     break;
                                 }
+                                if bytes_payload.kind == BytesPayloadKind::Keepalive as i32 {
+                                    continue;
+                                }
                             }
 
                             if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx, &mut pty_manager).await {
