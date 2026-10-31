@@ -1441,6 +1441,22 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
                 target: "cat /etc/shadow && grep root /etc/passwd",
             })
         ).toBe("cat /etc/shadow && grep ...");
+
+        // Manual rename overrides any auto-naming for PTY and SSH
+        expect(
+            formatPivotTabLabel({
+                type: "pty",
+                target: "cat /etc/shadow && grep root /etc/passwd",
+                customTitle: "Shadow Dump",
+            })
+        ).toBe("Shadow Dump");
+        expect(
+            formatPivotTabLabel({
+                type: "ssh",
+                target: "root:secret@10.0.0.15:22",
+                customTitle: "Bastion Jump",
+            })
+        ).toBe("Bastion Jump");
     });
 
     it("strictly filters Queued / Running commands and responds to focusQueueTrigger", () => {
