@@ -24,17 +24,9 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	beaconID, err := srv.ValidateJWT(jwt)
+	_, err := srv.ValidateJWT(jwt)
 	if err != nil {
 		return err
-	}
-	if tc := req.GetTaskContext(); tc != nil {
-		_, err = srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID)
-	} else {
-		_, err = srv.loadShellTaskForBeacon(ctx, int(req.GetShellTaskContext().GetShellTaskId()), beaconID)
-	}
-	if err != nil {
-		return status.Errorf(codes.NotFound, "%v", err)
 	}
 
 	// Load Asset

@@ -65,7 +65,7 @@ func TestCrossBeaconIDOR(t *testing.T) {
 	_, err = stream.CloseAndRecv()
 	require.Equal(t, codes.NotFound, status.Code(err), "cross-beacon ReportFile should be denied: %v", err)
 
-	// 5. FetchAsset referencing another beacon's task must be rejected
+	// Assets remain shared across beacons with a valid task JWT.
 	asset := graph.Asset.Create().SetName("idor-asset").SetContent([]byte("secret")).SaveX(ctx)
 	fetchStream, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
 		Context: &c2pb.FetchAssetRequest_TaskContext{
@@ -74,8 +74,9 @@ func TestCrossBeaconIDOR(t *testing.T) {
 		Name: asset.Name,
 	})
 	require.NoError(t, err)
-	_, err = fetchStream.Recv()
-	require.Equal(t, codes.NotFound, status.Code(err), "cross-beacon FetchAsset should be denied: %v", err)
+	chunk, err := fetchStream.Recv()
+	require.NoError(t, err)
+	require.Equal(t, asset.Content, chunk.Chunk)
 }
 
 // TestCrossBeaconIDORCreatePortal ensures a JWT minted for one beacon cannot
@@ -138,7 +139,7 @@ func TestCrossBeaconIDORCreatePortal(t *testing.T) {
 
 // TestCrossBeaconIDORShellContext ensures a JWT minted for one beacon cannot
 // be used with a ShellTaskContext to read or write another beacon's shell
-// tasks, while the owning beacon can still fetch shared assets.
+// tasks. Asset fetches remain shared across beacons.
 func TestCrossBeaconIDORShellContext(t *testing.T) {
 	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
@@ -147,7 +148,6 @@ func TestCrossBeaconIDORShellContext(t *testing.T) {
 	beaconA := c2test.NewRandomBeacon(ctx, graph)
 	beaconB := c2test.NewRandomBeacon(ctx, graph)
 	tokenB := mintJWT(beaconB.ID)
-	tokenA := mintJWT(beaconA.ID)
 
 	userA := graph.User.Create().
 		SetOauthID("shell-ctx-user-a").
@@ -209,22 +209,11 @@ func TestCrossBeaconIDORShellContext(t *testing.T) {
 	_, err = stream.CloseAndRecv()
 	require.Equal(t, codes.NotFound, status.Code(err), "cross-beacon ReportFile (shell task) should be denied: %v", err)
 
-	// 5. FetchAsset must authorize shell tasks and preserve their ability
-	// to fetch shared assets.
+	// Assets remain shared across beacons with a valid shell task JWT.
 	asset := graph.Asset.Create().SetName("shell-asset").SetContent([]byte("shell-data")).SaveX(ctx)
 	fetchStream, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
 		Context: &c2pb.FetchAssetRequest_ShellTaskContext{
 			ShellTaskContext: &c2pb.ShellTaskContext{ShellTaskId: shellTaskID, Jwt: tokenB},
-		},
-		Name: asset.Name,
-	})
-	require.NoError(t, err)
-	_, err = fetchStream.Recv()
-	require.Equal(t, codes.NotFound, status.Code(err), "cross-beacon FetchAsset (shell task) should be denied: %v", err)
-
-	fetchStream, err = client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
-		Context: &c2pb.FetchAssetRequest_ShellTaskContext{
-			ShellTaskContext: &c2pb.ShellTaskContext{ShellTaskId: shellTaskID, Jwt: tokenA},
 		},
 		Name: asset.Name,
 	})

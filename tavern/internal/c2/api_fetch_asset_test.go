@@ -25,9 +25,7 @@ func TestFetchAsset(t *testing.T) {
 	defer close()
 	ctx := context.Background()
 
-	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
-	existingTask := c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier)
-	token := mintJWT(existingBeacon.ID)
+	token := mintJWT(c2test.NewRandomBeacon(ctx, graph).ID)
 
 	// Test Cases
 	type testCase struct {
@@ -79,7 +77,7 @@ func TestFetchAsset(t *testing.T) {
 		// Ensure request contains JWT
 		if tc.req.Context == nil {
 			tc.req.Context = &c2pb.FetchAssetRequest_TaskContext{
-				TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				TaskContext: &c2pb.TaskContext{Jwt: token},
 			}
 		} else {
 			switch c := tc.req.Context.(type) {
