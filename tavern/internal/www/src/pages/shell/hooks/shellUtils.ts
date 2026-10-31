@@ -833,3 +833,135 @@ export const highlightPythonSyntax = (input: string): string => {
 
     return result;
 };
+
+export interface TerminalKeyHandlerTarget {
+    hasSelection: () => boolean;
+    getSelection: () => string;
+    clearSelection?: () => void;
+}
+
+export interface HandleTerminalCustomKeyOptions {
+    onShiftEnter?: () => void;
+}
+
+/**
+ * Copies text to system clipboard via navigator.clipboard with fallback to document.execCommand.
+ */
+export const copyTextToClipboard = async (text: string): Promise<boolean> => {
+    if (!text) return false;
+    try {
+        if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch {
+        // Fall back to execCommand if available
+    }
+
+    try {
+        if (typeof document !== "undefined" && document.execCommand) {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            const success = document.execCommand("copy");
+            document.body.removeChild(textarea);
+            return success;
+        }
+    } catch {
+        // execCommand not supported or failed
+    }
+
+    return false;
+};
+
+/**
+ * Custom key event handler for xterm.js terminals to provide consistent
+ * copy/paste and shortcut handling across platforms (Linux, Windows, macOS).
+ *
+ * - On non-macOS (Arch Linux, generic Linux, Windows):
+ *   - Ctrl+C with active selection copies to clipboard and prevents xterm from
+ *     sending \x03 (SIGINT / prompt reset). Without selection, Ctrl+C sends SIGINT normally.
+ *   - Ctrl+Shift+C copies selection if present and returns false.
+ *   - Ctrl+V / Ctrl+Shift+V returns false without preventDefault, allowing the browser to
+ *     dispatch its native DOM 'paste' event to xterm's hidden textarea (bypassing permission prompts in Brave).
+ * - Shift+Enter invokes optional callback (e.g. newline insertion) and prevents default.
+ */
+export const handleTerminalCustomKeyEvent = (
+    ev: KeyboardEvent,
+    term: TerminalKeyHandlerTarget,
+    options?: HandleTerminalCustomKeyOptions
+): boolean => {
+    if (ev.type !== "keydown") {
+        return true;
+    }
+
+    if (ev.key === "Enter" && ev.shiftKey && !ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+        if (options?.onShiftEnter) {
+            ev.preventDefault();
+            options.onShiftEnter();
+            return false;
+        }
+    }
+
+    const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent || "");
+    const isCtrl = ev.ctrlKey && !ev.altKey && !ev.metaKey;
+    const keyLower = ev.key ? ev.key.toLowerCase() : "";
+
+    // Copy: Ctrl+C (non-macOS with selection) or Ctrl+Shift+C (Linux terminal standard)
+    if (isCtrl && (keyLower === "c" || ev.code === "KeyC")) {
+        if (ev.shiftKey) {
+            // Ctrl+Shift+C
+            if (term.hasSelection()) {
+                const selection = term.getSelection();
+                if (selection) {
+                    void copyTextToClipboard(selection);
+                }
+                term.clearSelection?.();
+            }
+            return false;
+        }
+
+        // Plain Ctrl+C
+        if (!isMac) {
+            if (term.hasSelection()) {
+                const selection = term.getSelection();
+                if (selection) {
+                    void copyTextToClipboard(selection);
+                }
+                term.clearSelection?.();
+                return false;
+            }
+            // Without selection, let xterm process Ctrl+C normally as SIGINT (^C)
+            return true;
+        }
+    }
+
+    // Ctrl+Insert (classic copy)
+    if (isCtrl && !ev.shiftKey && (ev.key === "Insert" || ev.code === "Insert")) {
+        if (term.hasSelection()) {
+            const selection = term.getSelection();
+            if (selection) {
+                void copyTextToClipboard(selection);
+            }
+            term.clearSelection?.();
+        }
+        return false;
+    }
+
+    // Paste: Ctrl+V or Ctrl+Shift+V on non-macOS, or Shift+Insert
+    // Returning false without ev.preventDefault() lets the browser fire a native DOM 'paste' event
+    // on the terminal textarea, which xterm handles via event.clipboardData (safe in Brave / strict browsers).
+    if (
+        (isCtrl && (keyLower === "v" || ev.code === "KeyV") && (!isMac || ev.shiftKey)) ||
+        (ev.shiftKey && !ev.ctrlKey && !ev.altKey && !ev.metaKey && (ev.key === "Insert" || ev.code === "Insert"))
+    ) {
+        return false;
+    }
+
+    return true;
+};
+

@@ -7,8 +7,9 @@ import { KnowledgeCredentialItem, KnowledgeHostItem } from "../hooks/useShellDat
 interface SshConnectionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConnect: (target: string) => void;
+    onConnect: (target: string, credentialId?: string) => void;
     initialTarget?: string;
+    initialCredentialId?: string;
     credentials?: KnowledgeCredentialItem[];
     hosts?: KnowledgeHostItem[];
     onLoadIntoComposer?: (code: string) => void;
@@ -17,6 +18,12 @@ interface SshConnectionModalProps {
 const formatCredKind = (kind?: string) => {
     if (!kind) return "CRED";
     return kind.replace(/^KIND_/, "");
+};
+
+const isSshKeyCredential = (cred?: KnowledgeCredentialItem): boolean => {
+    if (!cred) return false;
+    if (cred.kind?.toUpperCase().includes("SSH_KEY")) return true;
+    return Boolean(cred.secret?.trim().startsWith("-----BEGIN"));
 };
 
 const parseSshTarget = (raw: string): { username: string; password: string; hostPort: string } => {
@@ -55,11 +62,122 @@ const buildSshTarget = (username: string, password: string, hostPort: string): s
     return `${authPart}@${hp}`;
 };
 
+const KnownHostsPicker: React.FC<{
+    hosts: KnowledgeHostItem[];
+    selectedHostIp: string;
+    onSelectHost: (host: KnowledgeHostItem) => void;
+}> = ({ hosts, selectedHostIp, onSelectHost }) => {
+    if (hosts.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-1.5">
+            <div className="text-[11px] text-gray-400 flex items-center gap-1">
+                <Server size={11} className="text-blue-400" />
+                <span>Known Hosts ({hosts.length})</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                {hosts.map((h) => {
+                    const ip = h.ipAddress || h.primaryIP || h.name;
+                    const isSelected = selectedHostIp === ip;
+                    const pillClass = isSelected
+                        ? "bg-blue-600/30 border-blue-400 text-blue-100"
+                        : "bg-[#1d222e] hover:bg-[#262c3c] border-[#2f3647] text-gray-300";
+
+                    return (
+                        <button
+                            key={h.id}
+                            type="button"
+                            data-testid={`ssh-host-option-${h.id}`}
+                            onClick={() => onSelectHost(h)}
+                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono border transition-colors ${pillClass}`}
+                        >
+                            <span>{h.name}</span>
+                            {h.primaryIP && (
+                                <span className="text-gray-400">({h.primaryIP})</span>
+                            )}
+                            {h.isCurrentHost && (
+                                <span className="px-1 rounded bg-purple-500/20 text-purple-300 text-[10px]">
+                                    this host
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+const CredentialPickerList: React.FC<{
+    credentials: KnowledgeCredentialItem[];
+    selectedCredId: string;
+    onSelectCred: (cred: KnowledgeCredentialItem) => void;
+}> = ({ credentials, selectedCredId, onSelectCred }) => {
+    if (credentials.length === 0) {
+        return (
+            <div className="text-xs text-gray-500 py-1">
+                No credentials available yet. Add an SSH key or password in Context → Creds.
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className="flex flex-col gap-1 max-h-40 overflow-y-auto"
+            data-testid="ssh-credential-selector"
+        >
+            {credentials.map((c) => {
+                const isSelected = selectedCredId === c.id;
+                const rowClass = isSelected
+                    ? "bg-purple-600/30 border-purple-400 text-purple-100"
+                    : "bg-[#1d222e] hover:bg-[#262c3c] border-[#2f3647] text-gray-200";
+                const hostBadgeClass = c.isCurrentHost
+                    ? "bg-emerald-500/20 text-emerald-300"
+                    : "bg-gray-700/60 text-gray-300";
+                const maskPreview = isSshKeyCredential(c)
+                    ? "SSH key"
+                    : "*".repeat(Math.min(8, Math.max(4, c.secret?.length || 6)));
+
+                return (
+                    <button
+                        key={c.id}
+                        type="button"
+                        aria-pressed={isSelected}
+                        data-testid={`ssh-cred-option-${c.id}`}
+                        onClick={() => onSelectCred(c)}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded text-xs border text-left transition-colors ${rowClass}`}
+                    >
+                        <span className="font-mono font-medium truncate">
+                            {c.principal}
+                            <span className="text-gray-500 ml-1.5">
+                                ({maskPreview})
+                            </span>
+                        </span>
+                        <span className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="px-1.5 py-0.5 rounded bg-[#12151c] text-gray-400 text-[10px] font-mono">
+                                {formatCredKind(c.kind)}
+                            </span>
+                            {c.hostName && (
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] ${hostBadgeClass}`}>
+                                    {c.hostName}
+                                </span>
+                            )}
+                        </span>
+                    </button>
+                );
+            })}
+        </div>
+    );
+};
+
 const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     isOpen,
     onClose,
     onConnect,
     initialTarget = "",
+    initialCredentialId = "",
     credentials = [],
     hosts = [],
     onLoadIntoComposer,
@@ -70,7 +188,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     const [hostPort, setHostPort] = useState<string>("");
     const [selectedHostIp, setSelectedHostIp] = useState<string>("");
     const [selectedPort, setSelectedPort] = useState<string>("22");
-    const [selectedCredId, setSelectedCredId] = useState<string>("");
+    const [selectedCredId, setSelectedCredId] = useState<string>(initialCredentialId);
 
     useEffect(() => {
         if (isOpen) {
@@ -79,6 +197,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
             setUsername(parsed.username);
             setPassword(parsed.password);
             setHostPort(parsed.hostPort);
+            setSelectedCredId(initialCredentialId || "");
             if (parsed.hostPort) {
                 const lastColon = parsed.hostPort.lastIndexOf(":");
                 if (lastColon > 0) {
@@ -93,7 +212,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                 setSelectedPort("22");
             }
         }
-    }, [isOpen, initialTarget]);
+    }, [isOpen, initialTarget, initialCredentialId]);
 
     const relevantCreds = useMemo(() => {
         const byId = new Map<string, KnowledgeCredentialItem>();
@@ -147,20 +266,6 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         }
     };
 
-    const handleUsernameChange = (nextUsername: string) => {
-        setUsername(nextUsername);
-        const effectiveHostPort =
-            hostPort || (selectedHostIp ? `${selectedHostIp}:${selectedPort || "22"}` : "");
-        setTarget(buildSshTarget(nextUsername, password, effectiveHostPort));
-    };
-
-    const handlePasswordChange = (nextPassword: string) => {
-        setPassword(nextPassword);
-        const effectiveHostPort =
-            hostPort || (selectedHostIp ? `${selectedHostIp}:${selectedPort || "22"}` : "");
-        setTarget(buildSshTarget(username, nextPassword, effectiveHostPort));
-    };
-
     const applySelection = (credId: string, hostIp: string, port: string) => {
         const cred = relevantCreds.find((c) => c.id === credId);
         const fallbackHost = hostPort.split(":")[0] || "";
@@ -170,14 +275,22 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         setHostPort(nextHostPort);
         if (cred) {
             setUsername(cred.principal);
-            setPassword(cred.secret);
-            setTarget(buildSshTarget(cred.principal, cred.secret, nextHostPort));
+            setPassword("");
+            setTarget(buildSshTarget(cred.principal, "", nextHostPort));
         } else if (hostIp || fallbackHost) {
             setTarget(buildSshTarget(username || "root", password, nextHostPort));
         }
     };
 
     const handleSelectCred = (cred: KnowledgeCredentialItem) => {
+        if (selectedCredId === cred.id) {
+            setSelectedCredId("");
+            const fallbackHost = selectedHostIp || hostPort.split(":")[0] || "";
+            if (fallbackHost) {
+                setTarget(buildSshTarget(username || cred.principal || "root", "", `${fallbackHost}:${selectedPort || "22"}`));
+            }
+            return;
+        }
         setSelectedCredId(cred.id);
         const ip = selectedHostIp || cred.hostPrimaryIP || "127.0.0.1";
         if (!selectedHostIp && cred.hostPrimaryIP) {
@@ -196,7 +309,11 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         e.preventDefault();
         const finalTarget = target.trim();
         if (finalTarget) {
-            onConnect(finalTarget);
+            if (selectedCredId) {
+                onConnect(finalTarget, selectedCredId);
+            } else {
+                onConnect(finalTarget);
+            }
             handleClose();
         }
     };
@@ -207,8 +324,10 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         const ip = selectedHostIp || cred?.hostPrimaryIP || hostPort.split(":")[0] || "127.0.0.1";
         const portNum = parseInt(selectedPort, 10) || 22;
         const principal = username || cred?.principal || "root";
-        const secret = password || cred?.secret || "";
-        const snippet = `res = ssh.exec(\n    "${ip}",\n    "${principal}",\n    "id && hostname",\n    password=${JSON.stringify(secret)},\n    port=${portNum}\n)\nprint(res)`;
+        const authArg = isSshKeyCredential(cred)
+            ? `key=${JSON.stringify(cred?.secret || "")}`
+            : `password=${JSON.stringify(password || cred?.secret || "")}`;
+        const snippet = `res = ssh.exec(\n    "${ip}",\n    "${principal}",\n    "id && hostname",\n    ${authArg},\n    port=${portNum}\n)\nprint(res)`;
         onLoadIntoComposer(snippet);
         handleClose();
     };
@@ -223,8 +342,6 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         setSelectedPort("22");
         onClose();
     };
-
-    const hasKnowledgeGraphSuggestions = relevantCreds.length > 0 || hosts.length > 0;
 
     return (
         <Transition show={isOpen} as={Fragment}>
@@ -275,144 +392,48 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                                         type="text"
                                         value={target}
                                         onChange={(e) => handleTargetChange(e.target.value)}
-                                        placeholder="host:port or user:password@host:port"
+                                        placeholder="user@host:port or host:port"
                                         className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                                         autoFocus
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label htmlFor="ssh-username" className="block text-xs font-medium text-gray-300 mb-1.5">
-                                            Username
-                                        </label>
-                                        <input
-                                            id="ssh-username"
-                                            type="text"
-                                            value={username}
-                                            onChange={(e) => handleUsernameChange(e.target.value)}
-                                            placeholder="root"
-                                            className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                        />
+                                <div className="rounded-md bg-[#151821] border border-[#2a3040] p-3 space-y-3">
+                                    <div className="text-xs font-semibold text-purple-300 flex items-center justify-between">
+                                        <span>Quick Fill</span>
+                                        <div className="flex items-center gap-1.5 font-normal text-gray-400">
+                                            <span>Port:</span>
+                                            <input
+                                                type="text"
+                                                aria-label="Port"
+                                                value={selectedPort}
+                                                onChange={(e) => {
+                                                    setSelectedPort(e.target.value);
+                                                    applySelection(selectedCredId, selectedHostIp, e.target.value);
+                                                }}
+                                                className="w-14 px-1.5 py-0.5 rounded bg-[#101218] border border-[#2e3444] text-xs font-mono text-gray-200"
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label htmlFor="ssh-password" className="block text-xs font-medium text-gray-300 mb-1.5">
-                                            Password
-                                        </label>
-                                        <input
-                                            id="ssh-password"
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => handlePasswordChange(e.target.value)}
-                                            placeholder="••••••••"
-                                            className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+
+                                    <KnownHostsPicker
+                                        hosts={hosts}
+                                        selectedHostIp={selectedHostIp}
+                                        onSelectHost={handleSelectHost}
+                                    />
+
+                                    <div className="space-y-1.5">
+                                        <div className="text-[11px] text-gray-400 flex items-center gap-1">
+                                            <KeyRound size={11} className="text-amber-400" />
+                                            <span>Credentials ({relevantCreds.length})</span>
+                                        </div>
+                                        <CredentialPickerList
+                                            credentials={relevantCreds}
+                                            selectedCredId={selectedCredId}
+                                            onSelectCred={handleSelectCred}
                                         />
                                     </div>
                                 </div>
-
-                                {hasKnowledgeGraphSuggestions && (
-                                    <div className="rounded-md bg-[#151821] border border-[#2a3040] p-3 space-y-3">
-                                        <div className="text-xs font-semibold text-purple-300 flex items-center justify-between">
-                                            <span>Quick Fill</span>
-                                            <div className="flex items-center gap-1.5 font-normal text-gray-400">
-                                                <span>Port:</span>
-                                                <input
-                                                    type="text"
-                                                    value={selectedPort}
-                                                    onChange={(e) => {
-                                                        setSelectedPort(e.target.value);
-                                                        applySelection(selectedCredId, selectedHostIp, e.target.value);
-                                                    }}
-                                                    className="w-14 px-1.5 py-0.5 rounded bg-[#101218] border border-[#2e3444] text-xs font-mono text-gray-200"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {hosts.length > 0 && (
-                                            <div className="space-y-1.5">
-                                                <div className="text-[11px] text-gray-400 flex items-center gap-1">
-                                                    <Server size={11} className="text-blue-400" />
-                                                    <span>Known Hosts ({hosts.length})</span>
-                                                </div>
-                                                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                                                    {hosts.map((h) => {
-                                                        const ip = h.ipAddress || h.primaryIP || h.name;
-                                                        const isSelected = selectedHostIp === ip;
-                                                        return (
-                                                            <button
-                                                                key={h.id}
-                                                                type="button"
-                                                                onClick={() => handleSelectHost(h)}
-                                                                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono border transition-colors ${
-                                                                    isSelected
-                                                                        ? "bg-blue-600/30 border-blue-400 text-blue-100"
-                                                                        : "bg-[#1d222e] hover:bg-[#262c3c] border-[#2f3647] text-gray-300"
-                                                                }`}
-                                                            >
-                                                                <span>{h.name}</span>
-                                                                {h.primaryIP && (
-                                                                    <span className="text-gray-400">({h.primaryIP})</span>
-                                                                )}
-                                                                {h.isCurrentHost && (
-                                                                    <span className="px-1 rounded bg-purple-500/20 text-purple-300 text-[10px]">
-                                                                        this host
-                                                                    </span>
-                                                                )}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {relevantCreds.length > 0 && (
-                                            <div className="space-y-1.5">
-                                                <div className="text-[11px] text-gray-400 flex items-center gap-1">
-                                                    <KeyRound size={11} className="text-amber-400" />
-                                                    <span>Credentials ({relevantCreds.length})</span>
-                                                </div>
-                                                <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
-                                                    {relevantCreds.map((c) => {
-                                                        const isSelected = selectedCredId === c.id;
-                                                        return (
-                                                            <button
-                                                                key={c.id}
-                                                                type="button"
-                                                                onClick={() => handleSelectCred(c)}
-                                                                className={`flex items-center justify-between px-2.5 py-1.5 rounded text-xs border text-left transition-colors ${
-                                                                    isSelected
-                                                                        ? "bg-purple-600/30 border-purple-400 text-purple-100"
-                                                                        : "bg-[#1d222e] hover:bg-[#262c3c] border-[#2f3647] text-gray-200"
-                                                                }`}
-                                                            >
-                                                                <span className="font-mono font-medium truncate">
-                                                                    {c.principal}
-                                                                    <span className="text-gray-500 ml-1.5">
-                                                                        ({ "*".repeat(Math.min(8, Math.max(4, c.secret?.length || 6))) })
-                                                                    </span>
-                                                                </span>
-                                                                <span className="flex items-center gap-1.5 flex-shrink-0">
-                                                                    <span className="px-1.5 py-0.5 rounded bg-[#12151c] text-gray-400 text-[10px] font-mono">
-                                                                        {formatCredKind(c.kind)}
-                                                                    </span>
-                                                                    <span
-                                                                        className={`px-1.5 py-0.5 rounded text-[10px] ${
-                                                                            c.isCurrentHost
-                                                                                ? "bg-emerald-500/20 text-emerald-300"
-                                                                                : "bg-gray-700/60 text-gray-300"
-                                                                        }`}
-                                                                    >
-                                                                        {c.hostName}
-                                                                    </span>
-                                                                </span>
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
 
                                 <div className="flex items-center justify-between pt-1">
                                     <div>

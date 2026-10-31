@@ -28,6 +28,36 @@ const CREDENTIAL_KIND_OPTIONS = [
     { value: "KIND_NTLM_HASH", label: "NTLM Hash" },
 ];
 
+const CredentialSecretField: React.FC<{
+    kind: string;
+    secret: string;
+    onChange: (value: string) => void;
+}> = ({ kind, secret, onChange }) => {
+    if (kind === "KIND_SSH_KEY") {
+        return (
+            <textarea
+                id="cred-secret"
+                rows={4}
+                value={secret}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;..."
+                className="w-full px-3 py-1.5 bg-[#12151c] border border-[#343b4d] rounded-md text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
+            />
+        );
+    }
+
+    return (
+        <input
+            id="cred-secret"
+            type="text"
+            value={secret}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Password, SSH key, or hash"
+            className="w-full px-3 py-1.5 bg-[#12151c] border border-[#343b4d] rounded-md text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
+        />
+    );
+};
+
 export const CredentialModal: React.FC<CredentialModalProps> = ({
     isOpen,
     onClose,
@@ -231,13 +261,10 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
                                     >
                                         Secret / Password
                                     </label>
-                                    <input
-                                        id="cred-secret"
-                                        type="text"
-                                        value={secret}
-                                        onChange={(e) => setSecret(e.target.value)}
-                                        placeholder="Password, SSH key, or hash"
-                                        className="w-full px-3 py-1.5 bg-[#12151c] border border-[#343b4d] rounded-md text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
+                                    <CredentialSecretField
+                                        kind={kind}
+                                        secret={secret}
+                                        onChange={setSecret}
                                     />
                                 </div>
 

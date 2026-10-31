@@ -4,6 +4,7 @@ import { PortalStreamStatus, useStreamingTerminal } from "../hooks/useStreamingT
 interface SshTerminalProps {
     portalId: number;
     target: string;
+    credentialId?: string;
     pivotId?: number;
     shellId: string;
     isActive?: boolean;
@@ -27,6 +28,7 @@ const maskTargetPassword = (target: string): string => {
 const SshTerminal: React.FC<SshTerminalProps> = ({
     portalId,
     target,
+    credentialId,
     pivotId,
     shellId,
     isActive,
@@ -45,12 +47,13 @@ const SshTerminal: React.FC<SshTerminalProps> = ({
         layoutKey,
         fontSize,
         closedBannerLabel: "SSH Closed (Read-Only)",
-        dependencyKey: `ssh:${target}:${displayTarget}:${shellId}`,
+        dependencyKey: `ssh:${target}:${displayTarget}:${shellId}:${credentialId || ""}`,
         buildWsUrl: (scheme, host, activePivotId) => {
             if (activePivotId) {
                 return `${scheme}://${host}/portals/ssh/ws?pivot_id=${activePivotId}`;
             }
-            return `${scheme}://${host}/portals/ssh/ws?portal_id=${portalIdRef.current}&target=${encodeURIComponent(target)}&shell_id=${shellId}`;
+            const credParam = credentialId ? `&credential_id=${encodeURIComponent(credentialId)}` : "";
+            return `${scheme}://${host}/portals/ssh/ws?portal_id=${portalIdRef.current}&target=${encodeURIComponent(target)}&shell_id=${shellId}${credParam}`;
         },
         onSocketOpen: ({ term, ws, isAutoRetry, targetPivotId, sendResize, reportStatus }) => {
             reportStatus("connecting");

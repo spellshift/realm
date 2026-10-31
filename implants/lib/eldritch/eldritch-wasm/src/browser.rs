@@ -268,6 +268,7 @@ impl BrowserRepl {
             }
 
             let payload = self.buffer.clone();
+            let _ = self.interpreter.interpret(&payload);
             self.buffer.clear();
             return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
         }

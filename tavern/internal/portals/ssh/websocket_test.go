@@ -1,11 +1,14 @@
 package ssh_test
 
 import (
+	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/binary"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"net"
@@ -22,6 +25,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/network"
@@ -488,4 +492,258 @@ func TestSSHPortalNegotiationOnGRPCInstance(t *testing.T) {
 	assert.Contains(t, createdNetworkHost.OpenPorts, pivot.Port)
 	require.NotEmpty(t, createdNetworkHost.Edges.Networks)
 	assert.Equal(t, createdNetwork.ID, createdNetworkHost.Edges.Networks[0].ID)
+}
+
+func startTestSSHKeyServer(t *testing.T, expectedUser string, expectedPubKey gossh.PublicKey) (string, func()) {
+	t.Helper()
+
+	hostKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	signer, err := gossh.NewSignerFromKey(hostKey)
+	require.NoError(t, err)
+
+	config := &gossh.ServerConfig{
+		PublicKeyCallback: func(c gossh.ConnMetadata, pubKey gossh.PublicKey) (*gossh.Permissions, error) {
+			if c.User() == expectedUser && bytes.Equal(pubKey.Marshal(), expectedPubKey.Marshal()) {
+				return nil, nil
+			}
+			return nil, fmt.Errorf("public key rejected for %q", c.User())
+		},
+	}
+	config.AddHostKey(signer)
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go func(nConn net.Conn) {
+				defer nConn.Close()
+				_, chans, reqs, err := gossh.NewServerConn(nConn, config)
+				if err != nil {
+					return
+				}
+				go gossh.DiscardRequests(reqs)
+
+				for newChannel := range chans {
+					if newChannel.ChannelType() != "session" {
+						_ = newChannel.Reject(gossh.UnknownChannelType, "unknown channel type")
+						continue
+					}
+					channel, requests, err := newChannel.Accept()
+					if err != nil {
+						continue
+					}
+
+					go func(in <-chan *gossh.Request) {
+						for req := range in {
+							switch req.Type {
+							case "pty-req", "shell":
+								if req.WantReply {
+									_ = req.Reply(true, nil)
+								}
+								if req.Type == "shell" {
+									_, _ = channel.Write([]byte("Key Auth SSH Ready\r\n"))
+								}
+							default:
+								if req.WantReply {
+									_ = req.Reply(false, nil)
+								}
+							}
+						}
+					}(requests)
+
+					go func() {
+						defer channel.Close()
+						buf := make([]byte, 1024)
+						for {
+							select {
+							case <-ctx.Done():
+								return
+							default:
+							}
+							n, err := channel.Read(buf)
+							if n > 0 {
+								_, _ = channel.Write([]byte("KEY_ECHO:" + string(buf[:n])))
+							}
+							if err != nil {
+								return
+							}
+						}
+					}()
+				}
+			}(conn)
+		}
+	}()
+
+	cleanup := func() {
+		cancel()
+		_ = listener.Close()
+		wg.Wait()
+	}
+
+	return listener.Addr().String(), cleanup
+}
+
+func TestSSHPortalWithSSHKeyCredentialAndPortalUpgrade(t *testing.T) {
+	env := setupSSHTestEnv(t)
+	defer env.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Generate Ed25519 client key pair and PEM encode private key
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	sshPubKey, err := gossh.NewPublicKey(pubKey)
+	require.NoError(t, err)
+	pemBlock, err := gossh.MarshalPrivateKey(privKey, "")
+	require.NoError(t, err)
+	pemBytes := pem.EncodeToMemory(pemBlock)
+
+	sshAddr, cleanupSSH := startTestSSHKeyServer(t, "deploy", sshPubKey)
+	defer cleanupSSH()
+
+	// Store SSH key as a HostCredential
+	hostEnt, err := env.TaskEnt.QueryBeacon().QueryHost().Only(ctx)
+	require.NoError(t, err)
+	credEnt, err := env.EntClient.HostCredential.Create().
+		SetHost(hostEnt).
+		SetTask(env.TaskEnt).
+		SetPrincipal("deploy").
+		SetSecret(string(pemBytes)).
+		SetKind(epb.Credential_KIND_SSH_KEY).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Create an initial portal (stale) and then a second active portal on the same beacon
+	stalePortalID, staleCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.TaskEnt.ID, 0)
+	require.NoError(t, err)
+	defer staleCleanup()
+
+	activePortalID, activeCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.TaskEnt.ID, 0)
+	require.NoError(t, err)
+	defer activeCleanup()
+	require.NotEqual(t, stalePortalID, activePortalID)
+
+	// Verify the stale portal was automatically closed when the new portal was created for the beacon
+	stalePortalEnt, err := env.EntClient.Portal.Get(ctx, stalePortalID)
+	require.NoError(t, err)
+	assert.False(t, stalePortalEnt.ClosedAt.IsZero(), "previous portal on beacon should be marked closed")
+
+	topicIn := env.Mux.TopicIn(activePortalID)
+	inCh, cleanupIn := env.Mux.Subscribe(topicIn)
+	defer cleanupIn()
+
+	var (
+		tcpConnsMu sync.Mutex
+		tcpConns   = make(map[string]net.Conn)
+		sshManager *portalssh.PortalManager
+	)
+
+	sendToAgent := func(mote *portalpb.Mote) error {
+		tcpPayload := mote.GetTcp()
+		if tcpPayload == nil {
+			return nil
+		}
+		streamID := mote.StreamId
+
+		tcpConnsMu.Lock()
+		conn, exists := tcpConns[streamID]
+		if !exists {
+			targetAddr := fmt.Sprintf("%s:%d", tcpPayload.DstAddr, tcpPayload.DstPort)
+			var err error
+			conn, err = net.DialTimeout("tcp", targetAddr, 5*time.Second)
+			if err != nil {
+				tcpConnsMu.Unlock()
+				return nil
+			}
+			tcpConns[streamID] = conn
+
+			go func(c net.Conn, sid string) {
+				defer c.Close()
+				buf := make([]byte, 4096)
+				var seq uint64
+				for {
+					n, err := c.Read(buf)
+					if n > 0 {
+						chunk := make([]byte, n)
+						copy(chunk, buf[:n])
+						_ = sshManager.RouteAgentMote(&portalpb.Mote{
+							StreamId: sid,
+							SeqId:    seq,
+							Payload: &portalpb.Mote_Tcp{
+								Tcp: &portalpb.TCPPayload{
+									Data: chunk,
+								},
+							},
+						})
+						seq++
+					}
+					if err != nil {
+						return
+					}
+				}
+			}(conn, streamID)
+		}
+		tcpConnsMu.Unlock()
+
+		if len(tcpPayload.Data) > 0 {
+			_, err := conn.Write(tcpPayload.Data)
+			return err
+		}
+		return nil
+	}
+
+	sshManager = portalssh.NewPortalManager(activePortalID, env.Mux, sendToAgent)
+	defer sshManager.Close()
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case mote, ok := <-inCh:
+				if !ok || mote == nil {
+					return
+				}
+				if mote.GetSsh() != nil {
+					sshManager.HandleMote(ctx, mote)
+				}
+			}
+		}
+	}()
+
+	// Dial WebSocket using stalePortalID and credential_id (without embedding secret in target)
+	wsURL := fmt.Sprintf("%s?portal_id=%d&shell_id=%d&target=%s&credential_id=%d",
+		env.WSURL, stalePortalID, env.ShellEnt.ID, fmt.Sprintf("deploy@%s", sshAddr), credEnt.ID)
+	ws, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	var combined strings.Builder
+	deadline := time.Now().Add(5 * time.Second)
+	ws.SetReadDeadline(deadline)
+	for time.Now().Before(deadline) {
+		_, data, err := ws.ReadMessage()
+		if err != nil {
+			break
+		}
+		var msg shell.WebsocketTaskOutputMessage
+		if err := json.Unmarshal(data, &msg); err == nil && msg.Kind == shell.WebsocketMessageKindOutput {
+			combined.WriteString(msg.Output)
+			if strings.Contains(combined.String(), "Key Auth SSH Ready") {
+				break
+			}
+		}
+	}
+	assert.Contains(t, combined.String(), "Key Auth SSH Ready")
 }

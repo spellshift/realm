@@ -10,7 +10,7 @@ interface ShellActionsMenuProps {
     onExport: () => void;
     onNewPortal: () => void;
     onClosePortal: () => void;
-    onSshConnect: (target: string) => void;
+    onSshConnect: (target: string, credentialId?: string) => void;
     onPtyOpen: () => void;
     onSendCtrlC: () => void;
     onSendCtrlR: () => void;
@@ -18,6 +18,7 @@ interface ShellActionsMenuProps {
     onReplayTutorial?: () => void;
     sshModalOpenExternal?: boolean;
     sshModalInitialTarget?: string;
+    sshModalInitialCredentialId?: string;
     onCloseSshModalExternal?: () => void;
     credentials?: KnowledgeCredentialItem[];
     hosts?: KnowledgeHostItem[];
@@ -35,6 +36,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     onReplayTutorial,
     sshModalOpenExternal,
     sshModalInitialTarget,
+    sshModalInitialCredentialId,
     onCloseSshModalExternal,
     credentials,
     hosts,
@@ -229,6 +231,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                 onClose={closeSshModal}
                 onConnect={onSshConnect}
                 initialTarget={sshModalInitialTarget}
+                initialCredentialId={sshModalInitialCredentialId}
                 credentials={credentials}
                 hosts={hosts}
                 onLoadIntoComposer={onLoadIntoComposer}

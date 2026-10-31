@@ -7,6 +7,7 @@ import {
     getViewportNonEmptyLineCount,
     isTerminalElementVisible,
     transformClearAnsiForScrollback,
+    handleTerminalCustomKeyEvent,
 } from "./shellUtils";
 import {
     WEBSOCKET_CONNECT_TIMEOUT_MS,
@@ -128,6 +129,10 @@ export function useStreamingTerminal({
             fitAddon.fit();
         }
         termInstance.current = term;
+
+        term.attachCustomKeyEventHandler((ev: KeyboardEvent) => {
+            return handleTerminalCustomKeyEvent(ev, term);
+        });
 
         const sendResize = (ws: WebSocket | null, force = false) => {
             if (!isTerminalElementVisible(termRef.current)) {

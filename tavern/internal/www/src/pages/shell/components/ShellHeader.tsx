@@ -46,7 +46,7 @@ interface ShellHeaderProps {
   onToggleSidebar?: () => void;
   onExport: () => void;
   onNewPortal: () => void;
-  onSshConnect: (target: string) => void;
+  onSshConnect: (target: string, credentialId?: string) => void;
   onPtyOpen: () => void;
   onSendCtrlC: () => void;
   onSendCtrlR: () => void;
@@ -69,6 +69,7 @@ interface ShellHeaderProps {
   composerOpen?: boolean;
   sshModalOpenExternal?: boolean;
   sshModalInitialTarget?: string;
+  sshModalInitialCredentialId?: string;
   onCloseSshModalExternal?: () => void;
   credentials?: KnowledgeCredentialItem[];
   hosts?: KnowledgeHostItem[];
@@ -106,6 +107,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   composerOpen = false,
   sshModalOpenExternal,
   sshModalInitialTarget,
+  sshModalInitialCredentialId,
   onCloseSshModalExternal,
   credentials,
   hosts,
@@ -353,6 +355,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             onReplayTutorial={onReplayTutorial}
             sshModalOpenExternal={sshModalOpenExternal}
             sshModalInitialTarget={sshModalInitialTarget}
+            sshModalInitialCredentialId={sshModalInitialCredentialId}
             onCloseSshModalExternal={onCloseSshModalExternal}
             credentials={credentials}
             hosts={hosts}

@@ -281,12 +281,13 @@ export const useShellData = (
         if (!Array.isArray(portals) || portals.length === 0) {
             return;
         }
-        const activePortal = portals.find((p: any) => !p.closedAt);
-        if (activePortal) {
-            const parsedId = parseInt(activePortal.id, 10);
-            if (!Number.isNaN(parsedId)) {
-                setPortalId(parsedId);
-            }
+        const openPortalIds = portals
+            .filter((p: any) => p && !p.closedAt)
+            .map((p: any) => parseInt(p.id, 10))
+            .filter((id: number) => !Number.isNaN(id));
+        if (openPortalIds.length > 0) {
+            const newestPortalId = Math.max(...openPortalIds);
+            setPortalId(newestPortalId);
         } else {
             setPortalId((prev) => {
                 if (

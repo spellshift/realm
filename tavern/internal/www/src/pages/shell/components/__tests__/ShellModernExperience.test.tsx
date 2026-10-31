@@ -46,7 +46,14 @@ import {
     ELDRITCH_KEYWORDS,
     ELDRITCH_MODULES,
     analyzeEldritchCode,
+    clearUserDefinedSymbols,
     completeEldritchCode,
+    getEldritchSignatureHelp,
+    getUserDefinedFunctions,
+    getUserDefinedVariables,
+    registerUserDefinedFunction,
+    registerUserDefinedVariable,
+    registerUserSymbolsFromCode,
     stdlibRegistry,
 } from "../../utils/eldritchLsp";
 import {
@@ -1214,6 +1221,130 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect(strComp).not.toBeNull();
         expect(strComp!.items.some((i) => i.label === "str.encode")).toBe(true);
     });
+
+    it("registers and autocompletes user-defined functions and variables (such as RC aliases)", () => {
+        clearUserDefinedSymbols();
+
+        // 1. Initially no user defined functions or variables
+        expect(getUserDefinedFunctions()).toHaveLength(0);
+        expect(getUserDefinedVariables()).toHaveLength(0);
+
+        // 2. Parse and register DEFAULT_RC_ALIASES_SCRIPT (simulating RC load)
+        const { functions } = registerUserSymbolsFromCode(DEFAULT_RC_ALIASES_SCRIPT);
+        expect(functions.map((f) => f.name)).toEqual(
+            expect.arrayContaining(["ls", "whoami", "ps", "pwd", "cat", "netstat"])
+        );
+
+        // 3. Autocomplete user-defined functions
+        const lsComp = completeEldritchCode("l", 1);
+        expect(lsComp).not.toBeNull();
+        const lsItem = lsComp!.items.find((i) => i.label === "ls");
+        expect(lsItem).toBeDefined();
+        expect(lsItem!.kind).toBe("function");
+        expect(lsItem!.detail).toContain('ls(path=".")');
+
+        const whoamiComp = completeEldritchCode("who", 3);
+        expect(whoamiComp).not.toBeNull();
+        expect(whoamiComp!.items.some((i) => i.label === "whoami")).toBe(true);
+
+        // 4. Parameter completions and signature help on user-defined function
+        const paramComp = completeEldritchCode("ls(p", 4);
+        expect(paramComp).not.toBeNull();
+        expect(paramComp!.items.some((i) => i.label === "path=")).toBe(true);
+
+        const sigHelp = getEldritchSignatureHelp("ls(", 3);
+        expect(sigHelp).not.toBeNull();
+        expect(sigHelp!.functionName).toBe("ls");
+
+        // 5. Register and autocomplete user-defined variables with type inference
+        registerUserSymbolsFromCode('TARGET_HOST = "10.10.10.5"\nPORT_LIST = [80, 443]\nAGENT_CONFIG = {"active": True}');
+        expect(getUserDefinedVariables().map((v) => v.name)).toEqual(
+            expect.arrayContaining(["TARGET_HOST", "PORT_LIST", "AGENT_CONFIG"])
+        );
+
+        const targetComp = completeEldritchCode("TAR", 3);
+        expect(targetComp).not.toBeNull();
+        expect(targetComp!.items.some((i) => i.label === "TARGET_HOST")).toBe(true);
+
+        // 6. Inferred type method completion on user variables (dict methods, list methods, str methods)
+        const agentConfigMethods = completeEldritchCode("AGENT_CONFIG.", 13);
+        expect(agentConfigMethods).not.toBeNull();
+        expect(agentConfigMethods!.items.some((i) => i.label === "dict.keys")).toBe(true);
+        expect(agentConfigMethods!.items.some((i) => i.label === "dict.values")).toBe(true);
+
+        const hostMethods = completeEldritchCode("TARGET_HOST.", 12);
+        expect(hostMethods).not.toBeNull();
+        expect(hostMethods!.items.some((i) => i.label === "str.encode")).toBe(true);
+
+        // 7. BrowserWasmAdapter completes registered user functions and variables
+        const adapter = new BrowserWasmAdapter(
+            "ws://localhost:8080/ws",
+            () => {},
+            () => {},
+            () => {}
+        );
+        const adapterRes = adapter.complete("who", 3);
+        expect(adapterRes.suggestions).toContain("whoami");
+
+        const adapterVarRes = adapter.complete("TAR", 3);
+        expect(adapterVarRes.suggestions).toContain("TARGET_HOST");
+
+        // 8. Dynamic clearing of user symbols
+        clearUserDefinedSymbols();
+        expect(getUserDefinedFunctions()).toHaveLength(0);
+        expect(getUserDefinedVariables()).toHaveLength(0);
+        const afterClearComp = completeEldritchCode("who", 3);
+        expect(afterClearComp?.items.some((i) => i.label === "whoami")).toBeFalsy();
+    });
+
+    it("completes user-defined functions on Tab with function call syntax and parameter completions", () => {
+        clearUserDefinedSymbols();
+
+        // Register default aliases script containing ls(path="."), cat(path), whoami()
+        registerUserSymbolsFromCode(DEFAULT_RC_ALIASES_SCRIPT);
+
+        // Verify minArgs computation:
+        // whoami has 0 params -> minArgs 0
+        const whoamiSym = stdlibRegistry.userFunctions.get("whoami");
+        expect(whoamiSym).toBeDefined();
+        expect(whoamiSym!.minArgs).toBe(0);
+
+        // ls has path="." (with default) -> minArgs 0
+        const lsSym = stdlibRegistry.userFunctions.get("ls");
+        expect(lsSym).toBeDefined();
+        expect(lsSym!.minArgs).toBe(0);
+
+        // cat has path (no default) -> minArgs 1
+        const catSym = stdlibRegistry.userFunctions.get("cat");
+        expect(catSym).toBeDefined();
+        expect(catSym!.minArgs).toBe(1);
+
+        // Check completeEldritchCode on exact function names and prefixes
+        const whoComp = completeEldritchCode("who", 3);
+        expect(whoComp?.items.some((i) => i.label === "whoami")).toBe(true);
+
+        const whoamiExactComp = completeEldritchCode("whoami", 6);
+        expect(whoamiExactComp?.items.some((i) => i.label === "whoami")).toBe(true);
+
+        // Check parameter completion for cat
+        const catParamComp = completeEldritchCode("cat(", 4);
+        expect(catParamComp?.items.some((i) => i.label === "path=")).toBe(true);
+
+        // Check parameter completion with prefix
+        const catPComp = completeEldritchCode("cat(p", 5);
+        expect(catPComp?.items.some((i) => i.label === "path=")).toBe(true);
+
+        // Register a custom function with multiple params (some default, some required)
+        registerUserSymbolsFromCode("def deploy_payload(host, port=22, timeout=60):\n    return True");
+        const deploySym = stdlibRegistry.userFunctions.get("deploy_payload");
+        expect(deploySym).toBeDefined();
+        expect(deploySym!.minArgs).toBe(1); // 'host' is required, 'port' and 'timeout' are optional
+
+        const deployParamComp = completeEldritchCode("deploy_payload(", 15);
+        expect(deployParamComp?.items.map((i) => i.label)).toEqual(
+            expect.arrayContaining(["host=", "port=", "timeout="])
+        );
+    });
 });
 
 describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
@@ -1609,7 +1740,7 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         fireEvent.click(screen.getByLabelText("Reveal secret"));
         expect(screen.getByText("Winter2025!")).toBeInTheDocument();
         fireEvent.click(screen.getByText("SSH Pivot"));
-        expect(onOpenSshWithTarget).toHaveBeenCalledWith("svc_backup:Winter2025!@10.0.0.10:22");
+        expect(onOpenSshWithTarget).toHaveBeenCalledWith("svc_backup@10.0.0.10:22", "cred-1");
 
         // Switch to Files tab: reported file download link
         fireEvent.click(screen.getByRole("button", { name: "Files" }));
@@ -1808,38 +1939,52 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         expect(result.nearbyPivots).toHaveLength(1);
     });
 
-    it("populates SshConnectionModal target from Quick Fill hosts and credentials", () => {
+    it("populates SshConnectionModal target from Quick Fill hosts and credentials (including SSH keys)", () => {
         const onConnect = vi.fn();
+        const onLoadIntoComposer = vi.fn();
+        const credsWithSshKey: KnowledgeCredentialItem[] = [
+            ...sampleCreds,
+            {
+                id: "cred-ssh-key-2",
+                principal: "deploy",
+                kind: "KIND_SSH_KEY",
+                secret: "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmU=\n-----END OPENSSH PRIVATE KEY-----",
+                createdAt: "2025-01-01T12:00:00Z",
+                hostId: "h-2",
+                hostName: "db-01",
+                hostPrimaryIP: "10.0.0.20",
+                isCurrentHost: false,
+            },
+        ];
+
         render(
             <SshConnectionModal
                 isOpen={true}
                 onClose={vi.fn()}
                 onConnect={onConnect}
-                credentials={sampleCreds}
+                credentials={credsWithSshKey}
                 hosts={sampleHosts}
+                onLoadIntoComposer={onLoadIntoComposer}
             />
         );
 
         expect(screen.getByText("Quick Fill")).toBeInTheDocument();
         expect(screen.queryByText("Quick Fill from Knowledge Graph")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
 
-        // Select host db-01 (10.0.0.20) and credential svc_backup
-        fireEvent.click(screen.getByText("db-01"));
-        fireEvent.click(screen.getByText("svc_backup"));
+        // Select host db-01 (10.0.0.20) and password credential svc_backup
+        fireEvent.click(screen.getByTestId("ssh-host-option-h-2"));
+        fireEvent.click(screen.getByTestId("ssh-cred-option-cred-1"));
 
         const input = screen.getByLabelText("Target") as HTMLInputElement;
-        const usernameInput = screen.getByLabelText("Username") as HTMLInputElement;
-        const passwordInput = screen.getByLabelText("Password") as HTMLInputElement;
-        expect(input.value).toBe("svc_backup:Winter2025!@10.0.0.20:22");
-        expect(usernameInput.value).toBe("svc_backup");
-        expect(passwordInput.value).toBe("Winter2025!");
+        expect(input.value).toBe("svc_backup@10.0.0.20:22");
 
-        fireEvent.change(usernameInput, { target: { value: "operator" } });
-        fireEvent.change(passwordInput, { target: { value: "customPass" } });
-        expect(input.value).toBe("operator:customPass@10.0.0.20:22");
+        // Switch selection to SSH key credential deploy
+        fireEvent.click(screen.getByTestId("ssh-cred-option-cred-ssh-key-2"));
+        expect(input.value).toBe("deploy@10.0.0.20:22");
 
         fireEvent.click(screen.getByText("Connect"));
-        expect(onConnect).toHaveBeenCalledWith("operator:customPass@10.0.0.20:22");
+        expect(onConnect).toHaveBeenCalledWith("deploy@10.0.0.20:22", "cred-ssh-key-2");
     });
 
     it("does not close the Context drawer when ShellWalkthrough is closed or re-rendered", () => {
