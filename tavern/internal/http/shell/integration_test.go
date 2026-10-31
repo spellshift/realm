@@ -162,13 +162,9 @@ func TestInteractiveShell(t *testing.T) {
 	require.NoError(t, err)
 	defer agentCleanup()
 
-	// We need to fetch the portal to associate it with the Shell
-	// (CreatePortal saves it to DB)
+	// We need to fetch the portal
+	// (CreatePortal saves it to DB and links to open beacon shells)
 	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	// Associate Portal with Shell
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
 	require.NoError(t, err)
 
 	// Subscribe to IN topic (User -> Agent)
@@ -365,9 +361,6 @@ func TestOtherStreamOutput(t *testing.T) {
 	defer agentCleanup()
 
 	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
 	require.NoError(t, err)
 
 	// 2. Connect User 1
@@ -650,12 +643,7 @@ func TestShellHistory_Interactive(t *testing.T) {
 	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID, 0)
 	require.NoError(t, err)
 	defer agentCleanup()
-
-	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
-	require.NoError(t, err)
+	_ = portalID
 
 	// Subscribe to verify connection
 	// agentInCh, agentSubCleanup := env.Mux.Subscribe(env.Mux.TopicIn(p.ID))
@@ -730,9 +718,6 @@ func TestPortalDowngrade(t *testing.T) {
 	require.NoError(t, err)
 
 	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
 	require.NoError(t, err)
 
 	// Subscribe to IN topic

@@ -82,19 +82,19 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		})
 	}
 
-	sshManager := ssh.NewPortalManager(portalID, srv.portalMux, sendToAgent)
-	defer sshManager.Close()
+	sshMux := ssh.New(portalID, srv.portalMux, sendToAgent)
+	defer sshMux.Close()
 
 	done := make(chan struct{}, 2)
 
 	go func() {
-		sendPortalInput(ctx, portalID, sendToAgent, sshManager, recv)
+		sendPortalInput(ctx, portalID, sendToAgent, sshMux, recv)
 		done <- struct{}{}
 	}()
 
 	// Send portal output from gRPC stream to portal output topic
 	go func() {
-		sendPortalOutput(ctx, portalID, gstream, srv.portalMux, sshManager)
+		sendPortalOutput(ctx, portalID, gstream, srv.portalMux, sshMux)
 		done <- struct{}{}
 	}()
 
@@ -109,7 +109,7 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	return nil
 }
 
-func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux, sshManager *ssh.PortalManager) {
+func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux, sshMux *ssh.Mux) {
 	portalOutTopic := mux.TopicOut(portalID)
 
 	for {
@@ -136,8 +136,8 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 			continue
 		}
 
-		// Route agent TCP/Close motes belonging to gRPC-side SSH sessions directly to the SSH manager
-		if sshManager != nil && sshManager.RouteAgentMote(mote) {
+		// Route agent TCP/Close motes belonging to gRPC-side SSH sessions directly to the SSH mux
+		if sshMux != nil && sshMux.RouteAgentMote(mote) {
 			continue
 		}
 
@@ -161,7 +161,7 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 	}
 }
 
-func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSenderFunc, sshManager *ssh.PortalManager, recv <-chan *portalpb.Mote) {
+func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSenderFunc, sshMux *ssh.Mux, recv <-chan *portalpb.Mote) {
 	ticker := time.NewTicker(keepAlivePingInterval)
 	defer ticker.Stop()
 
@@ -185,8 +185,8 @@ func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSen
 			}
 
 			// Intercept SSH portal motes and negotiate/manage SSH on this gRPC Tavern instance
-			if mote.GetSsh() != nil && sshManager != nil {
-				sshManager.HandleMote(ctx, mote)
+			if mote.GetSsh() != nil && sshMux != nil {
+				sshMux.HandleMote(ctx, mote)
 				continue
 			}
 

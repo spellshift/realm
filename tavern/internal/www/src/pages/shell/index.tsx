@@ -27,6 +27,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useMutation } from "@apollo/client";
 import SshTerminal from "./components/SshTerminal";
 import PtyTerminal from "./components/PtyTerminal";
+import TabContextMenu from "./components/TabContextMenu";
 import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
 import { formatPivotTabLabel } from "./utils/networkGraphUtils";
 import { DEFAULT_RC_ALIASES_SCRIPT, registerUserSymbolsFromCode } from "./utils/eldritchLsp";
@@ -40,10 +41,12 @@ export interface PortalTab {
   target: string;
   pivotId?: string;
   credentialId?: string;
+  customTitle?: string;
 }
 
 const NUX_STORAGE_KEY = "tavern_shell_nux_dismissed_v1";
 const PIVOT_TARGETS_STORAGE_KEY = "tavern_shell_pivot_targets_v1";
+const PIVOT_CUSTOM_TITLES_STORAGE_KEY = "tavern_shell_pivot_custom_titles_v1";
 
 const getMainTabIndicatorClass = (
   connectionStatus: string,
@@ -173,6 +176,159 @@ const ShellContent = () => {
   });
   const pivotTargetsRef = useRef<Record<string, string>>(pivotTargets);
   pivotTargetsRef.current = pivotTargets;
+
+  const [customTitles, setCustomTitles] = useState<Record<string, string>>(() => {
+    try {
+      const raw = sessionStorage.getItem(PIVOT_CUSTOM_TITLES_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const customTitlesRef = useRef<Record<string, string>>(customTitles);
+  customTitlesRef.current = customTitles;
+
+  const recordCustomTitle = useCallback((key: string, title?: string) => {
+    if (!key) return;
+    setCustomTitles((prev) => {
+      const next = { ...prev };
+      if (title && title.trim()) {
+        next[key] = title.trim();
+      } else {
+        delete next[key];
+      }
+      customTitlesRef.current = next;
+      try {
+        sessionStorage.setItem(PIVOT_CUSTOM_TITLES_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore storage error
+      }
+      return next;
+    });
+  }, []);
+
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    x: number;
+    y: number;
+    tab: PortalTab | null;
+  }>({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    tab: null,
+  });
+
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTabTitle, setEditingTabTitle] = useState<string>("");
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  const startEditingTab = useCallback((tab: PortalTab) => {
+    setEditingTabId(tab.id);
+    setEditingTabTitle(tab.customTitle || formatPivotTabLabel(tab));
+  }, []);
+
+  const handleRenameTab = useCallback(
+    (tabId: string, newTitle: string) => {
+      const trimmed = newTitle.trim();
+      setPortalTabs((prev) =>
+        prev.map((t) => {
+          if (t.id !== tabId) return t;
+          if (t.pivotId) {
+            recordCustomTitle(String(t.pivotId), trimmed || undefined);
+          }
+          recordCustomTitle(t.id, trimmed || undefined);
+          return {
+            ...t,
+            customTitle: trimmed || undefined,
+          };
+        })
+      );
+    },
+    [recordCustomTitle]
+  );
+
+  const handleResetTabName = useCallback(
+    (tabId: string) => {
+      setPortalTabs((prev) =>
+        prev.map((t) => {
+          if (t.id !== tabId) return t;
+          if (t.pivotId) {
+            recordCustomTitle(String(t.pivotId), undefined);
+          }
+          recordCustomTitle(t.id, undefined);
+          return {
+            ...t,
+            customTitle: undefined,
+          };
+        })
+      );
+    },
+    [recordCustomTitle]
+  );
+
+  const commitInlineRename = useCallback(
+    (tabId: string, newTitle: string) => {
+      const trimmed = newTitle.trim();
+      if (trimmed) {
+        handleRenameTab(tabId, trimmed);
+      } else {
+        handleResetTabName(tabId);
+      }
+      setEditingTabId(null);
+    },
+    [handleRenameTab, handleResetTabName]
+  );
+
+  const cancelInlineRename = useCallback(() => {
+    setEditingTabId(null);
+  }, []);
+
+  useEffect(() => {
+    if (editingTabId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingTabId]);
+
+  const handleRenamePivot = useCallback(
+    (pivotIdStr: string, newTitle: string) => {
+      const trimmed = newTitle.trim();
+      recordCustomTitle(pivotIdStr, trimmed || undefined);
+      setPortalTabs((prev) =>
+        prev.map((t) => {
+          if (t.pivotId && String(t.pivotId) === String(pivotIdStr)) {
+            recordCustomTitle(t.id, trimmed || undefined);
+            return {
+              ...t,
+              customTitle: trimmed || undefined,
+            };
+          }
+          return t;
+        })
+      );
+    },
+    [recordCustomTitle]
+  );
+
+  const handleResetPivotName = useCallback(
+    (pivotIdStr: string) => {
+      recordCustomTitle(pivotIdStr, undefined);
+      setPortalTabs((prev) =>
+        prev.map((t) => {
+          if (t.pivotId && String(t.pivotId) === String(pivotIdStr)) {
+            recordCustomTitle(t.id, undefined);
+            return {
+              ...t,
+              customTitle: undefined,
+            };
+          }
+          return t;
+        })
+      );
+    },
+    [recordCustomTitle]
+  );
   const lastUnboundPtyTargetRef = useRef<string>("");
 
   const recordPivotTarget = useCallback((pivotIdStr: string, target: string) => {
@@ -224,6 +380,9 @@ const ShellContent = () => {
           if (t.id !== tabId) return t;
           const targetToSave =
             t.target && t.target !== "PTY" ? t.target : lastUnboundPtyTargetRef.current;
+          if (t.customTitle) {
+            recordCustomTitle(String(createdPivotId), t.customTitle);
+          }
           if (targetToSave) {
             recordPivotTarget(String(createdPivotId), targetToSave);
             if (lastUnboundPtyTargetRef.current === targetToSave) {
@@ -240,7 +399,7 @@ const ShellContent = () => {
       refetchHistory();
       refetchKnowledgeGraph();
     },
-    [recordPivotTarget, refetchHistory, refetchKnowledgeGraph]
+    [recordPivotTarget, recordCustomTitle, refetchHistory, refetchKnowledgeGraph]
   );
 
   const handleUpdateTabTarget = useCallback(
@@ -248,6 +407,9 @@ const ShellContent = () => {
       if (nextTarget.trim().toLowerCase() === "exit") return;
       setPortalTabs((prev) => {
         const matched = prev.find((t) => t.id === tabId);
+        if (matched?.customTitle) {
+          return prev;
+        }
         if (matched?.pivotId) {
           recordPivotTarget(String(matched.pivotId), nextTarget);
         } else if (matched?.type === "pty") {
@@ -272,6 +434,8 @@ const ShellContent = () => {
         pivotId && normalizedType === "pty"
           ? pivotTargetsRef.current[String(pivotId)]
           : undefined;
+      const rememberedCustomTitle =
+        pivotId ? customTitlesRef.current[String(pivotId)] : undefined;
       const cleanedTarget =
         normalizedType === "pty"
           ? rememberedTarget || (target || "PTY").replace(/^PTY\s*#\d+$/i, "PTY")
@@ -280,6 +444,9 @@ const ShellContent = () => {
         knownPivotIdsRef.current.add(String(pivotId));
         if (cleanedTarget && cleanedTarget !== "PTY" && normalizedType === "pty") {
           recordPivotTarget(String(pivotId), cleanedTarget);
+        }
+        if (rememberedCustomTitle) {
+          recordCustomTitle(String(pivotId), rememberedCustomTitle);
         }
       }
       setPortalTabs((prev) => {
@@ -315,10 +482,16 @@ const ShellContent = () => {
             if (normalizedType === "pty" && resolvedTarget && resolvedTarget !== "PTY") {
               recordPivotTarget(String(pivotId), resolvedTarget);
             }
+            const resolvedCustomTitle =
+              next[pendingIdx].customTitle || rememberedCustomTitle;
+            if (resolvedCustomTitle) {
+              recordCustomTitle(String(pivotId), resolvedCustomTitle);
+            }
             next[pendingIdx] = {
               ...next[pendingIdx],
               pivotId: String(pivotId),
               target: resolvedTarget,
+              customTitle: resolvedCustomTitle,
             };
             if (focusNewTab) {
               setTabIndex(pendingIdx + 1);
@@ -336,6 +509,7 @@ const ShellContent = () => {
             target: cleanedTarget,
             pivotId: pivotId ? String(pivotId) : undefined,
             credentialId,
+            customTitle: rememberedCustomTitle,
           },
         ];
         if (focusNewTab) {
@@ -344,7 +518,7 @@ const ShellContent = () => {
         return newTabs;
       });
     },
-    [recordPivotTarget]
+    [recordPivotTarget, recordCustomTitle]
   );
 
   const handleClosePortalTab = useCallback(
@@ -781,11 +955,31 @@ const ShellContent = () => {
                   const isDisconnected = status === "disconnected";
                   const isTabConnecting = status === "connecting";
                   const isSsh = tab.type.toLowerCase() === "ssh";
+                  const tabLabel = formatPivotTabLabel(tab);
+                  const isEditing = editingTabId === tab.id;
 
                   return (
                     <Tab
                       key={tab.id}
-                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseDown={(e) => {
+                        if (isEditing) return;
+                        e.preventDefault();
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setContextMenu({
+                          isOpen: true,
+                          x: e.clientX,
+                          y: e.clientY,
+                          tab,
+                        });
+                      }}
+                      onDoubleClick={() => {
+                        if (!isEditing) {
+                          startEditingTab(tab);
+                        }
+                      }}
                       _selected={{
                         color: "white",
                         bg: "#1f2937",
@@ -803,9 +997,41 @@ const ShellContent = () => {
                           isSsh={isSsh}
                         />
 
-                        <span className={isDisconnected ? "line-through text-gray-400" : ""}>
-                          {formatPivotTabLabel(tab)}
-                        </span>
+                        {isEditing ? (
+                          <input
+                            ref={editInputRef}
+                            type="text"
+                            data-testid="inline-rename-tab-input"
+                            aria-label={`Rename ${tabLabel} tab`}
+                            value={editingTabTitle}
+                            onChange={(e) => setEditingTabTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                commitInlineRename(tab.id, editingTabTitle);
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                cancelInlineRename();
+                              }
+                            }}
+                            onBlur={() => {
+                              commitInlineRename(tab.id, editingTabTitle);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onDoubleClick={(e) => e.stopPropagation()}
+                            className="bg-[#12151c] text-white text-xs px-1.5 py-0.5 rounded border border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 min-w-[70px] max-w-[140px]"
+                          />
+                        ) : (
+                          <span
+                            className={isDisconnected ? "line-through text-gray-400" : ""}
+                            title="Double-click to rename"
+                          >
+                            {tabLabel}
+                          </span>
+                        )}
 
                         {isDisconnected && (
                           <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-semibold">
@@ -816,7 +1042,8 @@ const ShellContent = () => {
                         <span
                           role="button"
                           tabIndex={0}
-                          aria-label={`Close ${formatPivotTabLabel(tab)} tab`}
+                          aria-label={`Minimize ${tabLabel} tab`}
+                          title="Minimize"
                           onClick={(e) => handleClosePortalTab(tab.id, e)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
@@ -990,10 +1217,13 @@ const ShellContent = () => {
                 (!p.closedAt && String(p.kind || "").toLowerCase() === "pty"
                   ? lastUnboundPtyTargetRef.current || undefined
                   : undefined);
-              if (activeTarget) {
-                return { ...p, activeTarget };
-              }
-              return p;
+              const customTitle =
+                matchingTab?.customTitle || customTitles[String(p.id)];
+              return {
+                ...p,
+                ...(activeTarget ? { activeTarget } : {}),
+                ...(customTitle ? { customTitle } : {}),
+              };
             })}
             hostCredentials={hostCredentials}
             allCredentials={allCredentials}
@@ -1019,6 +1249,8 @@ const ShellContent = () => {
               setSshModalInitialCredentialId(credentialId);
               setSshModalOpenExternal(true);
             }}
+            onRenamePivot={handleRenamePivot}
+            onResetPivotName={handleResetPivotName}
             onLoadIntoComposer={handleLoadIntoComposer}
           />
 
@@ -1063,6 +1295,30 @@ const ShellContent = () => {
           onNewPortal={handleNewPortal}
           onClosePortal={handleClosePortal}
           onReconnect={handleReconnect}
+        />
+
+        <TabContextMenu
+          isOpen={contextMenu.isOpen}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          tabLabel={contextMenu.tab ? formatPivotTabLabel(contextMenu.tab) : ""}
+          hasCustomName={Boolean(contextMenu.tab?.customTitle)}
+          onClose={() => setContextMenu((prev) => ({ ...prev, isOpen: false }))}
+          onRename={() => {
+            if (contextMenu.tab) {
+              startEditingTab(contextMenu.tab);
+            }
+          }}
+          onResetName={() => {
+            if (contextMenu.tab) {
+              handleResetTabName(contextMenu.tab.id);
+            }
+          }}
+          onMinimize={() => {
+            if (contextMenu.tab) {
+              handleClosePortalTab(contextMenu.tab.id);
+            }
+          }}
         />
       </div>
   );

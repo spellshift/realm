@@ -50,6 +50,7 @@ export interface ShellPivotItem {
     kind: string;
     destination: string;
     activeTarget?: string;
+    customTitle?: string;
     port?: number;
     closedAt?: string | null;
     shellId?: string;
