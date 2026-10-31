@@ -206,18 +206,6 @@ input UpdateBuildProfileInput {
   unique: String
 }
 
-"""Output returned when registering a new builder."""
-type RegisterBuilderOutput {
-  """The created builder entity."""
-  builder: Builder!
-
-  """mTLS certificate PEM bundle for the builder to authenticate."""
-  mtlsCert: String!
-
-  """YAML-formatted configuration for the builder."""
-  config: String!
-}
-
 """The immutable build recipe captured at task creation."""
 type BuildProfileSnapshot @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileSnapshot") {
   name: String!

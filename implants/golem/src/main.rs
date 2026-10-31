@@ -78,6 +78,7 @@ fn main() -> anyhow::Result<()> {
             Arg::new("interactive")
                 .help("Run the interactive REPL")
                 .short('i')
+                .action(ArgAction::SetTrue)
                 .required(false),
         )
         .arg(
@@ -170,7 +171,7 @@ fn main() -> anyhow::Result<()> {
     // Setup the interpreter. This will need refactored when we do multi-threaded
     let mut interp = new_runtime(locker);
 
-    if matches.contains_id("interactive") {
+    if matches.get_flag("interactive") {
         repl::repl(interp)?;
         return Ok(());
     }

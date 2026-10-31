@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
@@ -3606,6 +3607,194 @@ func (i *BuilderWhereInput) P() (predicate.Builder, error) {
 		return predicates[0], nil
 	default:
 		return builder.And(predicates...), nil
+	}
+}
+
+// BuilderEnrollmentTokenWhereInput represents a where input for filtering BuilderEnrollmentToken queries.
+type BuilderEnrollmentTokenWhereInput struct {
+	Predicates []predicate.BuilderEnrollmentToken  `json:"-"`
+	Not        *BuilderEnrollmentTokenWhereInput   `json:"not,omitempty"`
+	Or         []*BuilderEnrollmentTokenWhereInput `json:"or,omitempty"`
+	And        []*BuilderEnrollmentTokenWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "token_hash" field predicates.
+	TokenHash             *string  `json:"tokenHash,omitempty"`
+	TokenHashNEQ          *string  `json:"tokenHashNEQ,omitempty"`
+	TokenHashIn           []string `json:"tokenHashIn,omitempty"`
+	TokenHashNotIn        []string `json:"tokenHashNotIn,omitempty"`
+	TokenHashGT           *string  `json:"tokenHashGT,omitempty"`
+	TokenHashGTE          *string  `json:"tokenHashGTE,omitempty"`
+	TokenHashLT           *string  `json:"tokenHashLT,omitempty"`
+	TokenHashLTE          *string  `json:"tokenHashLTE,omitempty"`
+	TokenHashContains     *string  `json:"tokenHashContains,omitempty"`
+	TokenHashHasPrefix    *string  `json:"tokenHashHasPrefix,omitempty"`
+	TokenHashHasSuffix    *string  `json:"tokenHashHasSuffix,omitempty"`
+	TokenHashEqualFold    *string  `json:"tokenHashEqualFold,omitempty"`
+	TokenHashContainsFold *string  `json:"tokenHashContainsFold,omitempty"`
+
+	// "used" field predicates.
+	Used    *bool `json:"used,omitempty"`
+	UsedNEQ *bool `json:"usedNEQ,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *BuilderEnrollmentTokenWhereInput) AddPredicates(predicates ...predicate.BuilderEnrollmentToken) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the BuilderEnrollmentTokenWhereInput filter on the BuilderEnrollmentTokenQuery builder.
+func (i *BuilderEnrollmentTokenWhereInput) Filter(q *BuilderEnrollmentTokenQuery) (*BuilderEnrollmentTokenQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyBuilderEnrollmentTokenWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyBuilderEnrollmentTokenWhereInput is returned in case the BuilderEnrollmentTokenWhereInput is empty.
+var ErrEmptyBuilderEnrollmentTokenWhereInput = errors.New("ent: empty predicate BuilderEnrollmentTokenWhereInput")
+
+// P returns a predicate for filtering builderenrollmenttokens.
+// An error is returned if the input is empty or invalid.
+func (i *BuilderEnrollmentTokenWhereInput) P() (predicate.BuilderEnrollmentToken, error) {
+	var predicates []predicate.BuilderEnrollmentToken
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, builderenrollmenttoken.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.BuilderEnrollmentToken, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, builderenrollmenttoken.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.BuilderEnrollmentToken, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, builderenrollmenttoken.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, builderenrollmenttoken.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, builderenrollmenttoken.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, builderenrollmenttoken.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, builderenrollmenttoken.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, builderenrollmenttoken.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, builderenrollmenttoken.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, builderenrollmenttoken.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, builderenrollmenttoken.IDLTE(*i.IDLTE))
+	}
+	if i.TokenHash != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashEQ(*i.TokenHash))
+	}
+	if i.TokenHashNEQ != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashNEQ(*i.TokenHashNEQ))
+	}
+	if len(i.TokenHashIn) > 0 {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashIn(i.TokenHashIn...))
+	}
+	if len(i.TokenHashNotIn) > 0 {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashNotIn(i.TokenHashNotIn...))
+	}
+	if i.TokenHashGT != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashGT(*i.TokenHashGT))
+	}
+	if i.TokenHashGTE != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashGTE(*i.TokenHashGTE))
+	}
+	if i.TokenHashLT != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashLT(*i.TokenHashLT))
+	}
+	if i.TokenHashLTE != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashLTE(*i.TokenHashLTE))
+	}
+	if i.TokenHashContains != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashContains(*i.TokenHashContains))
+	}
+	if i.TokenHashHasPrefix != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashHasPrefix(*i.TokenHashHasPrefix))
+	}
+	if i.TokenHashHasSuffix != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashHasSuffix(*i.TokenHashHasSuffix))
+	}
+	if i.TokenHashEqualFold != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashEqualFold(*i.TokenHashEqualFold))
+	}
+	if i.TokenHashContainsFold != nil {
+		predicates = append(predicates, builderenrollmenttoken.TokenHashContainsFold(*i.TokenHashContainsFold))
+	}
+	if i.Used != nil {
+		predicates = append(predicates, builderenrollmenttoken.UsedEQ(*i.Used))
+	}
+	if i.UsedNEQ != nil {
+		predicates = append(predicates, builderenrollmenttoken.UsedNEQ(*i.UsedNEQ))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyBuilderEnrollmentTokenWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return builderenrollmenttoken.And(predicates...), nil
 	}
 }
 

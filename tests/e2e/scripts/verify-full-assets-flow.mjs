@@ -1,3 +1,4 @@
+import * as os from 'os';
 import { chromium, request as pwRequest } from 'playwright';
 import * as child_process from 'child_process';
 import * as fs from 'fs';
@@ -39,6 +40,7 @@ async function main() {
   let builderProcess = null;
   let tavernProcess = null;
   let configPath = null;
+  let enrollmentDir = null;
   const results = { screenshots: [] };
 
   try {
@@ -89,29 +91,41 @@ async function main() {
 
     // 1. Enroll builder & start local daemon
     console.log('[1] Enrolling builder...');
-    const registerData = await graphql(
-      apiCtx,
-      `mutation registerNewBuilder($input: CreateBuilderInput!) {
-        registerBuilder(input: $input) {
-          builder { id }
-          config
-        }
-      }`,
-      { input: { supportedTargets: ['PLATFORM_LINUX'], upstream: baseURL } }
-    );
-    const builderId = registerData.registerBuilder.builder.id;
-    const configYaml = registerData.registerBuilder.config;
+    enrollmentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-builder-'));
+    const tokenData = await graphql(apiCtx, `mutation { createBuilderEnrollmentToken }`);
+    const enrollmentToken = tokenData.createBuilderEnrollmentToken;
 
-    configPath = `/tmp/builder-full-flow-${Date.now()}.yaml`;
-    fs.writeFileSync(configPath, configYaml);
+    configPath = path.join(enrollmentDir, 'builder.yaml');
+    fs.writeFileSync(configPath, [
+      'supported_targets: [linux]',
+      'identity_file: builder.identity',
+      `upstream: ${baseURL}`,
+      'executor: local',
+      '',
+    ].join('\n'));
 
     builderProcess = child_process.spawn(
       tavernBin,
       ['builder', '--config', configPath, '--executor', 'local'],
-      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MYSQL_ADDR: '' } }
+      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MYSQL_ADDR: '', REALM_BUILDER_ENROLLMENT_TOKEN: enrollmentToken } }
     );
     builderProcess.stdout.on('data', (d) => console.log(`[builder] ${d.toString().trim()}`));
     builderProcess.stderr.on('data', (d) => console.log(`[builder] ${d.toString().trim()}`));
+
+    console.log('    Waiting for builder to self-enroll...');
+    const identityPath = path.join(enrollmentDir, 'builder.identity');
+    let builderId = null;
+    for (let i = 0; i < 60; i++) {
+      if (fs.existsSync(identityPath)) {
+        const match = fs.readFileSync(identityPath, 'utf8').match(/^id:\s*(.+)$/m);
+        if (match) {
+          builderId = match[1].trim();
+          break;
+        }
+      }
+      await sleep(1000);
+    }
+    if (!builderId) throw new Error('Builder never enrolled (no identity file written)');
 
     console.log('    Waiting for builder to check in...');
     for (let i = 0; i < 60; i++) {
@@ -354,9 +368,7 @@ async function main() {
       await sleep(1000);
       try { tavernProcess.kill('SIGKILL'); } catch (_) {}
     }
-    if (configPath && fs.existsSync(configPath)) {
-      try { fs.unlinkSync(configPath); } catch (_) {}
-    }
+    if (enrollmentDir) fs.rmSync(enrollmentDir, { recursive: true, force: true });
     await apiCtx.dispose();
   }
 }

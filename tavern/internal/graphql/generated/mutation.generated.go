@@ -42,7 +42,7 @@ type MutationResolver interface {
 	CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error)
 	UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error)
 	DisableLink(ctx context.Context, linkID int) (*ent.Link, error)
-	RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error)
+	CreateBuilderEnrollmentToken(ctx context.Context) (string, error)
 	DeleteBuilder(ctx context.Context, builderID int) (int, error)
 	CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error)
 	UpdateBuildProfile(ctx context.Context, profileID int, input models.UpdateBuildProfileInput) (*ent.BuildProfile, error)
@@ -377,17 +377,6 @@ func (ec *executionContext) field_Mutation_markNotificationsAsRead_args(ctx cont
 		return nil, err
 	}
 	args["notificationIDs"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_registerBuilder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateBuilderInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateBuilderInput)
-	if err != nil {
-		return nil, err
-	}
-	args["input"] = arg0
 	return args, nil
 }
 
@@ -2564,15 +2553,14 @@ func (ec *executionContext) fieldContext_Mutation_disableLink(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_createBuilderEnrollmentToken(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Mutation_registerBuilder,
+		ec.fieldContext_Mutation_createBuilderEnrollmentToken,
 		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().RegisterBuilder(ctx, fc.Args["input"].(ent.CreateBuilderInput))
+			return ec.Resolvers.Mutation().CreateBuilderEnrollmentToken(ctx)
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2580,11 +2568,11 @@ func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field
 			directive1 := func(ctx context.Context) (any, error) {
 				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
 				if err != nil {
-					var zeroVal *models.RegisterBuilderOutput
+					var zeroVal string
 					return zeroVal, err
 				}
 				if ec.Directives.RequireRole == nil {
-					var zeroVal *models.RegisterBuilderOutput
+					var zeroVal string
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
 				return ec.Directives.RequireRole(ctx, nil, directive0, role)
@@ -2593,40 +2581,21 @@ func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field
 			next = directive1
 			return next
 		},
-		ec.marshalNRegisterBuilderOutput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRegisterBuilderOutput,
+		ec.marshalNString2string,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Mutation_registerBuilder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_createBuilderEnrollmentToken(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "builder":
-				return ec.fieldContext_RegisterBuilderOutput_builder(ctx, field)
-			case "mtlsCert":
-				return ec.fieldContext_RegisterBuilderOutput_mtlsCert(ctx, field)
-			case "config":
-				return ec.fieldContext_RegisterBuilderOutput_config(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type RegisterBuilderOutput", field.Name)
+			return nil, errors.New("field of type String does not have child fields")
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_registerBuilder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -4235,9 +4204,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "registerBuilder":
+		case "createBuilderEnrollmentToken":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_registerBuilder(ctx, field)
+				return ec._Mutation_createBuilderEnrollmentToken(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
