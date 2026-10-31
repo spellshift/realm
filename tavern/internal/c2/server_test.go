@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
@@ -177,9 +178,9 @@ func TestJWTValidate(t *testing.T) {
 	}
 
 	claims := jwt.MapClaims{
-		"task_id": 1234,
-		"iat":     time.Now().Unix(),
-		"exp":     time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		ClaimBeaconID: 1234,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -187,8 +188,62 @@ func TestJWTValidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to sign JWT: %v", err)
 	}
-	// Verify
-	err = srv.ValidateJWT(tokenStr)
-	fmt.Println(err)
+	// Verify bound token succeeds and returns the beacon ID
+	beaconID, err := srv.ValidateJWT(tokenStr)
 	assert.Nil(t, err)
+	assert.Equal(t, 1234, beaconID)
+
+	// Verify unbound (legacy) token without beacon_id is rejected
+	legacyClaims := jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	}
+	legacyToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, legacyClaims)
+	legacyStr, err := legacyToken.SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign JWT: %v", err)
+	}
+	_, err = srv.ValidateJWT(legacyStr)
+	assert.NotNil(t, err)
+
+	// Verify string beacon_id claims parse strictly
+	validStringClaims := jwt.MapClaims{
+		ClaimBeaconID: "5678",
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(1 * time.Hour).Unix(),
+	}
+	validStringToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, validStringClaims)
+	validStringStr, err := validStringToken.SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign JWT: %v", err)
+	}
+	beaconID, err = srv.ValidateJWT(validStringStr)
+	assert.Nil(t, err)
+	assert.Equal(t, 5678, beaconID)
+
+	for _, bad := range []string{"12abc", "-3", "0", ""} {
+		badClaims := jwt.MapClaims{
+			ClaimBeaconID: bad,
+			"iat":         time.Now().Unix(),
+			"exp":         time.Now().Add(1 * time.Hour).Unix(),
+		}
+		badToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, badClaims)
+		badStr, err := badToken.SignedString(privKey)
+		if err != nil {
+			t.Fatalf("failed to sign JWT: %v", err)
+		}
+		_, err = srv.ValidateJWT(badStr)
+		assert.NotNil(t, err, "expected rejection for beacon_id claim %q", bad)
+	}
+
+	for _, bad := range []json.Number{"1.5", "9223372036854775808"} {
+		badToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+			ClaimBeaconID: bad,
+			"exp":         time.Now().Add(time.Hour).Unix(),
+		})
+		badStr, err := badToken.SignedString(privKey)
+		assert.NoError(t, err)
+		_, err = srv.ValidateJWT(badStr)
+		assert.Error(t, err, "expected rejection for beacon_id claim %s", bad)
+	}
 }

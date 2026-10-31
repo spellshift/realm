@@ -39,21 +39,25 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	var taskID int
 	var shellTaskID int
 	if tc := registerMsg.GetTaskContext(); tc != nil {
-		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
+		beaconID, err := srv.ValidateJWT(tc.GetJwt())
+		if err != nil {
 			return err
 		}
 		taskID = int(tc.GetTaskId())
+		if _, err := srv.loadTaskForBeacon(ctx, taskID, beaconID); err != nil {
+			return err
+		}
 	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
-		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
+		beaconID, err := srv.ValidateJWT(stc.GetJwt())
+		if err != nil {
 			return err
 		}
 		shellTaskID = int(stc.GetShellTaskId())
+		if _, err := srv.loadShellTaskForBeacon(ctx, shellTaskID, beaconID); err != nil {
+			return err
+		}
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
-	}
-
-	if taskID <= 0 && shellTaskID <= 0 {
-		return status.Errorf(codes.InvalidArgument, "invalid task ID or shell task ID")
 	}
 
 	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID)

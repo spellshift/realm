@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
-	"realm.pub/tavern/internal/ent"
 )
 
 func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputRequest) (*c2pb.ReportOutputResponse, error) {
@@ -19,13 +18,20 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if taskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing task context")
 		}
-		if err := srv.ValidateJWT(taskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(taskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
 		output := taskOutputMsg.Output
-		if output == nil || output.Id == 0 {
+		if output == nil || output.Id <= 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
+		}
+		// When the context references a task, it must be the same task the
+		// output reports on, so a valid token cannot be paired with an
+		// unrelated task id.
+		if taskOutputMsg.Context.TaskId != 0 && taskOutputMsg.Context.TaskId != output.Id {
+			return nil, status.Errorf(codes.InvalidArgument, "task context id does not match output task id")
 		}
 
 		var (
@@ -42,13 +48,10 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 			execFinishedAt = &timestamp
 		}
 
-		// Load Task
-		t, err := srv.graph.Task.Get(ctx, int(output.Id))
-		if ent.IsNotFound(err) {
-			return nil, status.Errorf(codes.NotFound, "no task found (id=%d): %v", output.Id, err)
-		}
+		// Load only a task owned by the JWT's beacon.
+		t, err := srv.loadTaskForBeacon(ctx, int(output.Id), beaconID)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to submit task result (id=%d): %v", output.Id, err)
+			return nil, err
 		}
 
 		if output.Error != nil {
@@ -73,13 +76,20 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if shellTaskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing shell task context")
 		}
-		if err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
 		output := shellTaskOutputMsg.Output
-		if output == nil || output.Id == 0 {
+		if output == nil || output.Id <= 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "must provide shell task id")
+		}
+		// When the context references a shell task, it must be the same shell
+		// task the output reports on, so a valid token cannot be paired with
+		// an unrelated shell task id.
+		if shellTaskOutputMsg.Context.ShellTaskId != 0 && shellTaskOutputMsg.Context.ShellTaskId != output.Id {
+			return nil, status.Errorf(codes.InvalidArgument, "shell task context id does not match output shell task id")
 		}
 
 		var (
@@ -97,13 +107,10 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 			execFinishedAt = &timestamp
 		}
 
-		// Load ShellTask
-		t, err := srv.graph.ShellTask.Get(ctx, int(output.Id))
-		if ent.IsNotFound(err) {
-			return nil, status.Errorf(codes.NotFound, "no shell task found (id=%d): %v", output.Id, err)
-		}
+		// Load only a shell task owned by the JWT's beacon.
+		t, err := srv.loadShellTaskForBeacon(ctx, int(output.Id), beaconID)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to submit shell task result (id=%d): %v", output.Id, err)
+			return nil, err
 		}
 
 		if output.Error != nil {
