@@ -80,9 +80,6 @@ func TestCrossBeaconIDOR(t *testing.T) {
 
 	// 5. FetchAsset referencing another beacon's task must be rejected
 	asset := graph.Asset.Create().SetName("idor-asset").SetContent([]byte("secret")).SaveX(ctx)
-	// Attach the asset to the task's tome so the failure is attributable to
-	// cross-beacon authorization, not a missing-asset lookup.
-	taskA.QueryQuest().QueryTome().OnlyX(ctx).Update().AddAssets(asset).SaveX(ctx)
 	fetchStream, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
 		Context: &c2pb.FetchAssetRequest_TaskContext{
 			TaskContext: &c2pb.TaskContext{TaskId: int64(taskA.ID), Jwt: tokenB},
@@ -166,7 +163,7 @@ func TestCrossBeaconIDORCreatePortal(t *testing.T) {
 
 // TestCrossBeaconIDORShellContext ensures a JWT minted for one beacon cannot
 // be used with a ShellTaskContext to read or write another beacon's shell
-// tasks, and that FetchAsset rejects shell task contexts entirely.
+// tasks, while the owning beacon can still fetch shared assets.
 func TestCrossBeaconIDORShellContext(t *testing.T) {
 	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
@@ -237,17 +234,29 @@ func TestCrossBeaconIDORShellContext(t *testing.T) {
 	_, err = stream.CloseAndRecv()
 	require.Equal(t, codes.NotFound, status.Code(err), "cross-beacon ReportFile (shell task) should be denied: %v", err)
 
-	// 5. FetchAsset with a shell task context must be rejected, even with a
-	// valid own-beacon token: shell tasks have no associated assets.
+	// 5. FetchAsset must authorize shell tasks and preserve their ability
+	// to fetch shared assets.
+	asset := graph.Asset.Create().SetName("shell-asset").SetContent([]byte("shell-data")).SaveX(ctx)
 	fetchStream, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
 		Context: &c2pb.FetchAssetRequest_ShellTaskContext{
-			ShellTaskContext: &c2pb.ShellTaskContext{ShellTaskId: shellTaskID, Jwt: tokenA},
+			ShellTaskContext: &c2pb.ShellTaskContext{ShellTaskId: shellTaskID, Jwt: tokenB},
 		},
-		Name: "nope",
+		Name: asset.Name,
 	})
 	require.NoError(t, err)
 	_, err = fetchStream.Recv()
-	require.Equal(t, codes.InvalidArgument, status.Code(err), "FetchAsset with shell task context should be rejected: %v", err)
+	require.Equal(t, codes.NotFound, status.Code(err), "cross-beacon FetchAsset (shell task) should be denied: %v", err)
+
+	fetchStream, err = client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
+		Context: &c2pb.FetchAssetRequest_ShellTaskContext{
+			ShellTaskContext: &c2pb.ShellTaskContext{ShellTaskId: shellTaskID, Jwt: tokenA},
+		},
+		Name: asset.Name,
+	})
+	require.NoError(t, err)
+	chunk, err := fetchStream.Recv()
+	require.NoError(t, err)
+	require.Equal(t, asset.Content, chunk.Chunk)
 
 	// 6. Own-beacon JWT still works (sanity check)
 	_, err = client.ReportOutput(ctx, &c2pb.ReportOutputRequest{

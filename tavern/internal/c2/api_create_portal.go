@@ -44,6 +44,8 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 			return err
 		}
 		taskID = int(tc.GetTaskId())
+		// The portal mux loads the task again with its related records; this
+		// lookup gates creation on the JWT's beacon before any portal is opened.
 		if _, err := srv.loadTaskForBeacon(ctx, taskID, beaconID); err != nil {
 			return err
 		}
@@ -53,6 +55,8 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 			return err
 		}
 		shellTaskID = int(stc.GetShellTaskId())
+		// The portal mux loads the shell task with its related records after
+		// this ownership check.
 		if _, err := srv.loadShellTaskForBeacon(ctx, shellTaskID, beaconID); err != nil {
 			return err
 		}

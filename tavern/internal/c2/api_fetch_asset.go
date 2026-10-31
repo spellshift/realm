@@ -15,34 +15,33 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
-	var task *ent.Task
 	if tc := req.GetTaskContext(); tc != nil {
 		beaconID, err := srv.ValidateJWT(tc.GetJwt())
 		if err != nil {
 			return err
 		}
-		// The referenced task must belong to the JWT's beacon.
-		t, err := srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID)
+		if _, err := srv.loadTaskForBeacon(ctx, int(tc.GetTaskId()), beaconID); err != nil {
+			return err
+		}
+	} else if stc := req.GetShellTaskContext(); stc != nil {
+		beaconID, err := srv.ValidateJWT(stc.GetJwt())
 		if err != nil {
 			return err
 		}
-		task = t
-	} else if req.GetShellTaskContext() != nil {
-		// Shell tasks have no associated tomes or assets, so only task
-		// contexts may fetch assets.
-		return status.Errorf(codes.InvalidArgument, "fetch_asset requires a task context")
+		if _, err := srv.loadShellTaskForBeacon(ctx, int(stc.GetShellTaskId()), beaconID); err != nil {
+			return err
+		}
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	// Load Asset scoped to the task's tome.
+	// Shell tasks can fetch assets too, so preserve the shared asset lookup.
 	name := req.GetName()
-	a, err := task.QueryQuest().QueryTome().
-		QueryAssets().
+	a, err := srv.graph.Asset.Query().
 		Where(asset.Name(name)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
-		return status.Errorf(codes.NotFound, "asset %q not found for this task", name)
+		return status.Errorf(codes.NotFound, "asset %q not found", name)
 	}
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to query asset (%q): %v", name, err)
