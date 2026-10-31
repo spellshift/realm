@@ -2961,6 +2961,10 @@
     "returnType": "None",
     "deprecated": false
   },
+  "windows.enable_privilege": {
+    "signature": "windows.enable_privilege(privilege: str) -> bool",
+    "description": "The **windows.enable_privilege** method enables a privilege on the current process token\n```python\n$> pprint(windows.tokens(process.info()['pid']))\n[\n{\n\"pid\": 3236,\n\"privileges\": [\n...\n\"SeBackupPrivilege=disabled\",\n...\n],\n\"user\": \"NT AUTHORITY\\\\SYSTEM\"\n}\n]\n$> windows.enable_privilege('SeBackupPrivilege')\nTrue\n$> pprint(windows.tokens(process.info()['pid']))\n[\n{\n\"pid\": 3236,\n\"privileges\": [\n...\n\"SeBackupPrivilege=enabled\",\n...\n],\n\"user\": \"NT AUTHORITY\\\\SYSTEM\"\n}\n]\n```"
+  },
   "windows.impersonate": {
     "signature": "windows.impersonate(pid: int) -> int",
     "description": "Impersonates another user by stealing a process token.\n\n**Parameters**\n- `pid` (`int`): Target process ID.\n\n**Returns**\n- `int`: Token store ID for later use with `use_token()`.",
