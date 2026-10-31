@@ -395,7 +395,7 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
         setTomePickerOpen(false);
         handleRcCodeChange(formatted);
         handleSetRcEnabled(true);
-        (onToggle ?? onClose)?.();
+        (onClose ?? onToggle)?.();
     };
 
     const handleOpenCustomScript = () => {
@@ -522,7 +522,7 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
 
                     <button
                         type="button"
-                        onClick={onToggle ?? onClose}
+                        onClick={onClose ?? onToggle}
                         aria-label="Close session settings"
                         title="Close session settings"
                         className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"

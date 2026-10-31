@@ -149,6 +149,28 @@ describe("ShellStatusBar", () => {
         expect(timer).toHaveClass("text-red-500 font-bold");
     });
 
+    it("maintains consistent callback time highlight width when switching between 'now' and 'in a few seconds'", () => {
+        const { rerender } = render(
+            <ShellStatusBar {...defaultProps} timeUntilCallback="now" />
+        );
+        const nextCallbackEl = screen.getByTestId("status-bar-next-callback");
+        expect(nextCallbackEl).toHaveTextContent("Nextnow");
+        expect(nextCallbackEl).toHaveClass(
+            "inline-grid",
+            "place-items-center",
+            "min-w-[8.5rem]",
+            "whitespace-nowrap",
+            "after:content-['Next_in_a_few_seconds']"
+        );
+        const classesWhenNow = nextCallbackEl.className;
+
+        rerender(
+            <ShellStatusBar {...defaultProps} timeUntilCallback="in a few seconds" />
+        );
+        expect(nextCallbackEl).toHaveTextContent("Nextin a few seconds");
+        expect(nextCallbackEl.className).toBe(classesWhenNow);
+    });
+
     it("displays terminated status when closedAt is present", () => {
         render(<ShellStatusBar {...defaultProps} closedAt="2024-01-01T00:00:00Z" />);
         expect(screen.getByText(/Terminated/i)).toBeInTheDocument();

@@ -134,9 +134,12 @@ const ShellContent = () => {
     Record<string, "connecting" | "connected" | "disconnected">
   >({});
 
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [sessionSettingsOpen, setSessionSettingsOpen] = useState(false);
-  const [scratchpadOpen, setScratchpadOpen] = useState(false);
+  const [activeBottomPanel, setActiveBottomPanel] = useState<
+    "composer" | "settings" | "scratchpad" | null
+  >(null);
+  const composerOpen = activeBottomPanel === "composer";
+  const sessionSettingsOpen = activeBottomPanel === "settings";
+  const scratchpadOpen = activeBottomPanel === "scratchpad";
   const [composerCode, setComposerCode] = useState<string>("");
   const [rcCode, setRcCode] = useState<string>(() => loadRcScript());
   const [rcEnabled, setRcEnabled] = useState<boolean>(() => loadRcEnabled());
@@ -580,9 +583,7 @@ const ShellContent = () => {
   const handleLoadIntoComposer = useCallback((code: string) => {
     setTabIndex(0);
     setComposerCode(code);
-    setComposerOpen(true);
-    setSessionSettingsOpen(false);
-    setScratchpadOpen(false);
+    setActiveBottomPanel("composer");
   }, []);
 
   const handleRunCodeFromDrawer = useCallback(
@@ -617,28 +618,22 @@ const ShellContent = () => {
           isOpen={showNuxBanner && !isConnecting && !shellData?.node?.closedAt}
           onDismiss={handleDismissNuxBanner}
           onOpenComposer={() => {
-            setComposerOpen(true);
-            setSessionSettingsOpen(false);
-            setScratchpadOpen(false);
+            setActiveBottomPanel("composer");
           }}
           onCloseComposer={() => {
-            setComposerOpen(false);
+            setActiveBottomPanel((prev) => (prev === "composer" ? null : prev));
           }}
           onOpenScratchpad={() => {
-            setScratchpadOpen(true);
-            setComposerOpen(false);
-            setSessionSettingsOpen(false);
+            setActiveBottomPanel("scratchpad");
           }}
           onCloseScratchpad={() => {
-            setScratchpadOpen(false);
+            setActiveBottomPanel((prev) => (prev === "scratchpad" ? null : prev));
           }}
           onOpenSessionSettings={() => {
-            setSessionSettingsOpen(true);
-            setComposerOpen(false);
-            setScratchpadOpen(false);
+            setActiveBottomPanel("settings");
           }}
           onCloseSessionSettings={() => {
-            setSessionSettingsOpen(false);
+            setActiveBottomPanel((prev) => (prev === "settings" ? null : prev));
           }}
           onOpenContextDrawer={() => {
             setKnowledgeOpen(true);
@@ -688,14 +683,7 @@ const ShellContent = () => {
           onLoadIntoComposer={handleLoadIntoComposer}
           composerOpen={composerOpen}
           onToggleComposer={() => {
-            setComposerOpen((prev) => {
-              const next = !prev;
-              if (next) {
-                setSessionSettingsOpen(false);
-                setScratchpadOpen(false);
-              }
-              return next;
-            });
+            setActiveBottomPanel((prev) => (prev === "composer" ? null : "composer"));
           }}
           onSpawnFreshShell={handleSpawnFreshShell}
           onReplayTutorial={() => {
@@ -907,7 +895,9 @@ const ShellContent = () => {
             </Tabs>
             <MultiLineComposer
               isOpen={composerOpen}
-              onToggle={() => setComposerOpen((prev) => !prev)}
+              onToggle={() =>
+                setActiveBottomPanel((prev) => (prev === "composer" ? null : "composer"))
+              }
               code={composerCode}
               onChange={setComposerCode}
               onRunCode={(code) => {
@@ -931,7 +921,12 @@ const ShellContent = () => {
             />
             <SessionSettings
               isOpen={sessionSettingsOpen}
-              onToggle={() => setSessionSettingsOpen((prev) => !prev)}
+              onToggle={() =>
+                setActiveBottomPanel((prev) => (prev === "settings" ? null : "settings"))
+              }
+              onClose={() =>
+                setActiveBottomPanel((prev) => (prev === "settings" ? null : prev))
+              }
               disabled={!!shellData?.node?.closedAt}
               tomes={tomes}
               rcCode={rcCode}
@@ -943,7 +938,9 @@ const ShellContent = () => {
             />
             <ShellScratchpad
               isOpen={scratchpadOpen}
-              onToggle={() => setScratchpadOpen((prev) => !prev)}
+              onToggle={() =>
+                setActiveBottomPanel((prev) => (prev === "scratchpad" ? null : "scratchpad"))
+              }
               shellId={shellId}
               fontSize={shellFontSize}
             />
@@ -1010,6 +1007,7 @@ const ShellContent = () => {
             currentShellId={shellId}
             onRunCode={handleRunCodeFromDrawer}
             onLoadIntoComposer={handleLoadIntoComposer}
+            onSelectShell={(targetShellId) => navigate(`/shells/${targetShellId}`)}
           />
         </div>
 
@@ -1029,36 +1027,15 @@ const ShellContent = () => {
           queueTourOpen={queueTourOpen}
           sessionSettingsOpen={sessionSettingsOpen}
           onToggleSessionSettings={() => {
-            setSessionSettingsOpen((prev) => {
-              const next = !prev;
-              if (next) {
-                setComposerOpen(false);
-                setScratchpadOpen(false);
-              }
-              return next;
-            });
+            setActiveBottomPanel((prev) => (prev === "settings" ? null : "settings"));
           }}
           composerOpen={composerOpen}
           onToggleComposer={() => {
-            setComposerOpen((prev) => {
-              const next = !prev;
-              if (next) {
-                setSessionSettingsOpen(false);
-                setScratchpadOpen(false);
-              }
-              return next;
-            });
+            setActiveBottomPanel((prev) => (prev === "composer" ? null : "composer"));
           }}
           scratchpadOpen={scratchpadOpen}
           onToggleScratchpad={() => {
-            setScratchpadOpen((prev) => {
-              const next = !prev;
-              if (next) {
-                setSessionSettingsOpen(false);
-                setComposerOpen(false);
-              }
-              return next;
-            });
+            setActiveBottomPanel((prev) => (prev === "scratchpad" ? null : "scratchpad"));
           }}
           onNewPortal={handleNewPortal}
           onClosePortal={handleClosePortal}

@@ -223,6 +223,39 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       return;
     }
 
+    if (currentStep.id !== "composer") {
+      if (cb.onCloseComposer) {
+        cb.onCloseComposer();
+      } else if (document.querySelector('[data-tour="shell-composer"]')) {
+        const toggleBtn = document.querySelector<HTMLElement>(
+          '[data-tour="shell-composer-toggle"]'
+        );
+        toggleBtn?.click();
+      }
+    }
+
+    if (currentStep.id !== "scratchpad") {
+      if (cb.onCloseScratchpad) {
+        cb.onCloseScratchpad();
+      } else if (document.querySelector('[data-tour="shell-scratchpad"]')) {
+        const toggleBtn = document.querySelector<HTMLElement>(
+          '[data-tour="shell-scratchpad-toggle"]'
+        );
+        toggleBtn?.click();
+      }
+    }
+
+    if (currentStep.id !== "setup-aliases") {
+      if (cb.onCloseSessionSettings) {
+        cb.onCloseSessionSettings();
+      } else if (document.querySelector('[data-tour="shell-session-settings"]')) {
+        const toggleBtn = document.querySelector<HTMLElement>(
+          '[data-tour="shell-session-settings-toggle"]'
+        );
+        toggleBtn?.click();
+      }
+    }
+
     if (currentStep.id === "composer") {
       if (cb.onOpenComposer) {
         cb.onOpenComposer();
@@ -232,11 +265,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         );
         toggleBtn?.click();
       }
-    } else {
-      cb.onCloseComposer?.();
-    }
-
-    if (currentStep.id === "scratchpad") {
+    } else if (currentStep.id === "scratchpad") {
       if (cb.onOpenScratchpad) {
         cb.onOpenScratchpad();
       } else if (!document.querySelector('[data-tour="shell-scratchpad"]')) {
@@ -245,11 +274,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         );
         toggleBtn?.click();
       }
-    } else {
-      cb.onCloseScratchpad?.();
-    }
-
-    if (currentStep.id === "setup-aliases") {
+    } else if (currentStep.id === "setup-aliases") {
       if (cb.onOpenSessionSettings) {
         cb.onOpenSessionSettings();
       } else if (!document.querySelector('[data-tour="shell-session-settings"]')) {
@@ -258,8 +283,6 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         );
         toggleBtn?.click();
       }
-    } else {
-      cb.onCloseSessionSettings?.();
     }
 
     if (currentStep.id === "portal") {
@@ -281,13 +304,23 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         target.closest('[data-tour="shell-setup-aliases"]')
       ) {
         setStepIndex((i) => Math.min(WALKTHROUGH_STEPS.length - 1, i + 1));
+      } else if (
+        (currentStep.id === "session-settings" || currentStep.id === "setup-aliases") &&
+        target.closest('[data-tour="shell-composer-toggle"]')
+      ) {
+        const composerIdx = WALKTHROUGH_STEPS.findIndex((s) => s.id === "composer");
+        if (composerIdx !== -1) {
+          setStepIndex(composerIdx);
+        }
       }
     };
 
-    document.addEventListener("click", handleTargetClick, true);
+    document.addEventListener("click", handleTargetClick);
 
     cb.onPortalStepChange?.(currentStep.id === "guide" || currentStep.id === "feedback");
-    cb.onQueueStepChange?.(currentStep.id === "queue-status");
+    cb.onQueueStepChange?.(
+      currentStep.id === "callback" || currentStep.id === "queue-status"
+    );
 
     const updateRect = (allowClear = false, allowFallback = true) => {
       const el =
@@ -308,16 +341,45 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
         }
         return false;
       }
-      setTargetRect({
-        top: r.top,
-        left: r.left,
-        width: r.width,
-        height: r.height,
+      setTargetRect((prev) => {
+        if (
+          prev &&
+          prev.top === r.top &&
+          prev.left === r.left &&
+          prev.width === r.width &&
+          prev.height === r.height
+        ) {
+          return prev;
+        }
+        return {
+          top: r.top,
+          left: r.left,
+          width: r.width,
+          height: r.height,
+        };
       });
       return true;
     };
 
     updateRect(false, false);
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      try {
+        const observedEl =
+          document.querySelector(currentStep.selector) ||
+          (currentStep.fallbackSelector
+            ? document.querySelector(currentStep.fallbackSelector)
+            : null);
+        if (observedEl) {
+          resizeObserver = new ResizeObserver(() => {
+            updateRect(false, true);
+          });
+          resizeObserver.observe(observedEl);
+        }
+      } catch {
+        // Ignore ResizeObserver errors in test environments
+      }
+    }
     const rafId = window.requestAnimationFrame(() => {
       updateRect(false, true);
     });
@@ -328,11 +390,12 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     window.addEventListener("resize", handleViewportChange);
     window.addEventListener("scroll", handleViewportChange, true);
     return () => {
+      resizeObserver?.disconnect();
       window.cancelAnimationFrame(rafId);
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
-      document.removeEventListener("click", handleTargetClick, true);
+      document.removeEventListener("click", handleTargetClick);
       window.removeEventListener("resize", handleViewportChange);
       window.removeEventListener("scroll", handleViewportChange, true);
     };

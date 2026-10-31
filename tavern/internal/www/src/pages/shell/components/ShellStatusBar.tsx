@@ -398,13 +398,15 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({
             <div
               data-tour="shell-next-callback"
               data-testid="status-bar-next-callback"
-              className="relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-gray-800 transition-colors cursor-default"
+              className="relative inline-grid place-items-center min-w-[8.5rem] px-2 py-0.5 rounded-md hover:bg-gray-800 transition-colors cursor-default whitespace-nowrap after:content-['Next_in_a_few_seconds'] after:col-start-1 after:row-start-1 after:invisible after:pointer-events-none after:select-none"
               onMouseEnter={() => setCallbackHovered(true)}
               onMouseLeave={() => setCallbackHovered(false)}
             >
-              <span>Next</span>
-              <span className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-300"}>
-                {timeUntilCallback}
+              <span className="col-start-1 row-start-1 inline-flex items-center gap-1.5">
+                <span>Next</span>
+                <span className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-300"}>
+                  {timeUntilCallback}
+                </span>
               </span>
               {callbackHovered && (
                 <CallbackStatsPopover

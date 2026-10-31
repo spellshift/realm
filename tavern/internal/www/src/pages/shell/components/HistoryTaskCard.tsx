@@ -19,6 +19,7 @@ import {
     ListVideo,
     Pencil,
     Play,
+    Terminal,
 } from "lucide-react";
 import { ShellTaskItem } from "../hooks/useShellData";
 import { formatFileSize } from "../utils/networkGraphUtils";
@@ -181,6 +182,7 @@ export interface HistoryTaskCardProps {
     currentShellId?: string;
     onRunCode: (code: string) => void;
     onLoadIntoComposer: (code: string) => void;
+    onSelectShell?: (shellId: string) => void;
 }
 
 export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
@@ -188,6 +190,7 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
     currentShellId,
     onRunCode,
     onLoadIntoComposer,
+    onSelectShell,
 }) => {
     const [activeTab, setActiveTab] = useState<HistoryCardTab>("input");
     const [isFullExpanded, setIsFullExpanded] = useState(false);
@@ -220,6 +223,16 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
     const isOtherSession = Boolean(
         currentShellId && task.shellId && String(task.shellId) !== String(currentShellId)
     );
+
+    const handleSwapShell = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        if (!task.shellId) return;
+        if (onSelectShell) {
+            onSelectShell(String(task.shellId));
+        } else if (typeof window !== "undefined" && window.location) {
+            window.location.assign(`/shells/${task.shellId}`);
+        }
+    };
 
     const formattedTime = formatTaskTime(task.createdAt);
 
@@ -272,9 +285,16 @@ export const HistoryTaskCard: React.FC<HistoryTaskCardProps> = ({
                     )}
 
                     {isOtherSession && (
-                        <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 font-mono text-[10px] leading-none shrink-0">
-                            Shell #{task.shellId}
-                        </span>
+                        <button
+                            type="button"
+                            data-testid="history-card-swap-shell"
+                            onClick={handleSwapShell}
+                            title={`Swap to Shell #${task.shellId}`}
+                            aria-label="Swap to shell"
+                            className="inline-flex items-center justify-center p-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors shrink-0 border border-gray-700/50"
+                        >
+                            <Terminal className="w-3.5 h-3.5" />
+                        </button>
                     )}
                 </div>
 

@@ -152,12 +152,13 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(onOpenScratchpad).toHaveBeenCalledTimes(1);
         expect(onCloseScratchpad).not.toHaveBeenCalled();
 
-        // Step 6: Agent Callback (closes scratchpad and highlights Next on bottom-right bar)
+        // Step 6: Agent Callback (closes scratchpad and highlights Next on bottom-right bar, pre-renders queue indicator)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Agent Callback")).toBeInTheDocument();
         expect(onCloseScratchpad).toHaveBeenCalledTimes(1);
+        expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
 
-        // Step 6: Queued & Executing Tasks
+        // Step 7: Queued & Executing Tasks
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Queued & Executing Tasks")).toBeInTheDocument();
         expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
@@ -166,17 +167,17 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         const nonInteractiveEl = document.createElement("span");
         nonInteractiveEl.setAttribute("data-tour", "shell-non-interactive");
         nonInteractiveEl.getBoundingClientRect = () =>
-            ({
-                top: 760,
-                left: 24,
-                width: 110,
-                height: 20,
-                bottom: 780,
-                right: 134,
-                x: 24,
-                y: 760,
-                toJSON: () => {},
-            } as DOMRect);
+        ({
+            top: 760,
+            left: 24,
+            width: 110,
+            height: 20,
+            bottom: 780,
+            right: 134,
+            x: 24,
+            y: 760,
+            toJSON: () => { },
+        } as DOMRect);
         document.body.appendChild(nonInteractiveEl);
 
         fireEvent.click(screen.getByText("Next"));
@@ -222,6 +223,134 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
 
         fireEvent.click(screen.getByLabelText("Dismiss welcome guide"));
         expect(onDismiss).toHaveBeenCalled();
+    });
+
+    it("cleanly closes SessionSettings and opens MultiLineComposer without stacking when moving from settings to composer during the NUX", () => {
+        const sampleAliasesTome: ShellTomeItem = {
+            id: "tome-aliases",
+            name: "Shell Aliases",
+            description: "Default aliases for shell sessions",
+            eldritch: 'def ls():\n    print("alias ls")\n',
+            tactic: "SHELL_RC",
+        };
+
+        const StatefulNuxBottomPanelsHarness: React.FC = () => {
+            const [activeBottomPanel, setActiveBottomPanel] = React.useState<
+                "composer" | "settings" | "scratchpad" | null
+            >(null);
+            const [composerCode, setComposerCode] = React.useState("");
+            const [rcCode, setRcCode] = React.useState("");
+            const [rcEnabled, setRcEnabled] = React.useState(false);
+
+            const composerOpen = activeBottomPanel === "composer";
+            const sessionSettingsOpen = activeBottomPanel === "settings";
+
+            return (
+                <div>
+                    <ShellWalkthrough
+                        isOpen={true}
+                        onDismiss={vi.fn()}
+                        onOpenComposer={() => setActiveBottomPanel("composer")}
+                        onCloseComposer={() =>
+                            setActiveBottomPanel((prev) => (prev === "composer" ? null : prev))
+                        }
+                        onOpenScratchpad={() => setActiveBottomPanel("scratchpad")}
+                        onCloseScratchpad={() =>
+                            setActiveBottomPanel((prev) => (prev === "scratchpad" ? null : prev))
+                        }
+                        onOpenSessionSettings={() => setActiveBottomPanel("settings")}
+                        onCloseSessionSettings={() =>
+                            setActiveBottomPanel((prev) => (prev === "settings" ? null : prev))
+                        }
+                    />
+                    <MultiLineComposer
+                        isOpen={composerOpen}
+                        onToggle={() =>
+                            setActiveBottomPanel((prev) =>
+                                prev === "composer" ? null : "composer"
+                            )
+                        }
+                        code={composerCode}
+                        onChange={setComposerCode}
+                        onRunCode={vi.fn()}
+                        tomes={[sampleAliasesTome]}
+                    />
+                    <SessionSettings
+                        isOpen={sessionSettingsOpen}
+                        onToggle={() =>
+                            setActiveBottomPanel((prev) =>
+                                prev === "settings" ? null : "settings"
+                            )
+                        }
+                        onClose={() =>
+                            setActiveBottomPanel((prev) => (prev === "settings" ? null : prev))
+                        }
+                        tomes={[sampleAliasesTome]}
+                        rcCode={rcCode}
+                        onRcCodeChange={setRcCode}
+                        rcEnabled={rcEnabled}
+                        onRcEnabledChange={setRcEnabled}
+                    />
+                    <button
+                        type="button"
+                        data-tour="shell-session-settings-toggle"
+                        onClick={() =>
+                            setActiveBottomPanel((prev) =>
+                                prev === "settings" ? null : "settings"
+                            )
+                        }
+                    >
+                        Settings Toggle
+                    </button>
+                    <button
+                        type="button"
+                        data-tour="shell-composer-toggle"
+                        onClick={() =>
+                            setActiveBottomPanel((prev) =>
+                                prev === "composer" ? null : "composer"
+                            )
+                        }
+                    >
+                        Composer Toggle
+                    </button>
+                </div>
+            );
+        };
+
+        render(<StatefulNuxBottomPanelsHarness />);
+
+        // Step 1 -> Step 2 (RC Script)
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByRole("dialog", { name: "RC Script" })).toBeInTheDocument();
+
+        // Clicking the Settings toggle button advances to Step 3 (Set Default Aliases) and opens SessionSettings
+        fireEvent.click(screen.getByText("Settings Toggle"));
+        expect(screen.getByRole("dialog", { name: "Set Default Aliases" })).toBeInTheDocument();
+        expect(screen.getByTestId("session-settings-drawer")).toBeInTheDocument();
+        expect(screen.queryByTestId("multiline-composer")).not.toBeInTheDocument();
+
+        // Clicking "Set Default Aliases" inside SessionSettings closes SessionSettings and opens MultiLineComposer on Step 4
+        const setupAliasesBtn = document.querySelector<HTMLElement>(
+            '[data-tour="shell-setup-aliases"]'
+        );
+        expect(setupAliasesBtn).not.toBeNull();
+        fireEvent.click(setupAliasesBtn!);
+
+        expect(screen.getByRole("dialog", { name: "Eldritch Composer" })).toBeInTheDocument();
+        expect(screen.getByTestId("multiline-composer")).toBeInTheDocument();
+        expect(screen.queryByTestId("session-settings-drawer")).not.toBeInTheDocument();
+
+        // Going Back to Step 3 re-opens SessionSettings and cleanly closes MultiLineComposer
+        fireEvent.click(screen.getByText("Back"));
+        expect(screen.getByRole("dialog", { name: "Set Default Aliases" })).toBeInTheDocument();
+        expect(screen.getByTestId("session-settings-drawer")).toBeInTheDocument();
+        expect(screen.queryByTestId("multiline-composer")).not.toBeInTheDocument();
+
+        // Clicking Next from Step 3 to Step 4 also cleanly closes SessionSettings and opens MultiLineComposer
+        fireEvent.click(screen.getByText("Next"));
+        expect(screen.getByRole("dialog", { name: "Eldritch Composer" })).toBeInTheDocument();
+        expect(screen.getByTestId("multiline-composer")).toBeInTheDocument();
+        expect(screen.queryByTestId("session-settings-drawer")).not.toBeInTheDocument();
     });
 
     it("avoids redundant executing spinners in banner when tasks are queued or running, and supports manual reconnect", () => {
@@ -587,7 +716,7 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         const leftSettingsPanel = screen.getByTestId("session-settings-left-panel");
         const rcToggle = screen.getByTestId("session-settings-rc-toggle");
         expect(leftSettingsPanel).toContainElement(rcToggle);
-        expect(leftSettingsPanel).toHaveTextContent(/Enable RC.*Font Size/s);
+        expect(leftSettingsPanel).toHaveTextContent(/Enable RC[\s\S]*Font Size/);
         expect(rcToggle).toHaveAttribute("aria-checked", "false");
         expect(rcToggle).not.toHaveClass("bg-purple-600");
 
@@ -1255,6 +1384,7 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
             },
         ];
 
+        const onSelectShellMock = vi.fn();
         render(
             <ShellHistoryDrawer
                 isOpen={true}
@@ -1264,6 +1394,7 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
                 currentShellId="10"
                 onRunCode={vi.fn()}
                 onLoadIntoComposer={vi.fn()}
+                onSelectShell={onSelectShellMock}
             />
         );
 
@@ -1274,8 +1405,13 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         expect(
             timeEls[0].compareDocumentPosition(aggregatedBadge) & Node.DOCUMENT_POSITION_FOLLOWING
         ).toBeTruthy();
-        // Cross-session task from Shell #99 is visible by default under "All Sessions"
-        expect(screen.getByText("Shell #99")).toBeInTheDocument();
+        // Cross-session task displays a condensed terminal icon button to swap shells instead of raw shell id text
+        expect(screen.queryByText(/Shell #/i)).not.toBeInTheDocument();
+        const swapButton = screen.getByTestId("history-card-swap-shell");
+        expect(swapButton).toBeInTheDocument();
+        expect(swapButton).toHaveAttribute("title", "Swap to Shell #99");
+        fireEvent.click(swapButton);
+        expect(onSelectShellMock).toHaveBeenCalledWith("99");
 
         // Switch to Output tab on the long-output task and verify truncation + Show full toggle
         const outputTabs = screen.getAllByRole("tab", { name: /Output/i });
@@ -1287,12 +1423,13 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         fireEvent.click(toggleFullBtn);
         expect(screen.getByText(/line 5/)).toBeInTheDocument();
 
-        // Toggle scope to Current Session only -> Shell #99 task is hidden
+        // Toggle scope to Current Session only -> Shell swap button is hidden
         const scopeToggle = screen.getByTestId("history-session-scope-toggle");
         expect(scopeToggle).toHaveTextContent("All Sessions");
         fireEvent.click(scopeToggle);
         expect(scopeToggle).toHaveTextContent("Current Session");
-        expect(screen.queryByText("Shell #99")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("history-card-swap-shell")).not.toBeInTheDocument();
+        expect(screen.queryByText(/Shell #/i)).not.toBeInTheDocument();
     });
 });
 
@@ -1711,11 +1848,11 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             <ShellWalkthrough
                 isOpen={false}
                 onDismiss={vi.fn()}
-                onOpenComposer={() => {}}
-                onCloseComposer={() => {}}
-                onOpenSessionSettings={() => {}}
-                onCloseSessionSettings={() => {}}
-                onOpenContextDrawer={() => {}}
+                onOpenComposer={() => { }}
+                onCloseComposer={() => { }}
+                onOpenSessionSettings={() => { }}
+                onCloseSessionSettings={() => { }}
+                onOpenContextDrawer={() => { }}
                 onCloseContextDrawer={onCloseContextDrawer}
             />
         );
@@ -1727,11 +1864,11 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             <ShellWalkthrough
                 isOpen={false}
                 onDismiss={vi.fn()}
-                onOpenComposer={() => {}}
-                onCloseComposer={() => {}}
-                onOpenSessionSettings={() => {}}
-                onCloseSessionSettings={() => {}}
-                onOpenContextDrawer={() => {}}
+                onOpenComposer={() => { }}
+                onCloseComposer={() => { }}
+                onOpenSessionSettings={() => { }}
+                onCloseSessionSettings={() => { }}
+                onOpenContextDrawer={() => { }}
                 onCloseContextDrawer={onCloseContextDrawer}
             />
         );

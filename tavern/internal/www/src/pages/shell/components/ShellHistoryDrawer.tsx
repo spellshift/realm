@@ -27,6 +27,7 @@ interface ShellHistoryDrawerProps {
     onRunCode: (code: string) => void;
     onLoadIntoComposer: (code: string) => void;
     onOpenPivotTab?: (type: "pty" | "ssh", target: string, pivotId?: string) => void;
+    onSelectShell?: (shellId: string) => void;
 }
 
 const STATUS_FILTERS: { key: HistoryStatusFilter; label: string }[] = [
@@ -61,7 +62,8 @@ const HistoryGroupList: React.FC<{
     currentShellId?: string;
     onRunCode: (code: string) => void;
     onLoadIntoComposer: (code: string) => void;
-}> = ({ groups, currentShellId, onRunCode, onLoadIntoComposer }) => (
+    onSelectShell?: (shellId: string) => void;
+}> = ({ groups, currentShellId, onRunCode, onLoadIntoComposer, onSelectShell }) => (
     <>
         {groups.map((group) => (
             <HistoryTaskCard
@@ -70,6 +72,7 @@ const HistoryGroupList: React.FC<{
                 currentShellId={currentShellId}
                 onRunCode={onRunCode}
                 onLoadIntoComposer={onLoadIntoComposer}
+                onSelectShell={onSelectShell}
             />
         ))}
     </>
@@ -85,6 +88,7 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
     focusQueueTrigger = 0,
     onRunCode,
     onLoadIntoComposer,
+    onSelectShell,
 }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<HistoryStatusFilter>(initialStatusFilter);
@@ -266,6 +270,7 @@ const ShellHistoryDrawer: React.FC<ShellHistoryDrawerProps> = ({
                         currentShellId={currentShellId}
                         onRunCode={onRunCode}
                         onLoadIntoComposer={onLoadIntoComposer}
+                        onSelectShell={onSelectShell}
                     />
                 )}
             </div>
