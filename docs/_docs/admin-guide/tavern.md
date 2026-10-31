@@ -78,6 +78,20 @@ After terraform completes successfully, head to the [DNS mappings for Cloud Run]
 
 After your certificate has successfully provisioned, it may still take a while (e.g. an hour or two) before you are able to visit Tavern using your custom OAuth Domain (if configured).
 
+#### Builder enrollment token
+
+Terraform creates one stable, one-time builder enrollment token and passes it to Tavern as `REALM_BUILDER_ENROLLMENT_TOKENS`. Retrieve the raw token from the Terraform directory when you are ready to enroll a builder:
+
+```sh
+terraform output -raw builder_enrollment_token
+```
+
+Hand one token to the builder operator through a secure channel. Set it on the builder as `REALM_BUILDER_ENROLLMENT_TOKEN` for its first connection, then remove it after the builder saves its identity file. The token is consumed on successful enrollment. Terraform state and Cloud Run configuration contain the raw token, so restrict access to both.
+
+The Terraform token stays the same across applies. With a persistent database, reapplying or restarting Tavern does not make a consumed token usable again; the Terraform deployment uses MySQL for this. To enroll another builder, explicitly rotate the token with `terraform apply -var-file=deployment.tfvars -replace=random_password.builder_enrollment`, using the same variable file as the original deployment. If you supplied values through `-var` or `TF_VAR_*` instead, supply those same values during rotation. Then retrieve the new output and hand it to that builder. Rotation adds the new token to Tavern; it does not revoke an unused old token already stored in Tavern. Revoke an unused old token from Tavern's database if needed.
+
+For a manual deployment, set `REALM_BUILDER_ENROLLMENT_TOKENS` on Tavern to a comma-separated list of raw tokens. Tavern trims whitespace around each item and rejects blank items. It stores only token hashes in its database and seeds missing hashes at startup. Use a persistent database to preserve consumed-token state across restarts. Tavern's default in-memory SQLite database loses that state on restart, allowing configured tokens to be seeded again. Keep raw tokens out of logs and share each token only with its intended builder.
+
 #### CLI Variables
 
 |Name|Required|Description|
