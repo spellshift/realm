@@ -38,34 +38,37 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 
 	var taskID int
 	var shellTaskID int
+	var beaconID int
 	if tc := registerMsg.GetTaskContext(); tc != nil {
-		beaconID, err := srv.ValidateJWT(tc.GetJwt())
+		beaconID, err = srv.ValidateJWT(tc.GetJwt())
 		if err != nil {
 			return err
 		}
 		taskID = int(tc.GetTaskId())
-		// The portal mux loads the task again with its related records; this
-		// lookup gates creation on the JWT's beacon before any portal is opened.
-		if _, err := srv.loadTaskForBeacon(ctx, taskID, beaconID); err != nil {
-			return err
+		if taskID <= 0 {
+			return status.Error(codes.InvalidArgument, "invalid task id")
 		}
 	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
-		beaconID, err := srv.ValidateJWT(stc.GetJwt())
+		beaconID, err = srv.ValidateJWT(stc.GetJwt())
 		if err != nil {
 			return err
 		}
 		shellTaskID = int(stc.GetShellTaskId())
-		// The portal mux loads the shell task with its related records after
-		// this ownership check.
-		if _, err := srv.loadShellTaskForBeacon(ctx, shellTaskID, beaconID); err != nil {
-			return err
+		if shellTaskID <= 0 {
+			return status.Error(codes.InvalidArgument, "invalid shell task id")
 		}
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID)
+	portalID, cleanup, err := srv.portalMux.CreatePortalForBeacon(ctx, srv.graph, taskID, shellTaskID, beaconID)
 	if err != nil {
+		if ent.IsNotFound(err) {
+			if taskID > 0 {
+				return status.Error(codes.NotFound, "task not found")
+			}
+			return status.Error(codes.NotFound, "shell task not found")
+		}
 		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "shell_task_id", shellTaskID, "error", err)
 		return status.Errorf(codes.Internal, "failed to create portal: %v", err)
 	}
