@@ -210,7 +210,10 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
               <>
                 <span className="text-gray-600">/</span>
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-gray-200 cursor-default">
-                  <User className="w-4 h-4 text-gray-400 shrink-0" />
+                  <User
+                    data-testid="shell-breadcrumb-user-icon"
+                    className="hidden sm:block w-4 h-4 text-gray-400 shrink-0"
+                  />
                   <span>{shellData.node.beacon.principal}</span>
                 </div>
               </>

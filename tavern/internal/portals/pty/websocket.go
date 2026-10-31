@@ -33,13 +33,6 @@ type WebsocketControlMessage struct {
 	Cols  uint32 `json:"cols"`
 }
 
-// PTYResizeMessage represents a PTY resize payload marshaled as JSON inside a BytesPayload.
-type PTYResizeMessage struct {
-	Kind string `json:"kind"`
-	Rows uint32 `json:"rows"`
-	Cols uint32 `json:"cols"`
-}
-
 // PivotSession represents an active PTY session that can be shared among multiple websockets.
 type PivotSession struct {
 	PivotID       int
@@ -409,24 +402,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		initData := []byte{}
-		if initRows > 0 && initCols > 0 {
-			if b, err := json.Marshal(PTYResizeMessage{
-				Kind: "resize",
-				Rows: initRows,
-				Cols: initCols,
-			}); err == nil {
-				initData = b
-			}
-		}
-
-		// Send initial PTY request mote to the agent to spawn the PTY
+		// Send initial PTY request mote to the agent to spawn the PTY.
+		// Data is kept empty so agents that do not support PTYResize never write
+		// control metadata into PTY stdin.
 		initMote := &portalpb.Mote{
 			StreamId: streamID,
 			SeqId:    0,
 			Payload: &portalpb.Mote_Bytes{
 				Bytes: &portalpb.BytesPayload{
-					Data: initData,
+					Data: []byte{},
 					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
 				},
 			},
@@ -435,6 +419,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			sendWsError(fmt.Sprintf("Failed to send PTY init mote: %v", err))
 			closePivot()
 			return
+		}
+
+		if initRows > 0 && initCols > 0 {
+			initResizeMote := &portalpb.Mote{
+				StreamId: streamID,
+				SeqId:    0,
+				Payload: &portalpb.Mote_PtyResize{
+					PtyResize: &portalpb.PTYResize{
+						Rows: initRows,
+						Cols: initCols,
+					},
+				},
+			}
+			if err := h.mux.Publish(sessionCtx, topicIn, initResizeMote); err != nil {
+				slog.ErrorContext(sessionCtx, "failed to publish initial pty resize", "error", err)
+			}
 		}
 
 		// WebSocket -> Portal PTY Input goroutine (spawned below in the common path)
@@ -468,21 +468,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					case "resize":
 						if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
-							resizeData, err := json.Marshal(PTYResizeMessage{
-								Kind: "resize",
-								Rows: ctrlMsg.Rows,
-								Cols: ctrlMsg.Cols,
-							})
-							if err != nil {
-								continue
-							}
 							resizeMote := &portalpb.Mote{
 								StreamId: streamID,
-								SeqId:    pivotSession.nextSeqID(),
-								Payload: &portalpb.Mote_Bytes{
-									Bytes: &portalpb.BytesPayload{
-										Data: resizeData,
-										Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+								SeqId:    0,
+								Payload: &portalpb.Mote_PtyResize{
+									PtyResize: &portalpb.PTYResize{
+										Rows: ctrlMsg.Rows,
+										Cols: ctrlMsg.Cols,
 									},
 								},
 							}
@@ -599,21 +591,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			case "resize":
 				if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
-					resizeData, err := json.Marshal(PTYResizeMessage{
-						Kind: "resize",
-						Rows: ctrlMsg.Rows,
-						Cols: ctrlMsg.Cols,
-					})
-					if err != nil {
-						continue
-					}
 					resizeMote := &portalpb.Mote{
 						StreamId: pivotSession.StreamID,
-						SeqId:    pivotSession.nextSeqID(),
-						Payload: &portalpb.Mote_Bytes{
-							Bytes: &portalpb.BytesPayload{
-								Data: resizeData,
-								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+						SeqId:    0,
+						Payload: &portalpb.Mote_PtyResize{
+							PtyResize: &portalpb.PTYResize{
+								Rows: ctrlMsg.Rows,
+								Cols: ctrlMsg.Cols,
 							},
 						},
 					}

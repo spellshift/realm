@@ -187,6 +187,20 @@ async fn handle_incoming_mote(
         return Ok(());
     }
 
+    // Handle PTY Resize Mote
+    if let Some(Payload::PtyResize(ref pty_resize)) = mote.payload {
+        let stream_id = mote.stream_id.clone();
+        pty_manager
+            .handle_resize(
+                stream_id,
+                pty_resize.rows as u16,
+                pty_resize.cols as u16,
+                out_tx.clone(),
+            )
+            .await?;
+        return Ok(());
+    }
+
     // Handle Shell Mote
     let is_shell = matches!(mote.payload, Some(Payload::Shell(_)));
     if is_shell {
@@ -210,6 +224,7 @@ async fn handle_incoming_mote(
                 Payload::Udp(u) => u.data.len(),
                 Payload::Shell(s) => s.input.len(),
                 Payload::Ssh(s) => s.data.len(),
+                Payload::PtyResize(_) => 0,
             });
             log::info!("new portal stream {stream_id} seq={seq_id} size={size}");
         }
@@ -304,6 +319,11 @@ async fn stream_handler(
             Payload::Ssh(_) => {
                 #[cfg(feature = "print_debug")]
                 log::warn!("SSH payloads should be negotiated by Tavern before reaching agent");
+                Ok(())
+            }
+            Payload::PtyResize(_) => {
+                #[cfg(feature = "print_debug")]
+                log::warn!("PTYResize payloads should have been intercepted before stream handler");
                 Ok(())
             }
         }

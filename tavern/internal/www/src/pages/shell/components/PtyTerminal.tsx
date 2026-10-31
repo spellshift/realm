@@ -83,7 +83,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
                     term.write(`\x1b[90m[*] PTY Active (Portal #${portalIdRef.current})\x1b[0m\r\n`);
                 }
             }
-            sendResize(ws, true);
+            sendResize(ws, Boolean(targetPivotId));
             term.focus();
         },
         onTerminalData: handleTerminalData,
