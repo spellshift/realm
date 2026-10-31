@@ -1,3 +1,4 @@
+import * as os from 'os';
 // Standalone e2e verification script for the Agent Builder flow.
 // Not a Playwright test (no test runner) -- a driver script that:
 //   1. Enrolls a builder via GraphQL and starts a local builder daemon.
@@ -42,6 +43,7 @@ async function main() {
 
   let builderProcess = null;
   let configPath = null;
+  let enrollmentDir = null;
   const results = { screenshots: [] };
 
   try {
@@ -66,21 +68,26 @@ async function main() {
 
     // ---------- Step 1: Enroll Builder ----------
     console.log('[1] Registering builder via GraphQL...');
+    enrollmentDir = fs.mkdtempSync(path.join(os.tmpdir(), 'realm-builder-'));
+    const tavernCli = process.env.TAVERN_BIN || '/tmp/tavern_bin';
+    child_process.execFileSync(tavernCli, ['builder', 'generate-csr', '--output-dir', enrollmentDir], { cwd: repoRoot });
+    const csr = fs.readFileSync(path.join(enrollmentDir, 'builder.csr'), 'utf8');
+
     const registerData = await graphql(
       apiCtx,
-      `mutation registerNewBuilder($input: CreateBuilderInput!) {
-        registerBuilder(input: $input) {
+      `mutation registerNewBuilder($input: CreateBuilderInput!, $csr: String!) {
+        registerBuilder(input: $input, csr: $csr) {
           builder { id }
           config
         }
       }`,
-      { input: { supportedTargets: ['PLATFORM_LINUX'], upstream: baseURL } }
+      { csr, input: { supportedTargets: ['PLATFORM_LINUX'], upstream: baseURL } }
     );
     const builderId = registerData.registerBuilder.builder.id;
     const configYaml = registerData.registerBuilder.config;
     console.log(`    Registered builder ${builderId}`);
 
-    configPath = `/tmp/builder-e2e-config-${Date.now()}.yaml`;
+    configPath = path.join(enrollmentDir, 'builder.yaml');
     fs.writeFileSync(configPath, configYaml);
 
     console.log('    Starting local builder daemon...');
@@ -295,9 +302,7 @@ async function main() {
       await sleep(1000);
       try { builderProcess.kill('SIGKILL'); } catch (_) {}
     }
-    if (configPath && fs.existsSync(configPath)) {
-      try { fs.unlinkSync(configPath); } catch (_) {}
-    }
+    if (enrollmentDir) fs.rmSync(enrollmentDir, { recursive: true, force: true });
     await apiCtx.dispose();
   }
 }

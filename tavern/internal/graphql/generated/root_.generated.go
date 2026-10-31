@@ -481,7 +481,7 @@ type ComplexityRoot struct {
 		ImportRepository            func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		MarkNotificationsAsArchived func(childComplexity int, notificationIDs []int) int
 		MarkNotificationsAsRead     func(childComplexity int, notificationIDs []int) int
-		RegisterBuilder             func(childComplexity int, input ent.CreateBuilderInput) int
+		RegisterBuilder             func(childComplexity int, input ent.CreateBuilderInput, csr string) int
 		ResetUserAPIKey             func(childComplexity int) int
 		SubscribeToHost             func(childComplexity int, hostID int) int
 		UnfavoriteHost              func(childComplexity int, hostID int) int
@@ -3295,7 +3295,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.RegisterBuilder(childComplexity, args["input"].(ent.CreateBuilderInput)), true
+		return e.ComplexityRoot.Mutation.RegisterBuilder(childComplexity, args["input"].(ent.CreateBuilderInput), args["csr"].(string)), true
 
 	case "Mutation.resetUserAPIKey":
 		if e.ComplexityRoot.Mutation.ResetUserAPIKey == nil {
@@ -15303,7 +15303,7 @@ scalar Uint64
     ###
     # Builder
     ###
-    registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    registerBuilder(input: CreateBuilderInput!, csr: String!): RegisterBuilderOutput! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
@@ -15566,7 +15566,7 @@ type RegisterBuilderOutput {
   """The created builder entity."""
   builder: Builder!
 
-  """mTLS certificate PEM bundle for the builder to authenticate."""
+  """mTLS certificate PEM for the builder to authenticate."""
   mtlsCert: String!
 
   """YAML-formatted configuration for the builder."""

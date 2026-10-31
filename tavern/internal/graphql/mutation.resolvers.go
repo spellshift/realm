@@ -519,26 +519,18 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 }
 
 // RegisterBuilder is the resolver for the registerBuilder field.
-func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
-	// 1. Create builder ent (identifier is auto-generated)
-	b, err := r.client.Builder.Create().SetInput(input).Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create builder: %w", err)
+func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput, csr string) (*models.RegisterBuilderOutput, error) {
+	if input.PollInterval != nil && (*input.PollInterval < 1 || *input.PollInterval > builder.MaxPollInterval) {
+		return nil, fmt.Errorf("poll_interval value out of range")
 	}
-
-	// 2. Generate CA-signed X.509 certificate for mTLS
-	certPEM, keyPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, b.Identifier)
+	identifier := uuid.NewString()
+	certPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, identifier, csr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
 	}
-
-	// Combine cert and key into a single PEM bundle
-	combinedPEM := append(certPEM, keyPEM...)
-	mtlsCert := string(combinedPEM)
-
-	// 3. Build YAML config
-	targetNames := make([]string, len(b.SupportedTargets))
-	for i, t := range b.SupportedTargets {
+	mtlsCert := string(certPEM)
+	targetNames := make([]string, len(input.SupportedTargets))
+	for i, t := range input.SupportedTargets {
 		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
 	}
 
@@ -546,21 +538,39 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 		PollInterval     int      `yaml:"poll_interval"`
 		ID               string   `yaml:"id"`
 		SupportedTargets []string `yaml:"supported_targets"`
-		MTLS             string   `yaml:"mtls"`
+		MTLSCert         string   `yaml:"mtls_cert"`
+		MTLSKeyFile      string   `yaml:"mtls_key_file"`
 		Upstream         string   `yaml:"upstream"`
 		Executor         string   `yaml:"executor"`
 	}{
-		PollInterval:     b.PollInterval,
-		ID:               b.Identifier,
+		PollInterval:     5,
+		ID:               identifier,
 		SupportedTargets: targetNames,
-		MTLS:             mtlsCert,
-		Upstream:         b.Upstream,
-		Executor:         string(b.Executor),
+		MTLSCert:         mtlsCert,
+		MTLSKeyFile:      "builder.key",
+		Upstream:         "http://127.0.0.1:8000",
+		Executor:         "docker",
+	}
+	if input.PollInterval != nil {
+		configData.PollInterval = *input.PollInterval
+	}
+	if input.Upstream != nil {
+		configData.Upstream = *input.Upstream
+	}
+	if input.Executor != nil {
+		configData.Executor = string(*input.Executor)
 	}
 
 	configBytes, err := yaml.Marshal(configData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal builder config: %w", err)
+	}
+	if _, err := builder.ParseConfigBytes(configBytes); err != nil {
+		return nil, fmt.Errorf("invalid builder config: %w", err)
+	}
+	b, err := r.client.Builder.Create().SetInput(input).SetIdentifier(identifier).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create builder: %w", err)
 	}
 
 	return &models.RegisterBuilderOutput{
