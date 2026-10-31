@@ -29,6 +29,7 @@ import SshTerminal from "./components/SshTerminal";
 import PtyTerminal from "./components/PtyTerminal";
 import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
 import { formatPivotTabLabel } from "./utils/networkGraphUtils";
+import { DEFAULT_RC_ALIASES_SCRIPT, registerUserSymbolsFromCode } from "./utils/eldritchLsp";
 import { Minus, SquareTerminal, Terminal, WifiOff } from "lucide-react";
 
 export { formatPivotTabLabel };
@@ -38,6 +39,7 @@ export interface PortalTab {
   type: string;
   target: string;
   pivotId?: string;
+  credentialId?: string;
 }
 
 const NUX_STORAGE_KEY = "tavern_shell_nux_dismissed_v1";
@@ -148,6 +150,9 @@ const ShellContent = () => {
   const [queueTourOpen, setQueueTourOpen] = useState(false);
   const [sshModalOpenExternal, setSshModalOpenExternal] = useState(false);
   const [sshModalInitialTarget, setSshModalInitialTarget] = useState("");
+  const [sshModalInitialCredentialId, setSshModalInitialCredentialId] = useState<string | undefined>(
+    undefined
+  );
   const [showNuxBanner, setShowNuxBanner] = useState<boolean>(() => {
     try {
       return localStorage.getItem(NUX_STORAGE_KEY) !== "true";
@@ -255,7 +260,13 @@ const ShellContent = () => {
   );
 
   const handleOpenPortalTab = useCallback(
-    (type: string, target: string, pivotId?: string, focusNewTab = true) => {
+    (
+      type: string,
+      target: string,
+      pivotId?: string,
+      focusNewTab = true,
+      credentialId?: string
+    ) => {
       const normalizedType = type.toLowerCase();
       const rememberedTarget =
         pivotId && normalizedType === "pty"
@@ -324,6 +335,7 @@ const ShellContent = () => {
             type: normalizedType,
             target: cleanedTarget,
             pivotId: pivotId ? String(pivotId) : undefined,
+            credentialId,
           },
         ];
         if (focusNewTab) {
@@ -463,6 +475,12 @@ const ShellContent = () => {
     submitShellCode,
   ]);
 
+  // Keep autocomplete aware of user defined functions and variables in RC script
+  useEffect(() => {
+    const codeToRegister = rcCode && rcCode.trim() ? rcCode : DEFAULT_RC_ALIASES_SCRIPT;
+    registerUserSymbolsFromCode(codeToRegister);
+  }, [rcCode]);
+
   const totalTabs = 1 + portalTabs.length;
   useTabHotkeys(totalTabs, setTabIndex);
 
@@ -572,8 +590,8 @@ const ShellContent = () => {
     }
   };
 
-  const handleSshConnect = (target: string) => {
-    handleOpenPortalTab("ssh", target, undefined, true);
+  const handleSshConnect = (target: string, credentialId?: string) => {
+    handleOpenPortalTab("ssh", target, undefined, true, credentialId);
   };
 
   const handlePtyOpen = () => {
@@ -676,9 +694,11 @@ const ShellContent = () => {
           hosts={networkHosts}
           sshModalOpenExternal={sshModalOpenExternal}
           sshModalInitialTarget={sshModalInitialTarget}
+          sshModalInitialCredentialId={sshModalInitialCredentialId}
           onCloseSshModalExternal={() => {
             setSshModalOpenExternal(false);
             setSshModalInitialTarget("");
+            setSshModalInitialCredentialId(undefined);
           }}
           onLoadIntoComposer={handleLoadIntoComposer}
           composerOpen={composerOpen}
@@ -857,6 +877,7 @@ const ShellContent = () => {
                       <SshTerminal
                         portalId={portalId || 0}
                         target={tab.target}
+                        credentialId={tab.credentialId}
                         pivotId={tab.pivotId ? parseInt(tab.pivotId, 10) : undefined}
                         shellId={shellId || ""}
                         isActive={tabIndex === idx + 1}
@@ -987,13 +1008,15 @@ const ShellContent = () => {
             onOpenPty={handlePtyOpen}
             onOpenSshModal={() => {
               setSshModalInitialTarget("");
+              setSshModalInitialCredentialId(undefined);
               setSshModalOpenExternal(true);
             }}
             onOpenPivotTab={(type, target, pivotId) =>
               handleOpenPortalTab(type, target, pivotId, true)
             }
-            onOpenSshWithTarget={(target) => {
+            onOpenSshWithTarget={(target, credentialId) => {
               setSshModalInitialTarget(target);
+              setSshModalInitialCredentialId(credentialId);
               setSshModalOpenExternal(true);
             }}
             onLoadIntoComposer={handleLoadIntoComposer}

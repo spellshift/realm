@@ -55,6 +55,11 @@ message SSHPayload {
     bytes data = 9;
 }
 
+message PTYResize {
+    uint32 rows = 1;
+    uint32 cols = 2;
+}
+
 message Mote {
     // Unique identifier used to route reply traffic back to original port
     string stream_id = 1;
@@ -69,6 +74,7 @@ message Mote {
         BytesPayload bytes = 5;
         ShellPayload shell = 6;
         SSHPayload ssh = 7;
+        PTYResize pty_resize = 8;
     }
 }
 

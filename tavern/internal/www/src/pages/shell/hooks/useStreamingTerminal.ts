@@ -7,6 +7,7 @@ import {
     getViewportNonEmptyLineCount,
     isTerminalElementVisible,
     transformClearAnsiForScrollback,
+    handleTerminalCustomKeyEvent,
 } from "./shellUtils";
 import {
     WEBSOCKET_CONNECT_TIMEOUT_MS,
@@ -129,6 +130,10 @@ export function useStreamingTerminal({
         }
         termInstance.current = term;
 
+        term.attachCustomKeyEventHandler((ev: KeyboardEvent) => {
+            return handleTerminalCustomKeyEvent(ev, term);
+        });
+
         const sendResize = (ws: WebSocket | null, force = false) => {
             if (!isTerminalElementVisible(termRef.current)) {
                 return;
@@ -229,13 +234,18 @@ export function useStreamingTerminal({
             }
             const scheme = window.location.protocol === "https:" ? "wss" : "ws";
             const targetPivotId = connectPivotIdRef.current;
+            const initialRows = term.rows;
+            const initialCols = term.cols;
             const wsUrl = buildWsUrlRef.current(scheme, window.location.host, targetPivotId, {
-                rows: term.rows,
-                cols: term.cols,
+                rows: initialRows,
+                cols: initialCols,
             });
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
-            lastSentSizeRef.current = { rows: 0, cols: 0 };
+            const urlHasInitialSize = wsUrl.includes("rows=") && wsUrl.includes("cols=");
+            lastSentSizeRef.current = urlHasInitialSize
+                ? { rows: initialRows, cols: initialCols }
+                : { rows: 0, cols: 0 };
 
             connectTimeoutTimer = setTimeout(() => {
                 if (cancelled || wsRef.current !== ws) return;

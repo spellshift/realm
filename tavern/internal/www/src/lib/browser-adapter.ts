@@ -1,4 +1,8 @@
 import { WebsocketMessage, WebsocketMessageKind } from "../pages/shell/websocket";
+import {
+    completeEldritchCode,
+    registerUserSymbolsFromCode,
+} from "../pages/shell/utils/eldritchLsp";
 
 export interface ExecutionResult {
     status: "complete" | "incomplete" | "error" | "meta";
@@ -325,6 +329,10 @@ export class BrowserWasmAdapter {
             }
 
             if (result.status === "complete") {
+                const codeToRegister = result.payload || line;
+                if (codeToRegister) {
+                    registerUserSymbolsFromCode(codeToRegister);
+                }
                 if (this.isSocketReady() && this.ws) {
                     this.ws.send(JSON.stringify({
                         kind: WebsocketMessageKind.Input,
@@ -376,6 +384,10 @@ export class BrowserWasmAdapter {
             }
 
             if (result.status === "complete") {
+                const codeToRegister = result.payload || normalized;
+                if (codeToRegister) {
+                    registerUserSymbolsFromCode(codeToRegister);
+                }
                 if (this.isSocketReady() && this.ws) {
                     this.ws.send(JSON.stringify({
                         kind: WebsocketMessageKind.Input,
@@ -402,15 +414,46 @@ export class BrowserWasmAdapter {
         }
     }
 
-    complete(line: string, cursor: number): { suggestions: string[], start: number } {
-        if (!this.repl) return { suggestions: [], start: cursor };
-        const resultJson = this.repl.complete(line, cursor);
-        try {
-            return JSON.parse(resultJson);
-        } catch (e) {
-            console.error("Failed to parse completion result", e);
-            return { suggestions: [], start: cursor };
+    complete(line: string, cursor: number): { suggestions: string[]; start: number } {
+        const lspResult = completeEldritchCode(line, cursor);
+        let suggestions: string[] = [];
+        let start = cursor;
+
+        if (lspResult && lspResult.items.length > 0) {
+            suggestions = lspResult.items.map((it) => it.insertText);
+            start = lspResult.startOffset;
         }
+
+        if (this.repl) {
+            try {
+                const replResultJson = this.repl.complete(line, cursor);
+                const replResult = JSON.parse(replResultJson);
+                if (
+                    replResult &&
+                    Array.isArray(replResult.suggestions) &&
+                    replResult.suggestions.length > 0
+                ) {
+                    if (suggestions.length === 0) {
+                        return replResult;
+                    }
+                    const seen = new Set(suggestions);
+                    for (const s of replResult.suggestions) {
+                        if (!seen.has(s)) {
+                            seen.add(s);
+                            suggestions.push(s);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse completion result", e);
+            }
+        }
+
+        return { suggestions, start };
+    }
+
+    registerSymbols(code: string): void {
+        registerUserSymbolsFromCode(code);
     }
 
     reset() {

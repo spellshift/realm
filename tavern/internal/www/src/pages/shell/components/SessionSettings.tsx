@@ -9,7 +9,7 @@ import {
     Settings,
     X,
 } from "lucide-react";
-import { analyzeEldritchCode } from "../utils/eldritchLsp";
+import { analyzeEldritchCode, registerUserSymbolsFromCode } from "../utils/eldritchLsp";
 import { ShellTomeItem } from "../hooks/useShellData";
 import EldritchCodeEditor, {
     EldritchLspStatusButton,
@@ -253,6 +253,8 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
         useResizableEditorHeight();
 
     useEffect(() => {
+        const code = controlledRcCode !== undefined ? controlledRcCode : loadRcScript();
+        registerUserSymbolsFromCode(code || DEFAULT_RC_ALIASES_SCRIPT);
         if (controlledRcCode !== undefined) {
             setInternalRcCode(controlledRcCode);
             if (controlledRcCode.trim().length > 0) {
@@ -303,6 +305,7 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
         (nextCode: string) => {
             setInternalRcCode(nextCode);
             saveRcScript(nextCode);
+            registerUserSymbolsFromCode(nextCode || DEFAULT_RC_ALIASES_SCRIPT);
             onRcCodeChange?.(nextCode);
             onRcChange?.(nextCode);
         },

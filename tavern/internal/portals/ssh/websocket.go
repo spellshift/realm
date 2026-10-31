@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
 	enthost "realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
@@ -231,6 +233,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	portalIDStr := r.URL.Query().Get("portal_id")
 	target := r.URL.Query().Get("target")
 	shellIDStr := r.URL.Query().Get("shell_id")
+	credentialIDStr := r.URL.Query().Get("credential_id")
 
 	var pivotSession *PivotSession
 
@@ -299,19 +302,46 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Parse target: defaults to root@<target>:22
 		user := "root"
+		hasExplicitUser := false
 		password := ""
+		var privateKey []byte
 		hostPortStr := target
 
-		parts := strings.SplitN(target, "@", 2)
-		if len(parts) == 2 {
-			userPassStr := parts[0]
-			hostPortStr = parts[1]
+		if atIdx := strings.LastIndex(target, "@"); atIdx != -1 {
+			userPassStr := target[:atIdx]
+			hostPortStr = target[atIdx+1:]
 
 			userPass := strings.SplitN(userPassStr, ":", 2)
-			user = userPass[0]
+			if strings.TrimSpace(userPass[0]) != "" {
+				user = strings.TrimSpace(userPass[0])
+				hasExplicitUser = true
+			}
 			if len(userPass) == 2 {
 				password = userPass[1]
 			}
+		}
+
+		if credentialIDStr != "" {
+			if credID, err := strconv.Atoi(credentialIDStr); err == nil && credID > 0 {
+				cred, err := shell.RetryOnLock(ctx, func() (*ent.HostCredential, error) {
+					return h.graph.HostCredential.Get(ctx, credID)
+				})
+				if err == nil && cred != nil {
+					if !hasExplicitUser && strings.TrimSpace(cred.Principal) != "" {
+						user = strings.TrimSpace(cred.Principal)
+					}
+					if cred.Kind == epb.Credential_KIND_SSH_KEY || strings.HasPrefix(strings.TrimSpace(cred.Secret), "-----BEGIN") {
+						privateKey = []byte(cred.Secret)
+					} else if password == "" {
+						password = cred.Secret
+					}
+				}
+			}
+		}
+
+		if len(privateKey) == 0 && strings.HasPrefix(strings.TrimSpace(password), "-----BEGIN") {
+			privateKey = []byte(password)
+			password = ""
 		}
 
 		host, portStr, err := net.SplitHostPort(hostPortStr)
@@ -328,13 +358,31 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			hostPortStr = net.JoinHostPort(host, portStr)
 		}
 
-		// Verify Portal
+		// Verify Portal (and upgrade to the beacon's newest open portal if a newer one exists)
 		p, err := shell.RetryOnLock(ctx, func() (*ent.Portal, error) {
-			return h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+			return h.graph.Portal.Query().
+				Where(portal.ID(portalID)).
+				WithBeacon().
+				Only(ctx)
 		})
 		if err != nil {
 			sendWsError("portal not found")
 			return
+		}
+		if p.Edges.Beacon != nil {
+			latestPortal, latestErr := shell.RetryOnLock(ctx, func() (*ent.Portal, error) {
+				return h.graph.Portal.Query().
+					Where(
+						portal.HasBeaconWith(beacon.ID(p.Edges.Beacon.ID)),
+						portal.ClosedAtIsNil(),
+					).
+					Order(ent.Desc(portal.FieldID)).
+					First(ctx)
+			})
+			if latestErr == nil && latestPortal != nil {
+				p = latestPortal
+				portalID = latestPortal.ID
+			}
 		}
 		if !p.ClosedAt.IsZero() {
 			sendWsError("portal is closed")
@@ -486,13 +534,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			SeqId:    0,
 			Payload: &portalpb.Mote_Ssh{
 				Ssh: &portalpb.SSHPayload{
-					Kind:     portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CONNECT,
-					DstAddr:  host,
-					DstPort:  uint32(dstPort),
-					Username: user,
-					Password: password,
-					Rows:     40,
-					Cols:     80,
+					Kind:       portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CONNECT,
+					DstAddr:    host,
+					DstPort:    uint32(dstPort),
+					Username:   user,
+					Password:   password,
+					PrivateKey: privateKey,
+					Rows:       40,
+					Cols:       80,
 				},
 			},
 		}

@@ -73,13 +73,17 @@ describe("ShellHeader", () => {
         expect(screen.getByText("test-host")).toBeInTheDocument();
     });
 
-    it("renders principal badge when present", () => {
+    it("renders principal badge when present and hides user icon on mobile to prevent wrapping", () => {
         render(
             <BrowserRouter>
                 <ShellHeader {...defaultProps} />
             </BrowserRouter>
         );
         expect(screen.getByText("root")).toBeInTheDocument();
+        const userIcon = screen.getByTestId("shell-breadcrumb-user-icon");
+        expect(userIcon).toBeInTheDocument();
+        expect(userIcon).toHaveClass("hidden");
+        expect(userIcon).toHaveClass("sm:block");
     });
 
     it("does not render principal badge when absent", () => {

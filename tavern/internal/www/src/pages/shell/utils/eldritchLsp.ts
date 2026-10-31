@@ -270,6 +270,21 @@ export function parseFunctionSignature(
     };
 }
 
+export const DEFAULT_RC_ALIASES_SCRIPT = [
+    'def ls(path="."):',
+    "    return file.list(path)",
+    "def whoami():",
+    "    return user.info()",
+    "def ps():",
+    "    return process.list()",
+    "def pwd():",
+    "    return process.cwd()",
+    "def cat(path):",
+    "    return str(file.read(path))",
+    "def netstat():",
+    "    return net.conns()",
+].join("\n");
+
 class StdlibRegistry {
     public allModules = new Set<string>();
     public functions = new Map<string, EldritchFunctionSymbol>();
@@ -305,7 +320,260 @@ class StdlibRegistry {
                 this.byModule.set(sym.moduleName, list);
             }
         }
+        this.registerDefaultAliases();
     }
+
+    public userFunctions = new Map<string, EldritchFunctionSymbol>();
+    public userVariables = new Map<string, EldritchUserVariable>();
+
+    public registerDefaultAliases(): void {
+        const lines = DEFAULT_RC_ALIASES_SCRIPT.split("\n");
+        const defRegex = /^[ \t]*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([\s\S]*?)\)/gm;
+        let m: RegExpExecArray | null;
+        while ((m = defRegex.exec(DEFAULT_RC_ALIASES_SCRIPT)) !== null) {
+            const fnName = m[1];
+            const rawParams = m[2].replace(/\s+/g, " ").trim();
+            const signature = `${fnName}(${rawParams})`;
+            const lineIdx = DEFAULT_RC_ALIASES_SCRIPT.slice(0, m.index).split("\n").length - 1;
+            const docstring = extractDocstring(lines, lineIdx);
+            this.registerUserFunction({
+                name: fnName,
+                signature,
+                description: docstring || `Shell alias: ${fnName}`,
+            });
+        }
+    }
+
+    public registerUserFunction(
+        fn:
+            | EldritchFunctionSymbol
+            | {
+                  name: string;
+                  signature?: string;
+                  description?: string;
+                  params?: EldritchParamInfo[];
+                  returnType?: string;
+              }
+            | string
+    ): EldritchFunctionSymbol {
+        if (typeof fn === "string") {
+            const sym = parseFunctionSignature(
+                fn,
+                `${fn}()`,
+                "User-defined function"
+            );
+            this.userFunctions.set(fn, sym);
+            return sym;
+        }
+        const sym =
+            "params" in fn && Array.isArray(fn.params)
+                ? (fn as EldritchFunctionSymbol)
+                : parseFunctionSignature(
+                      fn.name,
+                      fn.signature || `${fn.name}()`,
+                      fn.description || "User-defined function"
+                  );
+        this.userFunctions.set(fn.name, sym);
+        return sym;
+    }
+
+    public registerUserVariable(
+        name: string,
+        detail?: string,
+        inferredType?: string
+    ): void {
+        if (!name) return;
+        this.userVariables.set(name, {
+            name,
+            detail: detail || (inferredType ? `${name}: ${inferredType}` : "local variable"),
+            inferredType,
+        });
+    }
+
+    public unregisterUserFunction(name: string): boolean {
+        return this.userFunctions.delete(name);
+    }
+
+    public unregisterUserVariable(name: string): boolean {
+        return this.userVariables.delete(name);
+    }
+
+    public clearUserSymbols(): void {
+        this.userFunctions.clear();
+        this.userVariables.clear();
+    }
+}
+
+export interface EldritchUserVariable {
+    name: string;
+    detail: string;
+    inferredType?: string;
+}
+
+export function registerUserDefinedFunction(
+    fn:
+        | EldritchFunctionSymbol
+        | {
+              name: string;
+              signature?: string;
+              description?: string;
+              params?: EldritchParamInfo[];
+              returnType?: string;
+          }
+        | string
+): EldritchFunctionSymbol {
+    return stdlibRegistry.registerUserFunction(fn);
+}
+
+export function registerUserDefinedVariable(
+    name: string,
+    detail?: string,
+    inferredType?: string
+): void {
+    stdlibRegistry.registerUserVariable(name, detail, inferredType);
+}
+
+export function unregisterUserDefinedFunction(name: string): boolean {
+    return stdlibRegistry.unregisterUserFunction(name);
+}
+
+export function unregisterUserDefinedVariable(name: string): boolean {
+    return stdlibRegistry.unregisterUserVariable(name);
+}
+
+export function clearUserDefinedSymbols(): void {
+    stdlibRegistry.clearUserSymbols();
+}
+
+export function getUserDefinedFunctions(): EldritchFunctionSymbol[] {
+    return Array.from(stdlibRegistry.userFunctions.values());
+}
+
+export function getUserDefinedVariables(): EldritchUserVariable[] {
+    return Array.from(stdlibRegistry.userVariables.values());
+}
+
+function extractDocstring(lines: string[], defLineIndex: number): string | undefined {
+    let nextIdx = defLineIndex + 1;
+    while (nextIdx < lines.length && lines[nextIdx].trim() === "") {
+        nextIdx++;
+    }
+    if (nextIdx >= lines.length) return undefined;
+    const line = lines[nextIdx].trim();
+    if (line.startsWith('"""') || line.startsWith("'''")) {
+        const quote = line.slice(0, 3);
+        const rest = line.slice(3);
+        if (rest.includes(quote)) {
+            return rest.slice(0, rest.indexOf(quote)).trim();
+        }
+        const docLines = [rest];
+        nextIdx++;
+        while (nextIdx < lines.length) {
+            const cur = lines[nextIdx];
+            if (cur.includes(quote)) {
+                docLines.push(cur.slice(0, cur.indexOf(quote)));
+                break;
+            }
+            docLines.push(cur);
+            nextIdx++;
+        }
+        return docLines.join("\n").trim();
+    }
+    return undefined;
+}
+
+export function inferTypeFromRhs(rhs: string): string | null {
+    if (!rhs) return null;
+    const trimmed = rhs.trim();
+    if (/^(?:f|r|fr|rf)?["']/i.test(trimmed)) return "str";
+    if (/^(?:b|br|rb)["']/i.test(trimmed)) return "bytes";
+    if (trimmed.startsWith("[")) return "list";
+    if (trimmed.startsWith("{")) return "dict";
+    if (/^\d+(?:\.\d+)?$/.test(trimmed)) return "number";
+    if (trimmed === "True" || trimmed === "False") return "bool";
+    if (trimmed === "None") return "None";
+
+    const callMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(/);
+    if (callMatch) {
+        const target = callMatch[1];
+        const sym =
+            stdlibRegistry.functions.get(target) ||
+            stdlibRegistry.builtins.get(target) ||
+            stdlibRegistry.userFunctions.get(target) ||
+            (DEPRECATED_STDLIB_FUNCTIONS[target]
+                ? stdlibRegistry.functions.get(DEPRECATED_STDLIB_FUNCTIONS[target])
+                : undefined);
+        const mapped = normalizeReturnTypeToValueType(sym?.returnType);
+        if (mapped) return mapped;
+    }
+    return null;
+}
+
+export function registerUserSymbolsFromCode(code: string): {
+    functions: EldritchFunctionSymbol[];
+    variables: string[];
+} {
+    if (!code || typeof code !== "string") {
+        return { functions: [], variables: [] };
+    }
+    const cleanCode = code.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const lines = cleanCode.split("\n");
+    const registeredFns: EldritchFunctionSymbol[] = [];
+    const registeredVars: string[] = [];
+
+    // 1. User-defined functions: def name(params):
+    const defRegex = /^[ \t]*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([\s\S]*?)\)(?:\s*->\s*[^:\n]+)?\s*:/gm;
+    let m: RegExpExecArray | null;
+    const seenFns = new Set<string>();
+    while ((m = defRegex.exec(cleanCode)) !== null) {
+        const fnName = m[1];
+        if (seenFns.has(fnName)) continue;
+        seenFns.add(fnName);
+        const rawParams = m[2].replace(/\s+/g, " ").trim();
+        const lineIdx = cleanCode.slice(0, m.index).split("\n").length - 1;
+        const docstring = extractDocstring(lines, lineIdx);
+        const signature = `${fnName}(${rawParams})`;
+        const sym = stdlibRegistry.registerUserFunction({
+            name: fnName,
+            signature,
+            description: docstring || `User-defined function: ${fnName}`,
+        });
+        registeredFns.push(sym);
+    }
+
+    // Fallback for in-progress function headers without trailing colon: def name(...)
+    const fallbackDefRegex = /^[ \t]*def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([\s\S]*?)\)/gm;
+    while ((m = fallbackDefRegex.exec(cleanCode)) !== null) {
+        const fnName = m[1];
+        if (seenFns.has(fnName)) continue;
+        seenFns.add(fnName);
+        const rawParams = m[2].replace(/\s+/g, " ").trim();
+        const lineIdx = cleanCode.slice(0, m.index).split("\n").length - 1;
+        const docstring = extractDocstring(lines, lineIdx);
+        const signature = `${fnName}(${rawParams})`;
+        const sym = stdlibRegistry.registerUserFunction({
+            name: fnName,
+            signature,
+            description: docstring || `User-defined function: ${fnName}`,
+        });
+        registeredFns.push(sym);
+    }
+
+    // 2. User-defined variables: name = value
+    const varRegex = /^[ \t]*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?!=)(.+)$/gm;
+    while ((m = varRegex.exec(cleanCode)) !== null) {
+        const vName = m[1];
+        const rhs = m[2].trim();
+        if (ELDRITCH_KEYWORDS.includes(vName) || ELDRITCH_BOOLEANS.includes(vName)) {
+            continue;
+        }
+        const inferredType = inferTypeFromRhs(rhs) || undefined;
+        const detail = inferredType ? `${vName}: ${inferredType}` : "local variable";
+        stdlibRegistry.registerUserVariable(vName, detail, inferredType);
+        registeredVars.push(vName);
+    }
+
+    return { functions: registeredFns, variables: registeredVars };
 }
 
 export const stdlibRegistry = new StdlibRegistry();
@@ -864,7 +1132,9 @@ export function analyzeEldritchCode(code: string): EldritchDiagnostic[] {
                       (DEPRECATED_STDLIB_FUNCTIONS[qualified]
                           ? stdlibRegistry.functions.get(DEPRECATED_STDLIB_FUNCTIONS[qualified])
                           : undefined)
-                    : userFunctions.get(fnName) || stdlibRegistry.builtins.get(fnName)) || undefined;
+                    : userFunctions.get(fnName) ||
+                      stdlibRegistry.userFunctions.get(fnName) ||
+                      stdlibRegistry.builtins.get(fnName)) || undefined;
 
             if (sym) {
                 const openParenCol = masked.indexOf("(", nameEndCol);
@@ -1035,7 +1305,10 @@ export function completeEldritchCode(
     // 2. General identifier / keyword / function / parameter completion
     const identMatch = lineBeforeCursor.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/);
     const prefix = identMatch ? identMatch[1] : "";
-    if (!prefix) {
+
+    // Check if inside a function call to suggest keyword arguments `param=`
+    const sigHelp = getEldritchSignatureHelp(code, safeCursor);
+    if (!prefix && !sigHelp) {
         return null;
     }
 
@@ -1043,12 +1316,11 @@ export function completeEldritchCode(
     const items: EldritchCompletionItem[] = [];
     const seen = new Set<string>();
 
-    // Check if inside a function call to suggest keyword arguments `param=`
-    const sigHelp = getEldritchSignatureHelp(code, safeCursor);
     if (sigHelp) {
         const sym =
             stdlibRegistry.functions.get(sigHelp.functionName) ||
-            stdlibRegistry.builtins.get(sigHelp.functionName);
+            stdlibRegistry.builtins.get(sigHelp.functionName) ||
+            stdlibRegistry.userFunctions.get(sigHelp.functionName);
         if (sym) {
             for (const p of sym.params) {
                 if (!p.isVariadic && !p.isKwargs && p.name.startsWith(prefix)) {
@@ -1108,6 +1380,33 @@ export function completeEldritchCode(
                 insertText: vName,
                 kind: "variable",
                 detail: "local variable",
+            });
+        }
+    }
+
+    // Registered user-defined functions (e.g. from RC scripts or executed shell input)
+    for (const [fnName, sym] of Array.from(stdlibRegistry.userFunctions.entries())) {
+        if (fnName.startsWith(prefix) && !seen.has(fnName)) {
+            seen.add(fnName);
+            items.push({
+                label: fnName,
+                insertText: fnName,
+                kind: "function",
+                detail: sym.signature,
+                documentation: sym.description,
+            });
+        }
+    }
+
+    // Registered user-defined variables
+    for (const [vName, vInfo] of Array.from(stdlibRegistry.userVariables.entries())) {
+        if (vName.startsWith(prefix) && !seen.has(vName)) {
+            seen.add(vName);
+            items.push({
+                label: vName,
+                insertText: vName,
+                kind: "variable",
+                detail: vInfo.detail,
             });
         }
     }
@@ -1186,23 +1485,13 @@ function inferVariableType(code: string, varName: string): string | null {
     while ((m = assignRegex.exec(code)) !== null) {
         lastRhs = m[1].trim();
     }
-    if (!lastRhs) return null;
-    if (/^(?:f|r|fr|rf)?["']/i.test(lastRhs)) return "str";
-    if (/^(?:b|br|rb)["']/i.test(lastRhs)) return "bytes";
-    if (lastRhs.startsWith("[")) return "list";
-    if (lastRhs.startsWith("{")) return "dict";
-
-    const callMatch = lastRhs.match(/^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\(/);
-    if (callMatch) {
-        const target = callMatch[1];
-        const sym =
-            stdlibRegistry.functions.get(target) ||
-            stdlibRegistry.builtins.get(target) ||
-            (DEPRECATED_STDLIB_FUNCTIONS[target]
-                ? stdlibRegistry.functions.get(DEPRECATED_STDLIB_FUNCTIONS[target])
-                : undefined);
-        const mapped = normalizeReturnTypeToValueType(sym?.returnType);
-        if (mapped) return mapped;
+    if (lastRhs) {
+        const inferred = inferTypeFromRhs(lastRhs);
+        if (inferred) return inferred;
+    }
+    const userVar = stdlibRegistry.userVariables.get(varName);
+    if (userVar?.inferredType) {
+        return userVar.inferredType;
     }
     return null;
 }
@@ -1251,6 +1540,7 @@ export function getEldritchSignatureHelp(
     const sym =
         stdlibRegistry.functions.get(callee) ||
         stdlibRegistry.builtins.get(callee) ||
+        stdlibRegistry.userFunctions.get(callee) ||
         (DEPRECATED_STDLIB_FUNCTIONS[callee]
             ? stdlibRegistry.functions.get(DEPRECATED_STDLIB_FUNCTIONS[callee])
             : undefined);

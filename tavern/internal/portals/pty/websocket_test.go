@@ -264,9 +264,10 @@ func TestPTYOutputOrdering(t *testing.T) {
 		"PTY output must be in order and each line should appear exactly once")
 }
 
-// TestPTYResizeJSONViaBytesPayload verifies that initial size query parameters
-// and websocket resize control messages are marshaled as JSON inside BytesPayload.Data.
-func TestPTYResizeJSONViaBytesPayload(t *testing.T) {
+// TestPTYResizeMessage verifies that initial size query parameters and websocket
+// resize control messages are sent using the dedicated PTYResize protobuf message,
+// while the initial PTY spawn mote keeps BytesPayload.Data empty.
+func TestPTYResizeMessage(t *testing.T) {
 	env := setupPTYTestEnv(t)
 	defer env.Close()
 	ctx := context.Background()
@@ -284,21 +285,27 @@ func TestPTYResizeJSONViaBytesPayload(t *testing.T) {
 	require.NoError(t, err)
 	defer ws.Close()
 
-	// 1. Expect initial mote with JSON resize payload
+	// 1. Expect initial PTY spawn mote with empty BytesPayload.Data
 	select {
 	case initMote := <-inCh:
 		require.NotNil(t, initMote.GetBytes())
 		assert.Equal(t, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY, initMote.GetBytes().Kind)
-		var initResize pty.PTYResizeMessage
-		require.NoError(t, json.Unmarshal(initMote.GetBytes().Data, &initResize))
-		assert.Equal(t, "resize", initResize.Kind)
-		assert.Equal(t, uint32(32), initResize.Rows)
-		assert.Equal(t, uint32(110), initResize.Cols)
+		assert.Empty(t, initMote.GetBytes().Data)
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for initial PTY mote")
 	}
 
-	// 2. Send a resize control message over websocket
+	// 2. Expect initial PTYResize mote from query parameters
+	select {
+	case initResizeMote := <-inCh:
+		require.NotNil(t, initResizeMote.GetPtyResize())
+		assert.Equal(t, uint32(32), initResizeMote.GetPtyResize().Rows)
+		assert.Equal(t, uint32(110), initResizeMote.GetPtyResize().Cols)
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for initial PTYResize mote")
+	}
+
+	// 3. Send a resize control message over websocket
 	require.NoError(t, ws.WriteJSON(pty.WebsocketControlMessage{
 		Kind: "resize",
 		Rows: 45,
@@ -307,13 +314,9 @@ func TestPTYResizeJSONViaBytesPayload(t *testing.T) {
 
 	select {
 	case resizeMote := <-inCh:
-		require.NotNil(t, resizeMote.GetBytes())
-		assert.Equal(t, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY, resizeMote.GetBytes().Kind)
-		var resizeMsg pty.PTYResizeMessage
-		require.NoError(t, json.Unmarshal(resizeMote.GetBytes().Data, &resizeMsg))
-		assert.Equal(t, "resize", resizeMsg.Kind)
-		assert.Equal(t, uint32(45), resizeMsg.Rows)
-		assert.Equal(t, uint32(132), resizeMsg.Cols)
+		require.NotNil(t, resizeMote.GetPtyResize())
+		assert.Equal(t, uint32(45), resizeMote.GetPtyResize().Rows)
+		assert.Equal(t, uint32(132), resizeMote.GetPtyResize().Cols)
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for PTY resize mote")
 	}

@@ -21,6 +21,8 @@ import {
     transformClearAnsiForScrollback,
     getViewportNonEmptyLineCount,
     findReverseHistoryMatch,
+    handleTerminalCustomKeyEvent,
+    copyTextToClipboard,
     HISTORY_KEY,
     MAX_HISTORY,
 } from './shellUtils';
@@ -678,3 +680,190 @@ describe('Shell !command macro handling', () => {
         expect(inserted.buffer).toBe('if True:\n    !echo foo:\n    ');
     });
 });
+
+describe('Terminal Custom Key Event Handling (Copy/Paste & Shortcuts)', () => {
+    let mockTerm: {
+        hasSelection: () => boolean;
+        getSelection: () => string;
+        clearSelection: () => void;
+    };
+    let hasSelectionMock: ReturnType<typeof vi.fn<[], boolean>>;
+    let getSelectionMock: ReturnType<typeof vi.fn<[], string>>;
+    let clearSelectionMock: ReturnType<typeof vi.fn<[], void>>;
+    let writeTextMock: ReturnType<typeof vi.fn<[string], Promise<void>>>;
+    const originalNavigator = globalThis.navigator;
+
+    beforeEach(() => {
+        hasSelectionMock = vi.fn<[], boolean>().mockReturnValue(false);
+        getSelectionMock = vi.fn<[], string>().mockReturnValue('');
+        clearSelectionMock = vi.fn<[], void>();
+        writeTextMock = vi.fn<[string], Promise<void>>().mockResolvedValue(undefined);
+
+        mockTerm = {
+            hasSelection: () => hasSelectionMock(),
+            getSelection: () => getSelectionMock(),
+            clearSelection: () => clearSelectionMock(),
+        };
+
+        // Mock navigator with Linux userAgent by default (non-macOS)
+        Object.defineProperty(globalThis, 'navigator', {
+            configurable: true,
+            writable: true,
+            value: {
+                userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                clipboard: {
+                    writeText: writeTextMock,
+                },
+            },
+        });
+    });
+
+    afterEach(() => {
+        Object.defineProperty(globalThis, 'navigator', {
+            configurable: true,
+            writable: true,
+            value: originalNavigator,
+        });
+    });
+
+    const createKeyEvent = (props: Partial<KeyboardEvent>): KeyboardEvent => {
+        const preventDefault = vi.fn();
+        return {
+            type: 'keydown',
+            key: 'c',
+            code: 'KeyC',
+            ctrlKey: false,
+            shiftKey: false,
+            altKey: false,
+            metaKey: false,
+            preventDefault,
+            ...props,
+        } as unknown as KeyboardEvent;
+    };
+
+    it('copies selected text to clipboard and clears selection on Ctrl+C (non-macOS)', () => {
+        hasSelectionMock.mockReturnValue(true);
+        getSelectionMock.mockReturnValue('copied content');
+
+        const ev = createKeyEvent({ ctrlKey: true, key: 'c', code: 'KeyC' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(false);
+        expect(writeTextMock).toHaveBeenCalledWith('copied content');
+        expect(clearSelectionMock).toHaveBeenCalled();
+    });
+
+    it('allows default Ctrl+C handling (SIGINT) when no text is selected on non-macOS', () => {
+        hasSelectionMock.mockReturnValue(false);
+
+        const ev = createKeyEvent({ ctrlKey: true, key: 'c', code: 'KeyC' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(true);
+        expect(writeTextMock).not.toHaveBeenCalled();
+        expect(clearSelectionMock).not.toHaveBeenCalled();
+    });
+
+    it('copies selected text on Ctrl+Shift+C (Linux terminal convention)', () => {
+        hasSelectionMock.mockReturnValue(true);
+        getSelectionMock.mockReturnValue('linux copied text');
+
+        const ev = createKeyEvent({ ctrlKey: true, shiftKey: true, key: 'C', code: 'KeyC' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(false);
+        expect(writeTextMock).toHaveBeenCalledWith('linux copied text');
+        expect(clearSelectionMock).toHaveBeenCalled();
+    });
+
+    it('blocks Ctrl+Shift+C from sending stray chars when no text is selected', () => {
+        hasSelectionMock.mockReturnValue(false);
+
+        const ev = createKeyEvent({ ctrlKey: true, shiftKey: true, key: 'C', code: 'KeyC' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(false);
+        expect(writeTextMock).not.toHaveBeenCalled();
+    });
+
+    it('copies selected text on Ctrl+Insert', () => {
+        hasSelectionMock.mockReturnValue(true);
+        getSelectionMock.mockReturnValue('insert copied text');
+
+        const ev = createKeyEvent({ ctrlKey: true, key: 'Insert', code: 'Insert' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(false);
+        expect(writeTextMock).toHaveBeenCalledWith('insert copied text');
+        expect(clearSelectionMock).toHaveBeenCalled();
+    });
+
+    it('allows native paste on Ctrl+V for non-macOS by returning false without preventDefault', () => {
+        const ev = createKeyEvent({ ctrlKey: true, key: 'v', code: 'KeyV' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(false);
+        expect(ev.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('allows native paste on Ctrl+Shift+V by returning false without preventDefault', () => {
+        const ev = createKeyEvent({ ctrlKey: true, shiftKey: true, key: 'V', code: 'KeyV' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(false);
+        expect(ev.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('allows native paste on Shift+Insert by returning false without preventDefault', () => {
+        const ev = createKeyEvent({ shiftKey: true, key: 'Insert', code: 'Insert' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        expect(result).toBe(false);
+        expect(ev.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('handles Shift+Enter with custom callback and prevents default', () => {
+        const onShiftEnter = vi.fn();
+        const ev = createKeyEvent({ shiftKey: true, key: 'Enter', code: 'Enter' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm, { onShiftEnter });
+
+        expect(result).toBe(false);
+        expect(ev.preventDefault).toHaveBeenCalled();
+        expect(onShiftEnter).toHaveBeenCalled();
+    });
+
+    it('does not intercept Ctrl+C on macOS even if text is selected (lets Meta+C handle copy)', () => {
+        Object.defineProperty(globalThis, 'navigator', {
+            configurable: true,
+            writable: true,
+            value: {
+                userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+                clipboard: { writeText: writeTextMock },
+            },
+        });
+
+        hasSelectionMock.mockReturnValue(true);
+        getSelectionMock.mockReturnValue('some text');
+
+        const ev = createKeyEvent({ ctrlKey: true, key: 'c', code: 'KeyC' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+
+        // On macOS, Ctrl+C should remain SIGINT
+        expect(result).toBe(true);
+        expect(writeTextMock).not.toHaveBeenCalled();
+    });
+
+    it('ignores non-keydown events (keyup/keypress)', () => {
+        const ev = createKeyEvent({ type: 'keyup', ctrlKey: true, key: 'c', code: 'KeyC' });
+        const result = handleTerminalCustomKeyEvent(ev, mockTerm);
+        expect(result).toBe(true);
+    });
+
+    it('passes through standard typing and control keys', () => {
+        for (const key of ['a', 'Enter', 'Backspace', 'ArrowUp', 'Tab']) {
+            const ev = createKeyEvent({ key, code: key });
+            expect(handleTerminalCustomKeyEvent(ev, mockTerm)).toBe(true);
+        }
+    });
+});
+

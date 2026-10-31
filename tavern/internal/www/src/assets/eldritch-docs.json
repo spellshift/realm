@@ -2963,7 +2963,17 @@
   },
   "windows.enable_privilege": {
     "signature": "windows.enable_privilege(privilege: str) -> bool",
-    "description": "The **windows.enable_privilege** method enables a privilege on the current process token\n```python\n$> pprint(windows.tokens(process.info()['pid']))\n[\n{\n\"pid\": 3236,\n\"privileges\": [\n...\n\"SeBackupPrivilege=disabled\",\n...\n],\n\"user\": \"NT AUTHORITY\\\\SYSTEM\"\n}\n]\n$> windows.enable_privilege('SeBackupPrivilege')\nTrue\n$> pprint(windows.tokens(process.info()['pid']))\n[\n{\n\"pid\": 3236,\n\"privileges\": [\n...\n\"SeBackupPrivilege=enabled\",\n...\n],\n\"user\": \"NT AUTHORITY\\\\SYSTEM\"\n}\n]\n```"
+    "description": "Enables a privilege on the current process token.\n\n**Parameters**\n- `privilege` (`String`): The privilege to enable (ex. SeImpersonatePrivilege).\n\n**Returns**\n- `bool`: True if privilege was enabled.",
+    "kind": "function",
+    "module": "windows",
+    "params": [
+      {
+        "name": "privilege",
+        "type": "str"
+      }
+    ],
+    "returnType": "bool",
+    "deprecated": false
   },
   "windows.impersonate": {
     "signature": "windows.impersonate(pid: int) -> int",
