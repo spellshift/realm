@@ -27,7 +27,13 @@ impl NetLibrary for StdNetLibrary {
         tcp_impl::tcp(address, port as i32, data).map_err(|e| e.to_string())
     }
 
-    fn udp(&self, address: String, port: i64, data: String) -> Result<String, String> {
-        udp_impl::udp(address, port as i32, data).map_err(|e| e.to_string())
+    fn udp(
+        &self,
+        address: String,
+        port: i64,
+        data: String,
+        timeout: Option<i64>,
+    ) -> Result<String, String> {
+        udp_impl::udp(address, port as i32, data, timeout).map_err(|e| e.to_string())
     }
 }

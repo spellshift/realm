@@ -47,8 +47,15 @@ pub trait NetLibrary {
     /// - `address` (`str`): Target address.
     /// - `port` (`int`): Target port.
     /// - `data` (`str`): Data to send.
+    /// - `timeout` (`Option<int>`): Optional timeout in seconds (defaults to 3).
     ///
     /// **Returns**
-    /// - `str`: The response data.
-    fn udp(&self, address: String, port: i64, data: String) -> Result<String, String>;
+    /// - `str`: The response data, or empty string if no reply was received.
+    fn udp(
+        &self,
+        address: String,
+        port: i64,
+        data: String,
+        timeout: Option<i64>,
+    ) -> Result<String, String>;
 }
