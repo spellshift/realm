@@ -68,6 +68,8 @@ type Tx struct {
 	ShellTask *ShellTaskClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TagRule is the client for interacting with the TagRule builders.
+	TagRule *TagRuleClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tome is the client for interacting with the Tome builders.
@@ -233,6 +235,7 @@ func (tx *Tx) init() {
 	tx.ShellPivot = NewShellPivotClient(tx.config)
 	tx.ShellTask = NewShellTaskClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
+	tx.TagRule = NewTagRuleClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.Tome = NewTomeClient(tx.config)
 	tx.User = NewUserClient(tx.config)

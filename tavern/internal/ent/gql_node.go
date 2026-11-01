@@ -42,6 +42,7 @@ import (
 	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tagrule"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -186,6 +187,11 @@ var tagImplementors = []string{"Tag", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Tag) IsNode() {}
+
+var tagruleImplementors = []string{"TagRule", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*TagRule) IsNode() {}
 
 var taskImplementors = []string{"Task", "Node"}
 
@@ -499,6 +505,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(tag.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, tagImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case tagrule.Table:
+		query := c.TagRule.Query().
+			Where(tagrule.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, tagruleImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -1023,6 +1038,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Tag.Query().
 			Where(tag.IDIn(ids...))
 		query, err := query.CollectFields(ctx, tagImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case tagrule.Table:
+		query := c.TagRule.Query().
+			Where(tagrule.IDIn(ids...))
+		query, err := query.CollectFields(ctx, tagruleImplementors...)
 		if err != nil {
 			return nil, err
 		}

@@ -35,6 +35,7 @@ import (
 	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tagrule"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -761,6 +762,29 @@ func init() {
 	tagDescName := tagFields[0].Descriptor()
 	// tag.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tag.NameValidator = tagDescName.Validators[0].(func(string) error)
+	tagruleMixin := schema.TagRule{}.Mixin()
+	tagruleMixinFields0 := tagruleMixin[0].Fields()
+	_ = tagruleMixinFields0
+	tagruleFields := schema.TagRule{}.Fields()
+	_ = tagruleFields
+	// tagruleDescCreatedAt is the schema descriptor for created_at field.
+	tagruleDescCreatedAt := tagruleMixinFields0[0].Descriptor()
+	// tagrule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	tagrule.DefaultCreatedAt = tagruleDescCreatedAt.Default.(func() time.Time)
+	// tagruleDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	tagruleDescLastModifiedAt := tagruleMixinFields0[1].Descriptor()
+	// tagrule.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	tagrule.DefaultLastModifiedAt = tagruleDescLastModifiedAt.Default.(func() time.Time)
+	// tagrule.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	tagrule.UpdateDefaultLastModifiedAt = tagruleDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// tagruleDescPriority is the schema descriptor for priority field.
+	tagruleDescPriority := tagruleFields[0].Descriptor()
+	// tagrule.DefaultPriority holds the default value on creation for the priority field.
+	tagrule.DefaultPriority = tagruleDescPriority.Default.(int)
+	// tagruleDescConditions is the schema descriptor for conditions field.
+	tagruleDescConditions := tagruleFields[1].Descriptor()
+	// tagrule.ConditionsValidator is a validator for the "conditions" field. It is called by the builders before save.
+	tagrule.ConditionsValidator = tagruleDescConditions.Validators[0].(func(string) error)
 	taskMixin := schema.Task{}.Mixin()
 	taskHooks := schema.Task{}.Hooks()
 	task.Hooks[0] = taskHooks[0]

@@ -1236,6 +1236,14 @@ func (t *Tag) Hosts(
 	return t.QueryHosts().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (tr *TagRule) Tag(ctx context.Context) (*Tag, error) {
+	result, err := tr.Edges.TagOrErr()
+	if IsNotLoaded(err) {
+		result, err = tr.QueryTag().Only(ctx)
+	}
+	return result, err
+}
+
 func (t *Task) Quest(ctx context.Context) (*Quest, error) {
 	result, err := t.Edges.QuestOrErr()
 	if IsNotLoaded(err) {

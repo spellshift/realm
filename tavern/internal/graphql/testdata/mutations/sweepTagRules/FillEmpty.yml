@@ -1,0 +1,38 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `tags` (id, name, kind)
+    VALUES (4000,"web-group","group");
+  INSERT INTO `hosts` (id, name, identifier, platform, created_at, last_modified_at)
+    VALUES (1010,"web-1","HOST-1","PLATFORM_LINUX","2024-01-22 14:51:13","2024-01-22 14:51:13");
+  INSERT INTO `tag_rules` (id, created_at, last_modified_at, priority, conditions, tag_rule_tag)
+    VALUES (1,"2024-01-22 14:51:13","2024-01-22 14:51:13",0,'[{"field":"platform","predicate":"is","values":["PLATFORM_LINUX"]}]',4000);
+requestor:
+  session_token: secretToken
+query: |
+  mutation SweepTagRules($input: SweepTagRulesInput!) {
+    sweepTagRules(input: $input) {
+      mode
+      totalMatched
+      totalTagged
+      results {
+        tagRuleID
+        tagID
+        matchedHosts
+        taggedHosts
+      }
+    }
+  }
+variables:
+  input:
+    mode: fill-empty
+expected:
+  sweepTagRules:
+    mode: fill-empty
+    totalMatched: 1
+    totalTagged: 1
+    results:
+      - tagRuleID: "1"
+        tagID: "4000"
+        matchedHosts: 1
+        taggedHosts: 1

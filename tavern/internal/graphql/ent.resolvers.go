@@ -136,6 +136,9 @@ func (r *Resolver) Quest() generated.QuestResolver { return &questResolver{r} }
 // ShellTask returns generated.ShellTaskResolver implementation.
 func (r *Resolver) ShellTask() generated.ShellTaskResolver { return &shellTaskResolver{r} }
 
+// TagRule returns generated.TagRuleResolver implementation.
+func (r *Resolver) TagRule() generated.TagRuleResolver { return &tagRuleResolver{r} }
+
 // User returns generated.UserResolver implementation.
 func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
 
@@ -148,5 +151,6 @@ type hostFileResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type questResolver struct{ *Resolver }
 type shellTaskResolver struct{ *Resolver }
+type tagRuleResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
 type shellTaskWhereInputResolver struct{ *Resolver }

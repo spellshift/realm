@@ -42,6 +42,7 @@ import (
 	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tagrule"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -10384,6 +10385,374 @@ func (t *Tag) ToEdge(order *TagOrder) *TagEdge {
 	return &TagEdge{
 		Node:   t,
 		Cursor: order.Field.toCursor(t),
+	}
+}
+
+// TagRuleEdge is the edge representation of TagRule.
+type TagRuleEdge struct {
+	Node   *TagRule `json:"node"`
+	Cursor Cursor   `json:"cursor"`
+}
+
+// TagRuleConnection is the connection containing edges to TagRule.
+type TagRuleConnection struct {
+	Edges      []*TagRuleEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (c *TagRuleConnection) build(nodes []*TagRule, pager *tagrulePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *TagRule
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *TagRule {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *TagRule {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*TagRuleEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &TagRuleEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// TagRulePaginateOption enables pagination customization.
+type TagRulePaginateOption func(*tagrulePager) error
+
+// WithTagRuleOrder configures pagination ordering.
+func WithTagRuleOrder(order []*TagRuleOrder) TagRulePaginateOption {
+	return func(pager *tagrulePager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithTagRuleFilter configures pagination filter.
+func WithTagRuleFilter(filter func(*TagRuleQuery) (*TagRuleQuery, error)) TagRulePaginateOption {
+	return func(pager *tagrulePager) error {
+		if filter == nil {
+			return errors.New("TagRuleQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type tagrulePager struct {
+	reverse bool
+	order   []*TagRuleOrder
+	filter  func(*TagRuleQuery) (*TagRuleQuery, error)
+}
+
+func newTagRulePager(opts []TagRulePaginateOption, reverse bool) (*tagrulePager, error) {
+	pager := &tagrulePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *tagrulePager) applyFilter(query *TagRuleQuery) (*TagRuleQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *tagrulePager) toCursor(tr *TagRule) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(tr).Value)
+	}
+	return Cursor{ID: tr.ID, Value: cs_}
+}
+
+func (p *tagrulePager) applyCursors(query *TagRuleQuery, after, before *Cursor) (*TagRuleQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultTagRuleOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *tagrulePager) applyOrder(query *TagRuleQuery) *TagRuleQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultTagRuleOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultTagRuleOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *tagrulePager) orderExpr(query *TagRuleQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultTagRuleOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to TagRule.
+func (tr *TagRuleQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...TagRulePaginateOption,
+) (*TagRuleConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newTagRulePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if tr, err = pager.applyFilter(tr); err != nil {
+		return nil, err
+	}
+	conn := &TagRuleConnection{Edges: []*TagRuleEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := tr.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if tr, err = pager.applyCursors(tr, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		tr.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := tr.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	tr = pager.applyOrder(tr)
+	nodes, err := tr.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// TagRuleOrderFieldCreatedAt orders TagRule by created_at.
+	TagRuleOrderFieldCreatedAt = &TagRuleOrderField{
+		Value: func(tr *TagRule) (ent.Value, error) {
+			return tr.CreatedAt, nil
+		},
+		column: tagrule.FieldCreatedAt,
+		toTerm: tagrule.ByCreatedAt,
+		toCursor: func(tr *TagRule) Cursor {
+			return Cursor{
+				ID:    tr.ID,
+				Value: tr.CreatedAt,
+			}
+		},
+	}
+	// TagRuleOrderFieldLastModifiedAt orders TagRule by last_modified_at.
+	TagRuleOrderFieldLastModifiedAt = &TagRuleOrderField{
+		Value: func(tr *TagRule) (ent.Value, error) {
+			return tr.LastModifiedAt, nil
+		},
+		column: tagrule.FieldLastModifiedAt,
+		toTerm: tagrule.ByLastModifiedAt,
+		toCursor: func(tr *TagRule) Cursor {
+			return Cursor{
+				ID:    tr.ID,
+				Value: tr.LastModifiedAt,
+			}
+		},
+	}
+	// TagRuleOrderFieldPriority orders TagRule by priority.
+	TagRuleOrderFieldPriority = &TagRuleOrderField{
+		Value: func(tr *TagRule) (ent.Value, error) {
+			return tr.Priority, nil
+		},
+		column: tagrule.FieldPriority,
+		toTerm: tagrule.ByPriority,
+		toCursor: func(tr *TagRule) Cursor {
+			return Cursor{
+				ID:    tr.ID,
+				Value: tr.Priority,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f TagRuleOrderField) String() string {
+	var str string
+	switch f.column {
+	case TagRuleOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case TagRuleOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case TagRuleOrderFieldPriority.column:
+		str = "PRIORITY"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f TagRuleOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *TagRuleOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("TagRuleOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *TagRuleOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *TagRuleOrderFieldLastModifiedAt
+	case "PRIORITY":
+		*f = *TagRuleOrderFieldPriority
+	default:
+		return fmt.Errorf("%s is not a valid TagRuleOrderField", str)
+	}
+	return nil
+}
+
+// TagRuleOrderField defines the ordering field of TagRule.
+type TagRuleOrderField struct {
+	// Value extracts the ordering value from the given TagRule.
+	Value    func(*TagRule) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) tagrule.OrderOption
+	toCursor func(*TagRule) Cursor
+}
+
+// TagRuleOrder defines the ordering of TagRule.
+type TagRuleOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *TagRuleOrderField `json:"field"`
+}
+
+// DefaultTagRuleOrder is the default ordering of TagRule.
+var DefaultTagRuleOrder = &TagRuleOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &TagRuleOrderField{
+		Value: func(tr *TagRule) (ent.Value, error) {
+			return tr.ID, nil
+		},
+		column: tagrule.FieldID,
+		toTerm: tagrule.ByID,
+		toCursor: func(tr *TagRule) Cursor {
+			return Cursor{ID: tr.ID}
+		},
+	},
+}
+
+// ToEdge converts TagRule into TagRuleEdge.
+func (tr *TagRule) ToEdge(order *TagRuleOrder) *TagRuleEdge {
+	if order == nil {
+		order = DefaultTagRuleOrder
+	}
+	return &TagRuleEdge{
+		Node:   tr,
+		Cursor: order.Field.toCursor(tr),
 	}
 }
 

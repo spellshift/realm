@@ -898,6 +898,29 @@ var (
 		Columns:    TagsColumns,
 		PrimaryKey: []*schema.Column{TagsColumns[0]},
 	}
+	// TagRulesColumns holds the columns for the "tag_rules" table.
+	TagRulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "priority", Type: field.TypeInt, Default: 0},
+		{Name: "conditions", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "tag_rule_tag", Type: field.TypeInt},
+	}
+	// TagRulesTable holds the schema information for the "tag_rules" table.
+	TagRulesTable = &schema.Table{
+		Name:       "tag_rules",
+		Columns:    TagRulesColumns,
+		PrimaryKey: []*schema.Column{TagRulesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tag_rules_tags_tag",
+				Columns:    []*schema.Column{TagRulesColumns[5]},
+				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// TasksColumns holds the columns for the "tasks" table.
 	TasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -1224,6 +1247,7 @@ var (
 		ShellPivotsTable,
 		ShellTasksTable,
 		TagsTable,
+		TagRulesTable,
 		TasksTable,
 		TomesTable,
 		UsersTable,
@@ -1367,6 +1391,10 @@ func init() {
 	ShellTasksTable.ForeignKeys[0].RefTable = ShellsTable
 	ShellTasksTable.ForeignKeys[1].RefTable = UsersTable
 	TagsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	TagRulesTable.ForeignKeys[0].RefTable = TagsTable
+	TagRulesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	TasksTable.ForeignKeys[0].RefTable = QuestsTable

@@ -30,6 +30,7 @@ type ResolverRoot interface {
 	Query() QueryResolver
 	Quest() QuestResolver
 	ShellTask() ShellTaskResolver
+	TagRule() TagRuleResolver
 	User() UserResolver
 	ShellTaskWhereInput() ShellTaskWhereInputResolver
 }
@@ -452,6 +453,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ApplyTagRules                func(childComplexity int, input models.SweepTagRulesInput) int
 		ClosePortal                  func(childComplexity int, portalID int) int
 		CreateBuildProfile           func(childComplexity int, input models.CreateBuildProfileInput) int
 		CreateBuildTask              func(childComplexity int, input models.CreateBuildTaskInput) int
@@ -466,6 +468,7 @@ type ComplexityRoot struct {
 		CreateScheduledTask          func(childComplexity int, input ent.CreateScheduledTaskInput) int
 		CreateShell                  func(childComplexity int, input ent.CreateShellInput) int
 		CreateTag                    func(childComplexity int, input ent.CreateTagInput) int
+		CreateTagRule                func(childComplexity int, input models.CreateTagRuleInput) int
 		CreateTome                   func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteAllNotifications       func(childComplexity int) int
 		DeleteAsset                  func(childComplexity int, assetID int) int
@@ -474,6 +477,7 @@ type ComplexityRoot struct {
 		DeleteNetwork                func(childComplexity int, networkID int) int
 		DeleteNetworkHost            func(childComplexity int, networkHostID int) int
 		DeleteOperatorNote           func(childComplexity int, operatorNoteID int) int
+		DeleteTagRule                func(childComplexity int, tagRuleID int) int
 		DeleteTome                   func(childComplexity int, tomeID int) int
 		DisableLink                  func(childComplexity int, linkID int) int
 		DisableScheduledTask         func(childComplexity int, scheduledTaskID int) int
@@ -484,6 +488,7 @@ type ComplexityRoot struct {
 		MarkNotificationsAsRead      func(childComplexity int, notificationIDs []int) int
 		ResetUserAPIKey              func(childComplexity int) int
 		SubscribeToHost              func(childComplexity int, hostID int) int
+		SweepTagRules                func(childComplexity int, input models.SweepTagRulesInput) int
 		UnfavoriteHost               func(childComplexity int, hostID int) int
 		UnsubscribeFromHost          func(childComplexity int, hostID int) int
 		UpdateBeacon                 func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
@@ -494,6 +499,7 @@ type ComplexityRoot struct {
 		UpdateNetworkHost            func(childComplexity int, networkHostID int, input ent.UpdateNetworkHostInput) int
 		UpdateOperatorNote           func(childComplexity int, operatorNoteID int, input ent.UpdateOperatorNoteInput) int
 		UpdateTag                    func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTagRule                func(childComplexity int, tagRuleID int, input models.UpdateTagRuleInput) int
 		UpdateTome                   func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
 		UpdateUser                   func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
@@ -637,6 +643,7 @@ type ComplexityRoot struct {
 		Repositories           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		ScheduledTasks         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) int
 		Shells                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		TagRules               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagRuleOrder, where *ent.TagRuleWhereInput) int
 		Tags                   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 		Tasks                  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tomes                  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
@@ -840,6 +847,13 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	SweepTagRulesPayload struct {
+		Mode         func(childComplexity int) int
+		Results      func(childComplexity int) int
+		TotalMatched func(childComplexity int) int
+		TotalTagged  func(childComplexity int) int
+	}
+
 	Tag struct {
 		Hosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		ID    func(childComplexity int) int
@@ -856,6 +870,34 @@ type ComplexityRoot struct {
 	TagEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	TagRule struct {
+		Conditions     func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Order          func(childComplexity int) int
+		Priority       func(childComplexity int) int
+		Tag            func(childComplexity int) int
+	}
+
+	TagRuleConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	TagRuleEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	TagRuleSweepResult struct {
+		MatchedHosts func(childComplexity int) int
+		TagID        func(childComplexity int) int
+		TagRuleID    func(childComplexity int) int
+		TaggedHosts  func(childComplexity int) int
 	}
 
 	Task struct {
@@ -2941,6 +2983,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Metrics.TasksByTome(childComplexity), true
 
+	case "Mutation.applyTagRules":
+		if e.ComplexityRoot.Mutation.ApplyTagRules == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_applyTagRules_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ApplyTagRules(childComplexity, args["input"].(models.SweepTagRulesInput)), true
+
 	case "Mutation.closePortal":
 		if e.ComplexityRoot.Mutation.ClosePortal == nil {
 			break
@@ -3104,6 +3158,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.CreateTag(childComplexity, args["input"].(ent.CreateTagInput)), true
 
+	case "Mutation.createTagRule":
+		if e.ComplexityRoot.Mutation.CreateTagRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createTagRule_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateTagRule(childComplexity, args["input"].(models.CreateTagRuleInput)), true
+
 	case "Mutation.createTome":
 		if e.ComplexityRoot.Mutation.CreateTome == nil {
 			break
@@ -3194,6 +3260,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteOperatorNote(childComplexity, args["operatorNoteID"].(int)), true
+
+	case "Mutation.deleteTagRule":
+		if e.ComplexityRoot.Mutation.DeleteTagRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteTagRule_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteTagRule(childComplexity, args["tagRuleID"].(int)), true
 
 	case "Mutation.deleteTome":
 		if e.ComplexityRoot.Mutation.DeleteTome == nil {
@@ -3304,6 +3382,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SubscribeToHost(childComplexity, args["hostID"].(int)), true
+
+	case "Mutation.sweepTagRules":
+		if e.ComplexityRoot.Mutation.SweepTagRules == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sweepTagRules_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SweepTagRules(childComplexity, args["input"].(models.SweepTagRulesInput)), true
 
 	case "Mutation.unfavoriteHost":
 		if e.ComplexityRoot.Mutation.UnfavoriteHost == nil {
@@ -3424,6 +3514,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateTag(childComplexity, args["tagID"].(int), args["input"].(ent.UpdateTagInput)), true
+
+	case "Mutation.updateTagRule":
+		if e.ComplexityRoot.Mutation.UpdateTagRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTagRule_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateTagRule(childComplexity, args["tagRuleID"].(int), args["input"].(models.UpdateTagRuleInput)), true
 
 	case "Mutation.updateTome":
 		if e.ComplexityRoot.Mutation.UpdateTome == nil {
@@ -4188,6 +4290,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Shells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
+
+	case "Query.tagRules":
+		if e.ComplexityRoot.Query.TagRules == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tagRules_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.TagRules(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.TagRuleOrder), args["where"].(*ent.TagRuleWhereInput)), true
 
 	case "Query.tags":
 		if e.ComplexityRoot.Query.Tags == nil {
@@ -5188,6 +5302,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ShellTaskEdge.Node(childComplexity), true
 
+	case "SweepTagRulesPayload.mode":
+		if e.ComplexityRoot.SweepTagRulesPayload.Mode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SweepTagRulesPayload.Mode(childComplexity), true
+
+	case "SweepTagRulesPayload.results":
+		if e.ComplexityRoot.SweepTagRulesPayload.Results == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SweepTagRulesPayload.Results(childComplexity), true
+
+	case "SweepTagRulesPayload.totalMatched":
+		if e.ComplexityRoot.SweepTagRulesPayload.TotalMatched == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SweepTagRulesPayload.TotalMatched(childComplexity), true
+
+	case "SweepTagRulesPayload.totalTagged":
+		if e.ComplexityRoot.SweepTagRulesPayload.TotalTagged == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SweepTagRulesPayload.TotalTagged(childComplexity), true
+
 	case "Tag.hosts":
 		if e.ComplexityRoot.Tag.Hosts == nil {
 			break
@@ -5255,6 +5397,118 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.TagEdge.Node(childComplexity), true
+
+	case "TagRule.conditions":
+		if e.ComplexityRoot.TagRule.Conditions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRule.Conditions(childComplexity), true
+
+	case "TagRule.createdAt":
+		if e.ComplexityRoot.TagRule.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRule.CreatedAt(childComplexity), true
+
+	case "TagRule.id":
+		if e.ComplexityRoot.TagRule.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRule.ID(childComplexity), true
+
+	case "TagRule.lastModifiedAt":
+		if e.ComplexityRoot.TagRule.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRule.LastModifiedAt(childComplexity), true
+
+	case "TagRule.order":
+		if e.ComplexityRoot.TagRule.Order == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRule.Order(childComplexity), true
+
+	case "TagRule.priority":
+		if e.ComplexityRoot.TagRule.Priority == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRule.Priority(childComplexity), true
+
+	case "TagRule.tag":
+		if e.ComplexityRoot.TagRule.Tag == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRule.Tag(childComplexity), true
+
+	case "TagRuleConnection.edges":
+		if e.ComplexityRoot.TagRuleConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleConnection.Edges(childComplexity), true
+
+	case "TagRuleConnection.pageInfo":
+		if e.ComplexityRoot.TagRuleConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleConnection.PageInfo(childComplexity), true
+
+	case "TagRuleConnection.totalCount":
+		if e.ComplexityRoot.TagRuleConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleConnection.TotalCount(childComplexity), true
+
+	case "TagRuleEdge.cursor":
+		if e.ComplexityRoot.TagRuleEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleEdge.Cursor(childComplexity), true
+
+	case "TagRuleEdge.node":
+		if e.ComplexityRoot.TagRuleEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleEdge.Node(childComplexity), true
+
+	case "TagRuleSweepResult.matchedHosts":
+		if e.ComplexityRoot.TagRuleSweepResult.MatchedHosts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleSweepResult.MatchedHosts(childComplexity), true
+
+	case "TagRuleSweepResult.tagID":
+		if e.ComplexityRoot.TagRuleSweepResult.TagID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleSweepResult.TagID(childComplexity), true
+
+	case "TagRuleSweepResult.tagRuleID":
+		if e.ComplexityRoot.TagRuleSweepResult.TagRuleID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleSweepResult.TagRuleID(childComplexity), true
+
+	case "TagRuleSweepResult.taggedHosts":
+		if e.ComplexityRoot.TagRuleSweepResult.TaggedHosts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TagRuleSweepResult.TaggedHosts(childComplexity), true
 
 	case "Task.beacon":
 		if e.ComplexityRoot.Task.Beacon == nil {
@@ -5859,6 +6113,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateShellInput,
 		ec.unmarshalInputCreateShellPivotInput,
 		ec.unmarshalInputCreateTagInput,
+		ec.unmarshalInputCreateTagRuleInput,
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputDeviceAuthOrder,
 		ec.unmarshalInputDeviceAuthWhereInput,
@@ -5900,7 +6155,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputShellTaskWhereInput,
 		ec.unmarshalInputShellWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
+		ec.unmarshalInputSweepTagRulesInput,
 		ec.unmarshalInputTagOrder,
+		ec.unmarshalInputTagRuleConditionInput,
+		ec.unmarshalInputTagRuleOrder,
+		ec.unmarshalInputTagRuleWhereInput,
 		ec.unmarshalInputTagWhereInput,
 		ec.unmarshalInputTaskOrder,
 		ec.unmarshalInputTaskWhereInput,
@@ -5917,6 +6176,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateOperatorNoteInput,
 		ec.unmarshalInputUpdateScheduledTaskInput,
 		ec.unmarshalInputUpdateTagInput,
+		ec.unmarshalInputUpdateTagRuleInput,
 		ec.unmarshalInputUpdateTomeInput,
 		ec.unmarshalInputUpdateUserInput,
 		ec.unmarshalInputUserOrder,
@@ -13293,6 +13553,154 @@ Properties by which Tag connections can be ordered.
 enum TagOrderField {
   NAME
 }
+type TagRule implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Evaluation order; lower values evaluate first. Ties break by ID.
+  """
+  priority: Int!
+  """
+  JSON-encoded TagRule rows: [{field, predicate, values}]. Allowed fields: platform, primaryIP, externalIP, host (name).
+  """
+  conditions: String!
+  """
+  Existing tag applied when conditions match. Tag kind (group/service) fills that kind slot.
+  """
+  tag: Tag!
+}
+"""
+A connection to a list of items.
+"""
+type TagRuleConnection {
+  """
+  A list of edges.
+  """
+  edges: [TagRuleEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type TagRuleEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: TagRule
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for TagRule connections
+"""
+input TagRuleOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order TagRules.
+  """
+  field: TagRuleOrderField!
+}
+"""
+Properties by which TagRule connections can be ordered.
+"""
+enum TagRuleOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  PRIORITY
+}
+"""
+TagRuleWhereInput is used for filtering TagRule objects.
+Input was generated by ent.
+"""
+input TagRuleWhereInput {
+  not: TagRuleWhereInput
+  and: [TagRuleWhereInput!]
+  or: [TagRuleWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  priority field predicates
+  """
+  priority: Int
+  priorityNEQ: Int
+  priorityIn: [Int!]
+  priorityNotIn: [Int!]
+  priorityGT: Int
+  priorityGTE: Int
+  priorityLT: Int
+  priorityLTE: Int
+  """
+  conditions field predicates
+  """
+  conditions: String
+  conditionsNEQ: String
+  conditionsIn: [String!]
+  conditionsNotIn: [String!]
+  conditionsGT: String
+  conditionsGTE: String
+  conditionsLT: String
+  conditionsLTE: String
+  conditionsContains: String
+  conditionsHasPrefix: String
+  conditionsHasSuffix: String
+  conditionsEqualFold: String
+  conditionsContainsFold: String
+  """
+  tag edge predicates
+  """
+  hasTag: Boolean
+  hasTagWith: [TagWhereInput!]
+}
 """
 TagWhereInput is used for filtering Tag objects.
 Input was generated by ent.
@@ -15656,6 +16064,102 @@ extend type Quest {
         """
         where: TaskWhereInput
     ): [TaskDiff!]! @goField(forceResolver: true)
+}
+`, BuiltIn: false},
+	{Name: "../schema/tagrule.graphql", Input: `"""
+TagRule inputs and operations (see TAGRULE_DECISIONS.md).
+
+A TagRule references an existing tag by ID and stores Field + Predicate +
+Value rows (HostFilterRow model) as JSON. Rules evaluate in priority order
+(lower first, ties by ID); the first matching rule per tag-kind slot wins.
+"""
+
+input TagRuleConditionInput {
+    """Rule field: platform, primaryIP, externalIP, host (host name)."""
+    field: String!
+    """Predicate: is, is-not, is-in, is-not-in, contains, does-not-contain."""
+    predicate: String!
+    """Values: exactly one for single-value predicates, one or more for is-in/is-not-in."""
+    values: [String!]!
+}
+
+input CreateTagRuleInput {
+    """Existing tag to apply when conditions match."""
+    tagID: ID!
+    """Evaluation order; lower values evaluate first. Defaults to 0."""
+    priority: Int = 0
+    """Alias for priority; when set, overrides priority."""
+    order: Int
+    """Condition rows: AND across rows, OR within multi-value rows."""
+    conditions: [TagRuleConditionInput!]!
+}
+
+input UpdateTagRuleInput {
+    """Existing tag to apply when conditions match."""
+    tagID: ID
+    """Evaluation order; lower values evaluate first."""
+    priority: Int
+    """Alias for priority; when set, overrides priority."""
+    order: Int
+    """Condition rows: AND across rows, OR within multi-value rows."""
+    conditions: [TagRuleConditionInput!]
+}
+
+input SweepTagRulesInput {
+    """Sweep mode: fill-empty (only empty kind slots) or overwrite (replace current tag with winner)."""
+    mode: String!
+}
+
+type TagRuleSweepResult {
+    tagRuleID: ID!
+    tagID: ID!
+    matchedHosts: Int!
+    taggedHosts: Int!
+}
+
+type SweepTagRulesPayload {
+    mode: String!
+    results: [TagRuleSweepResult!]!
+    totalMatched: Int!
+    totalTagged: Int!
+}
+
+extend type TagRule {
+    """Alias for priority (evaluation order)."""
+    order: Int! @goField(forceResolver: true)
+}
+
+extend type Query {
+    tagRules(
+        """Returns the elements in the list that come after the specified cursor."""
+        after: Cursor
+
+        """Returns the first _n_ elements from the list."""
+        first: Int
+
+        """Returns the elements in the list that come before the specified cursor."""
+        before: Cursor
+
+        """Returns the last _n_ elements from the list."""
+        last: Int
+
+        """Ordering options for TagRules returned from the connection."""
+        orderBy: [TagRuleOrder!]
+
+        """Filtering options for TagRules returned from the connection."""
+        where: TagRuleWhereInput
+    ): TagRuleConnection! @requireRole(role: USER)
+}
+
+extend type Mutation {
+    ###
+    # TagRule
+    ###
+    createTagRule(input: CreateTagRuleInput!): TagRule! @requireRole(role: ADMIN)
+    updateTagRule(tagRuleID: ID!, input: UpdateTagRuleInput!): TagRule! @requireRole(role: ADMIN)
+    deleteTagRule(tagRuleID: ID!): ID! @requireRole(role: ADMIN)
+    sweepTagRules(input: SweepTagRulesInput!): SweepTagRulesPayload! @requireRole(role: ADMIN)
+    applyTagRules(input: SweepTagRulesInput!): SweepTagRulesPayload! @requireRole(role: ADMIN)
 }
 `, BuiltIn: false},
 }

@@ -17,8 +17,9 @@ import { BuildersTab } from "../agent-builder/builders-tab";
 import NewBuildProfileModal from "../agent-builder/components/NewBuildProfileModal";
 import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, useBuilders, useBuildProfiles } from "../agent-builder/queries";
 import { BuildProfile } from "../agent-builder/types";
+import { TagRulesTab } from "./tag-rules/TagRulesTab";
 
-const TAB_NAMES = ["users", "profiles", "builders"] as const;
+const TAB_NAMES = ["users", "profiles", "builders", "tag-rules"] as const;
 
 export const AdminPortal = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -88,6 +89,7 @@ export const AdminPortal = () => {
                         profileCount={profiles.length}
                         builderCount={builders.length}
                     />
+
                     <TabPanels className="min-w-0">
                         <TabPanel>
                             <VirtualizedTableWrapper
@@ -122,6 +124,19 @@ export const AdminPortal = () => {
                                 loading={buildersLoading}
                                 error={buildersError}
                             />
+                        </TabPanel>
+                        <TabPanel>
+                            <div className="flex flex-col gap-2 rounded-md border border-gray-200 bg-white p-4">
+                                <h3 className="text-xl font-semibold leading-6 text-gray-900">
+                                    Tag Rules
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                    Automatically tag hosts when they check in.
+                                    Rules evaluate on every callback; the
+                                    manual sweep below retags the whole fleet.
+                                </p>
+                                <TagRulesTab />
+                            </div>
                         </TabPanel>
                     </TabPanels>
                 </TabGroup>

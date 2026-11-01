@@ -1,0 +1,39 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,false);
+  INSERT INTO `tags` (id, name, kind)
+    VALUES (4000,"web-group","group");
+  INSERT INTO `tag_rules` (id, created_at, last_modified_at, priority, conditions, tag_rule_tag)
+    VALUES (1,"2024-01-22 14:51:13","2024-01-22 14:51:13",0,'[{"field":"platform","predicate":"is","values":["PLATFORM_LINUX"]}]',4000);
+requestor:
+  session_token: secretToken
+query: |
+  query TagRules {
+    tagRules {
+      edges {
+        node {
+          id
+          priority
+          order
+          conditions
+          tag {
+            id
+            name
+            kind
+          }
+        }
+      }
+    }
+  }
+expected:
+  tagRules:
+    edges:
+      - node:
+          id: "1"
+          priority: 0
+          order: 0
+          conditions: '[{"field":"platform","predicate":"is","values":["PLATFORM_LINUX"]}]'
+          tag:
+            id: "4000"
+            name: web-group
+            kind: group

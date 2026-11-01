@@ -1,0 +1,95 @@
+"""
+TagRule inputs and operations (see TAGRULE_DECISIONS.md).
+
+A TagRule references an existing tag by ID and stores Field + Predicate +
+Value rows (HostFilterRow model) as JSON. Rules evaluate in priority order
+(lower first, ties by ID); the first matching rule per tag-kind slot wins.
+"""
+
+input TagRuleConditionInput {
+    """Rule field: platform, primaryIP, externalIP, host (host name)."""
+    field: String!
+    """Predicate: is, is-not, is-in, is-not-in, contains, does-not-contain."""
+    predicate: String!
+    """Values: exactly one for single-value predicates, one or more for is-in/is-not-in."""
+    values: [String!]!
+}
+
+input CreateTagRuleInput {
+    """Existing tag to apply when conditions match."""
+    tagID: ID!
+    """Evaluation order; lower values evaluate first. Defaults to 0."""
+    priority: Int = 0
+    """Alias for priority; when set, overrides priority."""
+    order: Int
+    """Condition rows: AND across rows, OR within multi-value rows."""
+    conditions: [TagRuleConditionInput!]!
+}
+
+input UpdateTagRuleInput {
+    """Existing tag to apply when conditions match."""
+    tagID: ID
+    """Evaluation order; lower values evaluate first."""
+    priority: Int
+    """Alias for priority; when set, overrides priority."""
+    order: Int
+    """Condition rows: AND across rows, OR within multi-value rows."""
+    conditions: [TagRuleConditionInput!]
+}
+
+input SweepTagRulesInput {
+    """Sweep mode: fill-empty (only empty kind slots) or overwrite (replace current tag with winner)."""
+    mode: String!
+}
+
+type TagRuleSweepResult {
+    tagRuleID: ID!
+    tagID: ID!
+    matchedHosts: Int!
+    taggedHosts: Int!
+}
+
+type SweepTagRulesPayload {
+    mode: String!
+    results: [TagRuleSweepResult!]!
+    totalMatched: Int!
+    totalTagged: Int!
+}
+
+extend type TagRule {
+    """Alias for priority (evaluation order)."""
+    order: Int! @goField(forceResolver: true)
+}
+
+extend type Query {
+    tagRules(
+        """Returns the elements in the list that come after the specified cursor."""
+        after: Cursor
+
+        """Returns the first _n_ elements from the list."""
+        first: Int
+
+        """Returns the elements in the list that come before the specified cursor."""
+        before: Cursor
+
+        """Returns the last _n_ elements from the list."""
+        last: Int
+
+        """Ordering options for TagRules returned from the connection."""
+        orderBy: [TagRuleOrder!]
+
+        """Filtering options for TagRules returned from the connection."""
+        where: TagRuleWhereInput
+    ): TagRuleConnection! @requireRole(role: USER)
+}
+
+extend type Mutation {
+    ###
+    # TagRule
+    ###
+    createTagRule(input: CreateTagRuleInput!): TagRule! @requireRole(role: ADMIN)
+    updateTagRule(tagRuleID: ID!, input: UpdateTagRuleInput!): TagRule! @requireRole(role: ADMIN)
+    deleteTagRule(tagRuleID: ID!): ID! @requireRole(role: ADMIN)
+    sweepTagRules(input: SweepTagRulesInput!): SweepTagRulesPayload! @requireRole(role: ADMIN)
+    applyTagRules(input: SweepTagRulesInput!): SweepTagRulesPayload! @requireRole(role: ADMIN)
+}

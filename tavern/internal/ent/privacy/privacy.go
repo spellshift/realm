@@ -782,6 +782,30 @@ func (f TagMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) e
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.TagMutation", m)
 }
 
+// The TagRuleQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type TagRuleQueryRuleFunc func(context.Context, *ent.TagRuleQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f TagRuleQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.TagRuleQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.TagRuleQuery", q)
+}
+
+// The TagRuleMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type TagRuleMutationRuleFunc func(context.Context, *ent.TagRuleMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f TagRuleMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.TagRuleMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.TagRuleMutation", m)
+}
+
 // The TaskQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type TaskQueryRuleFunc func(context.Context, *ent.TaskQuery) error

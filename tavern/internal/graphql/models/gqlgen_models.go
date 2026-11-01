@@ -117,6 +117,17 @@ type CreateBuildTaskInput struct {
 	Unique *string `json:"unique,omitempty"`
 }
 
+type CreateTagRuleInput struct {
+	// Existing tag to apply when conditions match.
+	TagID int `json:"tagID"`
+	// Evaluation order; lower values evaluate first. Defaults to 0.
+	Priority *int `json:"priority,omitempty"`
+	// Alias for priority; when set, overrides priority.
+	Order *int `json:"order,omitempty"`
+	// Condition rows: AND across rows, OR within multi-value rows.
+	Conditions []*TagRuleConditionInput `json:"conditions"`
+}
+
 type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
@@ -152,6 +163,39 @@ type SubmitTaskResultInput struct {
 	Output string `json:"output"`
 	// Error message captured as the result of task execution failure.
 	Error *string `json:"error,omitempty"`
+}
+
+type SweepTagRulesInput struct {
+	// Sweep mode: fill-empty (only empty kind slots) or overwrite (replace current tag with winner).
+	Mode string `json:"mode"`
+}
+
+type SweepTagRulesPayload struct {
+	Mode         string                `json:"mode"`
+	Results      []*TagRuleSweepResult `json:"results"`
+	TotalMatched int                   `json:"totalMatched"`
+	TotalTagged  int                   `json:"totalTagged"`
+}
+
+// TagRule inputs and operations (see TAGRULE_DECISIONS.md).
+//
+// A TagRule references an existing tag by ID and stores Field + Predicate +
+// Value rows (HostFilterRow model) as JSON. Rules evaluate in priority order
+// (lower first, ties by ID); the first matching rule per tag-kind slot wins.
+type TagRuleConditionInput struct {
+	// Rule field: platform, primaryIP, externalIP, host (host name).
+	Field string `json:"field"`
+	// Predicate: is, is-not, is-in, is-not-in, contains, does-not-contain.
+	Predicate string `json:"predicate"`
+	// Values: exactly one for single-value predicates, one or more for is-in/is-not-in.
+	Values []string `json:"values"`
+}
+
+type TagRuleSweepResult struct {
+	TagRuleID    int `json:"tagRuleID"`
+	TagID        int `json:"tagID"`
+	MatchedHosts int `json:"matchedHosts"`
+	TaggedHosts  int `json:"taggedHosts"`
 }
 
 type TaskDiff struct {
@@ -198,6 +242,17 @@ type UpdateBuildProfileInput struct {
 	Tomes []*BuildProfileTomeInput `json:"tomes,omitempty"`
 	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
 	Unique *string `json:"unique,omitempty"`
+}
+
+type UpdateTagRuleInput struct {
+	// Existing tag to apply when conditions match.
+	TagID *int `json:"tagID,omitempty"`
+	// Evaluation order; lower values evaluate first.
+	Priority *int `json:"priority,omitempty"`
+	// Alias for priority; when set, overrides priority.
+	Order *int `json:"order,omitempty"`
+	// Condition rows: AND across rows, OR within multi-value rows.
+	Conditions []*TagRuleConditionInput `json:"conditions,omitempty"`
 }
 
 type Role string

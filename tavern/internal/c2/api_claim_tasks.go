@@ -24,6 +24,7 @@ import (
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/tagrules"
 )
 
 var (
@@ -231,6 +232,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		ID(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert host entity: %v", err)
+	}
+
+	// TagRule evaluation (best effort, fill-empty only):
+	// host attributes are re-upserted each callback and may arrive late,
+	// so rules evaluate on every callback, never displacing existing tags.
+	if err := tagrules.EvaluateHostForCallback(ctx, srv.graph, hostID); err != nil {
+		slog.ErrorContext(ctx, "failed to evaluate tag rules for host", "err", err, "host_id", hostID)
 	}
 
 	// Metrics
@@ -494,4 +502,3 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	// Return claimed tasks
 	return &resp, nil
 }
-

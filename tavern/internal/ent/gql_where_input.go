@@ -39,6 +39,7 @@ import (
 	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tagrule"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -13053,6 +13054,308 @@ func (i *TagWhereInput) P() (predicate.Tag, error) {
 		return predicates[0], nil
 	default:
 		return tag.And(predicates...), nil
+	}
+}
+
+// TagRuleWhereInput represents a where input for filtering TagRule queries.
+type TagRuleWhereInput struct {
+	Predicates []predicate.TagRule  `json:"-"`
+	Not        *TagRuleWhereInput   `json:"not,omitempty"`
+	Or         []*TagRuleWhereInput `json:"or,omitempty"`
+	And        []*TagRuleWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "priority" field predicates.
+	Priority      *int  `json:"priority,omitempty"`
+	PriorityNEQ   *int  `json:"priorityNEQ,omitempty"`
+	PriorityIn    []int `json:"priorityIn,omitempty"`
+	PriorityNotIn []int `json:"priorityNotIn,omitempty"`
+	PriorityGT    *int  `json:"priorityGT,omitempty"`
+	PriorityGTE   *int  `json:"priorityGTE,omitempty"`
+	PriorityLT    *int  `json:"priorityLT,omitempty"`
+	PriorityLTE   *int  `json:"priorityLTE,omitempty"`
+
+	// "conditions" field predicates.
+	Conditions             *string  `json:"conditions,omitempty"`
+	ConditionsNEQ          *string  `json:"conditionsNEQ,omitempty"`
+	ConditionsIn           []string `json:"conditionsIn,omitempty"`
+	ConditionsNotIn        []string `json:"conditionsNotIn,omitempty"`
+	ConditionsGT           *string  `json:"conditionsGT,omitempty"`
+	ConditionsGTE          *string  `json:"conditionsGTE,omitempty"`
+	ConditionsLT           *string  `json:"conditionsLT,omitempty"`
+	ConditionsLTE          *string  `json:"conditionsLTE,omitempty"`
+	ConditionsContains     *string  `json:"conditionsContains,omitempty"`
+	ConditionsHasPrefix    *string  `json:"conditionsHasPrefix,omitempty"`
+	ConditionsHasSuffix    *string  `json:"conditionsHasSuffix,omitempty"`
+	ConditionsEqualFold    *string  `json:"conditionsEqualFold,omitempty"`
+	ConditionsContainsFold *string  `json:"conditionsContainsFold,omitempty"`
+
+	// "tag" edge predicates.
+	HasTag     *bool            `json:"hasTag,omitempty"`
+	HasTagWith []*TagWhereInput `json:"hasTagWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *TagRuleWhereInput) AddPredicates(predicates ...predicate.TagRule) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the TagRuleWhereInput filter on the TagRuleQuery builder.
+func (i *TagRuleWhereInput) Filter(q *TagRuleQuery) (*TagRuleQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyTagRuleWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyTagRuleWhereInput is returned in case the TagRuleWhereInput is empty.
+var ErrEmptyTagRuleWhereInput = errors.New("ent: empty predicate TagRuleWhereInput")
+
+// P returns a predicate for filtering tagrules.
+// An error is returned if the input is empty or invalid.
+func (i *TagRuleWhereInput) P() (predicate.TagRule, error) {
+	var predicates []predicate.TagRule
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, tagrule.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.TagRule, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, tagrule.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.TagRule, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, tagrule.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, tagrule.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, tagrule.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, tagrule.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, tagrule.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, tagrule.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, tagrule.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, tagrule.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, tagrule.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, tagrule.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, tagrule.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, tagrule.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, tagrule.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, tagrule.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, tagrule.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, tagrule.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, tagrule.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, tagrule.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, tagrule.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, tagrule.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, tagrule.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, tagrule.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, tagrule.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, tagrule.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, tagrule.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Priority != nil {
+		predicates = append(predicates, tagrule.PriorityEQ(*i.Priority))
+	}
+	if i.PriorityNEQ != nil {
+		predicates = append(predicates, tagrule.PriorityNEQ(*i.PriorityNEQ))
+	}
+	if len(i.PriorityIn) > 0 {
+		predicates = append(predicates, tagrule.PriorityIn(i.PriorityIn...))
+	}
+	if len(i.PriorityNotIn) > 0 {
+		predicates = append(predicates, tagrule.PriorityNotIn(i.PriorityNotIn...))
+	}
+	if i.PriorityGT != nil {
+		predicates = append(predicates, tagrule.PriorityGT(*i.PriorityGT))
+	}
+	if i.PriorityGTE != nil {
+		predicates = append(predicates, tagrule.PriorityGTE(*i.PriorityGTE))
+	}
+	if i.PriorityLT != nil {
+		predicates = append(predicates, tagrule.PriorityLT(*i.PriorityLT))
+	}
+	if i.PriorityLTE != nil {
+		predicates = append(predicates, tagrule.PriorityLTE(*i.PriorityLTE))
+	}
+	if i.Conditions != nil {
+		predicates = append(predicates, tagrule.ConditionsEQ(*i.Conditions))
+	}
+	if i.ConditionsNEQ != nil {
+		predicates = append(predicates, tagrule.ConditionsNEQ(*i.ConditionsNEQ))
+	}
+	if len(i.ConditionsIn) > 0 {
+		predicates = append(predicates, tagrule.ConditionsIn(i.ConditionsIn...))
+	}
+	if len(i.ConditionsNotIn) > 0 {
+		predicates = append(predicates, tagrule.ConditionsNotIn(i.ConditionsNotIn...))
+	}
+	if i.ConditionsGT != nil {
+		predicates = append(predicates, tagrule.ConditionsGT(*i.ConditionsGT))
+	}
+	if i.ConditionsGTE != nil {
+		predicates = append(predicates, tagrule.ConditionsGTE(*i.ConditionsGTE))
+	}
+	if i.ConditionsLT != nil {
+		predicates = append(predicates, tagrule.ConditionsLT(*i.ConditionsLT))
+	}
+	if i.ConditionsLTE != nil {
+		predicates = append(predicates, tagrule.ConditionsLTE(*i.ConditionsLTE))
+	}
+	if i.ConditionsContains != nil {
+		predicates = append(predicates, tagrule.ConditionsContains(*i.ConditionsContains))
+	}
+	if i.ConditionsHasPrefix != nil {
+		predicates = append(predicates, tagrule.ConditionsHasPrefix(*i.ConditionsHasPrefix))
+	}
+	if i.ConditionsHasSuffix != nil {
+		predicates = append(predicates, tagrule.ConditionsHasSuffix(*i.ConditionsHasSuffix))
+	}
+	if i.ConditionsEqualFold != nil {
+		predicates = append(predicates, tagrule.ConditionsEqualFold(*i.ConditionsEqualFold))
+	}
+	if i.ConditionsContainsFold != nil {
+		predicates = append(predicates, tagrule.ConditionsContainsFold(*i.ConditionsContainsFold))
+	}
+
+	if i.HasTag != nil {
+		p := tagrule.HasTag()
+		if !*i.HasTag {
+			p = tagrule.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTagWith) > 0 {
+		with := make([]predicate.Tag, 0, len(i.HasTagWith))
+		for _, w := range i.HasTagWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTagWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, tagrule.HasTagWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyTagRuleWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return tagrule.And(predicates...), nil
 	}
 }
 

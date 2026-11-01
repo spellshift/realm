@@ -8,6 +8,7 @@ schema:
   - schema/user.graphql
   - schema/metrics.graphql
   - schema/quest.graphql
+  - schema/tagrule.graphql
 
 model:
   package: models

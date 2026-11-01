@@ -90,6 +90,9 @@ type ShellTask func(*sql.Selector)
 // Tag is the predicate function for tag builders.
 type Tag func(*sql.Selector)
 
+// TagRule is the predicate function for tagrule builders.
+type TagRule func(*sql.Selector)
+
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
 

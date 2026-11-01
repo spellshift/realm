@@ -43,6 +43,7 @@ import (
 	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/tagrule"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -109,6 +110,8 @@ type Client struct {
 	ShellTask *ShellTaskClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// TagRule is the client for interacting with the TagRule builders.
+	TagRule *TagRuleClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// Tome is the client for interacting with the Tome builders.
@@ -156,6 +159,7 @@ func (c *Client) init() {
 	c.ShellPivot = NewShellPivotClient(c.config)
 	c.ShellTask = NewShellTaskClient(c.config)
 	c.Tag = NewTagClient(c.config)
+	c.TagRule = NewTagRuleClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -279,6 +283,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ShellPivot:             NewShellPivotClient(cfg),
 		ShellTask:              NewShellTaskClient(cfg),
 		Tag:                    NewTagClient(cfg),
+		TagRule:                NewTagRuleClient(cfg),
 		Task:                   NewTaskClient(cfg),
 		Tome:                   NewTomeClient(cfg),
 		User:                   NewUserClient(cfg),
@@ -329,6 +334,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ShellPivot:             NewShellPivotClient(cfg),
 		ShellTask:              NewShellTaskClient(cfg),
 		Tag:                    NewTagClient(cfg),
+		TagRule:                NewTagRuleClient(cfg),
 		Task:                   NewTaskClient(cfg),
 		Tome:                   NewTomeClient(cfg),
 		User:                   NewUserClient(cfg),
@@ -366,7 +372,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Network, c.NetworkHost,
 		c.Notification, c.OperatorNote, c.Portal, c.Quest, c.Repository,
 		c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot, c.ShellTask, c.Tag,
-		c.Task, c.Tome, c.User,
+		c.TagRule, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -381,7 +387,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Network, c.NetworkHost,
 		c.Notification, c.OperatorNote, c.Portal, c.Quest, c.Repository,
 		c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot, c.ShellTask, c.Tag,
-		c.Task, c.Tome, c.User,
+		c.TagRule, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -446,6 +452,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ShellTask.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
+	case *TagRuleMutation:
+		return c.TagRule.mutate(ctx, m)
 	case *TaskMutation:
 		return c.Task.mutate(ctx, m)
 	case *TomeMutation:
@@ -5659,6 +5667,155 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 	}
 }
 
+// TagRuleClient is a client for the TagRule schema.
+type TagRuleClient struct {
+	config
+}
+
+// NewTagRuleClient returns a client for the TagRule from the given config.
+func NewTagRuleClient(c config) *TagRuleClient {
+	return &TagRuleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `tagrule.Hooks(f(g(h())))`.
+func (c *TagRuleClient) Use(hooks ...Hook) {
+	c.hooks.TagRule = append(c.hooks.TagRule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `tagrule.Intercept(f(g(h())))`.
+func (c *TagRuleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TagRule = append(c.inters.TagRule, interceptors...)
+}
+
+// Create returns a builder for creating a TagRule entity.
+func (c *TagRuleClient) Create() *TagRuleCreate {
+	mutation := newTagRuleMutation(c.config, OpCreate)
+	return &TagRuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TagRule entities.
+func (c *TagRuleClient) CreateBulk(builders ...*TagRuleCreate) *TagRuleCreateBulk {
+	return &TagRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TagRuleClient) MapCreateBulk(slice any, setFunc func(*TagRuleCreate, int)) *TagRuleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TagRuleCreateBulk{err: fmt.Errorf("calling to TagRuleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TagRuleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TagRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TagRule.
+func (c *TagRuleClient) Update() *TagRuleUpdate {
+	mutation := newTagRuleMutation(c.config, OpUpdate)
+	return &TagRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TagRuleClient) UpdateOne(tr *TagRule) *TagRuleUpdateOne {
+	mutation := newTagRuleMutation(c.config, OpUpdateOne, withTagRule(tr))
+	return &TagRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TagRuleClient) UpdateOneID(id int) *TagRuleUpdateOne {
+	mutation := newTagRuleMutation(c.config, OpUpdateOne, withTagRuleID(id))
+	return &TagRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TagRule.
+func (c *TagRuleClient) Delete() *TagRuleDelete {
+	mutation := newTagRuleMutation(c.config, OpDelete)
+	return &TagRuleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TagRuleClient) DeleteOne(tr *TagRule) *TagRuleDeleteOne {
+	return c.DeleteOneID(tr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TagRuleClient) DeleteOneID(id int) *TagRuleDeleteOne {
+	builder := c.Delete().Where(tagrule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TagRuleDeleteOne{builder}
+}
+
+// Query returns a query builder for TagRule.
+func (c *TagRuleClient) Query() *TagRuleQuery {
+	return &TagRuleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTagRule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TagRule entity by its id.
+func (c *TagRuleClient) Get(ctx context.Context, id int) (*TagRule, error) {
+	return c.Query().Where(tagrule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TagRuleClient) GetX(ctx context.Context, id int) *TagRule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTag queries the tag edge of a TagRule.
+func (c *TagRuleClient) QueryTag(tr *TagRule) *TagQuery {
+	query := (&TagClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := tr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tagrule.Table, tagrule.FieldID, id),
+			sqlgraph.To(tag.Table, tag.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, tagrule.TagTable, tagrule.TagColumn),
+		)
+		fromV = sqlgraph.Neighbors(tr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TagRuleClient) Hooks() []Hook {
+	return c.hooks.TagRule
+}
+
+// Interceptors returns the client interceptors.
+func (c *TagRuleClient) Interceptors() []Interceptor {
+	return c.inters.TagRule
+}
+
+func (c *TagRuleClient) mutate(ctx context.Context, m *TagRuleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TagRuleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TagRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TagRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TagRuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TagRule mutation op: %q", m.Op())
+	}
+}
+
 // TaskClient is a client for the Task schema.
 type TaskClient struct {
 	config
@@ -6355,13 +6512,13 @@ type (
 		BuilderEnrollmentToken, DeviceAuth, Event, Host, HostCredential, HostFile,
 		HostProcess, Link, Network, NetworkHost, Notification, OperatorNote, Portal,
 		Quest, Repository, ScheduledTask, Screenshot, Shell, ShellPivot, ShellTask,
-		Tag, Task, Tome, User []ent.Hook
+		Tag, TagRule, Task, Tome, User []ent.Hook
 	}
 	inters struct {
 		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
 		BuilderEnrollmentToken, DeviceAuth, Event, Host, HostCredential, HostFile,
 		HostProcess, Link, Network, NetworkHost, Notification, OperatorNote, Portal,
 		Quest, Repository, ScheduledTask, Screenshot, Shell, ShellPivot, ShellTask,
-		Tag, Task, Tome, User []ent.Interceptor
+		Tag, TagRule, Task, Tome, User []ent.Interceptor
 	}
 )
