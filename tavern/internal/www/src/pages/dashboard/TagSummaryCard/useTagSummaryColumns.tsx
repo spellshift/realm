@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useFilters } from "../../../context/FilterContext";
 import { OnlineOfflineFilterType } from "../../../utils/enums";
-import { FilterBarOption } from "../../../utils/interfacesUI";
-import { ONLINE_OFFLINE_OPTIONS } from "../../../components/beacon-filter-bar/constants";
+import { FilterBarOption, HostFilterRow } from "../../../utils/interfacesUI";
+import { createHostFilterRow } from "../../../components/host-filter-bar";
 import { TagRow } from "./types";
 
 export function useTagSummaryColumns(): ColumnDef<TagRow>[] {
@@ -28,12 +28,12 @@ export function useTagSummaryColumns(): ColumnDef<TagRow>[] {
     }, [navigate, updateFilters, setIsLocked, tagFilter]);
 
     const handleHostStatusClick = useCallback((row: TagRow, statusId: OnlineOfflineFilterType) => {
-        const statusFilter = ONLINE_OFFLINE_OPTIONS.find((opt) => opt.id === statusId);
-        if (!statusFilter) return;
         setIsLocked(true);
-        updateFilters({ beaconFields: [tagFilter(row), statusFilter] });
+        const tagRow: HostFilterRow = { ...createHostFilterRow(row.tagKind), predicate: 'is', values: [row.tagName] };
+        const statusRow: HostFilterRow = { ...createHostFilterRow('status'), predicate: 'is', values: [statusId] };
+        updateFilters({ hostFilters: [tagRow, statusRow] });
         navigate('/hosts');
-    }, [navigate, updateFilters, setIsLocked, tagFilter]);
+    }, [navigate, updateFilters, setIsLocked]);
 
     return useMemo(() => [
         {

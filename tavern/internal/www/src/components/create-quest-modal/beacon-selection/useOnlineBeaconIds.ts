@@ -1,8 +1,8 @@
 import { useQuery, NetworkStatus } from "@apollo/client";
 import { useMemo} from "react";
 import { sub } from "date-fns";
-import { FilterBarOption } from "../../../utils/interfacesUI";
-import { getBeaconFilterNameByTypes } from "../../../utils/utils";
+import { HostFilterRow } from "../../../utils/interfacesUI";
+import { constructBeaconIdsFilterQuery } from "../../../utils/constructQueryUtils";
 import { OrderDirection, PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
 import { GET_BEACON_IDS_QUERY } from "../../../utils/queries";
 import {
@@ -12,26 +12,29 @@ import {
 } from "../../../utils/interfacesQuery";
 import { UseOnlineBeaconIdsResult } from "./types";
 
+const NO_SELECTION: string[] = [];
+const NO_ROWS: HostFilterRow[] = [];
+
 interface UseOnlineBeaconIdsProps {
-    typeFilters?: FilterBarOption[];
+    rows?: HostFilterRow[];
     selectedBeaconIds?: string[];
     viewOnlySelected?: boolean;
     viewOnePerHost?: boolean;
 }
 
 export function useOnlineBeaconIds({
-    typeFilters = [],
-    selectedBeaconIds = [],
+    rows = NO_ROWS,
+    selectedBeaconIds = NO_SELECTION,
     viewOnlySelected = false,
     viewOnePerHost = false,
 }: UseOnlineBeaconIdsProps = {}): UseOnlineBeaconIdsResult {
     const queryVariables = useMemo(
         () =>
             buildBeaconIdsQuery({
-                typeFilters,
+                rows,
                 selectedBeaconIds: viewOnlySelected ? selectedBeaconIds : undefined,
             }),
-        [typeFilters, viewOnlySelected, selectedBeaconIds]
+        [rows, viewOnlySelected, selectedBeaconIds]
     );
 
     const { data, previousData, error, networkStatus, refetch } =
@@ -126,12 +129,12 @@ function filterOnePerHost(beacons: BeaconIdNode[]): string[] {
 }
 
 interface BuildBeaconIdsQueryParams {
-    typeFilters: FilterBarOption[];
+    rows: HostFilterRow[];
     selectedBeaconIds?: string[];
 }
 
 function buildBeaconIdsQuery({
-    typeFilters,
+    rows,
     selectedBeaconIds,
 }: BuildBeaconIdsQueryParams): GetBeaconIdsQueryVariables {
     const currentTimestamp = new Date();
@@ -140,7 +143,7 @@ function buildBeaconIdsQuery({
         nextSeenAtGTE: sub(currentTimestamp, { seconds: 30 }).toISOString(),
     };
 
-    const additionalFilters = buildFiltersFromTypeFilters(typeFilters);
+    const additionalFilters = constructBeaconIdsFilterQuery(rows) ?? {};
 
     const selectedFilter = selectedBeaconIds?.length
         ? { idIn: selectedBeaconIds }
@@ -156,67 +159,4 @@ function buildBeaconIdsQuery({
         where,
         orderBy: [{ field: "CREATED_AT", direction: OrderDirection.Desc }],
     };
-}
-
-function buildFiltersFromTypeFilters(
-    typeFilters: FilterBarOption[]
-): Record<string, unknown> {
-    if (typeFilters.length === 0) {
-        return {};
-    }
-
-    const searchTypes = getBeaconFilterNameByTypes(typeFilters);
-    const filters: Record<string, unknown> = {};
-
-    // Beacon-level filters
-    if (searchTypes.beacon.length > 0) {
-        filters.nameIn = searchTypes.beacon;
-    }
-    if (searchTypes.principal.length > 0) {
-        filters.principalIn = searchTypes.principal;
-    }
-    if (searchTypes.transport.length > 0) {
-        filters.transportIn = searchTypes.transport;
-    }
-
-    // Host-level filters need to use hasHostWith
-    const hostFilters: Record<string, unknown> = {};
-    if (searchTypes.host.length > 0) {
-        hostFilters.idIn = searchTypes.host;
-    }
-    if (searchTypes.platform.length > 0) {
-        hostFilters.platformIn = searchTypes.platform;
-    }
-    if (searchTypes.primaryIP.length > 0) {
-        hostFilters.primaryIPIn = searchTypes.primaryIP;
-    }
-
-    // Tag filters on host
-    const tagFilters: Array<Record<string, unknown>> = [];
-    if (searchTypes.group.length > 0) {
-        tagFilters.push({
-            hasTagsWith: {
-                kind: "group",
-                nameIn: searchTypes.group,
-            },
-        });
-    }
-    if (searchTypes.service.length > 0) {
-        tagFilters.push({
-            hasTagsWith: {
-                kind: "service",
-                nameIn: searchTypes.service,
-            },
-        });
-    }
-
-    if (tagFilters.length > 0) {
-        hostFilters.and = tagFilters;
-    }
-
-    if (Object.keys(hostFilters).length > 0) {
-        filters.hasHostWith = hostFilters;
-    }
-
-    return filters;
 }

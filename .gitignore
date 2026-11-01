@@ -18,6 +18,9 @@ tests/e2e/test-results/**
 tests/e2e/playwright-report/**
 tests/e2e/screenshots/**
 
+# Playwright MCP Results
+.playwright-mcp/
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -54,3 +57,4 @@ node_modules/
 bin/socks5/socks5-cli
 tavern.log
 **.log
+

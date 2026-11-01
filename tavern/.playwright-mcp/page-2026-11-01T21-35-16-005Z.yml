@@ -1,0 +1,69 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e8]:
+      - button "Open sidebar" [ref=e9] [cursor=pointer]
+      - generic [ref=e13]: Realm
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - navigation "Breadcrumb" [ref=e17]:
+            - list [ref=e18]:
+              - listitem [ref=e19]:
+                - link "Home" [ref=e21] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e25]:
+                - link "Hosts" [ref=e29] [cursor=pointer]:
+                  - /url: /hosts
+          - button "Create a quest" [ref=e31] [cursor=pointer]
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - heading "Hosts" [level=3] [ref=e40]
+              - paragraph [ref=e41]: (1)
+            - generic [ref=e42]:
+              - button "Sort (Created At)" [ref=e44] [cursor=pointer]
+              - button "Filters (1)" [ref=e126] [cursor=pointer]
+          - generic [ref=e54]:
+            - generic [ref=e55]: Host details
+            - generic [ref=e56]: Online beacons
+            - generic [ref=e57]: Beacon principals
+            - generic [ref=e58]: Last callback
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic:
+    - generic:
+      - generic:
+        - dialog "Filters (1)":
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - heading "Filters (1)" [level=2] [ref=e127]
+              - button [ref=e107] [cursor=pointer]
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - heading "Filters" [level=3] [ref=e113]
+                - button "Lock filters" [ref=e114] [cursor=pointer]
+              - generic [ref=e121]:
+                - generic [ref=e122]: Host fields
+                - generic [ref=e128]:
+                  - generic [ref=e129]:
+                    - generic [ref=e130]: Filter field
+                    - generic [ref=e135]:
+                      - generic [ref=e136]: Platform
+                      - combobox "Filter field" [ref=e137]
+                  - generic [ref=e143]:
+                    - generic [ref=e144]: Filter predicate
+                    - generic [ref=e149]:
+                      - generic [ref=e150]: is
+                      - combobox "Filter predicate" [ref=e151]
+                  - generic [ref=e157]:
+                    - generic [ref=e158]: Filter value
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: Select a value…
+                      - combobox "Filter value" [ref=e166]
+                  - button "Remove filter 1" [ref=e172] [cursor=pointer]
+                - button "Add filter" [active] [ref=e124] [cursor=pointer]

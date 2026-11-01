@@ -1,0 +1,71 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e8]:
+      - button "Open sidebar" [ref=f1e9] [cursor=pointer]
+      - generic [ref=f1e13]: Realm
+    - main [ref=f1e14]:
+      - generic [ref=f1e15]:
+        - generic [ref=f1e16]:
+          - navigation "Breadcrumb" [ref=f1e17]:
+            - list [ref=f1e18]:
+              - listitem [ref=f1e19]:
+                - link "Home" [ref=f1e21] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=f1e25]:
+                - link "Hosts" [ref=f1e29] [cursor=pointer]:
+                  - /url: /hosts
+          - button "Create a quest" [ref=f1e31] [cursor=pointer]
+        - generic [ref=f1e37]:
+          - generic [ref=f1e38]:
+            - generic [ref=f1e39]:
+              - heading "Hosts" [level=3] [ref=f1e40]
+              - paragraph [ref=f1e41]: (301)
+            - generic [ref=f1e42]:
+              - button "Sort (Created At)" [ref=f1e44] [cursor=pointer]
+              - button "Filters (1)" [ref=f1e556] [cursor=pointer]
+          - generic [ref=f1e54]:
+            - generic [ref=f1e55]: Host details
+            - generic [ref=f1e56]: Online beacons
+            - generic [ref=f1e57]: Beacon principals
+            - generic [ref=f1e58]: Last callback
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic:
+    - generic:
+      - generic:
+        - dialog "Filters (1)":
+          - generic [ref=f1e534]:
+            - generic [ref=f1e535]:
+              - heading "Filters (1)" [level=2] [ref=f1e557]
+              - button [ref=f1e537] [cursor=pointer]
+            - generic [ref=f1e541]:
+              - generic [ref=f1e542]:
+                - heading "Filters" [level=3] [ref=f1e543]
+                - button "Lock filters" [ref=f1e544] [cursor=pointer]
+              - generic [ref=f1e551]:
+                - generic [ref=f1e552]: Host fields
+                - generic [ref=f1e558]:
+                  - generic [ref=f1e559]:
+                    - generic [ref=f1e560]:
+                      - generic [ref=f1e561]: Filter field
+                      - generic [ref=f1e566]:
+                        - generic [ref=f1e567]: Platform
+                        - combobox "Filter field" [ref=f1e568]
+                    - button "Remove filter 1" [ref=f1e574] [cursor=pointer]
+                  - generic [ref=f1e578]:
+                    - generic [ref=f1e579]:
+                      - generic [ref=f1e580]: Filter predicate
+                      - generic [ref=f1e585]:
+                        - generic [ref=f1e586]: is
+                        - combobox "Filter predicate" [ref=f1e587]
+                    - generic [ref=f1e593]:
+                      - generic [ref=f1e594]: Filter value
+                      - generic [ref=f1e599]:
+                        - generic [ref=f1e600]: Select a value…
+                        - combobox "Filter value" [ref=f1e602]
+                - button "Add filter" [active] [ref=f1e554] [cursor=pointer]

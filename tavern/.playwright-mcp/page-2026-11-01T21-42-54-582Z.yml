@@ -1,0 +1,9 @@
+- generic [active] [ref=f1e1]:
+  - heading "Loading authorization state" [level=2] [ref=f1e7]
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"

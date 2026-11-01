@@ -5,7 +5,7 @@ import { FilterBarOption } from '../../../utils/interfacesUI';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
-const STORAGE_KEY = 'realm-filters-v1.1';
+const STORAGE_KEY = 'realm-filters-v1.2';
 
 const createWrapper = (initialEntries: string[] = ['/']) => {
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -33,6 +33,7 @@ describe('FilterContext', () => {
         questName: '',
         taskOutput: '',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
@@ -48,6 +49,7 @@ describe('FilterContext', () => {
         questName: 'test-quest',
         taskOutput: 'test-output',
         beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: 'search-term',
         assetName: '',
@@ -65,6 +67,7 @@ describe('FilterContext', () => {
         questName: 'test-quest',
         taskOutput: 'test-output',
         beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: 'search-term',
         assetName: '',
@@ -80,6 +83,7 @@ describe('FilterContext', () => {
         questName: 'test-quest',
         taskOutput: 'test-output',
         beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: 'search-term',
         assetName: '',
@@ -97,6 +101,7 @@ describe('FilterContext', () => {
         questName: '',
         taskOutput: '',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
@@ -119,6 +124,7 @@ describe('FilterContext', () => {
         questName: '',
         taskOutput: '',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
@@ -134,6 +140,7 @@ describe('FilterContext', () => {
         questName: '',
         taskOutput: '',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: '',
       };
@@ -153,6 +160,7 @@ describe('FilterContext', () => {
         questName: '',
         taskOutput: '',
         beaconFields: [{ kind: 'beacon', id: '1' }], // Missing 'name'
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: '',
       };
@@ -164,6 +172,81 @@ describe('FilterContext', () => {
       });
 
       expect(result.current.filters.beaconFields).toEqual([]);
+    });
+
+    it('should load locked hostFilters rows from sessionStorage', () => {
+      const storedFilters = {
+        isLocked: true,
+        questName: '',
+        taskOutput: '',
+        beaconFields: [],
+        hostFilters: [
+          { id: 'row-1', field: 'platform', predicate: 'is', values: ['PLATFORM_LINUX'] },
+          { id: 'row-2', field: 'principal', predicate: 'contains', values: ['root'] },
+        ],
+        tomeFields: [],
+        tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
+        agentOnly: false,
+      };
+
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
+
+      const { result } = renderHook(() => useFilters(), {
+        wrapper: createWrapper(),
+      });
+
+      expect(result.current.filters.hostFilters).toHaveLength(2);
+      expect(result.current.isLocked).toBe(true);
+      expect(calculateFilterCount(result.current.filters, FilterFieldType.HOST_FILTERS)).toBe(2);
+    });
+
+    it('should reject hostFilters with unknown fields', () => {
+      const invalidFilters = {
+        isLocked: true,
+        questName: '',
+        taskOutput: '',
+        beaconFields: [],
+        hostFilters: [{ id: 'row-1', field: 'unknown', predicate: 'is', values: ['x'] }],
+        tomeFields: [],
+        tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
+        agentOnly: false,
+      };
+
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(invalidFilters));
+
+      const { result } = renderHook(() => useFilters(), {
+        wrapper: createWrapper(),
+      });
+
+      expect(result.current.filters.hostFilters).toEqual([]);
+      expect(result.current.isLocked).toBe(false);
+    });
+
+    it('should reject hostFilters with non-string values', () => {
+      const invalidFilters = {
+        isLocked: true,
+        questName: '',
+        taskOutput: '',
+        beaconFields: [],
+        hostFilters: [{ id: 'row-1', field: 'platform', predicate: 'is', values: [42] }],
+        tomeFields: [],
+        tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
+        agentOnly: false,
+      };
+
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(invalidFilters));
+
+      const { result } = renderHook(() => useFilters(), {
+        wrapper: createWrapper(),
+      });
+
+      expect(result.current.filters.hostFilters).toEqual([]);
     });
   });
 
@@ -235,6 +318,7 @@ describe('FilterContext', () => {
           questName: 'custom-quest',
           taskOutput: 'custom-output',
           beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
+          hostFilters: [],
         });
       });
 
@@ -246,6 +330,7 @@ describe('FilterContext', () => {
         questName: '',
         taskOutput: '',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
@@ -267,6 +352,7 @@ describe('FilterContext', () => {
         questName: 'external-update',
         taskOutput: 'external-output',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: 'external-search',
         assetName: '',
@@ -286,6 +372,7 @@ describe('FilterContext', () => {
         questName: 'external-update',
         taskOutput: 'external-output',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: 'external-search',
         assetName: '',
@@ -311,6 +398,7 @@ describe('FilterContext', () => {
         questName: 'external-update',
         taskOutput: 'external-output',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: 'external-search',
         assetName: '',
@@ -331,6 +419,7 @@ describe('FilterContext', () => {
         questName: '',
         taskOutput: '',
         beaconFields: [],
+        hostFilters: [],
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
@@ -364,6 +453,7 @@ describe('FilterContext', () => {
       questName: '',
       taskOutput: '',
       beaconFields: [],
+      hostFilters: [],
       tomeFields: [],
       tomeMultiSearch: '',
       assetName: '',
@@ -400,18 +490,23 @@ describe('FilterContext', () => {
       expect(calculateFilterCount(baseFilters, FilterFieldType.TOME_FIELDS)).toBe(0);
 
       // Non-empty arrays
-      const filtersWithArrays = {
+      const filtersWithArrays: Filters = {
         ...baseFilters,
         beaconFields: [
           { kind: 'beacon', id: '1', name: 'B1' },
           { kind: 'beacon', id: '2', name: 'B2' },
           { kind: 'beacon', id: '3', name: 'B3' },
         ],
+        hostFilters: [
+          { id: 'row-1', field: 'platform', predicate: 'is', values: ['PLATFORM_LINUX'] },
+          { id: 'row-2', field: 'principal', predicate: 'contains', values: ['root'] },
+        ],
         tomeFields: [
           { kind: 'tome', id: '1', name: 'T1' },
         ],
       };
       expect(calculateFilterCount(filtersWithArrays, FilterFieldType.BEACON_FIELDS)).toBe(3);
+      expect(calculateFilterCount(filtersWithArrays, FilterFieldType.HOST_FILTERS)).toBe(2);
       expect(calculateFilterCount(filtersWithArrays, FilterFieldType.TOME_FIELDS)).toBe(1);
     });
   });
@@ -421,6 +516,7 @@ describe('FilterContext', () => {
       questName: '',
       taskOutput: '',
       beaconFields: [],
+      hostFilters: [],
       tomeFields: [],
       tomeMultiSearch: '',
       assetName: '',
@@ -439,6 +535,7 @@ describe('FilterContext', () => {
         questName: 'test',
         taskOutput: 'output',
         beaconFields: [{ kind: 'beacon', id: '1', name: 'B1' }],
+        hostFilters: [],
       };
 
       // Only count questName and taskOutput
@@ -457,6 +554,9 @@ describe('FilterContext', () => {
           { kind: 'beacon', id: '1', name: 'B1' },
           { kind: 'beacon', id: '2', name: 'B2' },
         ],
+        hostFilters: [
+          { id: 'row-1', field: 'status', predicate: 'is', values: ['onlineBeacons'] },
+        ],
         tomeFields: [
           { kind: 'tome', id: '1', name: 'T1' },
         ],
@@ -466,8 +566,8 @@ describe('FilterContext', () => {
       };
 
       const allFields = Object.values(FilterFieldType);
-      // 1 + 1 + 1 + 2 + 1 = 6
-      expect(calculateTotalFilterCount(filters, allFields)).toBe(6);
+      // 1 + 1 + 1 + 2 + 1 + 1 = 7
+      expect(calculateTotalFilterCount(filters, allFields)).toBe(7);
     });
   });
 });

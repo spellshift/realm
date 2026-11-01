@@ -1,0 +1,215 @@
+- generic [ref=f1e1]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e8]:
+      - button "Open sidebar" [ref=f1e9] [cursor=pointer]
+      - generic [ref=f1e13]: Realm
+    - main [ref=f1e14]:
+      - generic [ref=f1e15]:
+        - generic [ref=f1e16]:
+          - navigation "Breadcrumb" [ref=f1e17]:
+            - list [ref=f1e18]:
+              - listitem [ref=f1e19]:
+                - link "Home" [ref=f1e21] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=f1e25]:
+                - link "Hosts" [ref=f1e29] [cursor=pointer]:
+                  - /url: /hosts
+          - button "Create a quest" [ref=f1e31] [cursor=pointer]
+        - generic [ref=f1e37]:
+          - generic [ref=f1e38]:
+            - generic [ref=f1e39]:
+              - heading "Hosts" [level=3] [ref=f1e40]
+              - paragraph [ref=f1e41]: (301)
+            - generic [ref=f1e42]:
+              - button "Sort (Created At)" [ref=f1e44] [cursor=pointer]
+              - button "Filters (0)" [ref=f1e49] [cursor=pointer]
+          - generic [ref=f1e53]:
+            - generic [ref=f1e54]:
+              - generic [ref=f1e55]: Host details
+              - generic [ref=f1e56]: Online beacons
+              - generic [ref=f1e57]: Beacon principals
+              - generic [ref=f1e58]: Last callback
+            - generic [ref=f1e60]:
+              - button "Select row" [ref=f1e63] [cursor=pointer]:
+                - generic [ref=f1e66]:
+                  - generic [ref=f1e67]: DESKTOP-M0SBB8Q
+                  - generic [ref=f1e68]:
+                    - generic [ref=f1e69]: 172.17.111.96
+                    - generic [ref=f1e77]: 127.0.0.1
+                    - generic [ref=f1e83]: Linux
+                - generic [ref=f1e85]: 1/1
+                - generic [ref=f1e89]: skyz
+                - generic [ref=f1e93]: less than a minute
+                - button "Create Shell" [ref=f1e99]
+              - button "Select row" [ref=f1e104] [cursor=pointer]:
+                - generic [ref=f1e107]:
+                  - generic [ref=f1e108]: Group 15 - Service-20
+                  - generic [ref=f1e109]:
+                    - generic [ref=f1e110]: 31.237.87.116
+                    - generic [ref=f1e118]: BSD
+                    - generic [ref=f1e120]: Service-20
+                    - generic [ref=f1e122]: Group-15
+                - generic [ref=f1e124]: 2/3
+                - generic [ref=f1e129]:
+                  - generic [ref=f1e130]: Administrator
+                  - generic [ref=f1e132]: root
+                  - generic [ref=f1e134]: admin
+                - generic [ref=f1e136]: 3 minutes
+                - button "Create Shell" [ref=f1e142]
+              - button "Select row" [ref=f1e147] [cursor=pointer]:
+                - generic [ref=f1e150]:
+                  - generic [ref=f1e151]: Group 15 - Service-19
+                  - generic [ref=f1e152]:
+                    - generic [ref=f1e153]: 177.103.236.202
+                    - generic [ref=f1e161]: MacOS
+                    - generic [ref=f1e163]: Service-19
+                    - generic [ref=f1e165]: Group-15
+                - generic [ref=f1e167]: 2/3
+                - generic [ref=f1e172]:
+                  - generic [ref=f1e173]: Administrator
+                  - generic [ref=f1e175]: root
+                  - generic [ref=f1e177]: admin
+                - generic [ref=f1e179]: 3 minutes
+                - button "Create Shell" [ref=f1e185]
+              - button "Select row" [ref=f1e190] [cursor=pointer]:
+                - generic [ref=f1e193]:
+                  - generic [ref=f1e194]: Group 15 - Service-18
+                  - generic [ref=f1e195]:
+                    - generic [ref=f1e196]: 210.76.60.32
+                    - generic [ref=f1e204]: Linux
+                    - generic [ref=f1e206]: Service-18
+                    - generic [ref=f1e208]: Group-15
+                - generic [ref=f1e210]: 2/3
+                - generic [ref=f1e215]:
+                  - generic [ref=f1e216]: Administrator
+                  - generic [ref=f1e218]: root
+                  - generic [ref=f1e220]: admin
+                - generic [ref=f1e222]: 3 minutes
+                - button "Create Shell" [ref=f1e228]
+              - button "Select row" [ref=f1e233] [cursor=pointer]:
+                - generic [ref=f1e236]:
+                  - generic [ref=f1e237]: Group 15 - Service-17
+                  - generic [ref=f1e238]:
+                    - generic [ref=f1e239]: 241.241.109.141
+                    - generic [ref=f1e247]: Windows
+                    - generic [ref=f1e249]: Service-17
+                    - generic [ref=f1e251]: Group-15
+                - generic [ref=f1e253]: 2/3
+                - generic [ref=f1e258]:
+                  - generic [ref=f1e259]: Administrator
+                  - generic [ref=f1e261]: root
+                  - generic [ref=f1e263]: admin
+                - generic [ref=f1e265]: 3 minutes
+                - button "Create Shell" [ref=f1e271]
+              - button "Select row" [ref=f1e276] [cursor=pointer]:
+                - generic [ref=f1e279]:
+                  - generic [ref=f1e280]: Group 15 - Service-16
+                  - generic [ref=f1e281]:
+                    - generic [ref=f1e282]: 26.13.231.199
+                    - generic [ref=f1e290]: Platform_Unknown
+                    - generic [ref=f1e292]: Service-16
+                    - generic [ref=f1e294]: Group-15
+                - generic [ref=f1e296]: 2/3
+                - generic [ref=f1e301]:
+                  - generic [ref=f1e302]: Administrator
+                  - generic [ref=f1e304]: root
+                  - generic [ref=f1e306]: admin
+                - generic [ref=f1e308]: 3 minutes
+                - button "Create Shell" [ref=f1e314]
+              - button "Select row" [ref=f1e319] [cursor=pointer]:
+                - generic [ref=f1e322]:
+                  - generic [ref=f1e323]: Group 15 - Service-15
+                  - generic [ref=f1e324]:
+                    - generic [ref=f1e325]: 97.175.21.109
+                    - generic [ref=f1e333]: BSD
+                    - generic [ref=f1e335]: Service-15
+                    - generic [ref=f1e337]: Group-15
+                - generic [ref=f1e339]: 2/3
+                - generic [ref=f1e344]:
+                  - generic [ref=f1e345]: Administrator
+                  - generic [ref=f1e347]: root
+                  - generic [ref=f1e349]: admin
+                - generic [ref=f1e351]: 3 minutes
+                - button "Create Shell" [ref=f1e357]
+              - button "Select row" [ref=f1e362] [cursor=pointer]:
+                - generic [ref=f1e365]:
+                  - generic [ref=f1e366]: Group 15 - Service-14
+                  - generic [ref=f1e367]:
+                    - generic [ref=f1e368]: 95.253.37.37
+                    - generic [ref=f1e376]: MacOS
+                    - generic [ref=f1e378]: Service-14
+                    - generic [ref=f1e380]: Group-15
+                - generic [ref=f1e382]: 2/3
+                - generic [ref=f1e387]:
+                  - generic [ref=f1e388]: Administrator
+                  - generic [ref=f1e390]: root
+                  - generic [ref=f1e392]: admin
+                - generic [ref=f1e394]: 3 minutes
+                - button "Create Shell" [ref=f1e400]
+              - button "Select row" [ref=f1e405] [cursor=pointer]:
+                - generic [ref=f1e408]:
+                  - generic [ref=f1e409]: Group 15 - Service-13
+                  - generic [ref=f1e410]:
+                    - generic [ref=f1e411]: 241.109.54.138
+                    - generic [ref=f1e419]: Linux
+                    - generic [ref=f1e421]: Service-13
+                    - generic [ref=f1e423]: Group-15
+                - generic [ref=f1e425]: 2/3
+                - generic [ref=f1e430]:
+                  - generic [ref=f1e431]: Administrator
+                  - generic [ref=f1e433]: root
+                  - generic [ref=f1e435]: admin
+                - generic [ref=f1e437]: 3 minutes
+                - button "Create Shell" [ref=f1e443]
+              - button "Select row" [ref=f1e448] [cursor=pointer]:
+                - generic [ref=f1e451]:
+                  - generic [ref=f1e452]: Group 15 - Service-12
+                  - generic [ref=f1e453]:
+                    - generic [ref=f1e454]: 87.19.114.224
+                    - generic [ref=f1e462]: Windows
+                    - generic [ref=f1e464]: Service-12
+                    - generic [ref=f1e466]: Group-15
+                - generic [ref=f1e468]: 2/3
+                - generic [ref=f1e473]:
+                  - generic [ref=f1e474]: Administrator
+                  - generic [ref=f1e476]: root
+                  - generic [ref=f1e478]: admin
+                - generic [ref=f1e480]: 3 minutes
+                - button "Create Shell" [ref=f1e486]
+              - button "Select row" [ref=f1e491] [cursor=pointer]:
+                - generic [ref=f1e494]:
+                  - generic [ref=f1e495]: Group 15 - Service-11
+                  - generic [ref=f1e496]:
+                    - generic [ref=f1e497]: 152.20.150.241
+                    - generic [ref=f1e505]: Platform_Unknown
+                    - generic [ref=f1e507]: Service-11
+                    - generic [ref=f1e509]: Group-15
+                - generic [ref=f1e511]: 2/3
+                - generic [ref=f1e516]:
+                  - generic [ref=f1e517]: Administrator
+                  - generic [ref=f1e519]: root
+                  - generic [ref=f1e521]: admin
+                - generic [ref=f1e523]: 3 minutes
+                - button "Create Shell" [ref=f1e529]
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic:
+    - generic:
+      - generic:
+        - dialog "Filters (0)" [active]:
+          - generic [ref=f1e534]:
+            - generic [ref=f1e535]:
+              - heading "Filters (0)" [level=2] [ref=f1e536]
+              - button [ref=f1e537] [cursor=pointer]
+            - generic [ref=f1e541]:
+              - generic [ref=f1e542]:
+                - heading "Filters" [level=3] [ref=f1e543]
+                - button "Lock filters" [ref=f1e544] [cursor=pointer]
+              - generic [ref=f1e551]:
+                - generic [ref=f1e552]: Host fields
+                - button "Add filter" [ref=f1e554] [cursor=pointer]

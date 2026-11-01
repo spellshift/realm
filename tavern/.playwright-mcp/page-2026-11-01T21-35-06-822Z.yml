@@ -1,0 +1,64 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e8]:
+      - button "Open sidebar" [ref=e9] [cursor=pointer]
+      - generic [ref=e13]: Realm
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - navigation "Breadcrumb" [ref=e17]:
+            - list [ref=e18]:
+              - listitem [ref=e19]:
+                - link "Home" [ref=e21] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=e25]:
+                - link "Hosts" [ref=e29] [cursor=pointer]:
+                  - /url: /hosts
+          - button "Create a quest" [ref=e31] [cursor=pointer]
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - heading "Hosts" [level=3] [ref=e40]
+              - paragraph [ref=e41]: (1)
+            - generic [ref=e42]:
+              - button "Sort (Created At)" [ref=e44] [cursor=pointer]
+              - button "Filters (0)" [ref=e49] [cursor=pointer]
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - generic [ref=e55]: Host details
+              - generic [ref=e56]: Online beacons
+              - generic [ref=e57]: Beacon principals
+              - generic [ref=e58]: Last callback
+            - button "Select row" [ref=e63] [cursor=pointer]:
+              - generic [ref=e66]:
+                - generic [ref=e67]: DESKTOP-M0SBB8Q
+                - generic [ref=e68]:
+                  - generic [ref=e69]: 172.17.111.96
+                  - generic [ref=e77]: 127.0.0.1
+                  - generic [ref=e83]: Linux
+              - generic [ref=e85]: 1/1
+              - generic [ref=e89]: skyz
+              - generic [ref=e93]: less than a minute
+              - button "Create Shell" [ref=e99]
+  - generic:
+    - region "Notifications-top"
+    - region "Notifications-top-left"
+    - region "Notifications-top-right"
+    - region "Notifications-bottom-left"
+    - region "Notifications-bottom"
+    - region "Notifications-bottom-right"
+  - generic:
+    - generic:
+      - generic:
+        - dialog "Filters (0)" [active]:
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - heading "Filters (0)" [level=2] [ref=e106]
+              - button [ref=e107] [cursor=pointer]
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - heading "Filters" [level=3] [ref=e113]
+                - button "Lock filters" [ref=e114] [cursor=pointer]
+              - generic [ref=e121]:
+                - generic [ref=e122]: Host fields
+                - button "Add filter" [ref=e124] [cursor=pointer]

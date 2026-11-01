@@ -1,5 +1,5 @@
 import { BeaconNode } from "../../../utils/interfacesQuery";
-import { FilterBarOption } from "../../../utils/interfacesUI";
+import { HostFilterRow } from "../../../utils/interfacesUI";
 import { ModalQuestFormikProps } from "../types";
 import { Filters } from "../../../context/FilterContext";
 
@@ -33,7 +33,7 @@ export interface UseOnlineBeaconIdsResult {
 }
 
 export interface BeaconSelectionFilterState {
-    typeFilters: FilterBarOption[];
+    typeFilters: HostFilterRow[];
     viewOnlySelected: boolean;
     viewOnlyOnePerHost: boolean;
 }

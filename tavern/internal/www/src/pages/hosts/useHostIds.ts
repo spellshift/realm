@@ -1,12 +1,17 @@
 import { useQuery, NetworkStatus } from "@apollo/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
-import { Filters, useFilters } from "../../context/FilterContext";
-import { constructBeaconFilterQuery } from "../../utils/constructQueryUtils";
+import { useFilters } from "../../context/FilterContext";
+import { constructHostFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, OrderByField } from "../../utils/interfacesQuery";
+import { HostFilterRow } from "../../utils/interfacesUI";
 import { useSorts } from "../../context/SortContext";
 import { GET_HOST_IDS_QUERY } from "./queries";
 import { HostIdsQueryTopLevel, GetHostIdsQueryVariables } from "./types";
+
+// Incomplete rows (no value picked yet) must not change the query: the table
+// waits until the row is complete instead of flashing empty.
+const isCompleteHostFilterRow = (row: HostFilterRow): boolean => row.values.length > 0;
 
 // TODO: Clean up load more / hasMore, this seems like overengineering to avoid getting a full list of ids, we might as well.
 export const useHostIds = () => {
@@ -18,9 +23,16 @@ export const useHostIds = () => {
   const [hasMore, setHasMore] = useState(true);
   const [endCursor, setEndCursor] = useState<Cursor | undefined>(undefined);
 
+  const completeHostRows = useMemo(
+    () => filters.hostFilters.filter(isCompleteHostFilterRow),
+    [filters.hostFilters]
+  );
+  const completeHostRowsKey = JSON.stringify(completeHostRows);
+
   const queryVariables = useMemo(
-    () => getHostIdsQuery(filters, undefined, hostSort),
-    [filters, hostSort]
+    () => getHostIdsQuery(completeHostRows, undefined, hostSort),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [completeHostRowsKey, hostSort]
   );
 
   const { data, previousData, error, fetchMore, networkStatus, loading, refetch } = useQuery<HostIdsQueryTopLevel>(
@@ -43,19 +55,21 @@ export const useHostIds = () => {
     }
   }, [data, previousData]);
 
-  // Reset when filters or sort change
+  // Reset when the completed filters or sort change. Incomplete rows are
+  // ignored so half-built filters never clear the table.
   useEffect(() => {
     setAllHostIds([]);
     setHasMore(true);
     setEndCursor(undefined);
-  }, [filters, hostSort]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completeHostRowsKey, hostSort]);
 
   const loadMore = useCallback(async () => {
     if (!hasMore || loading) return;
 
     try {
       await fetchMore({
-        variables: getHostIdsQuery(filters, endCursor, hostSort),
+        variables: getHostIdsQuery(completeHostRows, endCursor, hostSort),
         updateQuery: (previousResult, { fetchMoreResult }) => {
           if (!fetchMoreResult) return previousResult;
 
@@ -78,7 +92,7 @@ export const useHostIds = () => {
     } catch (err) {
       console.error("Error loading more hosts:", err);
     }
-  }, [hasMore, loading, fetchMore, filters, endCursor, hostSort]);
+  }, [hasMore, loading, fetchMore, completeHostRows, endCursor, hostSort]);
 
   const currentData = data ?? previousData;
 
@@ -94,22 +108,16 @@ export const useHostIds = () => {
 };
 
 const getHostIdsQuery = (
-  filters: Filters,
+  rows: HostFilterRow[],
   afterCursor?: Cursor,
   sort?: OrderByField,
 ): GetHostIdsQueryVariables => {
   const currentTimestamp = new Date();
   const defaultRowLimit = TableRowLimit.HostRowLimit;
-  const filterInfo = constructBeaconFilterQuery(filters.beaconFields, currentTimestamp);
-  const hostFields = (filterInfo && filterInfo.hasBeaconWith?.hasHostWith) || {};
-  const beaconFields = (filterInfo && filterInfo.hasBeaconWith) ? { ...filterInfo.hasBeaconWith } : {};
-  delete beaconFields.hasHostWith; 
+  const where = constructHostFilterQuery(rows, currentTimestamp) ?? {};
 
   const query: GetHostIdsQueryVariables = {
-    where: {
-      ...hostFields,
-      ...(Object.keys(beaconFields).length > 0) && { "hasBeaconsWith": beaconFields }
-    },
+    where,
     ...(sort && { orderBy: [sort] }),
     first: defaultRowLimit,
     after: afterCursor || undefined,
