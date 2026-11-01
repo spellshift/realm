@@ -2,6 +2,7 @@ import { AdjustmentsHorizontalIcon, BugAntIcon } from "@heroicons/react/24/outli
 import Select from "react-select";
 import { calculateTotalFilterCount, FilterFieldType, useFilters } from "./FilterContext";
 import { BeaconFilterBar } from "../../components/beacon-filter-bar";
+import { HostFilterBar } from "../../components/host-filter-bar";
 import { ButtonDialogPopover } from "../../components/ButtonDialogPopover";
 import FreeTextSearch from "../../components/tavern-base-ui/FreeTextSearch";
 import Button from "../../components/tavern-base-ui/button/Button";
@@ -18,7 +19,7 @@ function getFilterFields(pathname: string): FilterFieldType[] | null {
         return [FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.USER, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
     }
     if (pathname === '/hosts') {
-        return [FilterFieldType.BEACON_FIELDS];
+        return [FilterFieldType.HOST_FILTERS];
     }
     if (pathname === '/quests' || pathname.startsWith('/quests/')) {
         return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.USER, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
@@ -47,6 +48,17 @@ export default function FilterControls() {
     };
 
     const renderFilterComponent = (field: FilterFieldType) => {
+        if (field === FilterFieldType.HOST_FILTERS) {
+            return (
+                <div key={field}>
+                    <HostFilterBar
+                        key={field}
+                        onChange={(newValue) => updateFilters({ hostFilters: newValue })}
+                        value={filters.hostFilters}
+                    />
+                </div>
+            )
+        }
         if (field === FilterFieldType.BEACON_FIELDS) {
             return (
                 <div key={field}>

@@ -3,6 +3,8 @@ import {
   constructTagFieldsQuery,
   constructHostFieldQuery,
   constructBeaconFilterQuery,
+  constructHostFilterQuery,
+  constructBeaconIdsFilterQuery,
   constructTomeFieldsFilterQuery,
   constructTomeDefinitionAndValueFilterQuery,
   constructTaskFilterQuery,
@@ -12,13 +14,14 @@ import {
   constructHostStatusFilter,
 } from '../constructQueryUtils';
 import { Filters } from '../../context/FilterContext';
-import { FilterBarOption } from '../interfacesUI';
+import { FilterBarOption, HostFilterRow } from '../interfacesUI';
 import { OnlineOfflineFilterType } from '../enums';
 
 const emptyFilters: Filters = {
   questName: '',
   taskOutput: '',
   beaconFields: [],
+  hostFilters: [],
   tomeFields: [],
   tomeMultiSearch: '',
   assetName: '',
@@ -70,6 +73,234 @@ describe('constructHostFieldQuery', () => {
       platformIn: ['linux'],
     });
     expect(result?.hasHostWith?.and).toBeDefined();
+  });
+});
+
+describe('constructHostFilterQuery', () => {
+  const row = (field: HostFilterRow['field'], predicate: HostFilterRow['predicate'], values: string[]): HostFilterRow => ({
+    id: `${field}-${predicate}`,
+    field,
+    predicate,
+    values,
+  });
+
+  it('returns null when no rows are provided', () => {
+    expect(constructHostFilterQuery([], FIXED_TIMESTAMP)).toBeNull();
+  });
+
+  it('returns null when rows have no values', () => {
+    expect(constructHostFilterQuery([row('platform', 'is', [])], FIXED_TIMESTAMP)).toBeNull();
+  });
+
+  it('matches the legacy dropdown output for platform', () => {
+    const legacy = constructBeaconFilterQuery([createBeaconField('platform', 'PLATFORM_LINUX')], FIXED_TIMESTAMP);
+    const next = constructHostFilterQuery([row('platform', 'is', ['PLATFORM_LINUX'])], FIXED_TIMESTAMP);
+    expect(next).toEqual(legacy?.hasBeaconWith?.hasHostWith);
+    expect(next).toEqual({ platformIn: ['PLATFORM_LINUX'] });
+  });
+
+  it('matches the legacy dropdown output for transport', () => {
+    const legacy = constructBeaconFilterQuery([createBeaconField('transport', 'TRANSPORT_GRPC')], FIXED_TIMESTAMP);
+    const { hasHostWith, ...legacyBeaconFields } = legacy?.hasBeaconWith ?? {};
+    const next = constructHostFilterQuery([row('transport', 'is', ['TRANSPORT_GRPC'])], FIXED_TIMESTAMP);
+    expect(next).toEqual({ hasBeaconsWith: legacyBeaconFields });
+    expect(next).toEqual({ hasBeaconsWith: { transportIn: ['TRANSPORT_GRPC'] } });
+  });
+
+  it('matches the legacy dropdown output for online beacons status', () => {
+    const legacy = constructBeaconFilterQuery(
+      [{ kind: 'onlineOfflineStatus', id: '1', name: 'Online beacons', value: OnlineOfflineFilterType.OnlineBeacons }],
+      FIXED_TIMESTAMP
+    );
+    const next = constructHostFilterQuery(
+      [row('status', 'is', [OnlineOfflineFilterType.OnlineBeacons])],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({ hasBeaconsWith: legacy?.hasBeaconWith });
+  });
+
+  it('matches the legacy dropdown output for offline hosts status', () => {
+    const legacy = constructBeaconFilterQuery(
+      [{ kind: 'onlineOfflineStatus', id: '1', name: 'Offline hosts', value: OnlineOfflineFilterType.OfflineHost }],
+      FIXED_TIMESTAMP
+    );
+    const next = constructHostFilterQuery(
+      [row('status', 'is', [OnlineOfflineFilterType.OfflineHost])],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual(legacy?.hasBeaconWith?.hasHostWith);
+  });
+
+  it('matches the legacy dropdown output for host and beacon names', () => {
+    const legacy = constructBeaconFilterQuery(
+      [createBeaconField('host', 'server1'), createBeaconField('beacon', 'beacon1')],
+      FIXED_TIMESTAMP
+    );
+    const next = constructHostFilterQuery(
+      [row('host', 'is', ['server1']), row('beacon', 'is', ['beacon1'])],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({
+      idIn: ['server1'],
+      hasBeaconsWith: { nameIn: ['beacon1'] },
+    });
+    expect(legacy?.hasBeaconWith?.hasHostWith).toEqual({ idIn: ['server1'] });
+  });
+
+  it('supports is not on every field', () => {
+    const next = constructHostFilterQuery(
+      [row('platform', 'is-not', ['PLATFORM_WINDOWS']), row('principal', 'is-not', ['root'])],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({
+      platformNotIn: ['PLATFORM_WINDOWS'],
+      hasBeaconsWith: { principalNotIn: ['root'] },
+    });
+  });
+
+  it('supports is in and is not in with multiple values', () => {
+    const next = constructHostFilterQuery(
+      [
+        row('platform', 'is-in', ['PLATFORM_WINDOWS', 'PLATFORM_LINUX']),
+        row('transport', 'is-not-in', ['TRANSPORT_DNS', 'TRANSPORT_GRPC']),
+        row('service', 'is-in', ['web', 'admin']),
+      ],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({
+      and: [
+        { platformIn: ['PLATFORM_WINDOWS', 'PLATFORM_LINUX'] },
+        { hasTagsWith: { kind: 'service', nameIn: ['web', 'admin'] } },
+      ],
+      hasBeaconsWith: { transportNotIn: ['TRANSPORT_DNS', 'TRANSPORT_GRPC'] },
+    });
+  });
+
+  it('supports contains and does not contain on free-text fields', () => {
+    const next = constructHostFilterQuery(
+      [
+        row('principal', 'contains', ['adm']),
+        row('primaryIP', 'does-not-contain', ['10.0.']),
+        row('beacon', 'contains', ['web']),
+        row('host', 'does-not-contain', ['db']),
+      ],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({
+      and: [{ not: { primaryIPContains: '10.0.' } }, { not: { nameContains: 'db' } }],
+      hasBeaconsWith: {
+        and: [{ principalContains: 'adm' }, { nameContains: 'web' }],
+      },
+    });
+  });
+
+  it('ANDs rows that share a level instead of merging them', () => {
+    const next = constructHostFilterQuery(
+      [row('platform', 'is', ['PLATFORM_WINDOWS']), row('platform', 'is', ['PLATFORM_LINUX'])],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({
+      and: [{ platformIn: ['PLATFORM_WINDOWS'] }, { platformIn: ['PLATFORM_LINUX'] }],
+    });
+  });
+
+  it('negates status rows through predicates', () => {
+    const next = constructHostFilterQuery(
+      [row('status', 'is-not', [OnlineOfflineFilterType.OnlineBeacons])],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({
+      hasBeaconsWith: { not: constructBeaconStatusFilter([OnlineOfflineFilterType.OnlineBeacons], FIXED_TIMESTAMP) },
+    });
+  });
+
+  it('ORs multiple status values within one row', () => {
+    const next = constructHostFilterQuery(
+      [row('status', 'is-in', [OnlineOfflineFilterType.OnlineBeacons, OnlineOfflineFilterType.RecentlyLostBeacons])],
+      FIXED_TIMESTAMP
+    );
+    expect(next).toEqual({
+      hasBeaconsWith: constructBeaconStatusFilter(
+        [OnlineOfflineFilterType.OnlineBeacons, OnlineOfflineFilterType.RecentlyLostBeacons],
+        FIXED_TIMESTAMP
+      ),
+    });
+  });
+
+  it('skips status rows when no timestamp is provided', () => {
+    expect(
+      constructHostFilterQuery([row('status', 'is', [OnlineOfflineFilterType.OnlineBeacons])])
+    ).toBeNull();
+  });
+});
+
+describe('constructBeaconIdsFilterQuery', () => {
+  const row = (field: HostFilterRow['field'], predicate: HostFilterRow['predicate'], values: string[]): HostFilterRow => ({
+    id: `${field}-${predicate}`,
+    field,
+    predicate,
+    values,
+  });
+
+  it('returns null when no rows are provided', () => {
+    expect(constructBeaconIdsFilterQuery([])).toBeNull();
+  });
+
+  it('returns null when rows have no values', () => {
+    expect(constructBeaconIdsFilterQuery([row('principal', 'contains', [])])).toBeNull();
+  });
+
+  it('keeps beacon-level filters at the top level', () => {
+    const next = constructBeaconIdsFilterQuery([row('transport', 'is', ['TRANSPORT_GRPC'])]);
+    expect(next).toEqual({ transportIn: ['TRANSPORT_GRPC'] });
+  });
+
+  it('nests host-level filters under hasHostWith', () => {
+    const next = constructBeaconIdsFilterQuery([
+      row('platform', 'is', ['PLATFORM_LINUX']),
+      row('host', 'is', ['host-1']),
+    ]);
+    expect(next).toEqual({
+      hasHostWith: {
+        and: [{ platformIn: ['PLATFORM_LINUX'] }, { idIn: ['host-1'] }],
+      },
+    });
+  });
+
+  it('wires tags and external IP through the host', () => {
+    const next = constructBeaconIdsFilterQuery([
+      row('service', 'is-in', ['web']),
+      row('externalIP', 'contains', ['10.0.']),
+    ]);
+    expect(next).toEqual({
+      hasHostWith: {
+        and: [
+          { hasTagsWith: { kind: 'service', nameIn: ['web'] } },
+          { externalIPContains: '10.0.' },
+        ],
+      },
+    });
+  });
+
+  it('supports contains on beacon names and negation', () => {
+    const next = constructBeaconIdsFilterQuery([
+      row('beacon', 'contains', ['web']),
+      row('principal', 'does-not-contain', ['root']),
+    ]);
+    expect(next).toEqual({
+      and: [{ nameContains: 'web' }, { not: { principalContains: 'root' } }],
+    });
+  });
+
+  it('skips status rows: the picker enforces online-only separately', () => {
+    expect(
+      constructBeaconIdsFilterQuery([row('status', 'is', [OnlineOfflineFilterType.OnlineBeacons])])
+    ).toBeNull();
+    const next = constructBeaconIdsFilterQuery([
+      row('status', 'is', [OnlineOfflineFilterType.OnlineBeacons]),
+      row('platform', 'is', ['PLATFORM_LINUX']),
+    ]);
+    expect(next).toEqual({ hasHostWith: { platformIn: ['PLATFORM_LINUX'] } });
   });
 });
 
