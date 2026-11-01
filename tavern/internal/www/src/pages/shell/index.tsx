@@ -29,7 +29,7 @@ import SshTerminal from "./components/SshTerminal";
 import PtyTerminal from "./components/PtyTerminal";
 import TabContextMenu from "./components/TabContextMenu";
 import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
-import { formatPivotTabLabel } from "./utils/networkGraphUtils";
+import { formatPivotTabLabel, extractPivotTargetHost } from "./utils/networkGraphUtils";
 import { DEFAULT_RC_ALIASES_SCRIPT, registerUserSymbolsFromCode } from "./utils/eldritchLsp";
 import { Minus, SquareTerminal, Terminal, WifiOff } from "lucide-react";
 
@@ -374,17 +374,21 @@ const ShellContent = () => {
 
   const handleBindTabPivotId = useCallback(
     (tabId: string, createdPivotId: string) => {
-      knownPivotIdsRef.current.add(createdPivotId);
-      setPortalTabs((prev) =>
-        prev.map((t) => {
+      const pidStr = String(createdPivotId);
+      knownPivotIdsRef.current.add(pidStr);
+      setPortalTabs((prev) => {
+        const withoutDuplicate = prev.filter(
+          (t) => t.id === tabId || String(t.pivotId) !== pidStr
+        );
+        return withoutDuplicate.map((t) => {
           if (t.id !== tabId) return t;
           const targetToSave =
             t.target && t.target !== "PTY" ? t.target : lastUnboundPtyTargetRef.current;
           if (t.customTitle) {
-            recordCustomTitle(String(createdPivotId), t.customTitle);
+            recordCustomTitle(pidStr, t.customTitle);
           }
           if (targetToSave) {
-            recordPivotTarget(String(createdPivotId), targetToSave);
+            recordPivotTarget(pidStr, targetToSave);
             if (lastUnboundPtyTargetRef.current === targetToSave) {
               lastUnboundPtyTargetRef.current = "";
             }
@@ -392,10 +396,10 @@ const ShellContent = () => {
           return {
             ...t,
             target: targetToSave || t.target,
-            pivotId: createdPivotId,
+            pivotId: pidStr,
           };
-        })
-      );
+        });
+      });
       refetchHistory();
       refetchKnowledgeGraph();
     },
@@ -420,6 +424,35 @@ const ShellContent = () => {
     },
     [recordPivotTarget]
   );
+
+  const isMatchingPivotTarget = (
+    type: string,
+    pendingTarget?: string,
+    incomingTarget?: string
+  ): boolean => {
+    if (!pendingTarget || !incomingTarget) return true;
+    if (type.toLowerCase() === "pty") return true;
+    if (pendingTarget === incomingTarget) return true;
+
+    // Strip credentials (user:pass@ or user@)
+    const stripUser = (s: string) => (s.includes("@") ? s.split("@").pop() || s : s).trim();
+    const cleanPending = stripUser(pendingTarget);
+    const cleanIncoming = stripUser(incomingTarget);
+    if (cleanPending === cleanIncoming) return true;
+
+    // Compare with/without default :22 port
+    const stripPort22 = (s: string) => s.replace(/:22$/, "");
+    if (stripPort22(cleanPending) === stripPort22(cleanIncoming)) return true;
+
+    // Compare extracted hosts
+    const hostPending = extractPivotTargetHost(pendingTarget);
+    const hostIncoming = extractPivotTargetHost(incomingTarget);
+    if (hostPending && hostIncoming && hostPending.toLowerCase() === hostIncoming.toLowerCase()) {
+      return true;
+    }
+
+    return false;
+  };
 
   const handleOpenPortalTab = useCallback(
     (
@@ -450,6 +483,22 @@ const ShellContent = () => {
         }
       }
       setPortalTabs((prev) => {
+        // 0. If opening without pivotId (e.g. user clicked Connect), check if an unbound tab for this target is already open
+        if (!pivotId) {
+          const existingUnboundIdx = prev.findIndex(
+            (t) =>
+              !t.pivotId &&
+              t.type === normalizedType &&
+              isMatchingPivotTarget(normalizedType, t.target, cleanedTarget)
+          );
+          if (existingUnboundIdx !== -1) {
+            if (focusNewTab) {
+              setTabIndex(existingUnboundIdx + 1);
+            }
+            return prev;
+          }
+        }
+
         // 1. Check if a tab already exists for this exact pivotId or deterministic id
         const deterministicId = pivotId ? `pivot-${pivotId}` : undefined;
         const existingByPivotIdx = prev.findIndex(
@@ -471,30 +520,37 @@ const ShellContent = () => {
             (t) =>
               !t.pivotId &&
               t.type === normalizedType &&
-              (normalizedType === "pty" || t.target === target)
+              isMatchingPivotTarget(normalizedType, t.target, target)
           );
-          if (pendingIdx !== -1) {
+          const targetPendingIdx =
+            pendingIdx !== -1
+              ? pendingIdx
+              : prev.filter((t) => !t.pivotId && t.type === normalizedType).length === 1
+              ? prev.findIndex((t) => !t.pivotId && t.type === normalizedType)
+              : -1;
+
+          if (targetPendingIdx !== -1) {
             const next = [...prev];
             const resolvedTarget =
-              next[pendingIdx].target && next[pendingIdx].target !== "PTY"
-                ? next[pendingIdx].target
+              next[targetPendingIdx].target && next[targetPendingIdx].target !== "PTY"
+                ? next[targetPendingIdx].target
                 : cleanedTarget;
             if (normalizedType === "pty" && resolvedTarget && resolvedTarget !== "PTY") {
               recordPivotTarget(String(pivotId), resolvedTarget);
             }
             const resolvedCustomTitle =
-              next[pendingIdx].customTitle || rememberedCustomTitle;
+              next[targetPendingIdx].customTitle || rememberedCustomTitle;
             if (resolvedCustomTitle) {
               recordCustomTitle(String(pivotId), resolvedCustomTitle);
             }
-            next[pendingIdx] = {
-              ...next[pendingIdx],
+            next[targetPendingIdx] = {
+              ...next[targetPendingIdx],
               pivotId: String(pivotId),
               target: resolvedTarget,
               customTitle: resolvedCustomTitle,
             };
             if (focusNewTab) {
-              setTabIndex(pendingIdx + 1);
+              setTabIndex(targetPendingIdx + 1);
             }
             return next;
           }
@@ -565,13 +621,14 @@ const ShellContent = () => {
     shellData.node.pivots.edges.forEach((edge: any) => {
       const pivot = edge.node;
       if (!pivot?.id) return;
-      const alreadyKnown = knownPivotIdsRef.current.has(pivot.id);
-      knownPivotIdsRef.current.add(pivot.id);
+      const pivotIdStr = String(pivot.id);
+      const alreadyKnown = knownPivotIdsRef.current.has(pivotIdStr);
+      knownPivotIdsRef.current.add(pivotIdStr);
 
       if (!pivot.closedAt && !alreadyKnown) {
         const label =
           pivot.kind?.toUpperCase() === "PTY" ? "PTY" : pivot.destination;
-        handleOpenPortalTab(pivot.kind.toLowerCase(), label, pivot.id, !isInitialLoad);
+        handleOpenPortalTab(pivot.kind.toLowerCase(), label, pivotIdStr, !isInitialLoad);
       }
     });
   }, [shellData, shellId, handleOpenPortalTab]);
