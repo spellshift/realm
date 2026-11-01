@@ -51,6 +51,18 @@ func TestFetchAsset(t *testing.T) {
 			wantCode: codes.OK,
 		},
 		{
+			name:     "Shared_Asset_Shell_Context",
+			fileName: "shared_asset",
+			fileSize: 100,
+			req: &c2pb.FetchAssetRequest{
+				Name: "shared_asset",
+				Context: &c2pb.FetchAssetRequest_ShellTaskContext{
+					ShellTaskContext: &c2pb.ShellTaskContext{ShellTaskId: 999},
+				},
+			},
+			wantCode: codes.OK,
+		},
+		{
 			name:     "File Not Found",
 			fileName: "n/a",
 			fileSize: 0,

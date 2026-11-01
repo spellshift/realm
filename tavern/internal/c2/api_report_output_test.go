@@ -32,6 +32,7 @@ func TestReportOutput(t *testing.T) {
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier),
 	}
 	token := mintJWT(existingBeacon.ID)
+	foreignToken := mintJWT(c2test.NewRandomBeacon(ctx, graph).ID)
 
 	// Test Cases
 	tests := []struct {
@@ -154,6 +155,16 @@ func TestReportOutput(t *testing.T) {
 				},
 			},
 			wantResp: nil,
+			wantCode: codes.NotFound,
+		},
+		{
+			name: "Foreign_Beacon",
+			req: &c2pb.ReportOutputRequest{Message: &c2pb.ReportOutputRequest_TaskOutput{
+				TaskOutput: &c2pb.ReportTaskOutputMessage{
+					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[1].ID), Jwt: foreignToken},
+					Output:  &c2pb.TaskOutput{Id: int64(existingTasks[1].ID), Output: "denied"},
+				},
+			}},
 			wantCode: codes.NotFound,
 		},
 		{

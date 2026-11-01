@@ -113,6 +113,16 @@ func TestReportFile(t *testing.T) {
 			wantCode: codes.InvalidArgument,
 		},
 		{
+			name: "ForeignBeacon",
+			reqs: []*c2pb.ReportFileRequest{{
+				Context: &c2pb.ReportFileRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token0},
+				},
+				Chunk: &epb.File{Metadata: &epb.FileMetadata{Path: "/denied"}},
+			}},
+			wantCode: codes.NotFound,
+		},
+		{
 			name: "NewFile_Single",
 			reqs: []*c2pb.ReportFileRequest{
 				{

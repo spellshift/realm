@@ -13,8 +13,12 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/enttest"
 )
 
 func TestGetClientIP(t *testing.T) {
@@ -216,4 +220,22 @@ func TestJWTValidate(t *testing.T) {
 		_, err = srv.ValidateJWT(badStr)
 		assert.Error(t, err, "expected rejection for beacon_id claim %s", bad)
 	}
+}
+
+func TestLoadShellTaskForBeacon(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	host := graph.Host.Create().SetIdentifier("host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	beacon := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	foreign := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	user := graph.User.Create().SetOauthID("user").SetName("user").SetPhotoURL("photo").SaveX(ctx)
+	shell := graph.Shell.Create().SetBeacon(beacon).SetOwner(user).SetData([]byte{}).SaveX(ctx)
+	shellTask := graph.ShellTask.Create().SetShell(shell).SetCreator(user).SetInput("id").SetStreamID("stream").SetSequenceID(1).SaveX(ctx)
+	srv := Server{graph: graph}
+
+	_, err := srv.loadShellTaskForBeacon(ctx, shellTask.ID, beacon.ID)
+	require.NoError(t, err)
+	_, err = srv.loadShellTaskForBeacon(ctx, shellTask.ID, foreign.ID)
+	require.True(t, ent.IsNotFound(err))
 }
