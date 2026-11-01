@@ -168,22 +168,14 @@ func newApp(ctx context.Context) (app *cli.App) {
 			},
 			Action: func(c *cli.Context) error {
 				configPath := c.String("config")
-				if configPath == "" {
-					return fmt.Errorf("--config flag is required")
+				var cliExec *string
+				if c.IsSet("executor") {
+					value := c.String("executor")
+					cliExec = &value
 				}
-
-				cfg, err := builder.ParseConfig(configPath)
+				cfg, err := loadBuilderConfig(configPath, cliExec)
 				if err != nil {
-					return fmt.Errorf("failed to parse builder config: %w", err)
-				}
-
-				if cliExec := c.String("executor"); cliExec != "" {
-					switch cliExec {
-					case "docker", "local":
-						cfg.Executor = cliExec
-					default:
-						return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cliExec)
-					}
+					return err
 				}
 
 				slog.InfoContext(ctx, "starting builder",
@@ -211,6 +203,28 @@ func newApp(ctx context.Context) (app *cli.App) {
 		},
 	}
 	return
+}
+
+func loadBuilderConfig(configPath string, cliExec *string) (*builder.Config, error) {
+	if cliExec != nil && *cliExec != "docker" && *cliExec != "local" {
+		return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", *cliExec)
+	}
+	cfg := builder.DefaultConfig()
+	if configPath != "" {
+		var err error
+		if cliExec == nil {
+			cfg, err = builder.ParseConfig(configPath)
+		} else {
+			cfg, err = builder.ParseConfigWithExecutor(configPath, *cliExec)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse builder config: %w", err)
+		}
+	}
+	if configPath == "" && cliExec != nil {
+		cfg.Executor = *cliExec
+	}
+	return cfg, nil
 }
 
 func runTavern(ctx context.Context, options ...func(*Config)) error {
@@ -266,6 +280,10 @@ func (srv *Server) Close() error {
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
 func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
+	tokens, err := parseBuilderEnrollmentTokens(EnvBuilderEnrollmentTokens.String())
+	if err != nil {
+		return nil, err
+	}
 	// Get server key pair from secrets manager (for OAuth)
 	pubKey, privKey, err := getKeyPairEd25519()
 	if err != nil {
@@ -290,6 +308,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	); err != nil {
 		client.Close()
 		return nil, fmt.Errorf("failed to initialize graph schema: %w", err)
+	}
+	if err := seedBuilderEnrollmentTokens(ctx, client, tokens); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to seed builder enrollment tokens: %w", err)
 	}
 
 	// Load Default Tomes
@@ -488,9 +510,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/graphql": tavernhttp.Endpoint{
-			Handler:          gqlHandler,
-			AllowUnactivated: true,
+		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler, AllowUnactivated: true},
+		"/auth/builder/enroll": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewBuilderEnrollHandler(client, builderCACert, builderCAKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
 			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),

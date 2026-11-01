@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/network"
 	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/portal"
+	entshell "realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
@@ -294,12 +295,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Require a shellID
-		if shellIDStr == "" {
-			sendWsError("missing shell_id")
-			return
-		}
-
 		// Parse target: defaults to root@<target>:22
 		user := "root"
 		hasExplicitUser := false
@@ -387,6 +382,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !p.ClosedAt.IsZero() {
 			sendWsError("portal is closed")
 			return
+		}
+
+		if shellIDStr == "" {
+			if s, err := h.graph.Shell.Query().Where(entshell.HasPortalsWith(portal.ID(portalID)), entshell.ClosedAtIsNil()).First(ctx); err == nil && s != nil {
+				shellIDStr = strconv.Itoa(s.ID)
+			} else if p.Edges.Beacon != nil {
+				if s, err := h.graph.Shell.Query().Where(entshell.HasBeaconWith(beacon.ID(p.Edges.Beacon.ID)), entshell.ClosedAtIsNil()).First(ctx); err == nil && s != nil {
+					shellIDStr = strconv.Itoa(s.ID)
+				}
+			}
 		}
 
 		// Open Portal Mux

@@ -125,6 +125,8 @@ var (
 	EnvEnableAIMCP   = EnvBool{"ENABLE_AI_MCP"}
 
 	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
+	// EnvBuilderEnrollmentTokens seeds one-time builder enrollment tokens at startup.
+	EnvBuilderEnrollmentTokens = EnvString{"REALM_BUILDER_ENROLLMENT_TOKENS", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern

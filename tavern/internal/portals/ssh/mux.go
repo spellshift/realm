@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	gossh "golang.org/x/crypto/ssh"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/portals/pnet"
@@ -21,32 +22,41 @@ import (
 // AgentSenderFunc sends a mote directly over the gRPC stream to the connected agent.
 type AgentSenderFunc = stream.SenderFunc
 
-// PortalManager manages SSH sessions negotiated on the gRPC-receiving Tavern instance.
+// Mux manages SSH sessions negotiated on the gRPC-receiving Tavern instance.
 // It intercepts SSHPayload motes arriving from PubSub (PORTAL_IN), dials TCP motes directly
 // to the agent over gRPC using pnet, performs the SSH handshake and session management,
 // and publishes decrypted SSHPayload motes back over PubSub (PORTAL_OUT).
-type PortalManager struct {
+type Mux struct {
 	portalID    int
 	mux         *mux.Mux
 	sendToAgent AgentSenderFunc
 
-	mu      sync.RWMutex
-	streams map[string]*portalSSHStream
-	closed  bool
+	mu         sync.RWMutex
+	sshStreams map[string]*portalSSHStream       // keyed by sshStreamID
+	tcpStreams map[string]*portalSSHStream       // keyed by tcpStreamID
+	pending    map[string][]*portalpb.SSHPayload // keyed by sshStreamID
+	closed     bool
 }
 
-// NewPortalManager creates a new PortalManager for a gRPC portal stream.
-func NewPortalManager(portalID int, portalMux *mux.Mux, sendToAgent AgentSenderFunc) *PortalManager {
-	return &PortalManager{
+// New creates a new SSH Mux for a gRPC portal stream.
+func New(portalID int, portalMux *mux.Mux, sendToAgent AgentSenderFunc) *Mux {
+	return &Mux{
 		portalID:    portalID,
 		mux:         portalMux,
 		sendToAgent: sendToAgent,
-		streams:     make(map[string]*portalSSHStream),
+		sshStreams:  make(map[string]*portalSSHStream),
+		tcpStreams:  make(map[string]*portalSSHStream),
+		pending:     make(map[string][]*portalpb.SSHPayload),
 	}
 }
 
+// NewMux creates a new SSH Mux for a gRPC portal stream.
+func NewMux(portalID int, portalMux *mux.Mux, sendToAgent AgentSenderFunc) *Mux {
+	return New(portalID, portalMux, sendToAgent)
+}
+
 // HandleMote processes an incoming Mote with an SSHPayload from PORTAL_IN.
-func (m *PortalManager) HandleMote(ctx context.Context, mote *portalpb.Mote) {
+func (m *Mux) HandleMote(ctx context.Context, mote *portalpb.Mote) {
 	sshPayload := mote.GetSsh()
 	if sshPayload == nil || mote.StreamId == "" {
 		return
@@ -56,12 +66,15 @@ func (m *PortalManager) HandleMote(ctx context.Context, mote *portalpb.Mote) {
 	case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CONNECT:
 		m.startStream(ctx, mote.StreamId, sshPayload)
 	case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA, portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_RESIZE:
-		m.mu.RLock()
-		s, exists := m.streams[mote.StreamId]
-		m.mu.RUnlock()
+		m.mu.Lock()
+		s, exists := m.sshStreams[mote.StreamId]
 		if !exists {
+			m.pending[mote.StreamId] = append(m.pending[mote.StreamId], sshPayload)
+			m.mu.Unlock()
 			return
 		}
+		m.mu.Unlock()
+
 		select {
 		case s.sshInCh <- sshPayload:
 		case <-s.ctx.Done():
@@ -70,11 +83,16 @@ func (m *PortalManager) HandleMote(ctx context.Context, mote *portalpb.Mote) {
 		}
 	case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE:
 		m.mu.Lock()
-		s, exists := m.streams[mote.StreamId]
+		delete(m.pending, mote.StreamId)
+		s, exists := m.sshStreams[mote.StreamId]
 		if exists {
-			delete(m.streams, mote.StreamId)
+			delete(m.sshStreams, mote.StreamId)
+			if s.tcpStreamID != "" {
+				delete(m.tcpStreams, s.tcpStreamID)
+			}
 		}
 		m.mu.Unlock()
+
 		if exists {
 			s.Close("SSH session closed by operator")
 		}
@@ -83,13 +101,13 @@ func (m *PortalManager) HandleMote(ctx context.Context, mote *portalpb.Mote) {
 
 // RouteAgentMote checks if an incoming mote from the agent (over gRPC) belongs to an active
 // gRPC-side SSH session. If so, it routes the mote to that session and returns true.
-func (m *PortalManager) RouteAgentMote(mote *portalpb.Mote) bool {
+func (m *Mux) RouteAgentMote(mote *portalpb.Mote) bool {
 	if mote == nil || mote.StreamId == "" {
 		return false
 	}
 
 	m.mu.RLock()
-	s, exists := m.streams[mote.StreamId]
+	s, exists := m.tcpStreams[mote.StreamId]
 	m.mu.RUnlock()
 	if !exists {
 		return false
@@ -105,18 +123,20 @@ func (m *PortalManager) RouteAgentMote(mote *portalpb.Mote) bool {
 }
 
 // Close shuts down all active SSH streams for this portal.
-func (m *PortalManager) Close() {
+func (m *Mux) Close() {
 	m.mu.Lock()
 	if m.closed {
 		m.mu.Unlock()
 		return
 	}
 	m.closed = true
-	streams := make([]*portalSSHStream, 0, len(m.streams))
-	for id, s := range m.streams {
+	streams := make([]*portalSSHStream, 0, len(m.sshStreams))
+	for id, s := range m.sshStreams {
 		streams = append(streams, s)
-		delete(m.streams, id)
+		delete(m.sshStreams, id)
 	}
+	clear(m.tcpStreams)
+	clear(m.pending)
 	m.mu.Unlock()
 
 	for _, s := range streams {
@@ -125,45 +145,61 @@ func (m *PortalManager) Close() {
 }
 
 type portalSSHStream struct {
-	streamID   string
-	manager    *PortalManager
-	ctx        context.Context
-	cancel     context.CancelFunc
-	agentOutCh chan *portalpb.Mote
-	sshInCh    chan *portalpb.SSHPayload
-	outWriter  *stream.OrderedWriter
-	closeOnce  sync.Once
+	sshStreamID string
+	tcpStreamID string
+	mux         *Mux
+	ctx         context.Context
+	cancel      context.CancelFunc
+	agentOutCh  chan *portalpb.Mote
+	sshInCh     chan *portalpb.SSHPayload
+	outWriter   *stream.OrderedWriter
+	closeOnce   sync.Once
 }
 
-func (m *PortalManager) startStream(ctx context.Context, streamID string, connectPayload *portalpb.SSHPayload) {
+func (m *Mux) startStream(ctx context.Context, sshStreamID string, connectPayload *portalpb.SSHPayload) {
 	m.mu.Lock()
 	if m.closed {
 		m.mu.Unlock()
 		return
 	}
-	if _, exists := m.streams[streamID]; exists {
+	if _, exists := m.sshStreams[sshStreamID]; exists {
 		m.mu.Unlock()
 		return
 	}
 
+	tcpStreamID := uuid.New().String()
 	streamCtx, cancel := context.WithCancel(ctx)
 	topicOut := m.mux.TopicOut(m.portalID)
-	outWriter := stream.NewOrderedWriter(streamID, func(outMote *portalpb.Mote) error {
+	outWriter := stream.NewOrderedWriter(sshStreamID, func(outMote *portalpb.Mote) error {
 		pubCtx, pubCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer pubCancel()
 		return m.mux.Publish(pubCtx, topicOut, outMote)
 	})
 
 	s := &portalSSHStream{
-		streamID:   streamID,
-		manager:    m,
-		ctx:        streamCtx,
-		cancel:     cancel,
-		agentOutCh: make(chan *portalpb.Mote, 1024),
-		sshInCh:    make(chan *portalpb.SSHPayload, 1024),
-		outWriter:  outWriter,
+		sshStreamID: sshStreamID,
+		tcpStreamID: tcpStreamID,
+		mux:         m,
+		ctx:         streamCtx,
+		cancel:      cancel,
+		agentOutCh:  make(chan *portalpb.Mote, 1024),
+		sshInCh:     make(chan *portalpb.SSHPayload, 1024),
+		outWriter:   outWriter,
 	}
-	m.streams[streamID] = s
+
+	// Drain any pending pre-buffered payloads
+	if pending, ok := m.pending[sshStreamID]; ok {
+		for _, p := range pending {
+			select {
+			case s.sshInCh <- p:
+			default:
+			}
+		}
+		delete(m.pending, sshStreamID)
+	}
+
+	m.sshStreams[sshStreamID] = s
+	m.tcpStreams[tcpStreamID] = s
 	m.mu.Unlock()
 
 	go s.run(connectPayload)
@@ -173,7 +209,7 @@ func (s *portalSSHStream) sendConnected() {
 	if err := s.outWriter.WriteSSH(&portalpb.SSHPayload{
 		Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA,
 	}); err != nil {
-		slog.Debug("failed to publish SSH connected mote", "stream_id", s.streamID, "err", err)
+		slog.Debug("failed to publish SSH connected mote", "ssh_stream_id", s.sshStreamID, "err", err)
 	}
 }
 
@@ -187,7 +223,7 @@ func (s *portalSSHStream) sendData(data []byte) {
 		Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA,
 		Data: cp,
 	}); err != nil {
-		slog.Debug("failed to publish SSH data mote", "stream_id", s.streamID, "err", err)
+		slog.Debug("failed to publish SSH data mote", "ssh_stream_id", s.sshStreamID, "err", err)
 	}
 }
 
@@ -198,15 +234,19 @@ func (s *portalSSHStream) Close(reason string) {
 			Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE,
 			Data: []byte(reason),
 		})
-		s.manager.mu.Lock()
-		if current, ok := s.manager.streams[s.streamID]; ok && current == s {
-			delete(s.manager.streams, s.streamID)
+		s.mux.mu.Lock()
+		if current, ok := s.mux.sshStreams[s.sshStreamID]; ok && current == s {
+			delete(s.mux.sshStreams, s.sshStreamID)
 		}
-		s.manager.mu.Unlock()
+		if current, ok := s.mux.tcpStreams[s.tcpStreamID]; ok && current == s {
+			delete(s.mux.tcpStreams, s.tcpStreamID)
+		}
+		delete(s.mux.pending, s.sshStreamID)
+		s.mux.mu.Unlock()
 	})
 }
 
-const handshakeIdleTimeout = 30 * time.Second
+const handshakeIdleTimeout = 45 * time.Second
 
 type activityConn struct {
 	net.Conn
@@ -351,7 +391,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 		}
 	}
 
-	rawConn, err := pnet.Dial("tcp", hostPortStr, s.streamID, s.manager.sendToAgent, receiver)
+	rawConn, err := pnet.Dial("tcp", hostPortStr, s.tcpStreamID, s.mux.sendToAgent, receiver)
 	if err != nil {
 		s.Close(fmt.Sprintf("Failed to initialize portal TCP stream: %v", err))
 		return

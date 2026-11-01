@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/99designs/gqlgen/client"
-	"github.com/99designs/gqlgen/graphql/handler"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,9 +21,6 @@ import (
 	"realm.pub/tavern/internal/builder/executor"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
-	"realm.pub/tavern/internal/graphql"
-	tavernhttp "realm.pub/tavern/internal/http"
-	"realm.pub/tavern/tomes"
 )
 
 func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
@@ -39,32 +35,10 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 
-	git := tomes.NewGitImporter(graph)
-	srv := tavernhttp.NewServer(
-		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
-		},
-		tavernhttp.WithAuthenticationBypass(graph),
-	)
-	gqlClient := client.New(srv, client.Path("/graphql"))
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 
 	// Register builder
-	var registerResp struct {
-		RegisterBuilder struct {
-			Builder struct{ ID string }
-			Config  string
-		}
-	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
-			builder { id }
-			config
-		}
-	}`, &registerResp, client.Var("input", map[string]any{
-		"supportedTargets": []string{"PLATFORM_LINUX"},
-		"upstream":         "https://tavern.example.com:443",
-	}))
-	require.NoError(t, err)
+	cfg := enrollTestBuilder(t, ctx, gqlClient, upstream, "linux")
 
 	// Get builder DB entity
 	builders, err := graph.Builder.Query().All(ctx)
@@ -110,9 +84,6 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return lis.Dial()
 	}
-
-	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
-	require.NoError(t, err)
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -192,31 +163,9 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 
-	git := tomes.NewGitImporter(graph)
-	srv := tavernhttp.NewServer(
-		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
-		},
-		tavernhttp.WithAuthenticationBypass(graph),
-	)
-	gqlClient := client.New(srv, client.Path("/graphql"))
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 
-	var registerResp struct {
-		RegisterBuilder struct {
-			Builder struct{ ID string }
-			Config  string
-		}
-	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
-			builder { id }
-			config
-		}
-	}`, &registerResp, client.Var("input", map[string]any{
-		"supportedTargets": []string{"PLATFORM_LINUX"},
-		"upstream":         "https://tavern.example.com:443",
-	}))
-	require.NoError(t, err)
+	cfg := enrollTestBuilder(t, ctx, gqlClient, upstream, "linux")
 
 	builders, err := graph.Builder.Query().All(ctx)
 	require.NoError(t, err)
@@ -258,9 +207,6 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return lis.Dial()
 	}
-
-	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
-	require.NoError(t, err)
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -346,31 +292,9 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 
-	git := tomes.NewGitImporter(graph)
-	srv := tavernhttp.NewServer(
-		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
-		},
-		tavernhttp.WithAuthenticationBypass(graph),
-	)
-	gqlClient := client.New(srv, client.Path("/graphql"))
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 
-	var registerResp struct {
-		RegisterBuilder struct {
-			Builder struct{ ID string }
-			Config  string
-		}
-	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
-			builder { id }
-			config
-		}
-	}`, &registerResp, client.Var("input", map[string]any{
-		"supportedTargets": []string{"PLATFORM_LINUX"},
-		"upstream":         "https://tavern.example.com:443",
-	}))
-	require.NoError(t, err)
+	cfg := enrollTestBuilder(t, ctx, gqlClient, upstream, "linux")
 
 	builders, err := graph.Builder.Query().All(ctx)
 	require.NoError(t, err)
@@ -413,9 +337,6 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return lis.Dial()
 	}
-
-	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
-	require.NoError(t, err)
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -481,31 +402,9 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 
-	git := tomes.NewGitImporter(graph)
-	srv := tavernhttp.NewServer(
-		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
-		},
-		tavernhttp.WithAuthenticationBypass(graph),
-	)
-	gqlClient := client.New(srv, client.Path("/graphql"))
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 
-	var registerResp struct {
-		RegisterBuilder struct {
-			Builder struct{ ID string }
-			Config  string
-		}
-	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
-			builder { id }
-			config
-		}
-	}`, &registerResp, client.Var("input", map[string]any{
-		"supportedTargets": []string{"PLATFORM_LINUX"},
-		"upstream":         "https://tavern.example.com:443",
-	}))
-	require.NoError(t, err)
+	cfg := enrollTestBuilder(t, ctx, gqlClient, upstream, "linux")
 
 	builders, err := graph.Builder.Query().All(ctx)
 	require.NoError(t, err)
@@ -548,9 +447,6 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return lis.Dial()
 	}
-
-	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
-	require.NoError(t, err)
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -613,31 +509,9 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 
-	git := tomes.NewGitImporter(graph)
-	srv := tavernhttp.NewServer(
-		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
-		},
-		tavernhttp.WithAuthenticationBypass(graph),
-	)
-	gqlClient := client.New(srv, client.Path("/graphql"))
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 
-	var registerResp struct {
-		RegisterBuilder struct {
-			Builder struct{ ID string }
-			Config  string
-		}
-	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
-			builder { id }
-			config
-		}
-	}`, &registerResp, client.Var("input", map[string]any{
-		"supportedTargets": []string{"PLATFORM_LINUX"},
-		"upstream":         "https://tavern.example.com:443",
-	}))
-	require.NoError(t, err)
+	cfg := enrollTestBuilder(t, ctx, gqlClient, upstream, "linux")
 
 	builders, err := graph.Builder.Query().All(ctx)
 	require.NoError(t, err)
@@ -681,9 +555,6 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return lis.Dial()
 	}
-
-	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
-	require.NoError(t, err)
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)
@@ -757,32 +628,10 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 
-	git := tomes.NewGitImporter(graph)
-	srv := tavernhttp.NewServer(
-		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
-		},
-		tavernhttp.WithAuthenticationBypass(graph),
-	)
-	gqlClient := client.New(srv, client.Path("/graphql"))
+	gqlClient, upstream := newTestBuilderServer(t, graph, caCert, caPrivKey)
 
 	// Register builder
-	var registerResp struct {
-		RegisterBuilder struct {
-			Builder struct{ ID string }
-			Config  string
-		}
-	}
-	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
-		registerBuilder(input: $input) {
-			builder { id }
-			config
-		}
-	}`, &registerResp, client.Var("input", map[string]any{
-		"supportedTargets": []string{"PLATFORM_LINUX"},
-		"upstream":         "https://tavern.example.com:443",
-	}))
-	require.NoError(t, err)
+	cfg := enrollTestBuilder(t, ctx, gqlClient, upstream, "linux")
 
 	// Create profile via createBuildProfile mutation
 	var profileResp struct {
@@ -831,9 +680,6 @@ func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return lis.Dial()
 	}
-
-	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
-	require.NoError(t, err)
 
 	creds, err := builder.NewCredentialsFromConfig(cfg)
 	require.NoError(t, err)

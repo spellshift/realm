@@ -59,48 +59,41 @@ func (c *builderCredentials) RequireTransportSecurity() bool {
 
 // NewCredentialsFromConfig creates gRPC per-RPC credentials from a builder config.
 func NewCredentialsFromConfig(cfg *Config) (credentials.PerRPCCredentials, error) {
-	return parseMTLSCredentials(cfg.MTLS)
+	identity, err := LoadIdentity(cfg.IdentityFile)
+	if err != nil {
+		return nil, err
+	}
+	return parseMTLSCredentials(identity.Certificate, []byte(identity.PrivateKey))
 }
 
-// parseMTLSCredentials loads the certificate and private key from the config's
-// PEM bundle string.
-func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
-	pemBundle := []byte(mtlsPEM)
-
-	var certDER []byte
-	var privKey ed25519.PrivateKey
-
-	for {
-		block, rest := pem.Decode(pemBundle)
-		if block == nil {
-			break
-		}
-		switch block.Type {
-		case "CERTIFICATE":
-			certDER = block.Bytes
-		case "PRIVATE KEY":
-			key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse private key: %w", err)
-			}
-			edKey, ok := key.(ed25519.PrivateKey)
-			if !ok {
-				return nil, fmt.Errorf("private key is not ED25519")
-			}
-			privKey = edKey
-		}
-		pemBundle = rest
+func parseMTLSCredentials(certPEM string, keyPEM []byte) (*builderCredentials, error) {
+	certBlock, certRest := pem.Decode([]byte(certPEM))
+	if certBlock == nil || certBlock.Type != "CERTIFICATE" || len(bytes.TrimSpace(certRest)) != 0 {
+		return nil, fmt.Errorf("invalid builder certificate PEM")
 	}
-
-	if certDER == nil {
-		return nil, fmt.Errorf("no certificate found in mTLS bundle")
+	cert, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("invalid builder certificate: %w", err)
 	}
-	if privKey == nil {
-		return nil, fmt.Errorf("no private key found in mTLS bundle")
+	keyBlock, keyRest := pem.Decode(keyPEM)
+	if keyBlock == nil || keyBlock.Type != "PRIVATE KEY" || len(bytes.TrimSpace(keyRest)) != 0 {
+		return nil, fmt.Errorf("invalid builder private key PEM")
+	}
+	key, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("invalid builder private key: %w", err)
+	}
+	privKey, ok := key.(ed25519.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("builder private key is not Ed25519")
+	}
+	pubKey, ok := cert.PublicKey.(ed25519.PublicKey)
+	if !ok || !pubKey.Equal(privKey.Public()) {
+		return nil, fmt.Errorf("builder key does not match certificate")
 	}
 
 	return &builderCredentials{
-		certDER: certDER,
+		certDER: cert.Raw,
 		privKey: privKey,
 	}, nil
 }
@@ -118,13 +111,17 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	if err := cfg.validate(); err != nil {
 		return err
 	}
+	identity, err := EnsureIdentity(ctx, cfg)
+	if err != nil {
+		return err
+	}
 	slog.InfoContext(ctx, "builder started",
-		"id", cfg.ID,
+		"id", identity.ID,
 		"supported_targets", cfg.SupportedTargets,
 		"upstream", cfg.Upstream,
 	)
 
-	creds, err := parseMTLSCredentials(cfg.MTLS)
+	creds, err := NewCredentialsFromConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to parse mTLS credentials: %w", err)
 	}

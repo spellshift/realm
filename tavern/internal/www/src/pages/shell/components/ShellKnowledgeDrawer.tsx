@@ -39,6 +39,8 @@ export interface ShellKnowledgeDrawerProps {
     onOpenSshModal?: () => void;
     onOpenPivotTab?: (type: "ssh" | "pty", target: string, pivotId: string) => void;
     onOpenSshWithTarget: (target: string, credentialId?: string) => void;
+    onRenamePivot?: (pivotId: string, newTitle: string) => void;
+    onResetPivotName?: (pivotId: string) => void;
     onLoadIntoComposer?: (code: string) => void;
     onStageToPrompt?: (code: string) => void;
 }
@@ -107,6 +109,8 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
     onOpenSshModal,
     onOpenPivotTab,
     onOpenSshWithTarget,
+    onRenamePivot,
+    onResetPivotName,
 }) => {
     const [activeSection, setActiveSection] = useState<GraphSectionFilter>("pivots");
     const [searchQuery, setSearchQuery] = useState("");
@@ -388,6 +392,8 @@ export const ShellKnowledgeDrawer: React.FC<ShellKnowledgeDrawerProps> = ({
                         onOpenSshModal={onOpenSshModal}
                         onOpenSshWithTarget={onOpenSshWithTarget}
                         onOpenPivotTab={onOpenPivotTab}
+                        onRenamePivot={onRenamePivot}
+                        onResetPivotName={onResetPivotName}
                     />
                 )}
                 {showShells && (
