@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -120,5 +122,32 @@ func TestDownloadLink(t *testing.T) {
 		defer result.Body.Close()
 
 		assert.Equal(t, largeContent, body)
+	})
+
+	t.Run("ConcurrentDownloadLimit", func(t *testing.T) {
+		limitedLink := graph.Link.Create().
+			SetAsset(existingAsset).
+			SetExpiresAt(time.Now().Add(1 * time.Hour)).
+			SetDownloadLimit(1).
+			SaveX(ctx)
+
+		var ok atomic.Int32
+		var wg sync.WaitGroup
+		for i := 0; i < 20; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/download/%s", limitedLink.Path), nil)
+				w := httptest.NewRecorder()
+				handler.ServeHTTP(w, req)
+				if w.Result().StatusCode == http.StatusOK {
+					ok.Add(1)
+				}
+			}()
+		}
+		wg.Wait()
+
+		assert.Equal(t, int32(1), ok.Load())
+		assert.Equal(t, 1, graph.Link.GetX(ctx, limitedLink.ID).Downloads)
 	})
 }
