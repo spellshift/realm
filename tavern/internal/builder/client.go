@@ -187,6 +187,10 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 }
 
 func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, sem *semaphore.Weighted) error {
+	// ClaimBuildTasks also refreshes the builder's last_seen_at heartbeat on
+	// the server, so this call must happen on every poll regardless of how
+	// many builds are currently running, instead of being blocked behind a
+	// full semaphore (see spellshift/realm#2400).
 	resp, err := client.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
 	if err != nil {
 		return fmt.Errorf("failed to claim build tasks: %w", err)
@@ -199,11 +203,16 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, e
 			"build_image", task.BuildImage,
 		)
 
-		// Acquire semaphore slot (blocks if at max concurrency).
-		if err := sem.Acquire(ctx, 1); err != nil {
-			return fmt.Errorf("failed to acquire semaphore: %w", err)
-		}
+		// Dispatch immediately rather than blocking the polling/heartbeat
+		// loop on sem.Acquire: the semaphore wait now happens inside the
+		// goroutine, so claimAndExecuteTasks (and therefore the next
+		// ClaimBuildTasks heartbeat) is never held up by build concurrency.
 		go func(t *builderpb.BuildTaskSpec) {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				slog.ErrorContext(ctx, "failed to acquire semaphore for build task",
+					"task_id", t.Id, "error", err)
+				return
+			}
 			defer sem.Release(1)
 			executeTask(ctx, client, exec, t)
 		}(task)
