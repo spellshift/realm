@@ -12,11 +12,10 @@ use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
 #[cfg(feature = "stdlib")]
 use crate::agent::Agent;
 
+pub mod callback_interval_impl;
 pub mod claim_tasks_impl;
+pub mod config_impl;
 pub mod fetch_asset_impl;
-pub mod get_callback_interval_impl;
-pub mod get_config_impl;
-pub mod get_transport_impl;
 pub mod list_tasks_impl;
 pub mod list_transports_impl;
 pub mod report_credential_impl;
@@ -28,6 +27,7 @@ pub mod set_callback_interval_impl;
 pub mod set_callback_uri_impl;
 pub mod stop_task_impl;
 pub mod terminate_impl;
+pub mod transport_impl;
 
 // We need manual Debug impl, and we need to put the macro on the struct.
 #[eldritch_library_impl(AgentLibrary)]
@@ -52,7 +52,11 @@ impl StdAgentLibrary {
 
 impl AgentLibrary for StdAgentLibrary {
     fn get_config(&self) -> Result<BTreeMap<String, Value>, String> {
-        get_config_impl::get_config(self.agent.clone())
+        self.config()
+    }
+
+    fn config(&self) -> Result<BTreeMap<String, Value>, String> {
+        config_impl::config(self.agent.clone())
     }
 
     fn _terminate_this_process_clowntown(&self) -> Result<(), String> {
@@ -103,7 +107,11 @@ impl AgentLibrary for StdAgentLibrary {
 
     // Agent Configuration
     fn get_transport(&self) -> Result<String, String> {
-        get_transport_impl::get_transport(self.agent.clone())
+        self.transport()
+    }
+
+    fn transport(&self) -> Result<String, String> {
+        transport_impl::transport(self.agent.clone())
     }
 
     fn reset_transport(&self) -> Result<(), String> {
@@ -119,7 +127,11 @@ impl AgentLibrary for StdAgentLibrary {
     }
 
     fn get_callback_interval(&self) -> Result<i64, String> {
-        get_callback_interval_impl::get_callback_interval(self.agent.clone())
+        self.callback_interval()
+    }
+
+    fn callback_interval(&self) -> Result<i64, String> {
+        callback_interval_impl::callback_interval(self.agent.clone())
     }
 
     // Task Management

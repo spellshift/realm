@@ -140,10 +140,71 @@ fn test_encode_decode() {
         s2 = b.decode()
         assert_eq(s2, "hello")
         assert_eq(type(s2), "string")
+        # Explicit utf8 / utf-8
+        assert_eq(s.encode("utf8"), b"hello")
+        assert_eq(s.encode("utf-8"), b"hello")
+        assert_eq(b.decode("utf8"), "hello")
+        assert_eq(b.decode("utf-8"), "hello")
+        # UTF-16LE encode and decode
+        b16 = s.encode("utf16le")
+        assert_eq(b16, b"h\x00e\x00l\x00l\x00o\x00")
+        assert_eq(s.encode("utf-16le"), b16)
+        assert_eq(b16.decode("utf16le"), "hello")
+        assert_eq(b16.decode("utf-16le"), "hello")
+        # str() and bytes() assume default utf8
+        assert_eq(str(b"hello"), "hello")
+        assert_eq(bytes("hello"), b"hello")
+        assert_eq(bytes(b"hello"), b"hello")
+        assert_eq(repr(b"hello"), 'b"hello"')
+        assert_eq(f"{b'hello'}", "hello")
+        assert_eq("{}".format(b"hello"), "hello")
+        assert_eq("-".join([b"a", "b"]), "a-b")
+        assert_eq(int(b"42"), 42)
+        assert_eq(int(b"2a", 16), 42)
+        assert_eq(float(b"3.5"), 3.5)
+        assert_eq(eval(b"20 + 22"), 42)
+        assert_eq(s.encode(b"utf8"), b"hello")
+        assert_eq(b.decode(b"utf8"), "hello")
         # Raw byte literal with hex escapes
         s3 = b"\x41\x42\x43".decode()
         assert_eq(s3, "ABC")
     "#,
+    );
+    assert::fail(r#""hello".encode("ascii")"#, "unknown encoding");
+    assert::fail(r#"b"hello".decode("ascii")"#, "unknown encoding");
+    assert::fail(r#"b"abc".decode("utf16le")"#, "multiple of 2");
+}
+
+#[test]
+fn test_print_and_from_value_bytes_and_strings() {
+    use eldritch_core::conversion::FromValue;
+    use eldritch_core::{BufferPrinter, Interpreter, Value};
+    use std::sync::Arc;
+
+    let printer = Arc::new(BufferPrinter::new());
+    let mut interp = Interpreter::new_with_printer(printer.clone());
+    interp.interpret(r#"print(b"stuff")"#).unwrap();
+    assert_eq!(printer.read_out(), "stuff");
+    assert_eq!(printer.read_err(), "");
+
+    printer.clear();
+    interp.interpret(r#"eprint(b"error stuff")"#).unwrap();
+    assert_eq!(printer.read_out(), "");
+    assert_eq!(printer.read_err(), "error stuff");
+
+    // Verify FromValue accepts both String and Bytes for String and Vec<u8>
+    let v_str = Value::String("my string".to_string());
+    let v_bytes = Value::Bytes(b"my bytes".to_vec());
+
+    assert_eq!(String::from_value(&v_str).unwrap(), "my string");
+    assert_eq!(String::from_value(&v_bytes).unwrap(), "my bytes");
+    assert_eq!(
+        Vec::<u8>::from_value(&v_str).unwrap(),
+        b"my string".to_vec()
+    );
+    assert_eq!(
+        Vec::<u8>::from_value(&v_bytes).unwrap(),
+        b"my bytes".to_vec()
     );
 }
 

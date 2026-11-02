@@ -37,6 +37,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: '',
         assetName: '',
         userId: '',
+        agentOnly: false,
       });
       expect(result.current.isLocked).toBe(false);
     });
@@ -51,6 +52,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: 'search-term',
         assetName: '',
         userId: '',
+        agentOnly: false,
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -67,6 +69,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: 'search-term',
         assetName: '',
         userId: '',
+        agentOnly: false,
       });
       expect(result.current.isLocked).toBe(true);
     });
@@ -81,6 +84,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: 'search-term',
         assetName: '',
         userId: '',
+        agentOnly: false,
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -97,6 +101,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: '',
         assetName: '',
         userId: '',
+        agentOnly: false,
       });
       expect(result.current.isLocked).toBe(false);
     });
@@ -118,6 +123,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: '',
         assetName: '',
         userId: '',
+        agentOnly: false,
       });
       expect(result.current.isLocked).toBe(false);
     });
@@ -244,6 +250,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: '',
         assetName: '',
         userId: '',
+        agentOnly: false,
       });
       expect(result.current.isLocked).toBe(false);
     });
@@ -264,6 +271,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: 'external-search',
         assetName: '',
         userId: '',
+        agentOnly: false,
       };
 
       act(() => {
@@ -282,6 +290,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: 'external-search',
         assetName: '',
         userId: '',
+        agentOnly: false,
       });
       expect(result.current.isLocked).toBe(true);
     });
@@ -306,6 +315,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: 'external-search',
         assetName: '',
         userId: '',
+        agentOnly: false,
       };
 
       act(() => {
@@ -325,6 +335,7 @@ describe('FilterContext', () => {
         tomeMultiSearch: '',
         assetName: '',
         userId: '',
+        agentOnly: false,
       });
       expect(result.current.isLocked).toBe(false);
     });
@@ -357,7 +368,13 @@ describe('FilterContext', () => {
       tomeMultiSearch: '',
       assetName: '',
       userId: '',
+      agentOnly: false,
     };
+
+    it('should count agent filter correctly', () => {
+      expect(calculateFilterCount(baseFilters, FilterFieldType.AGENT)).toBe(0);
+      expect(calculateFilterCount({ ...baseFilters, agentOnly: true }, FilterFieldType.AGENT)).toBe(1);
+    });
 
     it('should count string fields correctly', () => {
       // Empty strings
@@ -408,6 +425,7 @@ describe('FilterContext', () => {
       tomeMultiSearch: '',
       assetName: '',
       userId: '',
+      agentOnly: false,
     };
 
     it('should return 0 when all filters are empty', () => {
@@ -444,6 +462,7 @@ describe('FilterContext', () => {
         ],
         assetName: '',
         userId: '',
+        agentOnly: false,
       };
 
       const allFields = Object.values(FilterFieldType);

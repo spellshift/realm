@@ -204,8 +204,73 @@ impl DNS {
             .context("failed to receive DNS response")?;
         buf.truncate(len);
 
+        // If the response is truncated (TC bit set), the full answer is
+        // available over TCP. Retry over TCP so we don't lose part of a
+        // multi-record TXT payload.
+        if buf.len() >= 3 && buf[2] & 0x02 == 0x02 {
+            return self.try_dns_query_tcp(server, query, expected_txid).await;
+        }
+
         // Parse and validate response
         self.parse_dns_response(&buf, expected_txid)
+    }
+
+    /// Try a single DNS query over TCP (used when the UDP response is truncated).
+    async fn try_dns_query_tcp(
+        &self,
+        server: &str,
+        query: &[u8],
+        expected_txid: u16,
+    ) -> Result<Vec<u8>> {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpStream;
+
+        // The server may be "host:port" or "host". Normalize to a TcpStream.
+        let (host, port) = match server.rsplit_once(':') {
+            Some((h, p)) => (h.to_string(), p.to_string()),
+            None => (server.to_string(), "53".to_string()),
+        };
+        let addr = format!("{}:{}", host, port);
+        let mut stream = tokio::time::timeout(
+            std::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS),
+            TcpStream::connect(&addr),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("DNS TCP connect timeout after {}s", DNS_QUERY_TIMEOUT_SECS))?
+        .with_context(|| format!("failed to connect to DNS server {} over TCP", addr))?;
+
+        // DNS over TCP: 2-byte length prefix followed by the message.
+        let mut framed = Vec::with_capacity(query.len() + 2);
+        framed.extend_from_slice(&(query.len() as u16).to_be_bytes());
+        framed.extend_from_slice(query);
+
+        stream
+            .write_all(&framed)
+            .await
+            .context("failed to send DNS query over TCP")?;
+
+        // Read the 2-byte length prefix, then the full response.
+        let mut len_buf = [0u8; 2];
+        tokio::time::timeout(
+            std::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS),
+            stream.read_exact(&mut len_buf),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("DNS TCP read timeout after {}s", DNS_QUERY_TIMEOUT_SECS))?
+        .context("failed to read DNS response length over TCP")?;
+        let resp_len = u16::from_be_bytes(len_buf) as usize;
+
+        let mut resp = vec![0u8; resp_len];
+        tokio::time::timeout(
+            std::time::Duration::from_secs(DNS_QUERY_TIMEOUT_SECS),
+            stream.read_exact(&mut resp),
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("DNS TCP read timeout after {}s", DNS_QUERY_TIMEOUT_SECS))?
+        .context("failed to read DNS response over TCP")?;
+
+        // Parse and validate response
+        self.parse_dns_response(&resp, expected_txid)
     }
 
     /// Build DNS query packet with random transaction ID
@@ -254,6 +319,20 @@ impl DNS {
         // Class: IN (1)
         query.extend_from_slice(&[0x00, 0x01]);
 
+        // EDNS0 OPT pseudo-record (RFC 6891). We advertise the classic
+        // 512-byte payload size so middleboxes / recursive resolvers do not
+        // mark our responses as malformed; tavern's redirector echoes this
+        // OPT with the same 512-byte ceiling (see sendDNSResponse). Without
+        // it, some recursors (e.g. Google Public DNS) can truncate larger
+        // answers or serve empty/SERVFAIL to clients that don't signal EDNS0.
+        query.extend_from_slice(&[
+            0x00, // root name
+            0x00, 0x29, // type OPT (41)
+            0x02, 0x00, // class = UDP payload size (512)
+            0x00, 0x00, 0x00, 0x00, // TTL: ext rcode/version/flags (0)
+            0x00, 0x00, // RDLEN 0
+        ]);
+
         Ok((query, txid))
     }
 
@@ -290,12 +369,42 @@ impl DNS {
         let mut all_data = Vec::new();
 
         for _ in 0..answer_count {
-            if offset + 10 > response.len() {
+            if offset + 2 > response.len() {
                 return Err(anyhow::anyhow!("Invalid DNS response format"));
             }
 
-            // Skip name (2 bytes pointer), type (2), class (2), TTL (4)
-            offset += 10;
+            // Skip the answer owner name.
+            // Recursive resolvers may return the name either as a 2-byte
+            // compression pointer (as tavern emits, 0xC00C) or re-encoded as
+            // a full expanded sequence of length-prefixed labels. Both forms
+            // must be handled before reading TYPE (2), CLASS (2), TTL (4).
+            if response[offset] & 0xC0 == 0xC0 {
+                // Compression pointer: 2 bytes (offset into the message).
+                offset += 2;
+            } else {
+                // Expanded name: length-prefixed labels terminated by a 0 byte.
+                loop {
+                    if offset >= response.len() {
+                        return Err(anyhow::anyhow!("Invalid DNS response format"));
+                    }
+                    let label_len = response[offset] as usize;
+                    offset += 1;
+                    if label_len == 0 {
+                        break; // Root label (end of name)
+                    }
+                    if offset + label_len > response.len() {
+                        return Err(anyhow::anyhow!("Invalid DNS record length"));
+                    }
+                    offset += label_len;
+                }
+            }
+
+            if offset + 8 > response.len() {
+                return Err(anyhow::anyhow!("Invalid DNS response format"));
+            }
+
+            // Skip type (2), class (2), TTL (4)
+            offset += 8;
 
             // Read data length
             let data_len = u16::from_be_bytes([response[offset], response[offset + 1]]) as usize;
@@ -724,6 +833,23 @@ impl DNS {
         Ok(())
     }
 
+    /// Decide whether a FETCH that returned an empty response should be retried.
+    ///
+    /// The redirector serves an empty TXT payload while its upstream gRPC call
+    /// is still in flight; retry until the attempt budget is exhausted. Each
+    /// retry also increments the FETCH `sequence` so the QNAME differs per
+    /// attempt, avoiding recursive-resolver caching of the empty answer.
+    fn fetch_should_retry(attempt: usize) -> bool {
+        attempt + 1 < conv::FETCH_MAX_ATTEMPTS
+    }
+
+    /// The `sequence` used for a FETCH attempt. Incrementing per attempt keeps
+    /// each retry's encoded QNAME distinct so recursive resolvers don't serve a
+    /// cached empty "in progress" answer instead of forwarding the retry.
+    fn fetch_sequence(total_chunks: usize, attempt: usize) -> u32 {
+        (total_chunks + 1 + attempt) as u32
+    }
+
     /// Fetch response from server, handling potentially chunked responses
     async fn fetch_response(&mut self, conv_id: &str, total_chunks: usize) -> Result<Vec<u8>> {
         #[cfg(feature = "print_debug")]
@@ -732,47 +858,71 @@ impl DNS {
             total_chunks
         );
 
-        let fetch_packet = ConvPacket {
-            r#type: PacketType::Fetch as i32,
-            sequence: (total_chunks + 1) as u32,
-            conversation_id: conv_id.to_string(),
-            data: vec![],
-            crc32: 0,
-            acks: vec![],
-            nacks: vec![],
-        };
+        // The redirector can answer a FETCH with an empty TXT payload while its
+        // upstream gRPC call is still in flight. Retry (like the ICMP transport)
+        // instead of failing the whole exchange; the server stores the response
+        // shortly after and subsequent FETCHes return it.
+        //
+        // Each retry uses a distinct `sequence` so the encoded QNAME differs per
+        // attempt: recursive resolvers cache the empty "in progress" answer with
+        // a non-zero TTL, so re-sending the identical QNAME would just get re-served
+        // the cached empty reply and never reach the redirector again. The server's
+        // HandleFetch ignores `sequence` entirely (only ConversationId/Data matter), so
+        // this is wire-safe.
+        for attempt in 0..conv::FETCH_MAX_ATTEMPTS {
+            let fetch_packet = ConvPacket {
+                r#type: PacketType::Fetch as i32,
+                sequence: Self::fetch_sequence(total_chunks, attempt),
+                conversation_id: conv_id.to_string(),
+                data: vec![],
+                crc32: 0,
+                acks: vec![],
+                nacks: vec![],
+            };
 
-        let end_response = self.send_packet(fetch_packet).await.with_context(|| {
-            format!(
-                "failed to fetch response from server for conv_id={}",
-                conv_id
-            )
-        })?;
+            let end_response = self.send_packet(fetch_packet).await.with_context(|| {
+                format!(
+                    "failed to fetch response from server for conv_id={}",
+                    conv_id
+                )
+            })?;
 
-        #[cfg(feature = "print_debug")]
-        log::debug!(
-            "DNS: FETCH response received ({} bytes)",
-            end_response.len()
-        );
+            #[cfg(feature = "print_debug")]
+            log::debug!(
+                "DNS: FETCH response received ({} bytes, attempt {}/{})",
+                end_response.len(),
+                attempt + 1,
+                conv::FETCH_MAX_ATTEMPTS
+            );
 
-        // Validate response is not empty
-        if end_response.is_empty() {
-            return Err(anyhow::anyhow!("Server returned empty response."));
-        }
-
-        // Check if response is chunked
-        if let Ok(metadata) = ResponseMetadata::decode(&end_response[..]) {
-            if metadata.total_chunks > 0 {
-                return self
-                    .fetch_chunked_response(conv_id, total_chunks, &metadata)
-                    .await;
+            // Upstream response not ready yet - retry after a short delay.
+            if end_response.is_empty() {
+                if Self::fetch_should_retry(attempt) {
+                    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                    continue;
+                }
+                return Err(anyhow::anyhow!(
+                    "Server returned empty response after {} FETCH attempts.",
+                    conv::FETCH_MAX_ATTEMPTS
+                ));
             }
+
+            // Check if response is chunked
+            if let Ok(metadata) = ResponseMetadata::decode(&end_response[..]) {
+                if metadata.total_chunks > 0 {
+                    return self
+                        .fetch_chunked_response(conv_id, total_chunks, &metadata)
+                        .await;
+                }
+            }
+
+            // Response successfully received, send COMPLETE packet
+            self.send_complete_packet(conv_id).await?;
+
+            return Ok(end_response);
         }
 
-        // Response successfully received, send COMPLETE packet
-        self.send_complete_packet(conv_id).await?;
-
-        Ok(end_response)
+        unreachable!("FETCH loop always returns or errors")
     }
 
     /// Fetch and reassemble a chunked response from server
@@ -1442,6 +1592,155 @@ mod tests {
         let result = dns.parse_dns_response(&response, 0x5678); // Expect 0x5678
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("mismatch"));
+    }
+
+    /// Build a DNS response message for a TXT query with a single answer.
+    ///
+    /// Mirrors the wire format emitted by tavern's DNS redirector
+    /// (tavern/internal/redirectors/dns/dns.go sendDNSResponse).
+    ///
+    /// The answer owner name may be emitted as a 2-byte compression pointer
+    /// (what tavern sends) or as a full expanded name (how some recursive
+    /// resolvers re-encode the response before returning it to the client).
+    fn build_dns_response(packet_data: &[u8], expand_answer_name: bool) -> Vec<u8> {
+        let question_name = "baarcubspbzxez3yozucehqkcexwgmroimzc6q3mmfuw2vdbonvxgeaddcanz6g.mbuqjaaq.ad.cms-azure.com";
+        let txid: u16 = 0x1234;
+
+        let mut response = Vec::new();
+
+        // Header: ID, flags (0x8180 = response, RD+RA), QDCOUNT=1, ANCOUNT=1
+        response.extend_from_slice(&txid.to_be_bytes());
+        response.extend_from_slice(&[0x81, 0x80]);
+        response.extend_from_slice(&[0x00, 0x01]); // QDCOUNT
+        response.extend_from_slice(&[0x00, 0x01]); // ANCOUNT
+        response.extend_from_slice(&[0x00, 0x00]); // NSCOUNT
+        response.extend_from_slice(&[0x00, 0x00]); // ARCOUNT
+
+        // Question: QNAME, QTYPE=TXT(16), QCLASS=IN(1)
+        for label in question_name.split('.') {
+            response.push(label.len() as u8);
+            response.extend_from_slice(label.as_bytes());
+        }
+        response.push(0x00); // Root label
+        response.extend_from_slice(&[0x00, 0x10]); // QTYPE: TXT
+        response.extend_from_slice(&[0x00, 0x01]); // QCLASS: IN
+
+        // Answer owner name
+        if expand_answer_name {
+            // Full expanded name (how some resolvers re-encode the answer)
+            for label in question_name.split('.') {
+                response.push(label.len() as u8);
+                response.extend_from_slice(label.as_bytes());
+            }
+            response.push(0x00); // Root label
+        } else {
+            // Compression pointer to the question qname (0xC00C)
+            response.extend_from_slice(&[0xC0, 0x0C]);
+        }
+
+        // TYPE=TXT(16), CLASS=IN(1), TTL=60, RDLENGTH, RDATA
+        response.extend_from_slice(&[0x00, 0x10]); // TYPE: TXT
+        response.extend_from_slice(&[0x00, 0x01]); // CLASS: IN
+        response.extend_from_slice(&[0x00, 0x00, 0x00, 0x3c]); // TTL: 60
+
+        // TXT RDATA: `<len><bytes>` chunk(s)
+        let mut rdata = Vec::new();
+        let mut remaining = packet_data;
+        while !remaining.is_empty() {
+            let chunk_len = remaining.len().min(255);
+            rdata.push(chunk_len as u8);
+            rdata.extend_from_slice(&remaining[..chunk_len]);
+            remaining = &remaining[chunk_len..];
+        }
+        if rdata.is_empty() {
+            rdata.push(0x00);
+        }
+        response.extend_from_slice(&(rdata.len() as u16).to_be_bytes());
+        response.extend_from_slice(&rdata);
+
+        response
+    }
+
+    #[test]
+    fn test_parse_dns_response_pointer_name() {
+        // Regression: a response with the answer owner name as a compression
+        // pointer (what tavern's redirector emits) must parse.
+        let dns = DNS {
+            base_domain: String::new(),
+            dns_server: String::new(),
+            record_type: DnsRecordType::TXT,
+        };
+
+        let status_bytes = vec![
+            0x08, 0x04, 0x1a, 0x08, 0x32, 0x78, 0x73, 0x72, 0x67, 0x78, 0x76, 0x68,
+        ];
+        let response = build_dns_response(&status_bytes, false);
+
+        let result = dns.parse_dns_response(&response, 0x1234);
+        assert_eq!(result.unwrap(), status_bytes);
+    }
+
+    #[test]
+    fn test_parse_dns_response_expanded_name() {
+        // Regression: some recursive resolvers re-encode the answer owner
+        // name as a full expanded name instead of a compression pointer.
+        // The parser must not misread the record and fail with
+        // "Invalid DNS record length".
+        let dns = DNS {
+            base_domain: String::new(),
+            dns_server: String::new(),
+            record_type: DnsRecordType::TXT,
+        };
+
+        let status_bytes = vec![
+            0x08, 0x04, 0x1a, 0x08, 0x32, 0x78, 0x73, 0x72, 0x67, 0x78, 0x76, 0x68,
+        ];
+        let response = build_dns_response(&status_bytes, true);
+
+        let result = dns.parse_dns_response(&response, 0x1234);
+        assert_eq!(result.unwrap(), status_bytes);
+    }
+
+    #[test]
+    fn test_fetch_should_retry_empty_response() {
+        // Regression: the redirector returns an EMPTY TXT answer while its
+        // upstream gRPC call is still in flight ("response not ready yet - upstream
+        // call in progress"). The agent must retry the FETCH instead of failing the
+        // whole exchange; only give up once the attempt budget is exhausted.
+        assert!(DNS::fetch_should_retry(0)); // First empty response: retry.
+        assert!(DNS::fetch_should_retry(conv::FETCH_MAX_ATTEMPTS - 2));
+        assert!(!DNS::fetch_should_retry(conv::FETCH_MAX_ATTEMPTS - 1)); // Last attempt: give up.
+        assert!(!DNS::fetch_should_retry(conv::FETCH_MAX_ATTEMPTS));
+    }
+
+    #[test]
+    fn test_fetch_empty_response_error_message() {
+        // The exhaustion error should be explicit about the retry budget so the
+        // operator can distinguish an in-flight upstream from a hard failure.
+        let err = anyhow::anyhow!(
+            "Server returned empty response after {} FETCH attempts.",
+            conv::FETCH_MAX_ATTEMPTS
+        );
+        let msg = err.to_string();
+        assert!(msg.starts_with("Server returned empty response after"));
+        assert!(msg.contains(&conv::FETCH_MAX_ATTEMPTS.to_string()));
+    }
+
+    #[test]
+    fn test_fetch_sequence_distinct_per_attempt() {
+        // Regression: each FETCH retry must encode a DIFFERENT QNAME so recursive
+        // resolvers don't re-serve the cached empty "in progress" answer (TTL 60)
+        // instead of forwarding the retry to the redirector. The `sequence` field
+        // varies per attempt (the server ignores `sequence`, so this is wire-safe).
+        let base = 3usize; // total_chunks
+        let seq0 = DNS::fetch_sequence(base, 0);
+        let seq1 = DNS::fetch_sequence(base, 1);
+        let seq9 = DNS::fetch_sequence(base, conv::FETCH_MAX_ATTEMPTS - 1);
+        assert_ne!(seq0, seq1);
+        assert_ne!(seq0, seq9);
+        // Base sequence is still total_chunks+1 on the first attempt.
+        assert_eq!(seq0, (base + 1) as u32);
+        assert_eq!(seq9, (base + conv::FETCH_MAX_ATTEMPTS) as u32);
     }
 
     // ============================================================

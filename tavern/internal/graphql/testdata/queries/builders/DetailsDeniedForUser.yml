@@ -1,0 +1,10 @@
+state: |
+  INSERT INTO users (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"user_oauth","https://photos.com","operator","userToken","accessToken",true,false);
+requestor:
+  session_token: userToken
+query: |
+  query Builders {
+    builders { edges { node { identifier } } }
+  }
+expected_error: requires administrative privileges

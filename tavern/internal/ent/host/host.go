@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/99designs/gqlgen/graphql"
@@ -53,6 +54,8 @@ const (
 	EdgeEvents = "events"
 	// EdgeSubscribers holds the string denoting the subscribers edge name in mutations.
 	EdgeSubscribers = "subscribers"
+	// EdgeNetworkHosts holds the string denoting the network_hosts edge name in mutations.
+	EdgeNetworkHosts = "network_hosts"
 	// Table holds the table name of the host in the database.
 	Table = "hosts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -112,6 +115,13 @@ const (
 	// SubscribersInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	SubscribersInverseTable = "users"
+	// NetworkHostsTable is the table that holds the network_hosts relation/edge.
+	NetworkHostsTable = "network_hosts"
+	// NetworkHostsInverseTable is the table name for the NetworkHost entity.
+	// It exists in this package in order to avoid circular dependency with the "networkhost" package.
+	NetworkHostsInverseTable = "network_hosts"
+	// NetworkHostsColumn is the table column denoting the network_hosts relation/edge.
+	NetworkHostsColumn = "network_host_host"
 )
 
 // Columns holds all SQL columns for host fields.
@@ -161,7 +171,13 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "realm.pub/tavern/internal/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultLastModifiedAt holds the default value on creation for the "last_modified_at" field.
@@ -362,6 +378,20 @@ func BySubscribers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newSubscribersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByNetworkHostsCount orders the results by network_hosts count.
+func ByNetworkHostsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNetworkHostsStep(), opts...)
+	}
+}
+
+// ByNetworkHosts orders the results by network_hosts terms.
+func ByNetworkHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNetworkHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -423,6 +453,13 @@ func newSubscribersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SubscribersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, true, SubscribersTable, SubscribersPrimaryKey...),
+	)
+}
+func newNetworkHostsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NetworkHostsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, NetworkHostsTable, NetworkHostsColumn),
 	)
 }
 

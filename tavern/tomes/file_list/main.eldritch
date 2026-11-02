@@ -1,4 +1,4 @@
-usernfo = sys.get_user()
+usernfo = user.info()
 
 name = {
     "Directory": "Dir",

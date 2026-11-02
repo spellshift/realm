@@ -8,10 +8,17 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
 
 	"entgo.io/contrib/entgql"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	entbuilder "realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/operatornote"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Assets is the resolver for the assets field.
@@ -255,6 +262,34 @@ func (r *queryResolver) Builders(ctx context.Context, after *entgql.Cursor[int],
 	return query.Paginate(ctx, after, first, before, last, ent.WithBuilderOrder(orderBy))
 }
 
+// OnlineBuilderPlatforms is the resolver for the onlineBuilderPlatforms field.
+func (r *queryResolver) OnlineBuilderPlatforms(ctx context.Context) ([]c2pb.Host_Platform, error) {
+	now := time.Now()
+	builders, err := r.client.Builder.Query().
+		Where(entbuilder.LastSeenAtNotNil(), entbuilder.LastSeenAtGTE(now.Add(-builder.MaxStaleAge))).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query online builder platforms: %w", err)
+	}
+
+	platforms := make(map[c2pb.Host_Platform]struct{})
+	for _, b := range builders {
+		if !builder.BuilderHealthy(*b.LastSeenAt, b.PollInterval, now) {
+			continue
+		}
+		for _, platform := range b.SupportedTargets {
+			platforms[platform] = struct{}{}
+		}
+	}
+
+	available := make([]c2pb.Host_Platform, 0, len(platforms))
+	for platform := range platforms {
+		available = append(available, platform)
+	}
+	sort.Slice(available, func(i, j int) bool { return available[i] < available[j] })
+	return available, nil
+}
+
 // ScheduledTasks is the resolver for the scheduledTasks field.
 func (r *queryResolver) ScheduledTasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) (*ent.ScheduledTaskConnection, error) {
 	query, err := r.client.ScheduledTask.Query().CollectFields(ctx)
@@ -269,6 +304,57 @@ func (r *queryResolver) ScheduledTasks(ctx context.Context, after *entgql.Cursor
 		return query.Paginate(ctx, after, first, before, last, ent.WithScheduledTaskOrder(orderBy))
 	}
 	return query.Paginate(ctx, after, first, before, last, ent.WithScheduledTaskOrder(orderBy))
+}
+
+// Networks is the resolver for the networks field.
+func (r *queryResolver) Networks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkOrder, where *ent.NetworkWhereInput) (*ent.NetworkConnection, error) {
+	query, err := r.client.Network.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithNetworkOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithNetworkOrder(orderBy))
+}
+
+// NetworkHosts is the resolver for the networkHosts field.
+func (r *queryResolver) NetworkHosts(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NetworkHostOrder, where *ent.NetworkHostWhereInput) (*ent.NetworkHostConnection, error) {
+	query, err := r.client.NetworkHost.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithNetworkHostOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithNetworkHostOrder(orderBy))
+}
+
+// OperatorNotes is the resolver for the operatorNotes field.
+func (r *queryResolver) OperatorNotes(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) (*ent.OperatorNoteConnection, error) {
+	query, err := r.client.OperatorNote.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if authUser := auth.UserFromContext(ctx); authUser != nil {
+		query = query.Where(operatornote.HasAuthorWith(user.ID(authUser.ID)))
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithOperatorNoteOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithOperatorNoteOrder(orderBy))
 }
 
 // Me is the resolver for the me field.

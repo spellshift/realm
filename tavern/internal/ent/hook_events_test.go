@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -385,5 +386,114 @@ func TestHookDeriveUserRequestEvents(t *testing.T) {
 		}
 		assert.True(t, notifUserIDs[admin1.ID], "admin1 should be notified")
 		assert.True(t, notifUserIDs[admin2.ID], "admin2 should be notified")
+	})
+}
+
+func TestHookDeriveNetworkHost(t *testing.T) {
+	t.Run("creates NetworkHost mapped to new Host with PrimaryIP", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		ctx := context.Background()
+
+		h, err := client.Host.Create().
+			SetIdentifier("host-nh-1").
+			SetName("web-server-01").
+			SetPrimaryIP("10.0.1.25").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			Save(ctx)
+		require.NoError(t, err)
+
+		nh, err := client.NetworkHost.Query().
+			Where(networkhost.HasHostWith(host.ID(h.ID))).
+			WithHost().
+			Only(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, "web-server-01", nh.Name)
+		assert.Equal(t, "web-server-01", nh.Hostname)
+		assert.Equal(t, "10.0.1.25", nh.IPAddress)
+		assert.Equal(t, "10.0.1.0/24", nh.Subnet)
+		require.NotNil(t, nh.Edges.Host)
+		assert.Equal(t, h.ID, nh.Edges.Host.ID)
+	})
+
+	t.Run("falls back to ExternalIP when PrimaryIP is empty", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		ctx := context.Background()
+
+		h, err := client.Host.Create().
+			SetIdentifier("host-nh-ext").
+			SetName("edge-gateway").
+			SetExternalIP("192.168.10.5").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			Save(ctx)
+		require.NoError(t, err)
+
+		nh, err := client.NetworkHost.Query().
+			Where(networkhost.HasHostWith(host.ID(h.ID))).
+			Only(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, "edge-gateway", nh.Name)
+		assert.Equal(t, "edge-gateway", nh.Hostname)
+		assert.Equal(t, "192.168.10.5", nh.IPAddress)
+		assert.Equal(t, "192.168.10.0/24", nh.Subnet)
+	})
+
+	t.Run("skips NetworkHost creation when no IP is available", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		ctx := context.Background()
+
+		h, err := client.Host.Create().
+			SetIdentifier("host-nh-no-ip").
+			SetName("no-ip-host").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			Save(ctx)
+		require.NoError(t, err)
+
+		count, err := client.NetworkHost.Query().
+			Where(networkhost.HasHostWith(host.ID(h.ID))).
+			Count(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("does not duplicate NetworkHost on upsert", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		ctx := context.Background()
+
+		hostID, err := client.Host.Create().
+			SetIdentifier("host-nh-upsert").
+			SetName("db-primary").
+			SetPrimaryIP("10.10.0.50").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			OnConflict().
+			UpdateNewValues().
+			ID(ctx)
+		require.NoError(t, err)
+
+		// Second upsert (simulating repeated beacon check-in)
+		_, err = client.Host.Create().
+			SetIdentifier("host-nh-upsert").
+			SetName("db-primary").
+			SetPrimaryIP("10.10.0.50").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			OnConflict().
+			UpdateNewValues().
+			ID(ctx)
+		require.NoError(t, err)
+
+		nhs, err := client.NetworkHost.Query().
+			Where(networkhost.HasHostWith(host.ID(hostID))).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, nhs, 1)
+		assert.Equal(t, "db-primary", nhs[0].Name)
+		assert.Equal(t, "10.10.0.50", nhs[0].IPAddress)
 	})
 }

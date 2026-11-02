@@ -1,927 +1,529 @@
 {
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "Eldritch",
     "scopeName": "source.eldritch",
-    "fileTypes": ["eldritch"],
+    "fileTypes": [
+        "eldritch",
+        "tome"
+    ],
     "patterns": [
-        {
-            "include": "#statement"
-        },
-        {
-            "include": "#expression"
-        }
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#function-def" },
+        { "include": "#keywords" },
+        { "include": "#constants" },
+        { "include": "#types" },
+        { "include": "#stdlib-calls" },
+        { "include": "#stdlib-modules" },
+        { "include": "#builtins" },
+        { "include": "#method-calls" },
+        { "include": "#function-calls" },
+        { "include": "#keyword-arguments" },
+        { "include": "#numbers" },
+        { "include": "#illegal-operators" },
+        { "include": "#operators" },
+        { "include": "#punctuation" }
     ],
     "repository": {
-        "statement": {
+        "comments": {
             "patterns": [
                 {
-                    "include": "#function-definition"
-                },
-                {
-                    "include": "#statement-keyword"
-                },
-                {
-                    "include": "#assignment-operator"
-                },
-                {
-                    "include": "#docstring-statement"
-                },
-                {
-                    "include": "#discouraged-semicolon"
-                }
-            ]
-        },
-        "docstring-statement": {
-            "begin": "^(?=\\s*r?('''|\"\"\"|'|\"))",
-            "end": "(?<='''|\"\"\"|'|\")",
-            "patterns": [
-                {
-                    "include": "#docstring"
-                }
-            ]
-        },
-        "docstring": {
-            "patterns": [
-                {
-                    "name": "comment.block.documentation.eldritch",
-                    "begin": "('''|\"\"\")",
-                    "end": "(\\1)",
+                    "name": "comment.line.number-sign.eldritch",
+                    "begin": "#",
                     "beginCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.begin.eldritch"
-                        }
+                        "0": { "name": "punctuation.definition.comment.eldritch" }
                     },
-                    "endCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.end.eldritch"
-                        }
-                    },
+                    "end": "$",
                     "patterns": [
                         {
-                            "include": "#code-tag"
-                        },
-                        {
-                            "include": "#docstring-content"
-                        }
-                    ]
-                },
-                {
-                    "name": "comment.block.documentation.eldritch",
-                    "begin": "(r)('''|\"\"\")",
-                    "end": "(\\2)",
-                    "beginCaptures": {
-                        "1": {
-                            "name": "storage.type.string.eldritch"
-                        },
-                        "2": {
-                            "name": "punctuation.definition.string.begin.eldritch"
-                        }
-                    },
-                    "endCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.end.eldritch"
-                        }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#string-consume-escape"
-                        },
-                        {
-                            "include": "#code-tag"
-                        }
-                    ]
-                },
-                {
-                    "name": "comment.line.documentation.eldritch",
-                    "begin": "('|\")",
-                    "end": "(\\1)|((?<!\\\\)\\n)",
-                    "beginCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.begin.eldritch"
-                        }
-                    },
-                    "endCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.end.eldritch"
-                        },
-                        "2": {
-                            "name": "invalid.illegal.newline.eldritch"
-                        }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#code-tag"
-                        },
-                        {
-                            "include": "#docstring-content"
-                        }
-                    ]
-                },
-                {
-                    "name": "comment.line.documentation.eldritch",
-                    "begin": "(r)('|\")",
-                    "end": "(\\2)|((?<!\\\\)\\n)",
-                    "beginCaptures": {
-                        "1": {
-                            "name": "storage.type.string.eldritch"
-                        },
-                        "2": {
-                            "name": "punctuation.definition.string.begin.eldritch"
-                        }
-                    },
-                    "endCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.end.eldritch"
-                        },
-                        "2": {
-                            "name": "invalid.illegal.newline.eldritch"
-                        }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#string-consume-escape"
-                        },
-                        {
-                            "include": "#code-tag"
+                            "name": "keyword.codetag.notation.eldritch",
+                            "match": "\\b(TODO|FIXME|NOTE|HACK|XXX|BUG|WARNING|DEPRECATED)\\b"
                         }
                     ]
                 }
             ]
         },
-        "docstring-content": {
+        "strings": {
             "patterns": [
                 {
-                    "include": "#string-escape-sequence"
+                    "name": "string.interpolated.triple.double.eldritch",
+                    "begin": "\\b([fF][rR]?|[rR][fF])(\"\"\")",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "\"\"\"",
+                    "endCaptures": {
+                        "0": { "name": "punctuation.definition.string.end.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#fstring-interpolation" },
+                        { "include": "#string-escapes" }
+                    ]
                 },
                 {
-                    "include": "#discouraged-string-line-continuation"
+                    "name": "string.interpolated.triple.single.eldritch",
+                    "begin": "\\b([fF][rR]?|[rR][fF])(''')",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "'''",
+                    "endCaptures": {
+                        "0": { "name": "punctuation.definition.string.end.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#fstring-interpolation" },
+                        { "include": "#string-escapes" }
+                    ]
+                },
+                {
+                    "name": "string.quoted.triple.double.eldritch",
+                    "begin": "(\\b(?:[bB][rR]?|[rR][bB]?)?)(\"\"\")",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "\"\"\"",
+                    "endCaptures": {
+                        "0": { "name": "punctuation.definition.string.end.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#string-escapes" }
+                    ]
+                },
+                {
+                    "name": "string.quoted.triple.single.eldritch",
+                    "begin": "(\\b(?:[bB][rR]?|[rR][bB]?)?)(''')",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "'''",
+                    "endCaptures": {
+                        "0": { "name": "punctuation.definition.string.end.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#string-escapes" }
+                    ]
+                },
+                {
+                    "name": "string.interpolated.double.eldritch",
+                    "begin": "\\b([fF][rR]?|[rR][fF])(\")",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "(\")|($)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.definition.string.end.eldritch" },
+                        "2": { "name": "invalid.illegal.newline.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#fstring-interpolation" },
+                        { "include": "#string-escapes" }
+                    ]
+                },
+                {
+                    "name": "string.interpolated.single.eldritch",
+                    "begin": "\\b([fF][rR]?|[rR][fF])(')",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "(')|($)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.definition.string.end.eldritch" },
+                        "2": { "name": "invalid.illegal.newline.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#fstring-interpolation" },
+                        { "include": "#string-escapes" }
+                    ]
+                },
+                {
+                    "name": "string.quoted.raw.double.eldritch",
+                    "begin": "\\b([rR][bB]?|[bB][rR])(\")",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "(\")|($)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.definition.string.end.eldritch" },
+                        "2": { "name": "invalid.illegal.newline.eldritch" }
+                    },
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.eldritch",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.raw.single.eldritch",
+                    "begin": "\\b([rR][bB]?|[bB][rR])(')",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "(')|($)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.definition.string.end.eldritch" },
+                        "2": { "name": "invalid.illegal.newline.eldritch" }
+                    },
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.eldritch",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.double.eldritch",
+                    "begin": "(\\b[bB]?)(\")",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "(\")|($)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.definition.string.end.eldritch" },
+                        "2": { "name": "invalid.illegal.newline.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#string-escapes" }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.eldritch",
+                    "begin": "(\\b[bB]?)(')",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.string.eldritch" },
+                        "2": { "name": "punctuation.definition.string.begin.eldritch" }
+                    },
+                    "end": "(')|($)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.definition.string.end.eldritch" },
+                        "2": { "name": "invalid.illegal.newline.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#string-escapes" }
+                    ]
                 }
             ]
         },
-        "statement-keyword": {
+        "string-escapes": {
             "patterns": [
                 {
-                    "name": "storage.type.function.eldritch",
-                    "match": "\\b(\\s*def)\\b"
+                    "name": "constant.character.escape.eldritch",
+                    "match": "\\\\(x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3}|[\\\\\"'abfnrtv0])"
+                }
+            ]
+        },
+        "fstring-interpolation": {
+            "patterns": [
+                {
+                    "name": "constant.character.escape.eldritch",
+                    "match": "\\{\\{|\\}\\}"
                 },
+                {
+                    "name": "meta.embedded.line.eldritch",
+                    "begin": "\\{",
+                    "beginCaptures": {
+                        "0": { "name": "punctuation.section.embedded.begin.eldritch" }
+                    },
+                    "end": "\\}",
+                    "endCaptures": {
+                        "0": { "name": "punctuation.section.embedded.end.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "$self" }
+                    ]
+                }
+            ]
+        },
+        "function-def": {
+            "patterns": [
+                {
+                    "name": "meta.function.eldritch",
+                    "begin": "^\\s*(def)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(\\()",
+                    "beginCaptures": {
+                        "1": { "name": "storage.type.function.eldritch" },
+                        "2": { "name": "entity.name.function.eldritch" },
+                        "3": { "name": "punctuation.definition.parameters.begin.eldritch" }
+                    },
+                    "end": "(\\))\\s*(?:(->)\\s*([^:]+?))?\\s*(:)",
+                    "endCaptures": {
+                        "1": { "name": "punctuation.definition.parameters.end.eldritch" },
+                        "2": { "name": "punctuation.separator.annotation.result.eldritch" },
+                        "3": { "name": "support.type.eldritch" },
+                        "4": { "name": "punctuation.section.function.begin.eldritch" }
+                    },
+                    "patterns": [
+                        { "include": "#comments" },
+                        { "include": "#strings" },
+                        { "include": "#constants" },
+                        { "include": "#types" },
+                        { "include": "#numbers" },
+                        {
+                            "name": "keyword.operator.unpacking.parameter.eldritch",
+                            "match": "\\*\\*|\\*"
+                        },
+                        {
+                            "name": "variable.parameter.function.language.eldritch",
+                            "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:[,:=)]|$))"
+                        }
+                    ]
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
                 {
                     "name": "keyword.control.flow.eldritch",
-                    "match": "\\b(?<!\\.)(break|continue|elif|else|for|if|pass|return|lambda)\\b"
+                    "match": "(?<!\\.)\\b(if|elif|else|for|in|return|break|continue|pass)\\b"
+                },
+                {
+                    "name": "storage.type.function.eldritch",
+                    "match": "(?<!\\.)\\b(def|lambda)\\b"
+                },
+                {
+                    "name": "keyword.operator.logical.eldritch",
+                    "match": "(?<!\\.)\\b(and|or|not|in|is)\\b"
                 },
                 {
                     "name": "invalid.illegal.keyword.eldritch",
-                    "match": "\\b(?<!\\.)(as|class|del|except|finally|from|global|import|is|nonlocal|raise|try|while|with|yield)\\b"
+                    "match": "(?<!\\.)\\b(while|class|try|except|finally|with|yield|async|await|import|from|global|nonlocal|raise|del|load)\\b"
                 }
             ]
         },
-        "expression-base": {
+        "constants": {
             "patterns": [
                 {
-                    "include": "#line-comment"
+                    "name": "constant.language.boolean.eldritch",
+                    "match": "(?<!\\.)\\b(True|False)\\b"
                 },
                 {
-                    "include": "#literal"
+                    "name": "constant.language.null.eldritch",
+                    "match": "(?<!\\.)\\b(None)\\b"
                 },
                 {
-                    "include": "#string"
-                },
-                {
-                    "include": "#illegal-operator"
-                },
-                {
-                    "include": "#operator"
-                },
-                {
-                    "include": "#dictionary-literal"
-                },
-                {
-                    "include": "#subscript-expression"
-                },
-                {
-                    "include": "#list-literal"
-                },
-                {
-                    "include": "#parenthesized-expression"
-                },
-                {
-                    "include": "#function-call"
-                },
-                {
-                    "include": "#builtin-function"
-                },
-                {
-                    "include": "#constant-identifier"
-                },
-                {
-                    "include": "#type-identifier"
-                },
-                {
-                    "include": "#illegal-name"
-                },
-                {
-                    "include": "#line-continuation"
+                    "name": "variable.language.special.input_params.eldritch",
+                    "match": "(?<!\\.)\\b(input_params)\\b"
                 }
             ]
         },
-        "expression": {
+        "types": {
             "patterns": [
                 {
-                    "include": "#expression-base"
-                },
-                {
-                    "include": "#member-access"
-                },
-                {
-                    "include": "#variable"
+                    "name": "support.type.eldritch",
+                    "match": "(?<!\\.)\\b(int|float|bool|str|bytes|Bytes|list|List|dict|Dict|tuple|Tuple|set|Set|Any|Optional|Union|Iterable|Callable|Value)\\b(?!\\s*\\()"
                 }
             ]
         },
-        "variable": {
-            "match": "\\b([[:alpha:]_]\\w*)\\b",
-            "name": "variable.other.eldritch"
-        },
-        "member-access": {
-            "begin": "(\\.)\\s*(?!\\.)",
-            "end": "(?# Stop when we read non-whitespace followed by non-word; i.e. when finished reading an identifier or function call)(?<=\\S)(?=\\W)|(?# Stop when seeing the start of something that's not a word; e.g., a non-identifier)(^|(?<=\\s))(?=[^\\\\\\w\\s])|$",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.accessor.eldritch"
-                }
-            },
+        "stdlib-calls": {
             "patterns": [
                 {
-                    "include": "#function-call"
-                },
-                {
-                    "include": "#member-access-base"
-                },
-                {
-                    "include": "#member-access-property"
-                }
-            ]
-        },
-        "member-access-base": {
-            "patterns": [
-                {
-                    "include": "#illegal-name"
-                },
-                {
-                    "include": "#builtin-constant"
-                },
-                {
-                    "include": "#constant-identifier"
-                },
-                {
-                    "include": "#type-identifier"
-                },
-                {
-                    "include": "#line-continuation"
-                },
-                {
-                    "include": "#subscript-expression"
-                }
-            ]
-        },
-        "member-access-property": {
-            "match": "\\b([[:alpha:]_]\\w*)\\b",
-            "name": "variable.other.property.eldritch"
-        },
-        "constant-identifier": {
-            "name": "variable.other.constant.eldritch",
-            "match": "\\b_*[[:upper:]][[:upper:]\\d]*(_\\w*)?\\b"
-        },
-        "type-identifier": {
-            "name": "entity.name.type.eldritch",
-            "match": "\\b_*[[:upper:]][[:alpha:]\\d]*(_\\w*)?\\b"
-        },
-        "dictionary-literal": {
-            "comment": "This also currently covers comprehensions.",
-            "begin": "\\{",
-            "end": "\\}",
-            "beginCaptures": {
-                "0": {
-                    "name": "punctuation.definition.dict.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "0": {
-                    "name": "punctuation.definition.dict.end.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#expression"
-                }
-            ]
-        },
-        "list-literal": {
-            "comment": "This also currently covers comprehensions.",
-            "begin": "\\[",
-            "end": "\\]",
-            "beginCaptures": {
-                "0": {
-                    "name": "punctuation.definition.list.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "0": {
-                    "name": "punctuation.definition.list.end.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#expression"
-                }
-            ]
-        },
-        "parenthesized-expression": {
-            "comment": "This covers tuples and parenthesized expressions.",
-            "begin": "\\(",
-            "end": "\\)",
-            "beginCaptures": {
-                "0": {
-                    "name": "punctuation.parenthesis.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "0": {
-                    "name": "punctuation.parenthesis.end.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#expression"
-                }
-            ]
-        },
-        "line-continuation": {
-            "patterns": [
-                {
-                    "match": "(\\\\)\\s*(\\S.*$\\n?)",
+                    "name": "meta.function-call.stdlib.deprecated.eldritch",
+                    "match": "\\b(crypto|pivot)\\s*(\\.)\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
                     "captures": {
-                        "1": {
-                            "name": "invalid.deprecated.continuation.line.eldritch"
-                        },
-                        "2": {
-                            "name": "invalid.illegal.line.continuation.eldritch"
-                        }
+                        "1": { "name": "invalid.deprecated.module.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "invalid.deprecated.function.eldritch" }
                     }
                 },
                 {
-                    "begin": "(\\\\)\\s*$\\n?",
-                    "end": "(?=^\\s*$)|(?!(\\s*[rR]?('''|\"\"\"|'|\"))|(\\G$))",
-                    "beginCaptures": {
-                        "1": {
-                            "name": "invalid.deprecated.continuation.line.eldritch"
-                        }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#string"
-                        }
-                    ]
-                }
-            ]
-        },
-        "assignment-operator": {
-            "name": "keyword.operator.assignment.eldritch",
-            "match": "//=|\\+=|-=|/=|\\*=|%=|=(?!=)"
-        },
-        "operator": {
-            "match": "\\b(?<!\\.)(?:(and|or|not|in)(?# 1)|(for|if|else)(?# 2))(?!\\s*:)\\b|(\\*|\\+|-|%|//|/)(?# 3)|(!=|==|>=|<=|<|>)(?# 4)",
-            "captures": {
-                "1": {
-                    "name": "keyword.operator.logical.eldritch"
-                },
-                "2": {
-                    "name": "keyword.control.flow.eldritch"
-                },
-                "3": {
-                    "name": "keyword.operator.arithmetic.eldritch"
-                },
-                "4": {
-                    "name": "keyword.operator.comparison.eldritch"
-                }
-            }
-        },
-        "literal": {
-            "patterns": [
-                {
-                    "name": "constant.language.eldritch",
-                    "match": "\\b(True|False|None)\\b"
-                },
-                {
-                    "include": "#number"
-                }
-            ]
-        },
-        "number": {
-            "patterns": [
-                {
-                    "include": "#number-decimal"
-                },
-                {
-                    "include": "#number-hexadecimal"
-                },
-                {
-                    "include": "#number-octal"
-                },
-                {
-                    "name": "invalid.illegal.name.eldritch",
-                    "match": "\\b[0-9]+\\w+"
-                }
-            ]
-        },
-        "number-decimal": {
-            "name": "constant.numeric.decimal.eldritch",
-            "match": "(?<![\\w\\.])(?:[1-9][0-9]*|0+)\\b"
-        },
-        "number-hexadecimal": {
-            "name": "constant.numeric.hex.eldritch",
-            "match": "(?<![\\w\\.])0[xX][0-9a-fA-F]+\\b"
-        },
-        "number-octal": {
-            "name": "constant.numeric.octal.eldritch",
-            "match": "(?<![\\w\\.])0[oO][0-7]+\\b"
-        },
-        "string": {
-            "patterns": [
-                {
-                    "include": "#string-raw-quoted-multi-line"
-                },
-                {
-                    "include": "#string-raw-quoted-single-line"
-                },
-                {
-                    "include": "#string-quoted-multi-line"
-                },
-                {
-                    "include": "#string-quoted-single-line"
-                }
-            ]
-        },
-        "string-raw-quoted-single-line": {
-            "name": "string.quoted.raw.single.eldritch",
-            "begin": "\\b(r)(['\"])",
-            "end": "(\\2)|((?<!\\\\)\\n)",
-            "beginCaptures": {
-                "1": {
-                    "name": "storage.type.string.eldritch"
-                },
-                "2": {
-                    "name": "punctuation.definition.string.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.string.end.eldritch"
-                },
-                "2": {
-                    "name": "invalid.illegal.newline.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#string-raw-content"
-                }
-            ]
-        },
-        "string-quoted-single-line": {
-            "name": "string.quoted.single.eldritch",
-            "begin": "(['\"])",
-            "end": "(\\1)|((?<!\\\\)\\n)",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.string.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.string.end.eldritch"
-                },
-                "2": {
-                    "name": "invalid.illegal.newline.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#string-content"
-                }
-            ]
-        },
-        "string-raw-quoted-multi-line": {
-            "name": "string.quoted.raw.multi.eldritch",
-            "begin": "\\b(r)('''|\"\"\")",
-            "end": "(\\2)",
-            "beginCaptures": {
-                "1": {
-                    "name": "storage.type.string.eldritch"
-                },
-                "2": {
-                    "name": "punctuation.definition.string.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.string.end.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#string-raw-content"
-                }
-            ]
-        },
-        "string-quoted-multi-line": {
-            "name": "string.quoted.multi.eldritch",
-            "begin": "('''|\"\"\")",
-            "end": "(\\1)",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.string.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.string.end.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#string-content"
-                }
-            ]
-        },
-        "string-content": {
-            "patterns": [
-                {
-                    "include": "#string-escape-sequence"
-                },
-                {
-                    "include": "#string-illegal-escape-sequence"
-                },
-                {
-                    "include": "#discouraged-string-line-continuation"
-                },
-                {
-                    "include": "#string-format-placeholder-percent"
-                },
-                {
-                    "include": "#string-format-placeholder-braces"
-                }
-            ]
-        },
-        "string-raw-content": {
-            "patterns": [
-                {
-                    "include": "#string-consume-escape"
-                },
-                {
-                    "include": "#string-format-placeholder-percent"
-                },
-                {
-                    "include": "#string-format-placeholder-braces"
-                }
-            ]
-        },
-        "string-consume-escape": {
-            "match": "\\\\['\"\\n\\\\]"
-        },
-        "string-escape-sequence": {
-            "name": "constant.character.escape.eldritch",
-            "match": "\\\\[\\\\\"'nrt]"
-        },
-        "string-illegal-escape-sequence": {
-            "name": "invalid.illegal.character.escape.eldritch",
-            "match": "\\\\[^\\\\\"'nrt]"
-        },
-        "string-format-placeholder-percent": {
-            "name": "constant.character.format.placeholder.other.eldritch",
-            "match": "%[drs%]"
-        },
-        "string-format-placeholder-braces": {
-            "patterns": [
-                {
-                    "name": "constant.character.format.placeholder.other.eldritch",
-                    "match": "\\{(?:[0-9]+|[[:alpha:]_][[:alnum:]_]*)?\\}"
-                }
-            ]
-        },
-        "function-definition": {
-            "name": "meta.function.eldritch",
-            "begin": "\\s*\\b(def)\\s+(?=[[:alpha:]_][[:word:]]*\\s*\\()",
-            "end": "(:|(?=[#'\"\\n]))",
-            "beginCaptures": {
-                "1": {
-                    "name": "storage.type.function.eldritch"
-                }
-            },
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.section.function.begin.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#function-definition-name"
-                },
-                {
-                    "include": "#function-definition-parameters"
-                },
-                {
-                    "include": "#line-continuation"
-                }
-            ]
-        },
-        "function-definition-name": {
-            "patterns": [
-                {
-                    "include": "#builtin-constant"
-                },
-                {
-                    "include": "#illegal-name"
-                },
-                {
-                    "include": "#builtin-function"
-                },
-                {
-                    "name": "entity.name.function.eldritch",
-                    "match": "\\b([[:alpha:]_]\\w*)\\b"
-                }
-            ]
-        },
-        "function-definition-parameters": {
-            "name": "meta.function.parameters.eldritch",
-            "begin": "(\\()",
-            "end": "(\\))",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.parameters.begin.eldritch"
-                }
-            },
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.parameters.end.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "name": "keyword.operator.unpacking.parameter.eldritch",
-                    "match": "(\\*\\*|\\*)"
-                },
-                {
-                    "include": "#illegal-name"
-                },
-                {
-                    "include": "#builtin-constant"
-                },
-                {
-                    "match": "([[:alpha:]_]\\w*)\\s*(?:(,)|(?=[)#\\n=]))",
+                    "name": "meta.function-call.stdlib.deprecated.eldritch",
+                    "match": "\\b(agent)\\s*(\\.)\\s*(get_callback_interval|get_config|get_transport)\\s*(?=\\()",
                     "captures": {
-                        "1": {
-                            "name": "variable.parameter.eldritch"
-                        },
-                        "2": {
-                            "name": "punctuation.separator.parameters.eldritch"
-                        }
+                        "1": { "name": "support.class.namespace.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "invalid.deprecated.function.eldritch" }
                     }
                 },
                 {
-                    "include": "#line-comment"
-                },
-                {
-                    "include": "#function-definition-parameter-default-value"
-                }
-            ]
-        },
-        "function-definition-parameter-default-value": {
-            "begin": "(=)",
-            "end": "(,)|(?=\\))",
-            "beginCaptures": {
-                "1": {
-                    "name": "keyword.operator.eldritch"
-                }
-            },
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.separator.parameters.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#expression"
-                }
-            ]
-        },
-        "subscript-expression": {
-            "patterns": [
-                {
-                    "name": "meta.item-access.eldritch",
-                    "begin": "\\b(?=[[:alpha:]_]\\w*\\s*\\[)",
-                    "end": "(\\])",
-                    "endCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.arguments.end.eldritch"
-                        }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#subscript-receiver"
-                        },
-                        {
-                            "include": "#subscript-index"
-                        },
-                        {
-                            "include": "#expression"
-                        }
-                    ]
-                }
-            ]
-        },
-        "subscript-receiver": {
-            "patterns": [
-                {
-                    "include": "#builtin-function"
-                },
-                {
-                    "include": "#constant-identifier"
-                },
-                {
-                    "name": "variable.other.eldritch",
-                    "match": "\\b([[:alpha:]_]\\w*)\\b"
-                }
-            ]
-        },
-        "subscript-index": {
-            "begin": "(\\[)",
-            "end": "(?=\\])",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.arguments.begin.eldritch"
-                }
-            },
-            "contentName": "meta.item-access.arguments.eldritch",
-            "patterns": [
-                {
-                    "include": "#expression"
-                }
-            ]
-        },
-        "function-call": {
-            "name": "meta.function-call.eldritch",
-            "begin": "\\b(?=([[:alpha:]_]\\w*)\\s*(\\())",
-            "end": "(\\))",
-            "endCaptures": {
-                "1": {
-                    "name": "punctuation.definition.arguments.end.eldritch"
-                }
-            },
-            "patterns": [
-                {
-                    "include": "#function-call-name"
-                },
-                {
-                    "include": "#function-arguments"
-                }
-            ]
-        },
-        "function-call-name": {
-            "patterns": [
-                {
-                    "include": "#type-identifier"
-                },
-                {
-                    "include": "#builtin-function"
-                },
-                {
-                    "name": "entity.name.function.eldritch",
-                    "match": "\\b([[:alpha:]_]\\w*)\\b"
-                }
-            ]
-        },
-        "function-arguments": {
-            "begin": "(?:(\\()(?:\\s*(\\*\\*|\\*))?)",
-            "end": "(?=\\))(?!\\)\\s*\\()",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.arguments.begin.eldritch"
-                },
-                "2": {
-                    "name": "keyword.operator.unpacking.arguments.eldritch"
-                }
-            },
-            "contentName": "meta.function-call.arguments.eldritch",
-            "patterns": [
-                {
-                    "match": "(?:(,)(?:\\s*(\\*\\*|\\*))?)",
+                    "name": "meta.function-call.stdlib.deprecated.eldritch",
+                    "match": "\\b(assets)\\s*(\\.)\\s*(read_binary)\\s*(?=\\()",
                     "captures": {
-                        "1": {
-                            "name": "punctuation.separator.arguments.eldritch"
-                        },
-                        "2": {
-                            "name": "keyword.operator.unpacking.arguments.eldritch"
-                        }
+                        "1": { "name": "support.class.namespace.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "invalid.deprecated.function.eldritch" }
                     }
                 },
                 {
-                    "include": "#illegal-name"
+                    "name": "meta.function-call.stdlib.deprecated.eldritch",
+                    "match": "\\b(file)\\s*(\\.)\\s*(append_binary|compress|decompress|pwd|read_binary|temp_file|template|template_str|write_binary)\\s*(?=\\()",
+                    "captures": {
+                        "1": { "name": "support.class.namespace.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "invalid.deprecated.function.eldritch" }
+                    }
                 },
                 {
-                    "match": "\\b([[:alpha:]_]\\w*)\\s*(=)(?!=)",
+                    "name": "meta.function-call.stdlib.deprecated.eldritch",
+                    "match": "\\b(process)\\s*(\\.)\\s*(netstat)\\s*(?=\\()",
                     "captures": {
-                        "1": {
-                            "name": "meta.parameter.keyword.eldritch"
-                        },
-                        "2": {
-                            "name": "keyword.operator.assignment.eldritch"
-                        }
+                        "1": { "name": "support.class.namespace.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "invalid.deprecated.function.eldritch" }
                     }
+                },
+                {
+                    "name": "meta.function-call.stdlib.deprecated.eldritch",
+                    "match": "\\b(sys)\\s*(\\.)\\s*(dll_inject|dll_reflect|get_env|get_ip|get_os|get_pid|get_reg|get_user|impersonate|list_users|tokens|use_token|whereis|write_reg)\\s*(?=\\()",
+                    "captures": {
+                        "1": { "name": "support.class.namespace.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "invalid.deprecated.function.eldritch" }
+                    }
+                },
+                {
+                    "name": "meta.function-call.stdlib.deprecated.eldritch",
+                    "match": "\\b(time)\\s*(\\.)\\s*(format_to_epoch|format_to_readable)\\s*(?=\\()",
+                    "captures": {
+                        "1": { "name": "support.class.namespace.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "invalid.deprecated.function.eldritch" }
+                    }
+                },
+                {
+                    "name": "meta.function-call.stdlib.eldritch",
+                    "match": "\\b(aes|agent|assets|base64|chain|dns|file|gzip|hash|http|json|linux|net|portal|process|random|regex|registry|report|scan|ssh|sys|template|time|user|windows)\\s*(\\.)\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+                    "captures": {
+                        "1": { "name": "support.class.namespace.eldritch" },
+                        "2": { "name": "punctuation.accessor.dot.eldritch" },
+                        "3": { "name": "support.function.stdlib.eldritch" }
+                    }
+                }
+            ]
+        },
+        "stdlib-modules": {
+            "patterns": [
+                {
+                    "name": "support.class.namespace.eldritch",
+                    "match": "(?<!\\.)\\b(aes|agent|assets|base64|chain|dns|file|gzip|hash|http|json|linux|net|portal|process|random|regex|registry|report|scan|ssh|sys|template|time|user|windows)\\b(?=\\s*\\.)"
+                },
+                {
+                    "name": "invalid.deprecated.module.eldritch",
+                    "match": "(?<!\\.)\\b(crypto|pivot)\\b(?=\\s*\\.)"
+                }
+            ]
+        },
+        "builtins": {
+            "patterns": [
+                {
+                    "name": "support.function.builtin.eldritch",
+                    "match": "(?<!\\.)\\b(abs|all|any|assert|assert_eq|bool|bytes|chr|dict|dir|divmod|enumerate|eprint|eval|fail|filter|float|getattr|hasattr|hash|hex|int|isinstance|len|list|map|max|min|oct|ord|pprint|print|range|repr|reversed|set|sorted|str|sum|tuple|type|zip)\\b(?=\\s*\\()"
+                }
+            ]
+        },
+        "method-calls": {
+            "patterns": [
+                {
+                    "name": "meta.method-call.eldritch",
+                    "match": "(\\.)\\s*(capitalize|casefold|center|count|encode|endswith|expandtabs|find|format|index|isalnum|isalpha|isascii|isdecimal|isdigit|isidentifier|islower|isnumeric|isprintable|isspace|istitle|isupper|join|ljust|lower|lstrip|partition|removeprefix|removesuffix|replace|rfind|rindex|rjust|rpartition|rsplit|rstrip|split|splitlines|startswith|strip|swapcase|title|upper|zfill|decode|fromhex|hex|append|clear|copy|extend|insert|pop|remove|reverse|sort|fromkeys|get|items|keys|popitem|setdefault|update|values|add|difference|difference_update|discard|intersection|intersection_update|isdisjoint|issubset|issuperset|symmetric_difference|symmetric_difference_update|union)\\b(?=\\s*\\()",
+                    "captures": {
+                        "1": { "name": "punctuation.accessor.dot.eldritch" },
+                        "2": { "name": "support.function.method.eldritch" }
+                    }
+                }
+            ]
+        },
+        "function-calls": {
+            "patterns": [
+                {
+                    "name": "meta.function-call.eldritch",
+                    "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+                    "captures": {
+                        "1": { "name": "entity.name.function.call.eldritch" }
+                    }
+                }
+            ]
+        },
+        "keyword-arguments": {
+            "patterns": [
+                {
+                    "name": "variable.parameter.function-call.eldritch",
+                    "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?==(?!=))"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.hex.eldritch",
+                    "match": "\\b0[xX][0-9a-fA-F_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.octal.eldritch",
+                    "match": "\\b0[oO][0-7_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.binary.eldritch",
+                    "match": "\\b0[bB][01_]+\\b"
+                },
+                {
+                    "name": "constant.numeric.float.eldritch",
+                    "match": "\\b[0-9][0-9_]*\\.[0-9_]+([eE][+-]?[0-9_]+)?\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.eldritch",
+                    "match": "\\b[0-9][0-9_]*\\b"
+                }
+            ]
+        },
+        "illegal-operators": {
+            "patterns": [
+                {
+                    "name": "invalid.illegal.operator.eldritch",
+                    "match": "&&|\\|\\||\\+\\+|--"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "punctuation.separator.annotation.result.eldritch",
+                    "match": "->"
+                },
+                {
+                    "name": "keyword.operator.comparison.eldritch",
+                    "match": "==|!=|<=|>=|<|>"
+                },
+                {
+                    "name": "keyword.operator.assignment.augmented.eldritch",
+                    "match": "\\+=|-=|\\*=|//=|/=|%=|&=|\\|=|\\^=|<<=|>>="
                 },
                 {
                     "name": "keyword.operator.assignment.eldritch",
                     "match": "=(?!=)"
                 },
                 {
-                    "include": "#expression"
+                    "name": "keyword.operator.arithmetic.eldritch",
+                    "match": "\\*\\*|//|\\+|-|\\*|/|%|@"
                 },
                 {
-                    "match": "\\s*(\\))\\s*(\\()",
-                    "captures": {
-                        "1": {
-                            "name": "punctuation.definition.arguments.end.eldritch"
-                        },
-                        "2": {
-                            "name": "punctuation.definition.arguments.begin.eldritch"
-                        }
-                    }
+                    "name": "keyword.operator.bitwise.eldritch",
+                    "match": "<<|>>|&|\\||\\^|~"
                 }
             ]
         },
-        "builtin-function": {
+        "punctuation": {
             "patterns": [
                 {
-                    "name": "support.function.eldritch",
-                    "match": "(?<!\\.)\\b(all|any|bool|dict|dir|enumerate|getattr|hasattr|hash|int|len|list|load|max|min|print|range|repr|reversed|sorted|str|tuple|type|zip)\\b"
-                }
-            ]
-        },
-        "builtin-constant": {
-            "name": "keyword.illegal.name.eldritch",
-            "match": "\\b(True|False|None)\\b"
-        },
-        "illegal-name": {
-            "name": "keyword.control.flow.eldritch",
-            "match": "\\b(and|as|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|load|nonlocal|not|or|pass|raise|return|try|while|with|yield)\\b"
-        },
-        "illegal-operator": {
-            "patterns": [
-                {
-                    "name": "invalid.illegal.operator.eldritch",
-                    "match": "&&|\\|\\||--|\\+\\+"
+                    "name": "punctuation.separator.colon.eldritch",
+                    "match": ":"
                 },
                 {
-                    "name": "invalid.illegal.operator.eldritch",
-                    "match": "[?$]"
+                    "name": "punctuation.separator.comma.eldritch",
+                    "match": ","
                 },
                 {
-                    "name": "invalid.illegal.operator.eldritch",
-                    "match": "!\\b"
+                    "name": "punctuation.accessor.dot.eldritch",
+                    "match": "\\."
                 }
             ]
-        },
-        "line-comment": {
-            "name": "comment.line.number-sign.eldritch",
-            "begin": "(\\#)",
-            "beginCaptures": {
-                "1": {
-                    "name": "punctuation.definition.comment.eldritch"
-                }
-            },
-            "end": "($)",
-            "patterns": [
-                {
-                    "include": "#code-tag"
-                }
-            ]
-        },
-        "code-tag": {
-            "match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
-            "captures": {
-                "1": {
-                    "name": "keyword.codetag.notation.eldritch"
-                }
-            }
-        },
-       "discouraged-semicolon": {
-            "patterns": [
-                {
-                    "name": "invalid.deprecated.semicolon.eldritch",
-                    "match": "\\;$"
-                }
-            ]
-        },
-        "discouraged-string-line-continuation": {
-            "name": "invalid.deprecated.language.eldritch",
-            "match": "\\\\$"
         }
     }
 }

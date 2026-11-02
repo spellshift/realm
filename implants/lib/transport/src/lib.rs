@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use pb::c2::transport::Type as TransportType;
 use pb::config::Config;
 
-#[cfg(any(feature = "grpc", feature = "http1"))]
+#[cfg(any(feature = "grpc", feature = "http1", feature = "quic"))]
 mod tls_utils;
 
 #[cfg(feature = "grpc")]
@@ -33,6 +33,9 @@ mod tcp_bind;
 #[cfg(feature = "tcp-bind")]
 pub use tcp_bind::TcpBindTransport;
 
+#[cfg(feature = "quic")]
+mod quic;
+
 mod transport;
 pub use transport::Transport;
 
@@ -45,7 +48,14 @@ pub fn init_transport() -> Box<dyn Transport + Send + Sync> {
     return Box::new(http::HTTP::init());
     #[cfg(all(not(feature = "grpc"), not(feature = "http1"), feature = "dns"))]
     return Box::new(dns::DNS::init());
-    #[cfg(not(any(feature = "grpc", feature = "http1", feature = "dns")))]
+    #[cfg(all(
+        not(feature = "grpc"),
+        not(feature = "http1"),
+        not(feature = "dns"),
+        feature = "quic"
+    ))]
+    return Box::new(quic::QuicTransport::init());
+    #[cfg(not(any(feature = "grpc", feature = "http1", feature = "dns", feature = "quic")))]
     compile_error!("At least one transport feature must be enabled");
 }
 
@@ -98,6 +108,12 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
             return Ok(Box::new(icmp::ICMP::new(config)?));
             #[cfg(not(feature = "icmp"))]
             return Err(anyhow!("ICMP transport not enabled"));
+        }
+        Ok(TransportType::TransportQuic) => {
+            #[cfg(feature = "quic")]
+            return Ok(Box::new(quic::QuicTransport::new(config)?));
+            #[cfg(not(feature = "quic"))]
+            return Err(anyhow!("QUIC transport not enabled"));
         }
         Ok(TransportType::TransportUnspecified) | Err(_) => {
             Err(anyhow!("Invalid or unspecified transport type"))
@@ -165,6 +181,20 @@ mod tests {
 
             assert!(result.is_ok(), "URI '{}' did not resolve to Http", uri);
             assert_eq!(result.unwrap().name(), "http");
+        }
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "quic")]
+    async fn test_routes_to_quic_transport() {
+        let inputs = vec!["quic://127.0.0.1:8443", "quics://127.0.0.1:8443"];
+
+        for uri in inputs {
+            let config = create_test_config(uri, TransportType::TransportQuic as i32, "{}");
+            let result = create_transport(config);
+
+            assert!(result.is_ok(), "URI '{}' did not resolve to Quic", uri);
+            assert_eq!(result.unwrap().name(), "quic");
         }
     }
 

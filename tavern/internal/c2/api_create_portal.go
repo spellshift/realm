@@ -12,8 +12,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/portals/tracepb"
 )
@@ -71,31 +73,64 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
 
+	// Capture client public key for encrypting outbound gRPC stream messages
+	clientPubKey, _ := cryptocodec.GetSessionPubKey()
+
+	// Dedicated channel for sending motes to the agent over the gRPC stream.
+	// Using a channel and sending from the main CreatePortal handler goroutine ensures:
+	// 1. Thread-safety: gRPC stream.Send is only called by one goroutine.
+	// 2. Crypto session continuity: cryptocodec encryption derives the key from this goroutine.
+	agentSendCh := make(chan *portalpb.Mote, 1024)
+	sendToAgent := func(mote *portalpb.Mote) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case agentSendCh <- mote:
+			return nil
+		}
+	}
+
+	sshMux := ssh.New(portalID, srv.portalMux, sendToAgent)
+	defer sshMux.Close()
+
 	done := make(chan struct{}, 2)
 
 	go func() {
-		sendPortalInput(ctx, portalID, gstream, recv)
+		sendPortalInput(ctx, portalID, sendToAgent, sshMux, recv)
 		done <- struct{}{}
 	}()
 
 	// Send portal output from gRPC stream to portal output topic
 	go func() {
-		sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+		sendPortalOutput(ctx, portalID, gstream, srv.portalMux, sshMux)
 		done <- struct{}{}
 	}()
 
-	select {
-	case <-ctx.Done():
-	case <-done:
+	// Main sender loop on this goroutine
+	for {
+		if len(clientPubKey) > 0 {
+			cryptocodec.RegisterCurrentGoroutine(clientPubKey)
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-done:
+			cancel()
+			return nil
+		case mote := <-agentSendCh:
+			if err := gstream.Send(&c2pb.CreatePortalResponse{
+				Mote: mote,
+			}); err != nil {
+				slog.ErrorContext(ctx, "failed to send mote to agent over gRPC", "portal_id", portalID, "error", err)
+				cancel()
+				return err
+			}
+		}
 	}
-
-	// Cleanup
-	cancel()
-
-	return nil
 }
 
-func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux) {
+func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux, sshMux *ssh.Mux) {
 	portalOutTopic := mux.TopicOut(portalID)
 
 	for {
@@ -122,6 +157,11 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 			continue
 		}
 
+		// Route agent TCP/Close motes belonging to gRPC-side SSH sessions directly to the SSH mux
+		if sshMux != nil && sshMux.RouteAgentMote(mote) {
+			continue
+		}
+
 		// TRACE: Server Agent Recv
 		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV); err != nil {
 			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Recv)", "error", err)
@@ -142,7 +182,7 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 	}
 }
 
-func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, recv <-chan *portalpb.Mote) {
+func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSenderFunc, sshMux *ssh.Mux, recv <-chan *portalpb.Mote) {
 	ticker := time.NewTicker(keepAlivePingInterval)
 	defer ticker.Stop()
 
@@ -151,18 +191,26 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := gstream.Send(&c2pb.CreatePortalResponse{
-				Mote: &portalpb.Mote{
-					Payload: &portalpb.Mote_Bytes{
-						Bytes: &portalpb.BytesPayload{
-							Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE,
-						},
+			if err := sendToAgent(&portalpb.Mote{
+				Payload: &portalpb.Mote_Bytes{
+					Bytes: &portalpb.BytesPayload{
+						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE,
 					},
 				},
 			}); err != nil {
 				slog.ErrorContext(ctx, "portal failed to send gRPC keep alive ping", "error", err)
 			}
 		case mote := <-recv:
+			if mote == nil {
+				continue
+			}
+
+			// Intercept SSH portal motes and negotiate/manage SSH on this gRPC Tavern instance
+			if mote.GetSsh() != nil && sshMux != nil {
+				sshMux.HandleMote(ctx, mote)
+				continue
+			}
+
 			// TRACE: Server Agent Sub
 			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Sub)", "error", err)
@@ -173,9 +221,7 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Send)", "error", err)
 			}
 
-			if err := gstream.Send(&c2pb.CreatePortalResponse{
-				Mote: mote,
-			}); err != nil {
+			if err := sendToAgent(mote); err != nil {
 				slog.ErrorContext(ctx, "failed to send portal input message",
 					"portal_id", portalID,
 					"error", err,

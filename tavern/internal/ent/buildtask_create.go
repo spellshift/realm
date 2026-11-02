@@ -55,6 +55,12 @@ func (btc *BuildTaskCreate) SetNillableLastModifiedAt(t *time.Time) *BuildTaskCr
 	return btc
 }
 
+// SetProfileAtCreation sets the "profile_at_creation" field.
+func (btc *BuildTaskCreate) SetProfileAtCreation(bps *builderpb.BuildProfileSnapshot) *BuildTaskCreate {
+	btc.mutation.SetProfileAtCreation(bps)
+	return btc
+}
+
 // SetTargetOs sets the "target_os" field.
 func (btc *BuildTaskCreate) SetTargetOs(cp c2pb.Host_Platform) *BuildTaskCreate {
 	btc.mutation.SetTargetOs(cp)
@@ -225,6 +231,25 @@ func (btc *BuildTaskCreate) SetNillableUnique(s *string) *BuildTaskCreate {
 		btc.SetUnique(*s)
 	}
 	return btc
+}
+
+// SetBundleID sets the "bundle" edge to the Asset entity by ID.
+func (btc *BuildTaskCreate) SetBundleID(id int) *BuildTaskCreate {
+	btc.mutation.SetBundleID(id)
+	return btc
+}
+
+// SetNillableBundleID sets the "bundle" edge to the Asset entity by ID if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableBundleID(id *int) *BuildTaskCreate {
+	if id != nil {
+		btc = btc.SetBundleID(*id)
+	}
+	return btc
+}
+
+// SetBundle sets the "bundle" edge to the Asset entity.
+func (btc *BuildTaskCreate) SetBundle(a *Asset) *BuildTaskCreate {
+	return btc.SetBundleID(a.ID)
 }
 
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
@@ -419,6 +444,10 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(buildtask.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
+	if value, ok := btc.mutation.ProfileAtCreation(); ok {
+		_spec.SetField(buildtask.FieldProfileAtCreation, field.TypeJSON, value)
+		_node.ProfileAtCreation = value
+	}
 	if value, ok := btc.mutation.TargetOs(); ok {
 		_spec.SetField(buildtask.FieldTargetOs, field.TypeEnum, value)
 		_node.TargetOs = value
@@ -474,6 +503,23 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.Unique(); ok {
 		_spec.SetField(buildtask.FieldUnique, field.TypeString, value)
 		_node.Unique = value
+	}
+	if nodes := btc.mutation.BundleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.BundleTable,
+			Columns: []string{buildtask.BundleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.build_task_bundle = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := btc.mutation.BuilderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -843,6 +889,9 @@ func (u *BuildTaskUpsertOne) UpdateNewValues() *BuildTaskUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(buildtask.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.ProfileAtCreation(); exists {
+			s.SetIgnore(buildtask.FieldProfileAtCreation)
 		}
 	}))
 	return u
@@ -1347,6 +1396,9 @@ func (u *BuildTaskUpsertBulk) UpdateNewValues() *BuildTaskUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(buildtask.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.ProfileAtCreation(); exists {
+				s.SetIgnore(buildtask.FieldProfileAtCreation)
 			}
 		}
 	}))

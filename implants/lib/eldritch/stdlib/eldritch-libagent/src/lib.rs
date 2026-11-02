@@ -4,7 +4,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 use alloc::collections::BTreeMap;
 
@@ -64,6 +64,13 @@ pub trait AgentLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the configuration cannot be retrieved or is not implemented.
+    fn config(&self) -> Result<BTreeMap<String, Value>, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "agent.get_config has been deprecated and will be removed in a future version of eldritch. Please use agent.config instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `agent.config` instead.
     fn get_config(&self) -> Result<BTreeMap<String, Value>, String>;
 
     // Interactivity
@@ -83,6 +90,13 @@ pub trait AgentLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the transport cannot be identified.
+    fn transport(&self) -> Result<String, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "agent.get_transport has been deprecated and will be removed in a future version of eldritch. Please use agent.transport instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `agent.transport` instead.
     fn get_transport(&self) -> Result<String, String>;
 
     #[eldritch_method]
@@ -113,6 +127,13 @@ pub trait AgentLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the interval cannot be retrieved.
+    fn callback_interval(&self) -> Result<i64, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "agent.get_callback_interval has been deprecated and will be removed in a future version of eldritch. Please use agent.callback_interval instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `agent.callback_interval` instead.
     fn get_callback_interval(&self) -> Result<i64, String>;
 
     #[eldritch_method]

@@ -1,0 +1,23 @@
+[package]
+name = "eldritch-libportal"
+version = "0.4.1"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+eldritch-agent = { workspace = true, optional = true }
+pb = { workspace = true, optional = true }
+
+[dev-dependencies]
+eldritch-mockagent = { path = "../../testutils/eldritch-mockagent" }
+eldritch-agent = { workspace = true }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:eldritch-agent",
+    "dep:pb",
+]
+fake_bindings = []
+print_debug = []

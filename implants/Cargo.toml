@@ -11,26 +11,41 @@ members = [
     "lib/eldritch/eldritch-macros",
     "lib/eldritch/eldritch-repl",
     "lib/eldritch/eldritch-agent",
+    "lib/eldritch/stdlib/eldritch-libaes",
     "lib/eldritch/stdlib/eldritch-libagent",
     "lib/eldritch/stdlib/eldritch-libassets",
+    "lib/eldritch/stdlib/eldritch-libbase64",
     "lib/eldritch/stdlib/eldritch-libcrypto",
     "lib/eldritch/stdlib/eldritch-libfile",
+    "lib/eldritch/stdlib/eldritch-libgzip",
+    "lib/eldritch/stdlib/eldritch-libhash",
     "lib/eldritch/stdlib/eldritch-libhttp",
+    "lib/eldritch/stdlib/eldritch-libjson",
+    "lib/eldritch/stdlib/eldritch-liblinux",
+    "lib/eldritch/stdlib/eldritch-libnet",
     "lib/eldritch/stdlib/eldritch-libpivot",
+    "lib/eldritch/stdlib/eldritch-libportal",
     "lib/eldritch/stdlib/eldritch-libprocess",
     "lib/eldritch/stdlib/eldritch-librandom",
     "lib/eldritch/stdlib/eldritch-libregex",
+    "lib/eldritch/stdlib/eldritch-libregistry",
     "lib/eldritch/stdlib/eldritch-libreport",
+    "lib/eldritch/stdlib/eldritch-libscan",
+    "lib/eldritch/stdlib/eldritch-libssh",
     "lib/eldritch/stdlib/eldritch-libsys",
+    "lib/eldritch/stdlib/eldritch-libtemplate",
     "lib/eldritch/stdlib/eldritch-libtime",
+    "lib/eldritch/stdlib/eldritch-libuser",
+    "lib/eldritch/stdlib/eldritch-libwindows",
     "lib/eldritch/eldritch",
-    "lib/eldritch/eldritch-wasm",
+    "lib/eldritch/eldritch-lsp",
     "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
     "lib/eldritch/stdlib/eldritch-libchain",
     "lib/eldritch/stdlib/eldritch-libdns",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
+    "lib/eldritch/eldritch-wasm",  # Excluded to prevent fake_bindings from polluting workspace builds
 ]
 resolver = "2"
 
@@ -47,18 +62,32 @@ eldritch-macros = {path = "lib/eldritch/eldritch-macros", default-features = fal
 eldritch-repl = {path = "lib/eldritch/eldritch-repl", default-features = false}
 eldritch = {path = "lib/eldritch/eldritch", default-features = false}
 eldritch-agent = {path = "lib/eldritch/eldritch-agent"}
+eldritch-libaes = {path = "lib/eldritch/stdlib/eldritch-libaes", default-features = false}
 eldritch-libagent = {path = "lib/eldritch/stdlib/eldritch-libagent", default-features = false}
 eldritch-libassets = {path = "lib/eldritch/stdlib/eldritch-libassets", default-features = false}
+eldritch-libbase64 = {path = "lib/eldritch/stdlib/eldritch-libbase64", default-features = false}
 eldritch-libcrypto = {path = "lib/eldritch/stdlib/eldritch-libcrypto",default-features = false }
 eldritch-libfile = {path = "lib/eldritch/stdlib/eldritch-libfile",default-features = false }
+eldritch-libgzip = {path = "lib/eldritch/stdlib/eldritch-libgzip", default-features = false }
+eldritch-libhash = {path = "lib/eldritch/stdlib/eldritch-libhash", default-features = false }
 eldritch-libhttp = {path = "lib/eldritch/stdlib/eldritch-libhttp",default-features = false }
+eldritch-libjson = {path = "lib/eldritch/stdlib/eldritch-libjson", default-features = false }
+eldritch-liblinux = {path = "lib/eldritch/stdlib/eldritch-liblinux", default-features = false }
+eldritch-libnet = {path = "lib/eldritch/stdlib/eldritch-libnet", default-features = false }
 eldritch-libpivot = {path = "lib/eldritch/stdlib/eldritch-libpivot",default-features = false }
+eldritch-libportal = {path = "lib/eldritch/stdlib/eldritch-libportal", default-features = false }
 eldritch-libprocess = {path = "lib/eldritch/stdlib/eldritch-libprocess",default-features = false }
 eldritch-librandom = {path = "lib/eldritch/stdlib/eldritch-librandom", default-features = false }
 eldritch-libregex = {path = "lib/eldritch/stdlib/eldritch-libregex",default-features = false }
+eldritch-libregistry = {path = "lib/eldritch/stdlib/eldritch-libregistry", default-features = false }
 eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-features = false }
+eldritch-libscan = {path = "lib/eldritch/stdlib/eldritch-libscan", default-features = false }
+eldritch-libssh = {path = "lib/eldritch/stdlib/eldritch-libssh", default-features = false }
 eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features = false }
+eldritch-libtemplate = {path = "lib/eldritch/stdlib/eldritch-libtemplate",default-features = false }
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
+eldritch-libuser = {path = "lib/eldritch/stdlib/eldritch-libuser", default-features = false }
+eldritch-libwindows = {path = "lib/eldritch/stdlib/eldritch-libwindows", default-features = false }
 eldritch-libdns = {path = "lib/eldritch/stdlib/eldritch-libdns",default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }
 
@@ -78,7 +107,7 @@ async-trait = "0.1.68"
 base32 = "0.5"
 base64 = "0.21.4"
 byteorder = "1.5"
-chrono = "0.4.34"
+jiff = "0.2.35"
 const-decoder = "0.3.0"
 clap = "4.5.60"
 criterion = "0.5"
@@ -100,7 +129,8 @@ itertools = "0.10"
 libc = "0.2"
 libm = "0.2.15"
 listeners = "0.2"
-lsp-types = "0.93.0"
+lsp-types = "0.94.0"
+tower-lsp = "0.20"
 log = "0.4.20"
 md5 = "0.7.0"
 mockall = "0.12.1"
@@ -121,7 +151,8 @@ reqwest = { version = "0.12.15", default-features = false }
 russh = "0.37.1"
 russh-sftp = "=2.0.8" # `thiserror` dependcy in older versions causes downstream issues in other libraries.
 russh-keys = "0.37.1"
-rustls = "0.23"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+quinn = { version = "0.11", default-features = false, features = ["ring", "runtime-tokio"] }
 rust-embed = "8.5.0"
 serde = "1.0"
 serde_json = "1.0.87"

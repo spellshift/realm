@@ -3,7 +3,6 @@ package hostcheck
 import (
 	"crypto/ed25519"
 	"crypto/rand"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +13,18 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+func postHostCheck(t *testing.T, endpoint, token string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodPost, endpoint, nil)
+	require.NoError(t, err)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	return resp
+}
 
 func TestHandlerMissingToken(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
@@ -26,8 +37,7 @@ func TestHandlerMissingToken(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL, "application/json", nil)
-	require.NoError(t, err)
+	resp := postHostCheck(t, ts.URL, "")
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
@@ -43,8 +53,7 @@ func TestHandlerInvalidToken(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	resp, err := http.Post(fmt.Sprintf("%s?token=bad-token", ts.URL), "application/json", nil)
-	require.NoError(t, err)
+	resp := postHostCheck(t, ts.URL, "bad-token")
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
@@ -67,8 +76,7 @@ func TestHandlerWrongKeyToken(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	resp, err := http.Post(fmt.Sprintf("%s?token=%s", ts.URL, tokenStr), "application/json", nil)
-	require.NoError(t, err)
+	resp := postHostCheck(t, ts.URL, tokenStr)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
@@ -87,8 +95,7 @@ func TestHandlerValidToken(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	resp, err := http.Post(fmt.Sprintf("%s?token=%s", ts.URL, tokenStr), "application/json", nil)
-	require.NoError(t, err)
+	resp := postHostCheck(t, ts.URL, tokenStr)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }

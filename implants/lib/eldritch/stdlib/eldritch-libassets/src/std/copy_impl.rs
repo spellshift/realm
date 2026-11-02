@@ -5,7 +5,7 @@ use alloc::string::String;
 
 impl StdAssetsLibrary {
     pub fn copy_impl(&self, src: String, dest: String) -> Result<(), String> {
-        let bytes = self.read_binary_impl(&src).map_err(|e| e.to_string())?;
+        let bytes = self.read_impl(&src).map_err(|e| e.to_string())?;
         let mut file = std::fs::File::create(dest).map_err(|e| e.to_string())?;
         file.write_all(&bytes).map_err(|e| e.to_string())?;
         Ok(())
@@ -15,7 +15,7 @@ impl StdAssetsLibrary {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::std::read_binary_impl::tests::TestAsset;
+    use crate::std::read_impl::tests::TestAsset;
     use crate::std::{AgentAssets, AssetsLibrary, EmbeddedAssets};
     use eldritch_mockagent::MockAgent;
     use pb::c2::TaskContext;

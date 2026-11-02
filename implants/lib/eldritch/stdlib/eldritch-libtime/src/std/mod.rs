@@ -2,10 +2,10 @@ use super::TimeLibrary;
 use alloc::string::String;
 use eldritch_macros::eldritch_library_impl;
 
-pub mod format_to_epoch_impl;
-pub mod format_to_readable_impl;
+pub mod format_impl;
 pub mod now_impl;
 pub mod sleep_impl;
+pub mod to_epoch_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(TimeLibrary)]
@@ -13,11 +13,19 @@ pub struct StdTimeLibrary;
 
 impl TimeLibrary for StdTimeLibrary {
     fn format_to_epoch(&self, input: String, format: String) -> Result<i64, String> {
-        format_to_epoch_impl::format_to_epoch(input, format)
+        self.to_epoch(input, format)
+    }
+
+    fn to_epoch(&self, input: String, format: String) -> Result<i64, String> {
+        to_epoch_impl::to_epoch(input, format)
     }
 
     fn format_to_readable(&self, input: i64, format: String) -> Result<String, String> {
-        format_to_readable_impl::format_to_readable(input, format)
+        self.format(input, format)
+    }
+
+    fn format(&self, input: i64, format: String) -> Result<String, String> {
+        format_impl::format(input, format)
     }
 
     fn now(&self) -> Result<i64, String> {

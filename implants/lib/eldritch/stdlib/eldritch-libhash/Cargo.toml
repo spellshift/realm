@@ -1,0 +1,24 @@
+[package]
+name = "eldritch-libhash"
+version = "0.4.1"
+edition = "2024"
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:md5",
+    "dep:sha1",
+    "dep:sha2",
+]
+fake_bindings = []
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+
+md5 = { workspace = true, optional = true }
+sha1 = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

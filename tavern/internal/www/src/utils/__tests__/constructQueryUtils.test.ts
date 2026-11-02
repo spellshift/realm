@@ -23,6 +23,7 @@ const emptyFilters: Filters = {
   tomeMultiSearch: '',
   assetName: '',
   userId: '',
+  agentOnly: false,
 };
 
 const createBeaconField = (kind: string, name: string): FilterBarOption => ({
@@ -50,20 +51,20 @@ describe('constructTagFieldsQuery', () => {
 
 describe('constructHostFieldQuery', () => {
   it('returns null when no filters provided', () => {
-    expect(constructHostFieldQuery([], [], [], [], [], [])).toBeNull();
+    expect(constructHostFieldQuery([], [], [], [], [], [], [])).toBeNull();
   });
 
   it.each([
-    { args: [[], [], [], ['host1'], [], []], expected: { idIn: ['host1'] }, desc: 'hosts' },
-    { args: [[], [], ['linux'], [], [], []], expected: { platformIn: ['linux'] }, desc: 'platforms' },
-    { args: [[], [], [], [], ['192.168.1.1'], []], expected: { primaryIPIn: ['192.168.1.1'] }, desc: 'primaryIP' },
+    { args: [[], [], [], ['host1'], [], [], []], expected: { idIn: ['host1'] }, desc: 'hosts' },
+    { args: [[], [], ['linux'], [], [], [], []], expected: { platformIn: ['linux'] }, desc: 'platforms' },
+    { args: [[], [], [], [], ['192.168.1.1'], [], []], expected: { primaryIPIn: ['192.168.1.1'] }, desc: 'primaryIP' },
   ])('includes $desc in hasHostWith', ({ args, expected }) => {
     const result = constructHostFieldQuery(...(args as Parameters<typeof constructHostFieldQuery>));
     expect(result).toEqual({ hasHostWith: expected });
   });
 
   it('combines multiple filters', () => {
-    const result = constructHostFieldQuery(['admin'], ['web'], ['linux'], ['server1'], [], []);
+    const result = constructHostFieldQuery(['admin'], ['web'], ['linux'], ['server1'], [], [], []);
     expect(result?.hasHostWith).toMatchObject({
       idIn: ['server1'],
       platformIn: ['linux'],

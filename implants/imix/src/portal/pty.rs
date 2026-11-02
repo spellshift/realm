@@ -1,21 +1,86 @@
 use anyhow::Result;
 use pb::portal::{BytesPayload, BytesPayloadKind, Mote, mote::Payload};
-use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 
-#[cfg(not(target_os = "windows"))]
+#[derive(Deserialize)]
+struct PtyResizeMessage {
+    kind: String,
+    rows: u16,
+    cols: u16,
+}
+
+fn parse_resize_message(data: &[u8]) -> Option<(u16, u16)> {
+    if !data.starts_with(b"{") {
+        return None;
+    }
+    let msg: PtyResizeMessage = serde_json::from_slice(data).ok()?;
+    if msg.kind == "resize" && msg.rows > 0 && msg.cols > 0 {
+        Some((msg.rows, msg.cols))
+    } else {
+        None
+    }
+}
+
+#[cfg(not(target_os = "solaris"))]
+use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
+
+#[cfg(all(not(target_os = "windows"), not(target_os = "solaris")))]
 use std::path::Path;
 
-/// A single PTY session with its writer, master handle, and cancel channel.
+/// A single PTY session with its writer, process/master handle, and cancel channel.
 struct PtySession {
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
     // Keep the master PTY handle alive for the lifetime of the session.
     // Dropping it closes the PTY fd, which would kill the shell process.
-    _master: Box<dyn MasterPty + Send>,
+    #[cfg(not(target_os = "solaris"))]
+    master: Box<dyn MasterPty + Send>,
+    #[cfg(target_os = "solaris")]
+    master_fd: std::os::unix::io::RawFd,
+    #[cfg(target_os = "solaris")]
+    _child_pid: libc::pid_t,
     _cancel_tx: mpsc::Sender<()>,
+}
+
+impl PtySession {
+    fn resize(&self, rows: u16, cols: u16) {
+        if rows == 0 || cols == 0 {
+            return;
+        }
+        #[cfg(not(target_os = "solaris"))]
+        {
+            let _ = self.master.resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            });
+        }
+        #[cfg(target_os = "solaris")]
+        unsafe {
+            let ws = libc::winsize {
+                ws_row: rows,
+                ws_col: cols,
+                ws_xpixel: 0,
+                ws_ypixel: 0,
+            };
+            let _ = libc::ioctl(self.master_fd, libc::TIOCSWINSZ, &ws);
+        }
+    }
+}
+
+#[cfg(target_os = "solaris")]
+impl Drop for PtySession {
+    fn drop(&mut self) {
+        unsafe {
+            libc::kill(self._child_pid, libc::SIGHUP);
+            let mut status = 0;
+            libc::waitpid(self._child_pid, &mut status, libc::WNOHANG);
+        }
+    }
 }
 
 /// Manages PTY sessions keyed by stream_id.
@@ -44,15 +109,22 @@ impl PtyManager {
         data: Vec<u8>,
         out_tx: mpsc::Sender<Mote>,
     ) -> Result<()> {
-        if !self.sessions.contains_key(&stream_id) {
+        let resize = parse_resize_message(&data);
+
+        let is_new_session = !self.sessions.contains_key(&stream_id);
+        if is_new_session {
+            let (rows, cols) = resize.unwrap_or((48, 160));
             // Spawn a new PTY session
-            let session = spawn_pty_session(stream_id.clone(), out_tx.clone())?;
+            let session = spawn_pty_session(stream_id.clone(), rows, cols, out_tx.clone())?;
             self.sessions.insert(stream_id.clone(), session);
         }
 
         if let Some(session) = self.sessions.get(&stream_id) {
-            // Write input data to the PTY (skip empty data which is just the init mote)
-            if !data.is_empty()
+            if let Some((rows, cols)) = resize {
+                if !is_new_session {
+                    session.resize(rows, cols);
+                }
+            } else if !data.is_empty()
                 && let Ok(mut writer) = session.writer.lock()
             {
                 let _ = writer.write_all(&data);
@@ -61,16 +133,45 @@ impl PtyManager {
 
         Ok(())
     }
+
+    /// Process an incoming PTYResize mote. If no session exists for the stream_id,
+    /// a new PTY is spawned with the requested dimensions; otherwise the existing
+    /// PTY session is resized.
+    pub async fn handle_resize(
+        &mut self,
+        stream_id: String,
+        rows: u16,
+        cols: u16,
+        out_tx: mpsc::Sender<Mote>,
+    ) -> Result<()> {
+        if rows == 0 || cols == 0 {
+            return Ok(());
+        }
+
+        if let Some(session) = self.sessions.get(&stream_id) {
+            session.resize(rows, cols);
+        } else {
+            let session = spawn_pty_session(stream_id.clone(), rows, cols, out_tx)?;
+            self.sessions.insert(stream_id, session);
+        }
+
+        Ok(())
+    }
 }
 
-/// Spawn a new PTY process and return a PtySession with a writer handle.
-/// A background task reads PTY output and sends it as portal motes.
-fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<PtySession> {
+/// Spawn a new PTY process using portable-pty (Linux, macOS, Windows).
+#[cfg(not(target_os = "solaris"))]
+fn spawn_pty_session(
+    stream_id: String,
+    rows: u16,
+    cols: u16,
+    out_tx: mpsc::Sender<Mote>,
+) -> Result<PtySession> {
     let pty_system = native_pty_system();
 
     let pair = pty_system.openpty(PtySize {
-        rows: 48,
-        cols: 160,
+        rows: if rows > 0 { rows } else { 48 },
+        cols: if cols > 0 { cols } else { 160 },
         pixel_width: 0,
         pixel_height: 0,
     })?;
@@ -157,7 +258,204 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
 
     Ok(PtySession {
         writer,
-        _master: pair.master,
+        master: pair.master,
         _cancel_tx: cancel_tx,
     })
+}
+
+/// Spawn a native POSIX + STREAMS PTY session on Solaris / illumos.
+#[cfg(target_os = "solaris")]
+fn spawn_pty_session(
+    stream_id: String,
+    rows: u16,
+    cols: u16,
+    out_tx: mpsc::Sender<Mote>,
+) -> Result<PtySession> {
+    use std::fs::File;
+    use std::os::unix::io::{AsRawFd, FromRawFd};
+
+    const PTEM: &[u8] = b"ptem\0";
+    const LDTERM: &[u8] = b"ldterm\0";
+
+    let (master_fd, slave_fd) = unsafe {
+        let fdm = libc::posix_openpt(libc::O_RDWR | libc::O_NOCTTY);
+        if fdm < 0 {
+            return Err(anyhow::anyhow!(
+                "Failed to open master PTY via posix_openpt"
+            ));
+        }
+        if libc::grantpt(fdm) < 0 || libc::unlockpt(fdm) < 0 {
+            libc::close(fdm);
+            return Err(anyhow::anyhow!("Failed to grant/unlock slave PTY"));
+        }
+        let pts_name = libc::ptsname(fdm);
+        if pts_name.is_null() {
+            libc::close(fdm);
+            return Err(anyhow::anyhow!("Failed to get slave PTY name"));
+        }
+        let fds = libc::open(pts_name, libc::O_RDWR | libc::O_NOCTTY);
+        if fds < 0 {
+            libc::close(fdm);
+            return Err(anyhow::anyhow!("Failed to open slave PTY"));
+        }
+
+        // Push Solaris STREAMS terminal emulation and line discipline modules
+        if libc::ioctl(fds, libc::I_PUSH, PTEM.as_ptr()) < 0
+            || libc::ioctl(fds, libc::I_PUSH, LDTERM.as_ptr()) < 0
+        {
+            libc::close(fdm);
+            libc::close(fds);
+            return Err(anyhow::anyhow!(
+                "Failed to push STREAMS modules to slave PTY"
+            ));
+        }
+
+        let ws = libc::winsize {
+            ws_row: if rows > 0 { rows } else { 48 },
+            ws_col: if cols > 0 { cols } else { 160 },
+            ws_xpixel: 0,
+            ws_ypixel: 0,
+        };
+        let _ = libc::ioctl(fds, libc::TIOCSWINSZ, &ws);
+
+        (fdm, fds)
+    };
+
+    let pid = unsafe { libc::fork() };
+    if pid < 0 {
+        unsafe {
+            libc::close(master_fd);
+            libc::close(slave_fd);
+        }
+        return Err(anyhow::anyhow!("Failed to fork PTY child process"));
+    }
+
+    if pid == 0 {
+        // Child process
+        unsafe {
+            libc::close(master_fd);
+
+            if libc::setsid() < 0
+                || libc::ioctl(slave_fd, libc::TIOCSCTTY, 0) < 0
+                || libc::dup2(slave_fd, 0) < 0
+                || libc::dup2(slave_fd, 1) < 0
+                || libc::dup2(slave_fd, 2) < 0
+            {
+                libc::_exit(1);
+            }
+
+            if slave_fd > 2 {
+                libc::close(slave_fd);
+            }
+
+            // Set TERM environment variable
+            let term = std::ffi::CString::new("TERM=xterm-256color").unwrap();
+            libc::putenv(term.into_raw());
+
+            let shell_path = if std::path::Path::new("/bin/bash").exists() {
+                c"/bin/bash"
+            } else {
+                c"/bin/sh"
+            };
+
+            let args = [shell_path.as_ptr(), std::ptr::null()];
+            libc::execv(shell_path.as_ptr(), args.as_ptr());
+            libc::_exit(1);
+        }
+    }
+
+    // Parent process
+    unsafe {
+        libc::close(slave_fd);
+    }
+
+    let master_file = unsafe { File::from_raw_fd(master_fd) };
+    let writer_file = master_file.try_clone()?;
+    let resize_fd = writer_file.as_raw_fd();
+    let writer: Arc<Mutex<Box<dyn Write + Send>>> = Arc::new(Mutex::new(Box::new(writer_file)));
+
+    let (cancel_tx, _cancel_rx) = mpsc::channel::<()>(1);
+    let stream_id_clone = stream_id.clone();
+    let out_tx_clone = out_tx.clone();
+
+    tokio::task::spawn_blocking(move || {
+        let rt = tokio::runtime::Handle::current();
+        let mut reader = master_file;
+        let mut seq_id: u64 = 0;
+        loop {
+            let mut buffer = [0u8; 1024];
+            let n = match reader.read(&mut buffer[..]) {
+                Ok(n) if n > 0 => n,
+                Ok(_) => {
+                    let mut status = 0;
+                    let wait_res = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+                    if wait_res != 0 {
+                        break;
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                    continue;
+                }
+                Err(_err) => {
+                    #[cfg(feature = "print_debug")]
+                    log::error!("PTY read error for {}: {}", stream_id_clone, _err);
+                    break;
+                }
+            };
+
+            seq_id += 1;
+            let mote = Mote {
+                stream_id: stream_id_clone.clone(),
+                seq_id,
+                payload: Some(Payload::Bytes(BytesPayload {
+                    data: buffer[..n].to_vec(),
+                    kind: BytesPayloadKind::Pty as i32,
+                })),
+            };
+
+            if rt.block_on(out_tx_clone.send(mote)).is_err() {
+                break;
+            }
+        }
+
+        // Send close mote when PTY exits
+        let close_mote = Mote {
+            stream_id: stream_id_clone,
+            seq_id: seq_id + 1,
+            payload: Some(Payload::Bytes(BytesPayload {
+                data: b"PTY session ended".to_vec(),
+                kind: BytesPayloadKind::Close as i32,
+            })),
+        };
+        let _ = rt.block_on(out_tx_clone.send(close_mote));
+    });
+
+    Ok(PtySession {
+        writer,
+        master_fd: resize_fd,
+        _child_pid: pid,
+        _cancel_tx: cancel_tx,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_resize_message() {
+        assert_eq!(
+            parse_resize_message(br#"{"kind":"resize","rows":24,"cols":80}"#),
+            Some((24, 80))
+        );
+        assert_eq!(parse_resize_message(b""), None);
+        assert_eq!(parse_resize_message(b"ls -la\n"), None);
+        assert_eq!(
+            parse_resize_message(br#"{"kind":"input","rows":24,"cols":80}"#),
+            None
+        );
+        assert_eq!(
+            parse_resize_message(br#"{"kind":"resize","rows":0,"cols":80}"#),
+            None
+        );
+    }
 }

@@ -1,13 +1,41 @@
 package executor
 
 import (
+	"bufio"
 	"context"
+	"io"
+	"log/slog"
 )
 
 const (
 	// ExpectedExitCode is the expected container exit code for a successful build.
 	ExpectedExitCode int64 = 0
+
+	// maxScanTokenSize is the maximum line length streamBuildLines will buffer.
+	// bufio.Scanner's default (bufio.MaxScanTokenSize, 64KB) is easy to exceed
+	// with verbatim script echoes or long compiler/linker output lines, which
+	// would otherwise silently truncate the stream.
+	maxScanTokenSize = 1024 * 1024 // 1MB
 )
+
+// streamBuildLines scans newline-delimited text from r and sends each line to ch.
+// It uses a larger-than-default buffer (see maxScanTokenSize) and logs a warning
+// if the scan stops due to an error (e.g. a line still exceeding the buffer)
+// rather than silently dropping the remainder of the output.
+func streamBuildLines(ctx context.Context, r io.Reader, ch chan<- string) {
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 0, 64*1024), maxScanTokenSize)
+	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			return
+		case ch <- scanner.Text():
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		slog.ErrorContext(ctx, "build output stream scan stopped early", "error", err)
+	}
+}
 
 // BuildSpec contains the parameters for a build task execution.
 type BuildSpec struct {

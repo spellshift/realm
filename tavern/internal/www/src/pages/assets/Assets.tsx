@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAssetIds } from "./useAssetIds";
 import AssetsHeader from "./components/AssetsHeader";
 import AssetsTable from "./AssetsTable";
@@ -8,6 +9,7 @@ import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtual
 import { PageNavItem } from "../../utils/enums";
 
 export const Assets = () => {
+    const navigate = useNavigate();
     const {
         data,
         assetIds,
@@ -30,7 +32,10 @@ export const Assets = () => {
     return (
         <>
             <div className="flex flex-col gap-6">
-                <AssetsHeader setOpen={setUploadAssetModalOpen} />
+                <AssetsHeader
+                    setOpen={setUploadAssetModalOpen}
+                    onGenerateAgent={() => navigate("/assets/build")}
+                />
                 <VirtualizedTableWrapper
                     title="Assets"
                     totalItems={data?.assets?.totalCount}

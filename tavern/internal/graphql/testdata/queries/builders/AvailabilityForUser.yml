@@ -1,0 +1,17 @@
+state: |
+  INSERT INTO users (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"user_oauth","https://photos.com","operator","userToken","accessToken",true,false);
+  INSERT INTO builders (id,created_at,last_modified_at,identifier,supported_targets,upstream,poll_interval,executor,last_seen_at)
+    VALUES (1,datetime('now'),datetime('now'),"online-builder",'[2,3]',"http://127.0.0.1:8000",3600,"docker",datetime('now'));
+  INSERT INTO builders (id,created_at,last_modified_at,identifier,supported_targets,upstream,poll_interval,executor,last_seen_at)
+    VALUES (2,datetime('now'),datetime('now'),"stale-builder",'[1]',"http://127.0.0.1:8000",5,"docker",datetime('now','-10 hours'));
+  INSERT INTO builders (id,created_at,last_modified_at,identifier,supported_targets,upstream,poll_interval,executor,last_seen_at)
+    VALUES (3,datetime('now'),datetime('now'),"never-seen",'[4]',"http://127.0.0.1:8000",5,"docker",NULL);
+requestor:
+  session_token: userToken
+query: |
+  query OnlineBuilderPlatforms {
+    onlineBuilderPlatforms
+  }
+expected:
+  onlineBuilderPlatforms: [PLATFORM_LINUX, PLATFORM_MACOS]

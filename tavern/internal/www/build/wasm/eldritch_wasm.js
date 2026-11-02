@@ -58,7 +58,7 @@ export class BrowserRepl {
     }
     constructor() {
         const ret = wasm.browserrepl_new();
-        this.__wbg_ptr = ret >>> 0;
+        this.__wbg_ptr = ret;
         BrowserReplFinalization.register(this, this.__wbg_ptr, this);
         return this;
     }
@@ -70,7 +70,6 @@ if (Symbol.dispose) BrowserRepl.prototype[Symbol.dispose] = BrowserRepl.prototyp
 
 export class ExecutionResult {
     static __wrap(ptr) {
-        ptr = ptr >>> 0;
         const obj = Object.create(ExecutionResult.prototype);
         obj.__wbg_ptr = ptr;
         ExecutionResultFinalization.register(obj, obj.__wbg_ptr, obj);
@@ -104,7 +103,7 @@ export class ExecutionResult {
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
             let v1;
             if (r0 !== 0) {
-                v1 = getStringFromWasm0(r0, r1).slice();
+                v1 = getStringFromWasm0(r0, r1);
                 wasm.__wbindgen_export3(r0, r1 * 1, 1);
             }
             return v1;
@@ -123,7 +122,7 @@ export class ExecutionResult {
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
             let v1;
             if (r0 !== 0) {
-                v1 = getStringFromWasm0(r0, r1).slice();
+                v1 = getStringFromWasm0(r0, r1);
                 wasm.__wbindgen_export3(r0, r1 * 1, 1);
             }
             return v1;
@@ -136,7 +135,6 @@ if (Symbol.dispose) ExecutionResult.prototype[Symbol.dispose] = ExecutionResult.
 
 export class RenderState {
     static __wrap(ptr) {
-        ptr = ptr >>> 0;
         const obj = Object.create(RenderState.prototype);
         obj.__wbg_ptr = ptr;
         RenderStateFinalization.register(obj, obj.__wbg_ptr, obj);
@@ -202,7 +200,7 @@ export class RenderState {
      */
     get suggestion_idx() {
         const ret = wasm.renderstate_suggestion_idx(this.__wbg_ptr);
-        return ret === 0x100000001 ? undefined : ret;
+        return ret === Number.MAX_SAFE_INTEGER ? undefined : ret;
     }
     /**
      * @returns {any[] | undefined}
@@ -215,7 +213,7 @@ export class RenderState {
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
             let v1;
             if (r0 !== 0) {
-                v1 = getArrayJsValueFromWasm0(r0, r1).slice();
+                v1 = getArrayJsValueFromWasm0(r0, r1);
                 wasm.__wbindgen_export3(r0, r1 * 4, 4);
             }
             return v1;
@@ -246,7 +244,7 @@ export class WasmRepl {
             wasm.wasmrepl_get_history(retptr, this.__wbg_ptr);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            var v1 = getArrayJsValueFromWasm0(r0, r1).slice();
+            var v1 = getArrayJsValueFromWasm0(r0, r1);
             wasm.__wbindgen_export3(r0, r1 * 4, 4);
             return v1;
         } finally {
@@ -294,17 +292,16 @@ export class WasmRepl {
     }
     constructor() {
         const ret = wasm.wasmrepl_new();
-        this.__wbg_ptr = ret >>> 0;
+        this.__wbg_ptr = ret;
         WasmReplFinalization.register(this, this.__wbg_ptr, this);
         return this;
     }
 }
 if (Symbol.dispose) WasmRepl.prototype[Symbol.dispose] = WasmRepl.prototype.free;
-
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,
-        __wbg___wbindgen_string_get_72fb696202c56729: function(arg0, arg1) {
+        __wbg___wbindgen_string_get_0380ccaa2f57f0d9: function(arg0, arg1) {
             const obj = getObject(arg1);
             const ret = typeof(obj) === 'string' ? obj : undefined;
             var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_export, wasm.__wbindgen_export2);
@@ -312,10 +309,10 @@ function __wbg_get_imports() {
             getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
             getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
         },
-        __wbg___wbindgen_throw_be289d5034ed271b: function(arg0, arg1) {
+        __wbg___wbindgen_throw_41e9ee4f547fc59a: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
-        __wbindgen_cast_0000000000000001: function(arg0, arg1) {
+        __wbindgen_generic_0000000000000001: function(arg0, arg1) {
             // Cast intrinsic for `Ref(String) -> Externref`.
             const ret = getStringFromWasm0(arg0, arg1);
             return addHeapObject(ret);
@@ -332,16 +329,16 @@ function __wbg_get_imports() {
 
 const BrowserReplFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry(ptr => wasm.__wbg_browserrepl_free(ptr >>> 0, 1));
+    : new FinalizationRegistry(ptr => wasm.__wbg_browserrepl_free(ptr, 1));
 const ExecutionResultFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry(ptr => wasm.__wbg_executionresult_free(ptr >>> 0, 1));
+    : new FinalizationRegistry(ptr => wasm.__wbg_executionresult_free(ptr, 1));
 const RenderStateFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry(ptr => wasm.__wbg_renderstate_free(ptr >>> 0, 1));
+    : new FinalizationRegistry(ptr => wasm.__wbg_renderstate_free(ptr, 1));
 const WasmReplFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry(ptr => wasm.__wbg_wasmrepl_free(ptr >>> 0, 1));
+    : new FinalizationRegistry(ptr => wasm.__wbg_wasmrepl_free(ptr, 1));
 
 function addHeapObject(obj) {
     if (heap_next === heap.length) heap.push(heap.length + 1);
@@ -353,7 +350,7 @@ function addHeapObject(obj) {
 }
 
 function dropObject(idx) {
-    if (idx < 132) return;
+    if (idx < 1028) return;
     heap[idx] = heap_next;
     heap_next = idx;
 }
@@ -377,8 +374,7 @@ function getDataViewMemory0() {
 }
 
 function getStringFromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return decodeText(ptr, len);
+    return decodeText(ptr >>> 0, len);
 }
 
 let cachedUint8ArrayMemory0 = null;
@@ -391,7 +387,7 @@ function getUint8ArrayMemory0() {
 
 function getObject(idx) { return heap[idx]; }
 
-let heap = new Array(128).fill(undefined);
+let heap = new Array(1024).fill(undefined);
 heap.push(undefined, null, true, false);
 
 let heap_next = heap.length;
@@ -482,8 +478,9 @@ if (!('encodeInto' in cachedTextEncoder)) {
 
 let WASM_VECTOR_LEN = 0;
 
-let wasmModule, wasm;
+let wasmModule, wasmInstance, wasm;
 function __wbg_finalize_init(instance, module) {
+    wasmInstance = instance;
     wasm = instance.exports;
     wasmModule = module;
     cachedDataViewMemory0 = null;
@@ -493,11 +490,15 @@ function __wbg_finalize_init(instance, module) {
 
 async function __wbg_load(module, imports) {
     if (typeof Response === 'function' && module instanceof Response) {
+        if (!module.ok) {
+            throw new Error(`failed to fetch Wasm: ${module.status} ${module.statusText} fetching '${module.url}'`);
+        }
+
         if (typeof WebAssembly.instantiateStreaming === 'function') {
             try {
                 return await WebAssembly.instantiateStreaming(module, imports);
             } catch (e) {
-                const validResponse = module.ok && expectedResponseType(module.type);
+                const validResponse = expectedResponseType(module.type);
 
                 if (validResponse && module.headers.get('Content-Type') !== 'application/wasm') {
                     console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve Wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);

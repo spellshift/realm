@@ -41,7 +41,7 @@ def parse_credentials(raw):
     s = str(raw).strip()
     if s == "":
         return []
-    return crypto.from_json(s)
+    return json.decode(s)
 
 def optional_str(raw):
     if raw == None:
@@ -60,24 +60,24 @@ def optional_int(raw):
     return int(s)
 
 def optional_payload(raw):
-    """Read an optional asset name into bytes for pivot.ssh_deploy.
+    """Read an optional asset name into bytes for ssh.deploy.
 
     Returns None if no asset name is provided, otherwise returns the asset
-    contents as bytes via assets.read_binary.
+    contents as bytes via assets.read.
     """
     if raw == None:
         return None
     s = str(raw)
     if s == "":
         return None
-    return assets.read_binary(s)
+    return assets.read(s)
 
 def ssh_deploy_tome():
     ips = parse_ips(input_params.get("ips"))
     credentials = parse_credentials(input_params.get("credentials"))
     cmd = str(input_params.get("cmd", ""))
 
-    results = pivot.ssh_deploy(
+    results = ssh.deploy(
         ips,
         credentials,
         cmd,

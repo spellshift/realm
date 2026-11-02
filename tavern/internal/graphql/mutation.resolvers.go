@@ -8,7 +8,9 @@ package graphql
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v3"
+	"github.com/google/uuid"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
@@ -27,6 +29,8 @@ import (
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
@@ -62,6 +66,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	if _, err := client.Portal.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete portals: %w", err))
 	}
+	if _, err := client.OperatorNote.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete operator notes: %w", err))
+	}
 	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
 	}
@@ -85,6 +92,12 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Link.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete links: %w", err))
+	}
+	if _, err := client.NetworkHost.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete network hosts: %w", err))
+	}
+	if _, err := client.Network.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete networks: %w", err))
 	}
 	if _, err := client.Host.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
@@ -506,52 +519,16 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 		Save(ctx)
 }
 
-// RegisterBuilder is the resolver for the registerBuilder field.
-func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
-	// 1. Create builder ent (identifier is auto-generated)
-	b, err := r.client.Builder.Create().SetInput(input).Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create builder: %w", err)
+// CreateBuilderEnrollmentToken is the resolver for the createBuilderEnrollmentToken field.
+func (r *mutationResolver) CreateBuilderEnrollmentToken(ctx context.Context) (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
 	}
-
-	// 2. Generate CA-signed X.509 certificate for mTLS
-	certPEM, keyPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, b.Identifier)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
-	}
-
-	// Combine cert and key into a single PEM bundle
-	combinedPEM := append(certPEM, keyPEM...)
-	mtlsCert := string(combinedPEM)
-
-	// 3. Build YAML config
-	targetNames := make([]string, len(b.SupportedTargets))
-	for i, t := range b.SupportedTargets {
-		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
-	}
-
-	configData := struct {
-		ID               string   `yaml:"id"`
-		SupportedTargets []string `yaml:"supported_targets"`
-		MTLS             string   `yaml:"mtls"`
-		Upstream         string   `yaml:"upstream"`
-	}{
-		ID:               b.Identifier,
-		SupportedTargets: targetNames,
-		MTLS:             mtlsCert,
-		Upstream:         b.Upstream,
-	}
-
-	configBytes, err := yaml.Marshal(configData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal builder config: %w", err)
-	}
-
-	return &models.RegisterBuilderOutput{
-		Builder:  b,
-		MtlsCert: mtlsCert,
-		Config:   string(configBytes),
-	}, nil
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	hash := sha256.Sum256([]byte(token))
+	_, err := r.client.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
+	return token, err
 }
 
 // DeleteBuilder is the resolver for the deleteBuilder field.
@@ -562,11 +539,161 @@ func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (in
 	return builderID, nil
 }
 
+// CreateBuildProfile is the resolver for the createBuildProfile field.
+func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error) {
+	if input.Name == builder.DefaultBuildProfileName {
+		return nil, fmt.Errorf("the name %q is reserved for the default build profile", builder.DefaultBuildProfileName)
+	}
+	creator := r.client.BuildProfile.Create().
+		SetName(input.Name).
+		SetDescription(input.Description).
+		SetPrebuildscript(input.Prebuildscript).
+		SetSetupscript(input.Setupscript).
+		SetPostbuildscript(input.Postbuildscript)
+
+	if input.Unique != nil && *input.Unique != "" {
+		creator.SetUnique(*input.Unique)
+	}
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		creator.SetBuildImage(*input.BuildImage)
+	}
+	if input.BuildScript != nil && *input.BuildScript != "" {
+		creator.SetBuildScript(*input.BuildScript)
+	}
+	if input.ArtifactPath != nil && *input.ArtifactPath != "" {
+		creator.SetArtifactPath(*input.ArtifactPath)
+	}
+	if len(input.Transports) > 0 {
+		transports := make([]builderpb.BuildProfileTransport, len(input.Transports))
+		for i, t := range input.Transports {
+			var extra string
+			if t.Extra != nil {
+				extra = *t.Extra
+			}
+			transports[i] = builderpb.BuildProfileTransport{
+				URI:      t.URI,
+				Interval: t.Interval,
+				Type:     c2pb.Transport_Type(t.Type),
+				Extra:    extra,
+			}
+		}
+		creator.SetTransports(transports)
+	}
+	if len(input.Tomes) > 0 {
+		tomes := make([]builderpb.BuildProfileTome, len(input.Tomes))
+		for i, t := range input.Tomes {
+			tomes[i] = builderpb.BuildProfileTome{
+				TomeID: t.TomeID,
+				Params: t.Params,
+			}
+		}
+		creator.SetTomes(tomes)
+	}
+
+	return creator.Save(ctx)
+}
+
+// UpdateBuildProfile is the resolver for the updateBuildProfile field.
+func (r *mutationResolver) UpdateBuildProfile(ctx context.Context, profileID int, input models.UpdateBuildProfileInput) (*ent.BuildProfile, error) {
+	profile, err := r.client.BuildProfile.Get(ctx, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load build profile: %w", err)
+	}
+	protected, err := r.isSeededDefaultBuildProfile(ctx, profile)
+	if err != nil {
+		return nil, err
+	}
+	if protected {
+		return nil, fmt.Errorf("the default build profile cannot be edited")
+	}
+	if input.Name == builder.DefaultBuildProfileName && profile.Name != builder.DefaultBuildProfileName {
+		return nil, fmt.Errorf("the name %q is reserved for the default build profile", builder.DefaultBuildProfileName)
+	}
+
+	updater := profile.Update().
+		SetName(input.Name).
+		SetDescription(input.Description).
+		SetPrebuildscript(input.Prebuildscript).
+		SetSetupscript(input.Setupscript).
+		SetPostbuildscript(input.Postbuildscript)
+
+	if input.Unique != nil && *input.Unique != "" {
+		updater.SetUnique(*input.Unique)
+	} else {
+		updater.ClearUnique()
+	}
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		updater.SetBuildImage(*input.BuildImage)
+	}
+	if input.BuildScript != nil && *input.BuildScript != "" {
+		updater.SetBuildScript(*input.BuildScript)
+	}
+	if input.ArtifactPath != nil && *input.ArtifactPath != "" {
+		updater.SetArtifactPath(*input.ArtifactPath)
+	}
+
+	// Unlike CreateBuildProfile, transports/tomes are always fully replaced
+	// here (even with an empty list) rather than left untouched when absent --
+	// an update means "this is the new value", so a client removing the last
+	// tome must actually clear it rather than have the old list silently stick.
+	transports := make([]builderpb.BuildProfileTransport, len(input.Transports))
+	for i, t := range input.Transports {
+		var extra string
+		if t.Extra != nil {
+			extra = *t.Extra
+		}
+		transports[i] = builderpb.BuildProfileTransport{
+			URI:      t.URI,
+			Interval: t.Interval,
+			Type:     c2pb.Transport_Type(t.Type),
+			Extra:    extra,
+		}
+	}
+	updater.SetTransports(transports)
+
+	tomes := make([]builderpb.BuildProfileTome, len(input.Tomes))
+	for i, t := range input.Tomes {
+		tomes[i] = builderpb.BuildProfileTome{
+			TomeID: t.TomeID,
+			Params: t.Params,
+		}
+	}
+	updater.SetTomes(tomes)
+
+	return updater.Save(ctx)
+}
+
+// DeleteBuildProfile is the resolver for the deleteBuildProfile field.
+func (r *mutationResolver) DeleteBuildProfile(ctx context.Context, profileID int) (int, error) {
+	profile, err := r.client.BuildProfile.Get(ctx, profileID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to load build profile: %w", err)
+	}
+	protected, err := r.isSeededDefaultBuildProfile(ctx, profile)
+	if err != nil {
+		return 0, err
+	}
+	if protected {
+		return 0, fmt.Errorf("the default build profile cannot be deleted")
+	}
+	if err := r.client.BuildProfile.DeleteOneID(profileID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return profileID, nil
+}
+
 // CreateBuildTask is the resolver for the createBuildTask field.
 func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin build task transaction: %w", err)
+	}
+	defer tx.Rollback()
+	graph := tx.Client()
+
 	// 1. Load the build profile; its values serve as defaults for transports,
 	//    preBuildScript, and postBuildScript.
-	profile, err := r.client.BuildProfile.Get(ctx, input.ProfileID)
+	profile, err := graph.BuildProfile.Get(ctx, input.ProfileID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load build profile: %w", err)
 	}
@@ -599,45 +726,100 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	}
 
 	// Resolve pre/post build scripts: input > profile > default
-	preBuildScript := input.PreBuildScript
-	if preBuildScript == nil && profile.Prebuildscript != "" {
-		preBuildScript = &profile.Prebuildscript
+	preBuildScript := profile.Prebuildscript
+	if input.PreBuildScript != nil {
+		preBuildScript = *input.PreBuildScript
 	}
-	postBuildScript := input.PostBuildScript
-	if postBuildScript == nil && profile.Postbuildscript != "" {
-		postBuildScript = &profile.Postbuildscript
+	postBuildScript := profile.Postbuildscript
+	if input.PostBuildScript != nil {
+		postBuildScript = *input.PostBuildScript
 	}
 
 	// Resolve setup script: input > profile > default
-	setupScript := input.SetupScript
-	if setupScript == nil && profile.Setupscript != "" {
-		setupScript = &profile.Setupscript
+	setupScript := profile.Setupscript
+	if input.SetupScript != nil {
+		setupScript = *input.SetupScript
 	}
 
-	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
+	// Resolve build image: input > profile
+	buildImage := profile.BuildImage
+	if input.BuildImage != nil && *input.BuildImage != "" {
+		buildImage = *input.BuildImage
+	}
+
+	// Resolve unique: input > profile
+	var unique *string
+	if profile.Unique != "" {
+		unique = &profile.Unique
+	}
+	if input.Unique != nil {
+		unique = input.Unique
+	}
+
+	// Resolve tomes: input > profile
+	tomes := profile.Tomes
+	if input.Tomes != nil {
+		tomes = make([]builderpb.BuildProfileTome, 0, len(input.Tomes))
+		for _, t := range input.Tomes {
+			if t == nil {
+				continue
+			}
+			tomes = append(tomes, builderpb.BuildProfileTome{
+				TomeID: t.TomeID,
+				Params: t.Params,
+			})
+		}
+	}
+
+	setupScript, buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, setupScript, input.TargetOs, targetFormat)
+	if err != nil {
+		return nil, fmt.Errorf("resolve build recipe: %w", err)
+	}
 	if input.ArtifactPath != nil {
 		artifactPath = *input.ArtifactPath
 	}
 
-	// 3. Validate target format for the given OS
-	if err := builder.ValidateTargetFormat(input.TargetOs, targetFormat); err != nil {
-		return nil, err
+	// snapshot.BuildScript/ArtifactPath are set to the already-resolved
+	// (templated and input-overridden) values so profileAtCreation matches
+	// what's actually stored on the task and executed by the builder,
+	// rather than the raw profile template.
+	snapshot := builder.NewProfileSnapshot(profile)
+	snapshot.BuildImage = buildImage
+	snapshot.Setupscript = setupScript
+	snapshot.Prebuildscript = preBuildScript
+	snapshot.BuildScript = buildScript
+	snapshot.Postbuildscript = postBuildScript
+	snapshot.ArtifactPath = artifactPath
+	snapshot.Transports = transports
+	if unique != nil {
+		snapshot.Unique = *unique
 	}
 
-	// 4. Derive the build script from configuration
-	buildScript, err := builder.BuildCommand(input.TargetOs, targetFormat)
+	bundleContent, err := builder.SnapshotProfile(ctx, graph, snapshot, tomes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate build script: %w", err)
+		return nil, fmt.Errorf("capture build profile: %w", err)
+	}
+	var bundleID *int
+	if len(bundleContent) > 0 {
+		bundle, err := graph.Asset.Create().
+			SetName("BuildInputs-" + uuid.NewString()).
+			SetContent(bundleContent).
+			Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("save build input bundle: %w", err)
+		}
+		bundleID = &bundle.ID
 	}
 
-	// 5. Query healthy builders (checked in within the stale threshold).
-	// Use the first transport's interval for the stale threshold.
-	staleThreshold := time.Duration(transports[0].Interval) * time.Second
-	staleCutoff := time.Now().Add(-staleThreshold)
-	healthyBuilders, err := r.client.Builder.Query().
+	// 5. Query builders that have checked in; freshness uses each builder's own interval,
+	// so the precise check happens below in application code. Still bound the query at
+	// the DB layer using the longest possible staleness window (3x the max poll interval)
+	// to avoid pulling every builder that has ever checked in, including long-dead ones.
+	now := time.Now()
+	healthyBuilders, err := graph.Builder.Query().
 		Where(
 			entbuilder.LastSeenAtNotNil(),
-			entbuilder.LastSeenAtGTE(staleCutoff),
+			entbuilder.LastSeenAtGTE(now.Add(-builder.MaxStaleAge)),
 		).
 		All(ctx)
 	if err != nil {
@@ -648,6 +830,9 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// SupportedTargets is a JSON field so it must be filtered in application code.
 	var candidates []*ent.Builder
 	for _, b := range healthyBuilders {
+		if !builder.BuilderHealthy(*b.LastSeenAt, b.PollInterval, now) {
+			continue
+		}
 		for _, target := range b.SupportedTargets {
 			if target == input.TargetOs {
 				candidates = append(candidates, b)
@@ -664,19 +849,19 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	selected := candidates[mathrand.Intn(len(candidates))]
 
 	// 8. Create the build task
-	create := r.client.BuildTask.Create().
+	create := graph.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
 		SetTargetFormat(targetFormat).
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected).
 		SetBuildScript(buildScript).
-		SetProfile(profile)
+		SetProfile(profile).
+		SetProfileAtCreation(snapshot).
+		SetNillableBundleID(bundleID).
+		SetSetupscript(setupScript)
 
-	if setupScript != nil {
-		create.SetSetupscript(*setupScript)
-	}
-	if input.Unique != nil {
-		create.SetUnique(*input.Unique)
+	if unique != nil {
+		create.SetUnique(*unique)
 	}
 
 	bt, err := create.Save(ctx)
@@ -684,7 +869,10 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		return nil, fmt.Errorf("failed to create build task: %w", err)
 	}
 
-	return bt, nil
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit build task: %w", err)
+	}
+	return bt.Unwrap(), nil
 }
 
 // CreateScheduledTask is the resolver for the createScheduledTask field.
@@ -757,6 +945,155 @@ func (r *mutationResolver) DeleteAllNotifications(ctx context.Context) (bool, er
 		return false, fmt.Errorf("failed to delete notifications: %w", err)
 	}
 	return true, nil
+}
+
+// CreateNetwork is the resolver for the createNetwork field.
+func (r *mutationResolver) CreateNetwork(ctx context.Context, input ent.CreateNetworkInput) (*ent.Network, error) {
+	return r.client.Network.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateNetwork is the resolver for the updateNetwork field.
+func (r *mutationResolver) UpdateNetwork(ctx context.Context, networkID int, input ent.UpdateNetworkInput) (*ent.Network, error) {
+	return r.client.Network.UpdateOneID(networkID).SetInput(input).Save(ctx)
+}
+
+// DeleteNetwork is the resolver for the deleteNetwork field.
+func (r *mutationResolver) DeleteNetwork(ctx context.Context, networkID int) (int, error) {
+	if err := r.client.Network.DeleteOneID(networkID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return networkID, nil
+}
+
+// CreateNetworkHost is the resolver for the createNetworkHost field.
+func (r *mutationResolver) CreateNetworkHost(ctx context.Context, input ent.CreateNetworkHostInput) (*ent.NetworkHost, error) {
+	return r.client.NetworkHost.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateNetworkHost is the resolver for the updateNetworkHost field.
+func (r *mutationResolver) UpdateNetworkHost(ctx context.Context, networkHostID int, input ent.UpdateNetworkHostInput) (*ent.NetworkHost, error) {
+	return r.client.NetworkHost.UpdateOneID(networkHostID).SetInput(input).Save(ctx)
+}
+
+// DeleteNetworkHost is the resolver for the deleteNetworkHost field.
+func (r *mutationResolver) DeleteNetworkHost(ctx context.Context, networkHostID int) (int, error) {
+	if err := r.client.NetworkHost.DeleteOneID(networkHostID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return networkHostID, nil
+}
+
+// CreateOperatorNote is the resolver for the createOperatorNote field.
+func (r *mutationResolver) CreateOperatorNote(ctx context.Context, input ent.CreateOperatorNoteInput) (*ent.OperatorNote, error) {
+	if len(input.ShellIDs) > 0 {
+		validShellIDs, err := r.client.Shell.Query().
+			Where(shell.IDIn(input.ShellIDs...)).
+			IDs(ctx)
+		if err == nil {
+			input.ShellIDs = validShellIDs
+		} else {
+			input.ShellIDs = nil
+		}
+	}
+	creator := r.client.OperatorNote.Create().SetInput(input)
+	if author := auth.UserFromContext(ctx); author != nil {
+		creator.SetAuthorID(author.ID)
+	}
+	return creator.Save(ctx)
+}
+
+// UpdateOperatorNote is the resolver for the updateOperatorNote field.
+func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteID int, input ent.UpdateOperatorNoteInput) (*ent.OperatorNote, error) {
+	exists, err := r.client.OperatorNote.Query().
+		Where(operatornote.ID(operatorNoteID)).
+		Exist(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return r.CreateOperatorNote(ctx, ent.CreateOperatorNoteInput{
+			Content:  input.Content,
+			ShellIDs: input.AddShellIDs,
+		})
+	}
+	if author := auth.UserFromContext(ctx); author != nil {
+		owned, err := r.client.OperatorNote.Query().
+			Where(
+				operatornote.ID(operatorNoteID),
+				operatornote.Or(
+					operatornote.HasAuthorWith(user.ID(author.ID)),
+					operatornote.Not(operatornote.HasAuthor()),
+				),
+			).
+			Exist(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !owned {
+			return nil, errors.New("unauthorized")
+		}
+	}
+	if len(input.AddShellIDs) > 0 {
+		existingSet := make(map[int]bool)
+		if !input.ClearShells {
+			existingShellIDs, err := r.client.OperatorNote.Query().
+				Where(operatornote.ID(operatorNoteID)).
+				QueryShells().
+				IDs(ctx)
+			if err == nil {
+				removedSet := make(map[int]bool, len(input.RemoveShellIDs))
+				for _, id := range input.RemoveShellIDs {
+					removedSet[id] = true
+				}
+				for _, id := range existingShellIDs {
+					if !removedSet[id] {
+						existingSet[id] = true
+					}
+				}
+			}
+		}
+		filtered := make([]int, 0, len(input.AddShellIDs))
+		for _, id := range input.AddShellIDs {
+			if !existingSet[id] {
+				existingSet[id] = true
+				filtered = append(filtered, id)
+			}
+		}
+		if len(filtered) > 0 {
+			validShellIDs, err := r.client.Shell.Query().
+				Where(shell.IDIn(filtered...)).
+				IDs(ctx)
+			if err == nil {
+				filtered = validShellIDs
+			} else {
+				filtered = nil
+			}
+		}
+		input.AddShellIDs = filtered
+	}
+	return r.client.OperatorNote.UpdateOneID(operatorNoteID).SetInput(input).Save(ctx)
+}
+
+// DeleteOperatorNote is the resolver for the deleteOperatorNote field.
+func (r *mutationResolver) DeleteOperatorNote(ctx context.Context, operatorNoteID int) (int, error) {
+	if author := auth.UserFromContext(ctx); author != nil {
+		owned, err := r.client.OperatorNote.Query().
+			Where(
+				operatornote.ID(operatorNoteID),
+				operatornote.HasAuthorWith(user.ID(author.ID)),
+			).
+			Exist(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if !owned {
+			return 0, errors.New("unauthorized")
+		}
+	}
+	if err := r.client.OperatorNote.DeleteOneID(operatorNoteID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return operatorNoteID, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

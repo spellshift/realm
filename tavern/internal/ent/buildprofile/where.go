@@ -68,6 +68,16 @@ func BuildImage(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldBuildImage, v))
 }
 
+// BuildScript applies equality check predicate on the "build_script" field. It's identical to BuildScriptEQ.
+func BuildScript(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldBuildScript, v))
+}
+
+// ArtifactPath applies equality check predicate on the "artifact_path" field. It's identical to ArtifactPathEQ.
+func ArtifactPath(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldArtifactPath, v))
+}
+
 // Prebuildscript applies equality check predicate on the "prebuildscript" field. It's identical to PrebuildscriptEQ.
 func Prebuildscript(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldPrebuildscript, v))
@@ -281,6 +291,136 @@ func BuildImageEqualFold(v string) predicate.BuildProfile {
 // BuildImageContainsFold applies the ContainsFold predicate on the "build_image" field.
 func BuildImageContainsFold(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldContainsFold(FieldBuildImage, v))
+}
+
+// BuildScriptEQ applies the EQ predicate on the "build_script" field.
+func BuildScriptEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldBuildScript, v))
+}
+
+// BuildScriptNEQ applies the NEQ predicate on the "build_script" field.
+func BuildScriptNEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNEQ(FieldBuildScript, v))
+}
+
+// BuildScriptIn applies the In predicate on the "build_script" field.
+func BuildScriptIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldIn(FieldBuildScript, vs...))
+}
+
+// BuildScriptNotIn applies the NotIn predicate on the "build_script" field.
+func BuildScriptNotIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNotIn(FieldBuildScript, vs...))
+}
+
+// BuildScriptGT applies the GT predicate on the "build_script" field.
+func BuildScriptGT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGT(FieldBuildScript, v))
+}
+
+// BuildScriptGTE applies the GTE predicate on the "build_script" field.
+func BuildScriptGTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGTE(FieldBuildScript, v))
+}
+
+// BuildScriptLT applies the LT predicate on the "build_script" field.
+func BuildScriptLT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLT(FieldBuildScript, v))
+}
+
+// BuildScriptLTE applies the LTE predicate on the "build_script" field.
+func BuildScriptLTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLTE(FieldBuildScript, v))
+}
+
+// BuildScriptContains applies the Contains predicate on the "build_script" field.
+func BuildScriptContains(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContains(FieldBuildScript, v))
+}
+
+// BuildScriptHasPrefix applies the HasPrefix predicate on the "build_script" field.
+func BuildScriptHasPrefix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasPrefix(FieldBuildScript, v))
+}
+
+// BuildScriptHasSuffix applies the HasSuffix predicate on the "build_script" field.
+func BuildScriptHasSuffix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasSuffix(FieldBuildScript, v))
+}
+
+// BuildScriptEqualFold applies the EqualFold predicate on the "build_script" field.
+func BuildScriptEqualFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEqualFold(FieldBuildScript, v))
+}
+
+// BuildScriptContainsFold applies the ContainsFold predicate on the "build_script" field.
+func BuildScriptContainsFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContainsFold(FieldBuildScript, v))
+}
+
+// ArtifactPathEQ applies the EQ predicate on the "artifact_path" field.
+func ArtifactPathEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldArtifactPath, v))
+}
+
+// ArtifactPathNEQ applies the NEQ predicate on the "artifact_path" field.
+func ArtifactPathNEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNEQ(FieldArtifactPath, v))
+}
+
+// ArtifactPathIn applies the In predicate on the "artifact_path" field.
+func ArtifactPathIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldIn(FieldArtifactPath, vs...))
+}
+
+// ArtifactPathNotIn applies the NotIn predicate on the "artifact_path" field.
+func ArtifactPathNotIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNotIn(FieldArtifactPath, vs...))
+}
+
+// ArtifactPathGT applies the GT predicate on the "artifact_path" field.
+func ArtifactPathGT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGT(FieldArtifactPath, v))
+}
+
+// ArtifactPathGTE applies the GTE predicate on the "artifact_path" field.
+func ArtifactPathGTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGTE(FieldArtifactPath, v))
+}
+
+// ArtifactPathLT applies the LT predicate on the "artifact_path" field.
+func ArtifactPathLT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLT(FieldArtifactPath, v))
+}
+
+// ArtifactPathLTE applies the LTE predicate on the "artifact_path" field.
+func ArtifactPathLTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLTE(FieldArtifactPath, v))
+}
+
+// ArtifactPathContains applies the Contains predicate on the "artifact_path" field.
+func ArtifactPathContains(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContains(FieldArtifactPath, v))
+}
+
+// ArtifactPathHasPrefix applies the HasPrefix predicate on the "artifact_path" field.
+func ArtifactPathHasPrefix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasPrefix(FieldArtifactPath, v))
+}
+
+// ArtifactPathHasSuffix applies the HasSuffix predicate on the "artifact_path" field.
+func ArtifactPathHasSuffix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasSuffix(FieldArtifactPath, v))
+}
+
+// ArtifactPathEqualFold applies the EqualFold predicate on the "artifact_path" field.
+func ArtifactPathEqualFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEqualFold(FieldArtifactPath, v))
+}
+
+// ArtifactPathContainsFold applies the ContainsFold predicate on the "artifact_path" field.
+func ArtifactPathContainsFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContainsFold(FieldArtifactPath, v))
 }
 
 // PrebuildscriptEQ applies the EQ predicate on the "prebuildscript" field.

@@ -1,9 +1,10 @@
 [package]
 name = "eldritch-wasm"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 
 [features]
+default = ["fake_bindings"]
 stdlib = ["eldritch/stdlib", "eldritch/std"]
 fake_bindings = ["eldritch/fake_bindings"]
 

@@ -126,6 +126,15 @@ describe('FilterControls', () => {
       expect(screen.queryByTestId('beacon-filter-bar')).not.toBeInTheDocument();
     });
 
+    it('should render asset name, user, and agent filters for ASSETS page', () => {
+      render(<TestWrapper path="/assets" />);
+
+      expect(screen.getByTestId('free-text-search-Asset name')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('agent-filter-bar')).toBeInTheDocument();
+      expect(screen.queryByTestId('beacon-filter-bar')).not.toBeInTheDocument();
+    });
+
     it('should not render filters on non-filterable pages', () => {
       render(<TestWrapper path="/admin" />);
 

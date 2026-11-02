@@ -3,16 +3,153 @@ package ent
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"net"
+	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
+
+func deriveSubnetFromIP(ipStr string) string {
+	parsedIP := net.ParseIP(strings.TrimSpace(ipStr))
+	if parsedIP == nil {
+		return ""
+	}
+	if ip4 := parsedIP.To4(); ip4 != nil {
+		return fmt.Sprintf("%d.%d.%d.0/24", ip4[0], ip4[1], ip4[2])
+	}
+	mask := net.CIDRMask(64, 128)
+	ipNet := &net.IPNet{IP: parsedIP.Mask(mask), Mask: mask}
+	return ipNet.String()
+}
+
+// HookDeriveNetworkHost will attempt to create a NetworkHost ent mapped to a newly created Host ent.
+func HookDeriveNetworkHost() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*HostMutation)
+			if !ok || !mut.Op().Is(ent.OpCreate) {
+				return next.Mutate(ctx, m)
+			}
+
+			client := mut.Client()
+			if identifier, hasIdentifier := mut.Identifier(); hasIdentifier {
+				exists, err := client.Host.Query().
+					Where(host.IdentifierEQ(identifier)).
+					Exist(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("checking for existing host: %w", err)
+				}
+				if exists {
+					return next.Mutate(ctx, m)
+				}
+			}
+
+			val, err := next.Mutate(ctx, m)
+			if err != nil {
+				return val, err
+			}
+
+			if len(mut.NetworkHostsIDs()) > 0 {
+				return val, nil
+			}
+
+			h, _ := val.(*Host)
+			var id int
+			if h != nil {
+				id = h.ID
+			}
+			if id == 0 {
+				id, _ = mut.ID()
+			}
+			if id == 0 {
+				return val, nil
+			}
+
+			ipAddr, _ := mut.PrimaryIP()
+			if ipAddr == "" && h != nil {
+				ipAddr = h.PrimaryIP
+			}
+			ipAddr = strings.TrimSpace(ipAddr)
+			if ipAddr == "" {
+				extIP, _ := mut.ExternalIP()
+				if extIP == "" && h != nil {
+					extIP = h.ExternalIP
+				}
+				extIP = strings.TrimSpace(extIP)
+				if extIP != "" && extIP != "NOOP" {
+					ipAddr = extIP
+				}
+			}
+			if ipAddr == "" {
+				return val, nil
+			}
+
+			name, _ := mut.Name()
+			if name == "" && h != nil {
+				name = h.Name
+			}
+
+			existingNH, err := client.NetworkHost.Query().
+				Where(
+					networkhost.Or(
+						networkhost.HasHostWith(host.ID(id)),
+						networkhost.IPAddress(ipAddr),
+					),
+				).
+				First(ctx)
+			if err != nil && !IsNotFound(err) {
+				slog.ErrorContext(ctx, "failed to check for existing network host", "host_id", id, "err", err)
+				return val, nil
+			}
+			if existingNH != nil {
+				updater := existingNH.Update().SetHostID(id)
+				if existingNH.Name == "" && name != "" {
+					updater.SetName(name)
+				}
+				if existingNH.Hostname == "" && name != "" {
+					updater.SetHostname(name)
+				}
+				if credIDs := mut.CredentialsIDs(); len(credIDs) > 0 {
+					updater.AddCredentialIDs(credIDs...)
+				}
+				if _, err := updater.Save(ctx); err != nil {
+					slog.ErrorContext(ctx, "failed to link existing network host to host", "host_id", id, "err", err)
+				}
+				return val, nil
+			}
+
+			nhCreate := client.NetworkHost.Create().
+				SetHostID(id).
+				SetName(name).
+				SetIPAddress(ipAddr)
+
+			if name != "" {
+				nhCreate.SetHostname(name)
+			}
+			if subnet := deriveSubnetFromIP(ipAddr); subnet != "" {
+				nhCreate.SetSubnet(subnet)
+			}
+			if credIDs := mut.CredentialsIDs(); len(credIDs) > 0 {
+				nhCreate.AddCredentialIDs(credIDs...)
+			}
+
+			if _, err := nhCreate.Save(ctx); err != nil {
+				slog.ErrorContext(ctx, "failed to derive network host for new host", "host_id", id, "err", err)
+			}
+
+			return val, nil
+		})
+	}
+}
 
 // HookDeriveHostEvents will create host events based on mutations.
 func HookDeriveHostEvents() ent.Hook {

@@ -1,7 +1,7 @@
 [package]
 name = "eldritch-lang"
 edition = "2021"
-version = "0.4.0"
+version = "0.4.1"
 license = "GNU GPL v3.0"
 description = "Eldritch Language Server."
 documentation = "https://docs.realm.pub/eldritch"

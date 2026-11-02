@@ -3,7 +3,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -21,22 +21,25 @@ pub mod std;
 /// - content searching and replacement.
 pub trait FileLibrary {
     #[eldritch_method]
-    /// Appends content to a file.
+    /// Appends binary content to a file.
     ///
     /// If the file does not exist, it will be created.
     ///
     /// **Parameters**
     /// - `path` (`str`): The path to the file.
-    /// - `content` (`str`): The string content to append.
+    /// - `content` (`Bytes`): The bytes content to append.
     ///
     /// **Returns**
     /// - `None`
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be opened or written to.
-    fn append(&self, path: String, content: String) -> Result<(), String>;
+    fn append(&self, path: String, content: Vec<u8>) -> Result<(), String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "file.compress has been deprecated and will be removed in a future version of eldritch. Please use gzip.compress_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Compresses a file or directory using GZIP.
     ///
     /// If `src` is a directory, it will be archived (tar) before compression.
@@ -69,6 +72,9 @@ pub trait FileLibrary {
     fn copy(&self, src: String, dst: String) -> Result<(), String>;
 
     #[eldritch_method]
+    #[eldritch_deprecated(
+        "file.decompress has been deprecated and will be removed in a future version of eldritch. Please use gzip.decompress_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
     /// Decompresses a GZIP file.
     ///
     /// If the file is a tar archive, it will be extracted to the destination directory.
@@ -152,11 +158,32 @@ pub trait FileLibrary {
     ///   - `group` (`str`)
     ///   - `permissions` (`str`)
     ///   - `modified` (`str`)
+    ///   - `times` (`dict`)
     ///   - `type` (`str`: "File" or "Directory")
     ///
     /// **Errors**
     /// - Returns an error string if listing fails.
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
+    /// Lists all named pipes on the system.
+    ///
+    /// On Windows, enumerates `\\.\pipe\` using `FindFirstFileW`/`FindNextFileW`.
+    /// On Unix (Linux, macOS, BSD), scans `/tmp`, `/var/run`, `/var/tmp`, `/run` for FIFOs.
+    /// On Linux additionally scans `/proc/*/fd` for pipe file descriptors.
+    ///
+    /// **Parameters**
+    /// - `detailed` (`Option<bool>`): If True, returns list of dicts with `name`, `instances`,
+    ///   and `max_instances` (Windows only). Defaults to False (returns list of strings).
+    ///
+    /// **Returns**
+    /// - `List<str>` (default): Pipe names (Windows) or FIFO paths (Unix).
+    /// - `List<Dict>` (detailed=True, Windows): Dicts with `name` (str), `instances` (int),
+    ///   `max_instances` (int, -1 for unlimited).
+    ///
+    /// **Errors**
+    /// - Returns an error string if enumeration fails or the platform is unsupported.
+    fn list_named_pipes(&self, detailed: Option<bool>) -> Result<Value, String>;
 
     #[eldritch_method]
     /// Lists files in a directory recursively, sorted by most recent modification time.
@@ -214,23 +241,9 @@ pub trait FileLibrary {
     fn parent_dir(&self, path: String) -> Result<String, String>;
 
     #[eldritch_method]
-    /// Reads the entire content of a file as a string.
-    ///
-    /// Supports globbing; if multiple files match, reads the first one (or behavior may vary, usually reads specific file).
-    /// *Note*: v1 docs say it errors if a directory matches.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The file path.
-    ///
-    /// **Returns**
-    /// - `str`: The file content.
-    ///
-    /// **Errors**
-    /// - Returns an error string if the file cannot be read or contains invalid UTF-8.
-    fn read(&self, path: String) -> Result<String, String>;
-
-    #[eldritch_method]
     /// Reads the entire content of a file as binary data.
+    ///
+    /// Supports globbing; if multiple files match, concatenates their content.
     ///
     /// **Parameters**
     /// - `path` (`str`): The file path.
@@ -240,13 +253,36 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
-    fn read_binary(&self, path: String) -> Result<Value, String>;
+    fn read(&self, path: String) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
-    /// Returns the current working directory of the process.
+    /// Reads data from a named pipe.
+    ///
+    /// On Windows, connects to `\\.\pipe\<name>`. On Unix (Linux/macOS/BSD), opens the FIFO at `<name>`.
+    /// Reads up to `max_bytes` bytes (default: reads all available data to EOF).
+    /// For time-based reads, use a loop with `max_bytes` chunks in eldritch.
+    ///
+    /// **Parameters**
+    /// - `name` (`str`): The pipe name. On Windows this is just the pipe name (e.g. `"mypipe"`),
+    ///   which gets expanded to `\\.\pipe\mypipe`. On Unix, this is the full path to the FIFO
+    ///   (e.g. `"/tmp/mypipe"`).
+    /// - `max_bytes` (`Option<int>`): Maximum bytes to read. Defaults to reading all available data.
     ///
     /// **Returns**
-    /// - `Option<str>`: The current working directory path, or None if it cannot be determined.
+    /// - `str`: The data read from the pipe as a UTF-8 string.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the pipe cannot be opened or data is not valid UTF-8.
+    ///
+    /// **Supported OS**
+    /// - Windows, Linux, macOS, BSD
+    fn read_named_pipe(&self, name: String, max_bytes: Option<i64>) -> Result<String, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "file.pwd has been deprecated and will be removed in a future version of eldritch. Please use process.cwd instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `process.cwd` instead.
     fn pwd(&self) -> Result<Option<String>, String>;
 
     #[eldritch_method]
@@ -303,6 +339,13 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if creation fails.
+    fn tmp(&self, name: Option<String>) -> Result<String, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "file.temp_file has been deprecated and will be removed in a future version of eldritch. Please use file.tmp instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `file.tmp` instead.
     fn temp_file(&self, name: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
@@ -319,19 +362,10 @@ pub trait FileLibrary {
     fn tmp_dir(&self) -> Result<String, String>;
 
     #[eldritch_method]
-    /// Renders a Jinja2 template file to a destination path.
-    ///
-    /// **Parameters**
-    /// - `template_path` (`str`): Path to the source template file.
-    /// - `dst` (`str`): Destination path for the rendered file.
-    /// - `args` (`Dict<str, Value>`): Variables to substitute in the template.
-    /// - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
-    ///
-    /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if the template cannot be read, parsed, or written.
+    #[eldritch_deprecated(
+        "file.template has been deprecated and will be removed in a future version of eldritch. Please use template.render_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `template.render_file` instead.
     fn template(
         &self,
         template_path: String,
@@ -341,18 +375,10 @@ pub trait FileLibrary {
     ) -> Result<(), String>;
 
     #[eldritch_method]
-    /// Renders a template string and writes it to a file.
-    ///
-    /// **Parameters**
-    /// - `template` (`str`): The template string to render.
-    /// - `args` (`Dict<str, Value>`): Variables to substitute in the template.
-    /// - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
-    ///
-    /// **Returns**
-    /// - Returns the template as a string
-    ///
-    /// **Errors**
-    /// - Returns an error string if the template cannot be parsed or written.
+    #[eldritch_deprecated(
+        "file.template_str has been deprecated and will be removed in a future version of eldritch. Please use template.render instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `template.render` instead.
     fn template_str(
         &self,
         template: String,
@@ -388,18 +414,14 @@ pub trait FileLibrary {
     ) -> Result<(), String>;
 
     #[eldritch_method]
-    /// Writes content to a file, overwriting it if it exists.
+    /// Locates the executable path for a given command name (searches `PATH`).
     ///
     /// **Parameters**
-    /// - `path` (`str`): The file path.
-    /// - `content` (`str`): The string content to write.
+    /// - `bin` (`str`): The name of the binary to find (e.g., `"ls"`, `"python"`).
     ///
     /// **Returns**
-    /// - `None`
-    ///
-    /// **Errors**
-    /// - Returns an error string if writing fails.
-    fn write(&self, path: String, content: String) -> Result<(), String>;
+    /// - `str`: The full path to the executable.
+    fn which(&self, bin: String) -> Result<String, String>;
 
     #[eldritch_method]
     /// Writes binary content to a file, overwriting it if it exists.
@@ -413,7 +435,7 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if writing fails.
-    fn write_binary(&self, path: String, content: Value) -> Result<(), String>;
+    fn write(&self, path: String, content: Vec<u8>) -> Result<(), String>;
 
     #[eldritch_method]
     /// Finds files matching specific criteria.

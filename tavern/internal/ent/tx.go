@@ -26,6 +26,8 @@ type Tx struct {
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
 	Builder *BuilderClient
+	// BuilderEnrollmentToken is the client for interacting with the BuilderEnrollmentToken builders.
+	BuilderEnrollmentToken *BuilderEnrollmentTokenClient
 	// DeviceAuth is the client for interacting with the DeviceAuth builders.
 	DeviceAuth *DeviceAuthClient
 	// Event is the client for interacting with the Event builders.
@@ -40,8 +42,14 @@ type Tx struct {
 	HostProcess *HostProcessClient
 	// Link is the client for interacting with the Link builders.
 	Link *LinkClient
+	// Network is the client for interacting with the Network builders.
+	Network *NetworkClient
+	// NetworkHost is the client for interacting with the NetworkHost builders.
+	NetworkHost *NetworkHostClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// OperatorNote is the client for interacting with the OperatorNote builders.
+	OperatorNote *OperatorNoteClient
 	// Portal is the client for interacting with the Portal builders.
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
@@ -204,6 +212,7 @@ func (tx *Tx) init() {
 	tx.BuildProfile = NewBuildProfileClient(tx.config)
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)
+	tx.BuilderEnrollmentToken = NewBuilderEnrollmentTokenClient(tx.config)
 	tx.DeviceAuth = NewDeviceAuthClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
@@ -211,7 +220,10 @@ func (tx *Tx) init() {
 	tx.HostFile = NewHostFileClient(tx.config)
 	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Link = NewLinkClient(tx.config)
+	tx.Network = NewNetworkClient(tx.config)
+	tx.NetworkHost = NewNetworkHostClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
+	tx.OperatorNote = NewOperatorNoteClient(tx.config)
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)

@@ -93,6 +93,18 @@ func (f BuilderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BuilderMutation", m)
 }
 
+// The BuilderEnrollmentTokenFunc type is an adapter to allow the use of ordinary
+// function as BuilderEnrollmentToken mutator.
+type BuilderEnrollmentTokenFunc func(context.Context, *ent.BuilderEnrollmentTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BuilderEnrollmentTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BuilderEnrollmentTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BuilderEnrollmentTokenMutation", m)
+}
+
 // The DeviceAuthFunc type is an adapter to allow the use of ordinary
 // function as DeviceAuth mutator.
 type DeviceAuthFunc func(context.Context, *ent.DeviceAuthMutation) (ent.Value, error)
@@ -177,6 +189,30 @@ func (f LinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LinkMutation", m)
 }
 
+// The NetworkFunc type is an adapter to allow the use of ordinary
+// function as Network mutator.
+type NetworkFunc func(context.Context, *ent.NetworkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NetworkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NetworkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NetworkMutation", m)
+}
+
+// The NetworkHostFunc type is an adapter to allow the use of ordinary
+// function as NetworkHost mutator.
+type NetworkHostFunc func(context.Context, *ent.NetworkHostMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NetworkHostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NetworkHostMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NetworkHostMutation", m)
+}
+
 // The NotificationFunc type is an adapter to allow the use of ordinary
 // function as Notification mutator.
 type NotificationFunc func(context.Context, *ent.NotificationMutation) (ent.Value, error)
@@ -187,6 +223,18 @@ func (f NotificationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotificationMutation", m)
+}
+
+// The OperatorNoteFunc type is an adapter to allow the use of ordinary
+// function as OperatorNote mutator.
+type OperatorNoteFunc func(context.Context, *ent.OperatorNoteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OperatorNoteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OperatorNoteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OperatorNoteMutation", m)
 }
 
 // The PortalFunc type is an adapter to allow the use of ordinary

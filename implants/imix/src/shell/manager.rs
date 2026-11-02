@@ -1,8 +1,10 @@
+use prost_types::Timestamp;
 use std::collections::HashMap;
 use std::fmt;
 use std::panic::{self, AssertUnwindSafe};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 use tokio::sync::mpsc;
 
 use eldritch::agent::agent::Agent;
@@ -27,11 +29,16 @@ pub enum ShellManagerMessage {
 
 #[derive(Clone)]
 pub enum ExecutionContext {
-    ShellTask(ShellTaskContext),
+    ShellTask {
+        context: ShellTaskContext,
+        started_at: Timestamp,
+        emitted: Arc<AtomicBool>,
+    },
     Portal {
         tx: mpsc::Sender<Mote>,
         stream_id: String,
         seq_id: u64,
+        emitted: Arc<AtomicBool>,
     },
     None,
 }
@@ -44,7 +51,12 @@ fn dispatch_output(
     is_error: bool,
 ) {
     match context {
-        ExecutionContext::ShellTask(stc) => {
+        ExecutionContext::ShellTask {
+            context: stc,
+            started_at,
+            emitted,
+        } => {
+            emitted.store(true, Ordering::SeqCst);
             let task_error = if is_error {
                 Some(TaskError {
                     msg: output.clone(),
@@ -57,8 +69,8 @@ fn dispatch_output(
                 id: stc.shell_task_id,
                 output: if is_error { String::new() } else { output },
                 error: task_error,
-                exec_started_at: None,
-                exec_finished_at: None,
+                exec_started_at: Some(started_at.clone()),
+                exec_finished_at: Some(Timestamp::from(SystemTime::now())),
             };
 
             let req = ReportOutputRequest {
@@ -83,7 +95,9 @@ fn dispatch_output(
             tx,
             stream_id,
             seq_id,
+            emitted,
         } => {
+            emitted.store(true, Ordering::SeqCst);
             let payload = ShellPayload {
                 shell_id,
                 input: String::new(),
@@ -278,7 +292,11 @@ impl ShellManager {
                         shell_task_id: task_id,
                         jwt,
                     };
-                    *context.lock().unwrap() = ExecutionContext::ShellTask(stc.clone());
+                    *context.lock().unwrap() = ExecutionContext::ShellTask {
+                        context: stc.clone(),
+                        started_at: Timestamp::from(SystemTime::now()),
+                        emitted: Arc::new(AtomicBool::new(false)),
+                    };
 
                     let ctx = Context::ShellTask(stc);
                     let backend = Arc::new(EmptyAssets {});
@@ -297,14 +315,8 @@ impl ShellManager {
                         tx: reply_tx,
                         stream_id,
                         seq_id,
+                        emitted: Arc::new(AtomicBool::new(false)),
                     };
-                    // Portal execution doesn't have a task context really, or it inherits previous?
-                    // We might want to clear context or use a dummy one.
-                    // For now keeping what it was (could be previous task's context or default).
-                    // This might be risky if code uses context (e.g. reporting credential).
-                    // Ideally Portal requests should carry context if they are to report C2 data.
-                    // But `ExecutePortal` implies executing shell command from Portal.
-                    // We'll proceed as is.
 
                     Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
                     *context.lock().unwrap() = ExecutionContext::None;
@@ -325,10 +337,21 @@ impl ShellManager {
 
         match result {
             Ok(Ok(value)) => {
+                let ctx = context.lock().unwrap().clone();
                 if !matches!(value, Value::None) {
-                    let ctx = context.lock().unwrap().clone();
                     let formatted = format_value_smart(&value);
                     dispatch_output(agent, shell_id, &ctx, formatted, false);
+                } else {
+                    let emitted = match &ctx {
+                        ExecutionContext::ShellTask { emitted, .. } => {
+                            emitted.load(Ordering::SeqCst)
+                        }
+                        ExecutionContext::Portal { emitted, .. } => emitted.load(Ordering::SeqCst),
+                        ExecutionContext::None => true,
+                    };
+                    if !emitted {
+                        dispatch_output(agent, shell_id, &ctx, String::new(), false);
+                    }
                 }
             }
             Ok(Err(e)) => {

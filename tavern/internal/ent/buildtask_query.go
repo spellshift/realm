@@ -25,6 +25,7 @@ type BuildTaskQuery struct {
 	order        []buildtask.OrderOption
 	inters       []Interceptor
 	predicates   []predicate.BuildTask
+	withBundle   *AssetQuery
 	withBuilder  *BuilderQuery
 	withProfile  *BuildProfileQuery
 	withArtifact *AssetQuery
@@ -65,6 +66,28 @@ func (btq *BuildTaskQuery) Unique(unique bool) *BuildTaskQuery {
 func (btq *BuildTaskQuery) Order(o ...buildtask.OrderOption) *BuildTaskQuery {
 	btq.order = append(btq.order, o...)
 	return btq
+}
+
+// QueryBundle chains the current query on the "bundle" edge.
+func (btq *BuildTaskQuery) QueryBundle() *AssetQuery {
+	query := (&AssetClient{config: btq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := btq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := btq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildtask.Table, buildtask.FieldID, selector),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.BundleTable, buildtask.BundleColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(btq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryBuilder chains the current query on the "builder" edge.
@@ -325,6 +348,7 @@ func (btq *BuildTaskQuery) Clone() *BuildTaskQuery {
 		order:        append([]buildtask.OrderOption{}, btq.order...),
 		inters:       append([]Interceptor{}, btq.inters...),
 		predicates:   append([]predicate.BuildTask{}, btq.predicates...),
+		withBundle:   btq.withBundle.Clone(),
 		withBuilder:  btq.withBuilder.Clone(),
 		withProfile:  btq.withProfile.Clone(),
 		withArtifact: btq.withArtifact.Clone(),
@@ -332,6 +356,17 @@ func (btq *BuildTaskQuery) Clone() *BuildTaskQuery {
 		sql:  btq.sql.Clone(),
 		path: btq.path,
 	}
+}
+
+// WithBundle tells the query-builder to eager-load the nodes that are connected to
+// the "bundle" edge. The optional arguments are used to configure the query builder of the edge.
+func (btq *BuildTaskQuery) WithBundle(opts ...func(*AssetQuery)) *BuildTaskQuery {
+	query := (&AssetClient{config: btq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	btq.withBundle = query
+	return btq
 }
 
 // WithBuilder tells the query-builder to eager-load the nodes that are connected to
@@ -446,13 +481,14 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 		nodes       = []*BuildTask{}
 		withFKs     = btq.withFKs
 		_spec       = btq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
+			btq.withBundle != nil,
 			btq.withBuilder != nil,
 			btq.withProfile != nil,
 			btq.withArtifact != nil,
 		}
 	)
-	if btq.withBuilder != nil || btq.withProfile != nil || btq.withArtifact != nil {
+	if btq.withBundle != nil || btq.withBuilder != nil || btq.withProfile != nil || btq.withArtifact != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -478,6 +514,12 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+	if query := btq.withBundle; query != nil {
+		if err := btq.loadBundle(ctx, query, nodes, nil,
+			func(n *BuildTask, e *Asset) { n.Edges.Bundle = e }); err != nil {
+			return nil, err
+		}
 	}
 	if query := btq.withBuilder; query != nil {
 		if err := btq.loadBuilder(ctx, query, nodes, nil,
@@ -505,6 +547,38 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	return nodes, nil
 }
 
+func (btq *BuildTaskQuery) loadBundle(ctx context.Context, query *AssetQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *Asset)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*BuildTask)
+	for i := range nodes {
+		if nodes[i].build_task_bundle == nil {
+			continue
+		}
+		fk := *nodes[i].build_task_bundle
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(asset.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "build_task_bundle" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (btq *BuildTaskQuery) loadBuilder(ctx context.Context, query *BuilderQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *Builder)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*BuildTask)

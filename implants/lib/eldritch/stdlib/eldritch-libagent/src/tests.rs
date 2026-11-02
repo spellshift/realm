@@ -7,7 +7,7 @@ use eldritch_mockagent::MockAgent;
 use std::thread;
 
 #[test]
-fn test_get_config() {
+fn test_config() {
     let agent = Arc::new(MockAgent::new());
     let lib = StdAgentLibrary::new(
         agent,
@@ -17,7 +17,7 @@ fn test_get_config() {
         }),
     );
 
-    let config = lib.get_config().unwrap();
+    let config = lib.config().unwrap();
     assert_eq!(config.get("key"), Some(&Value::String("value".to_string())));
     assert_eq!(config.get("interval"), Some(&Value::Int(5)));
 }
@@ -41,7 +41,7 @@ fn test_concurrent_access() {
         let lib_clone = lib.clone();
         handles.push(thread::spawn(move || {
             for _ in 0..100 {
-                let config = lib_clone.get_config().unwrap();
+                let config = lib_clone.config().unwrap();
                 assert!(config.contains_key("key"));
                 assert!(config.contains_key("interval"));
             }
@@ -61,7 +61,7 @@ fn test_concurrent_access() {
     }
 
     // Verify final state
-    let config = lib.get_config().unwrap();
+    let config = lib.config().unwrap();
     // The last written value depends on thread scheduling, but it should be valid int
     if let Some(Value::Int(val)) = config.get("interval") {
         assert!(*val >= 0 && *val <= 100);

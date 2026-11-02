@@ -162,13 +162,9 @@ func TestInteractiveShell(t *testing.T) {
 	require.NoError(t, err)
 	defer agentCleanup()
 
-	// We need to fetch the portal to associate it with the Shell
-	// (CreatePortal saves it to DB)
+	// We need to fetch the portal
+	// (CreatePortal saves it to DB and links to open beacon shells)
 	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	// Associate Portal with Shell
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
 	require.NoError(t, err)
 
 	// Subscribe to IN topic (User -> Agent)
@@ -270,7 +266,7 @@ func TestInteractiveShell(t *testing.T) {
 			found = true
 		}
 	}
-	require.Equal(t, fmt.Sprintf("[+] %s\n%s", inputCmd, outputData), outMsg.Output)
+	require.Equal(t, outputData, outMsg.Output)
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
 }
 
@@ -350,7 +346,7 @@ func TestNonInteractiveShell(t *testing.T) {
 			found = true
 		}
 	}
-	require.Equal(t, fmt.Sprintf("[+] %s\nroot", inputCmd), outMsg.Output)
+	require.Equal(t, "root", outMsg.Output)
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
 }
 
@@ -365,9 +361,6 @@ func TestOtherStreamOutput(t *testing.T) {
 	defer agentCleanup()
 
 	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
 	require.NoError(t, err)
 
 	// 2. Connect User 1
@@ -608,9 +601,7 @@ func TestTruncation(t *testing.T) {
 		}
 	}
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
-
-	expectedPrefix := "[+] " + longInput[:64] + "...\n"
-	require.Contains(t, outMsg.Output, expectedPrefix)
+	require.Equal(t, "out", outMsg.Output)
 }
 
 func TestLargeShellTask(t *testing.T) {
@@ -652,12 +643,7 @@ func TestShellHistory_Interactive(t *testing.T) {
 	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID, 0)
 	require.NoError(t, err)
 	defer agentCleanup()
-
-	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
-	require.NoError(t, err)
+	_ = portalID
 
 	// Subscribe to verify connection
 	// agentInCh, agentSubCleanup := env.Mux.Subscribe(env.Mux.TopicIn(p.ID))
@@ -732,9 +718,6 @@ func TestPortalDowngrade(t *testing.T) {
 	require.NoError(t, err)
 
 	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
 	require.NoError(t, err)
 
 	// Subscribe to IN topic
@@ -927,4 +910,29 @@ func TestShellActiveUsers(t *testing.T) {
 		require.NoError(t, err)
 		return len(users) == 0
 	}, 5*time.Second, 100*time.Millisecond)
+}
+
+func TestRetryOnLock(t *testing.T) {
+	ctx := context.Background()
+	attempts := 0
+
+	res, err := shell.RetryOnLock(ctx, func() (int, error) {
+		attempts++
+		if attempts < 3 {
+			return 0, fmt.Errorf("sqlite3: database table is locked")
+		}
+		return 42, nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, 42, res)
+	require.Equal(t, 3, attempts)
+
+	// Non-lock errors should fail immediately without retrying
+	nonLockAttempts := 0
+	_, err = shell.RetryOnLock(ctx, func() (int, error) {
+		nonLockAttempts++
+		return 0, fmt.Errorf("some permanent error")
+	})
+	require.Error(t, err)
+	require.Equal(t, 1, nonLockAttempts)
 }

@@ -4,13 +4,12 @@ import {
 } from "@chakra-ui/react";
 import './style.css';
 
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import 'react-virtualized/styles.css';
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
-import Shell from "./pages/shell/Shell";
-import ShellV2 from "./pages/shellv2";
+import Shell from "./pages/shell";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import Assets from "./pages/assets/Assets";
@@ -20,6 +19,9 @@ import Hosts from "./pages/hosts/Hosts";
 import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
 import Profile from "./pages/profile/Profile";
+import AgentBuilderWizardPage from "./pages/agent-builder/AgentBuilderWizardPage";
+import EnrollBuilderPage from "./pages/agent-builder/EnrollBuilderPage";
+import { AdminAccessGate } from "./components/admin-access-gate";
 
 
 const router = createBrowserRouter([
@@ -64,22 +66,42 @@ const router = createBrowserRouter([
         element: <Assets />,
       },
       {
-        path: "shells/:shellId",
-        element: <Shell />,
+        path: "assets/build",
+        element: <AgentBuilderWizardPage />,
       },
       {
         path: "admin",
         element: <AdminPortal />,
       },
       {
+        path: "admin/builders/enroll",
+        element: <AdminAccessGate><EnrollBuilderPage /></AdminAccessGate>,
+      },
+      {
         path: "profile",
         element: <Profile />,
+      },
+      {
+        path: "builder",
+        element: <Navigate to="/admin?tab=profiles" replace />,
+      },
+      {
+        path: "builder/new",
+        element: <Navigate to="/assets/build" replace />,
       },
     ]
   },
   {
+    path: "shells/:shellId",
+    element: <Shell />,
+  },
+  {
+    path: "shell/:shellId",
+    element: <Shell />,
+  },
+  {
     path: "shellv2/:shellId",
-    element: <ShellV2 />,
+    element: <Shell />,
   },
 ]);
 

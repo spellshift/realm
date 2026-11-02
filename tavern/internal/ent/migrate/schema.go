@@ -59,7 +59,7 @@ var (
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "interval", Type: field.TypeUint64, Nullable: true},
-		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_ICMP", "TRANSPORT_TCP_BIND", "TRANSPORT_UDS", "TRANSPORT_UNSPECIFIED"}},
+		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_ICMP", "TRANSPORT_QUIC", "TRANSPORT_TCP_BIND", "TRANSPORT_UDS", "TRANSPORT_UNSPECIFIED"}},
 		{Name: "beacon_host", Type: field.TypeInt},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.
@@ -105,8 +105,10 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "transports", Type: field.TypeJSON},
 		{Name: "build_image", Type: field.TypeString, Default: "spellshift/devcontainer:main"},
+		{Name: "build_script", Type: field.TypeString, Size: 2147483647, Default: "{{.BuildCommand}}"},
+		{Name: "artifact_path", Type: field.TypeString, Size: 2147483647, Default: "{{.ArtifactPath}}"},
 		{Name: "prebuildscript", Type: field.TypeString, Default: "echo 'no prebuild set'"},
-		{Name: "setupscript", Type: field.TypeString, Default: "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"},
+		{Name: "setupscript", Type: field.TypeString, Default: "mkdir -p {{.BuildDir}} && cd {{.BuildDir}} && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"},
 		{Name: "postbuildscript", Type: field.TypeString, Default: "echo 'no postbuild set'"},
 		{Name: "unique", Type: field.TypeString, Nullable: true},
 		{Name: "tomes", Type: field.TypeJSON, Nullable: true},
@@ -122,6 +124,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "profile_at_creation", Type: field.TypeJSON, Nullable: true},
 		{Name: "target_os", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "target_format", Type: field.TypeEnum, Enums: []string{"TARGET_FORMAT_BIN", "TARGET_FORMAT_CDYLIB", "TARGET_FORMAT_UNSPECIFIED", "TARGET_FORMAT_WINDOWS_SERVICE"}},
 		{Name: "build_script", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
@@ -136,6 +139,7 @@ var (
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
 		{Name: "setupscript", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "unique", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "build_task_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "build_task_builder", Type: field.TypeInt},
 		{Name: "build_task_profile", Type: field.TypeInt},
 		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
@@ -147,20 +151,26 @@ var (
 		PrimaryKey: []*schema.Column{BuildTasksColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
+				Symbol:     "build_tasks_assets_bundle",
+				Columns:    []*schema.Column{BuildTasksColumns[18]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[17]},
+				Columns:    []*schema.Column{BuildTasksColumns[19]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_build_profiles_profile",
-				Columns:    []*schema.Column{BuildTasksColumns[18]},
+				Columns:    []*schema.Column{BuildTasksColumns[20]},
 				RefColumns: []*schema.Column{BuildProfilesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
-				Columns:    []*schema.Column{BuildTasksColumns[19]},
+				Columns:    []*schema.Column{BuildTasksColumns[21]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -174,6 +184,8 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "supported_targets", Type: field.TypeJSON},
 		{Name: "upstream", Type: field.TypeString, Default: "http://127.0.0.1:8000"},
+		{Name: "poll_interval", Type: field.TypeInt, Default: 5},
+		{Name: "executor", Type: field.TypeEnum, Enums: []string{"docker", "local"}, Default: "docker"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// BuildersTable holds the schema information for the "builders" table.
@@ -181,6 +193,18 @@ var (
 		Name:       "builders",
 		Columns:    BuildersColumns,
 		PrimaryKey: []*schema.Column{BuildersColumns[0]},
+	}
+	// BuilderEnrollmentTokensColumns holds the columns for the "builder_enrollment_tokens" table.
+	BuilderEnrollmentTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "token_hash", Type: field.TypeString, Unique: true},
+		{Name: "used", Type: field.TypeBool, Default: false},
+	}
+	// BuilderEnrollmentTokensTable holds the schema information for the "builder_enrollment_tokens" table.
+	BuilderEnrollmentTokensTable = &schema.Table{
+		Name:       "builder_enrollment_tokens",
+		Columns:    BuilderEnrollmentTokensColumns,
+		PrimaryKey: []*schema.Column{BuilderEnrollmentTokensColumns[0]},
 	}
 	// DeviceAuthsColumns holds the columns for the "device_auths" table.
 	DeviceAuthsColumns = []*schema.Column{
@@ -287,7 +311,7 @@ var (
 		{Name: "principal", Type: field.TypeString},
 		{Name: "secret", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_NTLM_HASH", "KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
-		{Name: "host_credential_host", Type: field.TypeInt},
+		{Name: "host_credential_host", Type: field.TypeInt, Nullable: true},
 		{Name: "shell_task_reported_credentials", Type: field.TypeInt, Nullable: true},
 		{Name: "task_reported_credentials", Type: field.TypeInt, Nullable: true},
 	}
@@ -452,6 +476,47 @@ var (
 			},
 		},
 	}
+	// NetworksColumns holds the columns for the "networks" table.
+	NetworksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "subnet", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "description", Type: field.TypeString, Nullable: true, Default: ""},
+	}
+	// NetworksTable holds the schema information for the "networks" table.
+	NetworksTable = &schema.Table{
+		Name:       "networks",
+		Columns:    NetworksColumns,
+		PrimaryKey: []*schema.Column{NetworksColumns[0]},
+	}
+	// NetworkHostsColumns holds the columns for the "network_hosts" table.
+	NetworkHostsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "hostname", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "ip_address", Type: field.TypeString},
+		{Name: "subnet", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "open_ports", Type: field.TypeJSON, Nullable: true},
+		{Name: "network_host_host", Type: field.TypeInt, Nullable: true},
+	}
+	// NetworkHostsTable holds the schema information for the "network_hosts" table.
+	NetworkHostsTable = &schema.Table{
+		Name:       "network_hosts",
+		Columns:    NetworkHostsColumns,
+		PrimaryKey: []*schema.Column{NetworkHostsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "network_hosts_hosts_host",
+				Columns:    []*schema.Column{NetworkHostsColumns[8]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// NotificationsColumns holds the columns for the "notifications" table.
 	NotificationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -480,6 +545,28 @@ var (
 				Columns:    []*schema.Column{NotificationsColumns[7]},
 				RefColumns: []*schema.Column{EventsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// OperatorNotesColumns holds the columns for the "operator_notes" table.
+	OperatorNotesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "content", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: "", SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "operator_note_author", Type: field.TypeInt, Nullable: true},
+	}
+	// OperatorNotesTable holds the schema information for the "operator_notes" table.
+	OperatorNotesTable = &schema.Table{
+		Name:       "operator_notes",
+		Columns:    OperatorNotesColumns,
+		PrimaryKey: []*schema.Column{OperatorNotesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "operator_notes_users_author",
+				Columns:    []*schema.Column{OperatorNotesColumns[4]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -854,7 +941,7 @@ var (
 		{Name: "description", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "author", Type: field.TypeString},
 		{Name: "support_model", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "FIRST_PARTY", "COMMUNITY"}, Default: "UNSPECIFIED"},
-		{Name: "tactic", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "RECON", "RESOURCE_DEVELOPMENT", "INITIAL_ACCESS", "EXECUTION", "PERSISTENCE", "PRIVILEGE_ESCALATION", "DEFENSE_EVASION", "CREDENTIAL_ACCESS", "DISCOVERY", "LATERAL_MOVEMENT", "COLLECTION", "COMMAND_AND_CONTROL", "EXFILTRATION", "IMPACT"}, Default: "UNSPECIFIED"},
+		{Name: "tactic", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "RECON", "RESOURCE_DEVELOPMENT", "INITIAL_ACCESS", "EXECUTION", "PERSISTENCE", "PRIVILEGE_ESCALATION", "DEFENSE_EVASION", "CREDENTIAL_ACCESS", "DISCOVERY", "LATERAL_MOVEMENT", "COLLECTION", "COMMAND_AND_CONTROL", "EXFILTRATION", "IMPACT", "SHELL_RC"}, Default: "UNSPECIFIED"},
 		{Name: "param_defs", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
@@ -928,6 +1015,81 @@ var (
 				Symbol:     "host_tags_tag_id",
 				Columns:    []*schema.Column{HostTagsColumns[1]},
 				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// NetworkHostNetworksColumns holds the columns for the "network_host_networks" table.
+	NetworkHostNetworksColumns = []*schema.Column{
+		{Name: "network_host_id", Type: field.TypeInt},
+		{Name: "network_id", Type: field.TypeInt},
+	}
+	// NetworkHostNetworksTable holds the schema information for the "network_host_networks" table.
+	NetworkHostNetworksTable = &schema.Table{
+		Name:       "network_host_networks",
+		Columns:    NetworkHostNetworksColumns,
+		PrimaryKey: []*schema.Column{NetworkHostNetworksColumns[0], NetworkHostNetworksColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "network_host_networks_network_host_id",
+				Columns:    []*schema.Column{NetworkHostNetworksColumns[0]},
+				RefColumns: []*schema.Column{NetworkHostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "network_host_networks_network_id",
+				Columns:    []*schema.Column{NetworkHostNetworksColumns[1]},
+				RefColumns: []*schema.Column{NetworksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// NetworkHostCredentialsColumns holds the columns for the "network_host_credentials" table.
+	NetworkHostCredentialsColumns = []*schema.Column{
+		{Name: "network_host_id", Type: field.TypeInt},
+		{Name: "host_credential_id", Type: field.TypeInt},
+	}
+	// NetworkHostCredentialsTable holds the schema information for the "network_host_credentials" table.
+	NetworkHostCredentialsTable = &schema.Table{
+		Name:       "network_host_credentials",
+		Columns:    NetworkHostCredentialsColumns,
+		PrimaryKey: []*schema.Column{NetworkHostCredentialsColumns[0], NetworkHostCredentialsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "network_host_credentials_network_host_id",
+				Columns:    []*schema.Column{NetworkHostCredentialsColumns[0]},
+				RefColumns: []*schema.Column{NetworkHostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "network_host_credentials_host_credential_id",
+				Columns:    []*schema.Column{NetworkHostCredentialsColumns[1]},
+				RefColumns: []*schema.Column{HostCredentialsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// OperatorNoteShellsColumns holds the columns for the "operator_note_shells" table.
+	OperatorNoteShellsColumns = []*schema.Column{
+		{Name: "operator_note_id", Type: field.TypeInt},
+		{Name: "shell_id", Type: field.TypeInt},
+	}
+	// OperatorNoteShellsTable holds the schema information for the "operator_note_shells" table.
+	OperatorNoteShellsTable = &schema.Table{
+		Name:       "operator_note_shells",
+		Columns:    OperatorNoteShellsColumns,
+		PrimaryKey: []*schema.Column{OperatorNoteShellsColumns[0], OperatorNoteShellsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "operator_note_shells_operator_note_id",
+				Columns:    []*schema.Column{OperatorNoteShellsColumns[0]},
+				RefColumns: []*schema.Column{OperatorNotesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "operator_note_shells_shell_id",
+				Columns:    []*schema.Column{OperatorNoteShellsColumns[1]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -1041,6 +1203,7 @@ var (
 		BuildProfilesTable,
 		BuildTasksTable,
 		BuildersTable,
+		BuilderEnrollmentTokensTable,
 		DeviceAuthsTable,
 		EventsTable,
 		HostsTable,
@@ -1048,7 +1211,10 @@ var (
 		HostFilesTable,
 		HostProcessesTable,
 		LinksTable,
+		NetworksTable,
+		NetworkHostsTable,
 		NotificationsTable,
+		OperatorNotesTable,
 		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
@@ -1062,6 +1228,9 @@ var (
 		TomesTable,
 		UsersTable,
 		HostTagsTable,
+		NetworkHostNetworksTable,
+		NetworkHostCredentialsTable,
+		OperatorNoteShellsTable,
 		ShellActiveUsersTable,
 		TomeAssetsTable,
 		UserFavoriteHostsTable,
@@ -1085,9 +1254,10 @@ func init() {
 	BuildProfilesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
-	BuildTasksTable.ForeignKeys[0].RefTable = BuildersTable
-	BuildTasksTable.ForeignKeys[1].RefTable = BuildProfilesTable
-	BuildTasksTable.ForeignKeys[2].RefTable = AssetsTable
+	BuildTasksTable.ForeignKeys[0].RefTable = AssetsTable
+	BuildTasksTable.ForeignKeys[1].RefTable = BuildersTable
+	BuildTasksTable.ForeignKeys[2].RefTable = BuildProfilesTable
+	BuildTasksTable.ForeignKeys[3].RefTable = AssetsTable
 	BuildTasksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -1134,9 +1304,20 @@ func init() {
 	LinksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	NetworksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	NetworkHostsTable.ForeignKeys[0].RefTable = HostsTable
+	NetworkHostsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	NotificationsTable.ForeignKeys[0].RefTable = UsersTable
 	NotificationsTable.ForeignKeys[1].RefTable = EventsTable
 	NotificationsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	OperatorNotesTable.ForeignKeys[0].RefTable = UsersTable
+	OperatorNotesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable
@@ -1204,6 +1385,12 @@ func init() {
 	}
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
+	NetworkHostNetworksTable.ForeignKeys[0].RefTable = NetworkHostsTable
+	NetworkHostNetworksTable.ForeignKeys[1].RefTable = NetworksTable
+	NetworkHostCredentialsTable.ForeignKeys[0].RefTable = NetworkHostsTable
+	NetworkHostCredentialsTable.ForeignKeys[1].RefTable = HostCredentialsTable
+	OperatorNoteShellsTable.ForeignKeys[0].RefTable = OperatorNotesTable
+	OperatorNoteShellsTable.ForeignKeys[1].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
 	TomeAssetsTable.ForeignKeys[0].RefTable = TomesTable

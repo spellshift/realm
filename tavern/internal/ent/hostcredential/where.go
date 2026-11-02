@@ -375,6 +375,29 @@ func HasShellTaskWith(preds ...predicate.ShellTask) predicate.HostCredential {
 	})
 }
 
+// HasNetworkHosts applies the HasEdge predicate on the "network_hosts" edge.
+func HasNetworkHosts() predicate.HostCredential {
+	return predicate.HostCredential(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, NetworkHostsTable, NetworkHostsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNetworkHostsWith applies the HasEdge predicate on the "network_hosts" edge with a given conditions (other predicates).
+func HasNetworkHostsWith(preds ...predicate.NetworkHost) predicate.HostCredential {
+	return predicate.HostCredential(func(s *sql.Selector) {
+		step := newNetworkHostsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.HostCredential) predicate.HostCredential {
 	return predicate.HostCredential(sql.AndPredicates(predicates...))

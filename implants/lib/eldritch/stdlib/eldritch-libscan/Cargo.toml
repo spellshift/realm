@@ -1,0 +1,31 @@
+[package]
+name = "eldritch-libscan"
+version = "0.4.1"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+
+anyhow = { workspace = true, optional = true }
+async-recursion = { workspace = true, optional = true }
+ipnetwork = { workspace = true, optional = true }
+log = { workspace = true, optional = true }
+tokio = { workspace = true, features = [
+    "macros",
+    "rt-multi-thread",
+], optional = true }
+pnet = { workspace = true, optional = true }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "anyhow",
+    "async-recursion",
+    "ipnetwork",
+    "log",
+    "tokio",
+    "pnet",
+]
+fake_bindings = []
+print_debug = []

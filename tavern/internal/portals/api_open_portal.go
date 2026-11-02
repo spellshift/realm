@@ -183,7 +183,7 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 				)
 			}
 
-			if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+			if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE && mote.StreamId == "" {
 				slog.InfoContext(ctx, "received portal close, disconnecting client", "portal_id", portalID, "reason", string(payload.Data))
 				return
 			}

@@ -1,0 +1,15 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `operator_notes` (id, content, operator_note_author, created_at, last_modified_at)
+    VALUES (100, "Note to delete", 5, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation DeleteOperatorNote($operatorNoteID: ID!) {
+    deleteOperatorNote(operatorNoteID: $operatorNoteID)
+  }
+variables:
+  operatorNoteID: 100
+expected:
+  deleteOperatorNote: "100"

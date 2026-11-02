@@ -1,0 +1,16 @@
+[package]
+name = "eldritch-libuser"
+version = "0.4.1"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+anyhow = { workspace = true, optional = true }
+sysinfo = { workspace = true, optional = true }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+
+[features]
+default = ["stdlib"]
+stdlib = ["dep:anyhow", "dep:sysinfo"]
+fake_bindings = []

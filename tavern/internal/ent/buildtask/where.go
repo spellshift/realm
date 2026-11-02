@@ -207,6 +207,16 @@ func LastModifiedAtLTE(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldLTE(FieldLastModifiedAt, v))
 }
 
+// ProfileAtCreationIsNil applies the IsNil predicate on the "profile_at_creation" field.
+func ProfileAtCreationIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldProfileAtCreation))
+}
+
+// ProfileAtCreationNotNil applies the NotNil predicate on the "profile_at_creation" field.
+func ProfileAtCreationNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldProfileAtCreation))
+}
+
 // TargetOsEQ applies the EQ predicate on the "target_os" field.
 func TargetOsEQ(v c2pb.Host_Platform) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldTargetOs, v))
@@ -965,6 +975,29 @@ func UniqueEqualFold(v string) predicate.BuildTask {
 // UniqueContainsFold applies the ContainsFold predicate on the "unique" field.
 func UniqueContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldUnique, v))
+}
+
+// HasBundle applies the HasEdge predicate on the "bundle" edge.
+func HasBundle() predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BundleTable, BundleColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBundleWith applies the HasEdge predicate on the "bundle" edge with a given conditions (other predicates).
+func HasBundleWith(preds ...predicate.Asset) predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := newBundleStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasBuilder applies the HasEdge predicate on the "builder" edge.

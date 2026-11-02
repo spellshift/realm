@@ -66,6 +66,9 @@ func (c *Connection) Read(b []byte) (n int, err error) {
 		switch p := mote.Payload.(type) {
 		case *portalpb.Mote_Bytes:
 			if p.Bytes.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+				if len(p.Bytes.Data) > 0 && string(p.Bytes.Data) != "EOF" {
+					return 0, fmt.Errorf("%s", string(p.Bytes.Data))
+				}
 				return 0, io.EOF
 			}
 			payloadData = p.Bytes.Data

@@ -1,0 +1,62 @@
+name: E2E Pivots Test 🧭
+
+on:
+  workflow_dispatch: ~
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  merge_group:
+
+jobs:
+  e2e_pivots_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: ⚡ Setup Golang
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: '1.91.1'
+        default: true
+        profile: minimal
+        components: rustfmt, clippy
+
+    - name: 📦 Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgbm-dev libx11-dev libssl-dev protobuf-compiler pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev libpam0g-dev
+
+    - name: 🔨 Build Tavern, Imix & Test Utilities
+      run: |
+        mkdir -p build
+        go mod download
+        echo "Building Tavern..."
+        go build -v -o build/tavern_e2e_bin ./tavern
+        echo "Building sshecho and pssh..."
+        go build -v -o build/sshecho ./tests/e2e/utils/sshecho
+        go build -v -o build/pssh ./tests/e2e/utils/pssh
+        echo "Building Imix agent..."
+        cargo build --bin imix --manifest-path implants/imix/Cargo.toml
+
+    - name: 🧪 Run Pivot E2E Tests (SSH)
+      run: |
+        go test -v -timeout 10m ./tests/e2e/pivot_ssh_e2e_test.go
+
+    - name: 📂 Upload Service Logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-pivots-logs
+        path: |
+          tavern.log
+          agent.log
+        if-no-files-found: ignore
+

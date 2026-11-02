@@ -4,7 +4,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
-/// `bool(x)`: Converts a value to a Boolean.
+/// `bool(x=False)`: Converts a value to a Boolean.
 ///
 /// Returns True when the argument x is true, False otherwise.
 pub fn builtin_bool(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {

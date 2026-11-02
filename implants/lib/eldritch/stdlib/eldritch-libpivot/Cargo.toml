@@ -1,31 +1,17 @@
 [package]
 name = "eldritch-libpivot"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
-
-anyhow = { workspace = true, optional = true }
-async-recursion = { workspace = true, optional = true }
-async-trait = { workspace = true, optional = true }
-ipnetwork = { workspace = true, optional = true }
-log = { workspace = true, optional = true }
-russh = { workspace = true, optional = true }
-russh-sftp = { workspace = true, optional = true }
-russh-keys = { workspace = true, optional = true }
-tokio = { workspace = true, features = [
-    "macros",
-    "rt-multi-thread",
-    "fs",
-], optional = true }
-pnet = { workspace = true, optional = true }
+eldritch-libnet = { path = "../eldritch-libnet", default-features = false }
+eldritch-libportal = { path = "../eldritch-libportal", default-features = false }
+eldritch-libscan = { path = "../eldritch-libscan", default-features = false }
+eldritch-libssh = { path = "../eldritch-libssh", default-features = false }
 pb = { workspace = true, optional = true }
-
-[target.'cfg(not(target_os = "freebsd"))'.dependencies]
-listeners = { workspace = true, optional = true }
 
 [dev-dependencies]
 eldritch-mockagent = { path = "../../testutils/eldritch-mockagent" }
@@ -37,16 +23,16 @@ default = ["stdlib"]
 stdlib = [
     "dep:eldritch-agent",
     "dep:pb",
-    "anyhow",
-    "async-recursion",
-    "async-trait",
-    "ipnetwork",
-    "log",
-    "russh",
-    "russh-sftp",
-    "russh-keys",
-    "tokio",
-    "pnet",
+    "eldritch-libnet/stdlib",
+    "eldritch-libportal/stdlib",
+    "eldritch-libscan/stdlib",
+    "eldritch-libssh/stdlib",
 ]
-fake_bindings = []
-print_debug = []
+fake_bindings = [
+    "eldritch-libnet/fake_bindings",
+    "eldritch-libportal/fake_bindings",
+    "eldritch-libscan/fake_bindings",
+    "eldritch-libssh/fake_bindings",
+]
+print_debug = ["eldritch-libscan/print_debug"]
+

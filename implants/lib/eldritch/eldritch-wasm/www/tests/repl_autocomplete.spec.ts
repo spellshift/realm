@@ -71,4 +71,39 @@ test.describe('REPL Autocomplete', () => {
     await expect(page.locator('#suggestions')).toBeVisible();
     await expect(page.locator('#suggestions')).toContainText('keys');
   });
+
+  test('should complete standard library module methods', async ({ page }) => {
+    await page.goto('/assets/eldritch-repl/index.html');
+    await expect(page.locator('#current-line .prompt')).toContainText('>>>');
+
+    await page.keyboard.type('file.');
+    await page.keyboard.press('Tab');
+
+    await expect(page.locator('#suggestions')).toBeVisible();
+    await expect(page.locator('#suggestions')).toContainText('list');
+  });
+
+  test('should support mobile viewport and touch toolbar controls', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/assets/eldritch-repl/index.html');
+    await expect(page.locator('#current-line .prompt')).toContainText('>>>');
+
+    // Ensure no horizontal overflow on mobile
+    const overflow = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > window.innerWidth;
+    });
+    expect(overflow).toBe(false);
+
+    // Simulate mobile virtual keyboard input via #hidden-input
+    const hiddenInput = page.locator('#hidden-input');
+    await hiddenInput.evaluate((el: HTMLInputElement) => {
+      el.value = 'sys.info()';
+      el.dispatchEvent(new InputEvent('input', { data: 'sys.info()', inputType: 'insertText', bubbles: true }));
+    });
+    await expect(page.locator('#current-line')).toContainText('sys.info()');
+
+    // Tap the mobile toolbar Run button
+    await page.locator('[data-repl-key="Enter"]').click();
+    await expect(page.locator('#terminal')).toContainText('PLATFORM_LINUX');
+  });
 });

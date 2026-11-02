@@ -406,6 +406,29 @@ func HasPivotsWith(preds ...predicate.ShellPivot) predicate.Shell {
 	})
 }
 
+// HasOperatorNotes applies the HasEdge predicate on the "operator_notes" edge.
+func HasOperatorNotes() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, OperatorNotesTable, OperatorNotesPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOperatorNotesWith applies the HasEdge predicate on the "operator_notes" edge with a given conditions (other predicates).
+func HasOperatorNotesWith(preds ...predicate.OperatorNote) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newOperatorNotesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Shell) predicate.Shell {
 	return predicate.Shell(sql.AndPredicates(predicates...))

@@ -1,0 +1,22 @@
+state: |
+  INSERT INTO users (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"admin_oauth","https://photos.com","admin","adminToken","accessToken",true,true);
+  INSERT INTO builders (id,created_at,last_modified_at,identifier,supported_targets,upstream,poll_interval,executor)
+    VALUES (1,datetime('now'),datetime('now'),"enrolled-builder",'[2]',"http://127.0.0.1:8000",5,"docker");
+  INSERT INTO builders (id,created_at,last_modified_at,identifier,supported_targets,upstream,poll_interval,executor)
+    VALUES (2,datetime('now'),datetime('now'),"other-builder",'[2]',"http://127.0.0.1:8000",5,"docker");
+requestor:
+  session_token: adminToken
+query: |
+  query EnrolledBuilder($identifier: String!) {
+    builders(where: { identifier: $identifier }) {
+      edges { node { identifier } }
+    }
+  }
+variables:
+  identifier: enrolled-builder
+expected:
+  builders:
+    edges:
+      - node:
+          identifier: enrolled-builder

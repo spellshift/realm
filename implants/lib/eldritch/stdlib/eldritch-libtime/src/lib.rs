@@ -1,6 +1,6 @@
 extern crate alloc;
 use alloc::string::String;
-use eldritch_macros::{eldritch_library, eldritch_method};
+use eldritch_macros::{eldritch_deprecated, eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
 pub mod fake;
@@ -23,6 +23,13 @@ pub trait TimeLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if parsing fails.
+    fn to_epoch(&self, input: String, format: String) -> Result<i64, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "time.format_to_epoch has been deprecated and will be removed in a future version of eldritch. Please use time.to_epoch instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `time.to_epoch` instead.
     fn format_to_epoch(&self, input: String, format: String) -> Result<i64, String>;
 
     #[eldritch_method]
@@ -34,6 +41,13 @@ pub trait TimeLibrary {
     ///
     /// **Returns**
     /// - `str`: The formatted time string.
+    fn format(&self, input: i64, format: String) -> Result<String, String>;
+
+    #[eldritch_method]
+    #[eldritch_deprecated(
+        "time.format_to_readable has been deprecated and will be removed in a future version of eldritch. Please use time.format instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
+    )]
+    /// Deprecated; use `time.format` instead.
     fn format_to_readable(&self, input: i64, format: String) -> Result<String, String>;
 
     #[eldritch_method]

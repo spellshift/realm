@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
@@ -17,6 +18,12 @@ const (
 
 	// DefaultTargetFormat is the default output format for builds.
 	DefaultTargetFormat = builderpb.TargetFormat_TARGET_FORMAT_BIN
+
+	// DefaultBuildProfileName is the name of the build profile Tavern seeds
+	// on startup (see ensureDefaultBuildProfile in tavern/app.go). It can't
+	// be edited or deleted through the API, since it's recreated under this
+	// same name on every restart if missing.
+	DefaultBuildProfileName = "Default"
 )
 
 // DefaultTransports is the default transport configuration for a build task.
@@ -115,12 +122,21 @@ type ImixConfig struct {
 	Transports   []ImixTransportConfig `yaml:"transports"`
 }
 
+// NewBuildDir generates a unique build directory path for a single build
+// task. It's templated into the setup/build/artifact-path recipes (as
+// {{.BuildDir}}) so they all agree on exactly where the setup script clones
+// the repo, regardless of how that script gets there (no more hardcoding a
+// fixed path like /home/vscode that only matched one specific setup script).
+func NewBuildDir() string {
+	return fmt.Sprintf("/tmp/realm-build-%s", uuid.NewString())
+}
+
 // DeriveArtifactPath returns the artifact path inside the build container
-// based on the target OS.
-func DeriveArtifactPath(os c2pb.Host_Platform) string {
+// based on the target OS, rooted at buildDir (see NewBuildDir).
+func DeriveArtifactPath(os c2pb.Host_Platform, buildDir string) string {
 	target, ok := buildTarget[os]
 	if !ok {
-		return "/home/vscode/realm/implants/target/release/imix"
+		return fmt.Sprintf("%s/realm/implants/target/release/imix", buildDir)
 	}
-	return fmt.Sprintf("/home/vscode/realm/implants/target/%s/release/imix", target)
+	return fmt.Sprintf("%s/realm/implants/target/%s/release/imix", buildDir, target)
 }

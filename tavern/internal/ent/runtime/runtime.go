@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
@@ -20,7 +21,10 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/network"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -154,16 +158,56 @@ func init() {
 	buildprofile.DefaultBuildImage = buildprofileDescBuildImage.Default.(string)
 	// buildprofile.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
 	buildprofile.BuildImageValidator = buildprofileDescBuildImage.Validators[0].(func(string) error)
+	// buildprofileDescBuildScript is the schema descriptor for build_script field.
+	buildprofileDescBuildScript := buildprofileFields[4].Descriptor()
+	// buildprofile.DefaultBuildScript holds the default value on creation for the build_script field.
+	buildprofile.DefaultBuildScript = buildprofileDescBuildScript.Default.(string)
+	// buildprofile.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
+	buildprofile.BuildScriptValidator = func() func(string) error {
+		validators := buildprofileDescBuildScript.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(build_script string) error {
+			for _, fn := range fns {
+				if err := fn(build_script); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// buildprofileDescArtifactPath is the schema descriptor for artifact_path field.
+	buildprofileDescArtifactPath := buildprofileFields[5].Descriptor()
+	// buildprofile.DefaultArtifactPath holds the default value on creation for the artifact_path field.
+	buildprofile.DefaultArtifactPath = buildprofileDescArtifactPath.Default.(string)
+	// buildprofile.ArtifactPathValidator is a validator for the "artifact_path" field. It is called by the builders before save.
+	buildprofile.ArtifactPathValidator = func() func(string) error {
+		validators := buildprofileDescArtifactPath.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(artifact_path string) error {
+			for _, fn := range fns {
+				if err := fn(artifact_path); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// buildprofileDescPrebuildscript is the schema descriptor for prebuildscript field.
-	buildprofileDescPrebuildscript := buildprofileFields[4].Descriptor()
+	buildprofileDescPrebuildscript := buildprofileFields[6].Descriptor()
 	// buildprofile.DefaultPrebuildscript holds the default value on creation for the prebuildscript field.
 	buildprofile.DefaultPrebuildscript = buildprofileDescPrebuildscript.Default.(string)
 	// buildprofileDescSetupscript is the schema descriptor for setupscript field.
-	buildprofileDescSetupscript := buildprofileFields[5].Descriptor()
+	buildprofileDescSetupscript := buildprofileFields[7].Descriptor()
 	// buildprofile.DefaultSetupscript holds the default value on creation for the setupscript field.
 	buildprofile.DefaultSetupscript = buildprofileDescSetupscript.Default.(string)
 	// buildprofileDescPostbuildscript is the schema descriptor for postbuildscript field.
-	buildprofileDescPostbuildscript := buildprofileFields[6].Descriptor()
+	buildprofileDescPostbuildscript := buildprofileFields[8].Descriptor()
 	// buildprofile.DefaultPostbuildscript holds the default value on creation for the postbuildscript field.
 	buildprofile.DefaultPostbuildscript = buildprofileDescPostbuildscript.Default.(string)
 	buildtaskMixin := schema.BuildTask{}.Mixin()
@@ -184,17 +228,17 @@ func init() {
 	// buildtask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	buildtask.UpdateDefaultLastModifiedAt = buildtaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// buildtaskDescBuildScript is the schema descriptor for build_script field.
-	buildtaskDescBuildScript := buildtaskFields[2].Descriptor()
+	buildtaskDescBuildScript := buildtaskFields[3].Descriptor()
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
 	// buildtaskDescOutputSize is the schema descriptor for output_size field.
-	buildtaskDescOutputSize := buildtaskFields[7].Descriptor()
+	buildtaskDescOutputSize := buildtaskFields[8].Descriptor()
 	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
 	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
 	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
 	// buildtaskDescErrorSize is the schema descriptor for error_size field.
-	buildtaskDescErrorSize := buildtaskFields[9].Descriptor()
+	buildtaskDescErrorSize := buildtaskFields[10].Descriptor()
 	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
 	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
 	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.
@@ -224,6 +268,32 @@ func init() {
 	builderDescUpstream := builderFields[2].Descriptor()
 	// builder.DefaultUpstream holds the default value on creation for the upstream field.
 	builder.DefaultUpstream = builderDescUpstream.Default.(string)
+	// builderDescPollInterval is the schema descriptor for poll_interval field.
+	builderDescPollInterval := builderFields[3].Descriptor()
+	// builder.DefaultPollInterval holds the default value on creation for the poll_interval field.
+	builder.DefaultPollInterval = builderDescPollInterval.Default.(int)
+	// builder.PollIntervalValidator is a validator for the "poll_interval" field. It is called by the builders before save.
+	builder.PollIntervalValidator = func() func(int) error {
+		validators := builderDescPollInterval.Validators
+		fns := [...]func(int) error{
+			validators[0].(func(int) error),
+			validators[1].(func(int) error),
+		}
+		return func(poll_interval int) error {
+			for _, fn := range fns {
+				if err := fn(poll_interval); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	builderenrollmenttokenFields := schema.BuilderEnrollmentToken{}.Fields()
+	_ = builderenrollmenttokenFields
+	// builderenrollmenttokenDescUsed is the schema descriptor for used field.
+	builderenrollmenttokenDescUsed := builderenrollmenttokenFields[1].Descriptor()
+	// builderenrollmenttoken.DefaultUsed holds the default value on creation for the used field.
+	builderenrollmenttoken.DefaultUsed = builderenrollmenttokenDescUsed.Default.(bool)
 	deviceauthMixin := schema.DeviceAuth{}.Mixin()
 	deviceauthMixinFields0 := deviceauthMixin[0].Fields()
 	_ = deviceauthMixinFields0
@@ -263,6 +333,8 @@ func init() {
 	// event.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	event.UpdateDefaultLastModifiedAt = eventDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	hostMixin := schema.Host{}.Mixin()
+	hostHooks := schema.Host{}.Hooks()
+	host.Hooks[0] = hostHooks[0]
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0
 	hostFields := schema.Host{}.Fields()
@@ -389,6 +461,64 @@ func init() {
 	link.DefaultDownloads = linkDescDownloads.Default.(int)
 	// link.DownloadsValidator is a validator for the "downloads" field. It is called by the builders before save.
 	link.DownloadsValidator = linkDescDownloads.Validators[0].(func(int) error)
+	networkMixin := schema.Network{}.Mixin()
+	networkMixinFields0 := networkMixin[0].Fields()
+	_ = networkMixinFields0
+	networkFields := schema.Network{}.Fields()
+	_ = networkFields
+	// networkDescCreatedAt is the schema descriptor for created_at field.
+	networkDescCreatedAt := networkMixinFields0[0].Descriptor()
+	// network.DefaultCreatedAt holds the default value on creation for the created_at field.
+	network.DefaultCreatedAt = networkDescCreatedAt.Default.(func() time.Time)
+	// networkDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	networkDescLastModifiedAt := networkMixinFields0[1].Descriptor()
+	// network.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	network.DefaultLastModifiedAt = networkDescLastModifiedAt.Default.(func() time.Time)
+	// network.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	network.UpdateDefaultLastModifiedAt = networkDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// networkDescName is the schema descriptor for name field.
+	networkDescName := networkFields[0].Descriptor()
+	// network.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	network.NameValidator = networkDescName.Validators[0].(func(string) error)
+	// networkDescSubnet is the schema descriptor for subnet field.
+	networkDescSubnet := networkFields[1].Descriptor()
+	// network.DefaultSubnet holds the default value on creation for the subnet field.
+	network.DefaultSubnet = networkDescSubnet.Default.(string)
+	// networkDescDescription is the schema descriptor for description field.
+	networkDescDescription := networkFields[2].Descriptor()
+	// network.DefaultDescription holds the default value on creation for the description field.
+	network.DefaultDescription = networkDescDescription.Default.(string)
+	networkhostMixin := schema.NetworkHost{}.Mixin()
+	networkhostMixinFields0 := networkhostMixin[0].Fields()
+	_ = networkhostMixinFields0
+	networkhostFields := schema.NetworkHost{}.Fields()
+	_ = networkhostFields
+	// networkhostDescCreatedAt is the schema descriptor for created_at field.
+	networkhostDescCreatedAt := networkhostMixinFields0[0].Descriptor()
+	// networkhost.DefaultCreatedAt holds the default value on creation for the created_at field.
+	networkhost.DefaultCreatedAt = networkhostDescCreatedAt.Default.(func() time.Time)
+	// networkhostDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	networkhostDescLastModifiedAt := networkhostMixinFields0[1].Descriptor()
+	// networkhost.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	networkhost.DefaultLastModifiedAt = networkhostDescLastModifiedAt.Default.(func() time.Time)
+	// networkhost.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	networkhost.UpdateDefaultLastModifiedAt = networkhostDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// networkhostDescName is the schema descriptor for name field.
+	networkhostDescName := networkhostFields[0].Descriptor()
+	// networkhost.DefaultName holds the default value on creation for the name field.
+	networkhost.DefaultName = networkhostDescName.Default.(string)
+	// networkhostDescHostname is the schema descriptor for hostname field.
+	networkhostDescHostname := networkhostFields[1].Descriptor()
+	// networkhost.DefaultHostname holds the default value on creation for the hostname field.
+	networkhost.DefaultHostname = networkhostDescHostname.Default.(string)
+	// networkhostDescIPAddress is the schema descriptor for ip_address field.
+	networkhostDescIPAddress := networkhostFields[2].Descriptor()
+	// networkhost.IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
+	networkhost.IPAddressValidator = networkhostDescIPAddress.Validators[0].(func(string) error)
+	// networkhostDescSubnet is the schema descriptor for subnet field.
+	networkhostDescSubnet := networkhostFields[3].Descriptor()
+	// networkhost.DefaultSubnet holds the default value on creation for the subnet field.
+	networkhost.DefaultSubnet = networkhostDescSubnet.Default.(string)
 	notificationMixin := schema.Notification{}.Mixin()
 	notificationMixinFields0 := notificationMixin[0].Fields()
 	_ = notificationMixinFields0
@@ -412,6 +542,25 @@ func init() {
 	notificationDescArchived := notificationFields[2].Descriptor()
 	// notification.DefaultArchived holds the default value on creation for the archived field.
 	notification.DefaultArchived = notificationDescArchived.Default.(bool)
+	operatornoteMixin := schema.OperatorNote{}.Mixin()
+	operatornoteMixinFields0 := operatornoteMixin[0].Fields()
+	_ = operatornoteMixinFields0
+	operatornoteFields := schema.OperatorNote{}.Fields()
+	_ = operatornoteFields
+	// operatornoteDescCreatedAt is the schema descriptor for created_at field.
+	operatornoteDescCreatedAt := operatornoteMixinFields0[0].Descriptor()
+	// operatornote.DefaultCreatedAt holds the default value on creation for the created_at field.
+	operatornote.DefaultCreatedAt = operatornoteDescCreatedAt.Default.(func() time.Time)
+	// operatornoteDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	operatornoteDescLastModifiedAt := operatornoteMixinFields0[1].Descriptor()
+	// operatornote.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	operatornote.DefaultLastModifiedAt = operatornoteDescLastModifiedAt.Default.(func() time.Time)
+	// operatornote.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	operatornote.UpdateDefaultLastModifiedAt = operatornoteDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// operatornoteDescContent is the schema descriptor for content field.
+	operatornoteDescContent := operatornoteFields[0].Descriptor()
+	// operatornote.DefaultContent holds the default value on creation for the content field.
+	operatornote.DefaultContent = operatornoteDescContent.Default.(string)
 	portalMixin := schema.Portal{}.Mixin()
 	portalMixinFields0 := portalMixin[0].Fields()
 	_ = portalMixinFields0

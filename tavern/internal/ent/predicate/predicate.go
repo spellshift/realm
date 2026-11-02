@@ -27,6 +27,9 @@ type BuildTask func(*sql.Selector)
 // Builder is the predicate function for builder builders.
 type Builder func(*sql.Selector)
 
+// BuilderEnrollmentToken is the predicate function for builderenrollmenttoken builders.
+type BuilderEnrollmentToken func(*sql.Selector)
+
 // DeviceAuth is the predicate function for deviceauth builders.
 type DeviceAuth func(*sql.Selector)
 
@@ -48,8 +51,17 @@ type HostProcess func(*sql.Selector)
 // Link is the predicate function for link builders.
 type Link func(*sql.Selector)
 
+// Network is the predicate function for network builders.
+type Network func(*sql.Selector)
+
+// NetworkHost is the predicate function for networkhost builders.
+type NetworkHost func(*sql.Selector)
+
 // Notification is the predicate function for notification builders.
 type Notification func(*sql.Selector)
+
+// OperatorNote is the predicate function for operatornote builders.
+type OperatorNote func(*sql.Selector)
 
 // Portal is the predicate function for portal builders.
 type Portal func(*sql.Selector)

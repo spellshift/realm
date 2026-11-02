@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
@@ -21,16 +23,18 @@ import (
 // HostCredentialQuery is the builder for querying HostCredential entities.
 type HostCredentialQuery struct {
 	config
-	ctx           *QueryContext
-	order         []hostcredential.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.HostCredential
-	withHost      *HostQuery
-	withTask      *TaskQuery
-	withShellTask *ShellTaskQuery
-	withFKs       bool
-	modifiers     []func(*sql.Selector)
-	loadTotal     []func(context.Context, []*HostCredential) error
+	ctx                   *QueryContext
+	order                 []hostcredential.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.HostCredential
+	withHost              *HostQuery
+	withTask              *TaskQuery
+	withShellTask         *ShellTaskQuery
+	withNetworkHosts      *NetworkHostQuery
+	withFKs               bool
+	modifiers             []func(*sql.Selector)
+	loadTotal             []func(context.Context, []*HostCredential) error
+	withNamedNetworkHosts map[string]*NetworkHostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -126,6 +130,28 @@ func (hcq *HostCredentialQuery) QueryShellTask() *ShellTaskQuery {
 			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, selector),
 			sqlgraph.To(shelltask.Table, shelltask.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.ShellTaskTable, hostcredential.ShellTaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hcq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNetworkHosts chains the current query on the "network_hosts" edge.
+func (hcq *HostCredentialQuery) QueryNetworkHosts() *NetworkHostQuery {
+	query := (&NetworkHostClient{config: hcq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hcq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hcq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, selector),
+			sqlgraph.To(networkhost.Table, networkhost.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, hostcredential.NetworkHostsTable, hostcredential.NetworkHostsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(hcq.driver.Dialect(), step)
 		return fromU, nil
@@ -320,14 +346,15 @@ func (hcq *HostCredentialQuery) Clone() *HostCredentialQuery {
 		return nil
 	}
 	return &HostCredentialQuery{
-		config:        hcq.config,
-		ctx:           hcq.ctx.Clone(),
-		order:         append([]hostcredential.OrderOption{}, hcq.order...),
-		inters:        append([]Interceptor{}, hcq.inters...),
-		predicates:    append([]predicate.HostCredential{}, hcq.predicates...),
-		withHost:      hcq.withHost.Clone(),
-		withTask:      hcq.withTask.Clone(),
-		withShellTask: hcq.withShellTask.Clone(),
+		config:           hcq.config,
+		ctx:              hcq.ctx.Clone(),
+		order:            append([]hostcredential.OrderOption{}, hcq.order...),
+		inters:           append([]Interceptor{}, hcq.inters...),
+		predicates:       append([]predicate.HostCredential{}, hcq.predicates...),
+		withHost:         hcq.withHost.Clone(),
+		withTask:         hcq.withTask.Clone(),
+		withShellTask:    hcq.withShellTask.Clone(),
+		withNetworkHosts: hcq.withNetworkHosts.Clone(),
 		// clone intermediate query.
 		sql:  hcq.sql.Clone(),
 		path: hcq.path,
@@ -364,6 +391,17 @@ func (hcq *HostCredentialQuery) WithShellTask(opts ...func(*ShellTaskQuery)) *Ho
 		opt(query)
 	}
 	hcq.withShellTask = query
+	return hcq
+}
+
+// WithNetworkHosts tells the query-builder to eager-load the nodes that are connected to
+// the "network_hosts" edge. The optional arguments are used to configure the query builder of the edge.
+func (hcq *HostCredentialQuery) WithNetworkHosts(opts ...func(*NetworkHostQuery)) *HostCredentialQuery {
+	query := (&NetworkHostClient{config: hcq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hcq.withNetworkHosts = query
 	return hcq
 }
 
@@ -446,10 +484,11 @@ func (hcq *HostCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 		nodes       = []*HostCredential{}
 		withFKs     = hcq.withFKs
 		_spec       = hcq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			hcq.withHost != nil,
 			hcq.withTask != nil,
 			hcq.withShellTask != nil,
+			hcq.withNetworkHosts != nil,
 		}
 	)
 	if hcq.withHost != nil || hcq.withTask != nil || hcq.withShellTask != nil {
@@ -494,6 +533,20 @@ func (hcq *HostCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	if query := hcq.withShellTask; query != nil {
 		if err := hcq.loadShellTask(ctx, query, nodes, nil,
 			func(n *HostCredential, e *ShellTask) { n.Edges.ShellTask = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hcq.withNetworkHosts; query != nil {
+		if err := hcq.loadNetworkHosts(ctx, query, nodes,
+			func(n *HostCredential) { n.Edges.NetworkHosts = []*NetworkHost{} },
+			func(n *HostCredential, e *NetworkHost) { n.Edges.NetworkHosts = append(n.Edges.NetworkHosts, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hcq.withNamedNetworkHosts {
+		if err := hcq.loadNetworkHosts(ctx, query, nodes,
+			func(n *HostCredential) { n.appendNamedNetworkHosts(name) },
+			func(n *HostCredential, e *NetworkHost) { n.appendNamedNetworkHosts(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -601,6 +654,67 @@ func (hcq *HostCredentialQuery) loadShellTask(ctx context.Context, query *ShellT
 	}
 	return nil
 }
+func (hcq *HostCredentialQuery) loadNetworkHosts(ctx context.Context, query *NetworkHostQuery, nodes []*HostCredential, init func(*HostCredential), assign func(*HostCredential, *NetworkHost)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*HostCredential)
+	nids := make(map[int]map[*HostCredential]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(hostcredential.NetworkHostsTable)
+		s.Join(joinT).On(s.C(networkhost.FieldID), joinT.C(hostcredential.NetworkHostsPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(hostcredential.NetworkHostsPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(hostcredential.NetworkHostsPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*HostCredential]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*NetworkHost](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "network_hosts" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
 
 func (hcq *HostCredentialQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hcq.querySpec()
@@ -684,6 +798,20 @@ func (hcq *HostCredentialQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedNetworkHosts tells the query-builder to eager-load the nodes that are connected to the "network_hosts"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hcq *HostCredentialQuery) WithNamedNetworkHosts(name string, opts ...func(*NetworkHostQuery)) *HostCredentialQuery {
+	query := (&NetworkHostClient{config: hcq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hcq.withNamedNetworkHosts == nil {
+		hcq.withNamedNetworkHosts = make(map[string]*NetworkHostQuery)
+	}
+	hcq.withNamedNetworkHosts[name] = query
+	return hcq
 }
 
 // HostCredentialGroupBy is the group-by builder for HostCredential entities.

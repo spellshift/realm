@@ -36,6 +36,7 @@ import (
 	"realm.pub/tavern/internal/crypto"
 	"realm.pub/tavern/internal/cryptocodec"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	"realm.pub/tavern/internal/hostcheck"
@@ -45,8 +46,8 @@ import (
 	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
-	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/portals/pty"
+	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/scheduler"
 	"realm.pub/tavern/internal/secrets"
@@ -59,6 +60,7 @@ import (
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
 	_ "realm.pub/tavern/internal/redirectors/icmp"
+	_ "realm.pub/tavern/internal/redirectors/quic"
 	_ "realm.pub/tavern/internal/scheduler/gcp"
 	_ "realm.pub/tavern/internal/scheduler/mem"
 )
@@ -159,26 +161,41 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Name:  "config",
 					Usage: "Path to the builder YAML configuration file",
 				},
+				cli.StringFlag{
+					Name:  "executor",
+					Usage: "Executor to run builds with (docker, local)",
+				},
 			},
 			Action: func(c *cli.Context) error {
 				configPath := c.String("config")
-				if configPath == "" {
-					return fmt.Errorf("--config flag is required")
+				var cliExec *string
+				if c.IsSet("executor") {
+					value := c.String("executor")
+					cliExec = &value
 				}
-
-				cfg, err := builder.ParseConfig(configPath)
+				cfg, err := loadBuilderConfig(configPath, cliExec)
 				if err != nil {
-					return fmt.Errorf("failed to parse builder config: %w", err)
+					return err
 				}
 
 				slog.InfoContext(ctx, "starting builder",
 					"config", configPath,
 					"supported_targets", cfg.SupportedTargets,
+					"executor", cfg.Executor,
 				)
 
-				exec, err := executor.NewDockerExecutorFromEnv(ctx)
-				if err != nil {
-					return fmt.Errorf("failed to create docker executor: %w", err)
+				var exec executor.Executor
+				switch cfg.Executor {
+				case "local":
+					exec = executor.NewLocalExecutor()
+				case "docker":
+					dockerExec, err := executor.NewDockerExecutorFromEnv(ctx)
+					if err != nil {
+						return fmt.Errorf("failed to create docker executor: %w", err)
+					}
+					exec = dockerExec
+				default:
+					return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cfg.Executor)
 				}
 
 				return builder.Run(ctx, cfg, exec)
@@ -186,6 +203,28 @@ func newApp(ctx context.Context) (app *cli.App) {
 		},
 	}
 	return
+}
+
+func loadBuilderConfig(configPath string, cliExec *string) (*builder.Config, error) {
+	if cliExec != nil && *cliExec != "docker" && *cliExec != "local" {
+		return nil, fmt.Errorf("unsupported executor %q, must be one of: docker, local", *cliExec)
+	}
+	cfg := builder.DefaultConfig()
+	if configPath != "" {
+		var err error
+		if cliExec == nil {
+			cfg, err = builder.ParseConfig(configPath)
+		} else {
+			cfg, err = builder.ParseConfigWithExecutor(configPath, *cliExec)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse builder config: %w", err)
+		}
+	}
+	if configPath == "" && cliExec != nil {
+		cfg.Executor = *cliExec
+	}
+	return cfg, nil
 }
 
 func runTavern(ctx context.Context, options ...func(*Config)) error {
@@ -241,6 +280,10 @@ func (srv *Server) Close() error {
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
 func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
+	tokens, err := parseBuilderEnrollmentTokens(EnvBuilderEnrollmentTokens.String())
+	if err != nil {
+		return nil, err
+	}
 	// Get server key pair from secrets manager (for OAuth)
 	pubKey, privKey, err := getKeyPairEd25519()
 	if err != nil {
@@ -266,6 +309,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		client.Close()
 		return nil, fmt.Errorf("failed to initialize graph schema: %w", err)
 	}
+	if err := seedBuilderEnrollmentTokens(ctx, client, tokens); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to seed builder enrollment tokens: %w", err)
+	}
 
 	// Load Default Tomes
 	// Load Tools
@@ -277,6 +324,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
 			slog.ErrorContext(ctx, "failed to upload default tomes", "err", err)
 		}
+	}
+
+	// Ensure Default Build Profile
+	if err := ensureDefaultBuildProfile(ctx, client); err != nil {
+		slog.ErrorContext(ctx, "failed to ensure default build profile", "err", err)
 	}
 
 	// Initialize Git Tome Importer
@@ -373,14 +425,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
 		hostCheckSchedule = "* * * * *"
 	}
-	// Generate a JWT scoped to the host-check endpoint and append it as a query parameter.
+	// Generate a JWT scoped to the host-check endpoint.
 	hostCheckToken, err := hostcheck.NewToken(privKey)
 	if err != nil {
 		client.Close()
 		sched.Close()
 		return nil, fmt.Errorf("failed to generate host-check JWT: %w", err)
 	}
-	hostCheckURL = fmt.Sprintf("%s?token=%s", hostCheckURL, url.QueryEscape(hostCheckToken))
 	slog.InfoContext(ctx, "resolved host check configuration", "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
 
 	// Schedule a recurring host-lost check.
@@ -393,8 +444,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		Name:     "host-lost-poll",
 		Schedule: hostCheckSchedule,
 		HTTPTarget: scheduler.HTTPTarget{
-			URL:    hostCheckURL,
-			Method: "POST",
+			URL:     hostCheckURL,
+			Method:  "POST",
+			Headers: map[string]string{"Authorization": "Bearer " + hostCheckToken},
 		},
 	}); err != nil {
 		if errors.Is(err, scheduler.ErrJobExists) {
@@ -458,9 +510,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/graphql": tavernhttp.Endpoint{
-			Handler:          gqlHandler,
-			AllowUnactivated: true,
+		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler, AllowUnactivated: true},
+		"/auth/builder/enroll": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewBuilderEnrollHandler(client, builderCACert, builderCAKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
 			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
@@ -493,7 +547,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: cdn.NewUploadHandler(client),
 		},
 		"/shell/ws": tavernhttp.Endpoint{
-			Handler: stream.NewShellHandler(client, wsShellMux),
+			Handler: tavernshell.NewHandler(client, portalMux),
 		},
 		"/shellv2/ws": tavernhttp.Endpoint{
 			Handler: tavernshell.NewHandler(client, portalMux),
@@ -840,4 +894,55 @@ func portFromAddr(addr string) string {
 		return addr[i:]
 	}
 	return ":80"
+}
+
+// defaultBuildProfileCallbackURI determines the callback URI for the
+// default build profile's gRPC transport -- the configured OAuth domain if
+// set (mirroring how the OAuth redirect URL is derived in config.go),
+// falling back to localhost for deployments that haven't configured OAuth.
+func defaultBuildProfileCallbackURI() string {
+	domain := EnvOAuthDomain.String()
+	if domain == "" {
+		return "http://127.0.0.1:8000"
+	}
+	if !strings.HasPrefix(domain, "http") {
+		domain = fmt.Sprintf("https://%s", domain)
+	}
+	return domain
+}
+
+const legacyDefaultBuildProfileDescription = "Default build profile. Callback points at the configured OAuth domain, or localhost if OAuth is not configured."
+
+// ensureDefaultBuildProfile creates a "Default" build profile the first time
+// Tavern starts up and clears the old generated description where it remains.
+func ensureDefaultBuildProfile(ctx context.Context, client *ent.Client) error {
+	exists, err := client.BuildProfile.Query().
+		Where(buildprofile.Name(builder.DefaultBuildProfileName)).
+		Exist(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to check for existing default build profile: %w", err)
+	}
+	if exists {
+		if err := client.BuildProfile.Update().
+			Where(buildprofile.Name(builder.DefaultBuildProfileName), buildprofile.Description(legacyDefaultBuildProfileDescription)).
+			SetDescription("").Exec(ctx); err != nil {
+			return fmt.Errorf("failed to clear legacy default build profile description: %w", err)
+		}
+		return nil
+	}
+
+	if _, err := client.BuildProfile.Create().
+		SetName(builder.DefaultBuildProfileName).
+		SetDescription("").
+		SetTransports([]builderpb.BuildProfileTransport{
+			{
+				URI:      defaultBuildProfileCallbackURI(),
+				Interval: 5,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
+			},
+		}).
+		Save(ctx); err != nil {
+		return fmt.Errorf("failed to create default build profile: %w", err)
+	}
+	return nil
 }

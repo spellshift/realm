@@ -90,3 +90,21 @@ fn test_arg_parsing_option() {
     // Check default handling
     assert!(s.contains("Default :: default ()"));
 }
+
+#[test]
+fn test_eldritch_deprecated() {
+    let attr = quote!("test");
+    let item = quote! {
+        trait MyLib {
+            #[eldritch_method]
+            #[eldritch_deprecated("test.old_fn has been deprecated")]
+            fn old_fn(&self) -> Result<(), String>;
+        }
+    };
+
+    let result = expand_eldritch_library(attr, item).unwrap();
+    let s = result.to_string();
+
+    assert!(s.contains("print_err"));
+    assert!(s.contains("\"test.old_fn has been deprecated\""));
+}

@@ -118,12 +118,10 @@ impl FromValue for FileWrapper {
                     .get(&Value::String("path".to_string()))
                     .map(|v| v.to_string())
                     .unwrap_or_default();
-                let chunk = if let Some(Value::Bytes(b)) =
-                    dict.get(&Value::String("content".to_string()))
-                {
-                    b.clone()
-                } else {
-                    Vec::new()
+                let chunk = match dict.get(&Value::String("content".to_string())) {
+                    Some(Value::Bytes(b)) => b.clone(),
+                    Some(Value::String(s)) => s.as_bytes().to_vec(),
+                    _ => Vec::new(),
                 };
 
                 // Construct FileMetadata

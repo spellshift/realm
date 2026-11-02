@@ -170,7 +170,12 @@ mod platform {
     }
 }
 
-#[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "solaris"
+))]
 mod platform {
     use super::*;
 

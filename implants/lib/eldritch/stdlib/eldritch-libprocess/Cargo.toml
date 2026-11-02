@@ -1,23 +1,25 @@
 [package]
 name = "eldritch-libprocess"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
+eldritch-libnet = { path = "../eldritch-libnet", default-features = false }
+anyhow = { workspace = true, optional = true }
 sysinfo = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
-netstat = { workspace = true }
 
 [target.'cfg(unix)'.dependencies]
 libc = { workspace = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:sysinfo"]
-fake_bindings = []
+stdlib = ["dep:anyhow", "dep:sysinfo", "eldritch-libnet/stdlib"]
+fake_bindings = ["eldritch-libnet/fake_bindings"]
 
 [dev-dependencies]
 anyhow = { workspace = true }
 tokio = { workspace = true, features = ["rt", "macros", "net", "io-util"] }
+

@@ -1,12 +1,16 @@
 {
 	"compilerOptions": {
+		"composite": true,
 		"module": "commonjs",
 		"target": "es2019",
 		"lib": ["ES2019"],
 		"outDir": "out",
 		"rootDir": "src",
-		"sourceMap": true
+		"resolveJsonModule": true,
+		"esModuleInterop": true,
+		"sourceMap": true,
+		"skipLibCheck": true
 	},
-	"include": ["src"],
+	"include": ["src/**/*.ts", "src/**/*.json"],
 	"exclude": ["node_modules", ".vscode-test"]
 }

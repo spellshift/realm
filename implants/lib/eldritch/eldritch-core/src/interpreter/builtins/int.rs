@@ -5,7 +5,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
-/// `int(x)`: Converts a number or string to an integer.
+/// `int(x=0, base=10)`: Converts a number or string to an integer.
 ///
 /// If x is a number, return x.__int__(). For floating point numbers, this truncates towards zero.
 /// If x is not a number or if base is given, then x must be a string, bytes, or bytearray instance representing an integer literal in the given base.
@@ -34,6 +34,11 @@ pub fn builtin_int(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
         // Explicit base provided
         match x {
             Value::String(s) => parse_int_string(s, base),
+            Value::Bytes(b) => {
+                let s = core::str::from_utf8(b)
+                    .map_err(|e| format!("Invalid UTF-8 in bytes for int(): {e}"))?;
+                parse_int_string(s, base)
+            }
             _ => Err("int() can't convert non-string with explicit base".into()),
         }
     } else {
@@ -43,6 +48,11 @@ pub fn builtin_int(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
             Value::Float(f) => Ok(Value::Int(*f as i64)), // Truncate
             Value::Bool(b) => Ok(Value::Int(if *b { 1 } else { 0 })),
             Value::String(s) => parse_int_string(s, 10),
+            Value::Bytes(b) => {
+                let s = core::str::from_utf8(b)
+                    .map_err(|e| format!("Invalid UTF-8 in bytes for int(): {e}"))?;
+                parse_int_string(s, 10)
+            }
             _ => Err(format!(
                 "int() argument must be a string, bytes or number, not '{}'",
                 get_type_name(x)

@@ -75,6 +75,11 @@ func Upstream(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldUpstream, v))
 }
 
+// PollInterval applies equality check predicate on the "poll_interval" field. It's identical to PollIntervalEQ.
+func PollInterval(v int) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldPollInterval, v))
+}
+
 // LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
 func LastSeenAt(v time.Time) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldLastSeenAt, v))
@@ -288,6 +293,66 @@ func UpstreamEqualFold(v string) predicate.Builder {
 // UpstreamContainsFold applies the ContainsFold predicate on the "upstream" field.
 func UpstreamContainsFold(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldContainsFold(FieldUpstream, v))
+}
+
+// PollIntervalEQ applies the EQ predicate on the "poll_interval" field.
+func PollIntervalEQ(v int) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldPollInterval, v))
+}
+
+// PollIntervalNEQ applies the NEQ predicate on the "poll_interval" field.
+func PollIntervalNEQ(v int) predicate.Builder {
+	return predicate.Builder(sql.FieldNEQ(FieldPollInterval, v))
+}
+
+// PollIntervalIn applies the In predicate on the "poll_interval" field.
+func PollIntervalIn(vs ...int) predicate.Builder {
+	return predicate.Builder(sql.FieldIn(FieldPollInterval, vs...))
+}
+
+// PollIntervalNotIn applies the NotIn predicate on the "poll_interval" field.
+func PollIntervalNotIn(vs ...int) predicate.Builder {
+	return predicate.Builder(sql.FieldNotIn(FieldPollInterval, vs...))
+}
+
+// PollIntervalGT applies the GT predicate on the "poll_interval" field.
+func PollIntervalGT(v int) predicate.Builder {
+	return predicate.Builder(sql.FieldGT(FieldPollInterval, v))
+}
+
+// PollIntervalGTE applies the GTE predicate on the "poll_interval" field.
+func PollIntervalGTE(v int) predicate.Builder {
+	return predicate.Builder(sql.FieldGTE(FieldPollInterval, v))
+}
+
+// PollIntervalLT applies the LT predicate on the "poll_interval" field.
+func PollIntervalLT(v int) predicate.Builder {
+	return predicate.Builder(sql.FieldLT(FieldPollInterval, v))
+}
+
+// PollIntervalLTE applies the LTE predicate on the "poll_interval" field.
+func PollIntervalLTE(v int) predicate.Builder {
+	return predicate.Builder(sql.FieldLTE(FieldPollInterval, v))
+}
+
+// ExecutorEQ applies the EQ predicate on the "executor" field.
+func ExecutorEQ(v Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldExecutor, v))
+}
+
+// ExecutorNEQ applies the NEQ predicate on the "executor" field.
+func ExecutorNEQ(v Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldNEQ(FieldExecutor, v))
+}
+
+// ExecutorIn applies the In predicate on the "executor" field.
+func ExecutorIn(vs ...Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldIn(FieldExecutor, vs...))
+}
+
+// ExecutorNotIn applies the NotIn predicate on the "executor" field.
+func ExecutorNotIn(vs ...Executor) predicate.Builder {
+	return predicate.Builder(sql.FieldNotIn(FieldExecutor, vs...))
 }
 
 // LastSeenAtEQ applies the EQ predicate on the "last_seen_at" field.

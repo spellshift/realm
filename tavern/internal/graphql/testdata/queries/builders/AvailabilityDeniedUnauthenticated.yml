@@ -1,0 +1,5 @@
+query: |
+  query OnlineBuilderPlatforms {
+    onlineBuilderPlatforms
+  }
+expected_error: unauthenticated

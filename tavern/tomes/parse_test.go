@@ -34,4 +34,12 @@ func TestUploadTomes(t *testing.T) {
 	assert.Len(t, testTomeAssets, 1)
 	assert.Equal(t, "example/linux/test-file", testTomeAssets[0].Name)
 	assert.Equal(t, []byte("This file exists"), testTomeAssets[0].Content)
+
+	// Assert our Shell Aliases RC tome is uploaded with the SHELL_RC tactic
+	rcTome := graph.Tome.Query().
+		Where(tome.Name("Shell Aliases")).
+		OnlyX(ctx)
+	require.NotNil(t, rcTome)
+	assert.Equal(t, tome.TacticSHELL_RC, rcTome.Tactic)
+	assert.Contains(t, rcTome.Eldritch, "def ls(")
 }

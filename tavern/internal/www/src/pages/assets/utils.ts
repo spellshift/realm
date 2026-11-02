@@ -2,6 +2,11 @@ import { CreateToastFnReturn } from "@chakra-ui/react";
 import { LinkEdge } from "../../utils/interfacesQuery";
 import { API_ENDPOINT } from "../../utils/utils";
 
+export const isAgentAsset = (name?: string | null): boolean => {
+    if (!name) return false;
+    return name.startsWith("build/") || name.includes("/imix-") || name.startsWith("imix-");
+};
+
 export const truncateAssetName = (name: string, maxLength: number = 25): string => {
     if (name.length <= maxLength) return name;
 

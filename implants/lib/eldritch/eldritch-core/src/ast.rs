@@ -551,7 +551,7 @@ impl fmt::Display for Value {
             Value::Int(i) => write!(f, "{i}"),
             Value::Float(fl) => write!(f, "{fl:?}"), // Use Debug for floats to get decent formatting (1.0 etc)
             Value::String(s) => write!(f, "{s}"),    // Strings print without quotes in str()
-            Value::Bytes(b) => write!(f, "{:?}", Value::Bytes(b.clone())), // Delegate to Debug for bytes representation
+            Value::Bytes(b) => write!(f, "{}", String::from_utf8_lossy(b)),
             Value::List(l) => {
                 // Containers use repr (Debug) for their elements
                 write!(f, "{:?}", Value::List(l.clone()))

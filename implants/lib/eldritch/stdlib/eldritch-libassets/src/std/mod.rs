@@ -6,7 +6,6 @@ use alloc::vec::Vec;
 use anyhow::Result;
 use core::marker::PhantomData;
 use eldritch_agent::{Agent, Context};
-use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
 use rust_embed;
@@ -14,7 +13,6 @@ use std::collections::HashSet;
 
 pub mod copy_impl;
 pub mod list_impl;
-pub mod read_binary_impl;
 pub mod read_impl;
 
 // Trait for arbitrary backends to get and list assets.
@@ -181,14 +179,8 @@ impl StdAssetsLibrary {
 }
 
 impl AssetsLibrary for StdAssetsLibrary {
-    fn read_binary(&self, name: String) -> Result<Value, String> {
-        self.read_binary_impl(&name)
-            .map(Value::Bytes)
-            .map_err(|e| e.to_string())
-    }
-
-    fn read(&self, name: String) -> Result<String, String> {
-        self.read_impl(name)
+    fn read(&self, name: String) -> Result<Vec<u8>, String> {
+        self.read_impl(&name).map_err(|e| e.to_string())
     }
 
     fn copy(&self, src: String, dest: String) -> Result<(), String> {

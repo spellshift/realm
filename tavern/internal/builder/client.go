@@ -23,9 +23,6 @@ import (
 )
 
 const (
-	// taskPollInterval is how often the builder polls for new build tasks.
-	taskPollInterval = 5 * time.Second
-
 	// maxConcurrentBuilds is the maximum number of builds that can run simultaneously.
 	maxConcurrentBuilds = 4
 
@@ -62,48 +59,41 @@ func (c *builderCredentials) RequireTransportSecurity() bool {
 
 // NewCredentialsFromConfig creates gRPC per-RPC credentials from a builder config.
 func NewCredentialsFromConfig(cfg *Config) (credentials.PerRPCCredentials, error) {
-	return parseMTLSCredentials(cfg.MTLS)
+	identity, err := LoadIdentity(cfg.IdentityFile)
+	if err != nil {
+		return nil, err
+	}
+	return parseMTLSCredentials(identity.Certificate, []byte(identity.PrivateKey))
 }
 
-// parseMTLSCredentials loads the certificate and private key from the config's
-// PEM bundle string.
-func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
-	pemBundle := []byte(mtlsPEM)
-
-	var certDER []byte
-	var privKey ed25519.PrivateKey
-
-	for {
-		block, rest := pem.Decode(pemBundle)
-		if block == nil {
-			break
-		}
-		switch block.Type {
-		case "CERTIFICATE":
-			certDER = block.Bytes
-		case "PRIVATE KEY":
-			key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse private key: %w", err)
-			}
-			edKey, ok := key.(ed25519.PrivateKey)
-			if !ok {
-				return nil, fmt.Errorf("private key is not ED25519")
-			}
-			privKey = edKey
-		}
-		pemBundle = rest
+func parseMTLSCredentials(certPEM string, keyPEM []byte) (*builderCredentials, error) {
+	certBlock, certRest := pem.Decode([]byte(certPEM))
+	if certBlock == nil || certBlock.Type != "CERTIFICATE" || len(bytes.TrimSpace(certRest)) != 0 {
+		return nil, fmt.Errorf("invalid builder certificate PEM")
 	}
-
-	if certDER == nil {
-		return nil, fmt.Errorf("no certificate found in mTLS bundle")
+	cert, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("invalid builder certificate: %w", err)
 	}
-	if privKey == nil {
-		return nil, fmt.Errorf("no private key found in mTLS bundle")
+	keyBlock, keyRest := pem.Decode(keyPEM)
+	if keyBlock == nil || keyBlock.Type != "PRIVATE KEY" || len(bytes.TrimSpace(keyRest)) != 0 {
+		return nil, fmt.Errorf("invalid builder private key PEM")
+	}
+	key, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("invalid builder private key: %w", err)
+	}
+	privKey, ok := key.(ed25519.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("builder private key is not Ed25519")
+	}
+	pubKey, ok := cert.PublicKey.(ed25519.PublicKey)
+	if !ok || !pubKey.Equal(privKey.Public()) {
+		return nil, fmt.Errorf("builder key does not match certificate")
 	}
 
 	return &builderCredentials{
-		certDER: certDER,
+		certDER: cert.Raw,
 		privKey: privKey,
 	}, nil
 }
@@ -113,13 +103,25 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 // then enters a polling loop to claim and execute build tasks using the
 // provided executor.
 func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
+	if cfg.PollInterval == 0 {
+		copy := *cfg
+		copy.PollInterval = DefaultPollInterval
+		cfg = &copy
+	}
+	if err := cfg.validate(); err != nil {
+		return err
+	}
+	identity, err := EnsureIdentity(ctx, cfg)
+	if err != nil {
+		return err
+	}
 	slog.InfoContext(ctx, "builder started",
-		"id", cfg.ID,
+		"id", identity.ID,
 		"supported_targets", cfg.SupportedTargets,
 		"upstream", cfg.Upstream,
 	)
 
-	creds, err := parseMTLSCredentials(cfg.MTLS)
+	creds, err := NewCredentialsFromConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to parse mTLS credentials: %w", err)
 	}
@@ -166,7 +168,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
-	ticker := time.NewTicker(taskPollInterval)
+	ticker := time.NewTicker(time.Duration(cfg.PollInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -232,7 +234,12 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 			"task_id", task.Id, "tome_id", t.Id, "name", name, "size", len(data))
 	}
 
-	stream, err := client.StreamBuildTaskOutput(ctx)
+	// taskCtx is cancelled if the output stream fails so the executor stops
+	// instead of blocking on channels that nothing is reading anymore.
+	taskCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	stream, err := client.StreamBuildTaskOutput(taskCtx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to open build output stream",
 			"task_id", task.Id, "error", err)
@@ -255,12 +262,16 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 					outCh = nil
 					continue
 				}
+				if sendErr != nil {
+					continue // Keep draining so the executor never blocks while exiting.
+				}
 				if err := stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 					TaskId: task.Id,
 					Output: line,
 				}); err != nil {
 					sendErr = err
-					return
+					cancel()
+					continue
 				}
 				slog.InfoContext(ctx, "build output",
 					"task_id", task.Id, "line", line)
@@ -269,12 +280,16 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 					errCh = nil
 					continue
 				}
+				if sendErr != nil {
+					continue
+				}
 				if err := stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 					TaskId: task.Id,
 					Error:  line,
 				}); err != nil {
 					sendErr = err
-					return
+					cancel()
+					continue
 				}
 				slog.WarnContext(ctx, "build error output",
 					"task_id", task.Id, "line", line)
@@ -282,9 +297,9 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 		}
 	}()
 
-	// Run the build through the executor.
-	// The executor closes both channels when done.
-	result, buildErr := exec.Build(ctx, executor.BuildSpec{
+	// Run the build through the executor using taskCtx so a stream failure
+	// cancels the subprocess. The executor closes both channels when done.
+	result, buildErr := exec.Build(taskCtx, executor.BuildSpec{
 		TaskID:          task.Id,
 		TargetOS:        task.TargetOs,
 		BuildImage:      task.BuildImage,

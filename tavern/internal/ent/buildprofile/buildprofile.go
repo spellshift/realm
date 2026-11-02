@@ -21,6 +21,10 @@ const (
 	FieldTransports = "transports"
 	// FieldBuildImage holds the string denoting the build_image field in the database.
 	FieldBuildImage = "build_image"
+	// FieldBuildScript holds the string denoting the build_script field in the database.
+	FieldBuildScript = "build_script"
+	// FieldArtifactPath holds the string denoting the artifact_path field in the database.
+	FieldArtifactPath = "artifact_path"
 	// FieldPrebuildscript holds the string denoting the prebuildscript field in the database.
 	FieldPrebuildscript = "prebuildscript"
 	// FieldSetupscript holds the string denoting the setupscript field in the database.
@@ -51,6 +55,8 @@ var Columns = []string{
 	FieldDescription,
 	FieldTransports,
 	FieldBuildImage,
+	FieldBuildScript,
+	FieldArtifactPath,
 	FieldPrebuildscript,
 	FieldSetupscript,
 	FieldPostbuildscript,
@@ -75,6 +81,14 @@ var (
 	DefaultBuildImage string
 	// BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
 	BuildImageValidator func(string) error
+	// DefaultBuildScript holds the default value on creation for the "build_script" field.
+	DefaultBuildScript string
+	// BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
+	BuildScriptValidator func(string) error
+	// DefaultArtifactPath holds the default value on creation for the "artifact_path" field.
+	DefaultArtifactPath string
+	// ArtifactPathValidator is a validator for the "artifact_path" field. It is called by the builders before save.
+	ArtifactPathValidator func(string) error
 	// DefaultPrebuildscript holds the default value on creation for the "prebuildscript" field.
 	DefaultPrebuildscript string
 	// DefaultSetupscript holds the default value on creation for the "setupscript" field.
@@ -104,6 +118,16 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 // ByBuildImage orders the results by the build_image field.
 func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildImage, opts...).ToFunc()
+}
+
+// ByBuildScript orders the results by the build_script field.
+func ByBuildScript(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuildScript, opts...).ToFunc()
+}
+
+// ByArtifactPath orders the results by the artifact_path field.
+func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldArtifactPath, opts...).ToFunc()
 }
 
 // ByPrebuildscript orders the results by the prebuildscript field.

@@ -14,7 +14,8 @@ export enum PageNavItem {
     assets="Assets",
     admin="Admin",
     processes="Processes",
-    files="Files"
+    files="Files",
+    agentBuilder="Agent Builder"
 }
 export enum SupportedPlatforms {
     Windows="PLATFORM_WINDOWS",
@@ -24,11 +25,22 @@ export enum SupportedPlatforms {
     Platform_Unknown='PLATFORM_UNSPECIFIED'
 }
 
+// Mirrors builderpb.TargetFormat (tavern/internal/builder/builderpb) --
+// the artifact formats a BuildTask can target.
+export enum SupportedFormats {
+    Bin = "TARGET_FORMAT_BIN",
+    Cdylib = "TARGET_FORMAT_CDYLIB",
+    WindowsService = "TARGET_FORMAT_WINDOWS_SERVICE",
+}
+
 export enum SupportedTransports {
     DNS="TRANSPORT_DNS",
     GRPC="TRANSPORT_GRPC",
     HTTP1="TRANSPORT_HTTP1",
     ICMP="TRANSPORT_ICMP",
+    QUIC="TRANSPORT_QUIC",
+    TCP_BIND="TRANSPORT_TCP_BIND",
+    UDS="TRANSPORT_UDS",
     Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
 
@@ -150,6 +162,7 @@ export enum TomeTactic {
     COMMAND_AND_CONTROL = "Command and control",
     EXFILTRATION = "Exfiltration",
     IMPACT = "Impact",
+    SHELL_RC = "Shell RC",
 }
 
 export enum TomeFilterFieldKind {

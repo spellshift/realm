@@ -13,6 +13,7 @@ icmp = ["dep:rand", "dep:libc"]
 mock = ["dep:mockall"]
 tcp-bind = ["tokio-stream/net"]
 print_debug = []
+quic = ["dep:quinn", "dep:rand"]
 
 [dependencies]
 pb = { workspace = true }
@@ -43,6 +44,7 @@ http-body-util = "0.1"
 hyper-http-proxy = { version = "1.1.0", default-features = false, features = ["rustls-tls-native-roots"] }
 hyper-proxy-legacy = { package = "hyper-proxy", version = "0.9.1", default-features = false, features = ["rustls"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
+quinn = { workspace = true, optional = true, features = ["rustls-ring"] }
 hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "webpki-roots"], optional = true }
 base32 = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }

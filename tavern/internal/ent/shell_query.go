@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -25,24 +26,26 @@ import (
 // ShellQuery is the builder for querying Shell entities.
 type ShellQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []shell.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.Shell
-	withTask             *TaskQuery
-	withBeacon           *BeaconQuery
-	withOwner            *UserQuery
-	withPortals          *PortalQuery
-	withActiveUsers      *UserQuery
-	withShellTasks       *ShellTaskQuery
-	withPivots           *ShellPivotQuery
-	withFKs              bool
-	modifiers            []func(*sql.Selector)
-	loadTotal            []func(context.Context, []*Shell) error
-	withNamedPortals     map[string]*PortalQuery
-	withNamedActiveUsers map[string]*UserQuery
-	withNamedShellTasks  map[string]*ShellTaskQuery
-	withNamedPivots      map[string]*ShellPivotQuery
+	ctx                    *QueryContext
+	order                  []shell.OrderOption
+	inters                 []Interceptor
+	predicates             []predicate.Shell
+	withTask               *TaskQuery
+	withBeacon             *BeaconQuery
+	withOwner              *UserQuery
+	withPortals            *PortalQuery
+	withActiveUsers        *UserQuery
+	withShellTasks         *ShellTaskQuery
+	withPivots             *ShellPivotQuery
+	withOperatorNotes      *OperatorNoteQuery
+	withFKs                bool
+	modifiers              []func(*sql.Selector)
+	loadTotal              []func(context.Context, []*Shell) error
+	withNamedPortals       map[string]*PortalQuery
+	withNamedActiveUsers   map[string]*UserQuery
+	withNamedShellTasks    map[string]*ShellTaskQuery
+	withNamedPivots        map[string]*ShellPivotQuery
+	withNamedOperatorNotes map[string]*OperatorNoteQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -226,6 +229,28 @@ func (sq *ShellQuery) QueryPivots() *ShellPivotQuery {
 			sqlgraph.From(shell.Table, shell.FieldID, selector),
 			sqlgraph.To(shellpivot.Table, shellpivot.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, shell.PivotsTable, shell.PivotsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOperatorNotes chains the current query on the "operator_notes" edge.
+func (sq *ShellQuery) QueryOperatorNotes() *OperatorNoteQuery {
+	query := (&OperatorNoteClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(operatornote.Table, operatornote.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, shell.OperatorNotesTable, shell.OperatorNotesPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -420,18 +445,19 @@ func (sq *ShellQuery) Clone() *ShellQuery {
 		return nil
 	}
 	return &ShellQuery{
-		config:          sq.config,
-		ctx:             sq.ctx.Clone(),
-		order:           append([]shell.OrderOption{}, sq.order...),
-		inters:          append([]Interceptor{}, sq.inters...),
-		predicates:      append([]predicate.Shell{}, sq.predicates...),
-		withTask:        sq.withTask.Clone(),
-		withBeacon:      sq.withBeacon.Clone(),
-		withOwner:       sq.withOwner.Clone(),
-		withPortals:     sq.withPortals.Clone(),
-		withActiveUsers: sq.withActiveUsers.Clone(),
-		withShellTasks:  sq.withShellTasks.Clone(),
-		withPivots:      sq.withPivots.Clone(),
+		config:            sq.config,
+		ctx:               sq.ctx.Clone(),
+		order:             append([]shell.OrderOption{}, sq.order...),
+		inters:            append([]Interceptor{}, sq.inters...),
+		predicates:        append([]predicate.Shell{}, sq.predicates...),
+		withTask:          sq.withTask.Clone(),
+		withBeacon:        sq.withBeacon.Clone(),
+		withOwner:         sq.withOwner.Clone(),
+		withPortals:       sq.withPortals.Clone(),
+		withActiveUsers:   sq.withActiveUsers.Clone(),
+		withShellTasks:    sq.withShellTasks.Clone(),
+		withPivots:        sq.withPivots.Clone(),
+		withOperatorNotes: sq.withOperatorNotes.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
 		path: sq.path,
@@ -515,6 +541,17 @@ func (sq *ShellQuery) WithPivots(opts ...func(*ShellPivotQuery)) *ShellQuery {
 	return sq
 }
 
+// WithOperatorNotes tells the query-builder to eager-load the nodes that are connected to
+// the "operator_notes" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithOperatorNotes(opts ...func(*OperatorNoteQuery)) *ShellQuery {
+	query := (&OperatorNoteClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withOperatorNotes = query
+	return sq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -594,7 +631,7 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		nodes       = []*Shell{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			sq.withTask != nil,
 			sq.withBeacon != nil,
 			sq.withOwner != nil,
@@ -602,6 +639,7 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			sq.withActiveUsers != nil,
 			sq.withShellTasks != nil,
 			sq.withPivots != nil,
+			sq.withOperatorNotes != nil,
 		}
 	)
 	if sq.withTask != nil || sq.withBeacon != nil || sq.withOwner != nil {
@@ -677,6 +715,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			return nil, err
 		}
 	}
+	if query := sq.withOperatorNotes; query != nil {
+		if err := sq.loadOperatorNotes(ctx, query, nodes,
+			func(n *Shell) { n.Edges.OperatorNotes = []*OperatorNote{} },
+			func(n *Shell, e *OperatorNote) { n.Edges.OperatorNotes = append(n.Edges.OperatorNotes, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range sq.withNamedPortals {
 		if err := sq.loadPortals(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedPortals(name) },
@@ -702,6 +747,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		if err := sq.loadPivots(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedPivots(name) },
 			func(n *Shell, e *ShellPivot) { n.appendNamedPivots(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedOperatorNotes {
+		if err := sq.loadOperatorNotes(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedOperatorNotes(name) },
+			func(n *Shell, e *OperatorNote) { n.appendNamedOperatorNotes(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -963,6 +1015,67 @@ func (sq *ShellQuery) loadPivots(ctx context.Context, query *ShellPivotQuery, no
 	}
 	return nil
 }
+func (sq *ShellQuery) loadOperatorNotes(ctx context.Context, query *OperatorNoteQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *OperatorNote)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Shell)
+	nids := make(map[int]map[*Shell]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(shell.OperatorNotesTable)
+		s.Join(joinT).On(s.C(operatornote.FieldID), joinT.C(shell.OperatorNotesPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(shell.OperatorNotesPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(shell.OperatorNotesPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Shell]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*OperatorNote](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "operator_notes" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
 
 func (sq *ShellQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
@@ -1101,6 +1214,20 @@ func (sq *ShellQuery) WithNamedPivots(name string, opts ...func(*ShellPivotQuery
 		sq.withNamedPivots = make(map[string]*ShellPivotQuery)
 	}
 	sq.withNamedPivots[name] = query
+	return sq
+}
+
+// WithNamedOperatorNotes tells the query-builder to eager-load the nodes that are connected to the "operator_notes"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedOperatorNotes(name string, opts ...func(*OperatorNoteQuery)) *ShellQuery {
+	query := (&OperatorNoteClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedOperatorNotes == nil {
+		sq.withNamedOperatorNotes = make(map[string]*OperatorNoteQuery)
+	}
+	sq.withNamedOperatorNotes[name] = query
 	return sq
 }
 

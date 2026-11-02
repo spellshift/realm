@@ -23,6 +23,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldLastModifiedAt holds the string denoting the last_modified_at field in the database.
 	FieldLastModifiedAt = "last_modified_at"
+	// FieldProfileAtCreation holds the string denoting the profile_at_creation field in the database.
+	FieldProfileAtCreation = "profile_at_creation"
 	// FieldTargetOs holds the string denoting the target_os field in the database.
 	FieldTargetOs = "target_os"
 	// FieldTargetFormat holds the string denoting the target_format field in the database.
@@ -51,6 +53,8 @@ const (
 	FieldSetupscript = "setupscript"
 	// FieldUnique holds the string denoting the unique field in the database.
 	FieldUnique = "unique"
+	// EdgeBundle holds the string denoting the bundle edge name in mutations.
+	EdgeBundle = "bundle"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
 	EdgeBuilder = "builder"
 	// EdgeProfile holds the string denoting the profile edge name in mutations.
@@ -59,6 +63,13 @@ const (
 	EdgeArtifact = "artifact"
 	// Table holds the table name of the buildtask in the database.
 	Table = "build_tasks"
+	// BundleTable is the table that holds the bundle relation/edge.
+	BundleTable = "build_tasks"
+	// BundleInverseTable is the table name for the Asset entity.
+	// It exists in this package in order to avoid circular dependency with the "asset" package.
+	BundleInverseTable = "assets"
+	// BundleColumn is the table column denoting the bundle relation/edge.
+	BundleColumn = "build_task_bundle"
 	// BuilderTable is the table that holds the builder relation/edge.
 	BuilderTable = "build_tasks"
 	// BuilderInverseTable is the table name for the Builder entity.
@@ -87,6 +98,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldLastModifiedAt,
+	FieldProfileAtCreation,
 	FieldTargetOs,
 	FieldTargetFormat,
 	FieldBuildScript,
@@ -106,6 +118,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "build_tasks"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"build_task_bundle",
 	"build_task_builder",
 	"build_task_profile",
 	"build_task_artifact",
@@ -259,6 +272,13 @@ func ByUnique(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUnique, opts...).ToFunc()
 }
 
+// ByBundleField orders the results by bundle field.
+func ByBundleField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBundleStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByBuilderField orders the results by builder field.
 func ByBuilderField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -278,6 +298,13 @@ func ByArtifactField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newArtifactStep(), sql.OrderByField(field, opts...))
 	}
+}
+func newBundleStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BundleInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, BundleTable, BundleColumn),
+	)
 }
 func newBuilderStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

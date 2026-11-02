@@ -1,0 +1,37 @@
+[package]
+name = "eldritch-libssh"
+version = "0.4.1"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+
+anyhow = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+ipnetwork = { workspace = true, optional = true }
+russh = { workspace = true, optional = true }
+russh-sftp = { workspace = true, optional = true }
+russh-keys = { workspace = true, optional = true }
+tokio = { workspace = true, features = [
+    "macros",
+    "rt-multi-thread",
+    "fs",
+], optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "anyhow",
+    "async-trait",
+    "ipnetwork",
+    "russh",
+    "russh-sftp",
+    "russh-keys",
+    "tokio",
+]
+fake_bindings = []
+print_debug = []

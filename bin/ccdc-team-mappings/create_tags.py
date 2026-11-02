@@ -11,22 +11,19 @@ from dataclasses import dataclass
 @dataclass
 class TagBuilder:
     graphql_url: str
-    auth_session: str
-    auth_session: str
+    api_key: str
 
     def make_graphql_request(self, query, variables):
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "X-Tavern-Access-Token": self.api_key,
         }
 
         data = {"query": query, "variables": variables}
-        cookies = {
-            "auth-session": self.auth_session,
-        }
 
         response = requests.post(
-            self.graphql_url, json=data, headers=headers, cookies=cookies)
+            self.graphql_url, json=data, headers=headers)
         if response.status_code == 200:
             return response.json()
         else:
@@ -182,14 +179,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    auth_session = os.environ.get("TAVERN_AUTH_SESSION")
+    api_key = os.environ.get("TAVERN_API_TOKEN")
 
-    if auth_session is None:
+    if api_key is None:
         print(
-            "No auth-session cookie found. Please set it using the environment variable TAVERN_AUTH_SESSION"
+            "No API key found. Please set it using the environment variable TAVERN_API_TOKEN"
         )
         exit(1)
 
     graphql_url = f"{args.tavern_url}/graphql"
-    poster = TagBuilder(graphql_url, auth_session)
+    poster = TagBuilder(graphql_url, api_key)
     poster.run()
