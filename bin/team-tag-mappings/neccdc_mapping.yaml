@@ -1,0 +1,157 @@
+---
+# Team tag mapping for create_tags.py (usage: create_tags.py <tavern_url> <mapping.yaml> [--overwrite]).
+# Converted from neccdc_mapping.py. Each entry defines a tag `name`, its `kind`
+# (group or service), and a `where` clause using HostWhereInput fields.
+# Rules apply in file order; a host carrying a tag of the rule's kind is
+# skipped unless --overwrite is given.
+#
+# Translation notes (regex -> HostWhereInput):
+# - Only `primaryIP` is matched; the old `externalIP` fallback was dropped.
+# - `^10\.0\.[0-9]{1,2}\.LAST$` becomes a prefix+suffix `and`. The leading dot
+#   in the suffix makes it exact: for valid IPv4 addresses, ending in ".LAST"
+#   holds exactly when the final octet is LAST.
+# - `^10\.0\.N\.[0-9]{1,3}$` becomes `primaryIPHasPrefix: "10.0.N."`.
+# - `^hostname$` becomes `name: hostname`.
+# - One known widening: the old `10.0.[0-9]{1,2}.LAST` patterns excluded
+#   3-digit middle octets (e.g. 10.0.100.132); the prefix form matches them.
+#   Team numbers here are 1-20, so this has no practical effect.
+
+# Services
+- name: idm
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".132"
+- name: controller
+  kind: service
+  where:
+    name: controller
+- name: wazuh
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".180"
+- name: kube_01
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".200"
+- name: kube_02
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".210"
+- name: kube_03
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".220"
+- name: dc_01
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".16"
+- name: ca
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".32"
+- name: win_01
+  kind: service
+  where:
+    name: win-01
+- name: win_02
+  kind: service
+  where:
+    and:
+      - primaryIPHasPrefix: "10.0."
+      - primaryIPHasSuffix: ".110"
+
+# Team groups
+- name: team01
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.1."
+- name: team02
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.2."
+- name: team03
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.3."
+- name: team04
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.4."
+- name: team05
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.5."
+- name: team06
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.6."
+- name: team07
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.7."
+- name: team08
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.8."
+- name: team09
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.9."
+- name: team10
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.10."
+- name: team11
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.11."
+- name: team12
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.12."
+- name: team13
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.13."
+- name: team14
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.14."
+- name: team15
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.15."
+- name: team16
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.16."
+- name: team17
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.17."
+- name: team18
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.18."
+- name: team19
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.19."
+- name: team20
+  kind: group
+  where:
+    primaryIPHasPrefix: "10.0.20."
