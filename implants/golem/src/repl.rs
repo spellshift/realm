@@ -263,10 +263,7 @@ mod tests {
     fn map_key_held_key_auto_repeat() {
         let inputs: Vec<Input> = (0..5)
             .map(|_| key_with_kind('x', KeyEventKind::Press))
-            .chain(std::iter::once(key_with_kind(
-                'x',
-                KeyEventKind::Release,
-            )))
+            .chain(std::iter::once(key_with_kind('x', KeyEventKind::Release)))
             .filter_map(map_key)
             .collect();
         assert_eq!(inputs.len(), 5);
@@ -285,8 +282,10 @@ mod tests {
             .flat_map(|c| [key_with_kind(c, Press), key_with_kind(c, Release)])
             .filter_map(map_key)
             .collect();
-        let expected: Vec<Input> =
-            ['h', 'e', 'l', 'l', 'o'].into_iter().map(Input::Char).collect();
+        let expected: Vec<Input> = ['h', 'e', 'l', 'l', 'o']
+            .into_iter()
+            .map(Input::Char)
+            .collect();
         assert_eq!(inputs, expected);
     }
 
