@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -78,6 +79,14 @@ func (hcc *HostCredentialCreate) SetHostID(id int) *HostCredentialCreate {
 	return hcc
 }
 
+// SetNillableHostID sets the "host" edge to the Host entity by ID if the given value is not nil.
+func (hcc *HostCredentialCreate) SetNillableHostID(id *int) *HostCredentialCreate {
+	if id != nil {
+		hcc = hcc.SetHostID(*id)
+	}
+	return hcc
+}
+
 // SetHost sets the "host" edge to the Host entity.
 func (hcc *HostCredentialCreate) SetHost(h *Host) *HostCredentialCreate {
 	return hcc.SetHostID(h.ID)
@@ -119,6 +128,21 @@ func (hcc *HostCredentialCreate) SetNillableShellTaskID(id *int) *HostCredential
 // SetShellTask sets the "shell_task" edge to the ShellTask entity.
 func (hcc *HostCredentialCreate) SetShellTask(s *ShellTask) *HostCredentialCreate {
 	return hcc.SetShellTaskID(s.ID)
+}
+
+// AddNetworkHostIDs adds the "network_hosts" edge to the NetworkHost entity by IDs.
+func (hcc *HostCredentialCreate) AddNetworkHostIDs(ids ...int) *HostCredentialCreate {
+	hcc.mutation.AddNetworkHostIDs(ids...)
+	return hcc
+}
+
+// AddNetworkHosts adds the "network_hosts" edges to the NetworkHost entity.
+func (hcc *HostCredentialCreate) AddNetworkHosts(n ...*NetworkHost) *HostCredentialCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return hcc.AddNetworkHostIDs(ids...)
 }
 
 // Mutation returns the HostCredentialMutation object of the builder.
@@ -197,9 +221,6 @@ func (hcc *HostCredentialCreate) check() error {
 		if err := hostcredential.KindValidator(v); err != nil {
 			return &ValidationError{Name: "kind", err: fmt.Errorf(`ent: validator failed for field "HostCredential.kind": %w`, err)}
 		}
-	}
-	if len(hcc.mutation.HostIDs()) == 0 {
-		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostCredential.host"`)}
 	}
 	return nil
 }
@@ -297,6 +318,22 @@ func (hcc *HostCredentialCreate) createSpec() (*HostCredential, *sqlgraph.Create
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.shell_task_reported_credentials = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hcc.mutation.NetworkHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   hostcredential.NetworkHostsTable,
+			Columns: hostcredential.NetworkHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

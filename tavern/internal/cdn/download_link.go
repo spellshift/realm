@@ -59,16 +59,23 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 			return ErrFileNotFound
 		}
 
-		// Increment Link Downloads
-		if _, err := graph.Link.UpdateOne(l).
-			SetDownloads(l.Downloads + 1).
-			Save(ctx); err != nil {
+		// Increment Link Downloads atomically, enforcing the limit in the UPDATE itself
+		update := graph.Link.Update().Where(link.ID(l.ID)).AddDownloads(1)
+		if downloadLimit > 0 {
+			update = update.Where(link.DownloadsLT(downloadLimit))
+		}
+		affected, err := update.Save(ctx)
+		if err != nil {
 			slog.Error("failed to increment downloads for link", "path", linkPath, "downloads", l.Downloads, "err", err)
 
 			// Only error if a download limit is enforced
 			if downloadLimit > 0 {
 				return ErrFileNotFound
 			}
+		}
+		if downloadLimit > 0 && affected == 0 {
+			slog.Info("Failed attempt to download link, maximum downloads reached", "path", linkPath, "download_limit", downloadLimit)
+			return ErrFileNotFound
 		}
 
 		// Set Etag to hash of asset

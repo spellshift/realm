@@ -7,7 +7,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
-/// `max(iterable)` or `max(arg1, arg2, *args)`: Returns the largest item.
+/// `max(iterable)` or `max(iterable, *args)`: Returns the largest item.
 ///
 /// **Parameters**
 /// - `iterable` (Iterable): An iterable to search.

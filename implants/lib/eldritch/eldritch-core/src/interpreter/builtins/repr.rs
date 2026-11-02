@@ -4,6 +4,13 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
+/// `repr(object)`: Returns a string containing a printable developer representation of an object.
+///
+/// **Parameters**
+/// - `object` (Any): The object to format.
+///
+/// **Returns**
+/// - `str`: Printable representation of `object`.
 pub fn builtin_repr(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     if args.len() != 1 {
         return Err(format!(

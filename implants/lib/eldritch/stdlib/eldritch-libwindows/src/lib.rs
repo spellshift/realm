@@ -46,6 +46,16 @@ pub trait WindowsLibrary {
     ) -> Result<(), String>;
 
     #[eldritch_method]
+    /// Enables a privilege on the current process token.
+    ///
+    /// **Parameters**
+    /// - `privilege` (`String`): The privilege to enable (ex. SeImpersonatePrivilege).
+    ///
+    /// **Returns**
+    /// - `bool`: True if privilege was enabled.
+    fn enable_privilege(&self, privilege: String) -> Result<bool, String>;
+
+    #[eldritch_method]
     /// Impersonates another user by stealing a process token.
     ///
     /// **Parameters**

@@ -1,94 +1,58 @@
-use tower_lsp::jsonrpc::Result;
-use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer, LspService, Server};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use eldritch_lsp::Backend;
+use eldritch_lsp::analysis::{TomeMetadata, analyze_document};
+use eldritch_lsp::linter::LintRegistry;
+use eldritch_lsp::stdlib::StdlibIndex;
+use std::path::PathBuf;
+use tower_lsp::lsp_types::DiagnosticSeverity;
+use tower_lsp::{LspService, Server};
 
-mod linter;
-mod stdlib;
+#[tokio::main]
+async fn main() {
+    let args: Vec<String> = std::env::args().skip(1).collect();
 
-use linter::LintRegistry;
-use stdlib::StdlibIndex;
-use eldritch_core::{Parser, Lexer};
-
-struct Backend {
-    client: Client,
-    /// Registry of lint rules.
-    linter: LintRegistry,
-    /// Index of the standard library.
-    stdlib: Arc<RwLock<StdlibIndex>>,
-    /// In-memory cache of document contents.
-    documents: Arc<RwLock<HashMap<Url, String>>>,
-}
-
-impl Backend {
-    async fn validate_document(&self, uri: Url, text: &str, version: Option<i32>) {
-        let mut diagnostics = Vec::new();
-
-        // 1. Parsing Phase (using eldritch-core)
-        let mut lexer = Lexer::new(text.to_string());
-        let tokens = lexer.scan_tokens();
-
-        let mut parser = Parser::new(tokens);
-        let (ast_stmts, parse_errors) = parser.parse();
-
-        // 2. Syntax Error Diagnostics
-        for err in parse_errors {
-            // Convert Span to LSP Range
-            // eldritch_core::token::Span has {start, end, line}.
-            // This is slightly tricky because Span in `token.rs` only has `line` and byte indices.
-            // LSP needs line/character.
-            // Simplified mapping: we trust the `line` from Span, but we need to calculate `character`.
-            // Ideally, we'd use a line indexer. For "Best Effort", we can estimate or just highlight the line.
-
-            // Note: `line` in Span is 1-based. LSP is 0-based.
-            let line_idx = err.span.line.saturating_sub(1) as u32;
-
-            let range = Range {
-                start: Position { line: line_idx, character: 0 },
-                end: Position { line: line_idx, character: u32::MAX }, // Highlight full line if column unknown
-            };
-
-            diagnostics.push(Diagnostic {
-                range,
-                severity: Some(DiagnosticSeverity::ERROR),
-                code: Some(NumberOrString::String("syntax-error".to_string())),
-                source: Some("eldritch-parser".to_string()),
-                message: err.message,
-                ..Default::default()
-            });
-        }
-
-        // 3. Linting Phase (Best Effort)
-        // Pass the AST if parsing succeeded partially (ast_stmts might contain valid stmts even with errors).
-        let lint_diags = self.linter.run(Some(&ast_stmts), text);
-        diagnostics.extend(lint_diags);
-
-        // 4. Publish Diagnostics
-        self.client.publish_diagnostics(uri, diagnostics, version).await;
+    if args.iter().any(|a| a == "--version" || a == "-V") {
+        println!("eldritch-lsp {}", env!("CARGO_PKG_VERSION"));
+        return;
     }
-}
 
-#[tower_lsp::async_trait]
-impl LanguageServer for Backend {
-    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
-        let root_uri = params.root_uri.or_else(|| {
-            params.root_path.map(|path| Url::from_file_path(path).unwrap())
-        });
+    if let Some(check_idx) = args.iter().position(|a| a == "--check") {
+        let files = &args[check_idx + 1..];
+        let stdlib = StdlibIndex::new();
+        let linter = LintRegistry::default();
+        let mut has_errors = false;
 
-        if let Some(uri) = root_uri {
-            if let Ok(path) = uri.to_file_path() {
-                // Heuristic: stdlib is at implants/lib/eldritch/stdlib
-                // We assume the workspace root is the repo root.
-                // Or we look for the stdlib relative to workspace.
-                let stdlib_path = path.join("implants/lib/eldritch/stdlib");
-
-                let stdlib_ref = self.stdlib.clone();
-                tokio::spawn(async move {
-                    let mut index = stdlib_ref.write().await;
-                    index.scan(stdlib_path);
-                });
+        for file_arg in files {
+            if file_arg.starts_with('-') {
+                continue;
+            }
+            let path = PathBuf::from(file_arg);
+            match std::fs::read_to_string(&path) {
+                Ok(source) => {
+                    let meta = TomeMetadata::load_for_document(&path);
+                    let result = analyze_document(&source, &stdlib, &linter, meta);
+                    for diag in &result.diagnostics {
+                        let sev = match diag.severity {
+                            Some(DiagnosticSeverity::ERROR) => {
+                                has_errors = true;
+                                "ERROR"
+                            }
+                            Some(DiagnosticSeverity::WARNING) => "WARN",
+                            _ => "INFO",
+                        };
+                        println!(
+                            "{}:{}:{}: [{}] {}",
+                            path.display(),
+                            diag.range.start.line + 1,
+                            diag.range.start.character + 1,
+                            sev,
+                            diag.message
+                        );
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Failed to read {}: {}", path.display(), err);
+                    has_errors = true;
+                }
             }
         }
 
@@ -167,23 +131,12 @@ impl LanguageServer for Backend {
                 ..Default::default()
             });
         }
-
-        Ok(Some(CompletionResponse::Array(items)))
+        return;
     }
-}
-
-#[tokio::main]
-async fn main() {
-    env_logger::init();
 
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
-    let (service, socket) = LspService::new(|client| Backend {
-        client,
-        linter: LintRegistry::default(),
-        stdlib: Arc::new(RwLock::new(StdlibIndex::new())),
-        documents: Arc::new(RwLock::new(HashMap::new())),
-    });
+    let (service, socket) = LspService::new(Backend::new);
     Server::new(stdin, stdout, socket).serve(service).await;
 }

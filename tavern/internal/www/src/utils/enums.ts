@@ -162,6 +162,7 @@ export enum TomeTactic {
     COMMAND_AND_CONTROL = "Command and control",
     EXFILTRATION = "Exfiltration",
     IMPACT = "Impact",
+    SHELL_RC = "Shell RC",
 }
 
 export enum TomeFilterFieldKind {

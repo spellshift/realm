@@ -1,15 +1,15 @@
 use alloc::string::{String, ToString};
 use anyhow::{Context, Result};
-use which::which as which_fn;
 
 pub fn which(bin: String) -> Result<String, String> {
-    match which_fn(bin).context("Failed to find binary") {
-        Ok(res) => match res.into_os_string().into_string() {
-            Ok(res_str) => Ok(res_str),
-            Err(err) => Err(format!("Failed to convert path to string: {err:?}")),
-        },
-        Err(err) => Err(err.to_string()),
+    if let Ok(res) = which::which(bin) {
+        return Ok(res
+            .into_os_string()
+            .into_string()
+            .expect("Located path is not a valid string"));
     }
+
+    Ok("".to_string())
 }
 
 #[cfg(test)]

@@ -7,7 +7,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
 
-/// `bytes(source)`: Creates a bytes object.
+/// `bytes(source=b"")`: Creates a bytes object.
 ///
 /// If source is an integer, the array will have that size and will be initialized with null bytes.
 /// If source is a string, it will be converted using UTF-8 encoding.

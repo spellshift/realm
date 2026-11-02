@@ -53,16 +53,19 @@ type ShellEdges struct {
 	ShellTasks []*ShellTask `json:"shell_tasks,omitempty"`
 	// Pivots associated with this shell
 	Pivots []*ShellPivot `json:"pivots,omitempty"`
+	// Operator notes modified from this shell
+	OperatorNotes []*OperatorNote `json:"operator_notes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 	// totalCount holds the count of the edges above.
-	totalCount [7]map[string]int
+	totalCount [8]map[string]int
 
-	namedPortals     map[string][]*Portal
-	namedActiveUsers map[string][]*User
-	namedShellTasks  map[string][]*ShellTask
-	namedPivots      map[string][]*ShellPivot
+	namedPortals       map[string][]*Portal
+	namedActiveUsers   map[string][]*User
+	namedShellTasks    map[string][]*ShellTask
+	namedPivots        map[string][]*ShellPivot
+	namedOperatorNotes map[string][]*OperatorNote
 }
 
 // TaskOrErr returns the Task value or an error if the edge
@@ -132,6 +135,15 @@ func (e ShellEdges) PivotsOrErr() ([]*ShellPivot, error) {
 		return e.Pivots, nil
 	}
 	return nil, &NotLoadedError{edge: "pivots"}
+}
+
+// OperatorNotesOrErr returns the OperatorNotes value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) OperatorNotesOrErr() ([]*OperatorNote, error) {
+	if e.loadedTypes[7] {
+		return e.OperatorNotes, nil
+	}
+	return nil, &NotLoadedError{edge: "operator_notes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -265,6 +277,11 @@ func (s *Shell) QueryPivots() *ShellPivotQuery {
 	return NewShellClient(s.config).QueryPivots(s)
 }
 
+// QueryOperatorNotes queries the "operator_notes" edge of the Shell entity.
+func (s *Shell) QueryOperatorNotes() *OperatorNoteQuery {
+	return NewShellClient(s.config).QueryOperatorNotes(s)
+}
+
 // Update returns a builder for updating this Shell.
 // Note that you need to call Shell.Unwrap() before calling this method if this Shell
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -396,6 +413,30 @@ func (s *Shell) appendNamedPivots(name string, edges ...*ShellPivot) {
 		s.Edges.namedPivots[name] = []*ShellPivot{}
 	} else {
 		s.Edges.namedPivots[name] = append(s.Edges.namedPivots[name], edges...)
+	}
+}
+
+// NamedOperatorNotes returns the OperatorNotes named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedOperatorNotes(name string) ([]*OperatorNote, error) {
+	if s.Edges.namedOperatorNotes == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedOperatorNotes[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedOperatorNotes(name string, edges ...*OperatorNote) {
+	if s.Edges.namedOperatorNotes == nil {
+		s.Edges.namedOperatorNotes = make(map[string][]*OperatorNote)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedOperatorNotes[name] = []*OperatorNote{}
+	} else {
+		s.Edges.namedOperatorNotes[name] = append(s.Edges.namedOperatorNotes[name], edges...)
 	}
 }
 

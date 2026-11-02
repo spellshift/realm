@@ -1,0 +1,16 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `networks` (id, name, subnet, description, created_at, last_modified_at)
+    VALUES (100, "DMZ", "10.0.0.0/24", "DMZ Segment", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation DeleteNetwork($networkID: ID!) {
+    deleteNetwork(networkID: $networkID)
+  }
+variables:
+  networkID: 100
+expected:
+  deleteNetwork: "100"
+

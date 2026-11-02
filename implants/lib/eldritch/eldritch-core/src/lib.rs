@@ -24,7 +24,7 @@ pub use interpreter::{
     BufferPrinter, Interpreter, NoopPrinter, Printer, StdoutPrinter, call_bound_method,
 };
 pub use lexer::Lexer;
-pub use token::{Span, TokenKind};
+pub use token::{Span, Token, TokenKind};
 
 // Public API exports
 pub mod conversion;

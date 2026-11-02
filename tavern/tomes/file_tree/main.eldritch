@@ -2,13 +2,13 @@ block_list = ["/proc", "/sys", "/lib", "/libx32", "/lib32", "/lib64",
               "/boot", "/srv", "/usr", "/snap", "/run", "/dev", "/cores"]
 
 usernfo = user.info()
-windows = sys.is_windows()
+is_windows = sys.is_windows()
 
 def can_read(f):
     """Return true if the user can read this dir/file
     """
     # Bypass until windows perms are implemented
-    if windows:
+    if is_windows:
         return True
     
     PERM_READ = 4

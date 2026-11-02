@@ -8,6 +8,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
+	tavernent "realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/hook"
 )
 
 // Host holds the schema definition for the Host entity.
@@ -130,6 +132,13 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Users who are subscribed to this host."),
+		edge.From("network_hosts", NetworkHost.Type).
+			Ref("host").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("NetworkHost entries linked to this host."),
 	}
 }
 
@@ -151,5 +160,12 @@ func (Host) Annotations() []schema.Annotation {
 func (Host) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		MixinHistory{}, // created_at, last_modified_at
+	}
+}
+
+// Hooks defines middleware for mutations for the ent.
+func (Host) Hooks() []ent.Hook {
+	return []ent.Hook{
+		hook.On(tavernent.HookDeriveNetworkHost(), ent.OpCreate),
 	}
 }

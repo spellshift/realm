@@ -6,6 +6,13 @@ use crate::interpreter::eval::functions::evaluate_arg;
 use crate::token::Span;
 use alloc::string::ToString;
 
+/// `eval(source)`: Evaluates an Eldritch code string in the current environment.
+///
+/// **Parameters**
+/// - `source` (str | Bytes): The Eldritch code to evaluate.
+///
+/// **Returns**
+/// - `Any`: The result of evaluating the code.
 pub(crate) fn builtin_eval_func(
     interp: &mut Interpreter,
     args: &[Argument],

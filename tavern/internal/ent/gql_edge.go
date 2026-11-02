@@ -494,12 +494,33 @@ func (h *Host) Subscribers(
 	return h.QuerySubscribers().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (h *Host) NetworkHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*NetworkHostOrder, where *NetworkHostWhereInput,
+) (*NetworkHostConnection, error) {
+	opts := []NetworkHostPaginateOption{
+		WithNetworkHostOrder(orderBy),
+		WithNetworkHostFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[9][alias]
+	if nodes, err := h.NamedNetworkHosts(alias); err == nil || hasTotalCount {
+		pager, err := newNetworkHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &NetworkHostConnection{Edges: []*NetworkHostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return h.QueryNetworkHosts().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
 	result, err := hc.Edges.HostOrErr()
 	if IsNotLoaded(err) {
 		result, err = hc.QueryHost().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
 }
 
 func (hc *HostCredential) Task(ctx context.Context) (*Task, error) {
@@ -516,6 +537,27 @@ func (hc *HostCredential) ShellTask(ctx context.Context) (*ShellTask, error) {
 		result, err = hc.QueryShellTask().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (hc *HostCredential) NetworkHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*NetworkHostOrder, where *NetworkHostWhereInput,
+) (*NetworkHostConnection, error) {
+	opts := []NetworkHostPaginateOption{
+		WithNetworkHostOrder(orderBy),
+		WithNetworkHostFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := hc.Edges.totalCount[3][alias]
+	if nodes, err := hc.NamedNetworkHosts(alias); err == nil || hasTotalCount {
+		pager, err := newNetworkHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &NetworkHostConnection{Edges: []*NetworkHostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return hc.QueryNetworkHosts().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (hf *HostFile) Host(ctx context.Context) (*Host, error) {
@@ -582,6 +624,77 @@ func (l *Link) Creator(ctx context.Context) (*User, error) {
 	return result, MaskNotFound(err)
 }
 
+func (n *Network) NetworkHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*NetworkHostOrder, where *NetworkHostWhereInput,
+) (*NetworkHostConnection, error) {
+	opts := []NetworkHostPaginateOption{
+		WithNetworkHostOrder(orderBy),
+		WithNetworkHostFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := n.Edges.totalCount[0][alias]
+	if nodes, err := n.NamedNetworkHosts(alias); err == nil || hasTotalCount {
+		pager, err := newNetworkHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &NetworkHostConnection{Edges: []*NetworkHostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return n.QueryNetworkHosts().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (nh *NetworkHost) Host(ctx context.Context) (*Host, error) {
+	result, err := nh.Edges.HostOrErr()
+	if IsNotLoaded(err) {
+		result, err = nh.QueryHost().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (nh *NetworkHost) Networks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*NetworkOrder, where *NetworkWhereInput,
+) (*NetworkConnection, error) {
+	opts := []NetworkPaginateOption{
+		WithNetworkOrder(orderBy),
+		WithNetworkFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := nh.Edges.totalCount[1][alias]
+	if nodes, err := nh.NamedNetworks(alias); err == nil || hasTotalCount {
+		pager, err := newNetworkPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &NetworkConnection{Edges: []*NetworkEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return nh.QueryNetworks().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (nh *NetworkHost) Credentials(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostCredentialOrder, where *HostCredentialWhereInput,
+) (*HostCredentialConnection, error) {
+	opts := []HostCredentialPaginateOption{
+		WithHostCredentialOrder(orderBy),
+		WithHostCredentialFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := nh.Edges.totalCount[2][alias]
+	if nodes, err := nh.NamedCredentials(alias); err == nil || hasTotalCount {
+		pager, err := newHostCredentialPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostCredentialConnection{Edges: []*HostCredentialEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return nh.QueryCredentials().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (n *Notification) User(ctx context.Context) (*User, error) {
 	result, err := n.Edges.UserOrErr()
 	if IsNotLoaded(err) {
@@ -596,6 +709,35 @@ func (n *Notification) Event(ctx context.Context) (*Event, error) {
 		result, err = n.QueryEvent().Only(ctx)
 	}
 	return result, err
+}
+
+func (on *OperatorNote) Author(ctx context.Context) (*User, error) {
+	result, err := on.Edges.AuthorOrErr()
+	if IsNotLoaded(err) {
+		result, err = on.QueryAuthor().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (on *OperatorNote) Shells(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellOrder, where *ShellWhereInput,
+) (*ShellConnection, error) {
+	opts := []ShellPaginateOption{
+		WithShellOrder(orderBy),
+		WithShellFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := on.Edges.totalCount[1][alias]
+	if nodes, err := on.NamedShells(alias); err == nil || hasTotalCount {
+		pager, err := newShellPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ShellConnection{Edges: []*ShellEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return on.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (po *Portal) Task(ctx context.Context) (*Task, error) {
@@ -962,6 +1104,27 @@ func (s *Shell) Pivots(
 		return conn, nil
 	}
 	return s.QueryPivots().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (s *Shell) OperatorNotes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*OperatorNoteOrder, where *OperatorNoteWhereInput,
+) (*OperatorNoteConnection, error) {
+	opts := []OperatorNotePaginateOption{
+		WithOperatorNoteOrder(orderBy),
+		WithOperatorNoteFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[7][alias]
+	if nodes, err := s.NamedOperatorNotes(alias); err == nil || hasTotalCount {
+		pager, err := newOperatorNotePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &OperatorNoteConnection{Edges: []*OperatorNoteEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return s.QueryOperatorNotes().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (sp *ShellPivot) Shell(ctx context.Context) (*Shell, error) {
@@ -1376,4 +1539,25 @@ func (u *User) Events(
 		return conn, nil
 	}
 	return u.QueryEvents().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) OperatorNotes(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*OperatorNoteOrder, where *OperatorNoteWhereInput,
+) (*OperatorNoteConnection, error) {
+	opts := []OperatorNotePaginateOption{
+		WithOperatorNoteOrder(orderBy),
+		WithOperatorNoteFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[7][alias]
+	if nodes, err := u.NamedOperatorNotes(alias); err == nil || hasTotalCount {
+		pager, err := newOperatorNotePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &OperatorNoteConnection{Edges: []*OperatorNoteEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryOperatorNotes().Paginate(ctx, after, first, before, last, opts...)
 }

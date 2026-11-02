@@ -10,10 +10,11 @@ use wasm_bindgen::prelude::*;
 #[cfg(feature = "fake_bindings")]
 use eldritch::{
     aes::fake::AesLibraryFake, agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
-    base64::fake::Base64LibraryFake, crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake,
-    file::fake::FileLibraryFake, gzip::fake::GzipLibraryFake, hash::fake::HashLibraryFake,
-    http::fake::HttpLibraryFake, json::fake::JsonLibraryFake, linux::fake::LinuxLibraryFake,
-    net::fake::NetLibraryFake, pivot::fake::PivotLibraryFake, portal::fake::PortalLibraryFake,
+    base64::fake::Base64LibraryFake, chain::fake::FakeChainLibrary,
+    crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake, file::fake::FileLibraryFake,
+    gzip::fake::GzipLibraryFake, hash::fake::HashLibraryFake, http::fake::HttpLibraryFake,
+    json::fake::JsonLibraryFake, linux::fake::LinuxLibraryFake, net::fake::NetLibraryFake,
+    pivot::fake::PivotLibraryFake, portal::fake::PortalLibraryFake,
     process::fake::ProcessLibraryFake, random::fake::RandomLibraryFake,
     regex::fake::RegexLibraryFake, registry::fake::RegistryLibraryFake,
     report::fake::ReportLibraryFake, scan::fake::ScanLibraryFake, ssh::fake::SshLibraryFake,
@@ -96,12 +97,14 @@ impl WasmRepl {
     #[wasm_bindgen(constructor)]
     pub fn new() -> WasmRepl {
         let printer = Arc::new(BufferPrinter::new());
+        #[allow(unused_mut)]
         let mut interp = Interpreter::new_with_printer(printer.clone());
 
         #[cfg(feature = "fake_bindings")]
         {
             interp.register_lib(AesLibraryFake::default());
             interp.register_lib(Base64LibraryFake::default());
+            interp.register_lib(FakeChainLibrary::new());
             interp.register_lib(FileLibraryFake::default());
             interp.register_lib(TemplateLibraryFake);
             interp.register_lib(GzipLibraryFake::default());

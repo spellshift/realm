@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/user"
@@ -276,6 +277,21 @@ func (hc *HostCreate) AddSubscribers(u ...*User) *HostCreate {
 	return hc.AddSubscriberIDs(ids...)
 }
 
+// AddNetworkHostIDs adds the "network_hosts" edge to the NetworkHost entity by IDs.
+func (hc *HostCreate) AddNetworkHostIDs(ids ...int) *HostCreate {
+	hc.mutation.AddNetworkHostIDs(ids...)
+	return hc
+}
+
+// AddNetworkHosts adds the "network_hosts" edges to the NetworkHost entity.
+func (hc *HostCreate) AddNetworkHosts(n ...*NetworkHost) *HostCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return hc.AddNetworkHostIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (hc *HostCreate) Mutation() *HostMutation {
 	return hc.mutation
@@ -283,7 +299,9 @@ func (hc *HostCreate) Mutation() *HostMutation {
 
 // Save creates the Host in the database.
 func (hc *HostCreate) Save(ctx context.Context) (*Host, error) {
-	hc.defaults()
+	if err := hc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, hc.sqlSave, hc.mutation, hc.hooks)
 }
 
@@ -310,15 +328,22 @@ func (hc *HostCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (hc *HostCreate) defaults() {
+func (hc *HostCreate) defaults() error {
 	if _, ok := hc.mutation.CreatedAt(); !ok {
+		if host.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized host.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := host.DefaultCreatedAt()
 		hc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := hc.mutation.LastModifiedAt(); !ok {
+		if host.DefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized host.DefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := host.DefaultLastModifiedAt()
 		hc.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -550,6 +575,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.NetworkHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   host.NetworkHostsTable,
+			Columns: []string{host.NetworkHostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(networkhost.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

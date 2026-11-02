@@ -4,6 +4,13 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use spin::RwLock;
 
+/// `eprint(*args)`: Prints objects to the standard error stream.
+///
+/// Converts each argument to a string and prints it to `stderr`,
+/// separated by spaces.
+///
+/// **Returns**
+/// - `None`
 pub fn builtin_eprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     let mut out = String::new();
     for (i, arg) in args.iter().enumerate() {

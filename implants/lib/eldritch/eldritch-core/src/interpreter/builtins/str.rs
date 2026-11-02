@@ -3,7 +3,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use spin::RwLock;
 
-/// `str(object)`: Returns a string containing a nicely printable representation of an object.
+/// `str(object="")`: Returns a string containing a nicely printable representation of an object.
 ///
 /// **Parameters**
 /// - `object` (Any): The object to convert.

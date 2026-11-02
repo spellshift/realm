@@ -8,6 +8,14 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// `map(function, iterable)`: Applies `function` to every item of `iterable` and returns a list of the results.
+///
+/// **Parameters**
+/// - `function` (Callable): Function to apply to each element.
+/// - `iterable` (Iterable): The iterable to transform.
+///
+/// **Returns**
+/// - `list`: A list of transformed elements.
 pub(crate) fn builtin_map(
     interp: &mut Interpreter,
     args: &[Argument],

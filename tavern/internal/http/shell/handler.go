@@ -39,11 +39,11 @@ const (
 	defaultMaxErrorsBuffered             = 1024
 	defaultMaxControlFlowsBuffered       = 1024
 	defaultMaxMessageSize          int64 = 1024 * 1024
-	defaultPortalPollingInterval         = 5 * time.Second
+	defaultPortalPollingInterval         = 1 * time.Second
 	defaultOutputPollingInterval         = 1 * time.Second
 	defaultKeepAliveInterval             = 1 * time.Second
-	defaultWriteWaitTimeout              = 10 * time.Second
-	defaultReadWaitTimeout               = 10 * time.Second
+	defaultWriteWaitTimeout              = 30 * time.Second
+	defaultReadWaitTimeout               = 60 * time.Second
 )
 
 // A Handler for browser to server shell communication using websockets.
@@ -141,6 +141,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to upgrade to websocket", http.StatusFailedDependency)
 		return
 	}
+	defer wsConn.Close()
 	defer slog.InfoContext(r.Context(), "websocket shell connection closed", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
 
 	// Configure Websocket Connection
@@ -213,7 +214,44 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
-	time.Sleep(60 * time.Second) // TODO: Remove this, just for testing
+}
+
+// IsTransientLockError returns true when an error is caused by a transient SQLite lock or busy state.
+func IsTransientLockError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "locked") || strings.Contains(msg, "busy")
+}
+
+// RetryOnLock executes fn and retries with exponential backoff if a transient database lock error occurs.
+func RetryOnLock[T any](ctx context.Context, fn func() (T, error)) (T, error) {
+	backoff := 10 * time.Millisecond
+	var (
+		zero    T
+		lastErr error
+	)
+	for attempt := 0; attempt < 6; attempt++ {
+		res, err := fn()
+		if err == nil {
+			return res, nil
+		}
+		if !IsTransientLockError(err) {
+			return zero, err
+		}
+		lastErr = err
+		select {
+		case <-ctx.Done():
+			return zero, ctx.Err()
+		case <-time.After(backoff):
+			backoff *= 2
+			if backoff > 150*time.Millisecond {
+				backoff = 150 * time.Millisecond
+			}
+		}
+	}
+	return zero, lastErr
 }
 
 // getShellForRequest using the shell_id query param.
@@ -228,12 +266,14 @@ func (h *Handler) getShellForRequest(r *http.Request) (*ent.Shell, error) {
 		return nil, ErrShellIDInvalid
 	}
 
-	// Load Shell
-	sh, err := h.graph.Shell.Query().
-		Where(shell.ID(shellID)).
-		WithBeacon().
-		Select(shell.FieldClosedAt).
-		Only(r.Context())
+	// Load Shell (retry on transient SQLite table locks)
+	sh, err := RetryOnLock(r.Context(), func() (*ent.Shell, error) {
+		return h.graph.Shell.Query().
+			Where(shell.ID(shellID)).
+			WithBeacon().
+			Select(shell.FieldClosedAt).
+			Only(r.Context())
+	})
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, ErrShellNotFound
@@ -250,18 +290,24 @@ func (h *Handler) getShellForRequest(r *http.Request) (*ent.Shell, error) {
 func (h *Handler) pollForOpenPortals(ctx context.Context, sh *ent.Shell, portalCh chan<- *ent.Portal, errCh chan<- *WebsocketErrorMessage) {
 	// Closure to poll a single time for open portals
 	poll := func() {
-		portal, err := h.graph.Portal.Query().
-			Where(
-				portal.HasBeaconWith(beacon.IDEQ(sh.Edges.Beacon.ID)),
-				portal.ClosedAtIsNil(),
-			).
-			Order(portal.ByCreatedAt(sql.OrderDesc())).
-			First(ctx)
+		p, err := RetryOnLock(ctx, func() (*ent.Portal, error) {
+			return h.graph.Portal.Query().
+				Where(
+					portal.HasBeaconWith(beacon.IDEQ(sh.Edges.Beacon.ID)),
+					portal.ClosedAtIsNil(),
+				).
+				Order(portal.ByCreatedAt(sql.OrderDesc())).
+				First(ctx)
+		})
 		if err != nil && !ent.IsNotFound(err) {
-			errCh <- NewWebsocketErrorMessage(fmt.Errorf("%s: %w", ErrFailedToQueryPortals.Error(), err))
+			slog.WarnContext(ctx, "failed to query open portals for shell", "error", err, "shell_id", sh.ID)
+			return
 		}
-		portalCh <- portal
+		portalCh <- p
 	}
+
+	// Poll immediately on connection so existing portals upgrade without delay
+	poll()
 
 	// Periodically poll for open portals
 	timer := time.NewTicker(h.portalPollingInterval)
@@ -301,6 +347,7 @@ func (h *Handler) readMessagesFromWebsocket(ctx context.Context, conn *websocket
 			var msg WebsocketTaskInputMessage
 			if err := json.Unmarshal(msgData, &msg); err != nil {
 				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to decode message from client: %w", err))
+				continue
 			}
 
 			// Send Message
@@ -377,6 +424,7 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 		case controlMsg, ok := <-controlCh:
 			if err := writeJSONMessage("shell_control", controlMsg, ok); err != nil {
 				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				return
 			}
 		case <-keepAliveTimer.C:
 			conn.SetWriteDeadline(time.Now().Add(h.writeWaitTimeout))
@@ -408,25 +456,31 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 				continue
 			}
 
+			// Check for Active Portal before creating task so interactive tasks are marked claimed
+			session.mu.Lock()
+			activePortal := session.activePortal
+			session.mu.Unlock()
+
 			// Create ShellTask
-			task, err := h.graph.ShellTask.Create().
-				SetShell(sh).
-				SetInput(msg.Input).
-				SetCreator(creator).
-				SetStreamID(streamID).
-				SetSequenceID(sequenceID).
-				Save(ctx)
+			task, err := RetryOnLock(ctx, func() (*ent.ShellTask, error) {
+				taskCreate := h.graph.ShellTask.Create().
+					SetShell(sh).
+					SetInput(msg.Input).
+					SetCreator(creator).
+					SetStreamID(streamID).
+					SetSequenceID(sequenceID)
+				if activePortal != nil {
+					now := time.Now()
+					taskCreate.SetClaimedAt(now).SetExecStartedAt(now)
+				}
+				return taskCreate.Save(ctx)
+			})
 
 			if err != nil {
 				slog.ErrorContext(ctx, "failed to create shell task", "error", err)
 				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to create shell task: %w", err))
 				continue
 			}
-
-			// Check for Active Portal
-			session.mu.Lock()
-			activePortal := session.activePortal
-			session.mu.Unlock()
 
 			if activePortal != nil {
 				// Publish to Portal
@@ -483,18 +537,21 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 	// Cache of sent task IDs to avoid duplication
 	sentTasks := make(map[int]struct{})
 
-	// Polls the DB for any new tasks with output
+	// Polls the DB for any new tasks with output, errors, or finished execution
 	pollForShellTasks := func() {
-		tasks, err := sh.QueryShellTasks().
-			Where(
-				shelltask.Or(
-					shelltask.OutputNEQ(""),
-					shelltask.ErrorNEQ(""),
-				),
-			).
-			Order(shelltask.ByCreatedAt(sql.OrderAsc())).
-			WithCreator().
-			All(ctx)
+		tasks, err := RetryOnLock(ctx, func() ([]*ent.ShellTask, error) {
+			return sh.QueryShellTasks().
+				Where(
+					shelltask.Or(
+						shelltask.OutputNEQ(""),
+						shelltask.ErrorNEQ(""),
+						shelltask.ExecFinishedAtNotNil(),
+					),
+				).
+				Order(shelltask.ByCreatedAt(sql.OrderAsc())).
+				WithCreator().
+				All(ctx)
+		})
 
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to poll shell tasks", "error", err)
@@ -509,7 +566,6 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			if task.Output != "" {
 				if task.StreamID == streamID {
 					msg := NewWebsocketTaskOutputMessage(task)
-					msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
 					taskOutputCh <- msg
 				} else {
 					msg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
@@ -520,10 +576,11 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					msg.Output = fmt.Sprintf("%s[@%s]%s%s[+]%s %s\n%s", colorCodeUsername, creatorName, colorCodeReset, colorCodeSuccess, colorCodeReset, truncateInput(task.Input), msg.Output)
 					otherStreamCh <- msg
 				}
+			} else if task.Error == "" && !task.ExecFinishedAt.IsZero() && task.StreamID == streamID {
+				taskOutputCh <- NewWebsocketTaskOutputMessage(task)
 			}
 			if task.Error != "" {
 				msg := NewWebsocketTaskErrorMessage(task)
-				msg.Error = fmt.Sprintf("[!] %s\n%s", truncateInput(task.Input), msg.Error)
 				taskErrCh <- msg
 			}
 			sentTasks[task.ID] = struct{}{}
@@ -595,41 +652,53 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			// If stream_id matches, we send standard output
 			// We check for shell payload as it indicates output.
 			shellPayload := mote.GetShell()
-			if shellPayload != nil && (shellPayload.Output != "" || shellPayload.Error != "") {
-				// It's output.
-				task, err := h.graph.ShellTask.Query().
-					Where(
-						shelltask.StreamID(mote.StreamId),
-						shelltask.SequenceID(mote.SeqId),
-					).
-					WithCreator().
-					First(ctx)
+			if shellPayload != nil {
+				// It's output or completion for a shell task.
+				task, err := RetryOnLock(ctx, func() (*ent.ShellTask, error) {
+					return h.graph.ShellTask.Query().
+						Where(
+							shelltask.StreamID(mote.StreamId),
+							shelltask.SequenceID(mote.SeqId),
+						).
+						WithCreator().
+						First(ctx)
+				})
 
 				if err != nil {
 					slog.DebugContext(ctx, "failed to find shell task for mote", "stream_id", mote.StreamId, "seq_id", mote.SeqId)
 					continue
 				}
 
+				// Persist interactive output/error and execution finish timestamp to DB
+				updatedTask, err := RetryOnLock(ctx, func() (*ent.ShellTask, error) {
+					update := task.Update().SetExecFinishedAt(time.Now())
+					if shellPayload.Output != "" {
+						update.SetOutput(task.Output + shellPayload.Output)
+					}
+					if shellPayload.Error != "" {
+						update.SetError(task.Error + shellPayload.Error)
+					}
+					return update.Save(ctx)
+				})
+				if err == nil {
+					updatedTask.Edges = task.Edges
+					task = updatedTask
+				}
+
 				if mote.StreamId == streamID {
 					// Local stream output
-					if shellPayload.Output != "" {
+					if shellPayload.Output != "" || shellPayload.Error == "" {
 						outputMsg := NewWebsocketTaskOutputMessage(task)
-						if _, sent := sentTasks[task.ID]; !sent {
-							outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), shellPayload.Output)
+						outputMsg.Output = shellPayload.Output // Use real-time chunk
+						if _, sent := sentTasks[task.ID]; !sent || shellPayload.Output != "" {
 							sentTasks[task.ID] = struct{}{}
-						} else {
-							outputMsg.Output = shellPayload.Output // Use real-time chunk
+							taskOutputCh <- outputMsg
 						}
-						taskOutputCh <- outputMsg
 					}
 					if shellPayload.Error != "" {
 						errMsg := NewWebsocketTaskErrorMessage(task)
-						if _, sent := sentTasks[task.ID]; !sent {
-							errMsg.Error = fmt.Sprintf("[!] %s\n%s", truncateInput(task.Input), shellPayload.Error)
-							sentTasks[task.ID] = struct{}{}
-						} else {
-							errMsg.Error = shellPayload.Error // Use real-time chunk
-						}
+						errMsg.Error = shellPayload.Error // Use real-time chunk
+						sentTasks[task.ID] = struct{}{}
 						taskErrCh <- errMsg
 					}
 				} else {
@@ -710,6 +779,20 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				continue
 			}
 
+			session.mu.Lock()
+			currentPortal := session.activePortal
+			session.mu.Unlock()
+			if currentPortal != nil && currentPortal.ID == p.ID {
+				continue
+			}
+			if cleanup != nil {
+				cleanup()
+				cleanup = nil
+			}
+
+			// Flush any shell tasks that finished right before or during portal creation
+			pollForShellTasks()
+
 			// Open Portal
 			portalCleanup, err := h.mux.OpenPortal(ctx, p.ID)
 			if err != nil {
@@ -768,32 +851,53 @@ func (h *Handler) manageUserPresence(ctx context.Context, sh *ent.Shell, u *ent.
 		return
 	}
 
+	added := false
+
 	// Helper to add user
 	addUser := func() {
-		exists, err := sh.QueryActiveUsers().Where(user.ID(u.ID)).Exist(ctx)
+		exists, err := RetryOnLock(ctx, func() (bool, error) {
+			return sh.QueryActiveUsers().Where(user.ID(u.ID)).Exist(ctx)
+		})
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to check active user presence", "error", err)
 			return
 		}
 		if !exists {
-			if err := sh.Update().AddActiveUsers(u).Exec(ctx); err != nil {
+			_, err := RetryOnLock(ctx, func() (struct{}, error) {
+				return struct{}{}, sh.Update().AddActiveUsers(u).Exec(ctx)
+			})
+			if err != nil {
 				slog.ErrorContext(ctx, "failed to add active user", "error", err)
+				return
 			}
 		}
+		added = true
 	}
 
-	// Initial Add
-	addUser()
-
-	// Remove on exit
+	// Remove on exit if added
 	defer func() {
+		if !added {
+			return
+		}
 		// Use a fresh context as the parent context is likely canceled
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		if err := sh.Update().RemoveActiveUsers(u).Exec(ctx); err != nil {
-			slog.ErrorContext(ctx, "failed to remove active user", "error", err)
+		_, err := RetryOnLock(cleanupCtx, func() (struct{}, error) {
+			return struct{}{}, sh.Update().RemoveActiveUsers(u).Exec(cleanupCtx)
+		})
+		if err != nil {
+			slog.ErrorContext(cleanupCtx, "failed to remove active user", "error", err)
 		}
 	}()
+
+	// Stagger the initial active-user write slightly so initial portal/history reads
+	// complete without table-lock contention and short-lived ghost sockets skip DB writes.
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(40 * time.Millisecond):
+		addUser()
+	}
 
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()

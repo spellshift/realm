@@ -7,6 +7,7 @@ use eldritch_macros::eldritch_library_impl;
 
 mod dll_inject_impl;
 mod dll_reflect_impl;
+mod enable_privilege_impl;
 mod impersonate_impl;
 pub mod tokens_impl;
 mod use_token_impl;
@@ -28,6 +29,10 @@ impl WindowsLibrary for StdWindowsLibrary {
     ) -> Result<(), String> {
         dll_reflect_impl::dll_reflect(dll_bytes, pid as u32, function_name)
             .map_err(|e| e.to_string())
+    }
+
+    fn enable_privilege(&self, privilege: String) -> Result<bool, String> {
+        enable_privilege_impl::enable_privilege(privilege)
     }
 
     fn impersonate(&self, pid: i64) -> Result<i64, String> {

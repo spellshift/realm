@@ -4,7 +4,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
-/// `range(stop)` or `range(start, stop[, step])`: Returns a sequence of numbers.
+/// `range(stop)` or `range(start, stop=None, step=1)`: Returns a sequence of numbers.
 ///
 /// **Parameters**
 /// - `start` (Int): The start value (inclusive). Defaults to 0.

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shellpivot"
@@ -175,6 +176,21 @@ func (sc *ShellCreate) AddPivots(s ...*ShellPivot) *ShellCreate {
 		ids[i] = s[i].ID
 	}
 	return sc.AddPivotIDs(ids...)
+}
+
+// AddOperatorNoteIDs adds the "operator_notes" edge to the OperatorNote entity by IDs.
+func (sc *ShellCreate) AddOperatorNoteIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddOperatorNoteIDs(ids...)
+	return sc
+}
+
+// AddOperatorNotes adds the "operator_notes" edges to the OperatorNote entity.
+func (sc *ShellCreate) AddOperatorNotes(o ...*OperatorNote) *ShellCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return sc.AddOperatorNoteIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
@@ -390,6 +406,22 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.OperatorNotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   shell.OperatorNotesTable,
+			Columns: shell.OperatorNotesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(operatornote.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -59,6 +59,7 @@ func (Tome) Fields() []ent.Field {
 				"COMMAND_AND_CONTROL",
 				"EXFILTRATION",
 				"IMPACT",
+				"SHELL_RC",
 			).
 			Default("UNSPECIFIED").
 			Comment("MITRE ATT&CK tactic provided by the tome."),

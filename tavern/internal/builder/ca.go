@@ -1,15 +1,20 @@
 package builder
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
 )
+
+// ErrInvalidBuilderCSR identifies client-supplied certificate requests that cannot be signed.
+var ErrInvalidBuilderCSR = errors.New("invalid builder CSR")
 
 // CreateCA creates a self-signed CA certificate from the provided ED25519 private key.
 // The certificate is generated in-memory each time — only the private key needs to be persisted.
@@ -50,15 +55,29 @@ func CreateCA(privKey ed25519.PrivateKey) (*x509.Certificate, error) {
 
 // SignBuilderCertificate generates a client certificate for a builder, signed by the CA.
 // The certificate CN is set to "builder-{identifier}" for identity attribution.
-func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, builderIdentifier string) (certPEM []byte, keyPEM []byte, err error) {
-	builderPub, builderPriv, err := ed25519.GenerateKey(rand.Reader)
+func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, builderIdentifier string, csrPEM string) ([]byte, error) {
+	block, rest := pem.Decode([]byte(csrPEM))
+	if block == nil || block.Type != "CERTIFICATE REQUEST" || len(bytes.TrimSpace(rest)) != 0 {
+		return nil, fmt.Errorf("%w PEM", ErrInvalidBuilderCSR)
+	}
+	csr, err := x509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate builder key pair: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidBuilderCSR, err)
+	}
+	if err := csr.CheckSignature(); err != nil {
+		return nil, fmt.Errorf("%w signature: %w", ErrInvalidBuilderCSR, err)
+	}
+	builderPub, ok := csr.PublicKey.(ed25519.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("%w: must use an Ed25519 public key", ErrInvalidBuilderCSR)
+	}
+	if ca == nil || len(caKey) != ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("builder CA is not configured")
 	}
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
+		return nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	template := x509.Certificate{
@@ -76,16 +95,7 @@ func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, buil
 
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, ca, builderPub, caKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create builder certificate: %w", err)
+		return nil, fmt.Errorf("failed to create builder certificate: %w", err)
 	}
-
-	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-
-	keyDER, err := x509.MarshalPKCS8PrivateKey(builderPriv)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal builder private key: %w", err)
-	}
-	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER})
-
-	return certPEM, keyPEM, nil
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER}), nil
 }

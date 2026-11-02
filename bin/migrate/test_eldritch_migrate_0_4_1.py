@@ -27,6 +27,9 @@ class AdditionalRenamesTest(unittest.TestCase):
         "net.sockets": "net.conns",
         "pivot.port_scan": "scan.ports",
         "scan.port": "scan.ports",
+        "file.moveto": "file.move",
+        "file.exist": "file.exists",
+        "assets.read_bytes": "assets.read",
     }
 
     def test_calls_and_references(self):
@@ -94,6 +97,21 @@ class AdditionalRenamesTest(unittest.TestCase):
                 'data = file.read_binary(src)\nfile.write(dst, data)',
                 'data = file.read(src)\nfile.write(dst, data)',
             ),
+            # Variable-based `in` / `not in` and `+` string operations trigger str() cast
+            (
+                'content = file.read(filepath)\nif install_path not in content:\n    file.write(filepath, content + startup_cmd)',
+                'content = str(file.read(filepath))\nif install_path not in content:\n    file.write(filepath, content + startup_cmd)',
+            ),
+            # Helper returning file.read() and "" gets str() cast
+            (
+                'def safe_read(path):\n    if file.is_file(path):\n        return file.read(path)\n    return ""\n',
+                'def safe_read(path):\n    if file.is_file(path):\n        return str(file.read(path))\n    return ""\n',
+            ),
+            # Explicit bytes(...) membership check preserves raw Bytes without str() cast
+            (
+                'contents = file.read(path)\nif bytes(password) in contents:\n    print("ok")',
+                'contents = file.read(path)\nif bytes(password) in contents:\n    print("ok")',
+            ),
         ]
         for original, expected in cases:
             with self.subTest(original=original):
@@ -101,6 +119,87 @@ class AdditionalRenamesTest(unittest.TestCase):
                 self.assertEqual(migrated, expected)
                 if "_binary" not in original and expected != "file.read(path)":
                     self.assertEqual(migration.migrate_content(migrated), expected)
+
+    def test_shadowed_stdlib_variables_and_params(self):
+        cases = [
+            # `user = sys.get_user()` -> `cur_user = user.info()` without overwriting `user` module
+            (
+                'def pre_flight():\n'
+                '    user = sys.get_user()\n'
+                '    if user["euid"]["uid"] != 0:\n'
+                '        return False\n'
+                '    return True\n',
+                'def pre_flight():\n'
+                '    cur_user = user.info()\n'
+                '    if cur_user["euid"]["uid"] != 0:\n'
+                '        return False\n'
+                '    return True\n',
+            ),
+            # `windows = sys.is_windows()` -> `is_windows = sys.is_windows()`
+            (
+                'windows = sys.is_windows()\n'
+                'def can_read(f):\n'
+                '    if windows:\n'
+                '        return True\n'
+                '    return False\n',
+                'is_windows = sys.is_windows()\n'
+                'def can_read(f):\n'
+                '    if is_windows:\n'
+                '        return True\n'
+                '    return False\n',
+            ),
+            # Loop variable and f-string with multi-byte UTF-8 emojis
+            (
+                'for user in candidate_users:\n'
+                '    print(f"[INFO] ❌ Trying \'{user}\' ✅")\n'
+                '    res = test_ssh(user)\n',
+                'for cur_user in candidate_users:\n'
+                '    print(f"[INFO] ❌ Trying \'{cur_user}\' ✅")\n'
+                '    res = test_ssh(cur_user)\n',
+            ),
+            # Function parameters and `file` variable shadowing alongside `file.is_file` calls
+            (
+                'def deploy(ip, user):\n'
+                '    file = input_params["FILE"]\n'
+                '    if file.is_file(file):\n'
+                '        pivot.ssh_copy(target=ip, src=file, username=user)\n',
+                'def deploy(ip, cur_user):\n'
+                '    target_file = input_params["FILE"]\n'
+                '    if file.is_file(target_file):\n'
+                '        ssh.copy(target=ip, src=target_file, username=cur_user)\n',
+            ),
+        ]
+        for original, expected in cases:
+            with self.subTest(original=original):
+                migrated = migration.migrate_content(original)
+                self.assertEqual(migrated, expected)
+                self.assertEqual(migration.migrate_content(migrated), expected)
+
+    def test_legacy_multi_arg_registry_calls(self):
+        cases = [
+            (
+                'winlogon = sys.get_reg(\n'
+                '    "HKEY_LOCAL_MACHINE",\n'
+                '    "SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Winlogon",\n'
+                ')\n',
+                'winlogon = registry.read(\n'
+                '    "HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Winlogon",\n'
+                ')\n',
+            ),
+            (
+                'vals = sys.get_reg(HIVE, reg_path)\n'
+                'ok1 = sys.write_reg_str(HIVE, reg_path, "ImagePath", "REG_EXPAND_SZ", bin_path)\n'
+                'ok2 = sys.write_reg_int(HIVE, reg_path, "Start", "REG_DWORD", 4)\n',
+                'vals = registry.read(HIVE + "\\\\" + reg_path)\n'
+                'ok1 = registry.write(HIVE + "\\\\" + reg_path, "ImagePath", "REG_EXPAND_SZ", bin_path)\n'
+                'ok2 = registry.write(HIVE + "\\\\" + reg_path, "Start", "REG_DWORD", 4)\n',
+            ),
+        ]
+        for original, expected in cases:
+            with self.subTest(original=original):
+                migrated = migration.migrate_content(original)
+                self.assertEqual(migrated, expected)
+                self.assertEqual(migration.migrate_content(migrated), expected)
 
     def test_nested_calls_and_idempotence(self):
         original = (

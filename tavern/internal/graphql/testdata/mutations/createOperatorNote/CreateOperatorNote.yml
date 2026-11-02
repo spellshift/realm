@@ -1,0 +1,45 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `hosts` (id, name, identifier, platform, created_at, last_modified_at)
+    VALUES (1010, "db1", "EXISTING-HOST", "PLATFORM_LINUX", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `beacons` (id, name, identifier, beacon_host, transport, created_at, last_modified_at)
+    VALUES (1337, "delightful-lich", "ABCDEFG-123456", 1010, "TRANSPORT_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `shells` (id, data, shell_beacon, shell_owner, created_at, last_modified_at)
+    VALUES (10, "", 1337, 5, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation CreateOperatorNote($input: CreateOperatorNoteInput!) {
+    createOperatorNote(input: $input) {
+      id
+      content
+      author {
+        id
+        name
+      }
+      shells {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+  }
+variables:
+  input:
+    content: "Initial operator scratchpad note"
+    shellIDs:
+      - 10
+expected:
+  createOperatorNote:
+    id: "1"
+    content: "Initial operator scratchpad note"
+    author:
+      id: "5"
+      name: "test"
+    shells:
+      edges:
+        - node:
+            id: "10"

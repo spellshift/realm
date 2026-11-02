@@ -1,0 +1,16 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `network_hosts` (id, name, hostname, ip_address, subnet, open_ports, created_at, last_modified_at)
+    VALUES (300, "srv1", "srv1.local", "10.0.0.50", "10.0.0.0/24", "[22]", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation DeleteNetworkHost($networkHostID: ID!) {
+    deleteNetworkHost(networkHostID: $networkHostID)
+  }
+variables:
+  networkHostID: 300
+expected:
+  deleteNetworkHost: "300"
+

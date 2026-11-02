@@ -31,7 +31,6 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "failed to read auth cookie", http.StatusBadRequest)
 			return
 		default:
-			resetAuthCookie(w)
 			http.Error(w, "unexpected error occurred", http.StatusInternalServerError)
 			return
 		}

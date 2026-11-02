@@ -4,6 +4,12 @@ use which::which;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Only the truly build-system concerns stay here.
+    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=../../../tavern/internal/c2/proto/eldritch.proto");
+    println!("cargo:rerun-if-changed=../../../tavern/internal/c2/proto/c2.proto");
+    println!("cargo:rerun-if-changed=../../../tavern/internal/c2/proto/conv.proto");
+    println!("cargo:rerun-if-changed=../../../tavern/portals/proto/portal.proto");
+    println!("cargo:rerun-if-changed=../../../tavern/portals/proto/trace.proto");
     println!("cargo:rerun-if-env-changed=PROTOC");
     println!("cargo:rerun-if-env-changed=IMIX_DEBUG");
     let profile = std::env::var("PROFILE").unwrap_or_default();
@@ -50,7 +56,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match tonic_prost_build::configure()
         .out_dir("./src/generated/")
         .codec_path("crate::xchacha::ChachaCodec")
-        .build_client(false)
         .build_server(false)
         .compile_protos(
             &["portal.proto"],

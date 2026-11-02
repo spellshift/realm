@@ -145,11 +145,38 @@ mod tests {
                 input_params.insert(Value::String(param.name), val);
             }
         }
+        let stdlib_names = [
+            "aes", "agent", "assets", "base64", "crypto", "dns", "file", "gzip", "hash", "http",
+            "json", "linux", "net", "pivot", "portal", "process", "random", "regex", "registry",
+            "report", "scan", "ssh", "sys", "template", "time", "user", "windows",
+        ];
+
         let input_params_val = Value::Dictionary(Arc::new(RwLock::new(input_params)));
         interp.define_variable("input_params", input_params_val);
 
         match interp.interpret(&code) {
-            Ok(_) => Ok(()),
+            Ok(_) => {
+                for lib_name in stdlib_names {
+                    match interp.interpret(lib_name) {
+                        Ok(Value::Foreign(_)) => {}
+                        Ok(other) => {
+                            return Err(anyhow::anyhow!(
+                                "Tome overwrote stdlib library '{}' with {:?}",
+                                lib_name,
+                                other
+                            ));
+                        }
+                        Err(e) => {
+                            return Err(anyhow::anyhow!(
+                                "Failed to resolve stdlib library '{}' after tome execution: {}",
+                                lib_name,
+                                e
+                            ));
+                        }
+                    }
+                }
+                Ok(())
+            }
             Err(e) => Err(anyhow::anyhow!("Eldritch error: {}", e)),
         }
     }

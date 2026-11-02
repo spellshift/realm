@@ -24,6 +24,10 @@ impl WindowsLibrary for WindowsLibraryFake {
         Ok(())
     }
 
+    fn enable_privilege(&self, _privilege: String) -> Result<bool, String> {
+        Ok(true)
+    }
+
     fn impersonate(&self, _pid: i64) -> Result<i64, String> {
         Ok(1)
     }

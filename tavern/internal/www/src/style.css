@@ -51,3 +51,90 @@ code {
     @apply text-purple-900 cursor-pointer;
   }
 }
+
+/* Smooth font rendering & thin, auto-hiding dark-mode scrollbars for the Shell workspace */
+.shell-font-onest {
+  font-family: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.xterm,
+.xterm-viewport,
+.xterm-screen {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.xterm .xterm-viewport {
+  background-color: #11131a !important;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease;
+}
+
+.xterm:hover .xterm-viewport,
+.xterm .xterm-viewport:focus,
+.xterm .xterm-viewport:active {
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.xterm:hover .xterm-viewport::-webkit-scrollbar-thumb,
+.xterm .xterm-viewport:hover::-webkit-scrollbar-thumb,
+.xterm .xterm-viewport:focus::-webkit-scrollbar-thumb,
+.xterm .xterm-viewport:active::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.24);
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.42);
+}
+
+.shell-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.shell-scrollbar:hover,
+.shell-scrollbar:focus-within {
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+.shell-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.shell-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.shell-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.shell-scrollbar:hover::-webkit-scrollbar-thumb,
+.shell-scrollbar:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.24);
+}
+
+.shell-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.42);
+}
+

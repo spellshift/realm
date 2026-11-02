@@ -20,6 +20,9 @@ pub struct TokenEntry {
 pub static TOKEN_STORE: std::sync::Mutex<Vec<TokenEntry>> = std::sync::Mutex::new(Vec::new());
 
 #[cfg(target_os = "windows")]
+static BASE_TOKEN_INFO: std::sync::Mutex<Option<(String, String)>> = std::sync::Mutex::new(None);
+
+#[cfg(target_os = "windows")]
 static NEXT_TOKEN_ID: std::sync::atomic::AtomicI64 = std::sync::atomic::AtomicI64::new(1);
 
 #[cfg(target_os = "windows")]
@@ -239,6 +242,42 @@ pub fn tokens(pid: Option<i64>) -> Result<Vec<BTreeMap<String, Value>>, String> 
     }
 }
 
+#[cfg(target_os = "windows")]
+fn get_base_token_info() -> (String, String) {
+    if let Ok(guard) = BASE_TOKEN_INFO.lock() {
+        if let Some(cached) = guard.as_ref() {
+            return cached.clone();
+        }
+    }
+
+    let mut tok = std::ptr::null_mut();
+    let user = if unsafe {
+        windows_sys::Win32::System::Threading::OpenProcessToken(
+            windows_sys::Win32::System::Threading::GetCurrentProcess(),
+            windows_sys::Win32::Security::TOKEN_QUERY,
+            &mut tok,
+        )
+    } != 0
+    {
+        let u = resolve_token_user(tok);
+        unsafe { windows_sys::Win32::Foundation::CloseHandle(tok) };
+        u
+    } else {
+        String::new()
+    };
+
+    let process = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.file_name().map(|f| f.to_string_lossy().to_string()))
+        .unwrap_or_default();
+
+    let info = (user, process);
+    if let Ok(mut guard) = BASE_TOKEN_INFO.lock() {
+        *guard = Some(info.clone());
+    }
+    info
+}
+
 fn list_stored() -> Result<Vec<BTreeMap<String, Value>>, String> {
     #[cfg(target_os = "windows")]
     {
@@ -252,26 +291,7 @@ fn list_stored() -> Result<Vec<BTreeMap<String, Value>>, String> {
                 Value::String("process_token".to_string()),
             );
             base.insert("active".to_string(), Value::Bool(!any_active));
-            let proc_token = unsafe {
-                let mut tok = std::ptr::null_mut();
-                windows_sys::Win32::System::Threading::OpenProcessToken(
-                    windows_sys::Win32::System::Threading::GetCurrentProcess(),
-                    windows_sys::Win32::Security::TOKEN_QUERY,
-                    &mut tok,
-                );
-                tok
-            };
-            let base_user = if !proc_token.is_null() {
-                let u = resolve_token_user(proc_token);
-                unsafe { windows_sys::Win32::Foundation::CloseHandle(proc_token) };
-                u
-            } else {
-                String::new()
-            };
-            let base_process = std::env::current_exe()
-                .ok()
-                .and_then(|p| p.file_name().map(|f| f.to_string_lossy().to_string()))
-                .unwrap_or_default();
+            let (base_user, base_process) = get_base_token_info();
             base.insert("user".to_string(), Value::String(base_user));
             base.insert("process".to_string(), Value::String(base_process));
             result.push(base);

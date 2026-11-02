@@ -20,10 +20,11 @@ pub enum MetaCommand {
 #[cfg(feature = "fake_bindings")]
 use eldritch::{
     aes::fake::AesLibraryFake, agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
-    base64::fake::Base64LibraryFake, crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake,
-    file::fake::FileLibraryFake, gzip::fake::GzipLibraryFake, hash::fake::HashLibraryFake,
-    http::fake::HttpLibraryFake, json::fake::JsonLibraryFake, linux::fake::LinuxLibraryFake,
-    net::fake::NetLibraryFake, pivot::fake::PivotLibraryFake, portal::fake::PortalLibraryFake,
+    base64::fake::Base64LibraryFake, chain::fake::FakeChainLibrary,
+    crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake, file::fake::FileLibraryFake,
+    gzip::fake::GzipLibraryFake, hash::fake::HashLibraryFake, http::fake::HttpLibraryFake,
+    json::fake::JsonLibraryFake, linux::fake::LinuxLibraryFake, net::fake::NetLibraryFake,
+    pivot::fake::PivotLibraryFake, portal::fake::PortalLibraryFake,
     process::fake::ProcessLibraryFake, random::fake::RandomLibraryFake,
     regex::fake::RegexLibraryFake, registry::fake::RegistryLibraryFake,
     report::fake::ReportLibraryFake, scan::fake::ScanLibraryFake, ssh::fake::SshLibraryFake,
@@ -51,6 +52,7 @@ impl BrowserRepl {
         {
             interp.register_lib(AesLibraryFake::default());
             interp.register_lib(Base64LibraryFake::default());
+            interp.register_lib(FakeChainLibrary::new());
             interp.register_lib(FileLibraryFake::default());
             interp.register_lib(TemplateLibraryFake);
             interp.register_lib(GzipLibraryFake::default());
@@ -266,6 +268,7 @@ impl BrowserRepl {
             }
 
             let payload = self.buffer.clone();
+            let _ = self.interpreter.interpret(&payload);
             self.buffer.clear();
             return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
         }
@@ -393,6 +396,13 @@ mod tests {
         assert!(res.contains("\"suggestions\":"));
         assert!(res.contains("print"));
         assert!(res.contains("\"start\":"));
+
+        let res = repl.complete("file.", 5);
+        assert!(res.contains("read"));
+        assert!(res.contains("write"));
+
+        let res = repl.complete("sys.", 4);
+        assert!(res.contains("info"));
     }
 
     #[test]

@@ -313,7 +313,7 @@ impl HTTP {
             if data_sent || data_received {
                 tokio::task::yield_now().await;
             } else {
-                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             }
         }
 

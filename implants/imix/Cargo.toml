@@ -54,6 +54,8 @@ async-trait = { workspace = true }
 rustls = { workspace = true }
 eldritch-libchain = { workspace = true, features = ["stdlib"] }
 base64 = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 
 [target.'cfg(not(target_os = "solaris"))'.dependencies]
 portable-pty = { workspace = true }

@@ -140,16 +140,6 @@ type QuestTimelineTacticBucket struct {
 	Count  int         `json:"count"`
 }
 
-// Output returned when registering a new builder.
-type RegisterBuilderOutput struct {
-	// The created builder entity.
-	Builder *ent.Builder `json:"builder"`
-	// mTLS certificate PEM bundle for the builder to authenticate.
-	MtlsCert string `json:"mtlsCert"`
-	// YAML-formatted configuration for the builder.
-	Config string `json:"config"`
-}
-
 type SubmitTaskResultInput struct {
 	// ID of the task to submit results for.
 	TaskID int `json:"taskID"`

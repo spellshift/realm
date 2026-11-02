@@ -125,6 +125,8 @@ var (
 	EnvEnableAIMCP   = EnvBool{"ENABLE_AI_MCP"}
 
 	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
+	// EnvBuilderEnrollmentTokens seeds one-time builder enrollment tokens at startup.
+	EnvBuilderEnrollmentTokens = EnvString{"REALM_BUILDER_ENROLLMENT_TOKENS", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern
@@ -181,6 +183,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetConnMaxLifetime(maxConnLifetime)
 	client := ent.NewClient(append(options, ent.Driver(drv))...)
 	client.Host.Use(ent.HookDeriveHostEvents())
+	client.Host.Use(ent.HookDeriveNetworkHost())
 	client.Task.Use(ent.HookDeriveQuestEvents())
 	client.Event.Use(ent.HookDeriveNotifications())
 	client.User.Use(ent.HookDeriveUserRequestEvents())

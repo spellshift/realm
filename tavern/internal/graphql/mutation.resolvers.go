@@ -8,7 +8,9 @@ package graphql
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -18,7 +20,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
@@ -28,6 +29,8 @@ import (
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/operatornote"
+	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
@@ -63,6 +66,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	if _, err := client.Portal.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete portals: %w", err))
 	}
+	if _, err := client.OperatorNote.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete operator notes: %w", err))
+	}
 	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
 	}
@@ -86,6 +92,12 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Link.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete links: %w", err))
+	}
+	if _, err := client.NetworkHost.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete network hosts: %w", err))
+	}
+	if _, err := client.Network.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete networks: %w", err))
 	}
 	if _, err := client.Host.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
@@ -507,56 +519,16 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 		Save(ctx)
 }
 
-// RegisterBuilder is the resolver for the registerBuilder field.
-func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
-	// 1. Create builder ent (identifier is auto-generated)
-	b, err := r.client.Builder.Create().SetInput(input).Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create builder: %w", err)
+// CreateBuilderEnrollmentToken is the resolver for the createBuilderEnrollmentToken field.
+func (r *mutationResolver) CreateBuilderEnrollmentToken(ctx context.Context) (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
 	}
-
-	// 2. Generate CA-signed X.509 certificate for mTLS
-	certPEM, keyPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, b.Identifier)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
-	}
-
-	// Combine cert and key into a single PEM bundle
-	combinedPEM := append(certPEM, keyPEM...)
-	mtlsCert := string(combinedPEM)
-
-	// 3. Build YAML config
-	targetNames := make([]string, len(b.SupportedTargets))
-	for i, t := range b.SupportedTargets {
-		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
-	}
-
-	configData := struct {
-		PollInterval     int      `yaml:"poll_interval"`
-		ID               string   `yaml:"id"`
-		SupportedTargets []string `yaml:"supported_targets"`
-		MTLS             string   `yaml:"mtls"`
-		Upstream         string   `yaml:"upstream"`
-		Executor         string   `yaml:"executor"`
-	}{
-		PollInterval:     b.PollInterval,
-		ID:               b.Identifier,
-		SupportedTargets: targetNames,
-		MTLS:             mtlsCert,
-		Upstream:         b.Upstream,
-		Executor:         string(b.Executor),
-	}
-
-	configBytes, err := yaml.Marshal(configData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal builder config: %w", err)
-	}
-
-	return &models.RegisterBuilderOutput{
-		Builder:  b,
-		MtlsCert: mtlsCert,
-		Config:   string(configBytes),
-	}, nil
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	hash := sha256.Sum256([]byte(token))
+	_, err := r.client.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
+	return token, err
 }
 
 // DeleteBuilder is the resolver for the deleteBuilder field.
@@ -973,6 +945,155 @@ func (r *mutationResolver) DeleteAllNotifications(ctx context.Context) (bool, er
 		return false, fmt.Errorf("failed to delete notifications: %w", err)
 	}
 	return true, nil
+}
+
+// CreateNetwork is the resolver for the createNetwork field.
+func (r *mutationResolver) CreateNetwork(ctx context.Context, input ent.CreateNetworkInput) (*ent.Network, error) {
+	return r.client.Network.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateNetwork is the resolver for the updateNetwork field.
+func (r *mutationResolver) UpdateNetwork(ctx context.Context, networkID int, input ent.UpdateNetworkInput) (*ent.Network, error) {
+	return r.client.Network.UpdateOneID(networkID).SetInput(input).Save(ctx)
+}
+
+// DeleteNetwork is the resolver for the deleteNetwork field.
+func (r *mutationResolver) DeleteNetwork(ctx context.Context, networkID int) (int, error) {
+	if err := r.client.Network.DeleteOneID(networkID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return networkID, nil
+}
+
+// CreateNetworkHost is the resolver for the createNetworkHost field.
+func (r *mutationResolver) CreateNetworkHost(ctx context.Context, input ent.CreateNetworkHostInput) (*ent.NetworkHost, error) {
+	return r.client.NetworkHost.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateNetworkHost is the resolver for the updateNetworkHost field.
+func (r *mutationResolver) UpdateNetworkHost(ctx context.Context, networkHostID int, input ent.UpdateNetworkHostInput) (*ent.NetworkHost, error) {
+	return r.client.NetworkHost.UpdateOneID(networkHostID).SetInput(input).Save(ctx)
+}
+
+// DeleteNetworkHost is the resolver for the deleteNetworkHost field.
+func (r *mutationResolver) DeleteNetworkHost(ctx context.Context, networkHostID int) (int, error) {
+	if err := r.client.NetworkHost.DeleteOneID(networkHostID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return networkHostID, nil
+}
+
+// CreateOperatorNote is the resolver for the createOperatorNote field.
+func (r *mutationResolver) CreateOperatorNote(ctx context.Context, input ent.CreateOperatorNoteInput) (*ent.OperatorNote, error) {
+	if len(input.ShellIDs) > 0 {
+		validShellIDs, err := r.client.Shell.Query().
+			Where(shell.IDIn(input.ShellIDs...)).
+			IDs(ctx)
+		if err == nil {
+			input.ShellIDs = validShellIDs
+		} else {
+			input.ShellIDs = nil
+		}
+	}
+	creator := r.client.OperatorNote.Create().SetInput(input)
+	if author := auth.UserFromContext(ctx); author != nil {
+		creator.SetAuthorID(author.ID)
+	}
+	return creator.Save(ctx)
+}
+
+// UpdateOperatorNote is the resolver for the updateOperatorNote field.
+func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteID int, input ent.UpdateOperatorNoteInput) (*ent.OperatorNote, error) {
+	exists, err := r.client.OperatorNote.Query().
+		Where(operatornote.ID(operatorNoteID)).
+		Exist(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return r.CreateOperatorNote(ctx, ent.CreateOperatorNoteInput{
+			Content:  input.Content,
+			ShellIDs: input.AddShellIDs,
+		})
+	}
+	if author := auth.UserFromContext(ctx); author != nil {
+		owned, err := r.client.OperatorNote.Query().
+			Where(
+				operatornote.ID(operatorNoteID),
+				operatornote.Or(
+					operatornote.HasAuthorWith(user.ID(author.ID)),
+					operatornote.Not(operatornote.HasAuthor()),
+				),
+			).
+			Exist(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !owned {
+			return nil, errors.New("unauthorized")
+		}
+	}
+	if len(input.AddShellIDs) > 0 {
+		existingSet := make(map[int]bool)
+		if !input.ClearShells {
+			existingShellIDs, err := r.client.OperatorNote.Query().
+				Where(operatornote.ID(operatorNoteID)).
+				QueryShells().
+				IDs(ctx)
+			if err == nil {
+				removedSet := make(map[int]bool, len(input.RemoveShellIDs))
+				for _, id := range input.RemoveShellIDs {
+					removedSet[id] = true
+				}
+				for _, id := range existingShellIDs {
+					if !removedSet[id] {
+						existingSet[id] = true
+					}
+				}
+			}
+		}
+		filtered := make([]int, 0, len(input.AddShellIDs))
+		for _, id := range input.AddShellIDs {
+			if !existingSet[id] {
+				existingSet[id] = true
+				filtered = append(filtered, id)
+			}
+		}
+		if len(filtered) > 0 {
+			validShellIDs, err := r.client.Shell.Query().
+				Where(shell.IDIn(filtered...)).
+				IDs(ctx)
+			if err == nil {
+				filtered = validShellIDs
+			} else {
+				filtered = nil
+			}
+		}
+		input.AddShellIDs = filtered
+	}
+	return r.client.OperatorNote.UpdateOneID(operatorNoteID).SetInput(input).Save(ctx)
+}
+
+// DeleteOperatorNote is the resolver for the deleteOperatorNote field.
+func (r *mutationResolver) DeleteOperatorNote(ctx context.Context, operatorNoteID int) (int, error) {
+	if author := auth.UserFromContext(ctx); author != nil {
+		owned, err := r.client.OperatorNote.Query().
+			Where(
+				operatornote.ID(operatorNoteID),
+				operatornote.HasAuthorWith(user.ID(author.ID)),
+			).
+			Exist(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if !owned {
+			return 0, errors.New("unauthorized")
+		}
+	}
+	if err := r.client.OperatorNote.DeleteOneID(operatorNoteID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return operatorNoteID, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

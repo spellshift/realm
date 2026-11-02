@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/networkhost"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
@@ -27,31 +28,33 @@ import (
 // HostQuery is the builder for querying Host entities.
 type HostQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []host.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.Host
-	withTags             *TagQuery
-	withBeacons          *BeaconQuery
-	withFiles            *HostFileQuery
-	withProcesses        *HostProcessQuery
-	withCredentials      *HostCredentialQuery
-	withScreenshots      *ScreenshotQuery
-	withFavoritedBy      *UserQuery
-	withEvents           *EventQuery
-	withSubscribers      *UserQuery
-	withFKs              bool
-	modifiers            []func(*sql.Selector)
-	loadTotal            []func(context.Context, []*Host) error
-	withNamedTags        map[string]*TagQuery
-	withNamedBeacons     map[string]*BeaconQuery
-	withNamedFiles       map[string]*HostFileQuery
-	withNamedProcesses   map[string]*HostProcessQuery
-	withNamedCredentials map[string]*HostCredentialQuery
-	withNamedScreenshots map[string]*ScreenshotQuery
-	withNamedFavoritedBy map[string]*UserQuery
-	withNamedEvents      map[string]*EventQuery
-	withNamedSubscribers map[string]*UserQuery
+	ctx                   *QueryContext
+	order                 []host.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.Host
+	withTags              *TagQuery
+	withBeacons           *BeaconQuery
+	withFiles             *HostFileQuery
+	withProcesses         *HostProcessQuery
+	withCredentials       *HostCredentialQuery
+	withScreenshots       *ScreenshotQuery
+	withFavoritedBy       *UserQuery
+	withEvents            *EventQuery
+	withSubscribers       *UserQuery
+	withNetworkHosts      *NetworkHostQuery
+	withFKs               bool
+	modifiers             []func(*sql.Selector)
+	loadTotal             []func(context.Context, []*Host) error
+	withNamedTags         map[string]*TagQuery
+	withNamedBeacons      map[string]*BeaconQuery
+	withNamedFiles        map[string]*HostFileQuery
+	withNamedProcesses    map[string]*HostProcessQuery
+	withNamedCredentials  map[string]*HostCredentialQuery
+	withNamedScreenshots  map[string]*ScreenshotQuery
+	withNamedFavoritedBy  map[string]*UserQuery
+	withNamedEvents       map[string]*EventQuery
+	withNamedSubscribers  map[string]*UserQuery
+	withNamedNetworkHosts map[string]*NetworkHostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -286,6 +289,28 @@ func (hq *HostQuery) QuerySubscribers() *UserQuery {
 	return query
 }
 
+// QueryNetworkHosts chains the current query on the "network_hosts" edge.
+func (hq *HostQuery) QueryNetworkHosts() *NetworkHostQuery {
+	query := (&NetworkHostClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(networkhost.Table, networkhost.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, host.NetworkHostsTable, host.NetworkHostsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Host entity from the query.
 // Returns a *NotFoundError when no Host was found.
 func (hq *HostQuery) First(ctx context.Context) (*Host, error) {
@@ -473,20 +498,21 @@ func (hq *HostQuery) Clone() *HostQuery {
 		return nil
 	}
 	return &HostQuery{
-		config:          hq.config,
-		ctx:             hq.ctx.Clone(),
-		order:           append([]host.OrderOption{}, hq.order...),
-		inters:          append([]Interceptor{}, hq.inters...),
-		predicates:      append([]predicate.Host{}, hq.predicates...),
-		withTags:        hq.withTags.Clone(),
-		withBeacons:     hq.withBeacons.Clone(),
-		withFiles:       hq.withFiles.Clone(),
-		withProcesses:   hq.withProcesses.Clone(),
-		withCredentials: hq.withCredentials.Clone(),
-		withScreenshots: hq.withScreenshots.Clone(),
-		withFavoritedBy: hq.withFavoritedBy.Clone(),
-		withEvents:      hq.withEvents.Clone(),
-		withSubscribers: hq.withSubscribers.Clone(),
+		config:           hq.config,
+		ctx:              hq.ctx.Clone(),
+		order:            append([]host.OrderOption{}, hq.order...),
+		inters:           append([]Interceptor{}, hq.inters...),
+		predicates:       append([]predicate.Host{}, hq.predicates...),
+		withTags:         hq.withTags.Clone(),
+		withBeacons:      hq.withBeacons.Clone(),
+		withFiles:        hq.withFiles.Clone(),
+		withProcesses:    hq.withProcesses.Clone(),
+		withCredentials:  hq.withCredentials.Clone(),
+		withScreenshots:  hq.withScreenshots.Clone(),
+		withFavoritedBy:  hq.withFavoritedBy.Clone(),
+		withEvents:       hq.withEvents.Clone(),
+		withSubscribers:  hq.withSubscribers.Clone(),
+		withNetworkHosts: hq.withNetworkHosts.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
 		path: hq.path,
@@ -592,6 +618,17 @@ func (hq *HostQuery) WithSubscribers(opts ...func(*UserQuery)) *HostQuery {
 	return hq
 }
 
+// WithNetworkHosts tells the query-builder to eager-load the nodes that are connected to
+// the "network_hosts" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNetworkHosts(opts ...func(*NetworkHostQuery)) *HostQuery {
+	query := (&NetworkHostClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withNetworkHosts = query
+	return hq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -671,7 +708,7 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		nodes       = []*Host{}
 		withFKs     = hq.withFKs
 		_spec       = hq.querySpec()
-		loadedTypes = [9]bool{
+		loadedTypes = [10]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
 			hq.withFiles != nil,
@@ -681,6 +718,7 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			hq.withFavoritedBy != nil,
 			hq.withEvents != nil,
 			hq.withSubscribers != nil,
+			hq.withNetworkHosts != nil,
 		}
 	)
 	if withFKs {
@@ -770,6 +808,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withNetworkHosts; query != nil {
+		if err := hq.loadNetworkHosts(ctx, query, nodes,
+			func(n *Host) { n.Edges.NetworkHosts = []*NetworkHost{} },
+			func(n *Host, e *NetworkHost) { n.Edges.NetworkHosts = append(n.Edges.NetworkHosts, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range hq.withNamedTags {
 		if err := hq.loadTags(ctx, query, nodes,
 			func(n *Host) { n.appendNamedTags(name) },
@@ -830,6 +875,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadSubscribers(ctx, query, nodes,
 			func(n *Host) { n.appendNamedSubscribers(name) },
 			func(n *Host, e *User) { n.appendNamedSubscribers(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedNetworkHosts {
+		if err := hq.loadNetworkHosts(ctx, query, nodes,
+			func(n *Host) { n.appendNamedNetworkHosts(name) },
+			func(n *Host, e *NetworkHost) { n.appendNamedNetworkHosts(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1210,6 +1262,37 @@ func (hq *HostQuery) loadSubscribers(ctx context.Context, query *UserQuery, node
 	}
 	return nil
 }
+func (hq *HostQuery) loadNetworkHosts(ctx context.Context, query *NetworkHostQuery, nodes []*Host, init func(*Host), assign func(*Host, *NetworkHost)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Host)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.NetworkHost(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(host.NetworkHostsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.network_host_host
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "network_host_host" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "network_host_host" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (hq *HostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hq.querySpec()
@@ -1418,6 +1501,20 @@ func (hq *HostQuery) WithNamedSubscribers(name string, opts ...func(*UserQuery))
 		hq.withNamedSubscribers = make(map[string]*UserQuery)
 	}
 	hq.withNamedSubscribers[name] = query
+	return hq
+}
+
+// WithNamedNetworkHosts tells the query-builder to eager-load the nodes that are connected to the "network_hosts"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedNetworkHosts(name string, opts ...func(*NetworkHostQuery)) *HostQuery {
+	query := (&NetworkHostClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedNetworkHosts == nil {
+		hq.withNamedNetworkHosts = make(map[string]*NetworkHostQuery)
+	}
+	hq.withNamedNetworkHosts[name] = query
 	return hq
 }
 

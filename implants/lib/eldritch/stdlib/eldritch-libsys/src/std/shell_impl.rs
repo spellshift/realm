@@ -123,7 +123,7 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
 // spawn cmd.exe using CreateProcessWithTokenW if there is an impersonation token active
 #[cfg(target_os = "windows")]
 fn try_shell_with_token(cmd: &str) -> Option<Result<CommandOutput>> {
-    use super::tokens_impl::get_active_token_handle;
+    use eldritch_libwindows::std::tokens_impl::get_active_token_handle;
     use windows_sys::Win32::Foundation::CloseHandle;
     use windows_sys::Win32::Security::{
         DuplicateTokenEx, SecurityImpersonation, TOKEN_ALL_ACCESS, TokenPrimary,
@@ -137,7 +137,7 @@ fn try_shell_with_token(cmd: &str) -> Option<Result<CommandOutput>> {
 
     // check SeImpersonatePrivilege on process token before calling CreateProcessWithTokenW
     {
-        use super::tokens_impl::check_privilege;
+        use eldritch_libwindows::std::tokens_impl::check_privilege;
         if !matches!(check_privilege("SeImpersonatePrivilege"), Ok(true)) {
             // fall back to normal Command::new
             return None;
@@ -290,7 +290,7 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn test_sys_shell_with_token() -> anyhow::Result<()> {
-        use super::super::tokens_impl::{TOKEN_STORE, store_token};
+        use eldritch_libwindows::std::tokens_impl::{TOKEN_STORE, store_token};
 
         let mut token_handle = std::ptr::null_mut();
         assert_ne!(

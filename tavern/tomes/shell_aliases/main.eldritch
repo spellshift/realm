@@ -1,0 +1,13 @@
+def ls(path="."):
+    return file.list(path)
+def whoami():
+    return user.info()
+def ps():
+    return process.list()
+def pwd():
+    return process.cwd()
+def cat(path):
+    return str(file.read(path))
+def netstat():
+    return net.conns()
+

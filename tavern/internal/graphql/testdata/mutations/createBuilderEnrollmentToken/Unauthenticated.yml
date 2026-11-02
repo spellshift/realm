@@ -1,0 +1,6 @@
+query: |
+  mutation CreateBuilderEnrollmentToken {
+    createBuilderEnrollmentToken
+  }
+
+expected_error: "permission denied"

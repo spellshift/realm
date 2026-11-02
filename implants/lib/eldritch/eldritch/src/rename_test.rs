@@ -99,6 +99,18 @@ fn test_std_renames_delegate_and_warn() {
             .interpret("template.render('{% if', {}, False)")
             .is_err()
     );
+    assert_eq!(
+        interp
+            .interpret("net.udp('127.0.0.1', 65534, 'ping', timeout=1)")
+            .unwrap(),
+        crate::Value::String("".into()),
+    );
+    assert_eq!(
+        interp
+            .interpret("net.udp('127.0.0.1', 65534, 'ping')")
+            .unwrap(),
+        crate::Value::String("".into()),
+    );
 }
 
 #[test]

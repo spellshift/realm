@@ -5,7 +5,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
-/// `int(x)`: Converts a number or string to an integer.
+/// `int(x=0, base=10)`: Converts a number or string to an integer.
 ///
 /// If x is a number, return x.__int__(). For floating point numbers, this truncates towards zero.
 /// If x is not a number or if base is given, then x must be a string, bytes, or bytearray instance representing an integer literal in the given base.

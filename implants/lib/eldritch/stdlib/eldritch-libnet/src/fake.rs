@@ -40,7 +40,13 @@ impl NetLibrary for NetLibraryFake {
         Ok("fake response".into())
     }
 
-    fn udp(&self, _address: String, _port: i64, _data: String) -> Result<String, String> {
+    fn udp(
+        &self,
+        _address: String,
+        _port: i64,
+        _data: String,
+        _timeout: Option<i64>,
+    ) -> Result<String, String> {
         Ok("fake response".into())
     }
 }
