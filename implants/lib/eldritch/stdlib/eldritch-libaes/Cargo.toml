@@ -7,6 +7,8 @@ edition = "2024"
 default = ["stdlib"]
 stdlib = [
     "dep:aes",
+    "dep:rand",
+    "dep:rand_chacha",
 ]
 fake_bindings = []
 
@@ -14,6 +16,8 @@ fake_bindings = []
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 aes = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

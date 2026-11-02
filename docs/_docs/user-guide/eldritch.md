@@ -392,7 +392,7 @@ The **aes.decrypt** method decrypts the given data using the given key and IV (A
 
 `aes.decrypt_file(src: str, dst: str, key: str) -> None`
 
-The **aes.decrypt_file** method decrypts the given src file using the given key and writes it to disk at the dst location.
+The **aes.decrypt_file** method decrypts the given src file using the given key and writes it to disk at the dst location. The IV is read from the first 16 bytes of the src file, matching the format written by `aes.encrypt_file`.
 
 Key must be 16 Bytes (Characters)
 
@@ -406,7 +406,7 @@ The **aes.encrypt** method encrypts the given data using the given key and IV (A
 
 `aes.encrypt_file(src: str, dst: str, key: str) -> None`
 
-The **aes.encrypt_file** method encrypts the given src file using the given key and writes it to disk at the dst location.
+The **aes.encrypt_file** method encrypts the given src file using the given key and writes it to disk at the dst location. A fresh random IV is generated for each call and written as the first 16 bytes of the dst file, followed by the ciphertext.
 
 Key must be 16 Bytes (Characters)
 
