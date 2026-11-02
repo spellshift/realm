@@ -1,5 +1,5 @@
 use super::CryptoLibrary;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use eldritch_core::{Value, call_bound_method};
 use eldritch_libaes::{AesLibrary, std::StdAesLibrary};
@@ -50,7 +50,12 @@ impl CryptoLibrary for StdCryptoLibrary {
     }
 
     fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
-        StdBase64Library.decode(content, encode_type)
+        // This deprecated shim is documented to return `str`, so we lossily
+        // convert the decoded bytes for backwards compatibility. Prefer
+        // `base64.decode`, which returns the raw `Bytes`.
+        StdBase64Library
+            .decode(content, encode_type)
+            .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
     }
 
     fn is_json(&self, content: String) -> Result<bool, String> {
