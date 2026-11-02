@@ -1,6 +1,6 @@
 use crossterm::{
     ExecutableCommand, QueueableCommand, cursor,
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     style::Stylize,
     terminal::{self, ClearType},
 };
@@ -156,6 +156,16 @@ fn main() -> io::Result<()> {
 }
 
 fn map_key(key: KeyEvent) -> Option<Input> {
+    // Windows consoles emit both key-down and key-up input records for every
+    // keypress, and crossterm's Windows event source surfaces both as
+    // `Event::Key` (`KeyEventKind::Press` and `KeyEventKind::Release`), with
+    // no filtering. Unix only ever emits `Press`. Without this check, every
+    // typed character would be processed twice on Windows. See
+    // https://github.com/spellshift/realm/issues/1702.
+    if key.kind != KeyEventKind::Press {
+        return None;
+    }
+
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::Cancel),
         KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => {

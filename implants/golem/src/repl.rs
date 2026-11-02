@@ -1,6 +1,6 @@
 use crossterm::{
     ExecutableCommand, QueueableCommand, cursor,
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     style::Stylize,
     terminal::{self, ClearType},
 };
@@ -99,7 +99,17 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
     Ok(())
 }
 
-fn map_key(key: KeyEvent) -> Option<Input> {
+pub(crate) fn map_key(key: KeyEvent) -> Option<Input> {
+    // Windows consoles emit both key-down and key-up input records for every
+    // keypress, and crossterm's Windows event source surfaces both as
+    // `Event::Key` (`KeyEventKind::Press` and `KeyEventKind::Release`), with
+    // no filtering. Unix only ever emits `Press`. Without this check, every
+    // typed character is processed twice on Windows (e.g. `print("hello")`
+    // becomes `pprriinntt((""hheelllloo""))`).
+    if key.kind != KeyEventKind::Press {
+        return None;
+    }
+
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::Cancel),
         KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -213,4 +223,55 @@ fn render(stdout: &mut io::Stdout, repl: &Repl) -> io::Result<()> {
 
     stdout.flush()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::KeyEventState;
+
+    fn key_with_kind(c: char, kind: KeyEventKind) -> KeyEvent {
+        KeyEvent::new_with_kind_and_state(
+            KeyCode::Char(c),
+            KeyModifiers::NONE,
+            kind,
+            KeyEventState::NONE,
+        )
+    }
+
+    // Regression test for https://github.com/spellshift/realm/issues/1702:
+    // on Windows, crossterm surfaces both key-down (Press) and key-up
+    // (Release) console input records as `Event::Key`, which previously
+    // caused every typed character to be processed twice. `map_key` must
+    // only act on `Press` events.
+    #[test]
+    fn map_key_only_handles_press_events() {
+        let press = key_with_kind('a', KeyEventKind::Press);
+        assert_eq!(map_key(press), Some(Input::Char('a')));
+
+        let release = key_with_kind('a', KeyEventKind::Release);
+        assert_eq!(map_key(release), None);
+
+        let repeat = key_with_kind('a', KeyEventKind::Repeat);
+        assert_eq!(map_key(repeat), None);
+    }
+
+    #[test]
+    fn map_key_release_does_not_double_process_control_keys() {
+        let enter_press = KeyEvent::new_with_kind_and_state(
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+            KeyEventKind::Press,
+            KeyEventState::NONE,
+        );
+        assert_eq!(map_key(enter_press), Some(Input::Enter));
+
+        let enter_release = KeyEvent::new_with_kind_and_state(
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+            KeyEventKind::Release,
+            KeyEventState::NONE,
+        );
+        assert_eq!(map_key(enter_release), None);
+    }
 }
