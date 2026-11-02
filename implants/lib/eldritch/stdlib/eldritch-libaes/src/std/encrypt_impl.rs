@@ -96,4 +96,36 @@ mod tests {
             "CBC chaining must prevent identical plaintext blocks from producing identical ciphertext blocks"
         );
     }
+
+    /// Decodes a hex string (e.g. `"DEADBEEF"`) into bytes, for use with
+    /// published test vectors.
+    fn decode_hex(s: &str) -> Vec<u8> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
+    }
+
+    /// Known-answer test against the NIST SP 800-38A (2001) Appendix F.2.1
+    /// "CBC-AES128.Encrypt" test vector, cross-checked independently with
+    /// `openssl enc -aes-128-cbc -nopad`.
+    ///
+    /// The vector itself is raw CBC with no padding, so only the first 4
+    /// blocks (64 bytes) of our output are comparable: `aes_encrypt` always
+    /// appends a full PKCS#7 padding block since the 64-byte input is
+    /// already block-aligned.
+    #[test]
+    fn test_aes_encrypt_matches_nist_sp800_38a_f_2_1_vector() {
+        let key = decode_hex("2B7E151628AED2A6ABF7158809CF4F3C");
+        let iv = decode_hex("000102030405060708090A0B0C0D0E0F");
+        let plaintext = decode_hex(
+            "6BC1BEE22E409F96E93D7E117393172AAE2D8A571E03AC9C9EB76FAC45AF8E5130C81C46A35CE411E5FBC1191A0A52EFF69F2445DF4F9B17AD2B417BE66C3710",
+        );
+        let expected_ciphertext = decode_hex(
+            "7649ABAC8119B246CEE98E9B12E9197D5086CB9B507219EE95DB113A917678B273BED6B8E3C1743B7116E69E222295163FF1CAA1681FAC09120ECA307586E1A7",
+        );
+
+        let encrypted = aes_encrypt(key, iv, plaintext).unwrap();
+        assert_eq!(&encrypted[..64], expected_ciphertext.as_slice());
+    }
 }
