@@ -2,6 +2,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import Button from "../../components/tavern-base-ui/button/Button";
 import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
 import { HostsTable } from "./HostsTable";
+import { AddTagToAll } from "./AddTagToAll";
 import { useHostIds } from "./useHostIds";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { PageNavItem } from "../../utils/enums";
@@ -15,6 +16,7 @@ const Hosts = () => {
         error,
         hasMore,
         loadMore,
+        refetch,
     } = useHostIds();
     const { openModal } = useCreateQuestModal();
 
@@ -43,6 +45,12 @@ const Hosts = () => {
                 loading={initialLoading}
                 error={error}
                 sortType={PageNavItem.hosts}
+                actions={
+                    <AddTagToAll
+                        totalCount={data?.hosts?.totalCount}
+                        onComplete={() => refetch()}
+                    />
+                }
                 table={
                     <HostsTable
                         hostIds={hostIds}
