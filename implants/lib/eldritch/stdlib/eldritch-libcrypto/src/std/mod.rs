@@ -49,7 +49,7 @@ impl CryptoLibrary for StdCryptoLibrary {
         StdBase64Library.encode(content, encode_type)
     }
 
-    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<Vec<u8>, String> {
         StdBase64Library.decode(content, encode_type)
     }
 
