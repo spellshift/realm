@@ -2458,6 +2458,14 @@ impl StdlibIndex {
             "Evaluates an Eldritch code string in the current interpreter context.",
         );
         add_builtin(
+            "Exception",
+            vec![ParamSpec::opt("message", "Any", "\"\"")],
+            "Exception",
+            true,
+            false,
+            "Constructs an exception value and represents the global exception type for `try`/`except` blocks.",
+        );
+        add_builtin(
             "fail",
             vec![ParamSpec::req("message", "str")],
             "None",

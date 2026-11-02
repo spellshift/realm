@@ -104,6 +104,38 @@ fn find_in_stmt(stmt: &Stmt, offset: usize) -> Option<Node<'_>> {
             }
             find_node_at_offset(body, offset)
         }
+        StmtKind::Try {
+            body,
+            handlers,
+            else_branch,
+            finally_branch,
+        } => {
+            if let Some(n) = find_node_at_offset(body, offset) {
+                return Some(n);
+            }
+            for handler in handlers {
+                if let Some(exc_type) = &handler.exception_type
+                    && let Some(n) = find_in_expr(exc_type, offset)
+                {
+                    return Some(n);
+                }
+                if let Some(n) = find_node_at_offset(&handler.body, offset) {
+                    return Some(n);
+                }
+            }
+            if let Some(else_stmts) = else_branch
+                && let Some(n) = find_node_at_offset(else_stmts, offset)
+            {
+                return Some(n);
+            }
+            if let Some(finally_stmts) = finally_branch
+                && let Some(n) = find_node_at_offset(finally_stmts, offset)
+            {
+                return Some(n);
+            }
+            None
+        }
+        StmtKind::Raise(Some(expr)) => find_in_expr(expr, offset),
         _ => None,
     }
 }
