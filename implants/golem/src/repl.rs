@@ -256,6 +256,40 @@ mod tests {
         assert_eq!(map_key(repeat), None);
     }
 
+    // Held keys must still auto-repeat: without keyboard-enhancement mode
+    // (which golem does not enable), a held key arrives as repeated `Press`
+    // events followed by a single `Release`. Every press must yield input.
+    #[test]
+    fn map_key_held_key_auto_repeat() {
+        let inputs: Vec<Input> = (0..5)
+            .map(|_| key_with_kind('x', KeyEventKind::Press))
+            .chain(std::iter::once(key_with_kind(
+                'x',
+                KeyEventKind::Release,
+            )))
+            .filter_map(map_key)
+            .collect();
+        assert_eq!(inputs.len(), 5);
+        assert!(inputs.iter().all(|i| *i == Input::Char('x')));
+    }
+
+    // Simulates a real Windows console event stream for typing "hello":
+    // (press, release) per keystroke, including the doubled "ll". Each press
+    // must yield exactly one input and each release none, so fast repeated
+    // characters keep working without duplicating.
+    #[test]
+    fn map_key_windows_press_release_stream_yields_single_inputs() {
+        use KeyEventKind::{Press, Release};
+        let inputs: Vec<Input> = ['h', 'e', 'l', 'l', 'o']
+            .into_iter()
+            .flat_map(|c| [key_with_kind(c, Press), key_with_kind(c, Release)])
+            .filter_map(map_key)
+            .collect();
+        let expected: Vec<Input> =
+            ['h', 'e', 'l', 'l', 'o'].into_iter().map(Input::Char).collect();
+        assert_eq!(inputs, expected);
+    }
+
     #[test]
     fn map_key_release_does_not_double_process_control_keys() {
         let enter_press = KeyEvent::new_with_kind_and_state(
