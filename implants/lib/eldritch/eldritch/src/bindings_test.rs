@@ -184,7 +184,7 @@ fn test_scan_bindings() {
 
 #[test]
 fn test_ssh_bindings() {
-    check_bindings("ssh", &["copy", "deploy", "exec"]);
+    check_bindings("ssh", &["copy", "deploy", "exec", "session"]);
 }
 
 #[test]
