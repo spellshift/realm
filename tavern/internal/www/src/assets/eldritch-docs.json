@@ -1523,8 +1523,8 @@
     "deprecated": false
   },
   "net.udp": {
-    "signature": "net.udp(address: str, port: int, data: str) -> str",
-    "description": "Sends arbitrary data to a host via UDP and waits for a response.\n\n**Parameters**\n- `address` (`str`): Target address.\n- `port` (`int`): Target port.\n- `data` (`str`): Data to send.\n\n**Returns**\n- `str`: The response data.",
+    "signature": "net.udp(address: str, port: int, data: str, timeout: Optional<int> = None) -> str",
+    "description": "Sends arbitrary data to a host via UDP and waits for a response.\n\n**Parameters**\n- `address` (`str`): Target address.\n- `port` (`int`): Target port.\n- `data` (`str`): Data to send.\n- `timeout` (`Option<int>`): Optional timeout in seconds (defaults to 3).\n\n**Returns**\n- `str`: The response data, or empty string if no reply was received.",
     "kind": "function",
     "module": "net",
     "params": [
@@ -1539,6 +1539,11 @@
       {
         "name": "data",
         "type": "str"
+      },
+      {
+        "name": "timeout",
+        "type": "Optional<int>",
+        "defaultValue": "None"
       }
     ],
     "returnType": "str",
