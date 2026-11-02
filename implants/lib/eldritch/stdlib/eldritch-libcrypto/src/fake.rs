@@ -1,5 +1,5 @@
 use super::CryptoLibrary;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::vec::Vec;
 use eldritch_core::{Value, call_bound_method};
 use eldritch_libaes::{AesLibrary, fake::AesLibraryFake};
@@ -49,10 +49,8 @@ impl CryptoLibrary for CryptoLibraryFake {
         Base64LibraryFake.encode(content, encode_type)
     }
 
-    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
-        Base64LibraryFake
-            .decode(content, encode_type)
-            .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<Vec<u8>, String> {
+        Base64LibraryFake.decode(content, encode_type)
     }
 
     fn is_json(&self, content: String) -> Result<bool, String> {
