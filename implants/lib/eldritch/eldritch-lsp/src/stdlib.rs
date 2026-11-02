@@ -1147,6 +1147,7 @@ impl StdlibIndex {
                         ParamSpec::req("address", "str"),
                         ParamSpec::req("port", "int"),
                         ParamSpec::req("data", "Bytes | str"),
+                        ParamSpec::opt("timeout", "Optional[int]", "None"),
                     ],
                     "str",
                     None,

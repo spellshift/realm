@@ -116,7 +116,7 @@ impl PivotLibrary for StdPivotLibrary {
     ) -> Result<String, String> {
         match protocol.as_str() {
             "tcp" => StdNetLibrary.tcp(address, port, data),
-            "udp" => StdNetLibrary.udp(address, port, data),
+            "udp" => StdNetLibrary.udp(address, port, data, None),
             _ => Err("Protocol not supported please use: udp or tcp.".to_string()),
         }
     }
