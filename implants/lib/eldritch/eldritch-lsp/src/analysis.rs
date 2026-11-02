@@ -647,6 +647,45 @@ impl<'a> SemanticAnalyzer<'a> {
                 }
             }
             StmtKind::Pass | StmtKind::Error(_) => {}
+            StmtKind::Try {
+                body,
+                handlers,
+                else_branch,
+                finally_branch,
+            } => {
+                self.analyze_stmts_in_scopes(body, scopes);
+                for handler in handlers {
+                    if let Some(exc_type) = &handler.exception_type {
+                        self.analyze_expr(exc_type, scopes);
+                    }
+                    if let Some(name) = &handler.name {
+                        self.check_shadowing(name, handler.span, false);
+                        let var_info = UserVarInfo {
+                            name: name.clone(),
+                            inferred_type: Some("str".to_string()),
+                            def_span: handler.span,
+                            is_top_level: scopes.len() == 1,
+                            is_param: false,
+                        };
+                        if let Some(s) = scopes.last_mut() {
+                            s.vars.insert(name.clone(), var_info.clone());
+                        }
+                        self.all_variables.entry(name.clone()).or_insert(var_info);
+                    }
+                    self.analyze_stmts_in_scopes(&handler.body, scopes);
+                }
+                if let Some(else_stmts) = else_branch {
+                    self.analyze_stmts_in_scopes(else_stmts, scopes);
+                }
+                if let Some(finally_stmts) = finally_branch {
+                    self.analyze_stmts_in_scopes(finally_stmts, scopes);
+                }
+            }
+            StmtKind::Raise(expr_opt) => {
+                if let Some(expr) = expr_opt {
+                    self.analyze_expr(expr, scopes);
+                }
+            }
         }
     }
 
@@ -1545,7 +1584,7 @@ fn extract_docstring(body: &[Stmt], line_index: &LineIndex, def_span: Span) -> O
 
 fn is_terminating_stmt(stmt: &Stmt) -> bool {
     match &stmt.kind {
-        StmtKind::Return(_) | StmtKind::Break | StmtKind::Continue => true,
+        StmtKind::Return(_) | StmtKind::Break | StmtKind::Continue | StmtKind::Raise(_) => true,
         StmtKind::Expression(expr) => {
             if let ExprKind::Call(callee, _) = &expr.kind {
                 if let ExprKind::Identifier(name) = &callee.kind {
@@ -1835,6 +1874,27 @@ pub fn complete_at(
             "Continue to next loop iteration",
         ),
         ("pass", CompletionItemKind::KEYWORD, "No-op statement"),
+        (
+            "try",
+            CompletionItemKind::KEYWORD,
+            "Exception handling try block",
+        ),
+        (
+            "except",
+            CompletionItemKind::KEYWORD,
+            "Exception handling except block",
+        ),
+        (
+            "finally",
+            CompletionItemKind::KEYWORD,
+            "Exception handling finally block",
+        ),
+        (
+            "as",
+            CompletionItemKind::KEYWORD,
+            "Alias / variable binding",
+        ),
+        ("raise", CompletionItemKind::KEYWORD, "Raise an exception"),
         ("and", CompletionItemKind::KEYWORD, "Logical AND operator"),
         ("or", CompletionItemKind::KEYWORD, "Logical OR operator"),
         ("not", CompletionItemKind::KEYWORD, "Logical NOT operator"),

@@ -15,7 +15,7 @@ mod token;
 // Re-export core types
 pub use analysis::find_node_at_offset;
 pub use ast::{
-    Argument, Environment, ExceptClause, ExprKind, FStringSegment, ForeignValue, Param, Stmt,
+    Argument, Environment, ExceptClause, Expr, ExprKind, FStringSegment, ForeignValue, Param, Stmt,
     StmtKind, Value,
 };
 pub use interpreter::builtins::pprint::pretty_format;

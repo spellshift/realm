@@ -11,6 +11,7 @@ use spin::RwLock;
 
 // Resolve circular reference for ForeignValue signature
 use crate::interpreter::Interpreter;
+use crate::interpreter::error::EldritchError;
 
 #[derive(Debug)]
 pub struct Environment {
@@ -18,6 +19,7 @@ pub struct Environment {
     pub values: BTreeMap<String, Value>,
     pub printer: Arc<dyn Printer + Send + Sync>,
     pub libraries: BTreeSet<String>,
+    pub active_exception: Option<EldritchError>,
 }
 
 #[derive(Debug, Clone)]

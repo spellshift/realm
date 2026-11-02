@@ -454,3 +454,196 @@ fn test_exception_builtin_and_analysis() {
     let node = eldritch_core::analysis::find_node_at_offset(&stmts, 18);
     assert!(node.is_some());
 }
+
+#[test]
+fn test_nested_raises_and_scopes() {
+    // 1. In-flight exception in try/finally re-raised by bare raise in finally
+    assert::pass(
+        r#"
+        m = ""
+        try:
+            try:
+                raise Exception("one")
+            finally:
+                raise
+        except Exception as e:
+            m = e
+        assert_eq(m, "one")
+    "#,
+    );
+
+    // 2. Expression evaluation of the above
+    let mut interp = eldritch_core::Interpreter::new();
+    let res = interp
+        .interpret(
+            r#"
+try:
+    try:
+        raise Exception("one")
+    finally:
+        raise
+except Exception as e:
+    m = e
+m
+"#,
+        )
+        .unwrap();
+    assert_eq!(res, eldritch_core::Value::String("one".to_string()));
+
+    // 3. Inner function call does not inherit active exception from caller
+    assert::pass(
+        r#"
+        def inner():
+            try:
+                raise
+            except Exception as e:
+                return e
+
+        def outer():
+            try:
+                raise Exception("root")
+            except Exception:
+                return inner()
+
+        assert_eq(outer(), "No active exception to reraise")
+    "#,
+    );
+
+    // 4. Expression evaluation of outer()
+    let mut interp2 = eldritch_core::Interpreter::new();
+    let res2 = interp2
+        .interpret(
+            r#"
+def inner():
+    try:
+        raise
+    except Exception as e:
+        return e
+
+def outer():
+    try:
+        raise Exception("root")
+    except Exception:
+        return inner()
+
+outer()
+"#,
+        )
+        .unwrap();
+    assert_eq!(
+        res2,
+        eldritch_core::Value::String("No active exception to reraise".to_string())
+    );
+
+    // 5. Outer can still re-raise its own exception after inner returns
+    assert::pass(
+        r#"
+        def inner():
+            try:
+                raise
+            except Exception as e:
+                return e
+
+        def outer():
+            try:
+                raise Exception("root")
+            except Exception:
+                inner_res = inner()
+                assert_eq(inner_res, "No active exception to reraise")
+                raise
+
+        caught = ""
+        try:
+            outer()
+        except Exception as e:
+            caught = e
+        assert_eq(caught, "root")
+    "#,
+    );
+
+    // 6. Bare raise in finally with no active exception in flight
+    assert::pass(
+        r#"
+        saw = ""
+        try:
+            try:
+                x = 1
+            finally:
+                raise
+        except Exception as e:
+            saw = e
+        assert_eq(saw, "No active exception to reraise")
+    "#,
+    );
+
+    // 7. Bare raise in finally when exception was already handled
+    assert::pass(
+        r#"
+        saw = ""
+        try:
+            try:
+                raise Exception("handled")
+            except Exception:
+                pass
+            finally:
+                raise
+        except Exception as e:
+            saw = e
+        assert_eq(saw, "No active exception to reraise")
+    "#,
+    );
+
+    // 8. Bare raise in finally when except raised a new exception
+    assert::pass(
+        r#"
+        saw = ""
+        try:
+            try:
+                raise Exception("first")
+            except Exception:
+                raise Exception("second")
+            finally:
+                raise
+        except Exception as e:
+            saw = e
+        assert_eq(saw, "second")
+    "#,
+    );
+
+    // 9. Nested try-finally inside finally
+    assert::pass(
+        r#"
+        saw = ""
+        try:
+            try:
+                raise Exception("one")
+            finally:
+                try:
+                    raise Exception("nested")
+                except Exception:
+                    pass
+                raise
+        except Exception as e:
+            saw = e
+        assert_eq(saw, "one")
+    "#,
+    );
+
+    // 10. Local function closure does not inherit active exception
+    assert::pass(
+        r#"
+        def outer():
+            def inner():
+                try:
+                    raise
+                except Exception as e:
+                    return e
+            try:
+                raise Exception("root")
+            except Exception:
+                return inner()
+
+        assert_eq(outer(), "No active exception to reraise")
+    "#,
+    );
+}

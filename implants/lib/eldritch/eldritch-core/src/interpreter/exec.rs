@@ -89,11 +89,13 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                 // Scope per iteration to prevent leaking variables
                 let parent_env = interp.env.clone();
                 let printer = parent_env.read().printer.clone();
+                let parent_active_exception = parent_env.read().active_exception.clone();
                 let new_env = Arc::new(RwLock::new(Environment {
                     parent: Some(parent_env.clone()),
                     values: BTreeMap::new(),
                     printer,
                     libraries: BTreeSet::new(),
+                    active_exception: parent_active_exception,
                 }));
                 interp.env = new_env;
 
@@ -184,9 +186,9 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
                                     interp
                                         .assign_variable(name, Value::String(err.message.clone()));
                                 }
-                                let prev_exception = interp.active_exception.replace(err.clone());
+                                let prev_exception = interp.set_active_exception(Some(err.clone()));
                                 handler_result = execute_stmts(interp, &handler.body);
-                                interp.active_exception = prev_exception;
+                                interp.set_active_exception(prev_exception);
                                 break;
                             }
                             Ok(false) => continue,
@@ -204,7 +206,15 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
 
             if let Some(finally_stmts) = finally_branch {
                 let saved_flow = core::mem::replace(&mut interp.flow, Flow::Next);
+                let prev_exception = if let Err(in_flight_err) = &pending_result {
+                    interp.set_active_exception(Some(in_flight_err.clone()))
+                } else {
+                    None
+                };
                 let finally_result = execute_stmts(interp, finally_stmts);
+                if pending_result.is_err() {
+                    interp.set_active_exception(prev_exception);
+                }
                 match finally_result {
                     Err(finally_err) => {
                         interp.flow = Flow::Next;
@@ -224,7 +234,7 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
         }
         StmtKind::Raise(expr_opt) => match expr_opt {
             None => {
-                if let Some(err) = interp.active_exception.clone() {
+                if let Some(err) = interp.active_exception() {
                     return Err(err);
                 }
                 return interp.error(
