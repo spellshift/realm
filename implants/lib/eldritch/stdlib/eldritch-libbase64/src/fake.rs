@@ -1,6 +1,7 @@
 use super::Base64Library;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::String;
+use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
@@ -8,11 +9,11 @@ use eldritch_macros::eldritch_library_impl;
 pub struct Base64LibraryFake;
 
 impl Base64Library for Base64LibraryFake {
-    fn decode(&self, content: String, _encode_type: Option<String>) -> Result<String, String> {
+    fn decode(&self, content: String, _encode_type: Option<String>) -> Result<Vec<u8>, String> {
         if let Some(stripped) = content.strip_prefix("B64:") {
-            Ok(stripped.to_string())
+            Ok(stripped.as_bytes().to_vec())
         } else {
-            Ok(format!("DECODED:{}", content))
+            Ok(format!("DECODED:{}", content).into_bytes())
         }
     }
 
@@ -31,6 +32,6 @@ mod tests {
         let orig = "hello world".to_string();
         let b64_enc = b64.encode(orig.clone(), None).unwrap();
         let b64_dec = b64.decode(b64_enc, None).unwrap();
-        assert_eq!(orig, b64_dec);
+        assert_eq!(orig.as_bytes(), b64_dec.as_slice());
     }
 }
