@@ -376,6 +376,8 @@ fn test_raise_statement() {
 
     // raising non-exception fails with TypeError
     assert::fail("raise 123", "exceptions must derive from Exception");
+    assert::fail("raise \"string\"", "exceptions must derive from Exception");
+    assert::fail("raise f\"string\"", "exceptions must derive from Exception");
 }
 
 #[test]
@@ -386,6 +388,16 @@ fn test_invalid_except_type_and_syntax() {
         try:
             1 / 0
         except 123:
+            pass
+    "#,
+        "catching classes that do not inherit from Exception is not allowed",
+    );
+
+    assert::fail(
+        r#"
+        try:
+            1 / 0
+        except (Exception, 123):
             pass
     "#,
         "catching classes that do not inherit from Exception is not allowed",
@@ -408,6 +420,18 @@ fn test_invalid_except_type_and_syntax() {
             x = 1
     "#,
         "Expected 'except' or 'finally' after 'try' block.",
+    );
+
+    assert::fail(
+        r#"
+        try:
+            x = 1
+        except:
+            pass
+        except Exception:
+            pass
+    "#,
+        "default 'except:' must be last",
     );
 
     assert::fail(

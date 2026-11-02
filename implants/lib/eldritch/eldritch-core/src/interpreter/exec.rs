@@ -245,6 +245,16 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
             }
             Some(expr) => {
                 let val = evaluate(interp, expr)?;
+                if matches!(
+                    expr.kind,
+                    ExprKind::Literal(Value::String(_)) | ExprKind::FString(_)
+                ) {
+                    return interp.error(
+                        EldritchErrorKind::TypeError,
+                        "exceptions must derive from Exception",
+                        stmt.span,
+                    );
+                }
                 match val {
                     Value::String(msg) => {
                         return interp.error(EldritchErrorKind::RuntimeError, &msg, stmt.span);
@@ -673,12 +683,13 @@ fn matches_exception_type(
             }
         }
         Value::Tuple(elements) => {
+            let mut matched = false;
             for elem in elements {
                 if matches_exception_type(interp, elem, err, span)? {
-                    return Ok(true);
+                    matched = true;
                 }
             }
-            Ok(false)
+            Ok(matched)
         }
         _ => interp.error(
             EldritchErrorKind::TypeError,

@@ -25,17 +25,17 @@
     ],
     "onEnterRules": [
         {
-            "beforeText": "^\\s*(?:def|for|if|elif|else).*?:\\s*(?:#.*)?$",
+            "beforeText": "^\\s*(?:def|for|if|elif|else|try|except|finally).*?:\\s*(?:#.*)?$",
             "action": { "indent": "indent" }
         },
         {
-            "beforeText": "^\\s*(?:return|break|continue|pass)\\b.*$",
+            "beforeText": "^\\s*(?:return|break|continue|pass|raise)\\b.*$",
             "action": { "indent": "outdent" }
         }
     ],
     "indentationRules": {
-        "increaseIndentPattern": "^\\s*(?:def|for|if|elif|else)\\b.*:\\s*(?:#.*)?$",
-        "decreaseIndentPattern": "^\\s*(?:elif|else)\\b.*:\\s*(?:#.*)?$"
+        "increaseIndentPattern": "^\\s*(?:def|for|if|elif|else|try|except|finally)\\b.*:\\s*(?:#.*)?$",
+        "decreaseIndentPattern": "^\\s*(?:elif|else|except|finally)\\b.*:\\s*(?:#.*)?$"
     },
     "folding": {
         "offSide": true,

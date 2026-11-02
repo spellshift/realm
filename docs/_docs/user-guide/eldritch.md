@@ -47,7 +47,7 @@ Eldritch currently only supports the [default starlark data types.](https://gith
 
 ## Error handling
 
-Eldritch supports Python-style `try`/`except` blocks (including optional `else` and `finally` clauses, as well as `raise`) to catch and handle runtime errors using the global `Exception` type (or a bare `except:` clause).
+Eldritch supports Python-style `try`/`except` blocks (including optional `else` and `finally` clauses, as well as `raise`) to catch and handle runtime errors using the global `Exception` type (or a bare `except:` / `except as e:` clause).
 
 ```python
 try:

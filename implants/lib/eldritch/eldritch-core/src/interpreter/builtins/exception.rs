@@ -3,10 +3,13 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use spin::RwLock;
 
-/// `Exception([message, ...])`: Constructs an exception value.
+/// `Exception(*args)`: Constructs an exception value.
 ///
 /// **Parameters**
-/// - `message` (Any, optional): The error message or details.
+/// - `*args` (Any): Optional error message or details.
+///
+/// **Returns**
+/// - `str`
 pub fn builtin_exception(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
     match args.len() {
         0 => Ok(Value::String(String::new())),

@@ -3364,6 +3364,18 @@
     "deprecatedOnly": true,
     "replacement": "registry.write"
   },
+  "Exception": {
+    "signature": "Exception(*args: Any) -> str",
+    "description": "Constructs an exception value.\n\n**Parameters**\n- `*args` (Any): Optional error message or details.\n\n**Returns**\n- `str`",
+    "kind": "builtin",
+    "params": [
+      {
+        "name": "*args",
+        "type": "Any"
+      }
+    ],
+    "returnType": "str"
+  },
   "abs": {
     "signature": "abs(x: int | float) -> int | float",
     "description": "Returns the absolute value of a number.\n\n**Parameters**\n- `x` (Int | Float): The number.",
@@ -3461,7 +3473,12 @@
       "break",
       "continue",
       "pass",
-      "lambda"
+      "lambda",
+      "try",
+      "except",
+      "as",
+      "finally",
+      "raise"
     ],
     "booleans": [
       "True",

@@ -281,6 +281,12 @@ impl Parser {
         let mut handlers = Vec::new();
         self.skip_newlines_before(&[TokenKind::Except]);
         while self.match_token(&[TokenKind::Except]) {
+            if handlers
+                .iter()
+                .any(|h: &ExceptClause| h.exception_type.is_none())
+            {
+                return self.error("default 'except:' must be last");
+            }
             let clause_start = self.tokens[self.current - 1].span;
             let mut exception_type = None;
             let mut name = None;

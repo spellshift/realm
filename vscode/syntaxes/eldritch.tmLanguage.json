@@ -106,69 +106,6 @@
                     "patterns": [
                         { "include": "#string-escapes" }
                     ]
-                }
-            ]
-        },
-        "docstring-content": {
-            "patterns": [
-                {
-                    "include": "#string-escape-sequence"
-                },
-                {
-                    "include": "#discouraged-string-line-continuation"
-                }
-            ]
-        },
-        "statement-keyword": {
-            "patterns": [
-                {
-                    "name": "storage.type.function.eldritch",
-                    "match": "\\b(\\s*def)\\b"
-                },
-                {
-                    "name": "keyword.control.flow.eldritch",
-                    "match": "\\b(?<!\\.)(as|break|continue|elif|else|except|finally|for|if|pass|raise|return|try|lambda)\\b"
-                },
-                {
-                    "name": "invalid.illegal.keyword.eldritch",
-                    "match": "\\b(?<!\\.)(class|del|from|global|import|is|nonlocal|while|with|yield)\\b"
-                }
-            ]
-        },
-        "expression-base": {
-            "patterns": [
-                {
-                    "include": "#line-comment"
-                },
-                {
-                    "include": "#literal"
-                },
-                {
-                    "include": "#string"
-                },
-                {
-                    "include": "#illegal-operator"
-                },
-                {
-                    "include": "#operator"
-                },
-                {
-                    "include": "#dictionary-literal"
-                },
-                {
-                    "include": "#subscript-expression"
-                },
-                {
-                    "include": "#list-literal"
-                },
-                {
-                    "include": "#parenthesized-expression"
-                },
-                {
-                    "include": "#function-call"
-                },
-                {
-                    "include": "#builtin-function"
                 },
                 {
                     "name": "string.interpolated.double.eldritch",
@@ -345,7 +282,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.flow.eldritch",
-                    "match": "(?<!\\.)\\b(if|elif|else|for|in|return|break|continue|pass)\\b"
+                    "match": "(?<!\\.)\\b(if|elif|else|for|in|return|break|continue|pass|try|except|finally|raise|as)\\b"
                 },
                 {
                     "name": "storage.type.function.eldritch",
@@ -357,7 +294,7 @@
                 },
                 {
                     "name": "invalid.illegal.keyword.eldritch",
-                    "match": "(?<!\\.)\\b(while|class|try|except|finally|with|yield|async|await|import|from|global|nonlocal|raise|del|load)\\b"
+                    "match": "(?<!\\.)\\b(while|class|with|yield|async|await|import|from|global|nonlocal|del|load)\\b"
                 }
             ]
         },
@@ -381,7 +318,7 @@
             "patterns": [
                 {
                     "name": "support.type.eldritch",
-                    "match": "(?<!\\.)\\b(int|float|bool|str|bytes|Bytes|list|List|dict|Dict|tuple|Tuple|set|Set|Any|Optional|Union|Iterable|Callable|Value)\\b(?!\\s*\\()"
+                    "match": "(?<!\\.)\\b(int|float|bool|str|bytes|Bytes|list|List|dict|Dict|tuple|Tuple|set|Set|Any|Optional|Union|Iterable|Callable|Value|Exception)\\b(?!\\s*\\()"
                 }
             ]
         },
@@ -477,7 +414,7 @@
             "patterns": [
                 {
                     "name": "support.function.builtin.eldritch",
-                    "match": "(?<!\\.)\\b(abs|all|any|assert|assert_eq|bool|bytes|chr|dict|dir|divmod|enumerate|eprint|eval|fail|filter|float|getattr|hasattr|hash|hex|int|isinstance|len|list|map|max|min|oct|ord|pprint|print|range|repr|reversed|set|sorted|str|sum|tuple|type|zip)\\b(?=\\s*\\()"
+                    "match": "(?<!\\.)\\b(Exception|abs|all|any|assert|assert_eq|bool|bytes|chr|dict|dir|divmod|enumerate|eprint|eval|fail|filter|float|getattr|hasattr|hash|hex|int|isinstance|len|list|map|max|min|oct|ord|pprint|print|range|repr|reversed|set|sorted|str|sum|tuple|type|zip)\\b(?=\\s*\\()"
                 }
             ]
         },
