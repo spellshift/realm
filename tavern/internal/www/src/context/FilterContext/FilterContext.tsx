@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { FilterBarOption } from '../../utils/interfacesUI'
+import { FilterBarOption, HostFilterRow } from '../../utils/interfacesUI'
 import { useLocation } from 'react-router-dom'
 
 export enum FilterFieldType {
     BEACON_FIELDS = 'beaconFields',
+    HOST_FILTERS = 'hostFilters',
     TASK_OUTPUT = 'taskOutput',
     QUEST_NAME = 'questName',
     TOME_FIELDS = 'tomeFields',
@@ -13,12 +14,13 @@ export enum FilterFieldType {
     AGENT = "agent"
 }
 
-const STORAGE_KEY = 'realm-filters-v1.1'
+const STORAGE_KEY = 'realm-filters-v1.2'
 
 export type Filters = {
     questName: string,
     taskOutput: string,
     beaconFields: Array<FilterBarOption>,
+    hostFilters: Array<HostFilterRow>,
     tomeFields: Array<FilterBarOption>,
     tomeMultiSearch: string,
     assetName: string,
@@ -33,6 +35,7 @@ const defaultFilters: Filters = {
     questName: "",
     taskOutput: "",
     beaconFields: [],
+    hostFilters: [],
     tomeFields: [],
     tomeMultiSearch: "",
     assetName: "",
@@ -52,6 +55,21 @@ function isValidFilterBarOption(item: any): item is FilterBarOption {
     )
 }
 
+const HOST_FILTER_FIELDS = ['platform', 'transport', 'status', 'service', 'group', 'principal', 'primaryIP', 'externalIP', 'host', 'beacon'];
+const HOST_FILTER_PREDICATES = ['is', 'is-not', 'is-in', 'is-not-in', 'contains', 'does-not-contain'];
+
+function isValidHostFilterRow(item: any): item is HostFilterRow {
+    return (
+        typeof item === 'object' &&
+        item !== null &&
+        typeof item.id === 'string' &&
+        HOST_FILTER_FIELDS.includes(item.field) &&
+        HOST_FILTER_PREDICATES.includes(item.predicate) &&
+        Array.isArray(item.values) &&
+        item.values.every((value: any) => typeof value === 'string')
+    )
+}
+
 function validateStoredFilters(data: any): StoredFilters {
     //If isLocked is not set, reset filters
     if (!data || typeof data !== 'object' || !data.isLocked) {
@@ -67,6 +85,7 @@ function validateStoredFilters(data: any): StoredFilters {
         userId: (v) => typeof v === 'string',
         agentOnly: (v) => typeof v === 'boolean',
         beaconFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
+        hostFilters: (v) => Array.isArray(v) && v.every(isValidHostFilterRow),
         tomeFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
     }
 
@@ -118,6 +137,8 @@ export function calculateFilterCount(filters: Filters, field: FilterFieldType): 
             return filters.agentOnly ? 1 : 0;
         case FilterFieldType.BEACON_FIELDS:
             return filters.beaconFields.length;
+        case FilterFieldType.HOST_FILTERS:
+            return filters.hostFilters.length;
         case FilterFieldType.TOME_FIELDS:
             return filters.tomeFields.length;
         default:

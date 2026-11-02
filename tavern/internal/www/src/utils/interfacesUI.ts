@@ -11,6 +11,35 @@ export interface FilterBarOption {
     name: string;
 }
 
+// Hosts page modular search bar: one row is a Field + Predicate + Value triple.
+// Rows AND together; multi-value predicates OR within the row.
+export type HostFilterField =
+    | 'platform'
+    | 'transport'
+    | 'status'
+    | 'service'
+    | 'group'
+    | 'principal'
+    | 'primaryIP'
+    | 'externalIP'
+    | 'host'
+    | 'beacon';
+
+export type HostFilterPredicate =
+    | 'is'
+    | 'is-not'
+    | 'is-in'
+    | 'is-not-in'
+    | 'contains'
+    | 'does-not-contain';
+
+export interface HostFilterRow {
+    id: string;
+    field: HostFilterField;
+    predicate: HostFilterPredicate;
+    values: string[];
+}
+
 export interface FilterOptionGroup {
     label: string;
     options: FilterBarOption[];

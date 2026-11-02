@@ -6,7 +6,7 @@ import {
     Tooltip,
 } from "@chakra-ui/react";
 
-import { BeaconFilterBar } from "../../beacon-filter-bar";
+import { HOST_FILTER_FIELDS, HostFilterBar, convertLegacyBeaconFilters } from "../../host-filter-bar";
 import Button from "../../tavern-base-ui/button/Button";
 import { EmptyState, EmptyStateType } from "../../tavern-base-ui/EmptyState";
 import { FilterBarOption } from "../../../utils/interfacesUI";
@@ -15,6 +15,10 @@ import { BeaconTable } from "./BeaconTable";
 import { BeaconSelectionStepProps } from "./types";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useFilters } from "../../../context/FilterContext";
+
+// The beacon picker enforces online-only itself, so it gets every field
+// except Status.
+const BEACON_PICKER_FIELDS = HOST_FILTER_FIELDS.filter((field) => field.value !== 'status');
 
 export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen, initialFilters }: BeaconSelectionStepProps) => {
     const { filters } = useFilters();
@@ -27,10 +31,10 @@ export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen, initialFilte
         contextFilters.forEach(f => filterMap.set(f.id, f));
         initial.forEach(f => filterMap.set(f.id, f));
 
-        return Array.from(filterMap.values());
+        return convertLegacyBeaconFilters(Array.from(filterMap.values()));
     }, [filters.beaconFields, initialFilters?.beaconFields]);
 
-    const [typeFilters, setTypeFilters] = useState<FilterBarOption[]>(computedInitialFilters);
+    const [typeFilters, setTypeFilters] = useState(computedInitialFilters);
     const [viewOnlySelected, setViewOnlySelected] = useState(false);
     const [viewOnePerHost, setViewOnePerHost] = useState(false);
 
@@ -40,7 +44,7 @@ export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen, initialFilte
         beaconIds,
         initialLoading,
     } = useOnlineBeaconIds({
-        typeFilters,
+        rows: typeFilters,
         selectedBeaconIds,
         viewOnlySelected,
         viewOnePerHost,
@@ -106,10 +110,11 @@ export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen, initialFilte
             <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="col-span-1 md:col-span-2">
-                        <BeaconFilterBar
+                        <HostFilterBar
                             value={typeFilters}
                             onChange={setTypeFilters}
-                            hideStatusFilter={true}
+                            title="Beacon fields"
+                            fields={BEACON_PICKER_FIELDS}
                         />
                     </div>
                     <div className="flex-1 flex md:flex-col gap-2 flex-row">

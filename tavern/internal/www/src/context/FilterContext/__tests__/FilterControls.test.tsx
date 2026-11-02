@@ -17,6 +17,17 @@ vi.mock('../../../components/beacon-filter-bar', () => ({
   ),
 }));
 
+vi.mock('../../../components/host-filter-bar', () => ({
+  HostFilterBar: ({ onChange, value }: any) => (
+    <div data-testid="host-filter-bar">
+      <span data-testid="host-filter-count">{value.length}</span>
+      <button onClick={() => onChange([{ id: 'row-1', field: 'platform', predicate: 'is', values: ['PLATFORM_LINUX'] }])}>
+        Add Host Filter
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock('../../../components/TomeFilterBar', () => ({
   TomeFilterBar: ({ setFiltersSelected, filtersSelected }: any) => (
     <div data-testid="tome-filter-bar">
@@ -96,14 +107,32 @@ describe('FilterControls', () => {
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
     });
 
-    it('should render only beacon filter for HOST page', () => {
+    it('should render only host filter bar for HOST page', () => {
       render(<TestWrapper path="/hosts" />);
 
-      expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('host-filter-bar')).toBeInTheDocument();
+      expect(screen.queryByTestId('beacon-filter-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('tome-filter-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('user-filter-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Quest name')).not.toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Task output')).not.toBeInTheDocument();
+    });
+
+    it('should update hostFilters when host filter bar changes', async () => {
+      const user = userEvent.setup();
+      render(<TestWrapper path="/hosts" includeDisplay />);
+
+      const getFilters = () => JSON.parse(screen.getByTestId('filters-display').textContent || '{}');
+
+      await user.click(screen.getByText('Add Host Filter'));
+
+      expect(getFilters().hostFilters).toHaveLength(1);
+      expect(getFilters().hostFilters[0]).toMatchObject({
+        field: 'platform',
+        predicate: 'is',
+        values: ['PLATFORM_LINUX'],
+      });
+      expect(screen.getByTestId('popover-button')).toHaveTextContent('Filters (1)');
     });
 
     it('should render beacon, user, and task output filters for TASKS page', () => {
