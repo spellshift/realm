@@ -4,7 +4,7 @@ version = "0.4.1"
 edition = "2024"
 
 [features]
-default = ["fake_bindings"]
+default = []
 stdlib = ["eldritch/stdlib", "eldritch/std"]
 fake_bindings = ["eldritch/fake_bindings"]
 

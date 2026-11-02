@@ -42,10 +42,10 @@ members = [
     "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
     "lib/eldritch/stdlib/eldritch-libchain",
     "lib/eldritch/stdlib/eldritch-libdns",
+    "lib/eldritch/eldritch-wasm",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
-    "lib/eldritch/eldritch-wasm",  # Excluded to prevent fake_bindings from polluting workspace builds
 ]
 resolver = "2"
 
