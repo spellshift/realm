@@ -90,7 +90,7 @@ impl PivotLibrary for PivotLibraryFake {
     ) -> Result<String, String> {
         match protocol.as_str() {
             "tcp" => NetLibraryFake.tcp(address, port, data),
-            "udp" => NetLibraryFake.udp(address, port, data),
+            "udp" => NetLibraryFake.udp(address, port, data, None),
             _ => Err("Protocol not supported please use: udp or tcp.".to_string()),
         }
     }

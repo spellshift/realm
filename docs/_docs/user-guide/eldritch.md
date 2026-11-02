@@ -1147,9 +1147,9 @@ The **net.tcp** method allows a user to send arbitrary data over TCP to a host. 
 
 ### net.udp
 
-`net.udp(address: str, port: int, data: str) -> str`
+`net.udp(address: str, port: int, data: str, timeout: Optional[int] = None) -> str`
 
-The **net.udp** method allows a user to send arbitrary data over UDP to a host. If the server responds, that response will be returned.
+The **net.udp** method allows a user to send arbitrary data over UDP to a host. If the server responds within the timeout period (defaults to 3 seconds), that response will be returned. If no reply is received, an empty string is returned.
 
 ---
 
