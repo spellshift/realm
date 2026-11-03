@@ -616,6 +616,22 @@ The `file` library gives you comprehensive control to interact with files and di
 
 The **file.append** method appends `content` (`Bytes` or `str`) to the file at `path`. If no file exists at `path`, it will create the file with the content.
 
+### file.chmod
+
+`file.chmod(path: str, mode: str) -> None`
+
+The **file.chmod** method changes the permissions of a file or directory, behaving like Go's [`os.Chmod`](https://pkg.go.dev/os#Chmod). `mode` is an octal permission string, optionally prefixed with `0` or `0o` (e.g. `"0755"`, `"755"`, `"0o644"`).
+
+On **Unix**, the full permission bits (including setuid/setgid/sticky) are applied. On **Windows**, only the owner-writable bit (`0o200`) is honored: it controls whether the file's read-only attribute is set or cleared, with all other bits ignored, matching Go's cross-platform behavior.
+
+```python
+# Make a file readable/writable by the owner only
+file.chmod("/tmp/secret.txt", "0600")
+
+# Make a script executable
+file.chmod("/tmp/run.sh", "0755")
+```
+
 ### file.copy
 
 `file.copy(src: str, dst: str) -> None`
@@ -673,10 +689,13 @@ print(file.list("/tmp/some_dir"))
 
 **NOTE:** On systems without a specific time field being tracked, the field is omitted. This means, for example, unix systems with `noatime` set will not have an `accessed` field visible in the `times` sub-Dict.
 
+**NOTE:** On **Linux**, an additional `attributes` field is included: an `lsattr`-style string (e.g. `"----i-------e-------"`) representing the extended filesystem attributes of the file, as read via the `FS_IOC_GETFLAGS` ioctl (see `linux.chattr`). This field is omitted if the underlying filesystem doesn't support these attributes.
+
 ```json
 [
   {
     "absolute_path": "/tmp/some_dir",
+    "attributes": "----i-------e-------", // Linux only
     "file_name": "some_dir",
     "group": "root",
     "modified": "2026-07-12 18:17:39 UTC",
@@ -693,6 +712,7 @@ print(file.list("/tmp/some_dir"))
   },
   {
     "absolute_path": "/tmp/some_dir/some_file",
+    "attributes": "--------------------", // Linux only
     "file_name": "some_file",
     "group": "root",
     "modified": "2026-07-12 18:17:39 UTC",
@@ -853,6 +873,36 @@ The **file.replace** method finds the first string matching a regex pattern in t
 `file.replace_all(path: str, pattern: str, value: str) -> None`
 
 The **file.replace_all** method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+
+### file.stat
+
+`file.stat(path: str) -> Dict`
+
+The **file.stat** method returns a single Dict with file details for exactly one path, behaving like `file.list` but without globbing or expanding directory contents. See `file.list` for the full set of fields returned (including the Linux-only `attributes` field). Returns an error if `path` doesn't exist.
+
+```python
+print(file.stat("/tmp/some_dir/some_file"))
+```
+
+```json
+{
+  "absolute_path": "/tmp/some_dir/some_file",
+  "attributes": "--------------------", // Linux only
+  "file_name": "some_file",
+  "group": "root",
+  "modified": "2026-07-12 18:17:39 UTC",
+  "owner": "root",
+  "permissions": "100664",
+  "size": 5,
+  "times": {
+    "accessed": -2208988800,
+    "changed": 1783880431,
+    "created": 1783880259,
+    "modified": -2208988800
+  },
+  "type": "file"
+}
+```
 
 ### file.tmp
 
@@ -1082,6 +1132,32 @@ False
 ## Linux
 
 The `linux` library provides Linux-specific system operations.
+
+### linux.chattr
+
+`linux.chattr(path: str, attrs: str) -> None`
+
+The **linux.chattr** method changes extended filesystem attributes on a file or directory, behaving like the `chattr` command (ext2/3/4, btrfs, xfs, and other Linux filesystems that support the `FS_IOC_SETFLAGS` ioctl).
+
+`attrs` follows `chattr` syntax:
+
+- `+<attrs>`: Adds the given attributes (e.g. `"+i"` sets immutable).
+- `-<attrs>`: Removes the given attributes (e.g. `"-i"` unsets immutable).
+- `=<attrs>`: Sets the attributes exactly, clearing any others (e.g. `"=ai"`).
+- Operators may be combined in a single string (e.g. `"+i-s"`).
+
+Supported attribute characters: `A` (no atime), `S` (synchronous updates), `D` (synchronous directory updates), `a` (append only), `c` (compression requested), `m` (don't compress), `d` (no dump), `e` (extents), `i` (immutable), `j` (journaled data), `P` (project hierarchy), `s` (secure deletion), `u` (undelete), `t` (no tail-merging), `T` (top of directory hierarchy), `C` (no COW), `x` (DAX), `F` (casefold).
+
+```python
+# Make a file immutable
+linux.chattr("/etc/important.conf", "+i")
+
+# Remove the immutable attribute
+linux.chattr("/etc/important.conf", "-i")
+
+# View the current attributes via file.list
+print(file.list("/etc/important.conf")[0]["attributes"])
+```
 
 ### linux.uname
 

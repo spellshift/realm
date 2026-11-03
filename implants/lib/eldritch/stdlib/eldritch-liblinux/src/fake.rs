@@ -1,11 +1,22 @@
 use super::LinuxLibrary;
 use alloc::collections::BTreeMap;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use eldritch_macros::eldritch_library_impl;
+use spin::Mutex;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 #[eldritch_library_impl(LinuxLibrary)]
-pub struct LinuxLibraryFake;
+pub struct LinuxLibraryFake {
+    attrs: Mutex<BTreeMap<String, String>>,
+}
+
+impl Default for LinuxLibraryFake {
+    fn default() -> Self {
+        Self {
+            attrs: Mutex::new(BTreeMap::new()),
+        }
+    }
+}
 
 impl LinuxLibrary for LinuxLibraryFake {
     fn uname(&self) -> Result<BTreeMap<String, String>, String> {
@@ -18,6 +29,33 @@ impl LinuxLibrary for LinuxLibraryFake {
         map.insert("domainname".into(), "(none)".into());
         Ok(map)
     }
+
+    fn chattr(&self, path: String, attrs: String) -> Result<(), String> {
+        let mut op = attrs.chars();
+        let Some(mode) = op.next() else {
+            return Err("attrs must not be empty".to_string());
+        };
+        if !matches!(mode, '+' | '-' | '=') {
+            return Err("attrs must start with '+', '-', or '='".to_string());
+        }
+        let requested: String = op.collect();
+
+        let mut store = self.attrs.lock();
+        let current = store.entry(path).or_default();
+        match mode {
+            '=' => *current = requested,
+            '+' => {
+                for c in requested.chars() {
+                    if !current.contains(c) {
+                        current.push(c);
+                    }
+                }
+            }
+            '-' => current.retain(|c| !requested.contains(c)),
+            _ => unreachable!(),
+        }
+        Ok(())
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]
@@ -26,9 +64,35 @@ mod tests {
 
     #[test]
     fn test_linux_fake() {
-        let linux = LinuxLibraryFake;
+        let linux = LinuxLibraryFake::default();
         let info = linux.uname().unwrap();
         assert_eq!(info.get("sysname").unwrap(), "Linux");
         assert_eq!(info.get("machine").unwrap(), "x86_64");
+    }
+
+    #[test]
+    fn test_linux_fake_chattr() {
+        let linux = LinuxLibraryFake::default();
+        linux
+            .chattr("/tmp/foo".to_string(), "+i".to_string())
+            .unwrap();
+        assert_eq!(linux.attrs.lock().get("/tmp/foo").unwrap(), "i");
+
+        linux
+            .chattr("/tmp/foo".to_string(), "+a".to_string())
+            .unwrap();
+        let val = linux.attrs.lock().get("/tmp/foo").unwrap().clone();
+        assert!(val.contains('i') && val.contains('a'));
+
+        linux
+            .chattr("/tmp/foo".to_string(), "-i".to_string())
+            .unwrap();
+        assert_eq!(linux.attrs.lock().get("/tmp/foo").unwrap(), "a");
+
+        assert!(
+            linux
+                .chattr("/tmp/foo".to_string(), "i".to_string())
+                .is_err()
+        );
     }
 }

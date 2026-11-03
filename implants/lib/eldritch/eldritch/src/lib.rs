@@ -241,7 +241,7 @@ impl Interpreter {
         #[cfg(feature = "fake_json")]
         self.inner.register_lib(JsonLibraryFake);
         #[cfg(feature = "fake_linux")]
-        self.inner.register_lib(LinuxLibraryFake);
+        self.inner.register_lib(LinuxLibraryFake::default());
         #[cfg(feature = "fake_net")]
         self.inner.register_lib(NetLibraryFake);
         #[cfg(feature = "fake_pivot")]
