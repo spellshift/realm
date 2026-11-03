@@ -1674,6 +1674,32 @@ Status will be equal to the code returned by the command being run and -1 in the
 }
 ```
 
+### ssh.session
+
+`ssh.session(target: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, port: Optional<int>, timeout: Optional<int>) -> <ssh_session>`
+
+The **ssh.session** method opens one persistent SSH connection and returns a session object for running multiple commands over it.
+Unlike `ssh.exec`, which performs a full connect-authenticate-disconnect cycle per call, `ssh.session` authenticates once and reuses the transport, reducing authentication log noise and handshake latency.
+
+- `port` defaults to `22` when omitted or `None`. `timeout` is the connection timeout in seconds and defaults to `3`.
+- `session.exec(command: str) -> Dict` runs a command and returns the same `{stdout, stderr, status}` dictionary as `ssh.exec`.
+- `session.close() -> None` disconnects the transport and is idempotent. Calling `exec` after `close` raises an error, as does `exec` when the server has closed the transport underneath (create a new session in that case).
+
+```python
+s = ssh.session("10.0.0.1", "root", "s3cr3t", None, None, None, None)
+r = s.exec("whoami")
+r["stdout"]
+s.close()
+```
+
+A key-based login reads the private key from a file:
+
+```python
+s = ssh.session("10.0.0.1", "root", None, file.read("/root/.ssh/id_ed25519"), None, None, None)
+s.exec("id")["stdout"]
+s.close()
+```
+
 ---
 
 ## Sys
