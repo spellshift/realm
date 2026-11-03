@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"time"
 
 	"realm.pub/tavern/internal/autogroup"
 	"realm.pub/tavern/internal/autogroup/features"
@@ -104,7 +103,11 @@ func clusterHostsByRole(tasks []*ent.Task, k *int) (hostIDs []int, labels []int,
 		return nil, nil, fmt.Errorf("no %q tasks found -- nothing to group", autogroupTomeName)
 	}
 
-	// Each host's FIRST (earliest) matching task.
+	// Each host's FIRST (earliest-CREATED) matching task, for the
+	// cleanest/least-drifted-from-initial-state process snapshot. Ordered
+	// by CreatedAt specifically, not ExecFinishedAt: a task created early
+	// but slow to execute can finish later than a task created after it,
+	// so comparing finish times can pick a LATER-created task as "first".
 	first := map[int]*ent.Task{}
 	for _, t := range tasks {
 		b := t.Edges.Beacon
@@ -112,7 +115,7 @@ func clusterHostsByRole(tasks []*ent.Task, k *int) (hostIDs []int, labels []int,
 			continue
 		}
 		id := b.Edges.Host.ID
-		if cur, ok := first[id]; !ok || taskTime(t).Before(taskTime(cur)) {
+		if cur, ok := first[id]; !ok || t.CreatedAt.Before(cur.CreatedAt) {
 			first[id] = t
 		}
 	}
@@ -163,12 +166,4 @@ func clusterHostsByRole(tasks []*ent.Task, k *int) (hostIDs []int, labels []int,
 		return nil, nil, fmt.Errorf("clustering failed to produce a grouping for %d host(s)", len(ids))
 	}
 	return ids, labels, nil
-}
-
-// taskTime is when the task finished, or was created if it hasn't finished.
-func taskTime(t *ent.Task) time.Time {
-	if !t.ExecFinishedAt.IsZero() {
-		return t.ExecFinishedAt
-	}
-	return t.CreatedAt
 }

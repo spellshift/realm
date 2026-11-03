@@ -7,13 +7,15 @@ import (
 	"strings"
 )
 
-// baseline_processes.json is the >=90%-of-hosts-per-platform noise list,
-// computed once from our combined historical competition dumps (ists,
-// rmccdc, seccdc, nccdc -- see tavern/internal/autogroup's doc comments
-// for how/why). Each entry's "process" field is in the exact same format
-// processFeatureToken produces (full exe path if the source process had
-// one, lowercased; otherwise the bare process name, lowercased), so it
-// can be compared directly against ProcPath tokens.
+// baseline_processes.json is used at runtime (not just a test fixture):
+// it's compiled into the tavern binary via go:embed below and read by
+// BuildDoc on every call, live, to filter ProcPath. It's the
+// >=90%-of-hosts-per-platform noise list, computed once from our combined
+// historical competition dumps (ists, rmccdc, seccdc, nccdc). Each
+// entry's "process" field is in the exact same format processFeatureToken
+// produces (full exe path if the source process had one, lowercased;
+// otherwise the bare process name, lowercased), so it can be compared
+// directly against ProcPath tokens.
 //
 //go:embed baseline_processes.json
 var baselineProcessesJSON []byte
@@ -56,21 +58,36 @@ func mustLoadBaseline(data []byte) map[string]map[string]bool {
 // every host, since every host has a CPU 0) does. Every kworker/irq/etc.
 // is still noise regardless of which CPU or device it's pinned to, hence
 // the separate name-pattern rule instead of relying on frequency alone.
-var kernelThreadBaseNames = map[string]bool{
-	"kthreadd": true, "kworker": true, "ksoftirqd": true, "migration": true,
-	"cpuhp": true, "idle_inject": true, "watchdog": true, "watchdogd": true,
-	"rcu_gp": true, "rcu_par_gp": true, "rcu_sched": true, "rcu_bh": true,
-	"rcu_preempt": true, "rcu_tasks": true, "rcu_tasks_rude_": true, "rcu_tasks_trace": true,
-	"kdevtmpfs": true, "netns": true, "kauditd": true, "khungtaskd": true,
-	"oom_reaper": true, "writeback": true, "kcompactd": true, "ksmd": true,
-	"khugepaged": true, "kintegrityd": true, "kblockd": true,
-	"blkcg_punt_bio": true, "tpm_dev_wait": true, "ata_sff": true,
-	"edac-poller": true, "devfreq_wq": true, "kswapd": true,
-	"ecryptfs-kthrea": true, "kthrotld": true, "scsi_eh": true, "scsi_tmf": true,
-	"ipv6_addrconf": true, "kstrp": true, "nvme-wq": true, "nvme-reset-wq": true,
-	"nvme-delete-wq": true, "irq": true, "jbd2": true, "kjournald2": true,
-	"dmcrypt_write": true, "xfsalloc": true, "xfs_mru_cache": true,
-	"charger_manager": true, "deferwq": true,
+// Grouped by subsystem (rather than one dense map literal) so adding or
+// removing a name later is a one-line change in the right place.
+var kernelThreadBaseNames = toSet(
+	// scheduler / CPU hotplug
+	"kthreadd", "kworker", "ksoftirqd", "migration", "cpuhp", "idle_inject",
+	"watchdog", "watchdogd",
+	// RCU
+	"rcu_gp", "rcu_par_gp", "rcu_sched", "rcu_bh", "rcu_preempt", "rcu_tasks",
+	"rcu_tasks_rude_", "rcu_tasks_trace",
+	// memory management
+	"kdevtmpfs", "oom_reaper", "writeback", "kcompactd", "ksmd", "khugepaged",
+	"kswapd",
+	// misc core kernel
+	"netns", "kauditd", "khungtaskd", "irq", "charger_manager", "deferwq",
+	// block / storage / filesystem
+	"kintegrityd", "kblockd", "blkcg_punt_bio", "tpm_dev_wait", "ata_sff",
+	"edac-poller", "devfreq_wq", "ecryptfs-kthrea", "kthrotld", "jbd2",
+	"kjournald2", "dmcrypt_write", "xfsalloc", "xfs_mru_cache",
+	// SCSI / networking / NVMe
+	"scsi_eh", "scsi_tmf", "ipv6_addrconf", "kstrp", "nvme-wq",
+	"nvme-reset-wq", "nvme-delete-wq",
+)
+
+// toSet builds a lookup set from a flat, easy-to-edit list of names.
+func toSet(names ...string) map[string]bool {
+	set := make(map[string]bool, len(names))
+	for _, n := range names {
+		set[n] = true
+	}
+	return set
 }
 
 var (

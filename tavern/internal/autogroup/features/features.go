@@ -1,48 +1,16 @@
-// Package features builds per-host bag-of-tokens documents from a host's
-// first "Process list" task, for unsupervised clustering into generic
-// role groups within a single engagement.
+// Package features builds per-host bag-of-tokens feature documents from a
+// host's first "Process list" task, for unsupervised clustering into
+// generic role groups within one engagement.
 //
-// This mirrors the feature set validated interactively against three past
-// competitions' data:
-//   - full executable path of each process, kept as ONE atomic token (not
-//     split into directory components) -- carries OS/install-location
-//     context for free, and fixes a double-counting bug an earlier
-//     name+path-basename version had
-//   - the beacon's principal (the identity the agent is authenticated as
-//     on that host, e.g. "root"/"SYSTEM"/a service account) -- a single
-//     stable per-host value, NOT scanned from the process list (an
-//     earlier version aggregated per-process principals, which let
-//     whichever generic account happened to run the most processes
-//     dominate the TF-IDF weight and drown out the actual signal)
-//   - hostname, tokenized -- a real, always-available field that's often
-//     deliberately descriptive of role; a small denylist strips
-//     placeholder values (localhost, etc.) that would create false
-//     matches between unrelated hosts
-//   - IP octets (last + third) treated as CATEGORICAL lookups, not ordinal
-//     numbers -- confirmed in real data that a fixed octet can denote a
-//     role (e.g. all DNS boxes in one competition's network sat at .248)
-//     but the convention is engagement/template-specific, not a universal
-//     constant. Both the internal and external IP's octets are computed
-//     here; main's defaultSkip picks internal by default or external
-//     with --ext (never both -- adding external IP features on top of
-//     internal measurably hurt clustering)
-//   - full external IP as a "site" token -- computed but unused by
-//     default (see defaultSkip): it hurt accuracy on both benchmark dumps
-//   - platform (OS)
+// Feature blocks: process executable path (full path, one atomic token),
+// beacon principal, tokenized hostname, primary/external IP octets
+// (categorical), external IP as a "site" token (unused by default, see
+// DefaultSkip), and platform. Raw primary IP, process cmd/env/cwd, and
+// process count are deliberately excluded.
 //
-// Deliberately excluded: raw/absolute primary IP (doesn't generalize even
-// within clustering since it's effectively a per-host identifier), process
-// cmd/env/cwd (untested, likely noisy), process count (weak/unused).
-//
-// Before counting into ProcPath, a process token is dropped if it's
-// baseline noise for the host's platform: either it's on the
-// pre-computed, per-platform list of processes seen on >=90% of hosts
-// across our combined historical dumps (baseline_processes.json, embedded
-// in this package -- see baseline.go), or it's a Linux kernel thread by
-// name pattern (kworker/ksoftirqd/cpuhp/irq/etc., including per-CPU and
-// per-device suffixes that will never themselves clear a frequency bar).
-// TF-IDF's idf weighting already softens near-universal terms somewhat,
-// but this removes them outright rather than relying on that alone.
+// Baseline-noise processes are dropped from ProcPath before counting:
+// a precomputed per-platform frequency list plus, on Linux, kernel
+// threads matched by name pattern -- see baseline.go.
 package features
 
 import (
@@ -98,11 +66,10 @@ var (
 // would create FALSE cross-host matches if tokenized naively (e.g. every
 // WSL/container host reporting itself as "localhost" does not mean they
 // share a role).
-var genericHostnames = map[string]bool{
-	"localhost": true, "localhost.localdomain": true, "desktop": true,
-	"pc": true, "host": true, "ubuntu": true, "debian": true,
-	"centos": true, "windows": true, "unknown": true, "": true,
-}
+var genericHostnames = toSet(
+	"localhost", "localhost.localdomain", "desktop", "pc", "host",
+	"ubuntu", "debian", "centos", "windows", "unknown", "",
+)
 
 // genericIPs are loopback/unset addresses that tell us nothing about
 // site/NAT structure.
