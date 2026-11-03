@@ -310,6 +310,7 @@ struct Scope {
     funcs: BTreeMap<String, UserFuncInfo>,
     in_function: bool,
     in_loop: bool,
+    in_exception_handler: bool,
     is_top_level: bool,
 }
 
@@ -320,6 +321,7 @@ impl Scope {
             funcs: BTreeMap::new(),
             in_function: false,
             in_loop: false,
+            in_exception_handler: false,
             is_top_level: true,
         }
     }
@@ -330,6 +332,7 @@ impl Scope {
             funcs: BTreeMap::new(),
             in_function: self.in_function || in_function,
             in_loop: self.in_loop || in_loop,
+            in_exception_handler: self.in_exception_handler,
             is_top_level: false,
         }
     }
@@ -583,6 +586,7 @@ impl<'a> SemanticAnalyzer<'a> {
                     funcs: BTreeMap::new(),
                     in_function: true,
                     in_loop: false,
+                    in_exception_handler: false,
                     is_top_level: false,
                 };
                 let _ = parent;
@@ -647,6 +651,84 @@ impl<'a> SemanticAnalyzer<'a> {
                 }
             }
             StmtKind::Pass | StmtKind::Error(_) => {}
+            StmtKind::Try {
+                body,
+                handlers,
+                else_branch,
+                finally_branch,
+            } => {
+                self.analyze_stmts_in_scopes(body, scopes);
+                for handler in handlers {
+                    if let Some(exc_type) = &handler.exception_type {
+                        self.analyze_expr(exc_type, scopes);
+                        self.validate_except_type_expr(exc_type, scopes);
+                    }
+                    if let Some(name) = &handler.name {
+                        self.check_shadowing(name, handler.span, false);
+                        let var_info = UserVarInfo {
+                            name: name.clone(),
+                            inferred_type: Some("Exception".to_string()),
+                            def_span: handler.span,
+                            is_top_level: scopes.len() == 1,
+                            is_param: false,
+                        };
+                        if let Some(s) = scopes.last_mut() {
+                            s.vars.insert(name.clone(), var_info.clone());
+                        }
+                        self.all_variables.entry(name.clone()).or_insert(var_info);
+                    }
+                    let prev_in_handler = scopes
+                        .last()
+                        .map(|s| s.in_exception_handler)
+                        .unwrap_or(false);
+                    if let Some(s) = scopes.last_mut() {
+                        s.in_exception_handler = true;
+                    }
+                    self.analyze_stmts_in_scopes(&handler.body, scopes);
+                    if let Some(s) = scopes.last_mut() {
+                        s.in_exception_handler = prev_in_handler;
+                    }
+                }
+                if let Some(else_stmts) = else_branch {
+                    self.analyze_stmts_in_scopes(else_stmts, scopes);
+                }
+                if let Some(finally_stmts) = finally_branch {
+                    let prev_in_handler = scopes
+                        .last()
+                        .map(|s| s.in_exception_handler)
+                        .unwrap_or(false);
+                    if let Some(s) = scopes.last_mut() {
+                        s.in_exception_handler = true;
+                    }
+                    self.analyze_stmts_in_scopes(finally_stmts, scopes);
+                    if let Some(s) = scopes.last_mut() {
+                        s.in_exception_handler = prev_in_handler;
+                    }
+                }
+            }
+            StmtKind::Raise(expr_opt) => {
+                if let Some(expr) = expr_opt {
+                    self.analyze_expr(expr, scopes);
+                    self.validate_raise_expr(expr, scopes);
+                } else {
+                    let in_handler = scopes
+                        .last()
+                        .map(|s| s.in_exception_handler)
+                        .unwrap_or(false);
+                    if !in_handler {
+                        self.diagnostics.push(Diagnostic {
+                            range: self.line_index.span_to_range(stmt.span),
+                            severity: Some(DiagnosticSeverity::ERROR),
+                            code: Some(NumberOrString::String("invalid-control-flow".to_string())),
+                            source: Some("eldritch-lsp".to_string()),
+                            message:
+                                "Bare `raise` statement outside of an `except` or `finally` block."
+                                    .to_string(),
+                            ..Default::default()
+                        });
+                    }
+                }
+            }
         }
     }
 
@@ -1447,6 +1529,209 @@ impl<'a> SemanticAnalyzer<'a> {
             _ => None,
         }
     }
+
+    fn validate_except_type_expr(&mut self, expr: &Expr, scopes: &[Scope]) {
+        match &expr.kind {
+            ExprKind::Error(_) => {}
+            ExprKind::Tuple(items) => {
+                for item in items {
+                    self.validate_except_type_expr(item, scopes);
+                }
+            }
+            ExprKind::Identifier(name) => {
+                if !self.is_user_defined(name, scopes) {
+                    if is_exception_type_name(name) {
+                        return;
+                    }
+                    if self.stdlib.is_module(name) || self.stdlib.is_builtin(name) {
+                        self.diagnostics.push(Diagnostic {
+                            range: self.line_index.span_to_range(expr.span),
+                            severity: Some(DiagnosticSeverity::ERROR),
+                            code: Some(NumberOrString::String("invalid-exception-type".to_string())),
+                            source: Some("eldritch-lsp".to_string()),
+                            message: format!(
+                                "Invalid exception type `{}` in `except` clause; expected `Exception` or a tuple of exception types.",
+                                name
+                            ),
+                            ..Default::default()
+                        });
+                        return;
+                    }
+                }
+                if self.lookup_user_func(name, scopes).is_some() {
+                    self.diagnostics.push(Diagnostic {
+                        range: self.line_index.span_to_range(expr.span),
+                        severity: Some(DiagnosticSeverity::ERROR),
+                        code: Some(NumberOrString::String("invalid-exception-type".to_string())),
+                        source: Some("eldritch-lsp".to_string()),
+                        message: format!(
+                            "Invalid exception type `{}` in `except` clause; expected `Exception` or a tuple of exception types.",
+                            name
+                        ),
+                        ..Default::default()
+                    });
+                    return;
+                }
+                if let Some(ty) = self.infer_expr_type(expr, scopes) {
+                    if is_non_exception_type(&ty) && ty != "Tuple" && !ty.starts_with("Tuple[") {
+                        self.diagnostics.push(Diagnostic {
+                            range: self.line_index.span_to_range(expr.span),
+                            severity: Some(DiagnosticSeverity::ERROR),
+                            code: Some(NumberOrString::String(
+                                "invalid-exception-type".to_string(),
+                            )),
+                            source: Some("eldritch-lsp".to_string()),
+                            message: format!(
+                                "Invalid exception type of type `{}` in `except` clause; expected `Exception` or a tuple of exception types.",
+                                ty
+                            ),
+                            ..Default::default()
+                        });
+                    }
+                }
+            }
+            _ => {
+                self.diagnostics.push(Diagnostic {
+                    range: self.line_index.span_to_range(expr.span),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    code: Some(NumberOrString::String("invalid-exception-type".to_string())),
+                    source: Some("eldritch-lsp".to_string()),
+                    message:
+                        "Invalid exception type in `except` clause; expected `Exception` or a tuple of exception types."
+                            .to_string(),
+                    ..Default::default()
+                });
+            }
+        }
+    }
+
+    fn validate_raise_expr(&mut self, expr: &Expr, scopes: &[Scope]) {
+        match &expr.kind {
+            ExprKind::Error(_) => {}
+            ExprKind::Literal(_) | ExprKind::FString(_) => {
+                self.diagnostics.push(Diagnostic {
+                    range: self.line_index.span_to_range(expr.span),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    code: Some(NumberOrString::String("invalid-raise".to_string())),
+                    source: Some("eldritch-lsp".to_string()),
+                    message:
+                        "Exceptions must derive from `Exception` (e.g. `raise Exception(...)`)."
+                            .to_string(),
+                    ..Default::default()
+                });
+            }
+            ExprKind::List(_)
+            | ExprKind::Tuple(_)
+            | ExprKind::Dictionary(_)
+            | ExprKind::Set(_)
+            | ExprKind::ListComp { .. }
+            | ExprKind::DictComp { .. }
+            | ExprKind::SetComp { .. }
+            | ExprKind::Lambda { .. }
+            | ExprKind::BinaryOp(..)
+            | ExprKind::LogicalOp(..)
+            | ExprKind::UnaryOp(..) => {
+                self.diagnostics.push(Diagnostic {
+                    range: self.line_index.span_to_range(expr.span),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    code: Some(NumberOrString::String("invalid-raise".to_string())),
+                    source: Some("eldritch-lsp".to_string()),
+                    message:
+                        "Exceptions must derive from `Exception` (e.g. `raise Exception(...)`)."
+                            .to_string(),
+                    ..Default::default()
+                });
+            }
+            ExprKind::Identifier(name) => {
+                if !self.is_user_defined(name, scopes) {
+                    if is_exception_type_name(name) {
+                        return;
+                    }
+                    if self.stdlib.is_module(name) || self.stdlib.is_builtin(name) {
+                        self.diagnostics.push(Diagnostic {
+                            range: self.line_index.span_to_range(expr.span),
+                            severity: Some(DiagnosticSeverity::ERROR),
+                            code: Some(NumberOrString::String("invalid-raise".to_string())),
+                            source: Some("eldritch-lsp".to_string()),
+                            message: format!(
+                                "Cannot `raise` `{}`; exceptions must derive from `Exception`.",
+                                name
+                            ),
+                            ..Default::default()
+                        });
+                        return;
+                    }
+                }
+                if self.lookup_user_func(name, scopes).is_some() {
+                    self.diagnostics.push(Diagnostic {
+                        range: self.line_index.span_to_range(expr.span),
+                        severity: Some(DiagnosticSeverity::ERROR),
+                        code: Some(NumberOrString::String("invalid-raise".to_string())),
+                        source: Some("eldritch-lsp".to_string()),
+                        message: format!(
+                            "Cannot `raise` function `{}`; exceptions must derive from `Exception`.",
+                            name
+                        ),
+                        ..Default::default()
+                    });
+                    return;
+                }
+                if let Some(ty) = self.infer_expr_type(expr, scopes) {
+                    if is_non_exception_type(&ty) {
+                        self.diagnostics.push(Diagnostic {
+                            range: self.line_index.span_to_range(expr.span),
+                            severity: Some(DiagnosticSeverity::ERROR),
+                            code: Some(NumberOrString::String("invalid-raise".to_string())),
+                            source: Some("eldritch-lsp".to_string()),
+                            message: format!(
+                                "Cannot `raise` value of type `{}`; exceptions must derive from `Exception`.",
+                                ty
+                            ),
+                            ..Default::default()
+                        });
+                    }
+                }
+            }
+            _ => {
+                if let Some(ty) = self.infer_expr_type(expr, scopes) {
+                    if is_non_exception_type(&ty) {
+                        self.diagnostics.push(Diagnostic {
+                            range: self.line_index.span_to_range(expr.span),
+                            severity: Some(DiagnosticSeverity::ERROR),
+                            code: Some(NumberOrString::String("invalid-raise".to_string())),
+                            source: Some("eldritch-lsp".to_string()),
+                            message: format!(
+                                "Cannot `raise` value of type `{}`; exceptions must derive from `Exception`.",
+                                ty
+                            ),
+                            ..Default::default()
+                        });
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn is_exception_type_name(name: &str) -> bool {
+    name == "Exception"
+        || name == "BaseException"
+        || name.ends_with("Error")
+        || name.ends_with("Exception")
+}
+
+fn is_non_exception_type(ty: &str) -> bool {
+    if is_exception_type_name(ty) || ty == "Any" {
+        return false;
+    }
+    matches!(
+        ty,
+        "str" | "int" | "float" | "bool" | "Bytes" | "None" | "List" | "Dict" | "Tuple" | "Set"
+    ) || ty.starts_with("List[")
+        || ty.starts_with("Dict[")
+        || ty.starts_with("Tuple[")
+        || ty.starts_with("Set[")
+        || ty.starts_with("Optional[")
 }
 
 fn format_type_expr(expr: &Expr) -> String {
@@ -1545,7 +1830,7 @@ fn extract_docstring(body: &[Stmt], line_index: &LineIndex, def_span: Span) -> O
 
 fn is_terminating_stmt(stmt: &Stmt) -> bool {
     match &stmt.kind {
-        StmtKind::Return(_) | StmtKind::Break | StmtKind::Continue => true,
+        StmtKind::Return(_) | StmtKind::Break | StmtKind::Continue | StmtKind::Raise(_) => true,
         StmtKind::Expression(expr) => {
             if let ExprKind::Call(callee, _) = &expr.kind {
                 if let ExprKind::Identifier(name) = &callee.kind {
@@ -1835,6 +2120,27 @@ pub fn complete_at(
             "Continue to next loop iteration",
         ),
         ("pass", CompletionItemKind::KEYWORD, "No-op statement"),
+        (
+            "try",
+            CompletionItemKind::KEYWORD,
+            "Exception handling try block",
+        ),
+        (
+            "except",
+            CompletionItemKind::KEYWORD,
+            "Exception handling except block",
+        ),
+        (
+            "finally",
+            CompletionItemKind::KEYWORD,
+            "Exception handling finally block",
+        ),
+        (
+            "as",
+            CompletionItemKind::KEYWORD,
+            "Alias / variable binding",
+        ),
+        ("raise", CompletionItemKind::KEYWORD, "Raise an exception"),
         ("and", CompletionItemKind::KEYWORD, "Logical AND operator"),
         ("or", CompletionItemKind::KEYWORD, "Logical OR operator"),
         ("not", CompletionItemKind::KEYWORD, "Logical NOT operator"),
@@ -1989,6 +2295,8 @@ fn complete_value_methods(stdlib: &StdlibIndex, inferred_ty: Option<&str>) -> Ve
             "Set"
         } else if t.starts_with("Tuple") {
             "Tuple"
+        } else if t == "Exception" {
+            "str"
         } else {
             t
         }
@@ -2658,5 +2966,75 @@ for file in file.list("/tmp"):
         } else {
             panic!("Expected markup hover");
         }
+    }
+
+    #[test]
+    fn test_try_except_and_raise_validation() {
+        let valid_code = r#"
+try:
+    e = Exception("boom")
+    raise e
+except Exception as err:
+    print(err)
+    raise
+except (Exception,):
+    raise Exception("nested")
+finally:
+    pass
+"#;
+        let res_valid = analyze(valid_code);
+        let errors: Vec<_> = res_valid
+            .diagnostics
+            .iter()
+            .filter(|d| d.severity == Some(DiagnosticSeverity::ERROR))
+            .collect();
+        assert!(
+            errors.is_empty(),
+            "Expected 0 errors on valid try/except/raise, got: {:?}",
+            errors
+        );
+
+        let invalid_code = r#"
+raise "string"
+raise f"formatted"
+s = "not an exception"
+raise s
+raise 123
+raise
+try:
+    pass
+except 123:
+    pass
+except (Exception, "bad"):
+    pass
+"#;
+        let res_invalid = analyze(invalid_code);
+        assert_eq!(
+            res_invalid
+                .diagnostics
+                .iter()
+                .filter(|d| d.code == Some(NumberOrString::String("invalid-raise".to_string())))
+                .count(),
+            4
+        );
+        assert_eq!(
+            res_invalid
+                .diagnostics
+                .iter()
+                .filter(
+                    |d| d.code == Some(NumberOrString::String("invalid-control-flow".to_string()))
+                )
+                .count(),
+            1
+        );
+        assert_eq!(
+            res_invalid
+                .diagnostics
+                .iter()
+                .filter(|d| d.code
+                    == Some(NumberOrString::String("invalid-exception-type".to_string())))
+                .count(),
+            2
+        );
     }
 }

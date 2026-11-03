@@ -161,6 +161,7 @@ const BUILTIN_SPECS: Array<[string, Array<[string, string, string?]>, string, st
     ["enumerate", [["iterable", "Iterable"], ["start", "int", "0"]], "List[Tuple[int, Any]]", "Return a list of `(index, element)` tuples from `iterable` starting at `start`."],
     ["eprint", [["*args", "Any"]], "None", "Print values to `stderr`."],
     ["eval", [["source", "str"]], "Any", "Evaluate an Eldritch expression string in the current environment."],
+    ["Exception", [["*args", "Any"]], "Exception", "Construct an exception value for use with `raise` and `try`/`except`."],
     ["fail", [["message", "str"]], "None", "Immediately abort execution with an error `message`."],
     ["filter", [["function", "Callable | None"], ["iterable", "Iterable"]], "List[Any]", "Construct a list from those elements of `iterable` for which `function` returns true."],
     ["float", [["x", "int | float | str", "0.0"]], "float", "Convert a number or string to a floating-point number."],
@@ -193,6 +194,7 @@ const BUILTIN_SPECS: Array<[string, Array<[string, string, string?]>, string, st
 
 const KEYWORDS = [
     "def", "if", "elif", "else", "for", "in", "return", "break", "continue", "pass",
+    "try", "except", "finally", "as", "raise",
     "and", "or", "not", "is", "lambda", "True", "False", "None",
 ];
 
@@ -383,6 +385,10 @@ export function analyzeEldritchText(
                 userVars.set(v, { line: i });
             }
         }
+        const exceptMatch = line.match(/^\s*except\b.*\bas\s+([A-Za-z_][A-Za-z0-9_]*)\s*:/);
+        if (exceptMatch) {
+            userVars.set(exceptMatch[1], { line: i });
+        }
         const assignMatch = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]+)?=/);
         if (assignMatch && !line.trim().startsWith("if ") && !line.trim().startsWith("elif ")) {
             const varName = assignMatch[1];
@@ -482,6 +488,21 @@ export function analyzeEldritchText(
                     });
                 }
             }
+        }
+
+        const badRaiseMatch = codePart.match(/^\s*raise\s+((?:f|r|b)?['"].*|[-+]?\d+.*|True\b|False\b|None\b|\[.*|\{.*)/);
+        if (badRaiseMatch) {
+            const exprCol = rawLine.indexOf(badRaiseMatch[1]);
+            diagnostics.push({
+                range: {
+                    start: { line: i, character: exprCol },
+                    end: { line: i, character: exprCol + badRaiseMatch[1].trimEnd().length },
+                },
+                severity: 1,
+                code: "invalid-raise",
+                source: "eldritch-lsp",
+                message: "Exceptions must derive from `Exception` (e.g. `raise Exception(...)`).",
+            });
         }
     }
 

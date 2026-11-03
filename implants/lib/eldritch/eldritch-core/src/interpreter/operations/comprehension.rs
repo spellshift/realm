@@ -25,11 +25,13 @@ where
     let items = crate::interpreter::eval::to_iterable(interp, &iterable_val, iterable.span)?;
 
     let printer = interp.env.read().printer.clone();
+    let active_exception = interp.env.read().active_exception.clone();
     let comp_env = Arc::new(RwLock::new(Environment {
         parent: Some(interp.env.clone()),
         values: BTreeMap::new(),
         printer,
         libraries: BTreeSet::new(),
+        active_exception,
     }));
     let original_env = interp.env.clone();
     interp.env = comp_env;

@@ -37,6 +37,27 @@ pub trait FileLibrary {
     fn append(&self, path: String, content: Vec<u8>) -> Result<(), String>;
 
     #[eldritch_method]
+    /// Changes the permissions of a file or directory, behaving like Go's `os.Chmod`.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file or directory to modify.
+    /// - `mode` (`str`): The permission mode, as an octal string (e.g. `"0755"`, `"755"`, or
+    ///   `"0o644"`).
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if `mode` isn't a valid octal permission string, the path
+    ///   doesn't exist, or the permissions can't be changed.
+    ///
+    /// **Supported OS**
+    /// - All. On Unix, the full permission bits (including setuid/setgid/sticky) are applied.
+    ///   On Windows, only the owner-writable bit (`0o200`) is honored: it controls whether the
+    ///   file's read-only attribute is set or cleared, matching Go's `os.Chmod` behavior.
+    fn chmod(&self, path: String, mode: String) -> Result<(), String>;
+
+    #[eldritch_method]
     #[eldritch_deprecated(
         "file.compress has been deprecated and will be removed in a future version of eldritch. Please use gzip.compress_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
@@ -327,6 +348,30 @@ pub trait FileLibrary {
     /// **Errors**
     /// - Returns an error string if the file cannot be modified or the regex is invalid.
     fn replace_all(&self, path: String, pattern: String, value: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Returns file details for a single path, behaving like `file.list` but for exactly one
+    /// path (no globbing, and directory contents aren't expanded).
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file or directory path.
+    ///
+    /// **Returns**
+    /// - `Dict`: A dictionary containing file details (see `file.list`):
+    ///   - `file_name` (`str`)
+    ///   - `absolute_path` (`str`)
+    ///   - `size` (`int`)
+    ///   - `owner` (`str`)
+    ///   - `group` (`str`)
+    ///   - `permissions` (`str`)
+    ///   - `modified` (`str`)
+    ///   - `times` (`dict`)
+    ///   - `type` (`str`: "file" or "dir")
+    ///   - `attributes` (`str`, Linux only, optional): `lsattr`-style attribute string.
+    ///
+    /// **Errors**
+    /// - Returns an error string if `path` doesn't exist or its metadata can't be read.
+    fn stat(&self, path: String) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
     /// Creates a temporary file and returns its path.

@@ -2,6 +2,7 @@ use crate::SshLibrary;
 pub mod copy_impl;
 pub mod deploy_impl;
 pub mod exec_impl;
+pub mod session_impl;
 
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
@@ -89,6 +90,28 @@ impl SshLibrary for StdSshLibrary {
             password,
             key,
             key_password,
+            timeout.map(|t| t as u32),
+        )
+        .map_err(|e| e.to_string())
+    }
+
+    fn session(
+        &self,
+        target: String,
+        username: String,
+        password: Option<String>,
+        key: Option<String>,
+        key_password: Option<String>,
+        port: Option<i64>,
+        timeout: Option<i64>,
+    ) -> Result<Value, String> {
+        session_impl::session(
+            target,
+            username,
+            password,
+            key,
+            key_password,
+            port.map(|p| p as i32),
             timeout.map(|t| t as u32),
         )
         .map_err(|e| e.to_string())

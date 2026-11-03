@@ -929,7 +929,7 @@ export function analyzeEldritchCode(code: string): EldritchDiagnostic[] {
             }
 
             // Check missing colon on compound statement headers
-            const headerMatch = trimmedMasked.match(/^(def|if|elif|else|for)\b(.*)$/);
+            const headerMatch = trimmedMasked.match(/^(def|if|elif|else|for|try|except|finally)\b(.*)$/);
             if (headerMatch && !trimmedMasked.endsWith(":")) {
                 // Only flag if brackets on the line are balanced
                 let lineBracketDiff = 0;
@@ -989,8 +989,23 @@ export function analyzeEldritchCode(code: string): EldritchDiagnostic[] {
                     terminatedBlockIndents.add(indent);
                 }
             }
-            if (/^fail\s*\(/.test(trimmedMasked)) {
+            if (/^fail\s*\(/.test(trimmedMasked) || /^raise\b/.test(trimmedMasked)) {
                 terminatedBlockIndents.add(indent);
+            }
+            if (/^raise\b/.test(trimmedMasked)) {
+                const codeNoComment = rawLine.split("#")[0];
+                const badRaiseMatch = codeNoComment.match(/^\s*raise\s+((?:f|r|b)?['"].*|[-+]?\d+.*|True\b|False\b|None\b|\[.*|\{.*)/);
+                if (badRaiseMatch) {
+                    const col = rawLine.indexOf(badRaiseMatch[1]);
+                    diagnostics.push({
+                        line: lineIdx,
+                        startCol: col,
+                        endCol: col + badRaiseMatch[1].trimEnd().length,
+                        severity: "error",
+                        code: "invalid-raise",
+                        message: "Exceptions must derive from 'Exception' (e.g. 'raise Exception(...)').",
+                    });
+                }
             }
 
             // Check shadowed stdlib module assignment (`file = ...`)

@@ -58,6 +58,7 @@ fn test_file_bindings() {
         "file",
         &[
             "append",
+            "chmod",
             "compress",
             "copy",
             "decompress",
@@ -78,6 +79,7 @@ fn test_file_bindings() {
             "remove",
             "replace",
             "replace_all",
+            "stat",
             "temp_file",
             "template",
             "template_str",
@@ -164,7 +166,7 @@ fn test_json_bindings() {
 
 #[test]
 fn test_linux_bindings() {
-    check_bindings("linux", &["uname"]);
+    check_bindings("linux", &["chattr", "uname"]);
 }
 
 #[test]
@@ -184,7 +186,7 @@ fn test_scan_bindings() {
 
 #[test]
 fn test_ssh_bindings() {
-    check_bindings("ssh", &["copy", "deploy", "exec"]);
+    check_bindings("ssh", &["copy", "deploy", "exec", "session"]);
 }
 
 #[test]

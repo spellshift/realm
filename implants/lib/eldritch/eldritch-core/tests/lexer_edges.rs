@@ -325,8 +325,7 @@ fn test_operators_comparison() {
 
 #[test]
 fn test_keywords() {
-    let input =
-        "def if elif else return for in True False None and or not break continue pass lambda";
+    let input = "def if elif else return for in True False None and or not break continue pass lambda try except as finally raise";
     let tokens = lex(input);
     let expected = vec![
         TokenKind::Def,
@@ -346,6 +345,11 @@ fn test_keywords() {
         TokenKind::Continue,
         TokenKind::Pass,
         TokenKind::Lambda,
+        TokenKind::Try,
+        TokenKind::Except,
+        TokenKind::As,
+        TokenKind::Finally,
+        TokenKind::Raise,
         TokenKind::Newline,
         TokenKind::Eof,
     ];

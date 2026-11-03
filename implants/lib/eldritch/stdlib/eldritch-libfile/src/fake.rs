@@ -106,6 +106,23 @@ impl FileLibrary for FileLibraryFake {
         eldritch_libgzip::fake::GzipLibraryFake.compress_file(src, dst)
     }
 
+    fn chmod(&self, path: String, mode: String) -> Result<(), String> {
+        let digits = mode
+            .trim()
+            .strip_prefix("0o")
+            .or_else(|| mode.trim().strip_prefix("0O"))
+            .unwrap_or(mode.trim());
+        u32::from_str_radix(digits, 8).map_err(|e| format!("Invalid mode '{mode}': {e}"))?;
+
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+        if Self::traverse(&mut root, &parts).is_some() {
+            Ok(())
+        } else {
+            Err("Path not found".to_string())
+        }
+    }
+
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
         let mut root = self.root.lock();
         let src_parts = Self::normalize_path(&src);
@@ -353,6 +370,40 @@ impl FileLibrary for FileLibraryFake {
         Ok(())
     }
 
+    fn stat(&self, path: String) -> Result<BTreeMap<String, Value>, String> {
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+
+        let entry =
+            Self::traverse(&mut root, &parts).ok_or_else(|| "Path not found".to_string())?;
+
+        let name = parts.last().cloned().unwrap_or_else(|| "/".to_string());
+        let mut info = BTreeMap::new();
+        info.insert("file_name".to_string(), Value::String(name));
+        info.insert(
+            "absolute_path".to_string(),
+            Value::String(format!("/{}", parts.join("/"))),
+        );
+        info.insert(
+            "type".to_string(),
+            Value::String(
+                match entry {
+                    FsEntry::Dir(_) => "dir",
+                    FsEntry::File(_) => "file",
+                }
+                .to_string(),
+            ),
+        );
+        info.insert(
+            "size".to_string(),
+            Value::Int(match entry {
+                FsEntry::File(d) => d.len() as i64,
+                FsEntry::Dir(_) => 4096,
+            }),
+        );
+        Ok(info)
+    }
+
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
         self.tmp(name)
     }
@@ -483,6 +534,15 @@ mod tests {
         file.mkdir("/home/user/docs".into(), None).unwrap();
         assert!(file.is_dir("/home/user/docs".into()).unwrap());
 
+        // Chmod
+        file.chmod("/home/user/notes.txt".into(), "0644".into())
+            .unwrap();
+        assert!(
+            file.chmod("/home/user/notes.txt".into(), "bogus".into())
+                .is_err()
+        );
+        assert!(file.chmod("/missing.txt".into(), "0644".into()).is_err());
+
         // Copy
         file.copy(
             "/home/user/notes.txt".into(),
@@ -497,6 +557,14 @@ mod tests {
         // Remove
         file.remove("/tmp/notes_backup.txt".into()).unwrap();
         assert!(!file.exists("/tmp/notes_backup.txt".into()).unwrap());
+
+        // Stat
+        let stat_info = file.stat("/home/user/notes.txt".into()).unwrap();
+        assert_eq!(
+            stat_info.get("type").unwrap().to_string(),
+            Value::String("file".to_string()).to_string()
+        );
+        assert!(file.stat("/missing.txt".into()).is_err());
     }
 
     #[test]

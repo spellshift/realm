@@ -105,4 +105,39 @@ pub trait SshLibrary {
         key_password: Option<String>,
         timeout: Option<i64>,
     ) -> Result<BTreeMap<String, Value>, String>;
+
+    #[allow(clippy::too_many_arguments)]
+    #[eldritch_method]
+    /// Creates a persistent SSH session for reuse across multiple commands.
+    ///
+    /// Unlike `exec` which opens a new connection per call, this establishes
+    /// one connection and returns a session object whose `exec()` can be called
+    /// repeatedly. This reduces authentication log noise and handshake latency.
+    ///
+    /// **Parameters**
+    /// - `target` (`str`): The remote host IP or hostname.
+    /// - `username` (`str`): SSH username.
+    /// - `password` (`Option<str>`): SSH password (optional).
+    /// - `key` (`Option<str>`): SSH private key (optional).
+    /// - `key_password` (`Option<str>`): Password for the private key (optional).
+    /// - `port` (`Option<int>`): The SSH port (optional, defaults to 22).
+    /// - `timeout` (`Option<int>`): Connection timeout in seconds (optional, defaults to 3).
+    ///
+    /// **Returns**
+    /// - `<ssh_session>`: A session object with methods:
+    ///   - `exec(command: str) -> Dict{stdout, stderr, status}`
+    ///   - `close() -> None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if connection fails.
+    fn session(
+        &self,
+        target: String,
+        username: String,
+        password: Option<String>,
+        key: Option<String>,
+        key_password: Option<String>,
+        port: Option<i64>,
+        timeout: Option<i64>,
+    ) -> Result<Value, String>;
 }

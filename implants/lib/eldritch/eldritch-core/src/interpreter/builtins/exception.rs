@@ -1,0 +1,19 @@
+use crate::ast::{Environment, Value};
+use alloc::string::{String, ToString};
+use alloc::sync::Arc;
+use spin::RwLock;
+
+/// `Exception(*args)`: Constructs an exception value.
+///
+/// **Parameters**
+/// - `*args` (Any): Optional error message or details.
+///
+/// **Returns**
+/// - `str`
+pub fn builtin_exception(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+    match args.len() {
+        0 => Ok(Value::String(String::new())),
+        1 => Ok(Value::String(args[0].to_string())),
+        _ => Ok(Value::String(Value::Tuple(args.to_vec()).to_string())),
+    }
+}

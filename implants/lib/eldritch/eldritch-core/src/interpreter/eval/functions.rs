@@ -205,6 +205,7 @@ pub(crate) fn call_function(
                     values: BTreeMap::new(),
                     printer,
                     libraries: BTreeSet::new(),
+                    active_exception: None,
                 }));
                 let mut pos_idx = 0;
                 for param in params {
