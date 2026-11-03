@@ -9,6 +9,8 @@
 package autogroup
 
 import (
+	"time"
+
 	"realm.pub/tavern/internal/autogroup/features"
 	"realm.pub/tavern/internal/autogroup/ml"
 )
@@ -23,7 +25,6 @@ const (
 	KMin, KMax, KStep = 4, 40, 2
 	NInit             = 10
 	MaxIter           = 100
-	RNGSeed           = int64(0)
 )
 
 // MinHosts is the fewest hosts with process-list data this package will
@@ -121,17 +122,25 @@ func DefaultSkip(ext bool) map[string]bool {
 
 // ChooseKAuto runs the auto-k silhouette grid search (KMin..KMax, step
 // KStep), clamping KMax below the number of hosts so k never reaches n.
+//
+// Seeded from the current time on each call rather than a fixed constant:
+// this is a one-shot admin action (runHostAutogroup), not a benchmark
+// needing byte-for-byte reproducibility, so a frozen seed would mean
+// every call on the same data forever explores the exact same nInit
+// random restarts -- if that happens to land on a mediocre local optimum,
+// there'd be no way to get a different grouping by simply trying again.
 func ChooseKAuto(X [][]float64) (k int, labels []int, silhouette float64) {
 	kMax := KMax
 	if kMax >= len(X) {
 		kMax = len(X) - 1
 	}
-	return ml.ChooseK(X, KMin, kMax, KStep, NInit, MaxIter, RNGSeed)
+	return ml.ChooseK(X, KMin, kMax, KStep, NInit, MaxIter, time.Now().UnixNano())
 }
 
-// ClusterK runs k-means for a caller-pinned k instead of auto-selecting it.
-// The caller is responsible for validating 0 < k < len(X) first.
+// ClusterK runs k-means for a caller-pinned k instead of auto-selecting
+// it. The caller is responsible for validating 0 < k < len(X) first. See
+// ChooseKAuto's doc comment for why the seed is time-based, not fixed.
 func ClusterK(X [][]float64, k int) (labels []int, silhouette float64) {
-	labels, _ = ml.KMeans(X, k, NInit, MaxIter, RNGSeed)
+	labels, _ = ml.KMeans(X, k, NInit, MaxIter, time.Now().UnixNano())
 	return labels, ml.SilhouetteScore(X, labels)
 }
