@@ -208,6 +208,13 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     // Add Time information
     dict.insert("times".to_string(), get_times_dict(metadata));
 
+    // Attributes (lsattr-style string), Linux only.
+    #[cfg(target_os = "linux")]
+    if let Some(attrs) = eldritch_liblinux::std::attr_impl::read_attributes(&path.to_string_lossy())
+    {
+        dict.insert("attributes".to_string(), Value::String(attrs));
+    }
+
     Ok(dict)
 }
 
@@ -271,6 +278,23 @@ mod tests {
             );
         } else {
             panic!("modified is not a string");
+        }
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn test_list_attributes_linux() {
+        let tmp = NamedTempFile::new().unwrap();
+        let path = tmp.path().to_string_lossy().to_string();
+        let files = list(Some(path)).unwrap();
+        assert_eq!(files.len(), 1);
+
+        let f = &files[0];
+        // `attributes` should be present on Linux (as long as the underlying ioctl is
+        // supported by the filesystem, e.g. ext4). If unsupported (e.g. overlayfs in some
+        // containers), the key is simply omitted.
+        if let Some(Value::String(attrs)) = f.get("attributes") {
+            assert!(!attrs.is_empty());
         }
     }
 }

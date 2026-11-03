@@ -106,6 +106,23 @@ impl FileLibrary for FileLibraryFake {
         eldritch_libgzip::fake::GzipLibraryFake.compress_file(src, dst)
     }
 
+    fn chmod(&self, path: String, mode: String) -> Result<(), String> {
+        let digits = mode
+            .trim()
+            .strip_prefix("0o")
+            .or_else(|| mode.trim().strip_prefix("0O"))
+            .unwrap_or(mode.trim());
+        u32::from_str_radix(digits, 8).map_err(|e| format!("Invalid mode '{mode}': {e}"))?;
+
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+        if Self::traverse(&mut root, &parts).is_some() {
+            Ok(())
+        } else {
+            Err("Path not found".to_string())
+        }
+    }
+
     fn copy(&self, src: String, dst: String) -> Result<(), String> {
         let mut root = self.root.lock();
         let src_parts = Self::normalize_path(&src);
@@ -482,6 +499,15 @@ mod tests {
         // Mkdir
         file.mkdir("/home/user/docs".into(), None).unwrap();
         assert!(file.is_dir("/home/user/docs".into()).unwrap());
+
+        // Chmod
+        file.chmod("/home/user/notes.txt".into(), "0644".into())
+            .unwrap();
+        assert!(
+            file.chmod("/home/user/notes.txt".into(), "bogus".into())
+                .is_err()
+        );
+        assert!(file.chmod("/missing.txt".into(), "0644".into()).is_err());
 
         // Copy
         file.copy(

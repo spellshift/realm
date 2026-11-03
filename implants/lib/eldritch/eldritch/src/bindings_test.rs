@@ -58,6 +58,7 @@ fn test_file_bindings() {
         "file",
         &[
             "append",
+            "chmod",
             "compress",
             "copy",
             "decompress",
@@ -164,7 +165,7 @@ fn test_json_bindings() {
 
 #[test]
 fn test_linux_bindings() {
-    check_bindings("linux", &["uname"]);
+    check_bindings("linux", &["chattr", "uname"]);
 }
 
 #[test]

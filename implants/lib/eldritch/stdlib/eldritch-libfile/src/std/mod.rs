@@ -6,6 +6,7 @@ use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
 pub mod append_impl;
+pub mod chmod_impl;
 pub mod copy_impl;
 pub mod exists_impl;
 pub mod find_impl;
@@ -36,6 +37,10 @@ pub struct StdFileLibrary;
 impl FileLibrary for StdFileLibrary {
     fn append(&self, path: String, content: Vec<u8>) -> Result<(), String> {
         append_impl::append(path, content)
+    }
+
+    fn chmod(&self, path: String, mode: String) -> Result<(), String> {
+        chmod_impl::chmod(path, mode)
     }
 
     fn compress(&self, src: String, dst: String) -> Result<(), String> {
