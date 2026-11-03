@@ -4,16 +4,22 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 )
@@ -23,6 +29,12 @@ import (
 // as the entrypoint, and streams stdout/stderr over the provided channels.
 type DockerExecutor struct {
 	client client.APIClient
+
+	// cacheMu serializes builds that share the same cache volume + key so that
+	// concurrent cargo/go builds don't race inside a shared target directory
+	// (cargo does not support concurrent builds into the same target dir).
+	// The lock is per-builder-process; see lockFor.
+	cacheMu sync.Map // map[string]*sync.Mutex
 }
 
 // NewDockerExecutor creates a DockerExecutor using the provided Docker API client.
@@ -71,6 +83,55 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	defer os.RemoveAll(tmpDir)
 
+	// Configure build caching. When spec.CacheVolume is set, ensure the
+	// Docker volume exists and mount it into the container, pointing the
+	// cargo/go cache directories at it. This persists downloaded dependencies
+	// and intermediate build artifacts across builds so repeated builds don't
+	// rebuild the entire dependency tree from scratch.
+	hostConfig := (*container.HostConfig)(nil)
+	cacheEnv := []string{}
+	unlock := func() {}
+	if spec.CacheVolume != "" {
+		cachePath := spec.CachePath
+		if cachePath == "" {
+			cachePath = DefaultCachePath
+		}
+		if _, err := d.client.VolumeCreate(ctx, volume.CreateOptions{
+			Name:   spec.CacheVolume,
+			Driver: "local",
+			Labels: map[string]string{"realm.buildcache": "true"},
+		}); err != nil {
+			// Volume creation can fail (e.g. storage driver limits, no
+			// permission). Degrade gracefully: build without caching rather
+			// than failing the whole build.
+			slog.WarnContext(ctx, "failed to create build cache volume, building without cache",
+				"task_id", spec.TaskID, "volume", spec.CacheVolume, "error", err)
+		} else {
+			hostConfig = &container.HostConfig{
+				Mounts: []mount.Mount{
+					{
+						Type:   mount.TypeVolume,
+						Source: spec.CacheVolume,
+						Target: cachePath,
+					},
+				},
+			}
+			key := cacheKeyFor(spec)
+			cacheEnv = []string{
+				"REALM_CACHE_DIR=" + cachePath,
+				"CARGO_HOME=" + path.Join(cachePath, "cargo"),
+				"CARGO_TARGET_DIR=" + path.Join(cachePath, "target", key),
+				"GOPATH=" + path.Join(cachePath, "gopath"),
+				"GOMODCACHE=" + path.Join(cachePath, "gopath", "pkg", "mod"),
+				"GOCACHE=" + path.Join(cachePath, "go-cache"),
+			}
+			// Serialize builds sharing a cache key so concurrent cargo
+			// invocations don't race inside the shared target directory.
+			unlock = d.lockFor(spec.CacheVolume + "/" + key)
+		}
+	}
+	defer unlock()
+
 	slog.InfoContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
 
 	// The container entrypoint runs all scripts in /mnt/scripts in order.
@@ -83,15 +144,15 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		&container.Config{
 			Image:      spec.BuildImage,
 			Entrypoint: []string{"/bin/sh", "-c", entrypoint},
-			Env: append(slices.Clone(spec.Env),
+			Env: append(append(slices.Clone(spec.Env),
 				"REALM_WORKSPACE_DIR=/mnt",
 				"REALM_TOMES_DIR=/mnt/tomes",
-			),
+			), cacheEnv...),
 		},
-		nil, // host config
-		nil, // networking config
-		nil, // platform
-		"",  // container name (auto-generated)
+		hostConfig, // host config (may mount the build cache volume)
+		nil,        // networking config
+		nil,        // platform
+		"",         // container name (auto-generated)
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create container: %w", err)
@@ -289,4 +350,39 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 	}
 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)
+}
+
+// lockFor returns an unlock function that serializes builds sharing the same
+// cache key. This prevents concurrent cargo/go builds from racing inside a
+// shared target directory (cargo does not support concurrent builds into the
+// same target dir). The returned function is intended to be deferred so the
+// lock is held for the duration of a Build call. The lock is per-builder-
+// process; separate builder processes sharing the same volume coordinate via
+// cargo's own file locking, which is safe for read-mostly dependency caches.
+func (d *DockerExecutor) lockFor(key string) func() {
+	mu, _ := d.cacheMu.LoadOrStore(key, &sync.Mutex{})
+	m := mu.(*sync.Mutex)
+	m.Lock()
+	return m.Unlock
+}
+
+// cacheKeyFor derives a stable identifier for a build's cache layout from the
+// inputs that determine which dependencies and target artifacts are produced.
+// Builds that share a key can safely reuse the same cache volume contents
+// (e.g. the same CARGO_TARGET_DIR), while different keys get isolated target
+// directories so concurrent builds of distinct profiles don't collide.
+func cacheKeyFor(spec BuildSpec) string {
+	h := sha256.New()
+	for _, s := range []string{
+		spec.BuildImage,
+		spec.TargetOS,
+		spec.SetupScript,
+		spec.BuildScript,
+		spec.PreBuildScript,
+		spec.PostBuildScript,
+	} {
+		_, _ = h.Write([]byte(s))
+		h.Write([]byte{0})
+	}
+	return hex.EncodeToString(h.Sum(nil))[:16]
 }

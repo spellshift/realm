@@ -41,6 +41,7 @@ func TestParseConfigBytes_DefaultsAndPartialOverrides(t *testing.T) {
 	require.Equal(t, &builder.Config{
 		PollInterval: 5, SupportedTargets: []string{"linux", "windows"},
 		IdentityFile: "builder.identity", Upstream: "http://127.0.0.1:8000", Executor: "docker",
+		CacheVolume: "realm-build-cache",
 	}, cfg)
 
 	cfg, err = builder.ParseConfigBytes([]byte("upstream: https://tavern.example.com\npoll_interval: 10\n"))

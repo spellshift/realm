@@ -2,6 +2,7 @@ package executor_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -195,6 +196,75 @@ func TestDockerExecutor_Build_ContextCancellation(t *testing.T) {
 
 	// The build should have been cancelled or errored due to timeout.
 	require.Error(t, buildErr)
+}
+
+func TestDockerExecutor_Build_CacheVolumePersistsAcrossBuilds(t *testing.T) {
+	cli := skipIfNoDocker(t)
+	exec := executor.NewDockerExecutor(cli)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	// Unique volume per test run so we don't collide with other tests or hosts.
+	cacheVolume := fmt.Sprintf("realm-test-cache-%d", time.Now().UnixNano())
+	cachePath := executor.DefaultCachePath
+	marker := "cargo-deps-cached"
+
+	buildScript := fmt.Sprintf(`marker=%s
+echo "REALM_CACHE_DIR=$REALM_CACHE_DIR"
+echo "CARGO_HOME=$CARGO_HOME"
+echo "CARGO_TARGET_DIR=$CARGO_TARGET_DIR"
+echo "GOMODCACHE=$GOMODCACHE"
+mkdir -p "$REALM_CACHE_DIR/deps"
+if [ -f "$REALM_CACHE_DIR/deps/marker" ]; then
+	echo "CACHE_HIT=$(cat "$REALM_CACHE_DIR/deps/marker")"
+else
+	echo "$marker" > "$REALM_CACHE_DIR/deps/marker"
+	echo "CACHE_MISS"
+fi`, marker)
+
+	collect := func(spec executor.BuildSpec) []string {
+		outputCh := make(chan string, 200)
+		errorCh := make(chan string, 200)
+		_, err := exec.Build(ctx, spec, outputCh, errorCh)
+		require.NoError(t, err)
+		var out []string
+		for line := range outputCh {
+			out = append(out, line)
+		}
+		return out
+	}
+
+	// First build should populate the cache volume.
+	first := collect(executor.BuildSpec{
+		TaskID:      101,
+		TargetOS:    "linux",
+		BuildImage:  "alpine:latest",
+		BuildScript: buildScript,
+		CacheVolume: cacheVolume,
+	})
+	require.Contains(t, first, "CACHE_MISS", "first build should miss the cache")
+	// Cache env vars should point at the mounted volume. Each output line is a
+	// separate slice element, so check for the expected substring in the
+	// joined output rather than an exact element match.
+	require.Contains(t, strings.Join(first, "\n"), "REALM_CACHE_DIR="+cachePath)
+	require.Contains(t, strings.Join(first, "\n"), fmt.Sprintf("CARGO_TARGET_DIR=%s/target/", cachePath))
+
+	// Second build reuses the same volume: the marker must persist across
+	// container teardown, proving dependency/artifact caching works.
+	second := collect(executor.BuildSpec{
+		TaskID:      102,
+		TargetOS:    "linux",
+		BuildImage:  "alpine:latest",
+		BuildScript: buildScript,
+		CacheVolume: cacheVolume,
+	})
+	require.Contains(t, second, "CACHE_HIT="+marker, "cache should persist across builds")
+
+	// Clean up the test volume.
+	if err := cli.VolumeRemove(ctx, cacheVolume, true); err != nil {
+		t.Logf("failed to remove test cache volume %q: %v", cacheVolume, err)
+	}
 }
 
 func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
