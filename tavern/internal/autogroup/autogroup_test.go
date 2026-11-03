@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"realm.pub/tavern/internal/autogroup/features"
+	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
 )
 
 func TestDefaultSkip(t *testing.T) {
@@ -19,8 +21,11 @@ func TestDefaultSkip(t *testing.T) {
 // Hosts sharing an internal IP but behind different external IPs are
 // indistinguishable by default, and separable with ext=true.
 func TestVectorizeExtSeparatesRemappedInternalIPs(t *testing.T) {
+	id := 0
 	mk := func(ext string) features.Doc {
-		return features.BuildDoc(features.Host{ID: ext, PrimaryIP: "10.0.0.5", ExternalIP: ext, Platform: "PLATFORM_LINUX"}, nil)
+		id++
+		h := &ent.Host{ID: id, PrimaryIP: "10.0.0.5", ExternalIP: ext, Platform: c2pb.Host_PLATFORM_LINUX}
+		return features.BuildDoc(h, "", nil)
 	}
 	docs := []features.Doc{mk("99.9.1.10"), mk("99.9.1.10"), mk("99.9.2.20"), mk("99.9.2.20")}
 
@@ -38,7 +43,7 @@ func TestVectorizeExtSeparatesRemappedInternalIPs(t *testing.T) {
 }
 
 func TestVectorizeAllBlocksSkippedReturnsNil(t *testing.T) {
-	docs := []features.Doc{features.BuildDoc(features.Host{ID: "a"}, nil)}
+	docs := []features.Doc{features.BuildDoc(&ent.Host{ID: 1}, "", nil)}
 	all := map[string]bool{"procpath": true, "principal": true, "hostname": true, "ipoctet": true, "extipoctet": true, "extipfull": true, "platform": true}
 	if got := Vectorize(docs, all); got != nil {
 		t.Errorf("expected nil, got %v", got)

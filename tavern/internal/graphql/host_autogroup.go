@@ -130,19 +130,7 @@ func clusterHostsByRole(tasks []*ent.Task, k *int) (hostIDs []int, labels []int,
 	for _, id := range ids {
 		t := first[id]
 		h := t.Edges.Beacon.Edges.Host
-		procs := make([]features.Process, 0, len(t.Edges.ReportedProcesses))
-		for _, p := range t.Edges.ReportedProcesses {
-			procs = append(procs, features.Process{Name: p.Name, Path: p.Path})
-		}
-		docs = append(docs, features.BuildDoc(features.Host{
-			ID:         fmt.Sprint(h.ID),
-			Identifier: h.Identifier,
-			Name:       h.Name,
-			PrimaryIP:  h.PrimaryIP,
-			ExternalIP: h.ExternalIP,
-			Platform:   h.Platform.String(),
-			Principal:  t.Edges.Beacon.Principal,
-		}, procs))
+		docs = append(docs, features.BuildDoc(h, t.Edges.Beacon.Principal, t.Edges.ReportedProcesses))
 	}
 
 	minHosts := autogroup.MinHosts

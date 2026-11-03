@@ -1,6 +1,11 @@
 package features
 
-import "testing"
+import (
+	"testing"
+
+	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
+)
 
 func TestIsLinuxKernelThreadMatchesKnownPatterns(t *testing.T) {
 	for _, name := range []string{
@@ -62,13 +67,13 @@ func TestIsBaselineNoiseKthreadRuleOnlyAppliesToLinuxBareNames(t *testing.T) {
 }
 
 func TestBuildDocFiltersBaselineProcesses(t *testing.T) {
-	procs := []Process{
+	procs := []*ent.HostProcess{
 		{Name: "sshd", Path: "/usr/sbin/sshd"},   // real role signal elsewhere, but BSD-baseline
 		{Name: "nginx", Path: "/usr/sbin/nginx"}, // NOT baseline -- should survive
 		{Name: "ksoftirqd/0", Path: ""},          // kthread by pattern
 		{Name: "kworker/3:1", Path: ""},          // kthread, not even on the frequency list
 	}
-	d := BuildDoc(Host{ID: "1", Platform: "PLATFORM_LINUX"}, procs)
+	d := BuildDoc(&ent.Host{ID: 1, Platform: c2pb.Host_PLATFORM_LINUX}, "", procs)
 
 	if _, ok := d.ProcPath["ksoftirqd/0"]; ok {
 		t.Errorf("expected ksoftirqd/0 to be filtered out, got %v", d.ProcPath)
@@ -85,8 +90,8 @@ func TestBuildDocBaselineFilterIsPlatformSpecific(t *testing.T) {
 	// /usr/sbin/sshd is BSD-baseline, not Windows-baseline (Windows has no
 	// such path at all) -- so on an unrecognized/different platform it
 	// must survive.
-	procs := []Process{{Name: "sshd", Path: "/usr/sbin/sshd"}}
-	d := BuildDoc(Host{ID: "1", Platform: "PLATFORM_WINDOWS"}, procs)
+	procs := []*ent.HostProcess{{Name: "sshd", Path: "/usr/sbin/sshd"}}
+	d := BuildDoc(&ent.Host{ID: 1, Platform: c2pb.Host_PLATFORM_WINDOWS}, "", procs)
 	if d.ProcPath["/usr/sbin/sshd"] != 1 {
 		t.Errorf("expected /usr/sbin/sshd to survive on a platform where it isn't baseline, got %v", d.ProcPath)
 	}

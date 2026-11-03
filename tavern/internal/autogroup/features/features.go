@@ -17,34 +17,18 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"realm.pub/tavern/internal/ent"
 )
-
-// Process is the subset of a reported HostProcess this package needs.
-type Process struct {
-	Name string
-	Path string
-}
-
-// Host is the subset of a Host (plus its beacon's principal) this
-// package needs.
-type Host struct {
-	ID         string
-	Identifier string
-	Name       string
-	PrimaryIP  string
-	ExternalIP string
-	Platform   string
-	// Principal is the BEACON's principal (Beacon.principal: "the
-	// identity the beacon is authenticated as"), not a process-list
-	// field -- one stable value per host.
-	Principal string
-}
 
 // Doc is a host's feature document: one bag-of-tokens per feature block,
 // kept separate so each block can be vectorized (and max-feature-capped)
-// independently, matching the validated reference implementation.
+// independently, matching the validated reference implementation. Unlike
+// Host/HostProcess, this has no ent equivalent -- it's a derived,
+// computed aggregate (per-block token counts) built FOR clustering, not a
+// stored entity.
 type Doc struct {
-	HostID     string
+	HostID     int
 	Identifier string
 	Hostname   string
 
@@ -73,7 +57,7 @@ var genericHostnames = toSet(
 
 // genericIPs are loopback/unset addresses that tell us nothing about
 // site/NAT structure.
-var genericIPs = map[string]bool{"127.0.0.1": true, "0.0.0.0": true, "": true}
+var genericIPs = toSet("127.0.0.1", "0.0.0.0", "")
 
 func incr(m map[string]int, k string) {
 	if k == "" {
@@ -125,8 +109,13 @@ func octetSplit(prefix, ip string) (last, third string) {
 }
 
 // BuildDoc builds the feature document for one host from its first
-// process-list snapshot.
-func BuildDoc(h Host, procs []Process) Doc {
+// process-list snapshot. h and procs are the real ent types -- reused
+// directly (rather than package-local copies) so this package stays in
+// sync for free as the ent schema evolves. principal is the BEACON's
+// principal (Beacon.principal: "the identity the beacon is authenticated
+// as"), passed separately since it's not a Host or HostProcess field.
+func BuildDoc(h *ent.Host, principal string, procs []*ent.HostProcess) Doc {
+	platform := h.Platform.String()
 	d := Doc{
 		HostID:      h.ID,
 		Identifier:  h.Identifier,
@@ -137,19 +126,19 @@ func BuildDoc(h Host, procs []Process) Doc {
 		IPOctet:     map[string]int{},
 		ExtIPOctet:  map[string]int{},
 		ExtIPFull:   map[string]int{},
-		Platform:    h.Platform,
+		Platform:    platform,
 	}
 
 	for _, p := range procs {
 		tok := processFeatureToken(p.Name, p.Path)
 		hadPath := strings.TrimSpace(p.Path) != ""
-		if isBaselineNoise(h.Platform, tok, hadPath) {
+		if isBaselineNoise(platform, tok, hadPath) {
 			continue
 		}
 		incr(d.ProcPath, tok)
 	}
-	if h.Principal != "" {
-		d.Principal[strings.ToLower(h.Principal)] = 1
+	if principal != "" {
+		d.Principal[strings.ToLower(principal)] = 1
 	}
 
 	hostnameLower := strings.ToLower(strings.TrimSpace(h.Name))

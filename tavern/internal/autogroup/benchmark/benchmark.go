@@ -18,6 +18,8 @@ import (
 
 	"realm.pub/tavern/internal/autogroup/features"
 	"realm.pub/tavern/internal/autogroup/sqldump"
+	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
 )
 
 // GroundTruthHost is one host with both its feature document and the
@@ -253,18 +255,23 @@ func Load(path, tomeName string) ([]GroundTruthHost, error) {
 			label = serviceTags[0]
 		}
 
-		fProcs := make([]features.Process, 0, len(procs))
+		entProcs := make([]*ent.HostProcess, 0, len(procs))
 		for _, p := range procs {
-			fProcs = append(fProcs, features.Process{Name: p.name, Path: p.path})
+			entProcs = append(entProcs, &ent.HostProcess{Name: p.name, Path: p.path})
 		}
 		// principal comes from the beacon that ran this task, not from the
 		// process list
 		principal := beaconPrincipal[taskBeacon[ft.taskID]]
-		doc := features.BuildDoc(features.Host{
-			ID: fmt.Sprintf("%d", hostID), Identifier: h.identifier, Name: h.name,
-			PrimaryIP: h.primaryIP, ExternalIP: h.externalIP, Platform: h.platform,
-			Principal: principal,
-		}, fProcs)
+		entHost := &ent.Host{
+			ID: int(hostID), Identifier: h.identifier, Name: h.name,
+			PrimaryIP: h.primaryIP, ExternalIP: h.externalIP,
+			// Host_Platform_value["" or anything unrecognized] is the map's
+			// zero value (0), which is Host_PLATFORM_UNSPECIFIED -- a
+			// reasonable default, same as a live host whose platform was
+			// never reported.
+			Platform: c2pb.Host_Platform(c2pb.Host_Platform_value[h.platform]),
+		}
+		doc := features.BuildDoc(entHost, principal, entProcs)
 
 		out = append(out, GroundTruthHost{Doc: doc, Label: label})
 	}
