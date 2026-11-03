@@ -32,8 +32,7 @@ fn stat_impl(path: String) -> AnyhowResult<BTreeMap<String, Value>> {
     if !path_buf.exists() {
         anyhow::bail!("No such file or directory: {path}");
     }
-    create_dict_from_file(path_buf)
-        .with_context(|| alloc::format!("Failed to stat path: {path}"))
+    create_dict_from_file(path_buf).with_context(|| alloc::format!("Failed to stat path: {path}"))
 }
 
 #[cfg(test)]

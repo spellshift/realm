@@ -374,7 +374,8 @@ impl FileLibrary for FileLibraryFake {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
 
-        let entry = Self::traverse(&mut root, &parts).ok_or_else(|| "Path not found".to_string())?;
+        let entry =
+            Self::traverse(&mut root, &parts).ok_or_else(|| "Path not found".to_string())?;
 
         let name = parts.last().cloned().unwrap_or_else(|| "/".to_string());
         let mut info = BTreeMap::new();
