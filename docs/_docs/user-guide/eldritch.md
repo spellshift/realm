@@ -874,6 +874,36 @@ The **file.replace** method finds the first string matching a regex pattern in t
 
 The **file.replace_all** method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
+### file.stat
+
+`file.stat(path: str) -> Dict`
+
+The **file.stat** method returns a single Dict with file details for exactly one path, behaving like `file.list` but without globbing or expanding directory contents. See `file.list` for the full set of fields returned (including the Linux-only `attributes` field). Returns an error if `path` doesn't exist.
+
+```python
+print(file.stat("/tmp/some_dir/some_file"))
+```
+
+```json
+{
+  "absolute_path": "/tmp/some_dir/some_file",
+  "attributes": "--------------------", // Linux only
+  "file_name": "some_file",
+  "group": "root",
+  "modified": "2026-07-12 18:17:39 UTC",
+  "owner": "root",
+  "permissions": "100664",
+  "size": 5,
+  "times": {
+    "accessed": -2208988800,
+    "changed": 1783880431,
+    "created": 1783880259,
+    "modified": -2208988800
+  },
+  "type": "file"
+}
+```
+
 ### file.tmp
 
 `file.tmp(name: Option<str>) -> str`

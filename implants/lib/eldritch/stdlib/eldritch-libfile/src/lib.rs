@@ -350,6 +350,30 @@ pub trait FileLibrary {
     fn replace_all(&self, path: String, pattern: String, value: String) -> Result<(), String>;
 
     #[eldritch_method]
+    /// Returns file details for a single path, behaving like `file.list` but for exactly one
+    /// path (no globbing, and directory contents aren't expanded).
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file or directory path.
+    ///
+    /// **Returns**
+    /// - `Dict`: A dictionary containing file details (see `file.list`):
+    ///   - `file_name` (`str`)
+    ///   - `absolute_path` (`str`)
+    ///   - `size` (`int`)
+    ///   - `owner` (`str`)
+    ///   - `group` (`str`)
+    ///   - `permissions` (`str`)
+    ///   - `modified` (`str`)
+    ///   - `times` (`dict`)
+    ///   - `type` (`str`: "file" or "dir")
+    ///   - `attributes` (`str`, Linux only, optional): `lsattr`-style attribute string.
+    ///
+    /// **Errors**
+    /// - Returns an error string if `path` doesn't exist or its metadata can't be read.
+    fn stat(&self, path: String) -> Result<BTreeMap<String, Value>, String>;
+
+    #[eldritch_method]
     /// Creates a temporary file and returns its path.
     ///
     /// **Parameters**

@@ -118,7 +118,7 @@ fn get_times_dict(metadata: std::fs::Metadata) -> Value {
 }
 
 #[cfg(feature = "stdlib")]
-fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
+pub(crate) fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     use alloc::format;
 
     let metadata = fs::metadata(path)?;

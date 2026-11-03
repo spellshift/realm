@@ -1007,6 +1007,20 @@
     "returnType": "None",
     "deprecated": false
   },
+  "file.stat": {
+    "signature": "file.stat(path: str) -> Dict",
+    "description": "Returns file details for a single path, behaving like `file.list` but for exactly one\npath (no globbing, and directory contents aren't expanded).\n\n**Parameters**\n- `path` (`str`): The file or directory path.\n\n**Returns**\n- `Dict`: A dictionary containing file details (see `file.list`):\n  - `file_name` (`str`)\n  - `absolute_path` (`str`)\n  - `size` (`int`)\n  - `owner` (`str`)\n  - `group` (`str`)\n  - `permissions` (`str`)\n  - `modified` (`str`)\n  - `times` (`dict`)\n  - `type` (`str`: \"file\" or \"dir\")\n  - `attributes` (`str`, Linux only, optional): `lsattr`-style attribute string.\n\n**Errors**\n- Returns an error string if `path` doesn't exist or its metadata can't be read.",
+    "kind": "function",
+    "module": "file",
+    "params": [
+      {
+        "name": "path",
+        "type": "str"
+      }
+    ],
+    "returnType": "Dict",
+    "deprecated": false
+  },
   "file.tmp": {
     "signature": "file.tmp(name: Optional<str> = None) -> str",
     "description": "Creates a temporary file and returns its path.\n\n**Parameters**\n- `name` (`Option<str>`): Optional preferred filename. If None, a random name is generated.\n\n**Returns**\n- `str`: The absolute path to the temporary file.\n\n**Errors**\n- Returns an error string if creation fails.",

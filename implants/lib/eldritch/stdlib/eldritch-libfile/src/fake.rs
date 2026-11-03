@@ -370,6 +370,39 @@ impl FileLibrary for FileLibraryFake {
         Ok(())
     }
 
+    fn stat(&self, path: String) -> Result<BTreeMap<String, Value>, String> {
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+
+        let entry = Self::traverse(&mut root, &parts).ok_or_else(|| "Path not found".to_string())?;
+
+        let name = parts.last().cloned().unwrap_or_else(|| "/".to_string());
+        let mut info = BTreeMap::new();
+        info.insert("file_name".to_string(), Value::String(name));
+        info.insert(
+            "absolute_path".to_string(),
+            Value::String(format!("/{}", parts.join("/"))),
+        );
+        info.insert(
+            "type".to_string(),
+            Value::String(
+                match entry {
+                    FsEntry::Dir(_) => "dir",
+                    FsEntry::File(_) => "file",
+                }
+                .to_string(),
+            ),
+        );
+        info.insert(
+            "size".to_string(),
+            Value::Int(match entry {
+                FsEntry::File(d) => d.len() as i64,
+                FsEntry::Dir(_) => 4096,
+            }),
+        );
+        Ok(info)
+    }
+
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
         self.tmp(name)
     }
@@ -523,6 +556,14 @@ mod tests {
         // Remove
         file.remove("/tmp/notes_backup.txt".into()).unwrap();
         assert!(!file.exists("/tmp/notes_backup.txt".into()).unwrap());
+
+        // Stat
+        let stat_info = file.stat("/home/user/notes.txt".into()).unwrap();
+        assert_eq!(
+            stat_info.get("type").unwrap().to_string(),
+            Value::String("file".to_string()).to_string()
+        );
+        assert!(file.stat("/missing.txt".into()).is_err());
     }
 
     #[test]

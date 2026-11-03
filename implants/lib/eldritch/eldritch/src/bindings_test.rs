@@ -79,6 +79,7 @@ fn test_file_bindings() {
             "remove",
             "replace",
             "replace_all",
+            "stat",
             "temp_file",
             "template",
             "template_str",

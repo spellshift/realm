@@ -24,6 +24,7 @@ pub mod read_named_pipe_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
+pub mod stat_impl;
 pub mod timestomp_impl;
 pub mod tmp_dir_impl;
 pub mod tmp_impl;
@@ -126,6 +127,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn replace_all(&self, path: String, pattern: String, value: String) -> Result<(), String> {
         replace_all_impl::replace_all(path, pattern, value)
+    }
+
+    fn stat(&self, path: String) -> Result<BTreeMap<String, Value>, String> {
+        stat_impl::stat(path)
     }
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
