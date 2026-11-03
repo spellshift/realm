@@ -128,3 +128,10 @@ func ChooseKAuto(X [][]float64) (k int, labels []int, silhouette float64) {
 	}
 	return ml.ChooseK(X, KMin, kMax, KStep, NInit, MaxIter, RNGSeed)
 }
+
+// ClusterK runs k-means for a caller-pinned k instead of auto-selecting it.
+// The caller is responsible for validating 0 < k < len(X) first.
+func ClusterK(X [][]float64, k int) (labels []int, silhouette float64) {
+	labels, _ = ml.KMeans(X, k, NInit, MaxIter, RNGSeed)
+	return labels, ml.SilhouetteScore(X, labels)
+}

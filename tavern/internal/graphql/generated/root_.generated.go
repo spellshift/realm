@@ -483,7 +483,7 @@ type ComplexityRoot struct {
 		MarkNotificationsAsArchived  func(childComplexity int, notificationIDs []int) int
 		MarkNotificationsAsRead      func(childComplexity int, notificationIDs []int) int
 		ResetUserAPIKey              func(childComplexity int) int
-		RunHostAutogroup             func(childComplexity int) int
+		RunHostAutogroup             func(childComplexity int, k *int) int
 		SubscribeToHost              func(childComplexity int, hostID int) int
 		UnfavoriteHost               func(childComplexity int, hostID int) int
 		UnsubscribeFromHost          func(childComplexity int, hostID int) int
@@ -3299,7 +3299,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.ComplexityRoot.Mutation.RunHostAutogroup(childComplexity), true
+		args, err := ec.field_Mutation_runHostAutogroup_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RunHostAutogroup(childComplexity, args["k"].(*int)), true
 
 	case "Mutation.subscribeToHost":
 		if e.ComplexityRoot.Mutation.SubscribeToHost == nil {
@@ -15230,7 +15235,7 @@ scalar Uint64
     # Admin
     ####
     dropAllData: Boolean! @requireRole(role: ADMIN)
-    runHostAutogroup: [Tag!]! @requireRole(role: ADMIN)
+    runHostAutogroup(k: Int): [Tag!]! @requireRole(role: ADMIN)
 
     ###
     # Quest

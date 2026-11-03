@@ -19,7 +19,7 @@ import (
 
 type MutationResolver interface {
 	DropAllData(ctx context.Context) (bool, error)
-	RunHostAutogroup(ctx context.Context) ([]*ent.Tag, error)
+	RunHostAutogroup(ctx context.Context, k *int) ([]*ent.Tag, error)
 	CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) (*ent.Quest, error)
 	UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error)
 	CreateShell(ctx context.Context, input ent.CreateShellInput) (*ent.Shell, error)
@@ -381,6 +381,17 @@ func (ec *executionContext) field_Mutation_markNotificationsAsRead_args(ctx cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_runHostAutogroup_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "k", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["k"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_subscribeToHost_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -636,7 +647,8 @@ func (ec *executionContext) _Mutation_runHostAutogroup(ctx context.Context, fiel
 		field,
 		ec.fieldContext_Mutation_runHostAutogroup,
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Mutation().RunHostAutogroup(ctx)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RunHostAutogroup(ctx, fc.Args["k"].(*int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -663,7 +675,7 @@ func (ec *executionContext) _Mutation_runHostAutogroup(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) fieldContext_Mutation_runHostAutogroup(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_runHostAutogroup(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -682,6 +694,17 @@ func (ec *executionContext) fieldContext_Mutation_runHostAutogroup(_ context.Con
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_runHostAutogroup_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }

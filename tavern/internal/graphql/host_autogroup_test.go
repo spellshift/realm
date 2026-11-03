@@ -69,7 +69,7 @@ func TestRunHostAutogroup(t *testing.T) {
 			dcHosts[h.ID] = true
 		}
 
-		tags, err := runHostAutogroup(ctx, client)
+		tags, err := runHostAutogroup(ctx, client, nil)
 		require.NoError(t, err)
 		require.GreaterOrEqual(t, len(tags), 2)
 
@@ -100,17 +100,69 @@ func TestRunHostAutogroup(t *testing.T) {
 			seedProcessList(t, ctx, client, q, fmt.Sprintf("h%d", i), fmt.Sprintf("10.0.0.%d", i), c2pb.Host_PLATFORM_LINUX,
 				[]string{"/usr/sbin/sshd", fmt.Sprintf("/opt/app%d/bin", i%2)})
 		}
-		first, err := runHostAutogroup(ctx, client)
+		first, err := runHostAutogroup(ctx, client, nil)
 		require.NoError(t, err)
-		second, err := runHostAutogroup(ctx, client)
+		second, err := runHostAutogroup(ctx, client, nil)
 		require.NoError(t, err)
 		assert.Equal(t, len(first)+len(second), client.Tag.Query().CountX(ctx))
+	})
+
+	t.Run("k pins the exact number of groups", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+		q := processListQuest(ctx, client, "Process list")
+		profiles := [][]string{
+			{"/usr/sbin/nginx", "/usr/sbin/sshd", "/usr/bin/php-fpm"},
+			{`C:\Windows\System32\lsass.exe`, `C:\Windows\System32\dns.exe`},
+			{"/usr/sbin/mysqld", "/usr/bin/mysqladmin"},
+		}
+		for g, procs := range profiles {
+			for i := 0; i < 3; i++ {
+				seedProcessList(t, ctx, client, q, fmt.Sprintf("h%d-%d", g, i), fmt.Sprintf("10.0.%d.%d", g, 10+i), c2pb.Host_PLATFORM_LINUX, procs)
+			}
+		}
+		k := 3
+		tags, err := runHostAutogroup(ctx, client, &k)
+		require.NoError(t, err)
+		assert.Len(t, tags, 3)
+
+		total := 0
+		for _, tg := range tags {
+			total += tg.QueryHosts().CountX(ctx)
+		}
+		assert.Equal(t, 9, total)
+	})
+
+	t.Run("k must be positive", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+		k := 0
+		_, err := runHostAutogroup(ctx, client, &k)
+		require.ErrorContains(t, err, "positive")
+		assert.Zero(t, client.Tag.Query().CountX(ctx))
+
+		k = -1
+		_, err = runHostAutogroup(ctx, client, &k)
+		require.ErrorContains(t, err, "positive")
+	})
+
+	t.Run("k must be less than the number of clusterable hosts", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+		q := processListQuest(ctx, client, "Process list")
+		for i := 0; i < 5; i++ {
+			seedProcessList(t, ctx, client, q, fmt.Sprintf("h%d", i), fmt.Sprintf("10.0.0.%d", i), c2pb.Host_PLATFORM_LINUX, []string{"/bin/sh"})
+		}
+		k := 5
+		_, err := runHostAutogroup(ctx, client, &k)
+		require.ErrorContains(t, err, "too few")
+		assert.Zero(t, client.Tag.Query().CountX(ctx))
 	})
 
 	t.Run("errors when no process list tasks exist", func(t *testing.T) {
 		client := enttest.OpenTempDB(t)
 		defer client.Close()
-		_, err := runHostAutogroup(ctx, client)
+		_, err := runHostAutogroup(ctx, client, nil)
 		require.Error(t, err)
 		assert.Zero(t, client.Tag.Query().CountX(ctx))
 	})
@@ -122,7 +174,7 @@ func TestRunHostAutogroup(t *testing.T) {
 		for i := 0; i < 2; i++ {
 			seedProcessList(t, ctx, client, q, fmt.Sprintf("h%d", i), fmt.Sprintf("10.0.0.%d", i), c2pb.Host_PLATFORM_LINUX, []string{"/bin/sh"})
 		}
-		_, err := runHostAutogroup(ctx, client)
+		_, err := runHostAutogroup(ctx, client, nil)
 		require.ErrorContains(t, err, "too few")
 		assert.Zero(t, client.Tag.Query().CountX(ctx))
 	})
@@ -134,7 +186,7 @@ func TestRunHostAutogroup(t *testing.T) {
 		for i := 0; i < 6; i++ {
 			seedProcessList(t, ctx, client, q, fmt.Sprintf("h%d", i), fmt.Sprintf("10.0.0.%d", i), c2pb.Host_PLATFORM_LINUX, []string{"/bin/sh"})
 		}
-		_, err := runHostAutogroup(ctx, client)
+		_, err := runHostAutogroup(ctx, client, nil)
 		require.Error(t, err)
 	})
 }

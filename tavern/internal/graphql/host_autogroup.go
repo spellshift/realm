@@ -24,9 +24,19 @@ const autogroupTomeName = "Process list"
 // role groups and creates one service-kind Tag per cluster, named with a
 // random namegen name and attached to the cluster's hosts.
 //
+// k, if non-nil, pins the exact number of groups instead of auto-selecting
+// it via silhouette score -- the single biggest accuracy lever when the
+// caller has a rough idea how many role-types to expect (see
+// tavern/internal/autogroup's doc comments). It must be a positive integer
+// less than the number of hosts with process-list data.
+//
 // Tags from previous runs are left untouched. If a generated name collides
 // with an existing tag, the whole run is rolled back and an error returned.
-func runHostAutogroup(ctx context.Context, client *ent.Client) ([]*ent.Tag, error) {
+func runHostAutogroup(ctx context.Context, client *ent.Client, k *int) ([]*ent.Tag, error) {
+	if k != nil && *k <= 0 {
+		return nil, fmt.Errorf("k must be a positive integer, got %d", *k)
+	}
+
 	tasks, err := client.Task.Query().
 		Where(task.HasQuestWith(quest.HasTomeWith(tome.NameEqualFold(autogroupTomeName)))).
 		WithBeacon(func(bq *ent.BeaconQuery) { bq.WithHost() }).
@@ -36,7 +46,7 @@ func runHostAutogroup(ctx context.Context, client *ent.Client) ([]*ent.Tag, erro
 		return nil, fmt.Errorf("failed to query %q tasks: %w", autogroupTomeName, err)
 	}
 
-	hostIDs, labels, err := clusterHostsByRole(tasks)
+	hostIDs, labels, err := clusterHostsByRole(tasks, k)
 	if err != nil {
 		return nil, err
 	}
@@ -86,9 +96,10 @@ func runHostAutogroup(ctx context.Context, client *ent.Client) ([]*ent.Tag, erro
 }
 
 // clusterHostsByRole picks each host's earliest "Process list" task, builds
-// feature documents and clusters them with the auto-selected k. It returns
-// parallel slices: the host ids and the cluster label assigned to each.
-func clusterHostsByRole(tasks []*ent.Task) (hostIDs []int, labels []int, err error) {
+// feature documents and clusters them -- with the auto-selected k, or the
+// caller-pinned k if non-nil. It returns parallel slices: the host ids and
+// the cluster label assigned to each.
+func clusterHostsByRole(tasks []*ent.Task, k *int) (hostIDs []int, labels []int, err error) {
 	if len(tasks) == 0 {
 		return nil, nil, fmt.Errorf("no %q tasks found -- nothing to group", autogroupTomeName)
 	}
@@ -131,13 +142,23 @@ func clusterHostsByRole(tasks []*ent.Task) (hostIDs []int, labels []int, err err
 		}, procs))
 	}
 
-	if len(docs) < autogroup.MinHosts {
+	minHosts := autogroup.MinHosts
+	if k != nil {
+		// A pinned k only needs to be smaller than the host count, even if
+		// that's below the auto-k search floor.
+		minHosts = *k + 1
+	}
+	if len(docs) < minHosts {
 		return nil, nil, fmt.Errorf("only %d host(s) with %q data -- too few to cluster meaningfully (need at least %d)",
-			len(docs), autogroupTomeName, autogroup.MinHosts)
+			len(docs), autogroupTomeName, minHosts)
 	}
 
 	X := autogroup.Vectorize(docs, autogroup.DefaultSkip(false))
-	_, labels, _ = autogroup.ChooseKAuto(X)
+	if k != nil {
+		labels, _ = autogroup.ClusterK(X, *k)
+	} else {
+		_, labels, _ = autogroup.ChooseKAuto(X)
+	}
 	if len(labels) != len(ids) {
 		return nil, nil, fmt.Errorf("clustering failed to produce a grouping for %d host(s)", len(ids))
 	}
