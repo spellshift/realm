@@ -44,3 +44,4 @@ wasm-bindgen = "0.2"
 
 [dev-dependencies]
 criterion = "0.5"
+eldritch = { workspace = true, features = ["fake_bindings"] }

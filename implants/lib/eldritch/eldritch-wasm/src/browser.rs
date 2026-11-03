@@ -17,7 +17,7 @@ pub enum MetaCommand {
     Pty,
 }
 
-#[cfg(feature = "fake_bindings")]
+#[cfg(any(feature = "fake_bindings", test))]
 use eldritch::{
     aes::fake::AesLibraryFake, agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
     base64::fake::Base64LibraryFake, chain::fake::FakeChainLibrary,
@@ -48,7 +48,7 @@ impl BrowserRepl {
         #[allow(unused_mut)]
         let mut interp = Interpreter::new_with_printer(printer);
 
-        #[cfg(feature = "fake_bindings")]
+        #[cfg(any(feature = "fake_bindings", test))]
         {
             interp.register_lib(AesLibraryFake::default());
             interp.register_lib(Base64LibraryFake::default());
