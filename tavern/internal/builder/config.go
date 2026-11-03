@@ -36,6 +36,14 @@ type Config struct {
 	IdentityFile     string   `yaml:"identity_file"`
 	Upstream         string   `yaml:"upstream"`
 	Executor         string   `yaml:"executor"`
+
+	// CacheVolume is the name of the Docker volume the DockerExecutor uses to
+	// cache build dependencies and intermediate artifacts between builds. When
+	// empty (or when the executor is "local"), no cache volume is used and
+	// every build starts from a clean dependency/build cache. Defaults to a
+	// shared "realm-build-cache" volume so repeated builds reuse downloaded
+	// crates/modules and compiled artifacts.
+	CacheVolume string `yaml:"cache_volume"`
 }
 
 // DefaultConfig returns the settings used when no builder configuration is provided.
@@ -46,6 +54,7 @@ func DefaultConfig() *Config {
 		IdentityFile:     "builder.identity",
 		Upstream:         "http://127.0.0.1:8000",
 		Executor:         "docker",
+		CacheVolume:      "realm-build-cache",
 	}
 }
 
@@ -89,12 +98,12 @@ func parseConfigBytes(data []byte, executor *string) (*Config, error) {
 	}
 	for name := range fields {
 		switch name {
-		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval":
+		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval", "cache_volume":
 		default:
 			return nil, fmt.Errorf("unknown builder config field %q", name)
 		}
 	}
-	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval"} {
+	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval", "cache_volume"} {
 		if value, present := fields[name]; present && value == nil {
 			return nil, fmt.Errorf("%s must not be null", name)
 		}

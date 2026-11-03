@@ -7,10 +7,10 @@ The builder package orchestrates agent compilation for target platforms. It conn
 - Add e2e testsq
 - BuildProfile structs are spread across models and builderpb can we consolidate these
 - [x] Streamline the buildScript with a setupScript and buildScript
+- [x] Add support for build caching between jobs (will speed up rust builds a lot; see "Build Caching" below)
 
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.
-- Add support for build caching between jobs (will speed up rust builds a lot)
 - Instead of assuming  `/home/vscode` create a correctly permissioned build dir
 
 ### future
@@ -129,6 +129,68 @@ archive. A task's `bundle` Asset contains these archives in a tar file named by
 tome ID (`<id>.tar.gz`). The snapshot, bundle, and task are saved in one
 transaction. Source tome or asset edits/deletions do not alter saved build inputs.
 The bundle and final `artifact` are separate relationships.
+
+## Build Caching
+
+By default the Docker executor builds into a throwaway container, so every build
+re-downloads dependencies (the crates.io index, all dependency crates, git
+dependencies, Go modules) and recompiles from scratch — including the entire
+dependency tree. This makes repeated builds slow. To speed them up, the Docker
+executor can mount a persistent Docker **volume** that survives container
+teardown and reuse it across builds.
+
+Enable it with the `cache_volume` builder config option (a Docker volume name). It
+defaults to `realm-build-cache`, so caching is on for the Docker executor unless
+explicitly disabled:
+
+```yaml
+# builder.yaml
+executor: docker
+cache_volume: realm-build-cache   # omit or set to "" to build without a cache
+```
+
+When `cache_volume` is set, the executor:
+
+1. Ensures the named Docker volume exists (created on first use; idempotent).
+2. Mounts it into the build container at `/realm-cache` (override with
+   `BuildSpec.CachePath` if needed).
+3. Points the toolchain cache directories at the volume by exporting:
+   - `CARGO_HOME=/realm-cache/cargo` (registry index, downloaded crates, git deps)
+   - `CARGO_TARGET_DIR=/realm-cache/target/<key>` (compiled dependency artifacts)
+   - `GOPATH=/realm-cache/gopath`, `GOMODCACHE=.../pkg/mod`, `GOCACHE=.../go-cache`
+   - `REALM_CACHE_DIR=/realm-cache` (convenience hook for your scripts)
+
+The `<key>` suffix isolates the cargo target directory per build recipe (image +
+OS + each script), so concurrent builds of different profiles use independent
+target dirs and can run in parallel, while repeated builds of the *same* profile
+reuse the cached registry, crates, and compiled artifacts. Builds that share a
+key are serialized within a single builder process to keep cargo from racing
+inside the shared target directory.
+
+### Getting the most out of the cache
+
+Cargo fingerprints include the absolute path of each workspace crate's source,
+so a brand-new clone directory per build (the default `{{.BuildDir}}`, a random
+`/tmp/realm-build-<uuid>`) still forces Realm's *own* crates to recompile even
+when the target cache is warm. The dependency tree — which is the bulk of compile
+time — is cached regardless. To also cache the workspace crates, have your setup
+script clone into the persistent cache dir instead of the random build dir, e.g.:
+
+```sh
+# setup script
+git -C "$REALM_CACHE_DIR/repo" pull 2>/dev/null || \
+  git clone https://github.com/spellshift/realm.git "$REALM_CACHE_DIR/repo"
+cd "$REALM_CACHE_DIR/repo"
+# then ${BuildCommand} from the cached checkout
+```
+
+Because `$REALM_CACHE_DIR` persists across builds, the clone is reused and the
+workspace crates' source paths stay stable, so their compiled artifacts are also
+reused on subsequent builds.
+
+If the volume cannot be created (e.g. driver limits or insufficient permission),
+the executor logs a warning and falls back to building without the cache rather
+than failing the build.
 
 Existing tasks without a snapshot remain queryable with a null
 `profileAtCreation`. Builders skip them; recreate them explicitly to build with

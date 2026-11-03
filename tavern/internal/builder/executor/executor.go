@@ -16,6 +16,10 @@ const (
 	// with verbatim script echoes or long compiler/linker output lines, which
 	// would otherwise silently truncate the stream.
 	maxScanTokenSize = 1024 * 1024 // 1MB
+
+	// DefaultCachePath is the in-container mount point for the build cache
+	// volume when a BuildSpec sets CacheVolume but not CachePath.
+	DefaultCachePath = "/realm-cache"
 )
 
 // streamBuildLines scans newline-delimited text from r and sends each line to ch.
@@ -39,9 +43,28 @@ func streamBuildLines(ctx context.Context, r io.Reader, ch chan<- string) {
 
 // BuildSpec contains the parameters for a build task execution.
 type BuildSpec struct {
-	TaskID      int64
-	TargetOS    string
-	BuildImage  string
+	TaskID     int64
+	TargetOS   string
+	BuildImage string
+
+	// CacheVolume is the name of a Docker volume used to persist build caches
+	// (downloaded dependencies and intermediate build artifacts) across builds.
+	// When non-empty, the DockerExecutor ensures the volume exists, mounts it
+	// into the container, and points the cargo/go cache directories at it so
+	// dependency downloads and compiled artifacts survive container teardown
+	// between builds. This dramatically speeds up repeated builds.
+	//
+	// Caching is only implemented by DockerExecutor; LocalExecutor and
+	// MockExecutor ignore this field.
+	CacheVolume string
+
+	// CachePath is the absolute path inside the container where CacheVolume is
+	// mounted. Defaults to DefaultCachePath when CacheVolume is set and
+	// CachePath is empty. Set this together with a build profile's scripts to
+	// stage the source checkout (e.g. clone into $REALM_CACHE_DIR/repo) so the
+	// workspace crates are also cached between builds.
+	CachePath string
+
 	BuildScript string
 
 	// ArtifactPath is the path inside the container to extract after the build.
