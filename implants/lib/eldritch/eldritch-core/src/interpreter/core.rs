@@ -43,6 +43,7 @@ impl Drop for Interpreter {
             // This drops all variables including functions, which may hold references back to the environment.
             self.env.write().values.clear();
             self.env.write().parent = None;
+            self.env.write().active_exception = None;
         }
     }
 }
@@ -64,6 +65,7 @@ impl Interpreter {
             values: BTreeMap::new(),
             printer,
             libraries: BTreeSet::new(),
+            active_exception: None,
         }));
 
         let mut interpreter = Interpreter {
@@ -119,6 +121,17 @@ impl Interpreter {
             .write()
             .values
             .insert(name, Value::Foreign(Arc::new(val)));
+    }
+
+    pub fn active_exception(&self) -> Option<EldritchError> {
+        self.env.read().active_exception.clone()
+    }
+
+    pub fn set_active_exception(&self, err: Option<EldritchError>) -> Option<EldritchError> {
+        let mut env = self.env.write();
+        let prev = env.active_exception.clone();
+        env.active_exception = err;
+        prev
     }
 
     // Helper to create errors from interpreter context
@@ -199,8 +212,11 @@ impl Interpreter {
         let mut last_val = Value::None;
 
         // Reset state for fresh run
-        self.call_stack.clear();
-        self.current_func_name = "<module>".to_string();
+        if self.is_scope_owner {
+            self.call_stack.clear();
+            self.current_func_name = "<module>".to_string();
+            self.env.write().active_exception = None;
+        }
 
         if let Err(e) = exec::hoist_functions(self, &stmts) {
             return Err(self.format_error(input, e));
@@ -496,7 +512,8 @@ impl Interpreter {
                 // 1. Keywords (filtered out as per request)
                 let keywords_to_filter = vec![
                     "def", "if", "elif", "else", "return", "for", "in", "True", "False", "None",
-                    "and", "or", "not", "break", "continue", "pass", "lambda",
+                    "and", "or", "not", "break", "continue", "pass", "lambda", "try", "except",
+                    "as", "finally", "raise",
                 ];
 
                 // 2. Builtins & Variables (walk up the environment chain)

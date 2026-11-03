@@ -29,7 +29,7 @@ mod tests {
         interp.register_lib(eldritch::template::fake::TemplateLibraryFake);
         interp.register_lib(eldritch::gzip::fake::GzipLibraryFake);
         interp.register_lib(eldritch::http::fake::HttpLibraryFake);
-        interp.register_lib(eldritch::linux::fake::LinuxLibraryFake);
+        interp.register_lib(eldritch::linux::fake::LinuxLibraryFake::default());
         interp.register_lib(eldritch::net::fake::NetLibraryFake);
         interp.register_lib(eldritch::dns::fake::DnsLibraryFake::default());
         interp.register_lib(eldritch::pivot::fake::PivotLibraryFake);

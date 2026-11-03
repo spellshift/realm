@@ -6,6 +6,7 @@ use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
 pub mod append_impl;
+pub mod chmod_impl;
 pub mod copy_impl;
 pub mod exists_impl;
 pub mod find_impl;
@@ -23,6 +24,7 @@ pub mod read_named_pipe_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
+pub mod stat_impl;
 pub mod timestomp_impl;
 pub mod tmp_dir_impl;
 pub mod tmp_impl;
@@ -36,6 +38,10 @@ pub struct StdFileLibrary;
 impl FileLibrary for StdFileLibrary {
     fn append(&self, path: String, content: Vec<u8>) -> Result<(), String> {
         append_impl::append(path, content)
+    }
+
+    fn chmod(&self, path: String, mode: String) -> Result<(), String> {
+        chmod_impl::chmod(path, mode)
     }
 
     fn compress(&self, src: String, dst: String) -> Result<(), String> {
@@ -121,6 +127,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn replace_all(&self, path: String, pattern: String, value: String) -> Result<(), String> {
         replace_all_impl::replace_all(path, pattern, value)
+    }
+
+    fn stat(&self, path: String) -> Result<BTreeMap<String, Value>, String> {
+        stat_impl::stat(path)
     }
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {

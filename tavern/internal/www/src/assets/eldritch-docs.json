@@ -282,8 +282,8 @@
     "deprecated": false
   },
   "base64.decode": {
-    "signature": "base64.decode(content: str, encode_type: Optional<str> = None) -> str",
-    "description": "Decodes a Base64 string.\n\n`encode_type` can be \"STANDARD\", \"STANDARD_NO_PAD\", \"URL_SAFE\", or \"URL_SAFE_NO_PAD\".",
+    "signature": "base64.decode(content: str, encode_type: Optional<str> = None) -> Bytes",
+    "description": "Decodes a Base64 string into raw bytes.\n\n`encode_type` can be \"STANDARD\", \"STANDARD_NO_PAD\", \"URL_SAFE\", or \"URL_SAFE_NO_PAD\".",
     "kind": "function",
     "module": "base64",
     "params": [
@@ -297,7 +297,7 @@
         "defaultValue": "None"
       }
     ],
-    "returnType": "str",
+    "returnType": "Bytes",
     "deprecated": false
   },
   "base64.encode": {
@@ -523,8 +523,8 @@
     "replacement": "base64.encode"
   },
   "crypto.decode_b64": {
-    "signature": "crypto.decode_b64(content: str, encode_type: Optional<str> = None) -> str",
-    "description": "Decodes a Base64 encoded string.\n\n**Parameters**\n- `content` (`str`): The Base64 string to decode.\n- `encode_type` (`Option<str>`): The decoding variant (matches encoding options). Valid options: `STANDARD` (default), `STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`\n\n**Returns**\n- `str`: The decoded string.\n\n**Errors**\n- Returns an error string if decoding fails or the variant is invalid.",
+    "signature": "crypto.decode_b64(content: str, encode_type: Optional<str> = None) -> Bytes",
+    "description": "Decodes a Base64 encoded string.\n\n**Parameters**\n- `content` (`str`): The Base64 string to decode.\n- `encode_type` (`Option<str>`): The decoding variant (matches encoding options). Valid options: `STANDARD` (default), `STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`\n\n**Returns**\n- `Bytes`: The decoded data.\n\n**Errors**\n- Returns an error string if decoding fails or the variant is invalid.",
     "kind": "function",
     "module": "crypto",
     "params": [
@@ -538,7 +538,7 @@
         "defaultValue": "None"
       }
     ],
-    "returnType": "str",
+    "returnType": "Bytes",
     "deprecated": true,
     "replacement": "base64.decode"
   },
@@ -666,6 +666,24 @@
       {
         "name": "content",
         "type": "Bytes"
+      }
+    ],
+    "returnType": "None",
+    "deprecated": false
+  },
+  "file.chmod": {
+    "signature": "file.chmod(path: str, mode: str) -> None",
+    "description": "Changes the permissions of a file or directory, behaving like Go's `os.Chmod`.\n\n**Parameters**\n- `path` (`str`): The file or directory to modify.\n- `mode` (`str`): The permission mode, as an octal string (e.g. `\"0755\"`, `\"755\"`, or\n  `\"0o644\"`).\n\n**Returns**\n- `None`\n\n**Errors**\n- Returns an error string if `mode` isn't a valid octal permission string, the path\n  doesn't exist, or the permissions can't be changed.\n\n**Supported OS**\n- All. On Unix, the full permission bits (including setuid/setgid/sticky) are applied.\n  On Windows, only the owner-writable bit (`0o200`) is honored: it controls whether the\n  file's read-only attribute is set or cleared, matching Go's `os.Chmod` behavior.",
+    "kind": "function",
+    "module": "file",
+    "params": [
+      {
+        "name": "path",
+        "type": "str"
+      },
+      {
+        "name": "mode",
+        "type": "str"
       }
     ],
     "returnType": "None",
@@ -987,6 +1005,20 @@
       }
     ],
     "returnType": "None",
+    "deprecated": false
+  },
+  "file.stat": {
+    "signature": "file.stat(path: str) -> Dict",
+    "description": "Returns file details for a single path, behaving like `file.list` but for exactly one\npath (no globbing, and directory contents aren't expanded).\n\n**Parameters**\n- `path` (`str`): The file or directory path.\n\n**Returns**\n- `Dict`: A dictionary containing file details (see `file.list`):\n  - `file_name` (`str`)\n  - `absolute_path` (`str`)\n  - `size` (`int`)\n  - `owner` (`str`)\n  - `group` (`str`)\n  - `permissions` (`str`)\n  - `modified` (`str`)\n  - `times` (`dict`)\n  - `type` (`str`: \"file\" or \"dir\")\n  - `attributes` (`str`, Linux only, optional): `lsattr`-style attribute string.\n\n**Errors**\n- Returns an error string if `path` doesn't exist or its metadata can't be read.",
+    "kind": "function",
+    "module": "file",
+    "params": [
+      {
+        "name": "path",
+        "type": "str"
+      }
+    ],
+    "returnType": "Dict",
     "deprecated": false
   },
   "file.tmp": {
@@ -1474,6 +1506,24 @@
     "module": "linux",
     "params": [],
     "returnType": "Dict<str, str>",
+    "deprecated": false
+  },
+  "linux.chattr": {
+    "signature": "linux.chattr(path: str, attrs: str) -> None",
+    "description": "Changes file attributes on a Linux filesystem (e.g. ext2/3/4, btrfs, xfs), behaving like\nthe `chattr` command.\n\n**Parameters**\n- `path` (`str`): The file or directory to modify.\n- `attrs` (`str`): An attribute change string, matching `chattr` syntax:\n  - `+<attrs>`: Adds the given attributes (e.g. `\"+i\"` to set immutable).\n  - `-<attrs>`: Removes the given attributes (e.g. `\"-i\"` to unset immutable).\n  - `=<attrs>`: Sets the attributes exactly, clearing any others (e.g. `\"=ai\"`).\n  - Operators may be combined in a single string (e.g. `\"+i-s\"`).\n  - Supported attribute characters: `A S D a c m d e i j P s u t T C x F`.\n\n**Returns**\n- `None`\n\n**Errors**\n- Returns an error string if the path doesn't exist, the attribute string is invalid, or\n  the underlying filesystem doesn't support the requested attributes.\n\n**Supported OS**\n- Linux only.",
+    "kind": "function",
+    "module": "linux",
+    "params": [
+      {
+        "name": "path",
+        "type": "str"
+      },
+      {
+        "name": "attrs",
+        "type": "str"
+      }
+    ],
+    "returnType": "None",
     "deprecated": false
   },
   "linux": {
@@ -3364,6 +3414,18 @@
     "deprecatedOnly": true,
     "replacement": "registry.write"
   },
+  "Exception": {
+    "signature": "Exception(*args: Any) -> str",
+    "description": "Constructs an exception value.\n\n**Parameters**\n- `*args` (Any): Optional error message or details.\n\n**Returns**\n- `str`",
+    "kind": "builtin",
+    "params": [
+      {
+        "name": "*args",
+        "type": "Any"
+      }
+    ],
+    "returnType": "str"
+  },
   "abs": {
     "signature": "abs(x: int | float) -> int | float",
     "description": "Returns the absolute value of a number.\n\n**Parameters**\n- `x` (Int | Float): The number.",
@@ -3461,7 +3523,12 @@
       "break",
       "continue",
       "pass",
-      "lambda"
+      "lambda",
+      "try",
+      "except",
+      "as",
+      "finally",
+      "raise"
     ],
     "booleans": [
       "True",

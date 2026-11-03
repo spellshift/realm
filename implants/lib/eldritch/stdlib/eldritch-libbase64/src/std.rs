@@ -1,5 +1,6 @@
 use super::Base64Library;
 use alloc::string::String;
+use alloc::vec::Vec;
 use eldritch_macros::eldritch_library_impl;
 
 pub mod decode_impl;
@@ -10,7 +11,7 @@ pub mod encode_impl;
 pub struct StdBase64Library;
 
 impl Base64Library for StdBase64Library {
-    fn decode(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+    fn decode(&self, content: String, encode_type: Option<String>) -> Result<Vec<u8>, String> {
         decode_impl::decode_b64(content, encode_type)
     }
 

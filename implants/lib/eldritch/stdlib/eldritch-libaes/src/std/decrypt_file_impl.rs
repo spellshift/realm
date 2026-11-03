@@ -4,6 +4,9 @@ use alloc::vec::Vec;
 use std::fs::File;
 use std::io::{Read, Write};
 
+/// Size of the AES block / IV, in bytes.
+const IV_LEN: usize = 16;
+
 pub fn aes_decrypt_file(src: String, dst: String, key: String) -> Result<(), String> {
     let key_bytes = key.into_bytes();
     if key_bytes.len() != 16 {
@@ -11,10 +14,18 @@ pub fn aes_decrypt_file(src: String, dst: String, key: String) -> Result<(), Str
     }
 
     let mut src_file = File::open(src).map_err(|e| e.to_string())?;
-    let mut data = Vec::new();
-    src_file.read_to_end(&mut data).map_err(|e| e.to_string())?;
+    let mut contents = Vec::new();
+    src_file
+        .read_to_end(&mut contents)
+        .map_err(|e| e.to_string())?;
 
-    let decrypted = aes_decrypt(key_bytes, Vec::new(), data)?;
+    if contents.len() < IV_LEN {
+        return Err("Encrypted file is too short to contain an IV".into());
+    }
+    // The IV was prepended to the ciphertext by `aes_encrypt_file`.
+    let (iv, data) = contents.split_at(IV_LEN);
+
+    let decrypted = aes_decrypt(key_bytes, iv.to_vec(), data.to_vec())?;
 
     let mut dst_file = File::create(dst).map_err(|e| e.to_string())?;
     dst_file.write_all(&decrypted).map_err(|e| e.to_string())?;
@@ -94,5 +105,17 @@ mod tests {
         assert!(
             aes_decrypt_file(enc_path, "/non/existent/dir/dst".to_string(), key_valid).is_err()
         );
+    }
+
+    #[test]
+    fn test_aes_decrypt_file_too_short() {
+        let key_valid = "VERY SECRET KEY!".to_string();
+
+        let mut src_file = NamedTempFile::new().unwrap();
+        // Shorter than a single IV.
+        src_file.write_all(b"short").unwrap();
+        let src_path = src_file.path().to_str().unwrap().to_string();
+
+        assert!(aes_decrypt_file(src_path, "dst".to_string(), key_valid).is_err());
     }
 }
