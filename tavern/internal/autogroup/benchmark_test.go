@@ -21,7 +21,9 @@ const defaultBenchmarkDump = "/persistent/workspaces/db_backups/2026-v0.3.3-secc
 // small/poor quality to benchmark meaningfully, per project convention).
 //
 // It mirrors the oracle-k / auto-k comparison documented in the deleted
-// bin/host-autogroup CLI's benchmark README:
+// bin/host-autogroup CLI's benchmark README, from BEFORE
+// features.BuildDoc started dropping baseline-noise processes
+// (baseline.go):
 //
 //	dump:            db_backups/2026-v0.3.3-seccdc.sql
 //	tome:            "Process list"
@@ -32,9 +34,13 @@ const defaultBenchmarkDump = "/persistent/workspaces/db_backups/2026-v0.3.3-secc
 //	oracle-k (true count)                23      1.000    1.000        n/a
 //	auto-k (unsupervised)                24      0.987    0.990      0.344
 //
-// RNGSeed is fixed at int64(0), so this run should be exactly
-// reproducible; a result other than k=24/acc=0.987/ARI=0.990 for auto-k is
-// worth flagging clearly rather than quietly passing a loose assertion.
+// RNGSeed is fixed at int64(0), so a given feature pipeline's result
+// against this dump should be exactly reproducible. Adding the
+// baseline-noise filter shifted the feature space on purpose, so the
+// current exact fixed point is k=24/acc=0.979/ARI=0.986/sil=0.343 (still
+// comfortably inside the tolerance bands below) -- a result other than
+// THAT is worth flagging clearly, since it would mean something changed
+// upstream of this test beyond the known baseline-filter shift.
 func TestBenchmarkAgainstSeccdcDump(t *testing.T) {
 	path := os.Getenv("AUTOGROUP_BENCHMARK_DUMP")
 	if path == "" {
@@ -105,10 +111,11 @@ func TestBenchmarkAgainstSeccdcDump(t *testing.T) {
 
 	// RNGSeed is fixed, so this exact run should be fully reproducible --
 	// flag loudly (without failing the build) if it drifts from the
-	// documented baseline, since that would mean something upstream of
-	// this test changed the ML pipeline's behavior.
-	if autoK != 24 || round3(autoAcc) != 0.987 || round3(autoARI) != 0.990 {
-		t.Logf("NOTE: auto-k result (k=%d, accuracy=%.3f, ARI=%.3f) differs from the exact documented baseline (k=24, accuracy=0.987, ARI=0.990) despite a fixed RNGSeed -- investigate if this wasn't expected", autoK, autoAcc, autoARI)
+	// current post-baseline-filter fixed point, since that would mean
+	// something upstream of this test changed the ML pipeline's behavior
+	// beyond the known, intentional baseline-noise-filter shift.
+	if autoK != 24 || round3(autoAcc) != 0.979 || round3(autoARI) != 0.986 {
+		t.Logf("NOTE: auto-k result (k=%d, accuracy=%.3f, ARI=%.3f) differs from the current exact fixed point (k=24, accuracy=0.979, ARI=0.986, post-baseline-filter) despite a fixed RNGSeed -- investigate if this wasn't expected", autoK, autoAcc, autoARI)
 	}
 }
 

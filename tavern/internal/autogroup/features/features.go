@@ -33,6 +33,16 @@
 // Deliberately excluded: raw/absolute primary IP (doesn't generalize even
 // within clustering since it's effectively a per-host identifier), process
 // cmd/env/cwd (untested, likely noisy), process count (weak/unused).
+//
+// Before counting into ProcPath, a process token is dropped if it's
+// baseline noise for the host's platform: either it's on the
+// pre-computed, per-platform list of processes seen on >=90% of hosts
+// across our combined historical dumps (baseline_processes.json, embedded
+// in this package -- see baseline.go), or it's a Linux kernel thread by
+// name pattern (kworker/ksoftirqd/cpuhp/irq/etc., including per-CPU and
+// per-device suffixes that will never themselves clear a frequency bar).
+// TF-IDF's idf weighting already softens near-universal terms somewhat,
+// but this removes them outright rather than relying on that alone.
 package features
 
 import (
@@ -164,7 +174,12 @@ func BuildDoc(h Host, procs []Process) Doc {
 	}
 
 	for _, p := range procs {
-		incr(d.ProcPath, processFeatureToken(p.Name, p.Path))
+		tok := processFeatureToken(p.Name, p.Path)
+		hadPath := strings.TrimSpace(p.Path) != ""
+		if isBaselineNoise(h.Platform, tok, hadPath) {
+			continue
+		}
+		incr(d.ProcPath, tok)
 	}
 	if h.Principal != "" {
 		d.Principal[strings.ToLower(h.Principal)] = 1
