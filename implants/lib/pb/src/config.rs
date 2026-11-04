@@ -284,21 +284,20 @@ impl Config {
 
     pub fn refresh_primary_ip(&mut self) {
         let fresh_ip = get_primary_ip();
-        match self.info.as_mut() {
-            Some(b) => match b.host.as_mut() {
-                Some(h) => {
-                    if h.primary_ip != fresh_ip {
-                        h.primary_ip = fresh_ip;
-                    }
+        match self
+            .info
+            .as_mut()
+            .ok_or("Beacon struct not initialized")
+            .and_then(|b| b.host.as_mut().ok_or("Host struct not initialized"))
+        {
+            Ok(host) => {
+                if host.primary_ip != fresh_ip {
+                    host.primary_ip = fresh_ip;
                 }
-                None => {
-                    #[cfg(feature = "print_debug")]
-                    log::error!("host struct was never initialized, failed to set primary ip");
-                }
-            },
-            None => {
+            }
+            Err(e) => {
                 #[cfg(feature = "print_debug")]
-                log::error!("beacon struct was never initialized, failed to set primary ip");
+                log::error!("Failed to refresh primary IP: {}", e);
             }
         }
     }
