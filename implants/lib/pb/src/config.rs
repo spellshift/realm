@@ -284,25 +284,20 @@ impl Config {
 
     pub fn refresh_primary_ip(&mut self) {
         let fresh_ip = get_primary_ip();
-        if self
+        match self
             .info
-            .clone()
-            .is_some_and(|b| b.host.as_ref().is_some_and(|h| h.primary_ip != fresh_ip))
+            .as_mut()
+            .ok_or("Beacon struct not initialized")
+            .and_then(|b| b.host.as_mut().ok_or("Host struct not initialized"))
         {
-            match self.info.clone() {
-                Some(mut b) => match b.host.as_mut() {
-                    Some(h) => {
-                        h.primary_ip = fresh_ip;
-                    }
-                    None => {
-                        #[cfg(feature = "print_debug")]
-                        log::error!("host struct was never initialized, failed to set primary ip");
-                    }
-                },
-                None => {
-                    #[cfg(feature = "print_debug")]
-                    log::error!("beacon struct was never initialized, failed to set primary ip");
+            Ok(host) => {
+                if host.primary_ip != fresh_ip {
+                    host.primary_ip = fresh_ip;
                 }
+            }
+            Err(e) => {
+                #[cfg(feature = "print_debug")]
+                log::error!("Failed to refresh primary IP: {}", e);
             }
         }
     }
@@ -585,6 +580,46 @@ mod tests {
         assert_eq!(
             transports[0].r#type,
             crate::c2::transport::Type::TransportQuic as i32
+        );
+    }
+
+    #[test]
+    fn test_refresh_primary_ip_persists_fresh_value() {
+        // Regression test for https://github.com/spellshift/realm/issues/2455:
+        // refresh_primary_ip() must persist the freshly resolved IP into the
+        // beacon config, so a transient bad read (e.g. 127.0.0.1 observed at
+        // startup) self-heals on the next agent cycle instead of sticking.
+        let live = get_primary_ip();
+        let mut cfg = Config {
+            info: Some(crate::c2::Beacon {
+                identifier: "test".to_string(),
+                principal: "test".to_string(),
+                host: Some(crate::c2::Host {
+                    name: "test".to_string(),
+                    identifier: "test".to_string(),
+                    platform: 0,
+                    primary_ip: "0.0.0.0-invalid".to_string(),
+                }),
+                agent: Some(crate::c2::Agent {
+                    identifier: "test".to_string(),
+                }),
+                available_transports: None,
+            }),
+            run_once: false,
+        };
+        cfg.refresh_primary_ip();
+        let stored = cfg
+            .info
+            .as_ref()
+            .unwrap()
+            .host
+            .as_ref()
+            .unwrap()
+            .primary_ip
+            .clone();
+        assert_eq!(
+            stored, live,
+            "refresh_primary_ip did not persist the fresh primary IP"
         );
     }
 }
