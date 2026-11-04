@@ -30,11 +30,14 @@ import (
 type DockerExecutor struct {
 	client client.APIClient
 
-	// cacheMu serializes builds that share the same cache volume + key so that
-	// concurrent cargo/go builds don't race inside a shared target directory
-	// (cargo does not support concurrent builds into the same target dir).
-	// The lock is per-builder-process; see lockFor.
-	cacheMu sync.Map // map[string]*sync.Mutex
+	// cacheMu holds a per-key binary semaphore (chan struct{} of cap 1) that
+	// serializes builds sharing the same cache volume + key so concurrent
+	// cargo/go builds don't race inside a shared target directory (cargo does
+	// not support concurrent builds into the same target dir). The set of keys
+	// is never pruned; in practice it is bounded by the number of distinct
+	// (image, OS, scripts) combinations a single builder process ever builds,
+	// so this is intentionally unbounded and harmless.
+	cacheMu sync.Map // map[string]chan struct{}
 }
 
 // NewDockerExecutor creates a DockerExecutor using the provided Docker API client.
@@ -84,10 +87,10 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	defer os.RemoveAll(tmpDir)
 
 	// Configure build caching. When spec.CacheVolume is set, ensure the
-	// Docker volume exists and mount it into the container, pointing the
-	// cargo/go cache directories at it. This persists downloaded dependencies
-	// and intermediate build artifacts across builds so repeated builds don't
-	// rebuild the entire dependency tree from scratch.
+	// Docker volume exists and is writable, then mount it into the container,
+	// pointing the cargo/go cache directories at it. This persists downloaded
+	// dependencies and intermediate build artifacts across builds so repeated
+	// builds don't rebuild the entire dependency tree from scratch.
 	hostConfig := (*container.HostConfig)(nil)
 	cacheEnv := []string{}
 	unlock := func() {}
@@ -96,15 +99,20 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		if cachePath == "" {
 			cachePath = DefaultCachePath
 		}
-		if _, err := d.client.VolumeCreate(ctx, volume.CreateOptions{
-			Name:   spec.CacheVolume,
-			Driver: "local",
-			Labels: map[string]string{"realm.buildcache": "true"},
-		}); err != nil {
-			// Volume creation can fail (e.g. storage driver limits, no
-			// permission). Degrade gracefully: build without caching rather
-			// than failing the whole build.
-			slog.WarnContext(ctx, "failed to create build cache volume, building without cache",
+		// Ensure the named volume exists. Inspect first so a volume created
+		// out-of-band (e.g. by an operator, without our label) is reused
+		// instead of triggering a 409 conflict on create.
+		if err := d.ensureCacheVolume(ctx, spec.CacheVolume); err != nil {
+			// Volume setup can fail (e.g. driver limits, no permission). Degrade
+			// gracefully: build without caching rather than failing the build.
+			slog.WarnContext(ctx, "failed to prepare build cache volume, building without cache",
+				"task_id", spec.TaskID, "volume", spec.CacheVolume, "error", err)
+		} else if err := d.ensureVolumeWritable(ctx, spec.CacheVolume, cachePath, spec.BuildImage); err != nil {
+			// The default build image runs as the non-root `vscode` user, but
+			// Docker creates a named volume's mountpoint as root:root 0755, which
+			// that user cannot write to. If we can't make it writable (e.g. the
+			// image lacks /bin/sh), degrade to an uncached build.
+			slog.WarnContext(ctx, "failed to make build cache volume writable, building without cache",
 				"task_id", spec.TaskID, "volume", spec.CacheVolume, "error", err)
 		} else {
 			hostConfig = &container.HostConfig{
@@ -117,17 +125,33 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 				},
 			}
 			key := cacheKeyFor(spec)
+			cargoTargetDir := path.Join(cachePath, "target", key)
 			cacheEnv = []string{
 				"REALM_CACHE_DIR=" + cachePath,
 				"CARGO_HOME=" + path.Join(cachePath, "cargo"),
-				"CARGO_TARGET_DIR=" + path.Join(cachePath, "target", key),
+				"CARGO_TARGET_DIR=" + cargoTargetDir,
 				"GOPATH=" + path.Join(cachePath, "gopath"),
 				"GOMODCACHE=" + path.Join(cachePath, "gopath", "pkg", "mod"),
 				"GOCACHE=" + path.Join(cachePath, "go-cache"),
 			}
+			// Setting CARGO_TARGET_DIR redirects ALL cargo output (including the
+			// final binary) into the cache volume, so remap the derived artifact
+			// path there; otherwise artifact extraction would look in the default
+			// workspace target dir and fail.
+			if spec.ArtifactPath != "" {
+				spec.ArtifactPath = remapArtifactPath(spec.ArtifactPath, cargoTargetDir)
+			}
 			// Serialize builds sharing a cache key so concurrent cargo
 			// invocations don't race inside the shared target directory.
-			unlock = d.lockFor(spec.CacheVolume + "/" + key)
+			u, lockErr := d.lockFor(ctx, spec.CacheVolume+"/"+key)
+			if lockErr != nil {
+				slog.WarnContext(ctx, "build cancelled while waiting for cache lock, building without cache",
+					"task_id", spec.TaskID, "error", lockErr)
+				hostConfig = nil
+				cacheEnv = nil
+			} else {
+				unlock = u
+			}
 		}
 	}
 	defer unlock()
@@ -359,11 +383,87 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 // lock is held for the duration of a Build call. The lock is per-builder-
 // process; separate builder processes sharing the same volume coordinate via
 // cargo's own file locking, which is safe for read-mostly dependency caches.
-func (d *DockerExecutor) lockFor(key string) func() {
-	mu, _ := d.cacheMu.LoadOrStore(key, &sync.Mutex{})
-	m := mu.(*sync.Mutex)
-	m.Lock()
-	return m.Unlock
+func (d *DockerExecutor) lockFor(ctx context.Context, key string) (func(), error) {
+	ch, _ := d.cacheMu.LoadOrStore(key, make(chan struct{}, 1))
+	c := ch.(chan struct{})
+	select {
+	case c <- struct{}{}:
+		return func() { <-c }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// ensureCacheVolume makes sure the named Docker volume exists. It inspects
+// first so a volume created out-of-band (e.g. by an operator, without our
+// label) is reused rather than rejected with a 409 conflict by VolumeCreate.
+func (d *DockerExecutor) ensureCacheVolume(ctx context.Context, name string) error {
+	if _, err := d.client.VolumeInspect(ctx, name); err == nil {
+		return nil
+	}
+	if _, err := d.client.VolumeCreate(ctx, volume.CreateOptions{
+		Name:   name,
+		Driver: "local",
+		Labels: map[string]string{"realm.buildcache": "true"},
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ensureVolumeWritable makes the cache volume's mountpoint world-writable.
+// Docker creates a named volume's mountpoint as root:root 0755, but the default
+// build image runs as the non-root `vscode` user, which cannot write there and
+// would fail the build with permission errors. We chmod it 0777 using a
+// throwaway root container built from the (already pulled) build image so the
+// non-root build can populate CARGO_HOME/CARGO_TARGET_DIR.
+func (d *DockerExecutor) ensureVolumeWritable(ctx context.Context, volumeName, target, buildImage string) error {
+	c, err := d.client.ContainerCreate(ctx,
+		&container.Config{
+			Image:      buildImage,
+			User:       "root",
+			Entrypoint: []string{"/bin/sh", "-c", fmt.Sprintf("chmod 777 %s || true", target)},
+		},
+		&container.HostConfig{
+			Mounts: []mount.Mount{
+				{Type: mount.TypeVolume, Source: volumeName, Target: target},
+			},
+		},
+		nil, nil, "",
+	)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = d.client.ContainerRemove(ctx, c.ID, container.RemoveOptions{Force: true}) }()
+	if err := d.client.ContainerStart(ctx, c.ID, container.StartOptions{}); err != nil {
+		return err
+	}
+	waitCh, errCh := d.client.ContainerWait(ctx, c.ID, container.WaitConditionNotRunning)
+	select {
+	case res := <-waitCh:
+		if res.StatusCode != 0 {
+			return fmt.Errorf("cache chmod container exited with status %d", res.StatusCode)
+		}
+	case e := <-errCh:
+		return e
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	return nil
+}
+
+// remapArtifactPath rewrites an artifact path that was derived for the default
+// workspace target directory (<buildDir>/realm/implants/target/<triple>/release/imix)
+// to point inside CARGO_TARGET_DIR. Setting CARGO_TARGET_DIR redirects all cargo
+// output there, so the final binary no longer lands at the default path. Paths
+// that don't look like a default-derived artifact path are returned unchanged
+// (e.g. a user-overridden ArtifactPath).
+func remapArtifactPath(artifactPath, cargoTargetDir string) string {
+	const marker = "/realm/implants/target/"
+	if idx := strings.Index(artifactPath, marker); idx >= 0 {
+		return path.Join(cargoTargetDir, artifactPath[idx+len(marker):])
+	}
+	return artifactPath
 }
 
 // cacheKeyFor derives a stable identifier for a build's cache layout from the

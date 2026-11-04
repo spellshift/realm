@@ -121,6 +121,12 @@ func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.H
 	// setup script embeds {{.BuildDir}}), allowing CARGO_TARGET_DIR artifacts
 	// cached in the shared volume to be reused. The Local executor shares the
 	// host filesystem, so it keeps a random, unique BuildDir.
+	//
+	// NOTE: executor here is the builder's stored Executor value, set once at
+	// enrollment and never refreshed. If a builder is later reconfigured
+	// (e.g. docker -> local) without re-enrolling, this will still reflect the
+	// stale enrollment-time value; that is an intentional, deliberate-step edge
+	// case, not normal operation.
 	if executor == "docker" {
 		buildDir = DockerBuildDir
 	}

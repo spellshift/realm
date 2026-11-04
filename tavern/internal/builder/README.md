@@ -146,7 +146,7 @@ explicitly disabled:
 ```yaml
 # builder.yaml
 executor: docker
-cache_volume: realm-build-cache   # omit or set to "" to build without a cache
+cache_volume: realm-build-cache   # omit to keep the default; "" disables caching
 ```
 
 When `cache_volume` is set, the executor:
@@ -167,14 +167,26 @@ reuse the cached registry, crates, and compiled artifacts. Builds that share a
 key are serialized within a single builder process to keep cargo from racing
 inside the shared target directory.
 
+Note: the cache volume name is a single shared string. If one Docker host runs
+builders for more than one independent Tavern deployment (e.g. separate
+engagements sharing a build host), they will silently share this volume (and its
+cached dependencies and checkouts) unless you give each deployment a distinct
+`cache_volume`.
+
 ### Getting the most out of the cache
 
-Cargo fingerprints include the absolute path of each workspace crate's source,
-so a brand-new clone directory per build (the default `{{.BuildDir}}`, a random
-`/tmp/realm-build-<uuid>`) still forces Realm's *own* crates to recompile even
-when the target cache is warm. The dependency tree — which is the bulk of compile
-time — is cached regardless. To also cache the workspace crates, have your setup
-script clone into the persistent cache dir instead of the random build dir, e.g.:
+The Docker executor resolves `{{.BuildDir}}` to a fixed `/tmp/realm-build` path
+(the container already isolates builds), so the rendered recipe — and therefore
+`CARGO_TARGET_DIR` — is stable across builds. That means cargo reuses **both** the
+dependency tree **and** Realm's own workspace crates from the shared volume, so
+the bulk of compile time is cached automatically; you don't need to do anything
+special to get it. (The Local executor keeps a random, unique `BuildDir` and does
+not use the cache volume.)
+
+One optional optimization is to keep the git checkout itself on the volume so the
+clone isn't re-downloaded every build (the container's `/tmp/realm-build` is
+discarded on teardown). Have your setup script clone into `$REALM_CACHE_DIR/repo`,
+e.g.:
 
 ```sh
 # setup script
@@ -184,9 +196,10 @@ cd "$REALM_CACHE_DIR/repo"
 # then ${BuildCommand} from the cached checkout
 ```
 
-Because `$REALM_CACHE_DIR` persists across builds, the clone is reused and the
-workspace crates' source paths stay stable, so their compiled artifacts are also
-reused on subsequent builds.
+Caveat: if multiple build profiles share the same `cache_volume` and clone
+different repositories (or different refs) into `$REALM_CACHE_DIR/repo`, they will
+overwrite each other's checkout. Only do this when all profiles build the same
+repo/ref, or give each profile its own `cache_volume`.
 
 If the volume cannot be created (e.g. driver limits or insufficient permission),
 the executor logs a warning and falls back to building without the cache rather

@@ -43,6 +43,10 @@ type Config struct {
 	// every build starts from a clean dependency/build cache. Defaults to a
 	// shared "realm-build-cache" volume so repeated builds reuse downloaded
 	// crates/modules and compiled artifacts.
+	//
+	// The default name is global and un-namespaced: if a single Docker host runs
+	// builders for more than one independent Tavern deployment, they will silently
+	// share this volume unless each deployment is given a distinct cache_volume.
 	CacheVolume string `yaml:"cache_volume"`
 }
 
