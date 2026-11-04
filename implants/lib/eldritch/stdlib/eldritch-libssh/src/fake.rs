@@ -1,10 +1,47 @@
 use super::SshLibrary;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
+use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use eldritch_macros::eldritch_library_impl;
+use eldritch_macros::{eldritch_library, eldritch_library_impl, eldritch_method};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Fake ssh session handle (returned as Foreign Value)
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[eldritch_library("ssh_session")]
+pub trait FakeSshSessionLibrary {
+    #[eldritch_method]
+    fn exec(&self, _command: String) -> Result<BTreeMap<String, Value>, String>;
+    #[eldritch_method]
+    fn close(&self) -> Result<(), String>;
+}
+
+#[derive(Debug)]
+#[eldritch_library_impl(FakeSshSessionLibrary)]
+pub struct FakeSshSessionHandle {
+    closed: spin::Mutex<bool>,
+}
+
+impl FakeSshSessionLibrary for FakeSshSessionHandle {
+    fn exec(&self, _command: String) -> Result<BTreeMap<String, Value>, String> {
+        if *self.closed.lock() {
+            return Err("ssh_session is closed".to_string());
+        }
+        let mut map = BTreeMap::new();
+        map.insert("status".into(), Value::Int(0));
+        map.insert("stdout".into(), Value::String("fake output".to_string()));
+        map.insert("stderr".into(), Value::String("".to_string()));
+        Ok(map)
+    }
+
+    fn close(&self) -> Result<(), String> {
+        *self.closed.lock() = true;
+        Ok(())
+    }
+}
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(SshLibrary)]
@@ -63,5 +100,21 @@ impl SshLibrary for SshLibraryFake {
         map.insert("stdout".into(), Value::String("fake output".to_string()));
         map.insert("stderr".into(), Value::String("".to_string()));
         Ok(map)
+    }
+
+    fn session(
+        &self,
+        _target: String,
+        _username: String,
+        _password: Option<String>,
+        _key: Option<String>,
+        _key_password: Option<String>,
+        _port: Option<i64>,
+        _timeout: Option<i64>,
+    ) -> Result<Value, String> {
+        let handle = FakeSshSessionHandle {
+            closed: spin::Mutex::new(false),
+        };
+        Ok(Value::Foreign(Arc::new(handle)))
     }
 }

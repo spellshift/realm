@@ -1,6 +1,6 @@
 use crossterm::{
     ExecutableCommand, QueueableCommand, cursor,
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     style::Stylize,
     terminal::{self, ClearType},
 };
@@ -104,8 +104,16 @@ fn main() -> io::Result<()> {
                             last_line: _,
                             prompt: _,
                         } => {
-                            // Clear current line visual and move down
-                            stdout.execute(cursor::MoveToNextLine(1))?;
+                            // Move down to a fresh line. We write a literal
+                            // "\r\n" rather than cursor::MoveToNextLine (ANSI
+                            // CNL): CNL only repositions the cursor, so once
+                            // the cursor reaches the terminal's bottom row it
+                            // becomes a no-op and the prompt stops visibly
+                            // advancing. A real line feed relies on the
+                            // terminal's native scroll-on-overflow instead.
+                            // See https://github.com/spellshift/realm/issues/1686.
+                            stdout.write_all(b"\r\n")?;
+                            stdout.flush()?;
 
                             terminal::disable_raw_mode()?;
                             match interpreter.interpret(&code) {
@@ -121,7 +129,11 @@ fn main() -> io::Result<()> {
                             render(&mut stdout, &repl)?;
                         }
                         ReplAction::AcceptLine { line: _, prompt: _ } => {
-                            stdout.execute(cursor::MoveToNextLine(1))?;
+                            // See the comment on the Submit branch above: a
+                            // literal newline is required so the terminal
+                            // scrolls once the cursor is pinned to the bottom
+                            // row.
+                            stdout.write_all(b"\r\n")?;
                             render(&mut stdout, &repl)?;
                         }
                         ReplAction::Render => {
@@ -156,6 +168,16 @@ fn main() -> io::Result<()> {
 }
 
 fn map_key(key: KeyEvent) -> Option<Input> {
+    // Windows consoles emit both key-down and key-up input records for every
+    // keypress, and crossterm's Windows event source surfaces both as
+    // `Event::Key` (`KeyEventKind::Press` and `KeyEventKind::Release`), with
+    // no filtering. Unix only ever emits `Press`. Without this check, every
+    // typed character would be processed twice on Windows. See
+    // https://github.com/spellshift/realm/issues/1702.
+    if key.kind != KeyEventKind::Press {
+        return None;
+    }
+
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::Cancel),
         KeyCode::Char('l') if key.modifiers.contains(KeyModifiers::CONTROL) => {

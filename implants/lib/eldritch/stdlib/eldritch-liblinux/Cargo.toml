@@ -6,9 +6,13 @@ edition = "2024"
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
+spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = { workspace = true }
+
+[target.'cfg(unix)'.dev-dependencies]
+tempfile = { workspace = true }
 
 [features]
 default = ["stdlib"]

@@ -12,6 +12,7 @@ mod chr;
 mod dir;
 mod enumerate;
 mod eprint;
+mod exception;
 mod fail;
 mod int;
 mod len;
@@ -63,6 +64,7 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
         ("dir", dir::builtin_dir as BuiltinFn),
         ("assert", assert::builtin_assert as BuiltinFn),
         ("assert_eq", assert_eq::builtin_assert_eq as BuiltinFn),
+        ("Exception", exception::builtin_exception as BuiltinFn),
         ("fail", fail::builtin_fail as BuiltinFn),
         ("enumerate", enumerate::builtin_enumerate as BuiltinFn),
         ("libs", libs::builtin_libs as BuiltinFn),

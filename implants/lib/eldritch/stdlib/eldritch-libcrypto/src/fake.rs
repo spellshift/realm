@@ -49,7 +49,7 @@ impl CryptoLibrary for CryptoLibraryFake {
         Base64LibraryFake.encode(content, encode_type)
     }
 
-    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<Vec<u8>, String> {
         Base64LibraryFake.decode(content, encode_type)
     }
 

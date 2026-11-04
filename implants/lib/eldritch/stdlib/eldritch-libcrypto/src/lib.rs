@@ -184,11 +184,11 @@ pub trait CryptoLibrary {
     /// - `encode_type` (`Option<str>`): The decoding variant (matches encoding options). Valid options: `STANDARD` (default), `STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`
     ///
     /// **Returns**
-    /// - `str`: The decoded string.
+    /// - `Bytes`: The decoded data.
     ///
     /// **Errors**
     /// - Returns an error string if decoding fails or the variant is invalid.
-    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String>;
+    fn decode_b64(&self, content: String, encode_type: Option<String>) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
     #[eldritch_deprecated(
