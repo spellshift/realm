@@ -55,8 +55,18 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
                         last_line: _,
                         prompt: _,
                     } => {
-                        // Clear current line visual and move down
-                        stdout.execute(cursor::MoveToNextLine(1))?;
+                        // Move down to a fresh line. We write a literal "\r\n"
+                        // rather than issuing cursor::MoveToNextLine (which
+                        // emits the ANSI CNL sequence) because CNL only
+                        // repositions the cursor: once the cursor reaches the
+                        // terminal's bottom row it has nowhere further to go
+                        // and the escape becomes a no-op, so the prompt stops
+                        // visibly advancing. A real line feed instead relies
+                        // on the terminal's native scroll-on-overflow
+                        // behavior, which keeps working once the screen fills
+                        // up. See https://github.com/spellshift/realm/issues/1686.
+                        stdout.write_all(b"\r\n")?;
+                        stdout.flush()?;
 
                         terminal::disable_raw_mode()?;
                         match inter.interpret(&code) {
@@ -72,7 +82,10 @@ pub fn repl(mut inter: Interpreter) -> io::Result<()> {
                         render(&mut stdout, &repl)?;
                     }
                     ReplAction::AcceptLine { line: _, prompt: _ } => {
-                        stdout.execute(cursor::MoveToNextLine(1))?;
+                        // See the comment on the Submit branch above: a
+                        // literal newline is required so the terminal scrolls
+                        // once the cursor is pinned to the bottom row.
+                        stdout.write_all(b"\r\n")?;
                         render(&mut stdout, &repl)?;
                     }
                     ReplAction::Render => {
