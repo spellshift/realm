@@ -101,7 +101,13 @@ func FrozenTome(bundle []byte, tomeID int) ([]byte, error) {
 // generated BuildDir (see NewBuildDir) -- this is what lets the setup
 // script clone the repo into an arbitrary unique directory while the build
 // script and artifact path still agree on exactly where to find it.
-func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.Host_Platform, format TargetFormat) (string, string, string, error) {
+//
+// The Docker executor uses a static BuildDir (see DockerBuildDir) because the
+// container already isolates builds; a stable path keeps the cargo cache key
+// constant across builds so CARGO_TARGET_DIR artifacts cached in the shared
+// volume are reused. The Local executor uses a random, unique BuildDir to
+// avoid colliding with other builds on the shared host filesystem.
+func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.Host_Platform, format TargetFormat, executor string) (string, string, string, error) {
 	if err := ValidateTargetFormat(os, format); err != nil {
 		return "", "", "", err
 	}
@@ -110,6 +116,14 @@ func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.H
 		return "", "", "", err
 	}
 	buildDir := NewBuildDir()
+	// The Docker executor runs each build in an isolated container, so a static
+	// BuildDir is safe and keeps the cargo cache key stable across builds (the
+	// setup script embeds {{.BuildDir}}), allowing CARGO_TARGET_DIR artifacts
+	// cached in the shared volume to be reused. The Local executor shares the
+	// host filesystem, so it keeps a random, unique BuildDir.
+	if executor == "docker" {
+		buildDir = DockerBuildDir
+	}
 	values := map[string]string{
 		"BuildCommand": command,
 		"ArtifactPath": DeriveArtifactPath(os, buildDir),

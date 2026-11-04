@@ -771,7 +771,41 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		}
 	}
 
-	setupScript, buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, setupScript, input.TargetOs, targetFormat)
+	// Select a healthy builder that supports the target OS up front so the
+	// rendered recipe can use the executor-appropriate BuildDir (the Docker
+	// executor uses a static BuildDir; the Local executor a random one).
+	now := time.Now()
+	healthyBuilders, err := graph.Builder.Query().
+		Where(
+			entbuilder.LastSeenAtNotNil(),
+			entbuilder.LastSeenAtGTE(now.Add(-builder.MaxStaleAge)),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query builders: %w", err)
+	}
+
+	// Filter builders that support the target OS.
+	var candidates []*ent.Builder
+	for _, b := range healthyBuilders {
+		if !builder.BuilderHealthy(*b.LastSeenAt, b.PollInterval, now) {
+			continue
+		}
+		for _, target := range b.SupportedTargets {
+			if target == input.TargetOs {
+				candidates = append(candidates, b)
+				break
+			}
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("no builder available that supports target %s (or all matching builders are offline)", input.TargetOs.String())
+	}
+
+	selected := candidates[mathrand.Intn(len(candidates))]
+
+	setupScript, buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, setupScript, input.TargetOs, targetFormat, string(selected.Executor))
 	if err != nil {
 		return nil, fmt.Errorf("resolve build recipe: %w", err)
 	}
@@ -810,43 +844,6 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		}
 		bundleID = &bundle.ID
 	}
-
-	// 5. Query builders that have checked in; freshness uses each builder's own interval,
-	// so the precise check happens below in application code. Still bound the query at
-	// the DB layer using the longest possible staleness window (3x the max poll interval)
-	// to avoid pulling every builder that has ever checked in, including long-dead ones.
-	now := time.Now()
-	healthyBuilders, err := graph.Builder.Query().
-		Where(
-			entbuilder.LastSeenAtNotNil(),
-			entbuilder.LastSeenAtGTE(now.Add(-builder.MaxStaleAge)),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query builders: %w", err)
-	}
-
-	// 6. Filter builders that support the target OS.
-	// SupportedTargets is a JSON field so it must be filtered in application code.
-	var candidates []*ent.Builder
-	for _, b := range healthyBuilders {
-		if !builder.BuilderHealthy(*b.LastSeenAt, b.PollInterval, now) {
-			continue
-		}
-		for _, target := range b.SupportedTargets {
-			if target == input.TargetOs {
-				candidates = append(candidates, b)
-				break
-			}
-		}
-	}
-
-	if len(candidates) == 0 {
-		return nil, fmt.Errorf("no builder available that supports target %s (or all matching builders are offline)", input.TargetOs.String())
-	}
-
-	// 7. Randomly select one builder
-	selected := candidates[mathrand.Intn(len(candidates))]
 
 	// 8. Create the build task
 	create := graph.BuildTask.Create().

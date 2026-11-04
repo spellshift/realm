@@ -16,6 +16,17 @@ const (
 	// DefaultBuildImage is the default Docker image for building agents.
 	DefaultBuildImage = "spellshift/devcontainer:main"
 
+	// DockerBuildDir is the fixed build directory used by the Docker executor.
+	// It lives under /tmp (world-writable in typical build images) so the
+	// non-root build user can write to it. The Docker container already
+	// provides filesystem isolation between builds, so a static path keeps the
+	// cargo cache key stable across builds (the setup script embeds
+	// {{.BuildDir}}), allowing compiled artifacts cached in the shared cache
+	// volume's CARGO_TARGET_DIR to be reused instead of being discarded on
+	// every build. The Local executor keeps a random, unique BuildDir because
+	// it shares the host filesystem with other builds.
+	DockerBuildDir = "/tmp/realm-build"
+
 	// DefaultTargetFormat is the default output format for builds.
 	DefaultTargetFormat = builderpb.TargetFormat_TARGET_FORMAT_BIN
 
