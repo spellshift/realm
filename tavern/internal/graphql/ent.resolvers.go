@@ -139,9 +139,132 @@ func (r *Resolver) ShellTask() generated.ShellTaskResolver { return &shellTaskRe
 // User returns generated.UserResolver implementation.
 func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
 
+// AdventureWhereInput returns generated.AdventureWhereInputResolver implementation.
+func (r *Resolver) AdventureWhereInput() generated.AdventureWhereInputResolver {
+	return &adventureWhereInputResolver{r}
+}
+
+// AssetWhereInput returns generated.AssetWhereInputResolver implementation.
+func (r *Resolver) AssetWhereInput() generated.AssetWhereInputResolver {
+	return &assetWhereInputResolver{r}
+}
+
+// BeaconWhereInput returns generated.BeaconWhereInputResolver implementation.
+func (r *Resolver) BeaconWhereInput() generated.BeaconWhereInputResolver {
+	return &beaconWhereInputResolver{r}
+}
+
+// BuildProfileWhereInput returns generated.BuildProfileWhereInputResolver implementation.
+func (r *Resolver) BuildProfileWhereInput() generated.BuildProfileWhereInputResolver {
+	return &buildProfileWhereInputResolver{r}
+}
+
+// BuildTaskWhereInput returns generated.BuildTaskWhereInputResolver implementation.
+func (r *Resolver) BuildTaskWhereInput() generated.BuildTaskWhereInputResolver {
+	return &buildTaskWhereInputResolver{r}
+}
+
+// BuilderEnrollmentTokenWhereInput returns generated.BuilderEnrollmentTokenWhereInputResolver implementation.
+func (r *Resolver) BuilderEnrollmentTokenWhereInput() generated.BuilderEnrollmentTokenWhereInputResolver {
+	return &builderEnrollmentTokenWhereInputResolver{r}
+}
+
+// BuilderWhereInput returns generated.BuilderWhereInputResolver implementation.
+func (r *Resolver) BuilderWhereInput() generated.BuilderWhereInputResolver {
+	return &builderWhereInputResolver{r}
+}
+
+// DeviceAuthWhereInput returns generated.DeviceAuthWhereInputResolver implementation.
+func (r *Resolver) DeviceAuthWhereInput() generated.DeviceAuthWhereInputResolver {
+	return &deviceAuthWhereInputResolver{r}
+}
+
+// HostCredentialWhereInput returns generated.HostCredentialWhereInputResolver implementation.
+func (r *Resolver) HostCredentialWhereInput() generated.HostCredentialWhereInputResolver {
+	return &hostCredentialWhereInputResolver{r}
+}
+
+// HostFileWhereInput returns generated.HostFileWhereInputResolver implementation.
+func (r *Resolver) HostFileWhereInput() generated.HostFileWhereInputResolver {
+	return &hostFileWhereInputResolver{r}
+}
+
+// HostProcessWhereInput returns generated.HostProcessWhereInputResolver implementation.
+func (r *Resolver) HostProcessWhereInput() generated.HostProcessWhereInputResolver {
+	return &hostProcessWhereInputResolver{r}
+}
+
+// HostWhereInput returns generated.HostWhereInputResolver implementation.
+func (r *Resolver) HostWhereInput() generated.HostWhereInputResolver {
+	return &hostWhereInputResolver{r}
+}
+
+// LinkWhereInput returns generated.LinkWhereInputResolver implementation.
+func (r *Resolver) LinkWhereInput() generated.LinkWhereInputResolver {
+	return &linkWhereInputResolver{r}
+}
+
+// NetworkHostWhereInput returns generated.NetworkHostWhereInputResolver implementation.
+func (r *Resolver) NetworkHostWhereInput() generated.NetworkHostWhereInputResolver {
+	return &networkHostWhereInputResolver{r}
+}
+
+// NetworkWhereInput returns generated.NetworkWhereInputResolver implementation.
+func (r *Resolver) NetworkWhereInput() generated.NetworkWhereInputResolver {
+	return &networkWhereInputResolver{r}
+}
+
+// OperatorNoteWhereInput returns generated.OperatorNoteWhereInputResolver implementation.
+func (r *Resolver) OperatorNoteWhereInput() generated.OperatorNoteWhereInputResolver {
+	return &operatorNoteWhereInputResolver{r}
+}
+
+// QuestWhereInput returns generated.QuestWhereInputResolver implementation.
+func (r *Resolver) QuestWhereInput() generated.QuestWhereInputResolver {
+	return &questWhereInputResolver{r}
+}
+
+// RepositoryWhereInput returns generated.RepositoryWhereInputResolver implementation.
+func (r *Resolver) RepositoryWhereInput() generated.RepositoryWhereInputResolver {
+	return &repositoryWhereInputResolver{r}
+}
+
+// ScheduledTaskWhereInput returns generated.ScheduledTaskWhereInputResolver implementation.
+func (r *Resolver) ScheduledTaskWhereInput() generated.ScheduledTaskWhereInputResolver {
+	return &scheduledTaskWhereInputResolver{r}
+}
+
+// ScreenshotWhereInput returns generated.ScreenshotWhereInputResolver implementation.
+func (r *Resolver) ScreenshotWhereInput() generated.ScreenshotWhereInputResolver {
+	return &screenshotWhereInputResolver{r}
+}
+
+// ShellPivotWhereInput returns generated.ShellPivotWhereInputResolver implementation.
+func (r *Resolver) ShellPivotWhereInput() generated.ShellPivotWhereInputResolver {
+	return &shellPivotWhereInputResolver{r}
+}
+
 // ShellTaskWhereInput returns generated.ShellTaskWhereInputResolver implementation.
 func (r *Resolver) ShellTaskWhereInput() generated.ShellTaskWhereInputResolver {
 	return &shellTaskWhereInputResolver{r}
+}
+
+// TagWhereInput returns generated.TagWhereInputResolver implementation.
+func (r *Resolver) TagWhereInput() generated.TagWhereInputResolver { return &tagWhereInputResolver{r} }
+
+// TaskWhereInput returns generated.TaskWhereInputResolver implementation.
+func (r *Resolver) TaskWhereInput() generated.TaskWhereInputResolver {
+	return &taskWhereInputResolver{r}
+}
+
+// TomeWhereInput returns generated.TomeWhereInputResolver implementation.
+func (r *Resolver) TomeWhereInput() generated.TomeWhereInputResolver {
+	return &tomeWhereInputResolver{r}
+}
+
+// UserWhereInput returns generated.UserWhereInputResolver implementation.
+func (r *Resolver) UserWhereInput() generated.UserWhereInputResolver {
+	return &userWhereInputResolver{r}
 }
 
 type hostFileResolver struct{ *Resolver }
@@ -149,4 +272,29 @@ type queryResolver struct{ *Resolver }
 type questResolver struct{ *Resolver }
 type shellTaskResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+type adventureWhereInputResolver struct{ *Resolver }
+type assetWhereInputResolver struct{ *Resolver }
+type beaconWhereInputResolver struct{ *Resolver }
+type buildProfileWhereInputResolver struct{ *Resolver }
+type buildTaskWhereInputResolver struct{ *Resolver }
+type builderEnrollmentTokenWhereInputResolver struct{ *Resolver }
+type builderWhereInputResolver struct{ *Resolver }
+type deviceAuthWhereInputResolver struct{ *Resolver }
+type hostCredentialWhereInputResolver struct{ *Resolver }
+type hostFileWhereInputResolver struct{ *Resolver }
+type hostProcessWhereInputResolver struct{ *Resolver }
+type hostWhereInputResolver struct{ *Resolver }
+type linkWhereInputResolver struct{ *Resolver }
+type networkHostWhereInputResolver struct{ *Resolver }
+type networkWhereInputResolver struct{ *Resolver }
+type operatorNoteWhereInputResolver struct{ *Resolver }
+type questWhereInputResolver struct{ *Resolver }
+type repositoryWhereInputResolver struct{ *Resolver }
+type scheduledTaskWhereInputResolver struct{ *Resolver }
+type screenshotWhereInputResolver struct{ *Resolver }
+type shellPivotWhereInputResolver struct{ *Resolver }
 type shellTaskWhereInputResolver struct{ *Resolver }
+type tagWhereInputResolver struct{ *Resolver }
+type taskWhereInputResolver struct{ *Resolver }
+type tomeWhereInputResolver struct{ *Resolver }
+type userWhereInputResolver struct{ *Resolver }

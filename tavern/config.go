@@ -20,6 +20,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/sqliteext"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/portals/mux"
@@ -148,7 +149,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 
 	var (
 		mysqlDSN = "file:ent?mode=memory&cache=shared&_fk=1"
-		driver   = "sqlite3"
+		driver   = sqliteext.DriverName
 	)
 	if cfg != nil && cfg.mysqlDSN != "" {
 		mysqlDSN = cfg.mysqlDSN

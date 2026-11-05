@@ -68,6 +68,116 @@ type UserResolver interface {
 	APIKey(ctx context.Context, obj *ent.User) (*string, error)
 }
 
+type AdventureWhereInputResolver interface {
+	NameMatchRegex(ctx context.Context, obj *ent.AdventureWhereInput, data *string) error
+}
+type AssetWhereInputResolver interface {
+	HashMatchRegex(ctx context.Context, obj *ent.AssetWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.AssetWhereInput, data *string) error
+}
+type BeaconWhereInputResolver interface {
+	AgentIdentifierMatchRegex(ctx context.Context, obj *ent.BeaconWhereInput, data *string) error
+	IdentifierMatchRegex(ctx context.Context, obj *ent.BeaconWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.BeaconWhereInput, data *string) error
+	PrincipalMatchRegex(ctx context.Context, obj *ent.BeaconWhereInput, data *string) error
+}
+type BuildProfileWhereInputResolver interface {
+	ArtifactPathMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	BuildImageMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	BuildScriptMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	DescriptionMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	PostbuildscriptMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	PrebuildscriptMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	SetupscriptMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+	UniqueMatchRegex(ctx context.Context, obj *ent.BuildProfileWhereInput, data *string) error
+}
+type BuildTaskWhereInputResolver interface {
+	ArtifactPathMatchRegex(ctx context.Context, obj *ent.BuildTaskWhereInput, data *string) error
+	BuildScriptMatchRegex(ctx context.Context, obj *ent.BuildTaskWhereInput, data *string) error
+	ErrorMatchRegex(ctx context.Context, obj *ent.BuildTaskWhereInput, data *string) error
+	OutputMatchRegex(ctx context.Context, obj *ent.BuildTaskWhereInput, data *string) error
+	SetupscriptMatchRegex(ctx context.Context, obj *ent.BuildTaskWhereInput, data *string) error
+	UniqueMatchRegex(ctx context.Context, obj *ent.BuildTaskWhereInput, data *string) error
+}
+type BuilderEnrollmentTokenWhereInputResolver interface {
+	TokenHashMatchRegex(ctx context.Context, obj *ent.BuilderEnrollmentTokenWhereInput, data *string) error
+}
+type BuilderWhereInputResolver interface {
+	IdentifierMatchRegex(ctx context.Context, obj *ent.BuilderWhereInput, data *string) error
+	UpstreamMatchRegex(ctx context.Context, obj *ent.BuilderWhereInput, data *string) error
+}
+type DeviceAuthWhereInputResolver interface {
+	DeviceCodeMatchRegex(ctx context.Context, obj *ent.DeviceAuthWhereInput, data *string) error
+	UserCodeMatchRegex(ctx context.Context, obj *ent.DeviceAuthWhereInput, data *string) error
+}
+type HostCredentialWhereInputResolver interface {
+	PrincipalMatchRegex(ctx context.Context, obj *ent.HostCredentialWhereInput, data *string) error
+	SecretMatchRegex(ctx context.Context, obj *ent.HostCredentialWhereInput, data *string) error
+}
+type HostFileWhereInputResolver interface {
+	GroupMatchRegex(ctx context.Context, obj *ent.HostFileWhereInput, data *string) error
+	HashMatchRegex(ctx context.Context, obj *ent.HostFileWhereInput, data *string) error
+	OwnerMatchRegex(ctx context.Context, obj *ent.HostFileWhereInput, data *string) error
+	PathMatchRegex(ctx context.Context, obj *ent.HostFileWhereInput, data *string) error
+	PermissionsMatchRegex(ctx context.Context, obj *ent.HostFileWhereInput, data *string) error
+}
+type HostProcessWhereInputResolver interface {
+	CmdMatchRegex(ctx context.Context, obj *ent.HostProcessWhereInput, data *string) error
+	CwdMatchRegex(ctx context.Context, obj *ent.HostProcessWhereInput, data *string) error
+	EnvMatchRegex(ctx context.Context, obj *ent.HostProcessWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.HostProcessWhereInput, data *string) error
+	PathMatchRegex(ctx context.Context, obj *ent.HostProcessWhereInput, data *string) error
+	PrincipalMatchRegex(ctx context.Context, obj *ent.HostProcessWhereInput, data *string) error
+}
+type HostWhereInputResolver interface {
+	ExternalIPMatchRegex(ctx context.Context, obj *ent.HostWhereInput, data *string) error
+	IdentifierMatchRegex(ctx context.Context, obj *ent.HostWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.HostWhereInput, data *string) error
+	PrimaryIPMatchRegex(ctx context.Context, obj *ent.HostWhereInput, data *string) error
+}
+type LinkWhereInputResolver interface {
+	PathMatchRegex(ctx context.Context, obj *ent.LinkWhereInput, data *string) error
+}
+type NetworkHostWhereInputResolver interface {
+	HostnameMatchRegex(ctx context.Context, obj *ent.NetworkHostWhereInput, data *string) error
+	IPAddressMatchRegex(ctx context.Context, obj *ent.NetworkHostWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.NetworkHostWhereInput, data *string) error
+	SubnetMatchRegex(ctx context.Context, obj *ent.NetworkHostWhereInput, data *string) error
+}
+type NetworkWhereInputResolver interface {
+	DescriptionMatchRegex(ctx context.Context, obj *ent.NetworkWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.NetworkWhereInput, data *string) error
+	SubnetMatchRegex(ctx context.Context, obj *ent.NetworkWhereInput, data *string) error
+}
+type OperatorNoteWhereInputResolver interface {
+	ContentMatchRegex(ctx context.Context, obj *ent.OperatorNoteWhereInput, data *string) error
+}
+type QuestWhereInputResolver interface {
+	EldritchAtCreationMatchRegex(ctx context.Context, obj *ent.QuestWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.QuestWhereInput, data *string) error
+	ParamDefsAtCreationMatchRegex(ctx context.Context, obj *ent.QuestWhereInput, data *string) error
+	ParametersMatchRegex(ctx context.Context, obj *ent.QuestWhereInput, data *string) error
+}
+type RepositoryWhereInputResolver interface {
+	PublicKeyMatchRegex(ctx context.Context, obj *ent.RepositoryWhereInput, data *string) error
+	URLMatchRegex(ctx context.Context, obj *ent.RepositoryWhereInput, data *string) error
+}
+type ScheduledTaskWhereInputResolver interface {
+	DescriptionMatchRegex(ctx context.Context, obj *ent.ScheduledTaskWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.ScheduledTaskWhereInput, data *string) error
+	ParametersMatchRegex(ctx context.Context, obj *ent.ScheduledTaskWhereInput, data *string) error
+	RunOnScheduleMatchRegex(ctx context.Context, obj *ent.ScheduledTaskWhereInput, data *string) error
+}
+type ScreenshotWhereInputResolver interface {
+	HashMatchRegex(ctx context.Context, obj *ent.ScreenshotWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.ScreenshotWhereInput, data *string) error
+}
+type ShellPivotWhereInputResolver interface {
+	DataMatchRegex(ctx context.Context, obj *ent.ShellPivotWhereInput, data *string) error
+	DestinationMatchRegex(ctx context.Context, obj *ent.ShellPivotWhereInput, data *string) error
+	StreamIDMatchRegex(ctx context.Context, obj *ent.ShellPivotWhereInput, data *string) error
+}
 type ShellTaskWhereInputResolver interface {
 	SequenceID(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error
 	SequenceIdneq(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error
@@ -77,6 +187,30 @@ type ShellTaskWhereInputResolver interface {
 	SequenceIdgte(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error
 	SequenceIdlt(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error
 	SequenceIdlte(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error
+
+	ErrorMatchRegex(ctx context.Context, obj *ent.ShellTaskWhereInput, data *string) error
+	InputMatchRegex(ctx context.Context, obj *ent.ShellTaskWhereInput, data *string) error
+	OutputMatchRegex(ctx context.Context, obj *ent.ShellTaskWhereInput, data *string) error
+	StreamIDMatchRegex(ctx context.Context, obj *ent.ShellTaskWhereInput, data *string) error
+}
+type TagWhereInputResolver interface {
+	NameMatchRegex(ctx context.Context, obj *ent.TagWhereInput, data *string) error
+}
+type TaskWhereInputResolver interface {
+	ErrorMatchRegex(ctx context.Context, obj *ent.TaskWhereInput, data *string) error
+	OutputMatchRegex(ctx context.Context, obj *ent.TaskWhereInput, data *string) error
+}
+type TomeWhereInputResolver interface {
+	AuthorMatchRegex(ctx context.Context, obj *ent.TomeWhereInput, data *string) error
+	DescriptionMatchRegex(ctx context.Context, obj *ent.TomeWhereInput, data *string) error
+	EldritchMatchRegex(ctx context.Context, obj *ent.TomeWhereInput, data *string) error
+	NameMatchRegex(ctx context.Context, obj *ent.TomeWhereInput, data *string) error
+	ParamDefsMatchRegex(ctx context.Context, obj *ent.TomeWhereInput, data *string) error
+}
+type UserWhereInputResolver interface {
+	NameMatchRegex(ctx context.Context, obj *ent.UserWhereInput, data *string) error
+	OauthIDMatchRegex(ctx context.Context, obj *ent.UserWhereInput, data *string) error
+	PhotoURLMatchRegex(ctx context.Context, obj *ent.UserWhereInput, data *string) error
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -22815,7 +22949,7 @@ func (ec *executionContext) unmarshalInputAdventureWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasQuests", "hasQuestsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "hasQuests", "hasQuestsWith", "nameMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23116,6 +23250,15 @@ func (ec *executionContext) unmarshalInputAdventureWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.HasQuestsWith = data
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.AdventureWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -23173,7 +23316,7 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold", "hasTomes", "hasTomesWith", "hasLinks", "hasLinksWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold", "hasTomes", "hasTomesWith", "hasLinks", "hasLinksWith", "hasCreator", "hasCreatorWith", "hashMatchRegex", "nameMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23649,6 +23792,24 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasCreatorWith = data
+		case "hashMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hashMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.AssetWhereInput().HashMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.AssetWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -24029,7 +24190,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "transport", "transportNEQ", "transportIn", "transportNotIn", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith", "hasShells", "hasShellsWith", "hasHistory", "hasHistoryWith", "hasEvents", "hasEventsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "transport", "transportNEQ", "transportIn", "transportNotIn", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith", "hasShells", "hasShellsWith", "hasHistory", "hasHistoryWith", "hasEvents", "hasEventsWith", "agentIdentifierMatchRegex", "identifierMatchRegex", "nameMatchRegex", "principalMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -24925,6 +25086,42 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.HasEventsWith = data
+		case "agentIdentifierMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentIdentifierMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BeaconWhereInput().AgentIdentifierMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "identifierMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BeaconWhereInput().IdentifierMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BeaconWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "principalMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("principalMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BeaconWhereInput().PrincipalMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -24982,7 +25179,7 @@ func (ec *executionContext) unmarshalInputBuildProfileWhereInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "buildImage", "buildImageNEQ", "buildImageIn", "buildImageNotIn", "buildImageGT", "buildImageGTE", "buildImageLT", "buildImageLTE", "buildImageContains", "buildImageHasPrefix", "buildImageHasSuffix", "buildImageEqualFold", "buildImageContainsFold", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathEqualFold", "artifactPathContainsFold", "prebuildscript", "prebuildscriptNEQ", "prebuildscriptIn", "prebuildscriptNotIn", "prebuildscriptGT", "prebuildscriptGTE", "prebuildscriptLT", "prebuildscriptLTE", "prebuildscriptContains", "prebuildscriptHasPrefix", "prebuildscriptHasSuffix", "prebuildscriptEqualFold", "prebuildscriptContainsFold", "setupscript", "setupscriptNEQ", "setupscriptIn", "setupscriptNotIn", "setupscriptGT", "setupscriptGTE", "setupscriptLT", "setupscriptLTE", "setupscriptContains", "setupscriptHasPrefix", "setupscriptHasSuffix", "setupscriptEqualFold", "setupscriptContainsFold", "postbuildscript", "postbuildscriptNEQ", "postbuildscriptIn", "postbuildscriptNotIn", "postbuildscriptGT", "postbuildscriptGTE", "postbuildscriptLT", "postbuildscriptLTE", "postbuildscriptContains", "postbuildscriptHasPrefix", "postbuildscriptHasSuffix", "postbuildscriptEqualFold", "postbuildscriptContainsFold", "unique", "uniqueNEQ", "uniqueIn", "uniqueNotIn", "uniqueGT", "uniqueGTE", "uniqueLT", "uniqueLTE", "uniqueContains", "uniqueHasPrefix", "uniqueHasSuffix", "uniqueIsNil", "uniqueNotNil", "uniqueEqualFold", "uniqueContainsFold", "hasBuildtasks", "hasBuildtasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "buildImage", "buildImageNEQ", "buildImageIn", "buildImageNotIn", "buildImageGT", "buildImageGTE", "buildImageLT", "buildImageLTE", "buildImageContains", "buildImageHasPrefix", "buildImageHasSuffix", "buildImageEqualFold", "buildImageContainsFold", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathEqualFold", "artifactPathContainsFold", "prebuildscript", "prebuildscriptNEQ", "prebuildscriptIn", "prebuildscriptNotIn", "prebuildscriptGT", "prebuildscriptGTE", "prebuildscriptLT", "prebuildscriptLTE", "prebuildscriptContains", "prebuildscriptHasPrefix", "prebuildscriptHasSuffix", "prebuildscriptEqualFold", "prebuildscriptContainsFold", "setupscript", "setupscriptNEQ", "setupscriptIn", "setupscriptNotIn", "setupscriptGT", "setupscriptGTE", "setupscriptLT", "setupscriptLTE", "setupscriptContains", "setupscriptHasPrefix", "setupscriptHasSuffix", "setupscriptEqualFold", "setupscriptContainsFold", "postbuildscript", "postbuildscriptNEQ", "postbuildscriptIn", "postbuildscriptNotIn", "postbuildscriptGT", "postbuildscriptGTE", "postbuildscriptLT", "postbuildscriptLTE", "postbuildscriptContains", "postbuildscriptHasPrefix", "postbuildscriptHasSuffix", "postbuildscriptEqualFold", "postbuildscriptContainsFold", "unique", "uniqueNEQ", "uniqueIn", "uniqueNotIn", "uniqueGT", "uniqueGTE", "uniqueLT", "uniqueLTE", "uniqueContains", "uniqueHasPrefix", "uniqueHasSuffix", "uniqueIsNil", "uniqueNotNil", "uniqueEqualFold", "uniqueContainsFold", "hasBuildtasks", "hasBuildtasksWith", "artifactPathMatchRegex", "buildImageMatchRegex", "buildScriptMatchRegex", "descriptionMatchRegex", "nameMatchRegex", "postbuildscriptMatchRegex", "prebuildscriptMatchRegex", "setupscriptMatchRegex", "uniqueMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25913,6 +26110,87 @@ func (ec *executionContext) unmarshalInputBuildProfileWhereInput(ctx context.Con
 				return it, err
 			}
 			it.HasBuildtasksWith = data
+		case "artifactPathMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artifactPathMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().ArtifactPathMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "buildImageMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildImageMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().BuildImageMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "buildScriptMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildScriptMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().BuildScriptMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "descriptionMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descriptionMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().DescriptionMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "postbuildscriptMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postbuildscriptMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().PostbuildscriptMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "prebuildscriptMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prebuildscriptMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().PrebuildscriptMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "setupscriptMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("setupscriptMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().SetupscriptMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "uniqueMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uniqueMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildProfileWhereInput().UniqueMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -25970,7 +26248,7 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "setupscript", "setupscriptNEQ", "setupscriptIn", "setupscriptNotIn", "setupscriptGT", "setupscriptGTE", "setupscriptLT", "setupscriptLTE", "setupscriptContains", "setupscriptHasPrefix", "setupscriptHasSuffix", "setupscriptIsNil", "setupscriptNotNil", "setupscriptEqualFold", "setupscriptContainsFold", "unique", "uniqueNEQ", "uniqueIn", "uniqueNotIn", "uniqueGT", "uniqueGTE", "uniqueLT", "uniqueLTE", "uniqueContains", "uniqueHasPrefix", "uniqueHasSuffix", "uniqueIsNil", "uniqueNotNil", "uniqueEqualFold", "uniqueContainsFold", "hasBundle", "hasBundleWith", "hasBuilder", "hasBuilderWith", "hasProfile", "hasProfileWith", "hasArtifact", "hasArtifactWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "setupscript", "setupscriptNEQ", "setupscriptIn", "setupscriptNotIn", "setupscriptGT", "setupscriptGTE", "setupscriptLT", "setupscriptLTE", "setupscriptContains", "setupscriptHasPrefix", "setupscriptHasSuffix", "setupscriptIsNil", "setupscriptNotNil", "setupscriptEqualFold", "setupscriptContainsFold", "unique", "uniqueNEQ", "uniqueIn", "uniqueNotIn", "uniqueGT", "uniqueGTE", "uniqueLT", "uniqueLTE", "uniqueContains", "uniqueHasPrefix", "uniqueHasSuffix", "uniqueIsNil", "uniqueNotNil", "uniqueEqualFold", "uniqueContainsFold", "hasBundle", "hasBundleWith", "hasBuilder", "hasBuilderWith", "hasProfile", "hasProfileWith", "hasArtifact", "hasArtifactWith", "artifactPathMatchRegex", "buildScriptMatchRegex", "errorMatchRegex", "outputMatchRegex", "setupscriptMatchRegex", "uniqueMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27286,6 +27564,60 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.HasArtifactWith = data
+		case "artifactPathMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artifactPathMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildTaskWhereInput().ArtifactPathMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "buildScriptMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildScriptMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildTaskWhereInput().BuildScriptMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "errorMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("errorMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildTaskWhereInput().ErrorMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "outputMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("outputMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildTaskWhereInput().OutputMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "setupscriptMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("setupscriptMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildTaskWhereInput().SetupscriptMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "uniqueMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uniqueMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuildTaskWhereInput().UniqueMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -27302,7 +27634,7 @@ func (ec *executionContext) unmarshalInputBuilderEnrollmentTokenWhereInput(ctx c
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "used", "usedNEQ"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "used", "usedNEQ", "tokenHashMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27400,6 +27732,15 @@ func (ec *executionContext) unmarshalInputBuilderEnrollmentTokenWhereInput(ctx c
 				return it, err
 			}
 			it.UsedNEQ = data
+		case "tokenHashMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tokenHashMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuilderEnrollmentTokenWhereInput().TokenHashMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -27457,7 +27798,7 @@ func (ec *executionContext) unmarshalInputBuilderWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "upstream", "upstreamNEQ", "upstreamIn", "upstreamNotIn", "upstreamGT", "upstreamGTE", "upstreamLT", "upstreamLTE", "upstreamContains", "upstreamHasPrefix", "upstreamHasSuffix", "upstreamEqualFold", "upstreamContainsFold", "pollInterval", "pollIntervalNEQ", "pollIntervalIn", "pollIntervalNotIn", "pollIntervalGT", "pollIntervalGTE", "pollIntervalLT", "pollIntervalLTE", "executor", "executorNEQ", "executorIn", "executorNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "hasBuildtasks", "hasBuildtasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "upstream", "upstreamNEQ", "upstreamIn", "upstreamNotIn", "upstreamGT", "upstreamGTE", "upstreamLT", "upstreamLTE", "upstreamContains", "upstreamHasPrefix", "upstreamHasSuffix", "upstreamEqualFold", "upstreamContainsFold", "pollInterval", "pollIntervalNEQ", "pollIntervalIn", "pollIntervalNotIn", "pollIntervalGT", "pollIntervalGTE", "pollIntervalLT", "pollIntervalLTE", "executor", "executorNEQ", "executorIn", "executorNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "hasBuildtasks", "hasBuildtasksWith", "identifierMatchRegex", "upstreamMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28003,6 +28344,24 @@ func (ec *executionContext) unmarshalInputBuilderWhereInput(ctx context.Context,
 				return it, err
 			}
 			it.HasBuildtasksWith = data
+		case "identifierMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuilderWhereInput().IdentifierMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "upstreamMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.BuilderWhereInput().UpstreamMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -28911,7 +29270,7 @@ func (ec *executionContext) unmarshalInputDeviceAuthWhereInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "userCode", "userCodeNEQ", "userCodeIn", "userCodeNotIn", "userCodeGT", "userCodeGTE", "userCodeLT", "userCodeLTE", "userCodeContains", "userCodeHasPrefix", "userCodeHasSuffix", "userCodeEqualFold", "userCodeContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "expiresAt", "expiresAtNEQ", "expiresAtIn", "expiresAtNotIn", "expiresAtGT", "expiresAtGTE", "expiresAtLT", "expiresAtLTE", "hasUser", "hasUserWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "userCode", "userCodeNEQ", "userCodeIn", "userCodeNotIn", "userCodeGT", "userCodeGTE", "userCodeLT", "userCodeLTE", "userCodeContains", "userCodeHasPrefix", "userCodeHasSuffix", "userCodeEqualFold", "userCodeContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "expiresAt", "expiresAtNEQ", "expiresAtIn", "expiresAtNotIn", "expiresAtGT", "expiresAtGTE", "expiresAtLT", "expiresAtLTE", "hasUser", "hasUserWith", "deviceCodeMatchRegex", "userCodeMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29296,6 +29655,24 @@ func (ec *executionContext) unmarshalInputDeviceAuthWhereInput(ctx context.Conte
 				return it, err
 			}
 			it.HasUserWith = data
+		case "deviceCodeMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceCodeMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.DeviceAuthWhereInput().DeviceCodeMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "userCodeMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userCodeMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.DeviceAuthWhereInput().UserCodeMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -29760,7 +30137,7 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "secret", "secretNEQ", "secretIn", "secretNotIn", "secretGT", "secretGTE", "secretLT", "secretLTE", "secretContains", "secretHasPrefix", "secretHasSuffix", "secretEqualFold", "secretContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "hasNetworkHosts", "hasNetworkHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "secret", "secretNEQ", "secretIn", "secretNotIn", "secretGT", "secretGTE", "secretLT", "secretLTE", "secretContains", "secretHasPrefix", "secretHasSuffix", "secretEqualFold", "secretContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "hasNetworkHosts", "hasNetworkHostsWith", "principalMatchRegex", "secretMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30222,6 +30599,24 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 				return it, err
 			}
 			it.HasNetworkHostsWith = data
+		case "principalMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("principalMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostCredentialWhereInput().PrincipalMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "secretMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("secretMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostCredentialWhereInput().SecretMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -30279,7 +30674,7 @@ func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "owner", "ownerNEQ", "ownerIn", "ownerNotIn", "ownerGT", "ownerGTE", "ownerLT", "ownerLTE", "ownerContains", "ownerHasPrefix", "ownerHasSuffix", "ownerIsNil", "ownerNotNil", "ownerEqualFold", "ownerContainsFold", "group", "groupNEQ", "groupIn", "groupNotIn", "groupGT", "groupGTE", "groupLT", "groupLTE", "groupContains", "groupHasPrefix", "groupHasSuffix", "groupIsNil", "groupNotNil", "groupEqualFold", "groupContainsFold", "permissions", "permissionsNEQ", "permissionsIn", "permissionsNotIn", "permissionsGT", "permissionsGTE", "permissionsLT", "permissionsLTE", "permissionsContains", "permissionsHasPrefix", "permissionsHasSuffix", "permissionsIsNil", "permissionsNotNil", "permissionsEqualFold", "permissionsContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "previewType", "previewTypeNEQ", "previewTypeIn", "previewTypeNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "owner", "ownerNEQ", "ownerIn", "ownerNotIn", "ownerGT", "ownerGTE", "ownerLT", "ownerLTE", "ownerContains", "ownerHasPrefix", "ownerHasSuffix", "ownerIsNil", "ownerNotNil", "ownerEqualFold", "ownerContainsFold", "group", "groupNEQ", "groupIn", "groupNotIn", "groupGT", "groupGTE", "groupLT", "groupLTE", "groupContains", "groupHasPrefix", "groupHasSuffix", "groupIsNil", "groupNotNil", "groupEqualFold", "groupContainsFold", "permissions", "permissionsNEQ", "permissionsIn", "permissionsNotIn", "permissionsGT", "permissionsGTE", "permissionsLT", "permissionsLTE", "permissionsContains", "permissionsHasPrefix", "permissionsHasSuffix", "permissionsIsNil", "permissionsNotNil", "permissionsEqualFold", "permissionsContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "previewType", "previewTypeNEQ", "previewTypeIn", "previewTypeNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "groupMatchRegex", "hashMatchRegex", "ownerMatchRegex", "pathMatchRegex", "permissionsMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -31112,6 +31507,51 @@ func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context
 				return it, err
 			}
 			it.HasShellTaskWith = data
+		case "groupMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("groupMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostFileWhereInput().GroupMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "hashMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hashMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostFileWhereInput().HashMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "ownerMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ownerMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostFileWhereInput().OwnerMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "pathMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pathMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostFileWhereInput().PathMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "permissionsMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("permissionsMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostFileWhereInput().PermissionsMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -31210,7 +31650,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "startTime", "startTimeNEQ", "startTimeIn", "startTimeNotIn", "startTimeGT", "startTimeGTE", "startTimeLT", "startTimeLTE", "startTimeIsNil", "startTimeNotNil", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "startTime", "startTimeNEQ", "startTimeIn", "startTimeNotIn", "startTimeGT", "startTimeGTE", "startTimeLT", "startTimeLTE", "startTimeIsNil", "startTimeNotNil", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "cmdMatchRegex", "cwdMatchRegex", "envMatchRegex", "nameMatchRegex", "pathMatchRegex", "principalMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -32274,6 +32714,60 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 				return it, err
 			}
 			it.HasShellTaskWith = data
+		case "cmdMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cmdMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostProcessWhereInput().CmdMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "cwdMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cwdMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostProcessWhereInput().CwdMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "envMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostProcessWhereInput().EnvMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostProcessWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "pathMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pathMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostProcessWhereInput().PathMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "principalMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("principalMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostProcessWhereInput().PrincipalMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -32290,7 +32784,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith", "hasFavoritedBy", "hasFavoritedByWith", "hasEvents", "hasEventsWith", "hasSubscribers", "hasSubscribersWith", "hasNetworkHosts", "hasNetworkHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith", "hasFavoritedBy", "hasFavoritedByWith", "hasEvents", "hasEventsWith", "hasSubscribers", "hasSubscribersWith", "hasNetworkHosts", "hasNetworkHostsWith", "externalIPMatchRegex", "identifierMatchRegex", "nameMatchRegex", "primaryIPMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -33200,6 +33694,42 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasNetworkHostsWith = data
+		case "externalIPMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("externalIPMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostWhereInput().ExternalIPMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "identifierMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostWhereInput().IdentifierMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "primaryIPMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("primaryIPMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.HostWhereInput().PrimaryIPMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -33257,7 +33787,7 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "expiresAt", "expiresAtNEQ", "expiresAtIn", "expiresAtNotIn", "expiresAtGT", "expiresAtGTE", "expiresAtLT", "expiresAtLTE", "downloadLimit", "downloadLimitNEQ", "downloadLimitIn", "downloadLimitNotIn", "downloadLimitGT", "downloadLimitGTE", "downloadLimitLT", "downloadLimitLTE", "downloadLimitIsNil", "downloadLimitNotNil", "downloads", "downloadsNEQ", "downloadsIn", "downloadsNotIn", "downloadsGT", "downloadsGTE", "downloadsLT", "downloadsLTE", "hasAsset", "hasAssetWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "expiresAt", "expiresAtNEQ", "expiresAtIn", "expiresAtNotIn", "expiresAtGT", "expiresAtGTE", "expiresAtLT", "expiresAtLTE", "downloadLimit", "downloadLimitNEQ", "downloadLimitIn", "downloadLimitNotIn", "downloadLimitGT", "downloadLimitGTE", "downloadLimitLT", "downloadLimitLTE", "downloadLimitIsNil", "downloadLimitNotNil", "downloads", "downloadsNEQ", "downloadsIn", "downloadsNotIn", "downloadsGT", "downloadsGTE", "downloadsLT", "downloadsLTE", "hasAsset", "hasAssetWith", "hasCreator", "hasCreatorWith", "pathMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -33754,6 +34284,15 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasCreatorWith = data
+		case "pathMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pathMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.LinkWhereInput().PathMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -33811,7 +34350,7 @@ func (ec *executionContext) unmarshalInputNetworkHostWhereInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "hostname", "hostnameNEQ", "hostnameIn", "hostnameNotIn", "hostnameGT", "hostnameGTE", "hostnameLT", "hostnameLTE", "hostnameContains", "hostnameHasPrefix", "hostnameHasSuffix", "hostnameIsNil", "hostnameNotNil", "hostnameEqualFold", "hostnameContainsFold", "ipAddress", "ipAddressNEQ", "ipAddressIn", "ipAddressNotIn", "ipAddressGT", "ipAddressGTE", "ipAddressLT", "ipAddressLTE", "ipAddressContains", "ipAddressHasPrefix", "ipAddressHasSuffix", "ipAddressEqualFold", "ipAddressContainsFold", "subnet", "subnetNEQ", "subnetIn", "subnetNotIn", "subnetGT", "subnetGTE", "subnetLT", "subnetLTE", "subnetContains", "subnetHasPrefix", "subnetHasSuffix", "subnetIsNil", "subnetNotNil", "subnetEqualFold", "subnetContainsFold", "hasHost", "hasHostWith", "hasNetworks", "hasNetworksWith", "hasCredentials", "hasCredentialsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "hostname", "hostnameNEQ", "hostnameIn", "hostnameNotIn", "hostnameGT", "hostnameGTE", "hostnameLT", "hostnameLTE", "hostnameContains", "hostnameHasPrefix", "hostnameHasSuffix", "hostnameIsNil", "hostnameNotNil", "hostnameEqualFold", "hostnameContainsFold", "ipAddress", "ipAddressNEQ", "ipAddressIn", "ipAddressNotIn", "ipAddressGT", "ipAddressGTE", "ipAddressLT", "ipAddressLTE", "ipAddressContains", "ipAddressHasPrefix", "ipAddressHasSuffix", "ipAddressEqualFold", "ipAddressContainsFold", "subnet", "subnetNEQ", "subnetIn", "subnetNotIn", "subnetGT", "subnetGTE", "subnetLT", "subnetLTE", "subnetContains", "subnetHasPrefix", "subnetHasSuffix", "subnetIsNil", "subnetNotNil", "subnetEqualFold", "subnetContainsFold", "hasHost", "hasHostWith", "hasNetworks", "hasNetworksWith", "hasCredentials", "hasCredentialsWith", "hostnameMatchRegex", "ipAddressMatchRegex", "nameMatchRegex", "subnetMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -34455,6 +34994,42 @@ func (ec *executionContext) unmarshalInputNetworkHostWhereInput(ctx context.Cont
 				return it, err
 			}
 			it.HasCredentialsWith = data
+		case "hostnameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostnameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.NetworkHostWhereInput().HostnameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "ipAddressMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ipAddressMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.NetworkHostWhereInput().IPAddressMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.NetworkHostWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "subnetMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.NetworkHostWhereInput().SubnetMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -34512,7 +35087,7 @@ func (ec *executionContext) unmarshalInputNetworkWhereInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "subnet", "subnetNEQ", "subnetIn", "subnetNotIn", "subnetGT", "subnetGTE", "subnetLT", "subnetLTE", "subnetContains", "subnetHasPrefix", "subnetHasSuffix", "subnetIsNil", "subnetNotNil", "subnetEqualFold", "subnetContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionIsNil", "descriptionNotNil", "descriptionEqualFold", "descriptionContainsFold", "hasNetworkHosts", "hasNetworkHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "subnet", "subnetNEQ", "subnetIn", "subnetNotIn", "subnetGT", "subnetGTE", "subnetLT", "subnetLTE", "subnetContains", "subnetHasPrefix", "subnetHasSuffix", "subnetIsNil", "subnetNotNil", "subnetEqualFold", "subnetContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionIsNil", "descriptionNotNil", "descriptionEqualFold", "descriptionContainsFold", "hasNetworkHosts", "hasNetworkHostsWith", "descriptionMatchRegex", "nameMatchRegex", "subnetMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -35023,6 +35598,33 @@ func (ec *executionContext) unmarshalInputNetworkWhereInput(ctx context.Context,
 				return it, err
 			}
 			it.HasNetworkHostsWith = data
+		case "descriptionMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descriptionMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.NetworkWhereInput().DescriptionMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.NetworkWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "subnetMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.NetworkWhereInput().SubnetMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -35417,7 +36019,7 @@ func (ec *executionContext) unmarshalInputOperatorNoteWhereInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "content", "contentNEQ", "contentIn", "contentNotIn", "contentGT", "contentGTE", "contentLT", "contentLTE", "contentContains", "contentHasPrefix", "contentHasSuffix", "contentIsNil", "contentNotNil", "contentEqualFold", "contentContainsFold", "hasAuthor", "hasAuthorWith", "hasShells", "hasShellsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "content", "contentNEQ", "contentIn", "contentNotIn", "contentGT", "contentGTE", "contentLT", "contentLTE", "contentContains", "contentHasPrefix", "contentHasSuffix", "contentIsNil", "contentNotNil", "contentEqualFold", "contentContainsFold", "hasAuthor", "hasAuthorWith", "hasShells", "hasShellsWith", "contentMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -35746,6 +36348,15 @@ func (ec *executionContext) unmarshalInputOperatorNoteWhereInput(ctx context.Con
 				return it, err
 			}
 			it.HasShellsWith = data
+		case "contentMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contentMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.OperatorNoteWhereInput().ContentMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -36196,7 +36807,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationIsNil", "eldritchAtCreationNotNil", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith", "hasScheduledTask", "hasScheduledTaskWith", "hasAdventure", "hasAdventureWith", "hasRelatedQuests", "hasRelatedQuestsWith", "hasPreviousQuest", "hasPreviousQuestWith", "hasEvents", "hasEventsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationIsNil", "eldritchAtCreationNotNil", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith", "hasScheduledTask", "hasScheduledTaskWith", "hasAdventure", "hasAdventureWith", "hasRelatedQuests", "hasRelatedQuestsWith", "hasPreviousQuest", "hasPreviousQuestWith", "hasEvents", "hasEventsWith", "eldritchAtCreationMatchRegex", "nameMatchRegex", "paramDefsAtCreationMatchRegex", "parametersMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -36924,6 +37535,42 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasEventsWith = data
+		case "eldritchAtCreationMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchAtCreationMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.QuestWhereInput().EldritchAtCreationMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.QuestWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "paramDefsAtCreationMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsAtCreationMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.QuestWhereInput().ParamDefsAtCreationMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "parametersMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.QuestWhereInput().ParametersMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -36981,7 +37628,7 @@ func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "url", "urlNEQ", "urlIn", "urlNotIn", "urlGT", "urlGTE", "urlLT", "urlLTE", "urlContains", "urlHasPrefix", "urlHasSuffix", "urlEqualFold", "urlContainsFold", "publicKey", "publicKeyNEQ", "publicKeyIn", "publicKeyNotIn", "publicKeyGT", "publicKeyGTE", "publicKeyLT", "publicKeyLTE", "publicKeyContains", "publicKeyHasPrefix", "publicKeyHasSuffix", "publicKeyEqualFold", "publicKeyContainsFold", "lastImportedAt", "lastImportedAtNEQ", "lastImportedAtIn", "lastImportedAtNotIn", "lastImportedAtGT", "lastImportedAtGTE", "lastImportedAtLT", "lastImportedAtLTE", "lastImportedAtIsNil", "lastImportedAtNotNil", "hasTomes", "hasTomesWith", "hasOwner", "hasOwnerWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "url", "urlNEQ", "urlIn", "urlNotIn", "urlGT", "urlGTE", "urlLT", "urlLTE", "urlContains", "urlHasPrefix", "urlHasSuffix", "urlEqualFold", "urlContainsFold", "publicKey", "publicKeyNEQ", "publicKeyIn", "publicKeyNotIn", "publicKeyGT", "publicKeyGTE", "publicKeyLT", "publicKeyLTE", "publicKeyContains", "publicKeyHasPrefix", "publicKeyHasSuffix", "publicKeyEqualFold", "publicKeyContainsFold", "lastImportedAt", "lastImportedAtNEQ", "lastImportedAtIn", "lastImportedAtNotIn", "lastImportedAtGT", "lastImportedAtGTE", "lastImportedAtLT", "lastImportedAtLTE", "lastImportedAtIsNil", "lastImportedAtNotNil", "hasTomes", "hasTomesWith", "hasOwner", "hasOwnerWith", "publicKeyMatchRegex", "urlMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -37457,6 +38104,24 @@ func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Conte
 				return it, err
 			}
 			it.HasOwnerWith = data
+		case "publicKeyMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("publicKeyMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.RepositoryWhereInput().PublicKeyMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "urlMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.RepositoryWhereInput().URLMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -37514,7 +38179,7 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "runOnNewBeaconCallback", "runOnNewBeaconCallbackNEQ", "runOnFirstHostCallback", "runOnFirstHostCallbackNEQ", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "runOnSchedule", "runOnScheduleNEQ", "runOnScheduleIn", "runOnScheduleNotIn", "runOnScheduleGT", "runOnScheduleGTE", "runOnScheduleLT", "runOnScheduleLTE", "runOnScheduleContains", "runOnScheduleHasPrefix", "runOnScheduleHasSuffix", "runOnScheduleEqualFold", "runOnScheduleContainsFold", "disabled", "disabledNEQ", "hasTome", "hasTomeWith", "hasScheduledHosts", "hasScheduledHostsWith", "hasQuests", "hasQuestsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "runOnNewBeaconCallback", "runOnNewBeaconCallbackNEQ", "runOnFirstHostCallback", "runOnFirstHostCallbackNEQ", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "runOnSchedule", "runOnScheduleNEQ", "runOnScheduleIn", "runOnScheduleNotIn", "runOnScheduleGT", "runOnScheduleGTE", "runOnScheduleLT", "runOnScheduleLTE", "runOnScheduleContains", "runOnScheduleHasPrefix", "runOnScheduleHasSuffix", "runOnScheduleEqualFold", "runOnScheduleContainsFold", "disabled", "disabledNEQ", "hasTome", "hasTomeWith", "hasScheduledHosts", "hasScheduledHostsWith", "hasQuests", "hasQuestsWith", "descriptionMatchRegex", "nameMatchRegex", "parametersMatchRegex", "runOnScheduleMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38172,6 +38837,42 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 				return it, err
 			}
 			it.HasQuestsWith = data
+		case "descriptionMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descriptionMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ScheduledTaskWhereInput().DescriptionMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ScheduledTaskWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "parametersMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ScheduledTaskWhereInput().ParametersMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "runOnScheduleMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runOnScheduleMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ScheduledTaskWhereInput().RunOnScheduleMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -38229,7 +38930,7 @@ func (ec *executionContext) unmarshalInputScreenshotWhereInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "hashMatchRegex", "nameMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38719,6 +39420,24 @@ func (ec *executionContext) unmarshalInputScreenshotWhereInput(ctx context.Conte
 				return it, err
 			}
 			it.HasShellTaskWith = data
+		case "hashMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hashMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ScreenshotWhereInput().HashMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ScreenshotWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -38817,7 +39536,7 @@ func (ec *executionContext) unmarshalInputShellPivotWhereInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "closedAt", "closedAtNEQ", "closedAtIn", "closedAtNotIn", "closedAtGT", "closedAtGTE", "closedAtLT", "closedAtLTE", "closedAtIsNil", "closedAtNotNil", "streamID", "streamIDNEQ", "streamIDIn", "streamIDNotIn", "streamIDGT", "streamIDGTE", "streamIDLT", "streamIDLTE", "streamIDContains", "streamIDHasPrefix", "streamIDHasSuffix", "streamIDEqualFold", "streamIDContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "destination", "destinationNEQ", "destinationIn", "destinationNotIn", "destinationGT", "destinationGTE", "destinationLT", "destinationLTE", "destinationContains", "destinationHasPrefix", "destinationHasSuffix", "destinationEqualFold", "destinationContainsFold", "port", "portNEQ", "portIn", "portNotIn", "portGT", "portGTE", "portLT", "portLTE", "data", "dataNEQ", "dataIn", "dataNotIn", "dataGT", "dataGTE", "dataLT", "dataLTE", "dataContains", "dataHasPrefix", "dataHasSuffix", "dataIsNil", "dataNotNil", "dataEqualFold", "dataContainsFold", "hasShell", "hasShellWith", "hasPortal", "hasPortalWith", "hasCredential", "hasCredentialWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "closedAt", "closedAtNEQ", "closedAtIn", "closedAtNotIn", "closedAtGT", "closedAtGTE", "closedAtLT", "closedAtLTE", "closedAtIsNil", "closedAtNotNil", "streamID", "streamIDNEQ", "streamIDIn", "streamIDNotIn", "streamIDGT", "streamIDGTE", "streamIDLT", "streamIDLTE", "streamIDContains", "streamIDHasPrefix", "streamIDHasSuffix", "streamIDEqualFold", "streamIDContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "destination", "destinationNEQ", "destinationIn", "destinationNotIn", "destinationGT", "destinationGTE", "destinationLT", "destinationLTE", "destinationContains", "destinationHasPrefix", "destinationHasSuffix", "destinationEqualFold", "destinationContainsFold", "port", "portNEQ", "portIn", "portNotIn", "portGT", "portGTE", "portLT", "portLTE", "data", "dataNEQ", "dataIn", "dataNotIn", "dataGT", "dataGTE", "dataLT", "dataLTE", "dataContains", "dataHasPrefix", "dataHasSuffix", "dataIsNil", "dataNotNil", "dataEqualFold", "dataContainsFold", "hasShell", "hasShellWith", "hasPortal", "hasPortalWith", "hasCredential", "hasCredentialWith", "dataMatchRegex", "destinationMatchRegex", "streamIDMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -39496,6 +40215,33 @@ func (ec *executionContext) unmarshalInputShellPivotWhereInput(ctx context.Conte
 				return it, err
 			}
 			it.HasCredentialWith = data
+		case "dataMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ShellPivotWhereInput().DataMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "destinationMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("destinationMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ShellPivotWhereInput().DestinationMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "streamIDMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("streamIDMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ShellPivotWhereInput().StreamIDMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -39553,7 +40299,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "input", "inputNEQ", "inputIn", "inputNotIn", "inputGT", "inputGTE", "inputLT", "inputLTE", "inputContains", "inputHasPrefix", "inputHasSuffix", "inputEqualFold", "inputContainsFold", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "streamID", "streamIDNEQ", "streamIDIn", "streamIDNotIn", "streamIDGT", "streamIDGTE", "streamIDLT", "streamIDLTE", "streamIDContains", "streamIDHasPrefix", "streamIDHasSuffix", "streamIDEqualFold", "streamIDContainsFold", "sequenceID", "sequenceIDNEQ", "sequenceIDIn", "sequenceIDNotIn", "sequenceIDGT", "sequenceIDGTE", "sequenceIDLT", "sequenceIDLTE", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "execStartedAt", "execStartedAtNEQ", "execStartedAtIn", "execStartedAtNotIn", "execStartedAtGT", "execStartedAtGTE", "execStartedAtLT", "execStartedAtLTE", "execStartedAtIsNil", "execStartedAtNotNil", "execFinishedAt", "execFinishedAtNEQ", "execFinishedAtIn", "execFinishedAtNotIn", "execFinishedAtGT", "execFinishedAtGTE", "execFinishedAtLT", "execFinishedAtLTE", "execFinishedAtIsNil", "execFinishedAtNotNil", "hasShell", "hasShellWith", "hasCreator", "hasCreatorWith", "hasReportedCredentials", "hasReportedCredentialsWith", "hasReportedFiles", "hasReportedFilesWith", "hasReportedProcesses", "hasReportedProcessesWith", "hasScreenshots", "hasScreenshotsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "input", "inputNEQ", "inputIn", "inputNotIn", "inputGT", "inputGTE", "inputLT", "inputLTE", "inputContains", "inputHasPrefix", "inputHasSuffix", "inputEqualFold", "inputContainsFold", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "streamID", "streamIDNEQ", "streamIDIn", "streamIDNotIn", "streamIDGT", "streamIDGTE", "streamIDLT", "streamIDLTE", "streamIDContains", "streamIDHasPrefix", "streamIDHasSuffix", "streamIDEqualFold", "streamIDContainsFold", "sequenceID", "sequenceIDNEQ", "sequenceIDIn", "sequenceIDNotIn", "sequenceIDGT", "sequenceIDGTE", "sequenceIDLT", "sequenceIDLTE", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "execStartedAt", "execStartedAtNEQ", "execStartedAtIn", "execStartedAtNotIn", "execStartedAtGT", "execStartedAtGTE", "execStartedAtLT", "execStartedAtLTE", "execStartedAtIsNil", "execStartedAtNotNil", "execFinishedAt", "execFinishedAtNEQ", "execFinishedAtIn", "execFinishedAtNotIn", "execFinishedAtGT", "execFinishedAtGTE", "execFinishedAtLT", "execFinishedAtLTE", "execFinishedAtIsNil", "execFinishedAtNotNil", "hasShell", "hasShellWith", "hasCreator", "hasCreatorWith", "hasReportedCredentials", "hasReportedCredentialsWith", "hasReportedFiles", "hasReportedFilesWith", "hasReportedProcesses", "hasReportedProcessesWith", "hasScreenshots", "hasScreenshotsWith", "errorMatchRegex", "inputMatchRegex", "outputMatchRegex", "streamIDMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -40507,6 +41253,42 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.HasScreenshotsWith = data
+		case "errorMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("errorMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ShellTaskWhereInput().ErrorMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "inputMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inputMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ShellTaskWhereInput().InputMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "outputMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("outputMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ShellTaskWhereInput().OutputMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "streamIDMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("streamIDMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.ShellTaskWhereInput().StreamIDMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -40958,7 +41740,7 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHosts", "hasHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHosts", "hasHostsWith", "nameMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -41175,6 +41957,15 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 				return it, err
 			}
 			it.HasHostsWith = data
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TagWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -41232,7 +42023,7 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "execStartedAt", "execStartedAtNEQ", "execStartedAtIn", "execStartedAtNotIn", "execStartedAtGT", "execStartedAtGTE", "execStartedAtLT", "execStartedAtLTE", "execStartedAtIsNil", "execStartedAtNotNil", "execFinishedAt", "execFinishedAtNEQ", "execFinishedAtIn", "execFinishedAtNotIn", "execFinishedAtGT", "execFinishedAtGTE", "execFinishedAtLT", "execFinishedAtLTE", "execFinishedAtIsNil", "execFinishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "hasQuest", "hasQuestWith", "hasBeacon", "hasBeaconWith", "hasReportedFiles", "hasReportedFilesWith", "hasReportedProcesses", "hasReportedProcessesWith", "hasReportedCredentials", "hasReportedCredentialsWith", "hasShells", "hasShellsWith", "hasScreenshots", "hasScreenshotsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "execStartedAt", "execStartedAtNEQ", "execStartedAtIn", "execStartedAtNotIn", "execStartedAtGT", "execStartedAtGTE", "execStartedAtLT", "execStartedAtLTE", "execStartedAtIsNil", "execStartedAtNotNil", "execFinishedAt", "execFinishedAtNEQ", "execFinishedAtIn", "execFinishedAtNotIn", "execFinishedAtGT", "execFinishedAtGTE", "execFinishedAtLT", "execFinishedAtLTE", "execFinishedAtIsNil", "execFinishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "hasQuest", "hasQuestWith", "hasBeacon", "hasBeaconWith", "hasReportedFiles", "hasReportedFilesWith", "hasReportedProcesses", "hasReportedProcessesWith", "hasReportedCredentials", "hasReportedCredentialsWith", "hasShells", "hasShellsWith", "hasScreenshots", "hasScreenshotsWith", "errorMatchRegex", "outputMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -42002,6 +42793,24 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasScreenshotsWith = data
+		case "errorMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("errorMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TaskWhereInput().ErrorMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "outputMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("outputMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TaskWhereInput().OutputMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -42059,7 +42868,7 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "author", "authorNEQ", "authorIn", "authorNotIn", "authorGT", "authorGTE", "authorLT", "authorLTE", "authorContains", "authorHasPrefix", "authorHasSuffix", "authorEqualFold", "authorContainsFold", "supportModel", "supportModelNEQ", "supportModelIn", "supportModelNotIn", "tactic", "tacticNEQ", "tacticIn", "tacticNotIn", "paramDefs", "paramDefsNEQ", "paramDefsIn", "paramDefsNotIn", "paramDefsGT", "paramDefsGTE", "paramDefsLT", "paramDefsLTE", "paramDefsContains", "paramDefsHasPrefix", "paramDefsHasSuffix", "paramDefsIsNil", "paramDefsNotNil", "paramDefsEqualFold", "paramDefsContainsFold", "eldritch", "eldritchNEQ", "eldritchIn", "eldritchNotIn", "eldritchGT", "eldritchGTE", "eldritchLT", "eldritchLTE", "eldritchContains", "eldritchHasPrefix", "eldritchHasSuffix", "eldritchEqualFold", "eldritchContainsFold", "hasAssets", "hasAssetsWith", "hasUploader", "hasUploaderWith", "hasRepository", "hasRepositoryWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "author", "authorNEQ", "authorIn", "authorNotIn", "authorGT", "authorGTE", "authorLT", "authorLTE", "authorContains", "authorHasPrefix", "authorHasSuffix", "authorEqualFold", "authorContainsFold", "supportModel", "supportModelNEQ", "supportModelIn", "supportModelNotIn", "tactic", "tacticNEQ", "tacticIn", "tacticNotIn", "paramDefs", "paramDefsNEQ", "paramDefsIn", "paramDefsNotIn", "paramDefsGT", "paramDefsGTE", "paramDefsLT", "paramDefsLTE", "paramDefsContains", "paramDefsHasPrefix", "paramDefsHasSuffix", "paramDefsIsNil", "paramDefsNotNil", "paramDefsEqualFold", "paramDefsContainsFold", "eldritch", "eldritchNEQ", "eldritchIn", "eldritchNotIn", "eldritchGT", "eldritchGTE", "eldritchLT", "eldritchLTE", "eldritchContains", "eldritchHasPrefix", "eldritchHasSuffix", "eldritchEqualFold", "eldritchContainsFold", "hasAssets", "hasAssetsWith", "hasUploader", "hasUploaderWith", "hasRepository", "hasRepositoryWith", "authorMatchRegex", "descriptionMatchRegex", "eldritchMatchRegex", "nameMatchRegex", "paramDefsMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -42822,6 +43631,51 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasRepositoryWith = data
+		case "authorMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TomeWhereInput().AuthorMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "descriptionMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descriptionMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TomeWhereInput().DescriptionMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "eldritchMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eldritchMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TomeWhereInput().EldritchMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TomeWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "paramDefsMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paramDefsMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.TomeWhereInput().ParamDefsMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
@@ -44149,7 +45003,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasNotifications", "hasNotificationsWith", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith", "hasFavoriteHosts", "hasFavoriteHostsWith", "hasSubscribedHosts", "hasSubscribedHostsWith", "hasEvents", "hasEventsWith", "hasOperatorNotes", "hasOperatorNotesWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasNotifications", "hasNotificationsWith", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith", "hasFavoriteHosts", "hasFavoriteHostsWith", "hasSubscribedHosts", "hasSubscribedHostsWith", "hasEvents", "hasEventsWith", "hasOperatorNotes", "hasOperatorNotesWith", "nameMatchRegex", "oauthIDMatchRegex", "photoURLMatchRegex"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -44555,6 +45409,33 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasOperatorNotesWith = data
+		case "nameMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.UserWhereInput().NameMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "oauthIDMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oauthIDMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.UserWhereInput().OauthIDMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "photoURLMatchRegex":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("photoURLMatchRegex"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			if err = ec.Resolvers.UserWhereInput().PhotoURLMatchRegex(ctx, &it, data); err != nil {
+				return it, err
+			}
 		}
 	}
 	return it, nil
