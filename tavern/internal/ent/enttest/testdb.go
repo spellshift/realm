@@ -5,11 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"realm.pub/tavern/internal/ent"
 	entsql "entgo.io/ent/dialect/sql"
-
-	// The mattn driver
-	_ "github.com/mattn/go-sqlite3"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/sqliteext"
 )
 
 // NewDB creates a new on-disk temporary SQLite database for testing.
@@ -30,7 +28,7 @@ func NewDB(t testing.TB) *sql.DB {
 	// _sync=NORMAL: Speeds up WAL mode safely
 	dsn := "file:" + file.Name() + "?_journal=WAL&_busy_timeout=10000&_fk=1&_sync=NORMAL"
 
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open(sqliteext.DriverName, dsn)
 	if err != nil {
 		t.Fatalf("failed to open db: %v", err)
 	}
