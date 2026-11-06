@@ -126,6 +126,11 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+// RunHostAutogroup is the resolver for the runHostAutogroup field.
+func (r *mutationResolver) RunHostAutogroup(ctx context.Context, k *int) ([]*ent.Tag, error) {
+	return runHostAutogroup(ctx, r.client, k)
+}
+
 // CreateQuest is the resolver for the createQuest field.
 func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) (*ent.Quest, error) {
 	// Ensure at least one Beacon ID provided
