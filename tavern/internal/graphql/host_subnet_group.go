@@ -23,7 +23,7 @@ func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, er
 	for _, h := range hosts {
 		ip, ipErr := netip.ParseAddr(h.PrimaryIP)
 		prefix, prefixErr := netip.ParsePrefix(h.Subnet)
-		if ipErr != nil || prefixErr != nil || ip.IsUnspecified() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || !prefix.Contains(ip) {
+		if ipErr != nil || prefixErr != nil || !usableHostSubnet(ip, prefix) {
 			continue
 		}
 		cidr := prefix.Masked().String()
@@ -76,4 +76,14 @@ func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, er
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 	return client.Tag.Query().Where(tag.IDIn(createdOrUpdatedIDs...)).Order(ent.Asc(tag.FieldName)).All(ctx)
+}
+
+// usableHostSubnet rejects addresses that cannot identify a host's network,
+// as well as catch-all and single-address prefixes. IsGlobalUnicast includes
+// private IPv4 and unique-local IPv6 addresses.
+func usableHostSubnet(ip netip.Addr, prefix netip.Prefix) bool {
+	if !ip.IsGlobalUnicast() || !prefix.Contains(ip) {
+		return false
+	}
+	return prefix.Bits() > 0 && prefix.Bits() < ip.BitLen()
 }

@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"net/netip"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,4 +70,30 @@ func TestGroupHostsBySubnetRejectsServiceNameCollision(t *testing.T) {
 	_, err := groupHostsBySubnet(ctx, client)
 	require.ErrorContains(t, err, "already exists")
 	assert.Equal(t, 1, client.Tag.Query().CountX(ctx))
+}
+
+func TestUsableHostSubnet(t *testing.T) {
+	tests := []struct {
+		name, ip, subnet string
+		want             bool
+	}{
+		{"private IPv4", "10.1.2.10", "10.1.2.0/24", true},
+		{"unique-local IPv6", "fd00::10", "fd00::/64", true},
+		{"IPv4 catch-all", "10.1.2.10", "0.0.0.0/0", false},
+		{"IPv6 catch-all", "fd00::10", "::/0", false},
+		{"IPv4 host route", "10.1.2.10", "10.1.2.10/32", false},
+		{"IPv6 host route", "fd00::10", "fd00::10/128", false},
+		{"multicast", "224.0.1.1", "224.0.1.0/24", false},
+		{"broadcast", "255.255.255.255", "255.255.255.0/24", false},
+		{"loopback", "127.0.0.1", "127.0.0.0/8", false},
+		{"link-local", "169.254.1.1", "169.254.0.0/16", false},
+		{"mismatched subnet", "10.1.2.10", "10.2.0.0/16", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ip := netip.MustParseAddr(tc.ip)
+			prefix := netip.MustParsePrefix(tc.subnet)
+			assert.Equal(t, tc.want, usableHostSubnet(ip, prefix))
+		})
+	}
 }
