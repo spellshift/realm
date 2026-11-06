@@ -3080,6 +3080,11 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				selectedFields = append(selectedFields, host.FieldPrimaryIP)
 				fieldSeen[host.FieldPrimaryIP] = struct{}{}
 			}
+		case "subnet":
+			if _, ok := fieldSeen[host.FieldSubnet]; !ok {
+				selectedFields = append(selectedFields, host.FieldSubnet)
+				fieldSeen[host.FieldSubnet] = struct{}{}
+			}
 		case "externalIP":
 			if _, ok := fieldSeen[host.FieldExternalIP]; !ok {
 				selectedFields = append(selectedFields, host.FieldExternalIP)

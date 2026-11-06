@@ -325,6 +325,7 @@ type ComplexityRoot struct {
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
 		Screenshots    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScreenshotOrder, where *ent.ScreenshotWhereInput) int
+		Subnet         func(childComplexity int) int
 		Subscribers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 	}
@@ -2363,6 +2364,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Host.Screenshots(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScreenshotOrder), args["where"].(*ent.ScreenshotWhereInput)), true
+
+	case "Host.subnet":
+		if e.ComplexityRoot.Host.Subnet == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Host.Subnet(childComplexity), true
 
 	case "Host.subscribers":
 		if e.ComplexityRoot.Host.Subscribers == nil {
@@ -8622,6 +8630,10 @@ type Host implements Node {
   """
   primaryIP: String
   """
+  Primary interface subnet CIDR reported by the agent.
+  """
+  subnet: String
+  """
   Incoming IP from Proxy. Will return first proxy IP if multiple.
   """
   externalIP: String
@@ -9949,6 +9961,24 @@ input HostWhereInput {
   primaryIPNotNil: Boolean
   primaryIPEqualFold: String
   primaryIPContainsFold: String
+  """
+  subnet field predicates
+  """
+  subnet: String
+  subnetNEQ: String
+  subnetIn: [String!]
+  subnetNotIn: [String!]
+  subnetGT: String
+  subnetGTE: String
+  subnetLT: String
+  subnetLTE: String
+  subnetContains: String
+  subnetHasPrefix: String
+  subnetHasSuffix: String
+  subnetIsNil: Boolean
+  subnetNotNil: Boolean
+  subnetEqualFold: String
+  subnetContainsFold: String
   """
   external_ip field predicates
   """

@@ -98,6 +98,26 @@ func (hu *HostUpdate) ClearPrimaryIP() *HostUpdate {
 	return hu
 }
 
+// SetSubnet sets the "subnet" field.
+func (hu *HostUpdate) SetSubnet(s string) *HostUpdate {
+	hu.mutation.SetSubnet(s)
+	return hu
+}
+
+// SetNillableSubnet sets the "subnet" field if the given value is not nil.
+func (hu *HostUpdate) SetNillableSubnet(s *string) *HostUpdate {
+	if s != nil {
+		hu.SetSubnet(*s)
+	}
+	return hu
+}
+
+// ClearSubnet clears the value of the "subnet" field.
+func (hu *HostUpdate) ClearSubnet() *HostUpdate {
+	hu.mutation.ClearSubnet()
+	return hu
+}
+
 // SetExternalIP sets the "external_ip" field.
 func (hu *HostUpdate) SetExternalIP(s string) *HostUpdate {
 	hu.mutation.SetExternalIP(s)
@@ -628,6 +648,12 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if hu.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
+	}
+	if value, ok := hu.mutation.Subnet(); ok {
+		_spec.SetField(host.FieldSubnet, field.TypeString, value)
+	}
+	if hu.mutation.SubnetCleared() {
+		_spec.ClearField(host.FieldSubnet, field.TypeString)
 	}
 	if value, ok := hu.mutation.ExternalIP(); ok {
 		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
@@ -1177,6 +1203,26 @@ func (huo *HostUpdateOne) SetNillablePrimaryIP(s *string) *HostUpdateOne {
 // ClearPrimaryIP clears the value of the "primary_ip" field.
 func (huo *HostUpdateOne) ClearPrimaryIP() *HostUpdateOne {
 	huo.mutation.ClearPrimaryIP()
+	return huo
+}
+
+// SetSubnet sets the "subnet" field.
+func (huo *HostUpdateOne) SetSubnet(s string) *HostUpdateOne {
+	huo.mutation.SetSubnet(s)
+	return huo
+}
+
+// SetNillableSubnet sets the "subnet" field if the given value is not nil.
+func (huo *HostUpdateOne) SetNillableSubnet(s *string) *HostUpdateOne {
+	if s != nil {
+		huo.SetSubnet(*s)
+	}
+	return huo
+}
+
+// ClearSubnet clears the value of the "subnet" field.
+func (huo *HostUpdateOne) ClearSubnet() *HostUpdateOne {
+	huo.mutation.ClearSubnet()
 	return huo
 }
 
@@ -1740,6 +1786,12 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 	}
 	if huo.mutation.PrimaryIPCleared() {
 		_spec.ClearField(host.FieldPrimaryIP, field.TypeString)
+	}
+	if value, ok := huo.mutation.Subnet(); ok {
+		_spec.SetField(host.FieldSubnet, field.TypeString, value)
+	}
+	if huo.mutation.SubnetCleared() {
+		_spec.ClearField(host.FieldSubnet, field.TypeString)
 	}
 	if value, ok := huo.mutation.ExternalIP(); ok {
 		_spec.SetField(host.FieldExternalIP, field.TypeString, value)

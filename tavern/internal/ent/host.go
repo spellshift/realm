@@ -28,6 +28,8 @@ type Host struct {
 	Name string `json:"name,omitempty"`
 	// Primary interface IP address reported by the agent.
 	PrimaryIP string `json:"primary_ip,omitempty"`
+	// Primary interface subnet CIDR reported by the agent.
+	Subnet string `json:"subnet,omitempty"`
 	// Incoming IP from Proxy. Will return first proxy IP if multiple.
 	ExternalIP string `json:"external_ip,omitempty"`
 	// Platform the agent is operating on.
@@ -182,7 +184,7 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case host.FieldID:
 			values[i] = new(sql.NullInt64)
-		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldExternalIP:
+		case host.FieldIdentifier, host.FieldName, host.FieldPrimaryIP, host.FieldSubnet, host.FieldExternalIP:
 			values[i] = new(sql.NullString)
 		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt, host.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
@@ -238,6 +240,12 @@ func (h *Host) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field primary_ip", values[i])
 			} else if value.Valid {
 				h.PrimaryIP = value.String
+			}
+		case host.FieldSubnet:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field subnet", values[i])
+			} else if value.Valid {
+				h.Subnet = value.String
 			}
 		case host.FieldExternalIP:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -370,6 +378,9 @@ func (h *Host) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("primary_ip=")
 	builder.WriteString(h.PrimaryIP)
+	builder.WriteString(", ")
+	builder.WriteString("subnet=")
+	builder.WriteString(h.Subnet)
 	builder.WriteString(", ")
 	builder.WriteString("external_ip=")
 	builder.WriteString(h.ExternalIP)

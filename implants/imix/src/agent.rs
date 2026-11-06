@@ -125,10 +125,10 @@ impl ImixAgent {
         Ok(jitter)
     }
 
-    // Triggers config.refresh_primary_ip() in a write lock
+    // Refreshes the primary IP and subnet in a write lock.
     pub async fn refresh_ip(&self) {
         let mut cfg = self.config.write().await;
-        cfg.refresh_primary_ip();
+        cfg.refresh_primary_ip_and_subnet();
     }
 
     // Updates the shared transport with a new instance
