@@ -3,9 +3,11 @@ package c2
 import (
 	"context"
 	"crypto/ed25519"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +18,10 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
@@ -100,11 +106,14 @@ func GetClientIP(ctx context.Context) string {
 	return "unknown"
 }
 
+const ClaimBeaconID = "beacon_id"
+
 // generateTaskJWT creates a signed JWT token containing the beacon ID
-func (srv *Server) generateTaskJWT() (string, error) {
+func (srv *Server) generateTaskJWT(beaconID int) (string, error) {
 	claims := jwt.MapClaims{
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		ClaimBeaconID: beaconID,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -116,7 +125,7 @@ func (srv *Server) generateTaskJWT() (string, error) {
 	return signedToken, nil
 }
 
-func (srv *Server) ValidateJWT(jwttoken string) error {
+func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
 	token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (any, error) {
 		// 1. Verify the signing method is EdDSA
 		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
@@ -124,12 +133,32 @@ func (srv *Server) ValidateJWT(jwttoken string) error {
 		}
 		// 2. Return the PUBLIC key for verification
 		return srv.jwtPublicKey, nil
-	})
+	}, jwt.WithJSONNumber())
 
 	if err != nil || !token.Valid {
-		return status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
+		return 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
 	}
 
+	beaconID, ok := token.Claims.(jwt.MapClaims)[ClaimBeaconID].(json.Number)
+	if !ok {
+		return 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
+	}
+	id, err := strconv.Atoi(string(beaconID))
+	if err != nil || id <= 0 {
+		return 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
+	}
 	slog.Info(fmt.Sprintf("received valid JWT: %s", jwttoken))
-	return nil
+	return id, nil
+}
+
+func (srv *Server) loadTaskForBeacon(ctx context.Context, taskID, beaconID int) (*ent.Task, error) {
+	return srv.graph.Task.Query().
+		Where(task.ID(taskID), task.HasBeaconWith(beacon.ID(beaconID))).
+		Only(ctx)
+}
+
+func (srv *Server) loadShellTaskForBeacon(ctx context.Context, shellTaskID, beaconID int) (*ent.ShellTask, error) {
+	return srv.graph.ShellTask.Query().
+		Where(shelltask.ID(shellTaskID), shelltask.HasShellWith(shell.HasBeaconWith(beacon.ID(beaconID)))).
+		Only(ctx)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/portals/portalpb"
@@ -89,9 +90,13 @@ func TestMux_CreatePortal(t *testing.T) {
 	tomeEnt := client.Tome.Create().SetName("testtome").SetDescription("desc").SetAuthor(u.Name).SetUploader(u).SetTactic(tome.TacticRECON).SetEldritch("print(1)").SaveX(ctx)
 	quest := client.Quest.Create().SetName("testquest").SetParameters("").SetCreator(u).SetTome(tomeEnt).SaveX(ctx)
 	task := client.Task.Create().SetQuest(quest).SetBeacon(b).SaveX(ctx)
+	foreign := client.Beacon.Create().SetName("foreign").SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
+	_, _, err := m.CreatePortal(ctx, client, task.ID, 0, foreign.ID)
+	require.True(t, ent.IsNotFound(err))
+	require.Zero(t, client.Portal.Query().CountX(ctx))
 
 	// Updated call
-	portalID, teardown, err := m.CreatePortal(ctx, client, task.ID, 0)
+	portalID, teardown, err := m.CreatePortal(ctx, client, task.ID, 0, b.ID)
 	require.NoError(t, err)
 	assert.NotZero(t, portalID)
 	defer teardown()
@@ -215,9 +220,13 @@ func TestMux_CreatePortal_ShellTask(t *testing.T) {
 	// Create Shell and ShellTask
 	shell := client.Shell.Create().SetBeacon(b).SetOwner(u).SetData([]byte("")).SaveX(ctx)
 	st := client.ShellTask.Create().SetShell(shell).SetCreator(u).SetInput("test").SetStreamID("stream").SetSequenceID(1).SaveX(ctx)
+	foreign := client.Beacon.Create().SetName("foreign").SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
+	_, _, err := m.CreatePortal(ctx, client, 0, st.ID, foreign.ID)
+	require.True(t, ent.IsNotFound(err))
+	require.Zero(t, client.Portal.Query().CountX(ctx))
 
 	// Updated call
-	portalID, teardown, err := m.CreatePortal(ctx, client, 0, st.ID)
+	portalID, teardown, err := m.CreatePortal(ctx, client, 0, st.ID, b.ID)
 	require.NoError(t, err)
 	assert.NotZero(t, portalID)
 	defer teardown()
