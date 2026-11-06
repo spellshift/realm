@@ -84,7 +84,7 @@ func TestCachedArtifactSpecKeepsScriptAndExtractionPathsEqual(t *testing.T) {
 func TestPrepareCacheDir(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "cache")
 	require.NoError(t, prepareCacheDir(dir, "key"))
-	for _, path := range []string{"cargo", "target/key", "gopath/pkg/mod", "go-cache"} {
+	for _, path := range []string{"cargo", "target/key"} {
 		info, err := os.Stat(filepath.Join(dir, path))
 		require.NoError(t, err)
 		require.Equal(t, os.FileMode(0o777), info.Mode().Perm(), path)

@@ -77,7 +77,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	defer os.RemoveAll(tmpDir)
 
 	// Prepare a host cache directory and bind-mount it into the container.
-	// Cargo and Go write their dependency caches and build artifacts there.
+	// Cargo writes dependencies and build artifacts there.
 	hostConfig := (*container.HostConfig)(nil)
 	cacheEnv := []string{}
 	uncachedSpec := spec
@@ -105,9 +105,6 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 				"REALM_CACHE_DIR=" + cachePath,
 				"CARGO_HOME=" + path.Join(cachePath, "cargo"),
 				"CARGO_TARGET_DIR=" + cargoTargetDir,
-				"GOPATH=" + path.Join(cachePath, "gopath"),
-				"GOMODCACHE=" + path.Join(cachePath, "gopath", "pkg", "mod"),
-				"GOCACHE=" + path.Join(cachePath, "go-cache"),
 			}
 			// Cargo places the binary under CARGO_TARGET_DIR. Keep the path
 			// seen by post-build scripts in sync with artifact extraction.
@@ -356,10 +353,6 @@ func prepareCacheDir(cacheDir, key string) error {
 		filepath.Join(cacheDir, "cargo"),
 		filepath.Join(cacheDir, "target"),
 		filepath.Join(cacheDir, "target", key),
-		filepath.Join(cacheDir, "gopath"),
-		filepath.Join(cacheDir, "gopath", "pkg"),
-		filepath.Join(cacheDir, "gopath", "pkg", "mod"),
-		filepath.Join(cacheDir, "go-cache"),
 	} {
 		if err := os.MkdirAll(dir, 0o777); err != nil {
 			return fmt.Errorf("creating %q: %w", dir, err)
