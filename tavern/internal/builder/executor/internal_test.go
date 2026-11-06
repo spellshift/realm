@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/docker/docker/api/types/mount"
 	"github.com/stretchr/testify/require"
 )
 
@@ -94,4 +95,26 @@ func TestPrepareCacheDir(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "file")
 	require.NoError(t, os.WriteFile(file, nil, 0o600))
 	require.Error(t, prepareCacheDir(file, "key"))
+}
+
+func TestPrepareBuildCache(t *testing.T) {
+	spec := BuildSpec{
+		CacheDir:     filepath.Join(t.TempDir(), "cache"),
+		BuildImage:   "builder:latest",
+		TargetOS:     "linux",
+		ArtifactPath: "/tmp/realm-build/realm/implants/target/release/imix",
+	}
+	hostConfig, env, cached, err := prepareBuildCache(spec)
+	require.NoError(t, err)
+	require.Equal(t, []mount.Mount{{Type: mount.TypeBind, Source: spec.CacheDir, Target: DefaultCachePath}}, hostConfig.Mounts)
+	require.Contains(t, env, "CARGO_HOME=/realm-cache/cargo")
+	require.Contains(t, env, "CARGO_TARGET_DIR=/realm-cache/target/"+cacheKeyFor(spec))
+	require.Equal(t, "/realm-cache/target/"+cacheKeyFor(spec)+"/release/imix", cached.ArtifactPath)
+
+	spec.CacheDir = ""
+	hostConfig, env, cached, err = prepareBuildCache(spec)
+	require.NoError(t, err)
+	require.Nil(t, hostConfig)
+	require.Empty(t, env)
+	require.Equal(t, spec, cached)
 }

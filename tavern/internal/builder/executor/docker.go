@@ -76,40 +76,13 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Prepare a host cache directory and bind-mount it into the container.
-	// Cargo writes dependencies and build artifacts there.
-	hostConfig := (*container.HostConfig)(nil)
-	cacheEnv := []string{}
 	uncachedSpec := spec
-	if spec.CacheDir != "" {
-		cachePath := spec.CachePath
-		if cachePath == "" {
-			cachePath = DefaultCachePath
-		}
-		key := cacheKeyFor(spec)
-		if err := prepareCacheDir(spec.CacheDir, key); err != nil {
-			slog.WarnContext(ctx, "failed to prepare build cache directory, building without cache",
-				"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", err)
-		} else {
-			hostConfig = &container.HostConfig{
-				Mounts: []mount.Mount{
-					{
-						Type:   mount.TypeBind,
-						Source: spec.CacheDir,
-						Target: cachePath,
-					},
-				},
-			}
-			cargoTargetDir := path.Join(cachePath, "target", key)
-			cacheEnv = []string{
-				"REALM_CACHE_DIR=" + cachePath,
-				"CARGO_HOME=" + path.Join(cachePath, "cargo"),
-				"CARGO_TARGET_DIR=" + cargoTargetDir,
-			}
-			// Cargo places the binary under CARGO_TARGET_DIR. Keep the path
-			// seen by post-build scripts in sync with artifact extraction.
-			spec = cachedArtifactSpec(spec, cargoTargetDir)
-		}
+	hostConfig, cacheEnv, cachedSpec, cacheErr := prepareBuildCache(spec)
+	if cacheErr != nil {
+		slog.WarnContext(ctx, "failed to prepare build cache directory, building without cache",
+			"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", cacheErr)
+	} else {
+		spec = cachedSpec
 	}
 
 	slog.InfoContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
@@ -120,30 +93,22 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; . \"$s\"; done",
 	}, " && ")
 
-	createContainer := func() (container.CreateResponse, error) {
-		return d.client.ContainerCreate(ctx,
-			&container.Config{
-				Image:      spec.BuildImage,
-				Entrypoint: []string{"/bin/sh", "-c", entrypoint},
-				Env: append(append(slices.Clone(spec.Env),
-					"REALM_WORKSPACE_DIR=/mnt",
-					"REALM_TOMES_DIR=/mnt/tomes",
-				), cacheEnv...),
-			},
-			hostConfig, // host config (may bind-mount the build cache directory)
-			nil,        // networking config
-			nil,        // platform
-			"",         // container name (auto-generated)
-		)
+	containerConfig := &container.Config{
+		Image:      spec.BuildImage,
+		Entrypoint: []string{"/bin/sh", "-c", entrypoint},
+		Env: append(append(slices.Clone(spec.Env),
+			"REALM_WORKSPACE_DIR=/mnt",
+			"REALM_TOMES_DIR=/mnt/tomes",
+		), cacheEnv...),
 	}
-	resp, err := createContainer()
+	resp, err := d.client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil && hostConfig != nil && ctx.Err() == nil {
 		slog.WarnContext(ctx, "failed to mount build cache, retrying without cache",
 			"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", err)
 		spec = uncachedSpec
-		hostConfig = nil
-		cacheEnv = nil
-		resp, err = createContainer()
+		containerConfig.Env = append(slices.Clone(spec.Env),
+			"REALM_WORKSPACE_DIR=/mnt", "REALM_TOMES_DIR=/mnt/tomes")
+		resp, err = d.client.ContainerCreate(ctx, containerConfig, nil, nil, nil, "")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create container: %w", err)
@@ -341,6 +306,31 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 	}
 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)
+}
+
+// prepareBuildCache returns the optional mount and Cargo settings.
+func prepareBuildCache(spec BuildSpec) (*container.HostConfig, []string, BuildSpec, error) {
+	if spec.CacheDir == "" {
+		return nil, nil, spec, nil
+	}
+	cachePath := spec.CachePath
+	if cachePath == "" {
+		cachePath = DefaultCachePath
+	}
+	key := cacheKeyFor(spec)
+	if err := prepareCacheDir(spec.CacheDir, key); err != nil {
+		return nil, nil, spec, err
+	}
+	cargoTargetDir := path.Join(cachePath, "target", key)
+	hostConfig := &container.HostConfig{Mounts: []mount.Mount{{
+		Type: mount.TypeBind, Source: spec.CacheDir, Target: cachePath,
+	}}}
+	cacheEnv := []string{
+		"REALM_CACHE_DIR=" + cachePath,
+		"CARGO_HOME=" + path.Join(cachePath, "cargo"),
+		"CARGO_TARGET_DIR=" + cargoTargetDir,
+	}
+	return hostConfig, cacheEnv, cachedArtifactSpec(spec, cargoTargetDir), nil
 }
 
 // prepareCacheDir creates writable cache paths on the host.
