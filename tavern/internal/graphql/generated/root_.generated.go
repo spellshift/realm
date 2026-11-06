@@ -480,6 +480,7 @@ type ComplexityRoot struct {
 		DisableScheduledTask         func(childComplexity int, scheduledTaskID int) int
 		DropAllData                  func(childComplexity int) int
 		FavoriteHost                 func(childComplexity int, hostID int) int
+		GroupHostsBySubnet           func(childComplexity int) int
 		ImportRepository             func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		MarkNotificationsAsArchived  func(childComplexity int, notificationIDs []int) int
 		MarkNotificationsAsRead      func(childComplexity int, notificationIDs []int) int
@@ -3258,6 +3259,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.FavoriteHost(childComplexity, args["hostID"].(int)), true
+
+	case "Mutation.groupHostsBySubnet":
+		if e.ComplexityRoot.Mutation.GroupHostsBySubnet == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.GroupHostsBySubnet(childComplexity), true
 
 	case "Mutation.importRepository":
 		if e.ComplexityRoot.Mutation.ImportRepository == nil {
@@ -15266,6 +15274,7 @@ scalar Uint64
     ####
     dropAllData: Boolean! @requireRole(role: ADMIN)
     runHostAutogroup(k: Int): [Tag!]! @requireRole(role: ADMIN)
+    groupHostsBySubnet: [Tag!]! @requireRole(role: ADMIN)
 
     ###
     # Quest

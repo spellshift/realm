@@ -131,6 +131,11 @@ func (r *mutationResolver) RunHostAutogroup(ctx context.Context, k *int) ([]*ent
 	return runHostAutogroup(ctx, r.client, k)
 }
 
+// GroupHostsBySubnet is the resolver for the groupHostsBySubnet field.
+func (r *mutationResolver) GroupHostsBySubnet(ctx context.Context) ([]*ent.Tag, error) {
+	return groupHostsBySubnet(ctx, r.client)
+}
+
 // CreateQuest is the resolver for the createQuest field.
 func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) (*ent.Quest, error) {
 	// Ensure at least one Beacon ID provided
