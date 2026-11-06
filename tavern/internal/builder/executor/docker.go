@@ -346,9 +346,7 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)
 }
 
-// prepareCacheDir creates the paths the build user writes beneath a bind
-// mount. Docker sees the host file modes directly, so no setup container is
-// needed.
+// prepareCacheDir creates writable cache paths on the host.
 func prepareCacheDir(cacheDir, key string) error {
 	if !filepath.IsAbs(cacheDir) {
 		return fmt.Errorf("cache directory must be absolute: %q", cacheDir)
@@ -373,12 +371,8 @@ func prepareCacheDir(cacheDir, key string) error {
 	return nil
 }
 
-// remapArtifactPath rewrites an artifact path that was derived for the default
-// workspace target directory (<buildDir>/realm/implants/target/<triple>/release/imix)
-// to point inside CARGO_TARGET_DIR. Setting CARGO_TARGET_DIR redirects all cargo
-// output there, so the final binary no longer lands at the default path. Paths
-// that don't look like a default-derived artifact path are returned unchanged
-// (e.g. a user-overridden ArtifactPath).
+// remapArtifactPath moves default artifact paths into CARGO_TARGET_DIR.
+// Custom paths stay unchanged.
 func remapArtifactPath(artifactPath, cargoTargetDir string) string {
 	const defaultTarget = "/tmp/realm-build/realm/implants/target/"
 	if strings.HasPrefix(artifactPath, defaultTarget) {
@@ -414,9 +408,8 @@ func cachedArtifactSpec(spec BuildSpec, cargoTargetDir string) BuildSpec {
 	return spec
 }
 
-// cacheKeyFor separates incompatible toolchain images and target platforms.
-// Cargo's fingerprints and file locks handle recipe differences and concurrent
-// builds within each target directory.
+// cacheKeyFor separates images and target platforms.
+// Cargo handles recipe differences and concurrent builds within each directory.
 func cacheKeyFor(spec BuildSpec) string {
 	h := sha256.New()
 	for _, s := range []string{spec.BuildImage, spec.TargetOS} {

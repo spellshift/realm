@@ -37,9 +37,8 @@ type Config struct {
 	Upstream         string   `yaml:"upstream"`
 	Executor         string   `yaml:"executor"`
 
-	// CacheDir is a host directory bind-mounted into Docker build containers.
-	// An empty value disables caching. Docker and the builder must share this
-	// filesystem, as with any Docker bind mount.
+	// CacheDir is a host directory shared with Docker and bind-mounted into builds.
+	// An empty value disables caching.
 	CacheDir string `yaml:"cache_dir"`
 }
 

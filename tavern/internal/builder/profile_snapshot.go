@@ -91,17 +91,8 @@ func FrozenTome(bundle []byte, tomeID int) ([]byte, error) {
 	}
 }
 
-// ResolveBuildRecipe renders a profile's setup script, build command, and
-// output path for one target. setupScript is the already input>profile
-// resolved setup script (see CreateBuildTask), rendered here rather than in
-// profile.Setupscript directly so callers can override it per-task before
-// templating happens.
-//
-// All three recipes are rendered against the same stable BuildDir so the
-// setup, build, and artifact paths agree. The local debug executor substitutes
-// a private path when it runs a task.
-//
-// The local debug executor substitutes its own scratch directory at execution.
+// ResolveBuildRecipe renders a profile's setup, build, and artifact paths.
+// The local debug executor substitutes a private build directory at execution.
 func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.Host_Platform, format TargetFormat) (string, string, string, error) {
 	if err := ValidateTargetFormat(os, format); err != nil {
 		return "", "", "", err

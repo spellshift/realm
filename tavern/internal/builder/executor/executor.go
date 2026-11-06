@@ -47,16 +47,12 @@ type BuildSpec struct {
 	TargetOS   string
 	BuildImage string
 
-	// CacheDir is the host directory bind-mounted into Docker build containers
-	// to persist downloaded dependencies and compiled artifacts. An empty value
-	// disables caching. LocalExecutor and MockExecutor ignore this field.
+	// CacheDir persists Docker build caches via a host bind mount.
+	// An empty value disables caching.
 	CacheDir string
 
-	// CachePath is the absolute path inside the container where CacheDir is
-	// mounted. Defaults to DefaultCachePath when CacheDir is set and
-	// CachePath is empty. Set this together with a build profile's scripts to
-	// stage the source checkout (e.g. clone into $REALM_CACHE_DIR/repo) so the
-	// workspace crates are also cached between builds.
+	// CachePath is the in-container mount point for CacheDir.
+	// An empty value uses DefaultCachePath.
 	CachePath string
 
 	BuildScript string
