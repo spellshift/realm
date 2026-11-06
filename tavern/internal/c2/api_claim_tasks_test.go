@@ -15,7 +15,54 @@ import (
 	"realm.pub/tavern/internal/c2/c2test"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/host"
 )
+
+func TestClaimTasksHostSubnetUpsert(t *testing.T) {
+	ctx := context.Background()
+	client, graph, close, _ := c2test.New(t)
+	defer close()
+
+	request := &c2pb.ClaimTasksRequest{Beacon: &c2pb.Beacon{
+		Identifier: "subnet-beacon",
+		Principal:  "root",
+		Agent:      &c2pb.Agent{Identifier: "test-agent"},
+		Host: &c2pb.Host{
+			Identifier: "subnet-host",
+			Name:       "subnet-host",
+			Platform:   c2pb.Host_PLATFORM_LINUX,
+			PrimaryIp:  "10.1.2.3",
+			Subnet:     "10.1.2.0/27",
+		},
+		AvailableTransports: &c2pb.AvailableTransports{
+			Transports: []*c2pb.Transport{{
+				Uri: "grpc://127.0.0.1:8080", Interval: 60, Type: c2pb.Transport_TRANSPORT_GRPC,
+			}},
+		},
+	}}
+
+	_, err := client.ClaimTasks(ctx, request)
+	require.NoError(t, err)
+	h, err := graph.Host.Query().Where(host.IdentifierEQ("subnet-host")).Only(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "10.1.2.0/27", h.Subnet)
+
+	request.Beacon.Host.PrimaryIp = "10.1.2.130"
+	request.Beacon.Host.Subnet = "10.1.2.128/25"
+	_, err = client.ClaimTasks(ctx, request)
+	require.NoError(t, err)
+	h, err = graph.Host.Query().Where(host.IdentifierEQ("subnet-host")).Only(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "10.1.2.130", h.PrimaryIP)
+	assert.Equal(t, "10.1.2.128/25", h.Subnet)
+
+	request.Beacon.Host.Subnet = ""
+	_, err = client.ClaimTasks(ctx, request)
+	require.NoError(t, err)
+	h, err = graph.Host.Query().Where(host.IdentifierEQ("subnet-host")).Only(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "10.1.2.128/25", h.Subnet)
+}
 
 func TestClaimTasks(t *testing.T) {
 	// Setup Dependencies

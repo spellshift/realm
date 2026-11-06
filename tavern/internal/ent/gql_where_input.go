@@ -4612,6 +4612,23 @@ type HostWhereInput struct {
 	PrimaryIPEqualFold    *string  `json:"primaryIPEqualFold,omitempty"`
 	PrimaryIPContainsFold *string  `json:"primaryIPContainsFold,omitempty"`
 
+	// "subnet" field predicates.
+	Subnet             *string  `json:"subnet,omitempty"`
+	SubnetNEQ          *string  `json:"subnetNEQ,omitempty"`
+	SubnetIn           []string `json:"subnetIn,omitempty"`
+	SubnetNotIn        []string `json:"subnetNotIn,omitempty"`
+	SubnetGT           *string  `json:"subnetGT,omitempty"`
+	SubnetGTE          *string  `json:"subnetGTE,omitempty"`
+	SubnetLT           *string  `json:"subnetLT,omitempty"`
+	SubnetLTE          *string  `json:"subnetLTE,omitempty"`
+	SubnetContains     *string  `json:"subnetContains,omitempty"`
+	SubnetHasPrefix    *string  `json:"subnetHasPrefix,omitempty"`
+	SubnetHasSuffix    *string  `json:"subnetHasSuffix,omitempty"`
+	SubnetIsNil        bool     `json:"subnetIsNil,omitempty"`
+	SubnetNotNil       bool     `json:"subnetNotNil,omitempty"`
+	SubnetEqualFold    *string  `json:"subnetEqualFold,omitempty"`
+	SubnetContainsFold *string  `json:"subnetContainsFold,omitempty"`
+
 	// "external_ip" field predicates.
 	ExternalIP             *string  `json:"externalIP,omitempty"`
 	ExternalIPNEQ          *string  `json:"externalIPNEQ,omitempty"`
@@ -4971,6 +4988,51 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 	}
 	if i.PrimaryIPContainsFold != nil {
 		predicates = append(predicates, host.PrimaryIPContainsFold(*i.PrimaryIPContainsFold))
+	}
+	if i.Subnet != nil {
+		predicates = append(predicates, host.SubnetEQ(*i.Subnet))
+	}
+	if i.SubnetNEQ != nil {
+		predicates = append(predicates, host.SubnetNEQ(*i.SubnetNEQ))
+	}
+	if len(i.SubnetIn) > 0 {
+		predicates = append(predicates, host.SubnetIn(i.SubnetIn...))
+	}
+	if len(i.SubnetNotIn) > 0 {
+		predicates = append(predicates, host.SubnetNotIn(i.SubnetNotIn...))
+	}
+	if i.SubnetGT != nil {
+		predicates = append(predicates, host.SubnetGT(*i.SubnetGT))
+	}
+	if i.SubnetGTE != nil {
+		predicates = append(predicates, host.SubnetGTE(*i.SubnetGTE))
+	}
+	if i.SubnetLT != nil {
+		predicates = append(predicates, host.SubnetLT(*i.SubnetLT))
+	}
+	if i.SubnetLTE != nil {
+		predicates = append(predicates, host.SubnetLTE(*i.SubnetLTE))
+	}
+	if i.SubnetContains != nil {
+		predicates = append(predicates, host.SubnetContains(*i.SubnetContains))
+	}
+	if i.SubnetHasPrefix != nil {
+		predicates = append(predicates, host.SubnetHasPrefix(*i.SubnetHasPrefix))
+	}
+	if i.SubnetHasSuffix != nil {
+		predicates = append(predicates, host.SubnetHasSuffix(*i.SubnetHasSuffix))
+	}
+	if i.SubnetIsNil {
+		predicates = append(predicates, host.SubnetIsNil())
+	}
+	if i.SubnetNotNil {
+		predicates = append(predicates, host.SubnetNotNil())
+	}
+	if i.SubnetEqualFold != nil {
+		predicates = append(predicates, host.SubnetEqualFold(*i.SubnetEqualFold))
+	}
+	if i.SubnetContainsFold != nil {
+		predicates = append(predicates, host.SubnetContainsFold(*i.SubnetContainsFold))
 	}
 	if i.ExternalIP != nil {
 		predicates = append(predicates, host.ExternalIPEQ(*i.ExternalIP))

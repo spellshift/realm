@@ -248,6 +248,8 @@ func (ec *executionContext) fieldContext_BeaconTimelineHostBucket_host(_ context
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":

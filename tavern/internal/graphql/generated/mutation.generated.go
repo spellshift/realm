@@ -1037,6 +1037,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -1138,6 +1140,8 @@ func (ec *executionContext) fieldContext_Mutation_favoriteHost(ctx context.Conte
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -1239,6 +1243,8 @@ func (ec *executionContext) fieldContext_Mutation_unfavoriteHost(ctx context.Con
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -1340,6 +1346,8 @@ func (ec *executionContext) fieldContext_Mutation_subscribeToHost(ctx context.Co
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -1441,6 +1449,8 @@ func (ec *executionContext) fieldContext_Mutation_unsubscribeFromHost(ctx contex
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
