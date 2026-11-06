@@ -62,7 +62,7 @@ func TestExecuteTask_CancelsBuildContextOnStreamSendFailure(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		executeTask(context.Background(), &Config{}, &fakeBuilderClient{}, mock, &builderpb.BuildTaskSpec{Id: 1})
+		executeTask(context.Background(), "", &fakeBuilderClient{}, mock, &builderpb.BuildTaskSpec{Id: 1})
 		close(done)
 	}()
 
@@ -121,7 +121,7 @@ func TestClaimAndExecuteTasks_DoesNotBlockWhenAtCapacity(t *testing.T) {
 
 	done := make(chan error, 1)
 	go func() {
-		done <- claimAndExecuteTasks(ctx, &Config{}, client, mock, sem)
+		done <- claimAndExecuteTasks(ctx, "", client, mock, sem)
 	}()
 
 	select {

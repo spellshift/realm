@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
@@ -16,15 +15,14 @@ const (
 	// DefaultBuildImage is the default Docker image for building agents.
 	DefaultBuildImage = "spellshift/devcontainer:main"
 
-	// DockerBuildDir is the fixed build directory used by the Docker executor.
+	// DockerBuildDir is the recipe's fixed build directory.
 	// It lives under /tmp (world-writable in typical build images) so the
 	// non-root build user can write to it. The Docker container already
 	// provides filesystem isolation between builds, so a static path keeps the
 	// cargo cache key stable across builds (the setup script embeds
 	// {{.BuildDir}}), allowing compiled artifacts cached in the shared cache
 	// volume's CARGO_TARGET_DIR to be reused instead of being discarded on
-	// every build. The Local executor keeps a random, unique BuildDir because
-	// it shares the host filesystem with other builds.
+	// every build. The local debug executor substitutes a private directory.
 	DockerBuildDir = "/tmp/realm-build"
 
 	// DefaultTargetFormat is the default output format for builds.
@@ -133,17 +131,8 @@ type ImixConfig struct {
 	Transports   []ImixTransportConfig `yaml:"transports"`
 }
 
-// NewBuildDir generates a unique build directory path for a single build
-// task. It's templated into the setup/build/artifact-path recipes (as
-// {{.BuildDir}}) so they all agree on exactly where the setup script clones
-// the repo, regardless of how that script gets there (no more hardcoding a
-// fixed path like /home/vscode that only matched one specific setup script).
-func NewBuildDir() string {
-	return fmt.Sprintf("/tmp/realm-build-%s", uuid.NewString())
-}
-
 // DeriveArtifactPath returns the artifact path inside the build container
-// based on the target OS, rooted at buildDir (see NewBuildDir).
+// based on the target OS, rooted at buildDir.
 func DeriveArtifactPath(os c2pb.Host_Platform, buildDir string) string {
 	target, ok := buildTarget[os]
 	if !ok {

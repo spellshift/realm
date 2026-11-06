@@ -97,17 +97,12 @@ func FrozenTome(bundle []byte, tomeID int) ([]byte, error) {
 // profile.Setupscript directly so callers can override it per-task before
 // templating happens.
 //
-// All three recipes are rendered against the same values, notably a freshly
-// generated BuildDir (see NewBuildDir) -- this is what lets the setup
-// script clone the repo into an arbitrary unique directory while the build
-// script and artifact path still agree on exactly where to find it.
+// All three recipes are rendered against the same stable BuildDir so the
+// setup, build, and artifact paths agree. The local debug executor substitutes
+// a private path when it runs a task.
 //
-// The Docker executor uses a static BuildDir (see DockerBuildDir) because the
-// container already isolates builds; a stable path keeps the cargo cache key
-// constant across builds so CARGO_TARGET_DIR artifacts cached in the shared
-// volume are reused. The Local executor uses a random, unique BuildDir to
-// avoid colliding with other builds on the shared host filesystem.
-func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.Host_Platform, format TargetFormat, executor string) (string, string, string, error) {
+// The local debug executor substitutes its own scratch directory at execution.
+func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.Host_Platform, format TargetFormat) (string, string, string, error) {
 	if err := ValidateTargetFormat(os, format); err != nil {
 		return "", "", "", err
 	}
@@ -115,21 +110,7 @@ func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.H
 	if err != nil {
 		return "", "", "", err
 	}
-	buildDir := NewBuildDir()
-	// The Docker executor runs each build in an isolated container, so a static
-	// BuildDir is safe and keeps the cargo cache key stable across builds (the
-	// setup script embeds {{.BuildDir}}), allowing CARGO_TARGET_DIR artifacts
-	// cached in the shared volume to be reused. The Local executor shares the
-	// host filesystem, so it keeps a random, unique BuildDir.
-	//
-	// NOTE: executor here is the builder's stored Executor value, set once at
-	// enrollment and never refreshed. If a builder is later reconfigured
-	// (e.g. docker -> local) without re-enrolling, this will still reflect the
-	// stale enrollment-time value; that is an intentional, deliberate-step edge
-	// case, not normal operation.
-	if executor == "docker" {
-		buildDir = DockerBuildDir
-	}
+	buildDir := DockerBuildDir
 	values := map[string]string{
 		"BuildCommand": command,
 		"ArtifactPath": DeriveArtifactPath(os, buildDir),

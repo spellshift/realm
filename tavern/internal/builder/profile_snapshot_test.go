@@ -24,7 +24,7 @@ func TestResolveBuildRecipe_BuildDir(t *testing.T) {
 	setupScript := "mkdir -p {{.BuildDir}} && cd {{.BuildDir}} && git clone https://example.com/realm.git realm"
 
 	resolvedSetup, resolvedBuild, resolvedArtifact, err := builder.ResolveBuildRecipe(
-		profile, setupScript, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN, "local",
+		profile, setupScript, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN,
 	)
 	require.NoError(t, err)
 
@@ -52,39 +52,24 @@ func TestResolveBuildRecipe_SetupScriptWithoutTemplate(t *testing.T) {
 	setupScript := "echo plain setup, no templating here"
 
 	resolvedSetup, _, _, err := builder.ResolveBuildRecipe(
-		profile, setupScript, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN, "local",
+		profile, setupScript, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN,
 	)
 	require.NoError(t, err)
 	assert.Equal(t, setupScript, resolvedSetup)
 }
 
-// TestResolveBuildRecipe_DockerStaticBuildDir verifies that the Docker
-// executor resolves {{.BuildDir}} to the fixed DockerBuildDir (so the cargo
-// cache key is stable across builds and cached artifacts are reused), while
-// the Local executor keeps a random, unique BuildDir.
-func TestResolveBuildRecipe_DockerStaticBuildDir(t *testing.T) {
-	profile := &ent.BuildProfile{
-		BuildScript:  "cd {{.BuildDir}}/realm/implants/imix && {{.BuildCommand}}",
-		ArtifactPath: "{{.ArtifactPath}}",
-	}
-	setupScript := "mkdir -p {{.BuildDir}} && cd {{.BuildDir}} && git clone https://example.com/realm.git realm"
-
-	dockerSetup, dockerBuild, dockerArtifact, err := builder.ResolveBuildRecipe(
-		profile, setupScript, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN, "docker",
-	)
+// Recipes have a stable path independent of the selected executor.
+func TestResolveBuildRecipe_StableBuildDir(t *testing.T) {
+	profile := &ent.BuildProfile{BuildScript: "cd {{.BuildDir}}/realm/implants/imix && {{.BuildCommand}}", ArtifactPath: "{{.ArtifactPath}}"}
+	setup := "mkdir -p {{.BuildDir}}"
+	firstSetup, firstBuild, firstArtifact, err := builder.ResolveBuildRecipe(profile, setup, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN)
 	require.NoError(t, err)
-	assert.Contains(t, dockerSetup, builder.DockerBuildDir)
-	assert.Contains(t, dockerBuild, builder.DockerBuildDir)
-	assert.Contains(t, dockerArtifact, builder.DockerBuildDir)
-
-	localSetup, _, localArtifact, err := builder.ResolveBuildRecipe(
-		profile, setupScript, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN, "local",
-	)
+	secondSetup, secondBuild, secondArtifact, err := builder.ResolveBuildRecipe(profile, setup, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN)
 	require.NoError(t, err)
-	// Local must remain a random, unique directory under /tmp (not the static
-	// docker path).
-	assert.Contains(t, localSetup, "/tmp/realm-build-")
-	assert.Contains(t, localArtifact, "/tmp/realm-build-")
+	assert.Equal(t, firstSetup, secondSetup)
+	assert.Equal(t, firstBuild, secondBuild)
+	assert.Equal(t, firstArtifact, secondArtifact)
+	assert.Contains(t, firstSetup, builder.DockerBuildDir)
 }
 
 // script (e.g. explicitly overridden to "" at the task level) is left as
@@ -97,7 +82,7 @@ func TestResolveBuildRecipe_EmptySetupScript(t *testing.T) {
 	}
 
 	resolvedSetup, _, _, err := builder.ResolveBuildRecipe(
-		profile, "", c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN, "local",
+		profile, "", c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN,
 	)
 	require.NoError(t, err)
 	assert.Empty(t, resolvedSetup)

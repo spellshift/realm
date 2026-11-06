@@ -19,6 +19,22 @@ func TestLocalExecutor_ImplementsInterface(t *testing.T) {
 	var _ executor.Executor = (*executor.LocalExecutor)(nil)
 }
 
+func TestLocalExecutor_RewritesRecipePathIntoPrivateWorkspace(t *testing.T) {
+	spec := executor.BuildSpec{
+		SetupScript:     "mkdir -p /tmp/realm-build/realm",
+		PreBuildScript:  "test -d /tmp/realm-build/realm",
+		BuildScript:     "printf 'binary' > /tmp/realm-build/realm/imix",
+		PostBuildScript: "test \"$ARTIFACT_PATH\" = /tmp/realm-build/realm/imix && test -s \"$ARTIFACT_PATH\"",
+		ArtifactPath:    "/tmp/realm-build/realm/imix",
+		Env:             []string{"ARTIFACT_PATH=/tmp/realm-build/realm/imix"},
+	}
+	outputCh := make(chan string, 10)
+	errorCh := make(chan string, 10)
+	result, err := executor.NewLocalExecutor().Build(context.Background(), spec, outputCh, errorCh)
+	require.NoError(t, err)
+	require.Equal(t, "binary", string(result.Artifact))
+}
+
 func TestLocalExecutor_Build_SimpleEcho(t *testing.T) {
 	exec := executor.NewLocalExecutor()
 

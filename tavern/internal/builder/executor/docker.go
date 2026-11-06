@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
@@ -22,6 +21,7 @@ import (
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/google/uuid"
 )
 
 // DockerExecutor runs build tasks inside Docker containers.
@@ -29,15 +29,6 @@ import (
 // as the entrypoint, and streams stdout/stderr over the provided channels.
 type DockerExecutor struct {
 	client client.APIClient
-
-	// cacheMu holds a per-key binary semaphore (chan struct{} of cap 1) that
-	// serializes builds sharing the same cache volume + key so concurrent
-	// cargo/go builds don't race inside a shared target directory (cargo does
-	// not support concurrent builds into the same target dir). The set of keys
-	// is never pruned; in practice it is bounded by the number of distinct
-	// (image, OS, scripts) combinations a single builder process ever builds,
-	// so this is intentionally unbounded and harmless.
-	cacheMu sync.Map // map[string]chan struct{}
 }
 
 // NewDockerExecutor creates a DockerExecutor using the provided Docker API client.
@@ -93,12 +84,12 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	// builds don't rebuild the entire dependency tree from scratch.
 	hostConfig := (*container.HostConfig)(nil)
 	cacheEnv := []string{}
-	unlock := func() {}
 	if spec.CacheVolume != "" {
 		cachePath := spec.CachePath
 		if cachePath == "" {
 			cachePath = DefaultCachePath
 		}
+		key := cacheKeyFor(spec)
 		// Ensure the named volume exists. Inspect first so a volume created
 		// out-of-band (e.g. by an operator, without our label) is reused
 		// instead of triggering a 409 conflict on create.
@@ -107,7 +98,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 			// gracefully: build without caching rather than failing the build.
 			slog.WarnContext(ctx, "failed to prepare build cache volume, building without cache",
 				"task_id", spec.TaskID, "volume", spec.CacheVolume, "error", err)
-		} else if err := d.ensureVolumeWritable(ctx, spec.CacheVolume, cachePath, spec.BuildImage); err != nil {
+		} else if err := d.ensureVolumeWritable(ctx, spec.CacheVolume, cachePath, spec.BuildImage, key); err != nil {
 			// The default build image runs as the non-root `vscode` user, but
 			// Docker creates a named volume's mountpoint as root:root 0755, which
 			// that user cannot write to. If we can't make it writable (e.g. the
@@ -124,7 +115,6 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 					},
 				},
 			}
-			key := cacheKeyFor(spec)
 			cargoTargetDir := path.Join(cachePath, "target", key)
 			cacheEnv = []string{
 				"REALM_CACHE_DIR=" + cachePath,
@@ -134,27 +124,11 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 				"GOMODCACHE=" + path.Join(cachePath, "gopath", "pkg", "mod"),
 				"GOCACHE=" + path.Join(cachePath, "go-cache"),
 			}
-			// Setting CARGO_TARGET_DIR redirects ALL cargo output (including the
-			// final binary) into the cache volume, so remap the derived artifact
-			// path there; otherwise artifact extraction would look in the default
-			// workspace target dir and fail.
-			if spec.ArtifactPath != "" {
-				spec.ArtifactPath = remapArtifactPath(spec.ArtifactPath, cargoTargetDir)
-			}
-			// Serialize builds sharing a cache key so concurrent cargo
-			// invocations don't race inside the shared target directory.
-			u, lockErr := d.lockFor(ctx, spec.CacheVolume+"/"+key)
-			if lockErr != nil {
-				slog.WarnContext(ctx, "build cancelled while waiting for cache lock, building without cache",
-					"task_id", spec.TaskID, "error", lockErr)
-				hostConfig = nil
-				cacheEnv = nil
-			} else {
-				unlock = u
-			}
+			// Cargo places the binary under CARGO_TARGET_DIR. Keep the path
+			// seen by post-build scripts in sync with artifact extraction.
+			spec = cachedArtifactSpec(spec, cargoTargetDir)
 		}
 	}
-	defer unlock()
 
 	slog.InfoContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
 
@@ -376,24 +350,6 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)
 }
 
-// lockFor returns an unlock function that serializes builds sharing the same
-// cache key. This prevents concurrent cargo/go builds from racing inside a
-// shared target directory (cargo does not support concurrent builds into the
-// same target dir). The returned function is intended to be deferred so the
-// lock is held for the duration of a Build call. The lock is per-builder-
-// process; separate builder processes sharing the same volume coordinate via
-// cargo's own file locking, which is safe for read-mostly dependency caches.
-func (d *DockerExecutor) lockFor(ctx context.Context, key string) (func(), error) {
-	ch, _ := d.cacheMu.LoadOrStore(key, make(chan struct{}, 1))
-	c := ch.(chan struct{})
-	select {
-	case c <- struct{}{}:
-		return func() { <-c }, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
-}
-
 // ensureCacheVolume makes sure the named Docker volume exists. It inspects
 // first so a volume created out-of-band (e.g. by an operator, without our
 // label) is reused rather than rejected with a 409 conflict by VolumeCreate.
@@ -411,18 +367,30 @@ func (d *DockerExecutor) ensureCacheVolume(ctx context.Context, name string) err
 	return nil
 }
 
-// ensureVolumeWritable makes the cache volume's mountpoint world-writable.
+// ensureVolumeWritable makes the cache volume's mountpoint writable.
 // Docker creates a named volume's mountpoint as root:root 0755, but the default
 // build image runs as the non-root `vscode` user, which cannot write there and
 // would fail the build with permission errors. We chmod it 0777 using a
 // throwaway root container built from the (already pulled) build image so the
-// non-root build can populate CARGO_HOME/CARGO_TARGET_DIR.
-func (d *DockerExecutor) ensureVolumeWritable(ctx context.Context, volumeName, target, buildImage string) error {
+// non-root build can populate CARGO_HOME/CARGO_TARGET_DIR. A separate check
+// runs as the image's configured user; chmod success alone is insufficient.
+func (d *DockerExecutor) ensureVolumeWritable(ctx context.Context, volumeName, target, buildImage, key string) error {
+	if err := d.runCacheHelper(ctx, volumeName, target, buildImage, "root", "chmod 0777 \"$1\"", key); err != nil {
+		return fmt.Errorf("setting cache permissions: %w", err)
+	}
+	check := "for d in \"$1/cargo\" \"$1/target/$2\" \"$1/gopath/pkg/mod\" \"$1/go-cache\"; do mkdir -p \"$d\" || exit; p=$(mktemp \"$d/.realm-write-check.XXXXXX\") || exit; rm \"$p\" || exit; done"
+	if err := d.runCacheHelper(ctx, volumeName, target, buildImage, "", check, key); err != nil {
+		return fmt.Errorf("checking cache write access: %w", err)
+	}
+	return nil
+}
+
+func (d *DockerExecutor) runCacheHelper(ctx context.Context, volumeName, target, buildImage, user, command, key string) error {
 	c, err := d.client.ContainerCreate(ctx,
 		&container.Config{
 			Image:      buildImage,
-			User:       "root",
-			Entrypoint: []string{"/bin/sh", "-c", fmt.Sprintf("chmod 777 %s || true", target)},
+			User:       user,
+			Entrypoint: []string{"/bin/sh", "-c", command, "sh", target, key},
 		},
 		&container.HostConfig{
 			Mounts: []mount.Mount{
@@ -434,22 +402,31 @@ func (d *DockerExecutor) ensureVolumeWritable(ctx context.Context, volumeName, t
 	if err != nil {
 		return err
 	}
-	defer func() { _ = d.client.ContainerRemove(ctx, c.ID, container.RemoveOptions{Force: true}) }()
+	defer func() { _ = d.client.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true}) }()
 	if err := d.client.ContainerStart(ctx, c.ID, container.StartOptions{}); err != nil {
 		return err
 	}
 	waitCh, errCh := d.client.ContainerWait(ctx, c.ID, container.WaitConditionNotRunning)
-	select {
-	case res := <-waitCh:
-		if res.StatusCode != 0 {
-			return fmt.Errorf("cache chmod container exited with status %d", res.StatusCode)
+	for {
+		select {
+		case res, ok := <-waitCh:
+			if !ok {
+				return fmt.Errorf("cache helper wait closed without a result")
+			}
+			if res.StatusCode != 0 {
+				return fmt.Errorf("cache helper exited with status %d", res.StatusCode)
+			}
+			return nil
+		case e, ok := <-errCh:
+			if !ok {
+				errCh = nil
+				continue
+			}
+			return e
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-	case e := <-errCh:
-		return e
-	case <-ctx.Done():
-		return ctx.Err()
 	}
-	return nil
 }
 
 // remapArtifactPath rewrites an artifact path that was derived for the default
@@ -459,28 +436,46 @@ func (d *DockerExecutor) ensureVolumeWritable(ctx context.Context, volumeName, t
 // that don't look like a default-derived artifact path are returned unchanged
 // (e.g. a user-overridden ArtifactPath).
 func remapArtifactPath(artifactPath, cargoTargetDir string) string {
-	const marker = "/realm/implants/target/"
-	if idx := strings.Index(artifactPath, marker); idx >= 0 {
-		return path.Join(cargoTargetDir, artifactPath[idx+len(marker):])
+	const defaultTarget = "/tmp/realm-build/realm/implants/target/"
+	if strings.HasPrefix(artifactPath, defaultTarget) {
+		return path.Join(cargoTargetDir, strings.TrimPrefix(artifactPath, defaultTarget))
+	}
+	// Tasks created before the recipe directory became stable still carry a
+	// UUID suffix in their saved artifact path.
+	const legacyPrefix = "/tmp/realm-build-"
+	if rest, ok := strings.CutPrefix(artifactPath, legacyPrefix); ok {
+		id, suffix, found := strings.Cut(rest, "/realm/implants/target/")
+		if found {
+			if _, err := uuid.Parse(id); err == nil {
+				return path.Join(cargoTargetDir, suffix)
+			}
+		}
 	}
 	return artifactPath
 }
 
-// cacheKeyFor derives a stable identifier for a build's cache layout from the
-// inputs that determine which dependencies and target artifacts are produced.
-// Builds that share a key can safely reuse the same cache volume contents
-// (e.g. the same CARGO_TARGET_DIR), while different keys get isolated target
-// directories so concurrent builds of distinct profiles don't collide.
+func cachedArtifactSpec(spec BuildSpec, cargoTargetDir string) BuildSpec {
+	artifactPath := remapArtifactPath(spec.ArtifactPath, cargoTargetDir)
+	if artifactPath == spec.ArtifactPath {
+		return spec
+	}
+	spec.ArtifactPath = artifactPath
+	spec.Env = slices.Clone(spec.Env)
+	for i, env := range spec.Env {
+		if strings.HasPrefix(env, "ARTIFACT_PATH=") {
+			spec.Env[i] = "ARTIFACT_PATH=" + artifactPath
+			break
+		}
+	}
+	return spec
+}
+
+// cacheKeyFor separates incompatible toolchain images and target platforms.
+// Cargo's fingerprints and file locks handle recipe differences and concurrent
+// builds within each target directory.
 func cacheKeyFor(spec BuildSpec) string {
 	h := sha256.New()
-	for _, s := range []string{
-		spec.BuildImage,
-		spec.TargetOS,
-		spec.SetupScript,
-		spec.BuildScript,
-		spec.PreBuildScript,
-		spec.PostBuildScript,
-	} {
+	for _, s := range []string{spec.BuildImage, spec.TargetOS} {
 		_, _ = h.Write([]byte(s))
 		h.Write([]byte{0})
 	}

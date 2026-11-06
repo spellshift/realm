@@ -771,9 +771,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		}
 	}
 
-	// Select a healthy builder that supports the target OS up front so the
-	// rendered recipe can use the executor-appropriate BuildDir (the Docker
-	// executor uses a static BuildDir; the Local executor a random one).
+	// Select a healthy builder that supports the target OS.
 	now := time.Now()
 	healthyBuilders, err := graph.Builder.Query().
 		Where(
@@ -805,7 +803,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 
 	selected := candidates[mathrand.Intn(len(candidates))]
 
-	setupScript, buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, setupScript, input.TargetOs, targetFormat, string(selected.Executor))
+	setupScript, buildScript, artifactPath, err := builder.ResolveBuildRecipe(profile, setupScript, input.TargetOs, targetFormat)
 	if err != nil {
 		return nil, fmt.Errorf("resolve build recipe: %w", err)
 	}
