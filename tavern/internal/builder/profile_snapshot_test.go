@@ -58,7 +58,20 @@ func TestResolveBuildRecipe_SetupScriptWithoutTemplate(t *testing.T) {
 	assert.Equal(t, setupScript, resolvedSetup)
 }
 
-// TestResolveBuildRecipe_EmptySetupScript verifies that an empty setup
+// Recipes have a stable path independent of the selected executor.
+func TestResolveBuildRecipe_StableBuildDir(t *testing.T) {
+	profile := &ent.BuildProfile{BuildScript: "cd {{.BuildDir}}/realm/implants/imix && {{.BuildCommand}}", ArtifactPath: "{{.ArtifactPath}}"}
+	setup := "mkdir -p {{.BuildDir}}"
+	firstSetup, firstBuild, firstArtifact, err := builder.ResolveBuildRecipe(profile, setup, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN)
+	require.NoError(t, err)
+	secondSetup, secondBuild, secondArtifact, err := builder.ResolveBuildRecipe(profile, setup, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN)
+	require.NoError(t, err)
+	assert.Equal(t, firstSetup, secondSetup)
+	assert.Equal(t, firstBuild, secondBuild)
+	assert.Equal(t, firstArtifact, secondArtifact)
+	assert.Contains(t, firstSetup, builder.DockerBuildDir)
+}
+
 // script (e.g. explicitly overridden to "" at the task level) is left as
 // an empty string rather than erroring out of renderRecipe's
 // empty-result check.
