@@ -18,7 +18,7 @@ const (
 	maxScanTokenSize = 1024 * 1024 // 1MB
 
 	// DefaultCachePath is the in-container mount point for the build cache
-	// volume when a BuildSpec sets CacheVolume but not CachePath.
+	// when a BuildSpec sets CacheDir but not CachePath.
 	DefaultCachePath = "/realm-cache"
 )
 
@@ -47,19 +47,13 @@ type BuildSpec struct {
 	TargetOS   string
 	BuildImage string
 
-	// CacheVolume is the name of a Docker volume used to persist build caches
-	// (downloaded dependencies and intermediate build artifacts) across builds.
-	// When non-empty, the DockerExecutor ensures the volume exists, mounts it
-	// into the container, and points the cargo/go cache directories at it so
-	// dependency downloads and compiled artifacts survive container teardown
-	// between builds. This dramatically speeds up repeated builds.
-	//
-	// Caching is only implemented by DockerExecutor; LocalExecutor and
-	// MockExecutor ignore this field.
-	CacheVolume string
+	// CacheDir is the host directory bind-mounted into Docker build containers
+	// to persist downloaded dependencies and compiled artifacts. An empty value
+	// disables caching. LocalExecutor and MockExecutor ignore this field.
+	CacheDir string
 
-	// CachePath is the absolute path inside the container where CacheVolume is
-	// mounted. Defaults to DefaultCachePath when CacheVolume is set and
+	// CachePath is the absolute path inside the container where CacheDir is
+	// mounted. Defaults to DefaultCachePath when CacheDir is set and
 	// CachePath is empty. Set this together with a build profile's scripts to
 	// stage the source checkout (e.g. clone into $REALM_CACHE_DIR/repo) so the
 	// workspace crates are also cached between builds.

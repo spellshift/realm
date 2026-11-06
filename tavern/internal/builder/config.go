@@ -37,17 +37,18 @@ type Config struct {
 	Upstream         string   `yaml:"upstream"`
 	Executor         string   `yaml:"executor"`
 
-	// CacheVolume is the name of the Docker volume the DockerExecutor uses to
-	// cache build dependencies and intermediate artifacts between builds. When
-	// empty (or when the executor is "local"), no cache volume is used and
-	// every build starts from a clean dependency/build cache. Defaults to a
-	// shared "realm-build-cache" volume so repeated builds reuse downloaded
-	// crates/modules and compiled artifacts.
-	//
-	// The default name is global and un-namespaced: if a single Docker host runs
-	// builders for more than one independent Tavern deployment, they will silently
-	// share this volume unless each deployment is given a distinct cache_volume.
-	CacheVolume string `yaml:"cache_volume"`
+	// CacheDir is a host directory bind-mounted into Docker build containers.
+	// An empty value disables caching. Docker and the builder must share this
+	// filesystem, as with any Docker bind mount.
+	CacheDir string `yaml:"cache_dir"`
+}
+
+func defaultCacheDir() string {
+	base, err := os.UserCacheDir()
+	if err != nil {
+		base = os.TempDir()
+	}
+	return filepath.Join(base, "realm", "builder")
 }
 
 // DefaultConfig returns the settings used when no builder configuration is provided.
@@ -58,7 +59,7 @@ func DefaultConfig() *Config {
 		IdentityFile:     "builder.identity",
 		Upstream:         "http://127.0.0.1:8000",
 		Executor:         "docker",
-		CacheVolume:      "realm-build-cache",
+		CacheDir:         defaultCacheDir(),
 	}
 }
 
@@ -102,12 +103,12 @@ func parseConfigBytes(data []byte, executor *string) (*Config, error) {
 	}
 	for name := range fields {
 		switch name {
-		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval", "cache_volume":
+		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval", "cache_dir":
 		default:
 			return nil, fmt.Errorf("unknown builder config field %q", name)
 		}
 	}
-	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval", "cache_volume"} {
+	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval", "cache_dir"} {
 		if value, present := fields[name]; present && value == nil {
 			return nil, fmt.Errorf("%s must not be null", name)
 		}
@@ -167,6 +168,9 @@ func (cfg *Config) validate() error {
 		// valid
 	default:
 		return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cfg.Executor)
+	}
+	if cfg.CacheDir != "" && !filepath.IsAbs(cfg.CacheDir) {
+		return fmt.Errorf("cache_dir must be an absolute path")
 	}
 	return nil
 }

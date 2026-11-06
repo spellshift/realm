@@ -41,14 +41,19 @@ func TestParseConfigBytes_DefaultsAndPartialOverrides(t *testing.T) {
 	require.Equal(t, &builder.Config{
 		PollInterval: 5, SupportedTargets: []string{"linux", "windows"},
 		IdentityFile: "builder.identity", Upstream: "http://127.0.0.1:8000", Executor: "docker",
-		CacheVolume: "realm-build-cache",
+		CacheDir: builder.DefaultConfig().CacheDir,
 	}, cfg)
+	require.True(t, filepath.IsAbs(cfg.CacheDir))
 
 	cfg, err = builder.ParseConfigBytes([]byte("upstream: https://tavern.example.com\npoll_interval: 10\n"))
 	require.NoError(t, err)
 	require.Equal(t, "https://tavern.example.com", cfg.Upstream)
 	require.Equal(t, 10, cfg.PollInterval)
 	require.Equal(t, []string{"linux", "windows"}, cfg.SupportedTargets)
+
+	cfg, err = builder.ParseConfigBytes([]byte("cache_dir: ''\n"))
+	require.NoError(t, err)
+	require.Empty(t, cfg.CacheDir)
 }
 
 func TestParseConfigBytes_RejectsExplicitInvalidFields(t *testing.T) {
@@ -61,6 +66,7 @@ func TestParseConfigBytes_RejectsExplicitInvalidFields(t *testing.T) {
 		{"supported targets", "supported_targets: []\n", "supported_target"},
 		{"upstream", "upstream: ''\n", "upstream"},
 		{"executor", "executor: ''\n", "executor"},
+		{"cache dir", "cache_dir: relative/path\n", "cache_dir must be an absolute path"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -18,7 +18,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
@@ -77,40 +76,26 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Configure build caching. When spec.CacheVolume is set, ensure the
-	// Docker volume exists and is writable, then mount it into the container,
-	// pointing the cargo/go cache directories at it. This persists downloaded
-	// dependencies and intermediate build artifacts across builds so repeated
-	// builds don't rebuild the entire dependency tree from scratch.
+	// Prepare a host cache directory and bind-mount it into the container.
+	// Cargo and Go write their dependency caches and build artifacts there.
 	hostConfig := (*container.HostConfig)(nil)
 	cacheEnv := []string{}
-	if spec.CacheVolume != "" {
+	uncachedSpec := spec
+	if spec.CacheDir != "" {
 		cachePath := spec.CachePath
 		if cachePath == "" {
 			cachePath = DefaultCachePath
 		}
 		key := cacheKeyFor(spec)
-		// Ensure the named volume exists. Inspect first so a volume created
-		// out-of-band (e.g. by an operator, without our label) is reused
-		// instead of triggering a 409 conflict on create.
-		if err := d.ensureCacheVolume(ctx, spec.CacheVolume); err != nil {
-			// Volume setup can fail (e.g. driver limits, no permission). Degrade
-			// gracefully: build without caching rather than failing the build.
-			slog.WarnContext(ctx, "failed to prepare build cache volume, building without cache",
-				"task_id", spec.TaskID, "volume", spec.CacheVolume, "error", err)
-		} else if err := d.ensureVolumeWritable(ctx, spec.CacheVolume, cachePath, spec.BuildImage, key); err != nil {
-			// The default build image runs as the non-root `vscode` user, but
-			// Docker creates a named volume's mountpoint as root:root 0755, which
-			// that user cannot write to. If we can't make it writable (e.g. the
-			// image lacks /bin/sh), degrade to an uncached build.
-			slog.WarnContext(ctx, "failed to make build cache volume writable, building without cache",
-				"task_id", spec.TaskID, "volume", spec.CacheVolume, "error", err)
+		if err := prepareCacheDir(spec.CacheDir, key); err != nil {
+			slog.WarnContext(ctx, "failed to prepare build cache directory, building without cache",
+				"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", err)
 		} else {
 			hostConfig = &container.HostConfig{
 				Mounts: []mount.Mount{
 					{
-						Type:   mount.TypeVolume,
-						Source: spec.CacheVolume,
+						Type:   mount.TypeBind,
+						Source: spec.CacheDir,
 						Target: cachePath,
 					},
 				},
@@ -138,20 +123,31 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; . \"$s\"; done",
 	}, " && ")
 
-	resp, err := d.client.ContainerCreate(ctx,
-		&container.Config{
-			Image:      spec.BuildImage,
-			Entrypoint: []string{"/bin/sh", "-c", entrypoint},
-			Env: append(append(slices.Clone(spec.Env),
-				"REALM_WORKSPACE_DIR=/mnt",
-				"REALM_TOMES_DIR=/mnt/tomes",
-			), cacheEnv...),
-		},
-		hostConfig, // host config (may mount the build cache volume)
-		nil,        // networking config
-		nil,        // platform
-		"",         // container name (auto-generated)
-	)
+	createContainer := func() (container.CreateResponse, error) {
+		return d.client.ContainerCreate(ctx,
+			&container.Config{
+				Image:      spec.BuildImage,
+				Entrypoint: []string{"/bin/sh", "-c", entrypoint},
+				Env: append(append(slices.Clone(spec.Env),
+					"REALM_WORKSPACE_DIR=/mnt",
+					"REALM_TOMES_DIR=/mnt/tomes",
+				), cacheEnv...),
+			},
+			hostConfig, // host config (may bind-mount the build cache directory)
+			nil,        // networking config
+			nil,        // platform
+			"",         // container name (auto-generated)
+		)
+	}
+	resp, err := createContainer()
+	if err != nil && hostConfig != nil && ctx.Err() == nil {
+		slog.WarnContext(ctx, "failed to mount build cache, retrying without cache",
+			"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", err)
+		spec = uncachedSpec
+		hostConfig = nil
+		cacheEnv = nil
+		resp, err = createContainer()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create container: %w", err)
 	}
@@ -350,83 +346,31 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)
 }
 
-// ensureCacheVolume makes sure the named Docker volume exists. It inspects
-// first so a volume created out-of-band (e.g. by an operator, without our
-// label) is reused rather than rejected with a 409 conflict by VolumeCreate.
-func (d *DockerExecutor) ensureCacheVolume(ctx context.Context, name string) error {
-	if _, err := d.client.VolumeInspect(ctx, name); err == nil {
-		return nil
+// prepareCacheDir creates the paths the build user writes beneath a bind
+// mount. Docker sees the host file modes directly, so no setup container is
+// needed.
+func prepareCacheDir(cacheDir, key string) error {
+	if !filepath.IsAbs(cacheDir) {
+		return fmt.Errorf("cache directory must be absolute: %q", cacheDir)
 	}
-	if _, err := d.client.VolumeCreate(ctx, volume.CreateOptions{
-		Name:   name,
-		Driver: "local",
-		Labels: map[string]string{"realm.buildcache": "true"},
-	}); err != nil {
-		return err
-	}
-	return nil
-}
-
-// ensureVolumeWritable makes the cache volume's mountpoint writable.
-// Docker creates a named volume's mountpoint as root:root 0755, but the default
-// build image runs as the non-root `vscode` user, which cannot write there and
-// would fail the build with permission errors. We chmod it 0777 using a
-// throwaway root container built from the (already pulled) build image so the
-// non-root build can populate CARGO_HOME/CARGO_TARGET_DIR. A separate check
-// runs as the image's configured user; chmod success alone is insufficient.
-func (d *DockerExecutor) ensureVolumeWritable(ctx context.Context, volumeName, target, buildImage, key string) error {
-	if err := d.runCacheHelper(ctx, volumeName, target, buildImage, "root", "chmod 0777 \"$1\"", key); err != nil {
-		return fmt.Errorf("setting cache permissions: %w", err)
-	}
-	check := "for d in \"$1/cargo\" \"$1/target/$2\" \"$1/gopath/pkg/mod\" \"$1/go-cache\"; do mkdir -p \"$d\" || exit; p=$(mktemp \"$d/.realm-write-check.XXXXXX\") || exit; rm \"$p\" || exit; done"
-	if err := d.runCacheHelper(ctx, volumeName, target, buildImage, "", check, key); err != nil {
-		return fmt.Errorf("checking cache write access: %w", err)
-	}
-	return nil
-}
-
-func (d *DockerExecutor) runCacheHelper(ctx context.Context, volumeName, target, buildImage, user, command, key string) error {
-	c, err := d.client.ContainerCreate(ctx,
-		&container.Config{
-			Image:      buildImage,
-			User:       user,
-			Entrypoint: []string{"/bin/sh", "-c", command, "sh", target, key},
-		},
-		&container.HostConfig{
-			Mounts: []mount.Mount{
-				{Type: mount.TypeVolume, Source: volumeName, Target: target},
-			},
-		},
-		nil, nil, "",
-	)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = d.client.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true}) }()
-	if err := d.client.ContainerStart(ctx, c.ID, container.StartOptions{}); err != nil {
-		return err
-	}
-	waitCh, errCh := d.client.ContainerWait(ctx, c.ID, container.WaitConditionNotRunning)
-	for {
-		select {
-		case res, ok := <-waitCh:
-			if !ok {
-				return fmt.Errorf("cache helper wait closed without a result")
-			}
-			if res.StatusCode != 0 {
-				return fmt.Errorf("cache helper exited with status %d", res.StatusCode)
-			}
-			return nil
-		case e, ok := <-errCh:
-			if !ok {
-				errCh = nil
-				continue
-			}
-			return e
-		case <-ctx.Done():
-			return ctx.Err()
+	for _, dir := range []string{
+		cacheDir,
+		filepath.Join(cacheDir, "cargo"),
+		filepath.Join(cacheDir, "target"),
+		filepath.Join(cacheDir, "target", key),
+		filepath.Join(cacheDir, "gopath"),
+		filepath.Join(cacheDir, "gopath", "pkg"),
+		filepath.Join(cacheDir, "gopath", "pkg", "mod"),
+		filepath.Join(cacheDir, "go-cache"),
+	} {
+		if err := os.MkdirAll(dir, 0o777); err != nil {
+			return fmt.Errorf("creating %q: %w", dir, err)
+		}
+		if err := os.Chmod(dir, 0o777); err != nil {
+			return fmt.Errorf("setting permissions on %q: %w", dir, err)
 		}
 	}
+	return nil
 }
 
 // remapArtifactPath rewrites an artifact path that was derived for the default
