@@ -151,7 +151,7 @@ export const TagSummaryCard: FC = () => {
                                     {({ close }) => (
                                         <div className="flex flex-col gap-3">
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-900">Advanced auto tagging</p>
+                                                <p className="text-sm font-semibold text-gray-900">Auto tagging options</p>
                                                 <p className="text-xs text-gray-500">Choose which tags to apply.</p>
                                             </div>
                                             <div className="flex flex-col gap-2">
