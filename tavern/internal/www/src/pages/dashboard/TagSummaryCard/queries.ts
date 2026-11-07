@@ -6,7 +6,6 @@ export const GET_ALL_HOSTS_WITH_TAG_STATS = gql`
     $whereRecentlyLost: BeaconWhereInput
   ) {
     hosts {
-      totalCount
       edges {
         node {
           id

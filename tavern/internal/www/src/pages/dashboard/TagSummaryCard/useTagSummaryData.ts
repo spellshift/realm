@@ -110,7 +110,7 @@ export const useTagSummaryData = (tagKind: TagKind): {
 
   return {
     rows,
-    hostCount: data?.hosts?.totalCount ?? 0,
+    hostCount: data?.hosts?.edges?.length ?? 0,
     loading: networkStatus === NetworkStatus.loading,
     error: error ? new Error(error.message) : undefined,
   };

@@ -32,7 +32,6 @@ export interface HostWithTagStats {
 
 export interface GetAllHostsWithTagStatsResponse {
   hosts: {
-    totalCount: number;
     edges: Array<{ node: HostWithTagStats }>;
   };
 }
