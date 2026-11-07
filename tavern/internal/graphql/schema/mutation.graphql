@@ -4,6 +4,7 @@ type Mutation {
     ####
     dropAllData: Boolean! @requireRole(role: ADMIN)
     runHostAutogroup(k: Int): [Tag!]! @requireRole(role: ADMIN)
+    groupHostsBySubnet: [Tag!]! @requireRole(role: ADMIN)
 
     ###
     # Quest
