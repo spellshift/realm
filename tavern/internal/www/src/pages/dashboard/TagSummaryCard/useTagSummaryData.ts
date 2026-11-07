@@ -21,6 +21,7 @@ const computeQueryVariables = () => {
 
 export const useTagSummaryData = (tagKind: TagKind): {
   rows: TagRow[];
+  hostCount: number;
   loading: boolean;
   error?: Error;
 } => {
@@ -109,6 +110,7 @@ export const useTagSummaryData = (tagKind: TagKind): {
 
   return {
     rows,
+    hostCount: data?.hosts?.totalCount ?? 0,
     loading: networkStatus === NetworkStatus.loading,
     error: error ? new Error(error.message) : undefined,
   };
