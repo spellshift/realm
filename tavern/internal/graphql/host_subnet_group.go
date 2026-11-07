@@ -3,16 +3,13 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"net/netip"
 	"sort"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 )
 
-// groupHostsBySubnet creates or refreshes group tags for reported primary
-// subnets shared by at least two hosts. A host is skipped when its primary IP
-// is missing or does not belong to its reported subnet.
+// groupHostsBySubnet creates or refreshes group tags for hosts with a reported subnet.
 func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, error) {
 	hosts, err := client.Host.Query().All(ctx)
 	if err != nil {
@@ -21,20 +18,15 @@ func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, er
 
 	bySubnet := make(map[string][]int)
 	for _, h := range hosts {
-		ip, ipErr := netip.ParseAddr(h.PrimaryIP)
-		prefix, prefixErr := netip.ParsePrefix(h.Subnet)
-		if ipErr != nil || prefixErr != nil || !usableHostSubnet(ip, prefix) {
+		if h.Subnet == "" {
 			continue
 		}
-		cidr := prefix.Masked().String()
-		bySubnet[cidr] = append(bySubnet[cidr], h.ID)
+		bySubnet[h.Subnet] = append(bySubnet[h.Subnet], h.ID)
 	}
 
 	subnets := make([]string, 0, len(bySubnet))
-	for cidr, ids := range bySubnet {
-		if len(ids) >= 2 {
-			subnets = append(subnets, cidr)
-		}
+	for subnet := range bySubnet {
+		subnets = append(subnets, subnet)
 	}
 	sort.Strings(subnets)
 	if len(subnets) == 0 {
@@ -46,8 +38,8 @@ func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, er
 		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
 	}
 	createdOrUpdatedIDs := make([]int, 0, len(subnets))
-	for _, cidr := range subnets {
-		name := "Subnet: " + cidr
+	for _, subnet := range subnets {
+		name := "Subnet: " + subnet
 		existing, err := tx.Tag.Query().Where(tag.Name(name)).Only(ctx)
 		if err != nil && !ent.IsNotFound(err) {
 			return nil, rollback(tx, fmt.Errorf("failed to query tag %q: %w", name, err))
@@ -56,7 +48,7 @@ func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, er
 			if existing.Kind != tag.KindGroup {
 				return nil, rollback(tx, fmt.Errorf("tag %q already exists with kind %q", name, existing.Kind))
 			}
-			if _, err := existing.Update().ClearHosts().AddHostIDs(bySubnet[cidr]...).Save(ctx); err != nil {
+			if _, err := existing.Update().ClearHosts().AddHostIDs(bySubnet[subnet]...).Save(ctx); err != nil {
 				return nil, rollback(tx, fmt.Errorf("failed to update tag %q: %w", name, err))
 			}
 			createdOrUpdatedIDs = append(createdOrUpdatedIDs, existing.ID)
@@ -65,7 +57,7 @@ func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, er
 		created, err := tx.Tag.Create().
 			SetName(name).
 			SetKind(tag.KindGroup).
-			AddHostIDs(bySubnet[cidr]...).
+			AddHostIDs(bySubnet[subnet]...).
 			Save(ctx)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to create tag %q: %w", name, err))
@@ -76,14 +68,4 @@ func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, er
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 	return client.Tag.Query().Where(tag.IDIn(createdOrUpdatedIDs...)).Order(ent.Asc(tag.FieldName)).All(ctx)
-}
-
-// usableHostSubnet rejects addresses that cannot identify a host's network,
-// as well as catch-all and single-address prefixes. IsGlobalUnicast includes
-// private IPv4 and unique-local IPv6 addresses.
-func usableHostSubnet(ip netip.Addr, prefix netip.Prefix) bool {
-	if !ip.IsGlobalUnicast() || !prefix.Contains(ip) {
-		return false
-	}
-	return prefix.Bits() > 0 && prefix.Bits() < ip.BitLen()
 }
