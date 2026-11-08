@@ -21,7 +21,7 @@ export interface ScreenshotConnection {
 }
 
 export interface HostScreenshotsQueryResponse {
-    hosts: { edges: Array<{ node: { screenshots: ScreenshotConnection } }> };
+    hosts: { edges: Array<{ node: { id: string; screenshots: ScreenshotConnection } }> };
 }
 
 export interface GetHostScreenshotsQueryVariables {

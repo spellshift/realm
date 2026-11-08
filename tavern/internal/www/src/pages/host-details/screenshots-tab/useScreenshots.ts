@@ -24,7 +24,7 @@ export const useScreenshots = (hostId: string) => {
         {
             variables: queryVariables,
             skip: !hostId,
-            fetchPolicy: "cache-and-network",
+            fetchPolicy: "cache-first",
             notifyOnNetworkStatusChange: true,
         }
     );
@@ -54,25 +54,6 @@ export const useScreenshots = (hostId: string) => {
         try {
             const result = await fetchMore({
                 variables: { after: endCursor },
-                updateQuery: (previous, { fetchMoreResult }) => {
-                    const next = fetchMoreResult?.hosts?.edges?.[0]?.node?.screenshots;
-                    const current = previous.hosts?.edges?.[0]?.node?.screenshots;
-                    if (!next || !current) {
-                        return previous;
-                    }
-                    return {
-                        hosts: {
-                            ...previous.hosts,
-                            edges: previous.hosts.edges.map((edge, index) => index === 0 ? {
-                                ...edge,
-                                node: {
-                                    ...edge.node,
-                                    screenshots: { ...next, edges: [...current.edges, ...next.edges] },
-                                },
-                            } : edge),
-                        },
-                    };
-                },
             });
             return result.data?.hosts?.edges?.[0]?.node?.screenshots?.edges?.[0]?.node;
         } finally {

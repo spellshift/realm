@@ -10,6 +10,7 @@ export const GET_HOST_SCREENSHOTS = gql`
         hosts(where: { id: $hostId }) {
             edges {
                 node {
+                    id
                     screenshots(first: $first, after: $after, orderBy: $orderBy) {
                         totalCount
                         pageInfo { endCursor hasNextPage }

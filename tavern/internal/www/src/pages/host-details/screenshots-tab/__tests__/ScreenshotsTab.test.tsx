@@ -1,4 +1,6 @@
+import { InMemoryCache } from "@apollo/client";
 import { MockedProvider, MockedResponse } from "@apollo/client/testing";
+import { relayStylePagination } from "@apollo/client/utilities";
 import { ChakraProvider } from "@chakra-ui/react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -49,7 +51,7 @@ const third = screenshot("12", "third.png", 4096);
 
 const page = (nodes: ReturnType<typeof screenshot>[], totalCount: number, hasNextPage: boolean, endCursor: string) => ({
     data: {
-        hosts: { edges: [{ node: { screenshots: {
+        hosts: { edges: [{ node: { __typename: "Host", id: "1", screenshots: {
             totalCount,
             pageInfo: { endCursor, hasNextPage },
             edges: nodes.map(node => ({ node })),
@@ -65,9 +67,17 @@ const request = (variables: Record<string, unknown> = {}) => ({
 // The first render in jsdom (Chakra, react-select, lazy module transforms) is slow on cold start.
 const COLD_START = { timeout: 20000 };
 
+const makeCache = () => new InMemoryCache({
+    addTypename: false,
+    typePolicies: {
+        Query: { fields: { hosts: relayStylePagination(["where", "orderBy"]) } },
+        Host: { fields: { screenshots: relayStylePagination(["orderBy"]) } },
+    },
+});
+
 const renderTab = (mocks: MockedResponse[]) => render(
     <ChakraProvider>
-        <MockedProvider mocks={mocks} addTypename={false}>
+        <MockedProvider mocks={mocks} addTypename={false} cache={makeCache()}>
             <MemoryRouter initialEntries={["/hosts/1?tab=screenshots"]}>
                 <SortsProvider>
                     <Routes><Route path="/hosts/:hostId" element={<ScreenshotsTab />} /></Routes>

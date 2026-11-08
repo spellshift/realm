@@ -41,7 +41,7 @@ const ScreenshotsTab = () => {
             return null;
         }
         return (
-            <div className={`flex items-center gap-2 px-2 py-2 border-b border-gray-100 ${screenshot.id === selected?.id ? "bg-purple-50 border-l-2 border-l-purple-600" : "hover:bg-gray-50"}`}>
+            <div className={`flex h-[61px] items-center gap-2 px-2 py-2 border-b border-gray-100 ${screenshot.id === selected?.id ? "bg-purple-50 border-l-2 border-l-purple-600" : "hover:bg-gray-50"}`}>
                 <button
                     type="button"
                     onClick={() => setSelectedId(screenshot.id)}
@@ -50,9 +50,9 @@ const ScreenshotsTab = () => {
                     className="flex items-center gap-2 min-w-0 flex-1 text-left"
                 >
                     <img src={imageURL(screenshot.id)} alt="" loading="lazy" className="w-16 h-11 object-contain bg-gray-100 rounded-sm shrink-0" />
-                    <span className="min-w-0">
+                    <span className="min-w-0 flex-1">
                         <span className="block truncate text-xs text-gray-900" title={screenshot.name}>{screenshot.name}</span>
-                        <span className="block text-xs text-gray-500">{capturedAt(screenshot.createdAt)} · {formatBytes(screenshot.size)}</span>
+                        <span className="block truncate text-xs text-gray-500">{capturedAt(screenshot.createdAt)} · {formatBytes(screenshot.size)}</span>
                     </span>
                 </button>
                 <Tooltip label={`Download ${screenshot.name}`}>
@@ -100,6 +100,7 @@ const ScreenshotsTab = () => {
                             hasMore={hasMore}
                             onLoadMore={loadMore}
                             estimateCardSize={61}
+                            dynamicSizing={false}
                             gap={0}
                             padding="0"
                             height="60vh"
