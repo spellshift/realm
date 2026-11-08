@@ -2,6 +2,7 @@ import { useQuery, NetworkStatus } from "@apollo/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { Filters, useFilters } from "../../context/FilterContext";
+import { KindOfTag } from "../../utils/interfacesUI";
 import { constructBeaconFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, OrderByField } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
@@ -93,10 +94,12 @@ export const useHostIds = () => {
   };
 };
 
-const getHostIdsQuery = (
+export const getHostIdsQuery = (
   filters: Filters,
   afterCursor?: Cursor,
   sort?: OrderByField,
+  first?: number,
+  excludeTagKind?: KindOfTag,
 ): GetHostIdsQueryVariables => {
   const currentTimestamp = new Date();
   const defaultRowLimit = TableRowLimit.HostRowLimit;
@@ -108,10 +111,11 @@ const getHostIdsQuery = (
   const query: GetHostIdsQueryVariables = {
     where: {
       ...hostFields,
-      ...(Object.keys(beaconFields).length > 0) && { "hasBeaconsWith": beaconFields }
+      ...(Object.keys(beaconFields).length > 0) && { "hasBeaconsWith": beaconFields },
+      ...(excludeTagKind && { "not": { "hasTagsWith": { "kind": excludeTagKind } } })
     },
     ...(sort && { orderBy: [sort] }),
-    first: defaultRowLimit,
+    first: first ?? defaultRowLimit,
     after: afterCursor || undefined,
   };
 

@@ -26,6 +26,14 @@ export const GET_HOST_IDS_QUERY = gql`
     }
 `;
 
+export const UPDATE_TAG_HOSTS_MUTATION = gql`
+    mutation UpdateTagHosts($tagID: ID!, $input: UpdateTagInput!) {
+        updateTag(tagID: $tagID, input: $input) {
+            id
+        }
+    }
+`;
+
 export const GET_HOST_DETAIL_QUERY = gql`
     query GetHostDetail($id: ID!) {
         hosts(where: { id: $id }, first: 1) {
