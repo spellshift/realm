@@ -3,11 +3,9 @@ import { useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import Tooltip from "../../../components/tavern-base-ui/Tooltip";
 import { VirtualizedCardList } from "../../../components/tavern-base-ui/virtualized-card-list";
 import { SortingControls } from "../../../context/SortContext";
-import { formatEnumLabel } from "../../../context/SortContext/sortingUtils";
 import { PageNavItem } from "../../../utils/enums";
 import { formatBytes } from "../../../utils/utils";
 import { useScreenshots } from "./useScreenshots";
@@ -30,9 +28,6 @@ const ScreenshotsTab = () => {
         loadMore,
         initialLoading,
         error,
-        searchTerm,
-        setSearchTerm,
-        sort,
     } = useScreenshots(hostId || "");
 
     const screenshotsById = useMemo(
@@ -77,13 +72,6 @@ const ScreenshotsTab = () => {
                     {totalCount !== undefined && <span className="text-gray-600">({totalCount})</span>}
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                    <SortingControls sortType={PageNavItem.screenshots} />
-                    <FreeTextSearch
-                        labelVisible={false}
-                        placeholder="Search screenshots by name"
-                        defaultValue={searchTerm}
-                        setSearch={setSearchTerm}
-                    />
                     <Button
                         buttonVariant="ghost"
                         buttonStyle={{ color: "gray", size: "sm" }}
@@ -93,26 +81,19 @@ const ScreenshotsTab = () => {
                     >
                         Download all
                     </Button>
+                    <SortingControls sortType={PageNavItem.screenshots} />
                 </div>
             </div>
 
             {(error || !hostId) && <EmptyState type={EmptyStateType.error} label="Error loading screenshots" details={error?.message || "Host ID not found"} />}
             {!error && hostId && initialLoading && <EmptyState type={EmptyStateType.loading} label="Loading screenshots..." />}
             {!error && hostId && !initialLoading && totalCount === 0 && (
-                <EmptyState
-                    type={searchTerm ? EmptyStateType.noMatches : EmptyStateType.noData}
-                    label={searchTerm ? "No screenshots match your search" : "No screenshots reported"}
-                >
-                    {searchTerm && <Button buttonVariant="ghost" onClick={() => setSearchTerm("")}>Clear search</Button>}
-                </EmptyState>
+                <EmptyState type={EmptyStateType.noData} label="No screenshots reported" />
             )}
 
             {!error && screenshots.length > 0 && selected && (
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,300px)_minmax(0,1fr)] gap-4 min-h-[60vh]">
                     <div className="border border-gray-200 rounded-md overflow-hidden flex flex-col min-h-0">
-                        <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-sm text-gray-600">
-                            {totalCount} screenshots · sorted by {formatEnumLabel(sort.field).toLowerCase()} ({sort.direction.toLowerCase()})
-                        </div>
                         <VirtualizedCardList
                             items={screenshotIds}
                             renderCard={renderThumbnail}

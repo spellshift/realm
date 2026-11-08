@@ -29,5 +29,4 @@ export interface GetHostScreenshotsQueryVariables {
     first: number;
     after?: Cursor;
     orderBy: OrderByField[];
-    where?: { nameContainsFold: string };
 }

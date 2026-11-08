@@ -10,14 +10,13 @@ import { GetHostScreenshotsQueryVariables, HostScreenshotsQueryResponse, Screens
 export const useScreenshots = (hostId: string) => {
     const { sorts } = useSorts();
     const screenshotSort = sorts[PageNavItem.screenshots];
-    const [searchTerm, setSearchTermState] = useState<string>("");
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [loadingMore, setLoadingMore] = useState(false);
     const loadingMoreRef = useRef(false);
 
     const queryVariables = useMemo(
-        () => getScreenshotsQuery(hostId, searchTerm, screenshotSort),
-        [hostId, searchTerm, screenshotSort]
+        () => getScreenshotsQuery(hostId, screenshotSort),
+        [hostId, screenshotSort]
     );
 
     const { data, error, networkStatus, fetchMore } = useQuery<HostScreenshotsQueryResponse, GetHostScreenshotsQueryVariables>(
@@ -37,11 +36,6 @@ export const useScreenshots = (hostId: string) => {
     const selected: ScreenshotNode | undefined = screenshots[selectedIndex];
     const hasMore = connection?.pageInfo.hasNextPage ?? false;
     const endCursor = connection?.pageInfo.endCursor;
-
-    const setSearchTerm = useCallback((value: string) => {
-        setSearchTermState(value);
-        setSelectedId(null);
-    }, []);
 
     // The sort field/direction live in the shared SortContext (set via
     // SortingControls), so react to its changes here instead of wrapping a
@@ -123,26 +117,15 @@ export const useScreenshots = (hostId: string) => {
         loadingMore,
         initialLoading: networkStatus === NetworkStatus.loading && !data,
         error,
-        searchTerm,
-        setSearchTerm,
         sort: screenshotSort,
     };
 };
 
 const getScreenshotsQuery = (
     hostId: string,
-    searchTerm: string,
     sort: OrderByField,
-): GetHostScreenshotsQueryVariables => {
-    const query: GetHostScreenshotsQueryVariables = {
-        hostId,
-        first: PAGE_SIZE,
-        orderBy: [sort],
-    };
-
-    if (searchTerm.trim()) {
-        query.where = { nameContainsFold: searchTerm.trim() };
-    }
-
-    return query;
-};
+): GetHostScreenshotsQueryVariables => ({
+    hostId,
+    first: PAGE_SIZE,
+    orderBy: [sort],
+});

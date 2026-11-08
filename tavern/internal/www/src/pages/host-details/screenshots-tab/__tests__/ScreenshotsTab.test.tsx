@@ -150,6 +150,24 @@ describe("ScreenshotsTab", () => {
         expect(screen.getByRole("button", { name: "Next screenshot" })).toBeDisabled();
     }, 30000);
 
+    it("renders the toolbar with no search input and Download all to the left of the sort control", async () => {
+        renderTab([
+            { request: request(), result: page([first, second], 2, false, "cursor") },
+        ]);
+
+        const downloadAllButton = await screen.findByRole("button", { name: "Download all" }, COLD_START);
+        const sortButton = screen.getByRole("button", { name: "Sort (Created At)" });
+
+        expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
+
+        // Download all is the left-most action; sort is right-most.
+        expect(downloadAllButton.compareDocumentPosition(sortButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+        // The screenshot-count/sort summary line above the thumbnail list is gone.
+        expect(screen.queryByText(/sorted by/i)).not.toBeInTheDocument();
+    }, 30000);
+
     it("loads a previously persisted sort from the shared SortContext on mount", async () => {
         sessionStorage.setItem("realm-sorting-v1.1", JSON.stringify({
             Hosts: { field: "CREATED_AT", direction: "DESC" },
