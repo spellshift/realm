@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
 	"io"
 	"log/slog"
 	mrand "math/rand"
@@ -55,6 +60,11 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetName(fmt.Sprintf("Service-%d", i+1)).
 				SaveX(ctx),
 		)
+	}
+	screenshotImages := [][]byte{
+		createTestScreenshotImage(0),
+		createTestScreenshotImage(1),
+		createTestScreenshotImage(2),
 	}
 
 	/*
@@ -184,6 +194,23 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetKind(epb.Credential_KIND_PASSWORD).
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
+
+			if groupNum == 1 && i < 3 {
+				count := 3
+				if i == 0 {
+					count = 55 // Exercise the screenshots tab's pagination.
+				}
+				for n := 0; n < count; n++ {
+					capturedAt := timeAgo(time.Duration(n+1) * 8 * time.Minute)
+					client.Screenshot.Create().
+						SetHost(testHost).
+						SetName(fmt.Sprintf("desktop_capture_%02d.png", n+1)).
+						SetContent(screenshotImages[n%len(screenshotImages)]).
+						SetCreatedAt(capturedAt).
+						SetLastModifiedAt(capturedAt).
+						SaveX(ctx)
+				}
+			}
 
 			// Cycle through transports: HTTP1, GRPC, DNS
 			getTransport := func(idx int) c2pb.Transport_Type {
@@ -423,6 +450,31 @@ func createTestData(ctx context.Context, client *ent.Client) {
 	}
 
 	createNonLinearAdventures(ctx, client, testBeacons[0])
+}
+
+// createTestScreenshotImage makes a small, valid PNG that resembles a desktop capture.
+func createTestScreenshotImage(variant int) []byte {
+	width, height := 960+variant*80, 540+variant*40
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	fill := func(rect image.Rectangle, value color.RGBA) {
+		draw.Draw(img, rect, &image.Uniform{C: value}, image.Point{}, draw.Src)
+	}
+
+	fill(img.Bounds(), color.RGBA{230, 233, 239, 255})
+	fill(image.Rect(0, 0, width, 42), color.RGBA{46, 49, 66, 255})
+	fill(image.Rect(24, 66, 168, height-24), color.RGBA{216, 222, 233, 255})
+	fill(image.Rect(192, 66, width-24, height-24), color.RGBA{255, 255, 255, 255})
+	fill(image.Rect(220, 100, 520+variant*70, 126), color.RGBA{128, 138, 166, 255})
+	for row := 0; row < 5+variant; row++ {
+		top := 160 + row*54
+		fill(image.Rect(220, top, width-80-row*38, top+16), color.RGBA{213, 218, 229, 255})
+	}
+
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		panic(fmt.Errorf("failed to encode test screenshot: %w", err))
+	}
+	return buf.Bytes()
 }
 
 func newRandomIdentifier() string {
