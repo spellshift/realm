@@ -1,9 +1,7 @@
 import { FC, useState } from "react";
-import { Checkbox } from "@chakra-ui/react";
-import { Popover, PopoverButton, PopoverPanel, Tab, TabGroup, TabList } from "@headlessui/react";
-import { ChevronDown, Tags } from "lucide-react";
+import { Checkbox, Description, Field, Input, Label, Popover, PopoverButton, PopoverPanel, Tab, TabGroup, TabList } from "@headlessui/react";
+import { Check, ChevronDown, Tags } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import FormTextField from "../../../components/tavern-base-ui/FormTextField";
 import { Table } from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { useAuthorization } from "../../../context/AuthorizationContext";
@@ -98,45 +96,49 @@ export const TagSummaryCard: FC = () => {
                                                 <p className="text-xs text-gray-500">Choose which tags to apply.</p>
                                             </div>
                                             <div className="flex flex-col gap-2">
-                                                <div className={`rounded-md border p-3 ${includeGroups ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
+                                                <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeGroups ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
                                                     <Checkbox
-                                                        isChecked={includeGroups}
-                                                        onChange={(event) => setIncludeGroups(event.target.checked)}
-                                                        colorScheme="purple"
-                                                        isDisabled={busyAction !== null}
+                                                        checked={includeGroups}
+                                                        onChange={setIncludeGroups}
+                                                        disabled={busyAction !== null}
+                                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
                                                     >
-                                                        <span className="flex flex-col">
-                                                            <span className="text-sm font-medium text-gray-900">Groups</span>
-                                                            <span className="text-xs text-gray-500">Refresh group tags</span>
-                                                        </span>
+                                                        {includeGroups && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
                                                     </Checkbox>
-                                                </div>
-                                                <div className={`rounded-md border p-3 ${includeServices ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
+                                                    <div className="flex flex-col">
+                                                        <Label className="text-sm font-medium text-gray-900">Groups</Label>
+                                                        <Description className="text-xs text-gray-500">Refresh group tags</Description>
+                                                    </div>
+                                                </Field>
+                                                <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeServices ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
                                                     <Checkbox
-                                                        isChecked={includeServices}
-                                                        onChange={(event) => setIncludeServices(event.target.checked)}
-                                                        colorScheme="purple"
-                                                        isDisabled={busyAction !== null}
+                                                        checked={includeServices}
+                                                        onChange={setIncludeServices}
+                                                        disabled={busyAction !== null}
+                                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
                                                     >
-                                                        <span className="flex flex-col">
-                                                            <span className="text-sm font-medium text-gray-900">Services</span>
-                                                            <span className="text-xs text-gray-500">Create service tags</span>
-                                                        </span>
+                                                        {includeServices && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
                                                     </Checkbox>
-                                                </div>
+                                                    <div className="flex flex-col">
+                                                        <Label className="text-sm font-medium text-gray-900">Services</Label>
+                                                        <Description className="text-xs text-gray-500">Create service tags</Description>
+                                                    </div>
+                                                </Field>
                                             </div>
                                             {includeServices && (
-                                                <FormTextField
-                                                    htmlFor="autoTagServiceCount"
-                                                    id="autoTagServiceCount"
-                                                    label="Number of service tags (optional)"
-                                                    type="number"
-                                                    min={1}
-                                                    step={1}
-                                                    placeholder="Leave blank for automatic"
-                                                    value={serviceCountInput}
-                                                    onChange={(event) => setServiceCountInput(event.target.value)}
-                                                />
+                                                <Field className="flex flex-col gap-1">
+                                                    <Label className="text-sm font-medium text-gray-900">Number of service tags (optional)</Label>
+                                                    <Input
+                                                        id="autoTagServiceCount"
+                                                        type="number"
+                                                        min={1}
+                                                        step={1}
+                                                        placeholder="Leave blank for automatic"
+                                                        value={serviceCountInput}
+                                                        onChange={(event) => setServiceCountInput(event.target.value)}
+                                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                                    />
+                                                </Field>
                                             )}
                                             <div className="flex justify-end">
                                                 <Button
