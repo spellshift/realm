@@ -76,6 +76,9 @@ const HostTabs = () => {
                 <div>
                     Screenshots
                 </div>
+                <div>
+                    {host?.screenshots?.totalCount !== undefined && `(${host.screenshots.totalCount})`}
+                </div>
             </Tab>
         </TabList>
     )

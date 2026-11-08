@@ -85,7 +85,7 @@ const ScreenshotsTab = () => {
                 </div>
             </div>
 
-            {(error || !hostId) && <EmptyState type={EmptyStateType.error} label="Error loading screenshots" details={error?.message || "Host ID not found"} />}
+            {(error || !hostId) && <EmptyState type={EmptyStateType.error} label="Error loading data" details={error?.message || "Host ID not found"} />}
             {!error && hostId && initialLoading && <EmptyState type={EmptyStateType.loading} label="Loading screenshots..." />}
             {!error && hostId && !initialLoading && totalCount === 0 && (
                 <EmptyState type={EmptyStateType.noData} label="No screenshots reported" />
@@ -107,7 +107,7 @@ const ScreenshotsTab = () => {
                         />
                     </div>
 
-                    <div className="border border-gray-200 rounded-md overflow-hidden flex flex-col min-w-0">
+                    <div className="border border-gray-200 rounded-md overflow-hidden flex flex-col min-w-0 h-[60vh] min-h-[320px]">
                         <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-200 text-sm">
                             <span className="truncate font-medium text-gray-900" title={selected.name}>{selected.name}</span>
                             <div className="flex items-center gap-1 shrink-0">
@@ -121,8 +121,8 @@ const ScreenshotsTab = () => {
                                 </Tooltip>
                             </div>
                         </div>
-                        <div className="flex-1 min-h-[320px] bg-gray-100 flex items-center justify-center p-4">
-                            <img src={imageURL(selected.id)} alt={selected.name} className="max-w-full max-h-[60vh] object-contain shadow-sm" />
+                        <div className="flex-1 min-h-0 overflow-hidden bg-gray-100 flex items-center justify-center p-4">
+                            <img src={imageURL(selected.id)} alt={selected.name} className="max-w-full max-h-full object-contain shadow-sm" />
                         </div>
                         <div className="flex flex-wrap gap-x-6 gap-y-1 px-4 py-3 border-t border-gray-200 text-xs text-gray-600">
                             <span>Captured <b className="text-gray-900 font-medium">{capturedAt(selected.createdAt)}</b></span>
