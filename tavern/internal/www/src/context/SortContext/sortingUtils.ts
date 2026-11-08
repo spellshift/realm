@@ -1,5 +1,5 @@
 import { Option } from "../../components/tavern-base-ui/SingleDropdownSelector";
-import { AssetOrderField, HostFileOrderField, HostOrderField, OrderDirection, PageNavItem, ProcessOrderField, QuestOrderField, TaskOrderField } from "../../utils/enums";
+import { AssetOrderField, HostFileOrderField, HostOrderField, OrderDirection, PageNavItem, ProcessOrderField, QuestOrderField, ScreenshotOrderField, TaskOrderField } from "../../utils/enums";
 import { OrderByField } from "../../utils/interfacesQuery";
 
 export const sortablePageNavItems = [
@@ -9,13 +9,14 @@ export const sortablePageNavItems = [
     PageNavItem.assets,
     PageNavItem.processes,
     PageNavItem.files,
+    PageNavItem.screenshots,
 ] as const;
 
 export type SortablePageNavItem = typeof sortablePageNavItems[number];
 
 export type Sorts = Record<SortablePageNavItem, OrderByField>
 
-type CreateOrdeFieldOptions = QuestOrderField | TaskOrderField | HostOrderField | AssetOrderField | ProcessOrderField | HostFileOrderField;
+type CreateOrdeFieldOptions = QuestOrderField | TaskOrderField | HostOrderField | AssetOrderField | ProcessOrderField | HostFileOrderField | ScreenshotOrderField;
 
 export function formatEnumLabel(enumValue: string): string {
     return enumValue
@@ -40,6 +41,7 @@ export const orderFieldOptionsMap = {
     [PageNavItem.assets]: createOrderFieldOptions(AssetOrderField),
     [PageNavItem.processes]: createOrderFieldOptions(ProcessOrderField),
     [PageNavItem.files]: createOrderFieldOptions(HostFileOrderField),
+    [PageNavItem.screenshots]: createOrderFieldOptions(ScreenshotOrderField),
 };
 
 export const defaultSorts: Sorts = {
@@ -66,5 +68,9 @@ export const defaultSorts: Sorts = {
     [PageNavItem.files]: {
         direction: OrderDirection.Asc,
         field: HostFileOrderField.Name
+    },
+    [PageNavItem.screenshots]: {
+        direction: OrderDirection.Desc,
+        field: ScreenshotOrderField.CreatedAt
     }
 }
