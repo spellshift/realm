@@ -1,6 +1,5 @@
 import { FC, useState } from "react";
-import { useApolloClient, useMutation } from "@apollo/client";
-import { Checkbox, useToast } from "@chakra-ui/react";
+import { Checkbox } from "@chakra-ui/react";
 import { Popover, PopoverButton, PopoverPanel, Tab, TabGroup, TabList } from "@headlessui/react";
 import { ChevronDown, Tags } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -8,87 +7,31 @@ import FormTextField from "../../../components/tavern-base-ui/FormTextField";
 import { Table } from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { useAuthorization } from "../../../context/AuthorizationContext";
-import { GROUP_HOSTS_BY_SUBNET, RUN_HOST_AUTOGROUP } from "./queries";
 import { useTagSummaryData } from "./useTagSummaryData";
 import { useTagSummaryColumns } from "./useTagSummaryColumns";
+import { useAutoTagHosts, AutoTagAction } from "./useAutoTagHosts";
 import { TagKind } from "./types";
 
 const TAB_KINDS: TagKind[] = ["group", "service"];
 const TAB_LABELS = ["Group", "Service"];
-type AutoTagAction = "groups" | "services" | "both" | "both-custom";
 
 export const TagSummaryCard: FC = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [serviceCountInput, setServiceCountInput] = useState("");
-    const [includeGroups, setIncludeGroups] = useState(true);
-    const [includeServices, setIncludeServices] = useState(true);
-    const [busyAction, setBusyAction] = useState<AutoTagAction | null>(null);
     const tagKind = TAB_KINDS[selectedIndex];
     const { rows, hostCount, loading, error } = useTagSummaryData(tagKind);
-    const autoTagDisabled = hostCount === 0 || busyAction !== null;
     const columns = useTagSummaryColumns();
     const { data: authorization } = useAuthorization();
-    const client = useApolloClient();
-    const toast = useToast();
-    const [groupBySubnet] = useMutation(GROUP_HOSTS_BY_SUBNET);
-    const [runHostAutogroup] = useMutation(RUN_HOST_AUTOGROUP);
-
-    const applyAutoTags = async (action: AutoTagAction) => {
-        if (hostCount === 0) return false;
-        const hasCount = serviceCountInput.trim() !== "";
-        const k = Number(serviceCountInput);
-        if (action !== "both" && action !== "groups" && hasCount && (!Number.isInteger(k) || k < 1 || k > 2147483647)) {
-            toast({ title: "Enter a positive whole number of service tags", status: "error", duration: 4000, isClosable: true });
-            return false;
-        }
-
-        setBusyAction(action);
-        let groupCount = 0;
-        let serviceCount = 0;
-        let succeeded = false;
-        try {
-            if (action === "groups" || action === "both" || action === "both-custom") {
-                const result = await groupBySubnet();
-                groupCount = result.data?.groupHostsBySubnet?.length ?? 0;
-            }
-            if (action !== "groups") {
-                const result = await runHostAutogroup({ variables: { k: action === "both" || !hasCount ? null : k } });
-                serviceCount = result.data?.runHostAutogroup?.length ?? 0;
-            }
-            toast({
-                title: "Host auto tagging complete",
-                description: `${groupCount} group tag(s) created or refreshed; ${serviceCount} service tag(s) created.`,
-                status: "success",
-                duration: 4000,
-                isClosable: true,
-            });
-            succeeded = true;
-        } catch (error) {
-            toast({
-                title: "Host auto tagging failed",
-                description: error instanceof Error ? error.message : "The request failed.",
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-            });
-        } finally {
-            if (groupCount > 0 || serviceCount > 0) {
-                try {
-                    await client.refetchQueries({ include: ["GetHostDetail", "GetHostContext", "GetAllHostsWithTagStats"] });
-                } catch (error) {
-                    toast({
-                        title: "Tags updated, but the view could not refresh",
-                        description: error instanceof Error ? error.message : "Reload the page to see the latest tags.",
-                        status: "warning",
-                        duration: 5000,
-                        isClosable: true,
-                    });
-                }
-            }
-            setBusyAction(null);
-        }
-        return succeeded;
-    };
+    const {
+        applyAutoTags,
+        busyAction,
+        autoTagDisabled,
+        includeGroups,
+        setIncludeGroups,
+        includeServices,
+        setIncludeServices,
+        serviceCountInput,
+        setServiceCountInput,
+    } = useAutoTagHosts(hostCount);
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 py-2 px-6 flex flex-col gap-4">
