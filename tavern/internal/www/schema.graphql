@@ -2610,6 +2610,10 @@ type Host implements Node {
   """
   primaryIP: String
   """
+  Primary interface subnet CIDR reported by the agent.
+  """
+  subnet: String
+  """
   Incoming IP from Proxy. Will return first proxy IP if multiple.
   """
   externalIP: String
@@ -3937,6 +3941,24 @@ input HostWhereInput {
   primaryIPNotNil: Boolean
   primaryIPEqualFold: String
   primaryIPContainsFold: String
+  """
+  subnet field predicates
+  """
+  subnet: String
+  subnetNEQ: String
+  subnetIn: [String!]
+  subnetNotIn: [String!]
+  subnetGT: String
+  subnetGTE: String
+  subnetLT: String
+  subnetLTE: String
+  subnetContains: String
+  subnetHasPrefix: String
+  subnetHasSuffix: String
+  subnetIsNil: Boolean
+  subnetNotNil: Boolean
+  subnetEqualFold: String
+  subnetContainsFold: String
   """
   external_ip field predicates
   """
@@ -9136,6 +9158,8 @@ type Mutation {
     # Admin
     ####
     dropAllData: Boolean! @requireRole(role: ADMIN)
+    runHostAutogroup(k: Int): [Tag!]! @requireRole(role: ADMIN)
+    groupHostsBySubnet: [Tag!]! @requireRole(role: ADMIN)
 
     ###
     # Quest

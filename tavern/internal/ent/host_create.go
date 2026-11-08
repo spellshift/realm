@@ -94,6 +94,20 @@ func (hc *HostCreate) SetNillablePrimaryIP(s *string) *HostCreate {
 	return hc
 }
 
+// SetSubnet sets the "subnet" field.
+func (hc *HostCreate) SetSubnet(s string) *HostCreate {
+	hc.mutation.SetSubnet(s)
+	return hc
+}
+
+// SetNillableSubnet sets the "subnet" field if the given value is not nil.
+func (hc *HostCreate) SetNillableSubnet(s *string) *HostCreate {
+	if s != nil {
+		hc.SetSubnet(*s)
+	}
+	return hc
+}
+
 // SetExternalIP sets the "external_ip" field.
 func (hc *HostCreate) SetExternalIP(s string) *HostCreate {
 	hc.mutation.SetExternalIP(s)
@@ -422,6 +436,10 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 		_spec.SetField(host.FieldPrimaryIP, field.TypeString, value)
 		_node.PrimaryIP = value
 	}
+	if value, ok := hc.mutation.Subnet(); ok {
+		_spec.SetField(host.FieldSubnet, field.TypeString, value)
+		_node.Subnet = value
+	}
 	if value, ok := hc.mutation.ExternalIP(); ok {
 		_spec.SetField(host.FieldExternalIP, field.TypeString, value)
 		_node.ExternalIP = value
@@ -710,6 +728,24 @@ func (u *HostUpsert) ClearPrimaryIP() *HostUpsert {
 	return u
 }
 
+// SetSubnet sets the "subnet" field.
+func (u *HostUpsert) SetSubnet(v string) *HostUpsert {
+	u.Set(host.FieldSubnet, v)
+	return u
+}
+
+// UpdateSubnet sets the "subnet" field to the value that was provided on create.
+func (u *HostUpsert) UpdateSubnet() *HostUpsert {
+	u.SetExcluded(host.FieldSubnet)
+	return u
+}
+
+// ClearSubnet clears the value of the "subnet" field.
+func (u *HostUpsert) ClearSubnet() *HostUpsert {
+	u.SetNull(host.FieldSubnet)
+	return u
+}
+
 // SetExternalIP sets the "external_ip" field.
 func (u *HostUpsert) SetExternalIP(v string) *HostUpsert {
 	u.Set(host.FieldExternalIP, v)
@@ -888,6 +924,27 @@ func (u *HostUpsertOne) UpdatePrimaryIP() *HostUpsertOne {
 func (u *HostUpsertOne) ClearPrimaryIP() *HostUpsertOne {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearPrimaryIP()
+	})
+}
+
+// SetSubnet sets the "subnet" field.
+func (u *HostUpsertOne) SetSubnet(v string) *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.SetSubnet(v)
+	})
+}
+
+// UpdateSubnet sets the "subnet" field to the value that was provided on create.
+func (u *HostUpsertOne) UpdateSubnet() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateSubnet()
+	})
+}
+
+// ClearSubnet clears the value of the "subnet" field.
+func (u *HostUpsertOne) ClearSubnet() *HostUpsertOne {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearSubnet()
 	})
 }
 
@@ -1246,6 +1303,27 @@ func (u *HostUpsertBulk) UpdatePrimaryIP() *HostUpsertBulk {
 func (u *HostUpsertBulk) ClearPrimaryIP() *HostUpsertBulk {
 	return u.Update(func(s *HostUpsert) {
 		s.ClearPrimaryIP()
+	})
+}
+
+// SetSubnet sets the "subnet" field.
+func (u *HostUpsertBulk) SetSubnet(v string) *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.SetSubnet(v)
+	})
+}
+
+// UpdateSubnet sets the "subnet" field to the value that was provided on create.
+func (u *HostUpsertBulk) UpdateSubnet() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.UpdateSubnet()
+	})
+}
+
+// ClearSubnet clears the value of the "subnet" field.
+func (u *HostUpsertBulk) ClearSubnet() *HostUpsertBulk {
+	return u.Update(func(s *HostUpsert) {
+		s.ClearSubnet()
 	})
 }
 

@@ -325,6 +325,7 @@ type ComplexityRoot struct {
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
 		Screenshots    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScreenshotOrder, where *ent.ScreenshotWhereInput) int
+		Subnet         func(childComplexity int) int
 		Subscribers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 	}
@@ -479,10 +480,12 @@ type ComplexityRoot struct {
 		DisableScheduledTask         func(childComplexity int, scheduledTaskID int) int
 		DropAllData                  func(childComplexity int) int
 		FavoriteHost                 func(childComplexity int, hostID int) int
+		GroupHostsBySubnet           func(childComplexity int) int
 		ImportRepository             func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		MarkNotificationsAsArchived  func(childComplexity int, notificationIDs []int) int
 		MarkNotificationsAsRead      func(childComplexity int, notificationIDs []int) int
 		ResetUserAPIKey              func(childComplexity int) int
+		RunHostAutogroup             func(childComplexity int, k *int) int
 		SubscribeToHost              func(childComplexity int, hostID int) int
 		UnfavoriteHost               func(childComplexity int, hostID int) int
 		UnsubscribeFromHost          func(childComplexity int, hostID int) int
@@ -2363,6 +2366,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Host.Screenshots(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScreenshotOrder), args["where"].(*ent.ScreenshotWhereInput)), true
 
+	case "Host.subnet":
+		if e.ComplexityRoot.Host.Subnet == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Host.Subnet(childComplexity), true
+
 	case "Host.subscribers":
 		if e.ComplexityRoot.Host.Subscribers == nil {
 			break
@@ -3250,6 +3260,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.FavoriteHost(childComplexity, args["hostID"].(int)), true
 
+	case "Mutation.groupHostsBySubnet":
+		if e.ComplexityRoot.Mutation.GroupHostsBySubnet == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.GroupHostsBySubnet(childComplexity), true
+
 	case "Mutation.importRepository":
 		if e.ComplexityRoot.Mutation.ImportRepository == nil {
 			break
@@ -3292,6 +3309,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.ResetUserAPIKey(childComplexity), true
+
+	case "Mutation.runHostAutogroup":
+		if e.ComplexityRoot.Mutation.RunHostAutogroup == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_runHostAutogroup_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RunHostAutogroup(childComplexity, args["k"].(*int)), true
 
 	case "Mutation.subscribeToHost":
 		if e.ComplexityRoot.Mutation.SubscribeToHost == nil {
@@ -8609,6 +8638,10 @@ type Host implements Node {
   """
   primaryIP: String
   """
+  Primary interface subnet CIDR reported by the agent.
+  """
+  subnet: String
+  """
   Incoming IP from Proxy. Will return first proxy IP if multiple.
   """
   externalIP: String
@@ -9936,6 +9969,24 @@ input HostWhereInput {
   primaryIPNotNil: Boolean
   primaryIPEqualFold: String
   primaryIPContainsFold: String
+  """
+  subnet field predicates
+  """
+  subnet: String
+  subnetNEQ: String
+  subnetIn: [String!]
+  subnetNotIn: [String!]
+  subnetGT: String
+  subnetGTE: String
+  subnetLT: String
+  subnetLTE: String
+  subnetContains: String
+  subnetHasPrefix: String
+  subnetHasSuffix: String
+  subnetIsNil: Boolean
+  subnetNotNil: Boolean
+  subnetEqualFold: String
+  subnetContainsFold: String
   """
   external_ip field predicates
   """
@@ -15222,6 +15273,8 @@ scalar Uint64
     # Admin
     ####
     dropAllData: Boolean! @requireRole(role: ADMIN)
+    runHostAutogroup(k: Int): [Tag!]! @requireRole(role: ADMIN)
+    groupHostsBySubnet: [Tag!]! @requireRole(role: ADMIN)
 
     ###
     # Quest

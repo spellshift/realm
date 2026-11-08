@@ -3824,6 +3824,8 @@ func (ec *executionContext) fieldContext_Beacon_host(_ context.Context, field gr
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -7334,6 +7336,8 @@ func (ec *executionContext) fieldContext_Event_host(_ context.Context, field gra
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -7887,6 +7891,35 @@ func (ec *executionContext) _Host_primaryIP(ctx context.Context, field graphql.C
 }
 
 func (ec *executionContext) fieldContext_Host_primaryIP(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Host",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Host_subnet(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_subnet,
+		func(ctx context.Context) (any, error) {
+			return obj.Subnet, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Host_subnet(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Host",
 		Field:      field,
@@ -8818,6 +8851,8 @@ func (ec *executionContext) fieldContext_HostCredential_host(_ context.Context, 
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -9249,6 +9284,8 @@ func (ec *executionContext) fieldContext_HostEdge_node(_ context.Context, field 
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -9668,6 +9705,8 @@ func (ec *executionContext) fieldContext_HostFile_host(_ context.Context, field 
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -10435,6 +10474,8 @@ func (ec *executionContext) fieldContext_HostProcess_host(_ context.Context, fie
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -11953,6 +11994,8 @@ func (ec *executionContext) fieldContext_NetworkHost_host(_ context.Context, fie
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -17700,6 +17743,8 @@ func (ec *executionContext) fieldContext_Screenshot_host(_ context.Context, fiel
 				return ec.fieldContext_Host_name(ctx, field)
 			case "primaryIP":
 				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "subnet":
+				return ec.fieldContext_Host_subnet(ctx, field)
 			case "externalIP":
 				return ec.fieldContext_Host_externalIP(ctx, field)
 			case "platform":
@@ -32290,7 +32335,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith", "hasFavoritedBy", "hasFavoritedByWith", "hasEvents", "hasEventsWith", "hasSubscribers", "hasSubscribersWith", "hasNetworkHosts", "hasNetworkHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "subnet", "subnetNEQ", "subnetIn", "subnetNotIn", "subnetGT", "subnetGTE", "subnetLT", "subnetLTE", "subnetContains", "subnetHasPrefix", "subnetHasSuffix", "subnetIsNil", "subnetNotNil", "subnetEqualFold", "subnetContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith", "hasFavoritedBy", "hasFavoritedByWith", "hasEvents", "hasEventsWith", "hasSubscribers", "hasSubscribersWith", "hasNetworkHosts", "hasNetworkHostsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -32787,6 +32832,111 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.PrimaryIPContainsFold = data
+		case "subnet":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnet"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Subnet = data
+		case "subnetNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetNEQ = data
+		case "subnetIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetIn = data
+		case "subnetNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetNotIn = data
+		case "subnetGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetGT = data
+		case "subnetGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetGTE = data
+		case "subnetLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetLT = data
+		case "subnetLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetLTE = data
+		case "subnetContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetContains = data
+		case "subnetHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetHasPrefix = data
+		case "subnetHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetHasSuffix = data
+		case "subnetIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetIsNil = data
+		case "subnetNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetNotNil = data
+		case "subnetEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetEqualFold = data
+		case "subnetContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subnetContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SubnetContainsFold = data
 		case "externalIP":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("externalIP"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -46941,6 +47091,8 @@ func (ec *executionContext) _Host(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Host_name(ctx, field, obj)
 		case "primaryIP":
 			out.Values[i] = ec._Host_primaryIP(ctx, field, obj)
+		case "subnet":
+			out.Values[i] = ec._Host_subnet(ctx, field, obj)
 		case "externalIP":
 			out.Values[i] = ec._Host_externalIP(ctx, field, obj)
 		case "platform":
@@ -55431,6 +55583,22 @@ func (ec *executionContext) unmarshalNShellWhereInput2ᚖrealmᚗpubᚋtavernᚋ
 
 func (ec *executionContext) marshalNTag2realmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v ent.Tag) graphql.Marshaler {
 	return ec._Tag(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTag2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Tag) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNTag2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTag(ctx context.Context, sel ast.SelectionSet, v *ent.Tag) graphql.Marshaler {

@@ -40,6 +40,12 @@ func (Host) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Primary interface IP address reported by the agent."),
+		field.String("subnet").
+			Optional().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationUpdateInput),
+			).
+			Comment("Primary interface subnet CIDR reported by the agent."),
 		field.String("external_ip").
 			Optional().
 			Annotations(
