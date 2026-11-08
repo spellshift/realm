@@ -44,6 +44,7 @@ import (
 	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
 	tavernmcp "realm.pub/tavern/internal/mcp"
+	"realm.pub/tavern/internal/ocr"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/portals/pty"
@@ -464,6 +465,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
 
 	// Route Map
+	var c2Options []c2.Option
+	if cfg.IsAIEnabled() {
+		c2Options = append(c2Options, c2.WithAIEnabled())
+	}
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
 			Handler:              newStatusHandler(),
@@ -517,7 +522,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
+			Handler:              newGRPCHandler(client, grpcShellMux, portalMux, c2Options...),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -575,6 +580,66 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler:          playground.Handler("Realm - Red Team Engagement Platform", "/graphql"),
 			LoginRedirectURI: "/oauth/login",
 		},
+	}
+	if cfg.IsAIEnabled() {
+		vision, err := ocr.NewVisionClient(ctx, EnvGCPProjectID.String())
+		if err != nil {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("failed to initialize OCR: %w", err)
+		}
+		ocrURL := strings.TrimSuffix(hostCheckURL, hostcheck.Audience) + ocr.Audience
+		verify := ocr.VerifyLoopback
+		target := scheduler.HTTPTarget{URL: ocrURL, Method: http.MethodPost}
+		if schedulerURL.Scheme != "mem" {
+			email := EnvOCRSchedulerServiceAccount.String()
+			if email == "" {
+				client.Close()
+				sched.Close()
+				return nil, fmt.Errorf("OCR_SCHEDULER_SERVICE_ACCOUNT must be set when using an external scheduler")
+			}
+			verify = ocr.OIDCVerifier(email, ocrURL)
+			target.OIDCServiceAccountEmail = email
+			target.OIDCAudience = ocrURL
+		}
+		routes[ocr.Audience] = tavernhttp.Endpoint{
+			Handler:              ocr.NewHandler(client, vision, verify),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		}
+		job := scheduler.Job{
+			Name:       "screenshot-ocr-poll",
+			Schedule:   hostCheckSchedule,
+			HTTPTarget: target,
+		}
+		if reconciler, ok := sched.(scheduler.JobReconciler); ok {
+			err = reconciler.Ensure(ctx, job)
+		} else {
+			err = sched.Schedule(ctx, job)
+		}
+		if err != nil && !errors.Is(err, scheduler.ErrJobExists) {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("failed to schedule OCR job: %w", err)
+		}
+	} else {
+		cleanupScheduler := sched
+		if cleanupURI := EnvOCRSchedulerURI.String(); cleanupURI != "" && cleanupURI != schedulerURI {
+			cleanupScheduler, err = scheduler.New(ctx, cleanupURI)
+			if err != nil {
+				client.Close()
+				sched.Close()
+				return nil, fmt.Errorf("failed to initialize OCR cleanup scheduler: %w", err)
+			}
+			defer cleanupScheduler.Close()
+		}
+		if reconciler, ok := cleanupScheduler.(scheduler.JobReconciler); ok {
+			if err := reconciler.Disable(ctx, "screenshot-ocr-poll"); err != nil {
+				client.Close()
+				sched.Close()
+				return nil, fmt.Errorf("failed to pause disabled OCR job: %w", err)
+			}
+		}
 	}
 
 	// Setup Profiling

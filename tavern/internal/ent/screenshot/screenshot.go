@@ -27,6 +27,14 @@ const (
 	FieldHash = "hash"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// FieldOcrText holds the string denoting the ocr_text field in the database.
+	FieldOcrText = "ocr_text"
+	// FieldOcrRequested holds the string denoting the ocr_requested field in the database.
+	FieldOcrRequested = "ocr_requested"
+	// FieldOcrAttempts holds the string denoting the ocr_attempts field in the database.
+	FieldOcrAttempts = "ocr_attempts"
+	// FieldOcrLeaseUntil holds the string denoting the ocr_lease_until field in the database.
+	FieldOcrLeaseUntil = "ocr_lease_until"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTask holds the string denoting the task edge name in mutations.
@@ -67,6 +75,10 @@ var Columns = []string{
 	FieldSize,
 	FieldHash,
 	FieldContent,
+	FieldOcrText,
+	FieldOcrRequested,
+	FieldOcrAttempts,
+	FieldOcrLeaseUntil,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "screenshots"
@@ -113,6 +125,10 @@ var (
 	SizeValidator func(uint64) error
 	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	HashValidator func(string) error
+	// DefaultOcrRequested holds the default value on creation for the "ocr_requested" field.
+	DefaultOcrRequested bool
+	// DefaultOcrAttempts holds the default value on creation for the "ocr_attempts" field.
+	DefaultOcrAttempts int
 )
 
 // OrderOption defines the ordering options for the Screenshot queries.
@@ -146,6 +162,26 @@ func BySize(opts ...sql.OrderTermOption) OrderOption {
 // ByHash orders the results by the hash field.
 func ByHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHash, opts...).ToFunc()
+}
+
+// ByOcrText orders the results by the ocr_text field.
+func ByOcrText(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOcrText, opts...).ToFunc()
+}
+
+// ByOcrRequested orders the results by the ocr_requested field.
+func ByOcrRequested(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOcrRequested, opts...).ToFunc()
+}
+
+// ByOcrAttempts orders the results by the ocr_attempts field.
+func ByOcrAttempts(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOcrAttempts, opts...).ToFunc()
+}
+
+// ByOcrLeaseUntil orders the results by the ocr_lease_until field.
+func ByOcrLeaseUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOcrLeaseUntil, opts...).ToFunc()
 }
 
 // ByHostField orders the results by host field.

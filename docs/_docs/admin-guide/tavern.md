@@ -436,6 +436,16 @@ DISABLE_DEFAULT_TOMES=1 go run ./tavern
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).
 
+### Screenshot OCR
+
+Set `ENABLE_AI=1` to extract text from reported screenshots with Google Cloud Vision. Tavern saves the screenshot first, then a scheduled worker fills in its `ocrText` GraphQL field. OCR can take several minutes and temporary Vision errors are retried with backoff.
+
+The Tavern service account needs access to the Vision API and `roles/serviceusage.serviceUsageConsumer` on the project. Set `GCP_PROJECT_ID` to that project and provide Application Default Credentials. For Terraform deployments, set `enable_ai = true`; this enables the API, grants the service account role, and configures Cloud Scheduler to run the worker while Cloud Run is idle. The scheduler authenticates to Tavern using a dedicated service account and short lived Google OIDC tokens.
+
+For a manually configured external scheduler, set `OCR_SCHEDULER_SERVICE_ACCOUNT` to the service account that signs its OIDC tokens. Its token audience must be the full `/internal/ocr-check` URL. The Tavern runtime identity needs permission to manage the scheduler job and to act as that service account. Local in-memory scheduling uses a loopback request instead.
+
+If you later disable OCR and switch Tavern back to in-memory scheduling, keep `OCR_SCHEDULER_URI` set to the former GCP scheduler URI for one startup so Tavern can pause the old OCR job. Terraform sets this automatically.
+
 ### AI MCP Server
 
 Tavern includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that enables AI assistants and LLM-based tools to interact with your Tavern deployment. The MCP server uses Server-Sent Events (SSE) for transport and is gated behind the `ENABLE_AI_MCP` environment variable.

@@ -93,6 +93,62 @@ func (sc *ScreenshotCreate) SetContent(b []byte) *ScreenshotCreate {
 	return sc
 }
 
+// SetOcrText sets the "ocr_text" field.
+func (sc *ScreenshotCreate) SetOcrText(s string) *ScreenshotCreate {
+	sc.mutation.SetOcrText(s)
+	return sc
+}
+
+// SetNillableOcrText sets the "ocr_text" field if the given value is not nil.
+func (sc *ScreenshotCreate) SetNillableOcrText(s *string) *ScreenshotCreate {
+	if s != nil {
+		sc.SetOcrText(*s)
+	}
+	return sc
+}
+
+// SetOcrRequested sets the "ocr_requested" field.
+func (sc *ScreenshotCreate) SetOcrRequested(b bool) *ScreenshotCreate {
+	sc.mutation.SetOcrRequested(b)
+	return sc
+}
+
+// SetNillableOcrRequested sets the "ocr_requested" field if the given value is not nil.
+func (sc *ScreenshotCreate) SetNillableOcrRequested(b *bool) *ScreenshotCreate {
+	if b != nil {
+		sc.SetOcrRequested(*b)
+	}
+	return sc
+}
+
+// SetOcrAttempts sets the "ocr_attempts" field.
+func (sc *ScreenshotCreate) SetOcrAttempts(i int) *ScreenshotCreate {
+	sc.mutation.SetOcrAttempts(i)
+	return sc
+}
+
+// SetNillableOcrAttempts sets the "ocr_attempts" field if the given value is not nil.
+func (sc *ScreenshotCreate) SetNillableOcrAttempts(i *int) *ScreenshotCreate {
+	if i != nil {
+		sc.SetOcrAttempts(*i)
+	}
+	return sc
+}
+
+// SetOcrLeaseUntil sets the "ocr_lease_until" field.
+func (sc *ScreenshotCreate) SetOcrLeaseUntil(t time.Time) *ScreenshotCreate {
+	sc.mutation.SetOcrLeaseUntil(t)
+	return sc
+}
+
+// SetNillableOcrLeaseUntil sets the "ocr_lease_until" field if the given value is not nil.
+func (sc *ScreenshotCreate) SetNillableOcrLeaseUntil(t *time.Time) *ScreenshotCreate {
+	if t != nil {
+		sc.SetOcrLeaseUntil(*t)
+	}
+	return sc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (sc *ScreenshotCreate) SetHostID(id int) *ScreenshotCreate {
 	sc.mutation.SetHostID(id)
@@ -197,6 +253,14 @@ func (sc *ScreenshotCreate) defaults() error {
 		v := screenshot.DefaultSize
 		sc.mutation.SetSize(v)
 	}
+	if _, ok := sc.mutation.OcrRequested(); !ok {
+		v := screenshot.DefaultOcrRequested
+		sc.mutation.SetOcrRequested(v)
+	}
+	if _, ok := sc.mutation.OcrAttempts(); !ok {
+		v := screenshot.DefaultOcrAttempts
+		sc.mutation.SetOcrAttempts(v)
+	}
 	return nil
 }
 
@@ -228,6 +292,12 @@ func (sc *ScreenshotCreate) check() error {
 		if err := screenshot.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "Screenshot.hash": %w`, err)}
 		}
+	}
+	if _, ok := sc.mutation.OcrRequested(); !ok {
+		return &ValidationError{Name: "ocr_requested", err: errors.New(`ent: missing required field "Screenshot.ocr_requested"`)}
+	}
+	if _, ok := sc.mutation.OcrAttempts(); !ok {
+		return &ValidationError{Name: "ocr_attempts", err: errors.New(`ent: missing required field "Screenshot.ocr_attempts"`)}
 	}
 	if len(sc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "Screenshot.host"`)}
@@ -282,6 +352,22 @@ func (sc *ScreenshotCreate) createSpec() (*Screenshot, *sqlgraph.CreateSpec) {
 	if value, ok := sc.mutation.Content(); ok {
 		_spec.SetField(screenshot.FieldContent, field.TypeBytes, value)
 		_node.Content = value
+	}
+	if value, ok := sc.mutation.OcrText(); ok {
+		_spec.SetField(screenshot.FieldOcrText, field.TypeString, value)
+		_node.OcrText = &value
+	}
+	if value, ok := sc.mutation.OcrRequested(); ok {
+		_spec.SetField(screenshot.FieldOcrRequested, field.TypeBool, value)
+		_node.OcrRequested = value
+	}
+	if value, ok := sc.mutation.OcrAttempts(); ok {
+		_spec.SetField(screenshot.FieldOcrAttempts, field.TypeInt, value)
+		_node.OcrAttempts = value
+	}
+	if value, ok := sc.mutation.OcrLeaseUntil(); ok {
+		_spec.SetField(screenshot.FieldOcrLeaseUntil, field.TypeTime, value)
+		_node.OcrLeaseUntil = &value
 	}
 	if nodes := sc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -464,6 +550,72 @@ func (u *ScreenshotUpsert) ClearContent() *ScreenshotUpsert {
 	return u
 }
 
+// SetOcrText sets the "ocr_text" field.
+func (u *ScreenshotUpsert) SetOcrText(v string) *ScreenshotUpsert {
+	u.Set(screenshot.FieldOcrText, v)
+	return u
+}
+
+// UpdateOcrText sets the "ocr_text" field to the value that was provided on create.
+func (u *ScreenshotUpsert) UpdateOcrText() *ScreenshotUpsert {
+	u.SetExcluded(screenshot.FieldOcrText)
+	return u
+}
+
+// ClearOcrText clears the value of the "ocr_text" field.
+func (u *ScreenshotUpsert) ClearOcrText() *ScreenshotUpsert {
+	u.SetNull(screenshot.FieldOcrText)
+	return u
+}
+
+// SetOcrRequested sets the "ocr_requested" field.
+func (u *ScreenshotUpsert) SetOcrRequested(v bool) *ScreenshotUpsert {
+	u.Set(screenshot.FieldOcrRequested, v)
+	return u
+}
+
+// UpdateOcrRequested sets the "ocr_requested" field to the value that was provided on create.
+func (u *ScreenshotUpsert) UpdateOcrRequested() *ScreenshotUpsert {
+	u.SetExcluded(screenshot.FieldOcrRequested)
+	return u
+}
+
+// SetOcrAttempts sets the "ocr_attempts" field.
+func (u *ScreenshotUpsert) SetOcrAttempts(v int) *ScreenshotUpsert {
+	u.Set(screenshot.FieldOcrAttempts, v)
+	return u
+}
+
+// UpdateOcrAttempts sets the "ocr_attempts" field to the value that was provided on create.
+func (u *ScreenshotUpsert) UpdateOcrAttempts() *ScreenshotUpsert {
+	u.SetExcluded(screenshot.FieldOcrAttempts)
+	return u
+}
+
+// AddOcrAttempts adds v to the "ocr_attempts" field.
+func (u *ScreenshotUpsert) AddOcrAttempts(v int) *ScreenshotUpsert {
+	u.Add(screenshot.FieldOcrAttempts, v)
+	return u
+}
+
+// SetOcrLeaseUntil sets the "ocr_lease_until" field.
+func (u *ScreenshotUpsert) SetOcrLeaseUntil(v time.Time) *ScreenshotUpsert {
+	u.Set(screenshot.FieldOcrLeaseUntil, v)
+	return u
+}
+
+// UpdateOcrLeaseUntil sets the "ocr_lease_until" field to the value that was provided on create.
+func (u *ScreenshotUpsert) UpdateOcrLeaseUntil() *ScreenshotUpsert {
+	u.SetExcluded(screenshot.FieldOcrLeaseUntil)
+	return u
+}
+
+// ClearOcrLeaseUntil clears the value of the "ocr_lease_until" field.
+func (u *ScreenshotUpsert) ClearOcrLeaseUntil() *ScreenshotUpsert {
+	u.SetNull(screenshot.FieldOcrLeaseUntil)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -597,6 +749,83 @@ func (u *ScreenshotUpsertOne) UpdateContent() *ScreenshotUpsertOne {
 func (u *ScreenshotUpsertOne) ClearContent() *ScreenshotUpsertOne {
 	return u.Update(func(s *ScreenshotUpsert) {
 		s.ClearContent()
+	})
+}
+
+// SetOcrText sets the "ocr_text" field.
+func (u *ScreenshotUpsertOne) SetOcrText(v string) *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrText(v)
+	})
+}
+
+// UpdateOcrText sets the "ocr_text" field to the value that was provided on create.
+func (u *ScreenshotUpsertOne) UpdateOcrText() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrText()
+	})
+}
+
+// ClearOcrText clears the value of the "ocr_text" field.
+func (u *ScreenshotUpsertOne) ClearOcrText() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.ClearOcrText()
+	})
+}
+
+// SetOcrRequested sets the "ocr_requested" field.
+func (u *ScreenshotUpsertOne) SetOcrRequested(v bool) *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrRequested(v)
+	})
+}
+
+// UpdateOcrRequested sets the "ocr_requested" field to the value that was provided on create.
+func (u *ScreenshotUpsertOne) UpdateOcrRequested() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrRequested()
+	})
+}
+
+// SetOcrAttempts sets the "ocr_attempts" field.
+func (u *ScreenshotUpsertOne) SetOcrAttempts(v int) *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrAttempts(v)
+	})
+}
+
+// AddOcrAttempts adds v to the "ocr_attempts" field.
+func (u *ScreenshotUpsertOne) AddOcrAttempts(v int) *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.AddOcrAttempts(v)
+	})
+}
+
+// UpdateOcrAttempts sets the "ocr_attempts" field to the value that was provided on create.
+func (u *ScreenshotUpsertOne) UpdateOcrAttempts() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrAttempts()
+	})
+}
+
+// SetOcrLeaseUntil sets the "ocr_lease_until" field.
+func (u *ScreenshotUpsertOne) SetOcrLeaseUntil(v time.Time) *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrLeaseUntil(v)
+	})
+}
+
+// UpdateOcrLeaseUntil sets the "ocr_lease_until" field to the value that was provided on create.
+func (u *ScreenshotUpsertOne) UpdateOcrLeaseUntil() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrLeaseUntil()
+	})
+}
+
+// ClearOcrLeaseUntil clears the value of the "ocr_lease_until" field.
+func (u *ScreenshotUpsertOne) ClearOcrLeaseUntil() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.ClearOcrLeaseUntil()
 	})
 }
 
@@ -899,6 +1128,83 @@ func (u *ScreenshotUpsertBulk) UpdateContent() *ScreenshotUpsertBulk {
 func (u *ScreenshotUpsertBulk) ClearContent() *ScreenshotUpsertBulk {
 	return u.Update(func(s *ScreenshotUpsert) {
 		s.ClearContent()
+	})
+}
+
+// SetOcrText sets the "ocr_text" field.
+func (u *ScreenshotUpsertBulk) SetOcrText(v string) *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrText(v)
+	})
+}
+
+// UpdateOcrText sets the "ocr_text" field to the value that was provided on create.
+func (u *ScreenshotUpsertBulk) UpdateOcrText() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrText()
+	})
+}
+
+// ClearOcrText clears the value of the "ocr_text" field.
+func (u *ScreenshotUpsertBulk) ClearOcrText() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.ClearOcrText()
+	})
+}
+
+// SetOcrRequested sets the "ocr_requested" field.
+func (u *ScreenshotUpsertBulk) SetOcrRequested(v bool) *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrRequested(v)
+	})
+}
+
+// UpdateOcrRequested sets the "ocr_requested" field to the value that was provided on create.
+func (u *ScreenshotUpsertBulk) UpdateOcrRequested() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrRequested()
+	})
+}
+
+// SetOcrAttempts sets the "ocr_attempts" field.
+func (u *ScreenshotUpsertBulk) SetOcrAttempts(v int) *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrAttempts(v)
+	})
+}
+
+// AddOcrAttempts adds v to the "ocr_attempts" field.
+func (u *ScreenshotUpsertBulk) AddOcrAttempts(v int) *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.AddOcrAttempts(v)
+	})
+}
+
+// UpdateOcrAttempts sets the "ocr_attempts" field to the value that was provided on create.
+func (u *ScreenshotUpsertBulk) UpdateOcrAttempts() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrAttempts()
+	})
+}
+
+// SetOcrLeaseUntil sets the "ocr_lease_until" field.
+func (u *ScreenshotUpsertBulk) SetOcrLeaseUntil(v time.Time) *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetOcrLeaseUntil(v)
+	})
+}
+
+// UpdateOcrLeaseUntil sets the "ocr_lease_until" field to the value that was provided on create.
+func (u *ScreenshotUpsertBulk) UpdateOcrLeaseUntil() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateOcrLeaseUntil()
+	})
+}
+
+// ClearOcrLeaseUntil clears the value of the "ocr_lease_until" field.
+func (u *ScreenshotUpsertBulk) ClearOcrLeaseUntil() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.ClearOcrLeaseUntil()
 	})
 }
 

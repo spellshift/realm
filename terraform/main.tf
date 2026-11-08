@@ -237,6 +237,12 @@ variable "enable_mcp" {
   default = false
 }
 
+variable "enable_ai" {
+  type = bool
+  description = "Enable screenshot OCR with Cloud Vision"
+  default = false
+}
+
 provider "google" {
   project = var.gcp_project
   region  = var.gcp_region
@@ -264,6 +270,12 @@ resource "google_project_service" "cloud_sqladmin_api" {
 
 resource "google_project_service" "cloud_scheduler_api" {
   service = "cloudscheduler.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "vision_api" {
+  count = var.enable_ai ? 1 : 0
+  service = "vision.googleapis.com"
   disable_on_destroy = false
 }
 
@@ -307,6 +319,19 @@ locals {
 resource "google_service_account" "svctavern" {
   account_id = "svctavern"
   description = "The service account Realm's Tavern uses to connect to GCP based services. Managed by Terraform."
+}
+
+resource "google_service_account" "svctavern_ocr_scheduler" {
+  count = var.enable_ai ? 1 : 0
+  account_id = "svctavern-ocr-scheduler"
+  description = "Identity used by Cloud Scheduler for Tavern screenshot OCR."
+}
+
+resource "google_service_account_iam_member" "tavern_ocr_scheduler_act_as" {
+  count = var.enable_ai ? 1 : 0
+  service_account_id = google_service_account.svctavern_ocr_scheduler[0].name
+  role = "roles/iam.serviceAccountUser"
+  member = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
 resource "google_secret_manager_secret" "tavern-grpc-priv-key" {
@@ -363,16 +388,26 @@ resource "google_project_iam_member" "tavern-pubsub-binding" {
 resource "google_project_iam_custom_role" "tavern-cloud-scheduler" {
   role_id     = "tavernCloudScheduler"
   title       = "Tavern Cloud Scheduler"
-  description = "Least-privilege role for Tavern to create and list Cloud Scheduler jobs."
+  description = "Least-privilege role for Tavern to manage Cloud Scheduler jobs."
   permissions = [
     "cloudscheduler.jobs.create",
     "cloudscheduler.jobs.list",
+    "cloudscheduler.jobs.update",
+    "cloudscheduler.jobs.pause",
+    "cloudscheduler.jobs.enable",
   ]
 }
 
 resource "google_project_iam_member" "tavern-cloud-scheduler-binding" {
   project = var.gcp_project
   role    = google_project_iam_custom_role.tavern-cloud-scheduler.id
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
+resource "google_project_iam_member" "tavern-vision-binding" {
+  count   = var.enable_ai ? 1 : 0
+  project = var.gcp_project
+  role    = "roles/serviceusage.serviceUsageConsumer"
   member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
@@ -453,6 +488,24 @@ resource "google_cloud_run_service" "tavern" {
           name = "GCP_PROJECT_ID"
           value = var.gcp_project
         }
+        dynamic "env" {
+          for_each = var.enable_ai ? [1] : []
+          content {
+            name  = "SCHEDULER_URI"
+            value = "gcp://projects/${var.gcp_project}/locations/${var.gcp_region}"
+          }
+        }
+        env {
+          name  = "OCR_SCHEDULER_URI"
+          value = "gcp://projects/${var.gcp_project}/locations/${var.gcp_region}"
+        }
+        dynamic "env" {
+          for_each = var.enable_ai ? [1] : []
+          content {
+            name = "OCR_SCHEDULER_SERVICE_ACCOUNT"
+            value = google_service_account.svctavern_ocr_scheduler[0].email
+          }
+        }
         env {
           name  = "REALM_BUILDER_ENROLLMENT_TOKENS"
           value = random_password.builder_enrollment.result
@@ -513,6 +566,10 @@ resource "google_cloud_run_service" "tavern" {
           name = "ENABLE_AI_MCP"
           value = var.enable_mcp ? "1" : ""
         }
+        env {
+          name = "ENABLE_AI"
+          value = var.enable_ai ? "1" : ""
+        }
       }
 
       // Only create prometheus sidecar if metrics enabled
@@ -554,6 +611,9 @@ resource "google_cloud_run_service" "tavern" {
     google_project_service.cloud_run_api,
     google_project_service.cloud_sqladmin_api,
     google_project_service.cloud_scheduler_api,
+    google_project_service.vision_api,
+    google_project_iam_member.tavern-vision-binding,
+    google_service_account_iam_member.tavern_ocr_scheduler_act_as,
     google_sql_user.tavern-user,
     google_sql_database.tavern-db
   ]

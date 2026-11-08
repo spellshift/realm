@@ -744,6 +744,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Name           func(childComplexity int) int
+		OcrText        func(childComplexity int) int
 		ShellTask      func(childComplexity int) int
 		Size           func(childComplexity int) int
 		Task           func(childComplexity int) int
@@ -4748,6 +4749,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Screenshot.Name(childComplexity), true
+
+	case "Screenshot.ocrText":
+		if e.ComplexityRoot.Screenshot.OcrText == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Screenshot.OcrText(childComplexity), true
 
 	case "Screenshot.shellTask":
 		if e.ComplexityRoot.Screenshot.ShellTask == nil {
@@ -12226,6 +12234,10 @@ type Screenshot implements Node {
   """
   hash: String
   """
+  Text extracted from the screenshot by OCR
+  """
+  ocrText: String
+  """
   Host the screenshot was taken on.
   """
   host: Host!
@@ -12376,6 +12388,24 @@ input ScreenshotWhereInput {
   hashNotNil: Boolean
   hashEqualFold: String
   hashContainsFold: String
+  """
+  ocr_text field predicates
+  """
+  ocrText: String
+  ocrTextNEQ: String
+  ocrTextIn: [String!]
+  ocrTextNotIn: [String!]
+  ocrTextGT: String
+  ocrTextGTE: String
+  ocrTextLT: String
+  ocrTextLTE: String
+  ocrTextContains: String
+  ocrTextHasPrefix: String
+  ocrTextHasSuffix: String
+  ocrTextIsNil: Boolean
+  ocrTextNotNil: Boolean
+  ocrTextEqualFold: String
+  ocrTextContainsFold: String
   """
   host edge predicates
   """

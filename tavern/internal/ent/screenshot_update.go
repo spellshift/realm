@@ -104,6 +104,81 @@ func (su *ScreenshotUpdate) ClearContent() *ScreenshotUpdate {
 	return su
 }
 
+// SetOcrText sets the "ocr_text" field.
+func (su *ScreenshotUpdate) SetOcrText(s string) *ScreenshotUpdate {
+	su.mutation.SetOcrText(s)
+	return su
+}
+
+// SetNillableOcrText sets the "ocr_text" field if the given value is not nil.
+func (su *ScreenshotUpdate) SetNillableOcrText(s *string) *ScreenshotUpdate {
+	if s != nil {
+		su.SetOcrText(*s)
+	}
+	return su
+}
+
+// ClearOcrText clears the value of the "ocr_text" field.
+func (su *ScreenshotUpdate) ClearOcrText() *ScreenshotUpdate {
+	su.mutation.ClearOcrText()
+	return su
+}
+
+// SetOcrRequested sets the "ocr_requested" field.
+func (su *ScreenshotUpdate) SetOcrRequested(b bool) *ScreenshotUpdate {
+	su.mutation.SetOcrRequested(b)
+	return su
+}
+
+// SetNillableOcrRequested sets the "ocr_requested" field if the given value is not nil.
+func (su *ScreenshotUpdate) SetNillableOcrRequested(b *bool) *ScreenshotUpdate {
+	if b != nil {
+		su.SetOcrRequested(*b)
+	}
+	return su
+}
+
+// SetOcrAttempts sets the "ocr_attempts" field.
+func (su *ScreenshotUpdate) SetOcrAttempts(i int) *ScreenshotUpdate {
+	su.mutation.ResetOcrAttempts()
+	su.mutation.SetOcrAttempts(i)
+	return su
+}
+
+// SetNillableOcrAttempts sets the "ocr_attempts" field if the given value is not nil.
+func (su *ScreenshotUpdate) SetNillableOcrAttempts(i *int) *ScreenshotUpdate {
+	if i != nil {
+		su.SetOcrAttempts(*i)
+	}
+	return su
+}
+
+// AddOcrAttempts adds i to the "ocr_attempts" field.
+func (su *ScreenshotUpdate) AddOcrAttempts(i int) *ScreenshotUpdate {
+	su.mutation.AddOcrAttempts(i)
+	return su
+}
+
+// SetOcrLeaseUntil sets the "ocr_lease_until" field.
+func (su *ScreenshotUpdate) SetOcrLeaseUntil(t time.Time) *ScreenshotUpdate {
+	su.mutation.SetOcrLeaseUntil(t)
+	return su
+}
+
+// SetNillableOcrLeaseUntil sets the "ocr_lease_until" field if the given value is not nil.
+func (su *ScreenshotUpdate) SetNillableOcrLeaseUntil(t *time.Time) *ScreenshotUpdate {
+	if t != nil {
+		su.SetOcrLeaseUntil(*t)
+	}
+	return su
+}
+
+// ClearOcrLeaseUntil clears the value of the "ocr_lease_until" field.
+func (su *ScreenshotUpdate) ClearOcrLeaseUntil() *ScreenshotUpdate {
+	su.mutation.ClearOcrLeaseUntil()
+	return su
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (su *ScreenshotUpdate) SetHostID(id int) *ScreenshotUpdate {
 	su.mutation.SetHostID(id)
@@ -276,6 +351,27 @@ func (su *ScreenshotUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if su.mutation.ContentCleared() {
 		_spec.ClearField(screenshot.FieldContent, field.TypeBytes)
+	}
+	if value, ok := su.mutation.OcrText(); ok {
+		_spec.SetField(screenshot.FieldOcrText, field.TypeString, value)
+	}
+	if su.mutation.OcrTextCleared() {
+		_spec.ClearField(screenshot.FieldOcrText, field.TypeString)
+	}
+	if value, ok := su.mutation.OcrRequested(); ok {
+		_spec.SetField(screenshot.FieldOcrRequested, field.TypeBool, value)
+	}
+	if value, ok := su.mutation.OcrAttempts(); ok {
+		_spec.SetField(screenshot.FieldOcrAttempts, field.TypeInt, value)
+	}
+	if value, ok := su.mutation.AddedOcrAttempts(); ok {
+		_spec.AddField(screenshot.FieldOcrAttempts, field.TypeInt, value)
+	}
+	if value, ok := su.mutation.OcrLeaseUntil(); ok {
+		_spec.SetField(screenshot.FieldOcrLeaseUntil, field.TypeTime, value)
+	}
+	if su.mutation.OcrLeaseUntilCleared() {
+		_spec.ClearField(screenshot.FieldOcrLeaseUntil, field.TypeTime)
 	}
 	if su.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -454,6 +550,81 @@ func (suo *ScreenshotUpdateOne) SetContent(b []byte) *ScreenshotUpdateOne {
 // ClearContent clears the value of the "content" field.
 func (suo *ScreenshotUpdateOne) ClearContent() *ScreenshotUpdateOne {
 	suo.mutation.ClearContent()
+	return suo
+}
+
+// SetOcrText sets the "ocr_text" field.
+func (suo *ScreenshotUpdateOne) SetOcrText(s string) *ScreenshotUpdateOne {
+	suo.mutation.SetOcrText(s)
+	return suo
+}
+
+// SetNillableOcrText sets the "ocr_text" field if the given value is not nil.
+func (suo *ScreenshotUpdateOne) SetNillableOcrText(s *string) *ScreenshotUpdateOne {
+	if s != nil {
+		suo.SetOcrText(*s)
+	}
+	return suo
+}
+
+// ClearOcrText clears the value of the "ocr_text" field.
+func (suo *ScreenshotUpdateOne) ClearOcrText() *ScreenshotUpdateOne {
+	suo.mutation.ClearOcrText()
+	return suo
+}
+
+// SetOcrRequested sets the "ocr_requested" field.
+func (suo *ScreenshotUpdateOne) SetOcrRequested(b bool) *ScreenshotUpdateOne {
+	suo.mutation.SetOcrRequested(b)
+	return suo
+}
+
+// SetNillableOcrRequested sets the "ocr_requested" field if the given value is not nil.
+func (suo *ScreenshotUpdateOne) SetNillableOcrRequested(b *bool) *ScreenshotUpdateOne {
+	if b != nil {
+		suo.SetOcrRequested(*b)
+	}
+	return suo
+}
+
+// SetOcrAttempts sets the "ocr_attempts" field.
+func (suo *ScreenshotUpdateOne) SetOcrAttempts(i int) *ScreenshotUpdateOne {
+	suo.mutation.ResetOcrAttempts()
+	suo.mutation.SetOcrAttempts(i)
+	return suo
+}
+
+// SetNillableOcrAttempts sets the "ocr_attempts" field if the given value is not nil.
+func (suo *ScreenshotUpdateOne) SetNillableOcrAttempts(i *int) *ScreenshotUpdateOne {
+	if i != nil {
+		suo.SetOcrAttempts(*i)
+	}
+	return suo
+}
+
+// AddOcrAttempts adds i to the "ocr_attempts" field.
+func (suo *ScreenshotUpdateOne) AddOcrAttempts(i int) *ScreenshotUpdateOne {
+	suo.mutation.AddOcrAttempts(i)
+	return suo
+}
+
+// SetOcrLeaseUntil sets the "ocr_lease_until" field.
+func (suo *ScreenshotUpdateOne) SetOcrLeaseUntil(t time.Time) *ScreenshotUpdateOne {
+	suo.mutation.SetOcrLeaseUntil(t)
+	return suo
+}
+
+// SetNillableOcrLeaseUntil sets the "ocr_lease_until" field if the given value is not nil.
+func (suo *ScreenshotUpdateOne) SetNillableOcrLeaseUntil(t *time.Time) *ScreenshotUpdateOne {
+	if t != nil {
+		suo.SetOcrLeaseUntil(*t)
+	}
+	return suo
+}
+
+// ClearOcrLeaseUntil clears the value of the "ocr_lease_until" field.
+func (suo *ScreenshotUpdateOne) ClearOcrLeaseUntil() *ScreenshotUpdateOne {
+	suo.mutation.ClearOcrLeaseUntil()
 	return suo
 }
 
@@ -659,6 +830,27 @@ func (suo *ScreenshotUpdateOne) sqlSave(ctx context.Context) (_node *Screenshot,
 	}
 	if suo.mutation.ContentCleared() {
 		_spec.ClearField(screenshot.FieldContent, field.TypeBytes)
+	}
+	if value, ok := suo.mutation.OcrText(); ok {
+		_spec.SetField(screenshot.FieldOcrText, field.TypeString, value)
+	}
+	if suo.mutation.OcrTextCleared() {
+		_spec.ClearField(screenshot.FieldOcrText, field.TypeString)
+	}
+	if value, ok := suo.mutation.OcrRequested(); ok {
+		_spec.SetField(screenshot.FieldOcrRequested, field.TypeBool, value)
+	}
+	if value, ok := suo.mutation.OcrAttempts(); ok {
+		_spec.SetField(screenshot.FieldOcrAttempts, field.TypeInt, value)
+	}
+	if value, ok := suo.mutation.AddedOcrAttempts(); ok {
+		_spec.AddField(screenshot.FieldOcrAttempts, field.TypeInt, value)
+	}
+	if value, ok := suo.mutation.OcrLeaseUntil(); ok {
+		_spec.SetField(screenshot.FieldOcrLeaseUntil, field.TypeTime, value)
+	}
+	if suo.mutation.OcrLeaseUntilCleared() {
+		_spec.ClearField(screenshot.FieldOcrLeaseUntil, field.TypeTime)
 	}
 	if suo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{

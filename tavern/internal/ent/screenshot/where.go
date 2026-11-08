@@ -85,6 +85,26 @@ func Content(v []byte) predicate.Screenshot {
 	return predicate.Screenshot(sql.FieldEQ(FieldContent, v))
 }
 
+// OcrText applies equality check predicate on the "ocr_text" field. It's identical to OcrTextEQ.
+func OcrText(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrText, v))
+}
+
+// OcrRequested applies equality check predicate on the "ocr_requested" field. It's identical to OcrRequestedEQ.
+func OcrRequested(v bool) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrRequested, v))
+}
+
+// OcrAttempts applies equality check predicate on the "ocr_attempts" field. It's identical to OcrAttemptsEQ.
+func OcrAttempts(v int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrAttempts, v))
+}
+
+// OcrLeaseUntil applies equality check predicate on the "ocr_lease_until" field. It's identical to OcrLeaseUntilEQ.
+func OcrLeaseUntil(v time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrLeaseUntil, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Screenshot {
 	return predicate.Screenshot(sql.FieldEQ(FieldCreatedAt, v))
@@ -393,6 +413,181 @@ func ContentIsNil() predicate.Screenshot {
 // ContentNotNil applies the NotNil predicate on the "content" field.
 func ContentNotNil() predicate.Screenshot {
 	return predicate.Screenshot(sql.FieldNotNull(FieldContent))
+}
+
+// OcrTextEQ applies the EQ predicate on the "ocr_text" field.
+func OcrTextEQ(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrText, v))
+}
+
+// OcrTextNEQ applies the NEQ predicate on the "ocr_text" field.
+func OcrTextNEQ(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNEQ(FieldOcrText, v))
+}
+
+// OcrTextIn applies the In predicate on the "ocr_text" field.
+func OcrTextIn(vs ...string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldIn(FieldOcrText, vs...))
+}
+
+// OcrTextNotIn applies the NotIn predicate on the "ocr_text" field.
+func OcrTextNotIn(vs ...string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNotIn(FieldOcrText, vs...))
+}
+
+// OcrTextGT applies the GT predicate on the "ocr_text" field.
+func OcrTextGT(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGT(FieldOcrText, v))
+}
+
+// OcrTextGTE applies the GTE predicate on the "ocr_text" field.
+func OcrTextGTE(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGTE(FieldOcrText, v))
+}
+
+// OcrTextLT applies the LT predicate on the "ocr_text" field.
+func OcrTextLT(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLT(FieldOcrText, v))
+}
+
+// OcrTextLTE applies the LTE predicate on the "ocr_text" field.
+func OcrTextLTE(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLTE(FieldOcrText, v))
+}
+
+// OcrTextContains applies the Contains predicate on the "ocr_text" field.
+func OcrTextContains(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldContains(FieldOcrText, v))
+}
+
+// OcrTextHasPrefix applies the HasPrefix predicate on the "ocr_text" field.
+func OcrTextHasPrefix(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldHasPrefix(FieldOcrText, v))
+}
+
+// OcrTextHasSuffix applies the HasSuffix predicate on the "ocr_text" field.
+func OcrTextHasSuffix(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldHasSuffix(FieldOcrText, v))
+}
+
+// OcrTextIsNil applies the IsNil predicate on the "ocr_text" field.
+func OcrTextIsNil() predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldIsNull(FieldOcrText))
+}
+
+// OcrTextNotNil applies the NotNil predicate on the "ocr_text" field.
+func OcrTextNotNil() predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNotNull(FieldOcrText))
+}
+
+// OcrTextEqualFold applies the EqualFold predicate on the "ocr_text" field.
+func OcrTextEqualFold(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEqualFold(FieldOcrText, v))
+}
+
+// OcrTextContainsFold applies the ContainsFold predicate on the "ocr_text" field.
+func OcrTextContainsFold(v string) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldContainsFold(FieldOcrText, v))
+}
+
+// OcrRequestedEQ applies the EQ predicate on the "ocr_requested" field.
+func OcrRequestedEQ(v bool) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrRequested, v))
+}
+
+// OcrRequestedNEQ applies the NEQ predicate on the "ocr_requested" field.
+func OcrRequestedNEQ(v bool) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNEQ(FieldOcrRequested, v))
+}
+
+// OcrAttemptsEQ applies the EQ predicate on the "ocr_attempts" field.
+func OcrAttemptsEQ(v int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrAttempts, v))
+}
+
+// OcrAttemptsNEQ applies the NEQ predicate on the "ocr_attempts" field.
+func OcrAttemptsNEQ(v int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNEQ(FieldOcrAttempts, v))
+}
+
+// OcrAttemptsIn applies the In predicate on the "ocr_attempts" field.
+func OcrAttemptsIn(vs ...int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldIn(FieldOcrAttempts, vs...))
+}
+
+// OcrAttemptsNotIn applies the NotIn predicate on the "ocr_attempts" field.
+func OcrAttemptsNotIn(vs ...int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNotIn(FieldOcrAttempts, vs...))
+}
+
+// OcrAttemptsGT applies the GT predicate on the "ocr_attempts" field.
+func OcrAttemptsGT(v int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGT(FieldOcrAttempts, v))
+}
+
+// OcrAttemptsGTE applies the GTE predicate on the "ocr_attempts" field.
+func OcrAttemptsGTE(v int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGTE(FieldOcrAttempts, v))
+}
+
+// OcrAttemptsLT applies the LT predicate on the "ocr_attempts" field.
+func OcrAttemptsLT(v int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLT(FieldOcrAttempts, v))
+}
+
+// OcrAttemptsLTE applies the LTE predicate on the "ocr_attempts" field.
+func OcrAttemptsLTE(v int) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLTE(FieldOcrAttempts, v))
+}
+
+// OcrLeaseUntilEQ applies the EQ predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilEQ(v time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldOcrLeaseUntil, v))
+}
+
+// OcrLeaseUntilNEQ applies the NEQ predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilNEQ(v time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNEQ(FieldOcrLeaseUntil, v))
+}
+
+// OcrLeaseUntilIn applies the In predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilIn(vs ...time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldIn(FieldOcrLeaseUntil, vs...))
+}
+
+// OcrLeaseUntilNotIn applies the NotIn predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilNotIn(vs ...time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNotIn(FieldOcrLeaseUntil, vs...))
+}
+
+// OcrLeaseUntilGT applies the GT predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilGT(v time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGT(FieldOcrLeaseUntil, v))
+}
+
+// OcrLeaseUntilGTE applies the GTE predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilGTE(v time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGTE(FieldOcrLeaseUntil, v))
+}
+
+// OcrLeaseUntilLT applies the LT predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilLT(v time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLT(FieldOcrLeaseUntil, v))
+}
+
+// OcrLeaseUntilLTE applies the LTE predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilLTE(v time.Time) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLTE(FieldOcrLeaseUntil, v))
+}
+
+// OcrLeaseUntilIsNil applies the IsNil predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilIsNil() predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldIsNull(FieldOcrLeaseUntil))
+}
+
+// OcrLeaseUntilNotNil applies the NotNil predicate on the "ocr_lease_until" field.
+func OcrLeaseUntilNotNil() predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNotNull(FieldOcrLeaseUntil))
 }
 
 // HasHost applies the HasEdge predicate on the "host" edge.

@@ -23,6 +23,7 @@ import (
 
 type Server struct {
 	MaxFileChunkSize uint64
+	EnableAI         bool
 	graph            *ent.Client
 	mux              *stream.Mux
 	portalMux        *mux.Mux
@@ -49,6 +50,10 @@ func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtPublicKey ed
 
 // Option configures a C2 Server.
 type Option func(*Server)
+
+func WithAIEnabled() Option {
+	return func(srv *Server) { srv.EnableAI = true }
+}
 
 func getRemoteIP(ctx context.Context) string {
 	p, ok := peer.FromContext(ctx)

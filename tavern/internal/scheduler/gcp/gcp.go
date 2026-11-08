@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/url"
@@ -11,6 +12,9 @@ import (
 	schedulerpb "cloud.google.com/go/scheduler/apiv1/schedulerpb"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"realm.pub/tavern/internal/scheduler"
 )
 
@@ -26,6 +30,9 @@ type jobIterator interface {
 // cloudClient abstracts the GCP Cloud Scheduler API for testability.
 type cloudClient interface {
 	CreateJob(ctx context.Context, req *schedulerpb.CreateJobRequest) (*schedulerpb.Job, error)
+	UpdateJob(ctx context.Context, req *schedulerpb.UpdateJobRequest) (*schedulerpb.Job, error)
+	PauseJob(ctx context.Context, req *schedulerpb.PauseJobRequest) (*schedulerpb.Job, error)
+	ResumeJob(ctx context.Context, req *schedulerpb.ResumeJobRequest) (*schedulerpb.Job, error)
 	ListJobs(ctx context.Context, req *schedulerpb.ListJobsRequest) jobIterator
 	Close() error
 }
@@ -37,6 +44,18 @@ type gcpClient struct {
 
 func (c *gcpClient) CreateJob(ctx context.Context, req *schedulerpb.CreateJobRequest) (*schedulerpb.Job, error) {
 	return c.inner.CreateJob(ctx, req)
+}
+
+func (c *gcpClient) UpdateJob(ctx context.Context, req *schedulerpb.UpdateJobRequest) (*schedulerpb.Job, error) {
+	return c.inner.UpdateJob(ctx, req)
+}
+
+func (c *gcpClient) PauseJob(ctx context.Context, req *schedulerpb.PauseJobRequest) (*schedulerpb.Job, error) {
+	return c.inner.PauseJob(ctx, req)
+}
+
+func (c *gcpClient) ResumeJob(ctx context.Context, req *schedulerpb.ResumeJobRequest) (*schedulerpb.Job, error) {
+	return c.inner.ResumeJob(ctx, req)
 }
 
 func (c *gcpClient) ListJobs(ctx context.Context, req *schedulerpb.ListJobsRequest) jobIterator {
@@ -104,24 +123,7 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 		return fmt.Errorf("scheduler/gcp: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 
-	method := schedulerpb.HttpMethod_POST
-	if job.HTTPTarget.Method != "" {
-		method = httpMethodToProto(job.HTTPTarget.Method)
-	}
-
-	pbJob := &schedulerpb.Job{
-		Name:     fullName,
-		Schedule: job.Schedule,
-		TimeZone: "UTC",
-		Target: &schedulerpb.Job_HttpTarget{
-			HttpTarget: &schedulerpb.HttpTarget{
-				Uri:        job.HTTPTarget.URL,
-				HttpMethod: method,
-				Headers:    job.HTTPTarget.Headers,
-				Body:       job.HTTPTarget.Body,
-			},
-		},
-	}
+	pbJob := recurringJobProto(job, fullName)
 
 	if _, err := s.client.CreateJob(ctx, &schedulerpb.CreateJobRequest{
 		Parent: s.parent,
@@ -131,6 +133,71 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	}
 
 	slog.InfoContext(ctx, "scheduler/gcp: created job", "name", fullName, "schedule", job.Schedule, "url", job.HTTPTarget.URL)
+	return nil
+}
+
+func recurringJobProto(job scheduler.Job, fullName string) *schedulerpb.Job {
+	method := schedulerpb.HttpMethod_POST
+	if job.HTTPTarget.Method != "" {
+		method = httpMethodToProto(job.HTTPTarget.Method)
+	}
+	target := &schedulerpb.HttpTarget{
+		Uri: job.HTTPTarget.URL, HttpMethod: method,
+		Headers: job.HTTPTarget.Headers, Body: job.HTTPTarget.Body,
+	}
+	if job.HTTPTarget.OIDCServiceAccountEmail != "" {
+		target.AuthorizationHeader = &schedulerpb.HttpTarget_OidcToken{OidcToken: &schedulerpb.OidcToken{
+			ServiceAccountEmail: job.HTTPTarget.OIDCServiceAccountEmail,
+			Audience:            job.HTTPTarget.OIDCAudience,
+		}}
+	}
+	return &schedulerpb.Job{Name: fullName, Schedule: job.Schedule, TimeZone: "UTC", Target: &schedulerpb.Job_HttpTarget{HttpTarget: target}}
+}
+
+// Ensure creates or updates a recurring job with the current target and credentials.
+func (s *Scheduler) Ensure(ctx context.Context, job scheduler.Job) error {
+	fullName := fmt.Sprintf("%s/jobs/%s", s.parent, job.Name)
+	existing, err := s.findJob(ctx, fullName)
+	if err != nil {
+		return fmt.Errorf("scheduler/gcp: check job %q: %w", fullName, err)
+	}
+	if existing == nil {
+		err = s.Schedule(ctx, job)
+		if err == nil {
+			return nil
+		}
+		if !errors.Is(err, scheduler.ErrJobExists) && status.Code(err) != codes.AlreadyExists {
+			return err
+		}
+	}
+	_, err = s.client.UpdateJob(ctx, &schedulerpb.UpdateJobRequest{
+		Job:        recurringJobProto(job, fullName),
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"schedule", "time_zone", "http_target"}},
+	})
+	if err != nil {
+		return fmt.Errorf("scheduler/gcp: update job %q: %w", fullName, err)
+	}
+	if existing != nil && existing.GetState() == schedulerpb.Job_PAUSED {
+		if _, err := s.client.ResumeJob(ctx, &schedulerpb.ResumeJobRequest{Name: fullName}); err != nil {
+			return fmt.Errorf("scheduler/gcp: resume job %q: %w", fullName, err)
+		}
+	}
+	return nil
+}
+
+// Disable pauses a recurring job without releasing its name.
+func (s *Scheduler) Disable(ctx context.Context, name string) error {
+	fullName := fmt.Sprintf("%s/jobs/%s", s.parent, name)
+	existing, err := s.findJob(ctx, fullName)
+	if err != nil {
+		return fmt.Errorf("scheduler/gcp: check job %q: %w", fullName, err)
+	}
+	if existing == nil || existing.GetState() != schedulerpb.Job_ENABLED {
+		return nil
+	}
+	if _, err := s.client.PauseJob(ctx, &schedulerpb.PauseJobRequest{Name: fullName}); err != nil && status.Code(err) != codes.NotFound {
+		return fmt.Errorf("scheduler/gcp: pause job %q: %w", fullName, err)
+	}
 	return nil
 }
 
@@ -198,6 +265,11 @@ func (s *Scheduler) Close() error {
 
 // jobExists returns true if a job with the given full resource name exists.
 func (s *Scheduler) jobExists(ctx context.Context, fullName string) (bool, error) {
+	job, err := s.findJob(ctx, fullName)
+	return job != nil, err
+}
+
+func (s *Scheduler) findJob(ctx context.Context, fullName string) (*schedulerpb.Job, error) {
 	it := s.client.ListJobs(ctx, &schedulerpb.ListJobsRequest{
 		Parent: s.parent,
 	})
@@ -207,13 +279,13 @@ func (s *Scheduler) jobExists(ctx context.Context, fullName string) (bool, error
 			break
 		}
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		if j.GetName() == fullName {
-			return true, nil
+			return j, nil
 		}
 	}
-	return false, nil
+	return nil, nil
 }
 
 // httpMethodToProto maps an HTTP method string to the protobuf enum.

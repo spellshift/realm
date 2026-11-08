@@ -16,10 +16,12 @@ var ErrJobExists = errors.New("job already exists")
 
 // HTTPTarget defines an HTTP endpoint to invoke when a scheduled job fires.
 type HTTPTarget struct {
-	URL     string
-	Method  string
-	Headers map[string]string
-	Body    []byte
+	URL                     string
+	Method                  string
+	Headers                 map[string]string
+	Body                    []byte
+	OIDCServiceAccountEmail string
+	OIDCAudience            string
 }
 
 // Job represents a unit of work to be run on a schedule.
@@ -59,6 +61,12 @@ type Scheduler interface {
 
 	// Close releases any resources held by the scheduler.
 	Close() error
+}
+
+// JobReconciler updates or removes persistent recurring jobs across restarts.
+type JobReconciler interface {
+	Ensure(ctx context.Context, job Job) error
+	Disable(ctx context.Context, name string) error
 }
 
 // Driver is the interface that must be implemented by a scheduler driver.
