@@ -1,0 +1,21 @@
+---
+# Tag mapping for create_tags.py (usage: create_tags.py <tavern_url> <mapping.yaml> [--overwrite]).
+# Each entry defines a tag `name`, its `kind` (group or service), and a `where`
+# clause using HostWhereInput fields (see tavern/internal/graphql/schema/ent.graphql).
+# Rules apply in file order; a host that already has a tag is skipped unless
+# --overwrite is given.
+
+- name: hostA
+  kind: service
+  where:
+    name: hostA
+- name: hostB
+  kind: service
+  where:
+    name: hostB
+- name: Team01
+  kind: group
+  where:
+    or:
+      - primaryIPHasPrefix: 10.1.1.
+      - primaryIPHasPrefix: 192.168.1.
