@@ -6098,6 +6098,11 @@ func (s *ScreenshotQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, screenshot.FieldHash)
 				fieldSeen[screenshot.FieldHash] = struct{}{}
 			}
+		case "ocrText":
+			if _, ok := fieldSeen[screenshot.FieldOcrText]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldOcrText)
+				fieldSeen[screenshot.FieldOcrText] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

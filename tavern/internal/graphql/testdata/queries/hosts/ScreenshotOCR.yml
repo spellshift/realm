@@ -1,0 +1,33 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `hosts` (id, name, identifier, platform, created_at, last_modified_at)
+    VALUES (1010,"db1","EXISTING-HOST", "PLATFORM_UNSPECIFIED", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `screenshots` (id, name, size, screenshot_host, ocr_text, created_at, last_modified_at)
+    VALUES (2010, "screen.png", 10, 1010, "recognized words", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  query HostScreenshotOCR {
+    hosts {
+      edges {
+        node {
+          screenshots {
+            edges {
+              node {
+                ocrText
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+expected:
+  hosts:
+    edges:
+      - node:
+          screenshots:
+            edges:
+              - node:
+                  ocrText: recognized words

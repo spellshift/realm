@@ -44,6 +44,7 @@ import (
 	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
 	tavernmcp "realm.pub/tavern/internal/mcp"
+	"realm.pub/tavern/internal/ocr"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/portals/pty"
@@ -464,6 +465,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
 
 	// Route Map
+	var c2Options []c2.Option
+	if cfg.IsAIEnabled() {
+		c2Options = append(c2Options, c2.WithAIEnabled())
+	}
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
 			Handler:              newStatusHandler(),
@@ -517,7 +522,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
+			Handler:              newGRPCHandler(client, grpcShellMux, portalMux, c2Options...),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -575,6 +580,39 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler:          playground.Handler("Realm - Red Team Engagement Platform", "/graphql"),
 			LoginRedirectURI: "/oauth/login",
 		},
+	}
+	if cfg.IsAIEnabled() {
+		vision, err := ocr.NewVisionClient(ctx, EnvGCPProjectID.String())
+		if err != nil {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("failed to initialize OCR: %w", err)
+		}
+		routes[ocr.Audience] = tavernhttp.Endpoint{
+			Handler:              ocr.NewHandler(client, pubKey, vision),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		}
+		ocrToken, err := ocr.NewToken(privKey)
+		if err != nil {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("failed to sign OCR job token: %w", err)
+		}
+		ocrURL := strings.TrimSuffix(hostCheckURL, hostcheck.Audience) + ocr.Audience
+		if err := sched.Schedule(ctx, scheduler.Job{
+			Name:     "screenshot-ocr-poll",
+			Schedule: hostCheckSchedule,
+			HTTPTarget: scheduler.HTTPTarget{
+				URL:     ocrURL,
+				Method:  http.MethodPost,
+				Headers: map[string]string{"Authorization": "Bearer " + ocrToken},
+			},
+		}); err != nil && !errors.Is(err, scheduler.ErrJobExists) {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("failed to schedule OCR job: %w", err)
+		}
 	}
 
 	// Setup Profiling

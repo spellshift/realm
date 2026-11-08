@@ -21608,6 +21608,11 @@ type ScreenshotMutation struct {
 	addsize           *int64
 	hash              *string
 	content           *[]byte
+	ocr_text          *string
+	ocr_requested     *bool
+	ocr_attempts      *int
+	addocr_attempts   *int
+	ocr_lease_until   *time.Time
 	clearedFields     map[string]struct{}
 	host              *int
 	clearedhost       bool
@@ -21980,6 +21985,196 @@ func (m *ScreenshotMutation) ResetContent() {
 	delete(m.clearedFields, screenshot.FieldContent)
 }
 
+// SetOcrText sets the "ocr_text" field.
+func (m *ScreenshotMutation) SetOcrText(s string) {
+	m.ocr_text = &s
+}
+
+// OcrText returns the value of the "ocr_text" field in the mutation.
+func (m *ScreenshotMutation) OcrText() (r string, exists bool) {
+	v := m.ocr_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOcrText returns the old "ocr_text" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldOcrText(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOcrText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOcrText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOcrText: %w", err)
+	}
+	return oldValue.OcrText, nil
+}
+
+// ClearOcrText clears the value of the "ocr_text" field.
+func (m *ScreenshotMutation) ClearOcrText() {
+	m.ocr_text = nil
+	m.clearedFields[screenshot.FieldOcrText] = struct{}{}
+}
+
+// OcrTextCleared returns if the "ocr_text" field was cleared in this mutation.
+func (m *ScreenshotMutation) OcrTextCleared() bool {
+	_, ok := m.clearedFields[screenshot.FieldOcrText]
+	return ok
+}
+
+// ResetOcrText resets all changes to the "ocr_text" field.
+func (m *ScreenshotMutation) ResetOcrText() {
+	m.ocr_text = nil
+	delete(m.clearedFields, screenshot.FieldOcrText)
+}
+
+// SetOcrRequested sets the "ocr_requested" field.
+func (m *ScreenshotMutation) SetOcrRequested(b bool) {
+	m.ocr_requested = &b
+}
+
+// OcrRequested returns the value of the "ocr_requested" field in the mutation.
+func (m *ScreenshotMutation) OcrRequested() (r bool, exists bool) {
+	v := m.ocr_requested
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOcrRequested returns the old "ocr_requested" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldOcrRequested(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOcrRequested is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOcrRequested requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOcrRequested: %w", err)
+	}
+	return oldValue.OcrRequested, nil
+}
+
+// ResetOcrRequested resets all changes to the "ocr_requested" field.
+func (m *ScreenshotMutation) ResetOcrRequested() {
+	m.ocr_requested = nil
+}
+
+// SetOcrAttempts sets the "ocr_attempts" field.
+func (m *ScreenshotMutation) SetOcrAttempts(i int) {
+	m.ocr_attempts = &i
+	m.addocr_attempts = nil
+}
+
+// OcrAttempts returns the value of the "ocr_attempts" field in the mutation.
+func (m *ScreenshotMutation) OcrAttempts() (r int, exists bool) {
+	v := m.ocr_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOcrAttempts returns the old "ocr_attempts" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldOcrAttempts(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOcrAttempts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOcrAttempts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOcrAttempts: %w", err)
+	}
+	return oldValue.OcrAttempts, nil
+}
+
+// AddOcrAttempts adds i to the "ocr_attempts" field.
+func (m *ScreenshotMutation) AddOcrAttempts(i int) {
+	if m.addocr_attempts != nil {
+		*m.addocr_attempts += i
+	} else {
+		m.addocr_attempts = &i
+	}
+}
+
+// AddedOcrAttempts returns the value that was added to the "ocr_attempts" field in this mutation.
+func (m *ScreenshotMutation) AddedOcrAttempts() (r int, exists bool) {
+	v := m.addocr_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOcrAttempts resets all changes to the "ocr_attempts" field.
+func (m *ScreenshotMutation) ResetOcrAttempts() {
+	m.ocr_attempts = nil
+	m.addocr_attempts = nil
+}
+
+// SetOcrLeaseUntil sets the "ocr_lease_until" field.
+func (m *ScreenshotMutation) SetOcrLeaseUntil(t time.Time) {
+	m.ocr_lease_until = &t
+}
+
+// OcrLeaseUntil returns the value of the "ocr_lease_until" field in the mutation.
+func (m *ScreenshotMutation) OcrLeaseUntil() (r time.Time, exists bool) {
+	v := m.ocr_lease_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOcrLeaseUntil returns the old "ocr_lease_until" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldOcrLeaseUntil(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOcrLeaseUntil is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOcrLeaseUntil requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOcrLeaseUntil: %w", err)
+	}
+	return oldValue.OcrLeaseUntil, nil
+}
+
+// ClearOcrLeaseUntil clears the value of the "ocr_lease_until" field.
+func (m *ScreenshotMutation) ClearOcrLeaseUntil() {
+	m.ocr_lease_until = nil
+	m.clearedFields[screenshot.FieldOcrLeaseUntil] = struct{}{}
+}
+
+// OcrLeaseUntilCleared returns if the "ocr_lease_until" field was cleared in this mutation.
+func (m *ScreenshotMutation) OcrLeaseUntilCleared() bool {
+	_, ok := m.clearedFields[screenshot.FieldOcrLeaseUntil]
+	return ok
+}
+
+// ResetOcrLeaseUntil resets all changes to the "ocr_lease_until" field.
+func (m *ScreenshotMutation) ResetOcrLeaseUntil() {
+	m.ocr_lease_until = nil
+	delete(m.clearedFields, screenshot.FieldOcrLeaseUntil)
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
 func (m *ScreenshotMutation) SetHostID(id int) {
 	m.host = &id
@@ -22131,7 +22326,7 @@ func (m *ScreenshotMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ScreenshotMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, screenshot.FieldCreatedAt)
 	}
@@ -22149,6 +22344,18 @@ func (m *ScreenshotMutation) Fields() []string {
 	}
 	if m.content != nil {
 		fields = append(fields, screenshot.FieldContent)
+	}
+	if m.ocr_text != nil {
+		fields = append(fields, screenshot.FieldOcrText)
+	}
+	if m.ocr_requested != nil {
+		fields = append(fields, screenshot.FieldOcrRequested)
+	}
+	if m.ocr_attempts != nil {
+		fields = append(fields, screenshot.FieldOcrAttempts)
+	}
+	if m.ocr_lease_until != nil {
+		fields = append(fields, screenshot.FieldOcrLeaseUntil)
 	}
 	return fields
 }
@@ -22170,6 +22377,14 @@ func (m *ScreenshotMutation) Field(name string) (ent.Value, bool) {
 		return m.Hash()
 	case screenshot.FieldContent:
 		return m.Content()
+	case screenshot.FieldOcrText:
+		return m.OcrText()
+	case screenshot.FieldOcrRequested:
+		return m.OcrRequested()
+	case screenshot.FieldOcrAttempts:
+		return m.OcrAttempts()
+	case screenshot.FieldOcrLeaseUntil:
+		return m.OcrLeaseUntil()
 	}
 	return nil, false
 }
@@ -22191,6 +22406,14 @@ func (m *ScreenshotMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldHash(ctx)
 	case screenshot.FieldContent:
 		return m.OldContent(ctx)
+	case screenshot.FieldOcrText:
+		return m.OldOcrText(ctx)
+	case screenshot.FieldOcrRequested:
+		return m.OldOcrRequested(ctx)
+	case screenshot.FieldOcrAttempts:
+		return m.OldOcrAttempts(ctx)
+	case screenshot.FieldOcrLeaseUntil:
+		return m.OldOcrLeaseUntil(ctx)
 	}
 	return nil, fmt.Errorf("unknown Screenshot field %s", name)
 }
@@ -22242,6 +22465,34 @@ func (m *ScreenshotMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetContent(v)
 		return nil
+	case screenshot.FieldOcrText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOcrText(v)
+		return nil
+	case screenshot.FieldOcrRequested:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOcrRequested(v)
+		return nil
+	case screenshot.FieldOcrAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOcrAttempts(v)
+		return nil
+	case screenshot.FieldOcrLeaseUntil:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOcrLeaseUntil(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Screenshot field %s", name)
 }
@@ -22253,6 +22504,9 @@ func (m *ScreenshotMutation) AddedFields() []string {
 	if m.addsize != nil {
 		fields = append(fields, screenshot.FieldSize)
 	}
+	if m.addocr_attempts != nil {
+		fields = append(fields, screenshot.FieldOcrAttempts)
+	}
 	return fields
 }
 
@@ -22263,6 +22517,8 @@ func (m *ScreenshotMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case screenshot.FieldSize:
 		return m.AddedSize()
+	case screenshot.FieldOcrAttempts:
+		return m.AddedOcrAttempts()
 	}
 	return nil, false
 }
@@ -22279,6 +22535,13 @@ func (m *ScreenshotMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddSize(v)
 		return nil
+	case screenshot.FieldOcrAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOcrAttempts(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Screenshot numeric field %s", name)
 }
@@ -22292,6 +22555,12 @@ func (m *ScreenshotMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(screenshot.FieldContent) {
 		fields = append(fields, screenshot.FieldContent)
+	}
+	if m.FieldCleared(screenshot.FieldOcrText) {
+		fields = append(fields, screenshot.FieldOcrText)
+	}
+	if m.FieldCleared(screenshot.FieldOcrLeaseUntil) {
+		fields = append(fields, screenshot.FieldOcrLeaseUntil)
 	}
 	return fields
 }
@@ -22312,6 +22581,12 @@ func (m *ScreenshotMutation) ClearField(name string) error {
 		return nil
 	case screenshot.FieldContent:
 		m.ClearContent()
+		return nil
+	case screenshot.FieldOcrText:
+		m.ClearOcrText()
+		return nil
+	case screenshot.FieldOcrLeaseUntil:
+		m.ClearOcrLeaseUntil()
 		return nil
 	}
 	return fmt.Errorf("unknown Screenshot nullable field %s", name)
@@ -22338,6 +22613,18 @@ func (m *ScreenshotMutation) ResetField(name string) error {
 		return nil
 	case screenshot.FieldContent:
 		m.ResetContent()
+		return nil
+	case screenshot.FieldOcrText:
+		m.ResetOcrText()
+		return nil
+	case screenshot.FieldOcrRequested:
+		m.ResetOcrRequested()
+		return nil
+	case screenshot.FieldOcrAttempts:
+		m.ResetOcrAttempts()
+		return nil
+	case screenshot.FieldOcrLeaseUntil:
+		m.ResetOcrLeaseUntil()
 		return nil
 	}
 	return fmt.Errorf("unknown Screenshot field %s", name)

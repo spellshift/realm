@@ -436,6 +436,12 @@ DISABLE_DEFAULT_TOMES=1 go run ./tavern
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).
 
+### Screenshot OCR
+
+Set `ENABLE_AI=1` to extract text from reported screenshots with Google Cloud Vision. Tavern saves the screenshot first, then a scheduled worker fills in its `ocrText` GraphQL field. OCR can take several minutes and temporary Vision errors are retried with backoff.
+
+The Tavern service account needs access to the Vision API and `roles/serviceusage.serviceUsageConsumer` on the project. Set `GCP_PROJECT_ID` to that project and provide Application Default Credentials. For Terraform deployments, set `enable_ai = true`; this enables the API, grants the service account role, and configures Cloud Scheduler to run the worker while Cloud Run is idle.
+
 ### AI MCP Server
 
 Tavern includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that enables AI assistants and LLM-based tools to interact with your Tavern deployment. The MCP server uses Server-Sent Events (SSE) for transport and is gated behind the `ENABLE_AI_MCP` environment variable.

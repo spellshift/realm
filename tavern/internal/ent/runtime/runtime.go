@@ -702,6 +702,14 @@ func init() {
 	screenshotDescHash := screenshotFields[2].Descriptor()
 	// screenshot.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	screenshot.HashValidator = screenshotDescHash.Validators[0].(func(string) error)
+	// screenshotDescOcrRequested is the schema descriptor for ocr_requested field.
+	screenshotDescOcrRequested := screenshotFields[5].Descriptor()
+	// screenshot.DefaultOcrRequested holds the default value on creation for the ocr_requested field.
+	screenshot.DefaultOcrRequested = screenshotDescOcrRequested.Default.(bool)
+	// screenshotDescOcrAttempts is the schema descriptor for ocr_attempts field.
+	screenshotDescOcrAttempts := screenshotFields[6].Descriptor()
+	// screenshot.DefaultOcrAttempts holds the default value on creation for the ocr_attempts field.
+	screenshot.DefaultOcrAttempts = screenshotDescOcrAttempts.Default.(int)
 	shellMixin := schema.Shell{}.Mixin()
 	shellMixinFields0 := shellMixin[0].Fields()
 	_ = shellMixinFields0

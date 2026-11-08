@@ -17707,6 +17707,35 @@ func (ec *executionContext) fieldContext_Screenshot_hash(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Screenshot_ocrText(ctx context.Context, field graphql.CollectedField, obj *ent.Screenshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Screenshot_ocrText,
+		func(ctx context.Context) (any, error) {
+			return obj.OcrText, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Screenshot_ocrText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Screenshot",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Screenshot_host(ctx context.Context, field graphql.CollectedField, obj *ent.Screenshot) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -18047,6 +18076,8 @@ func (ec *executionContext) fieldContext_ScreenshotEdge_node(_ context.Context, 
 				return ec.fieldContext_Screenshot_size(ctx, field)
 			case "hash":
 				return ec.fieldContext_Screenshot_hash(ctx, field)
+			case "ocrText":
+				return ec.fieldContext_Screenshot_ocrText(ctx, field)
 			case "host":
 				return ec.fieldContext_Screenshot_host(ctx, field)
 			case "task":
@@ -20067,6 +20098,8 @@ func (ec *executionContext) fieldContext_ShellTask_screenshots(_ context.Context
 				return ec.fieldContext_Screenshot_size(ctx, field)
 			case "hash":
 				return ec.fieldContext_Screenshot_hash(ctx, field)
+			case "ocrText":
+				return ec.fieldContext_Screenshot_ocrText(ctx, field)
 			case "host":
 				return ec.fieldContext_Screenshot_host(ctx, field)
 			case "task":
@@ -38379,7 +38412,7 @@ func (ec *executionContext) unmarshalInputScreenshotWhereInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "ocrText", "ocrTextNEQ", "ocrTextIn", "ocrTextNotIn", "ocrTextGT", "ocrTextGTE", "ocrTextLT", "ocrTextLTE", "ocrTextContains", "ocrTextHasPrefix", "ocrTextHasSuffix", "ocrTextIsNil", "ocrTextNotNil", "ocrTextEqualFold", "ocrTextContainsFold", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38827,6 +38860,111 @@ func (ec *executionContext) unmarshalInputScreenshotWhereInput(ctx context.Conte
 				return it, err
 			}
 			it.HashContainsFold = data
+		case "ocrText":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrText"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrText = data
+		case "ocrTextNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextNEQ = data
+		case "ocrTextIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextIn = data
+		case "ocrTextNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextNotIn = data
+		case "ocrTextGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextGT = data
+		case "ocrTextGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextGTE = data
+		case "ocrTextLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextLT = data
+		case "ocrTextLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextLTE = data
+		case "ocrTextContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextContains = data
+		case "ocrTextHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextHasPrefix = data
+		case "ocrTextHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextHasSuffix = data
+		case "ocrTextIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextIsNil = data
+		case "ocrTextNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextNotNil = data
+		case "ocrTextEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextEqualFold = data
+		case "ocrTextContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ocrTextContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OcrTextContainsFold = data
 		case "hasHost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasHost"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -51469,6 +51607,8 @@ func (ec *executionContext) _Screenshot(ctx context.Context, sel ast.SelectionSe
 			}
 		case "hash":
 			out.Values[i] = ec._Screenshot_hash(ctx, field, obj)
+		case "ocrText":
+			out.Values[i] = ec._Screenshot_ocrText(ctx, field, obj)
 		case "host":
 			field := field
 

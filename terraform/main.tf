@@ -237,6 +237,12 @@ variable "enable_mcp" {
   default = false
 }
 
+variable "enable_ai" {
+  type = bool
+  description = "Enable screenshot OCR with Cloud Vision"
+  default = false
+}
+
 provider "google" {
   project = var.gcp_project
   region  = var.gcp_region
@@ -264,6 +270,12 @@ resource "google_project_service" "cloud_sqladmin_api" {
 
 resource "google_project_service" "cloud_scheduler_api" {
   service = "cloudscheduler.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "vision_api" {
+  count = var.enable_ai ? 1 : 0
+  service = "vision.googleapis.com"
   disable_on_destroy = false
 }
 
@@ -376,6 +388,13 @@ resource "google_project_iam_member" "tavern-cloud-scheduler-binding" {
   member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
+resource "google_project_iam_member" "tavern-vision-binding" {
+  count   = var.enable_ai ? 1 : 0
+  project = var.gcp_project
+  role    = "roles/serviceusage.serviceUsageConsumer"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
 resource "google_pubsub_topic" "shell_input" {
   count = var.disable_gcp_pubsub ? 0 : 1
   name = var.gcp_pubsub_topic_shell_input
@@ -453,6 +472,13 @@ resource "google_cloud_run_service" "tavern" {
           name = "GCP_PROJECT_ID"
           value = var.gcp_project
         }
+        dynamic "env" {
+          for_each = var.enable_ai ? [1] : []
+          content {
+            name  = "SCHEDULER_URI"
+            value = "gcp://projects/${var.gcp_project}/locations/${var.gcp_region}"
+          }
+        }
         env {
           name  = "REALM_BUILDER_ENROLLMENT_TOKENS"
           value = random_password.builder_enrollment.result
@@ -513,6 +539,10 @@ resource "google_cloud_run_service" "tavern" {
           name = "ENABLE_AI_MCP"
           value = var.enable_mcp ? "1" : ""
         }
+        env {
+          name = "ENABLE_AI"
+          value = var.enable_ai ? "1" : ""
+        }
       }
 
       // Only create prometheus sidecar if metrics enabled
@@ -554,6 +584,8 @@ resource "google_cloud_run_service" "tavern" {
     google_project_service.cloud_run_api,
     google_project_service.cloud_sqladmin_api,
     google_project_service.cloud_scheduler_api,
+    google_project_service.vision_api,
+    google_project_iam_member.tavern-vision-binding,
     google_sql_user.tavern-user,
     google_sql_database.tavern-db
   ]

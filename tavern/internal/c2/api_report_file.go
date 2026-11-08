@@ -152,6 +152,9 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			SetSize(size).
 			SetHash(hash).
 			SetContent(content)
+		if srv.EnableAI {
+			builder.SetOcrRequested(true)
+		}
 
 		if task != nil {
 			builder.SetTaskID(task.ID)

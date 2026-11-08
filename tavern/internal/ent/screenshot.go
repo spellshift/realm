@@ -32,6 +32,14 @@ type Screenshot struct {
 	Hash string `json:"hash,omitempty"`
 	// The content of the screenshot
 	Content []byte `json:"content,omitempty"`
+	// Text extracted from the screenshot by OCR
+	OcrText *string `json:"ocr_text,omitempty"`
+	// OcrRequested holds the value of the "ocr_requested" field.
+	OcrRequested bool `json:"ocr_requested,omitempty"`
+	// OcrAttempts holds the value of the "ocr_attempts" field.
+	OcrAttempts int `json:"ocr_attempts,omitempty"`
+	// OcrLeaseUntil holds the value of the "ocr_lease_until" field.
+	OcrLeaseUntil *time.Time `json:"ocr_lease_until,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ScreenshotQuery when eager-loading is set.
 	Edges                  ScreenshotEdges `json:"edges"`
@@ -96,11 +104,13 @@ func (*Screenshot) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case screenshot.FieldContent:
 			values[i] = new([]byte)
-		case screenshot.FieldID, screenshot.FieldSize:
+		case screenshot.FieldOcrRequested:
+			values[i] = new(sql.NullBool)
+		case screenshot.FieldID, screenshot.FieldSize, screenshot.FieldOcrAttempts:
 			values[i] = new(sql.NullInt64)
-		case screenshot.FieldName, screenshot.FieldHash:
+		case screenshot.FieldName, screenshot.FieldHash, screenshot.FieldOcrText:
 			values[i] = new(sql.NullString)
-		case screenshot.FieldCreatedAt, screenshot.FieldLastModifiedAt:
+		case screenshot.FieldCreatedAt, screenshot.FieldLastModifiedAt, screenshot.FieldOcrLeaseUntil:
 			values[i] = new(sql.NullTime)
 		case screenshot.ForeignKeys[0]: // screenshot_host
 			values[i] = new(sql.NullInt64)
@@ -164,6 +174,32 @@ func (s *Screenshot) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value != nil {
 				s.Content = *value
+			}
+		case screenshot.FieldOcrText:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field ocr_text", values[i])
+			} else if value.Valid {
+				s.OcrText = new(string)
+				*s.OcrText = value.String
+			}
+		case screenshot.FieldOcrRequested:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field ocr_requested", values[i])
+			} else if value.Valid {
+				s.OcrRequested = value.Bool
+			}
+		case screenshot.FieldOcrAttempts:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field ocr_attempts", values[i])
+			} else if value.Valid {
+				s.OcrAttempts = int(value.Int64)
+			}
+		case screenshot.FieldOcrLeaseUntil:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field ocr_lease_until", values[i])
+			} else if value.Valid {
+				s.OcrLeaseUntil = new(time.Time)
+				*s.OcrLeaseUntil = value.Time
 			}
 		case screenshot.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -254,6 +290,22 @@ func (s *Screenshot) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(fmt.Sprintf("%v", s.Content))
+	builder.WriteString(", ")
+	if v := s.OcrText; v != nil {
+		builder.WriteString("ocr_text=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("ocr_requested=")
+	builder.WriteString(fmt.Sprintf("%v", s.OcrRequested))
+	builder.WriteString(", ")
+	builder.WriteString("ocr_attempts=")
+	builder.WriteString(fmt.Sprintf("%v", s.OcrAttempts))
+	builder.WriteString(", ")
+	if v := s.OcrLeaseUntil; v != nil {
+		builder.WriteString("ocr_lease_until=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

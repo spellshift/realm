@@ -123,6 +123,7 @@ var (
 	EnvEnablePProf   = EnvBool{"ENABLE_PPROF"}
 	EnvEnableMetrics = EnvBool{"ENABLE_METRICS"}
 	EnvEnableAIMCP   = EnvBool{"ENABLE_AI_MCP"}
+	EnvEnableAI      = EnvBool{"ENABLE_AI"}
 
 	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
 	// EnvBuilderEnrollmentTokens seeds one-time builder enrollment tokens at startup.
@@ -400,6 +401,10 @@ func (cfg *Config) IsTestRunAndExitEnabled() bool {
 // IsMCPEnabled returns true if the AI MCP endpoint has been enabled.
 func (cfg *Config) IsMCPEnabled() bool {
 	return EnvEnableAIMCP.IsSet()
+}
+
+func (cfg *Config) IsAIEnabled() bool {
+	return EnvEnableAI.IsSet()
 }
 
 // ConfigureHTTPServer enables the configuration of the Tavern HTTP server. The endpoint field will be

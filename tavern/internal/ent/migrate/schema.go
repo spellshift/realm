@@ -743,6 +743,10 @@ var (
 		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "ocr_text", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "ocr_requested", Type: field.TypeBool, Default: false},
+		{Name: "ocr_attempts", Type: field.TypeInt, Default: 0},
+		{Name: "ocr_lease_until", Type: field.TypeTime, Nullable: true},
 		{Name: "screenshot_host", Type: field.TypeInt},
 		{Name: "shell_task_screenshots", Type: field.TypeInt, Nullable: true},
 		{Name: "task_screenshots", Type: field.TypeInt, Nullable: true},
@@ -755,21 +759,28 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "screenshots_hosts_host",
-				Columns:    []*schema.Column{ScreenshotsColumns[7]},
+				Columns:    []*schema.Column{ScreenshotsColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "screenshots_shell_tasks_screenshots",
-				Columns:    []*schema.Column{ScreenshotsColumns[8]},
+				Columns:    []*schema.Column{ScreenshotsColumns[12]},
 				RefColumns: []*schema.Column{ShellTasksColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "screenshots_tasks_screenshots",
-				Columns:    []*schema.Column{ScreenshotsColumns[9]},
+				Columns:    []*schema.Column{ScreenshotsColumns[13]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "screenshot_ocr_requested_ocr_lease_until",
+				Unique:  false,
+				Columns: []*schema.Column{ScreenshotsColumns[8], ScreenshotsColumns[10]},
 			},
 		},
 	}

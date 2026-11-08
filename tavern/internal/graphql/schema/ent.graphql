@@ -6193,6 +6193,10 @@ type Screenshot implements Node {
   """
   hash: String
   """
+  Text extracted from the screenshot by OCR
+  """
+  ocrText: String
+  """
   Host the screenshot was taken on.
   """
   host: Host!
@@ -6343,6 +6347,24 @@ input ScreenshotWhereInput {
   hashNotNil: Boolean
   hashEqualFold: String
   hashContainsFold: String
+  """
+  ocr_text field predicates
+  """
+  ocrText: String
+  ocrTextNEQ: String
+  ocrTextIn: [String!]
+  ocrTextNotIn: [String!]
+  ocrTextGT: String
+  ocrTextGTE: String
+  ocrTextLT: String
+  ocrTextLTE: String
+  ocrTextContains: String
+  ocrTextHasPrefix: String
+  ocrTextHasSuffix: String
+  ocrTextIsNil: Boolean
+  ocrTextNotNil: Boolean
+  ocrTextEqualFold: String
+  ocrTextContainsFold: String
   """
   host edge predicates
   """

@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // Screenshot holds the schema definition for the Screenshot entity.
@@ -51,6 +52,21 @@ func (Screenshot) Fields() []ent.Field {
 				entgql.Skip(), // Don't return content in GraphQL
 			).
 			Comment("The content of the screenshot"),
+		field.String("ocr_text").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.MySQL: "LONGTEXT"}).
+			Comment("Text extracted from the screenshot by OCR"),
+		field.Bool("ocr_requested").
+			Default(false).
+			Annotations(entgql.Skip()),
+		field.Int("ocr_attempts").
+			Default(0).
+			Annotations(entgql.Skip()),
+		field.Time("ocr_lease_until").
+			Optional().
+			Nillable().
+			Annotations(entgql.Skip()),
 	}
 }
 
@@ -78,6 +94,12 @@ func (Screenshot) Edges() []ent.Edge {
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Shell Task that reported this screenshot."),
+	}
+}
+
+func (Screenshot) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("ocr_requested", "ocr_lease_until"),
 	}
 }
 
@@ -122,7 +144,10 @@ func HookDeriveScreenshotInfo() ent.Hook {
 			}
 
 			// Set the new size
-			content, _ := s.Content()
+			content, ok := s.Content()
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
 			s.SetSize(uint64(len(content)))
 
 			// Set the new hash (if content exists)

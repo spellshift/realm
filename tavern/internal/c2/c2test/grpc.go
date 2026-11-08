@@ -25,7 +25,7 @@ import (
 	"realm.pub/tavern/internal/portals/mux"
 )
 
-func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
+func New(t *testing.T, opts ...c2.Option) (c2pb.C2Client, *ent.Client, func(), string) {
 	t.Helper()
 	ctx := context.Background()
 
@@ -66,7 +66,7 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
-	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux, testPubKey, testPrivKey))
+	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux, testPubKey, testPrivKey, opts...))
 
 	grpcErrCh := make(chan error, 1)
 	go func() {

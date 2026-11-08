@@ -10923,6 +10923,23 @@ type ScreenshotWhereInput struct {
 	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
 	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
 
+	// "ocr_text" field predicates.
+	OcrText             *string  `json:"ocrText,omitempty"`
+	OcrTextNEQ          *string  `json:"ocrTextNEQ,omitempty"`
+	OcrTextIn           []string `json:"ocrTextIn,omitempty"`
+	OcrTextNotIn        []string `json:"ocrTextNotIn,omitempty"`
+	OcrTextGT           *string  `json:"ocrTextGT,omitempty"`
+	OcrTextGTE          *string  `json:"ocrTextGTE,omitempty"`
+	OcrTextLT           *string  `json:"ocrTextLT,omitempty"`
+	OcrTextLTE          *string  `json:"ocrTextLTE,omitempty"`
+	OcrTextContains     *string  `json:"ocrTextContains,omitempty"`
+	OcrTextHasPrefix    *string  `json:"ocrTextHasPrefix,omitempty"`
+	OcrTextHasSuffix    *string  `json:"ocrTextHasSuffix,omitempty"`
+	OcrTextIsNil        bool     `json:"ocrTextIsNil,omitempty"`
+	OcrTextNotNil       bool     `json:"ocrTextNotNil,omitempty"`
+	OcrTextEqualFold    *string  `json:"ocrTextEqualFold,omitempty"`
+	OcrTextContainsFold *string  `json:"ocrTextContainsFold,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
@@ -11186,6 +11203,51 @@ func (i *ScreenshotWhereInput) P() (predicate.Screenshot, error) {
 	}
 	if i.HashContainsFold != nil {
 		predicates = append(predicates, screenshot.HashContainsFold(*i.HashContainsFold))
+	}
+	if i.OcrText != nil {
+		predicates = append(predicates, screenshot.OcrTextEQ(*i.OcrText))
+	}
+	if i.OcrTextNEQ != nil {
+		predicates = append(predicates, screenshot.OcrTextNEQ(*i.OcrTextNEQ))
+	}
+	if len(i.OcrTextIn) > 0 {
+		predicates = append(predicates, screenshot.OcrTextIn(i.OcrTextIn...))
+	}
+	if len(i.OcrTextNotIn) > 0 {
+		predicates = append(predicates, screenshot.OcrTextNotIn(i.OcrTextNotIn...))
+	}
+	if i.OcrTextGT != nil {
+		predicates = append(predicates, screenshot.OcrTextGT(*i.OcrTextGT))
+	}
+	if i.OcrTextGTE != nil {
+		predicates = append(predicates, screenshot.OcrTextGTE(*i.OcrTextGTE))
+	}
+	if i.OcrTextLT != nil {
+		predicates = append(predicates, screenshot.OcrTextLT(*i.OcrTextLT))
+	}
+	if i.OcrTextLTE != nil {
+		predicates = append(predicates, screenshot.OcrTextLTE(*i.OcrTextLTE))
+	}
+	if i.OcrTextContains != nil {
+		predicates = append(predicates, screenshot.OcrTextContains(*i.OcrTextContains))
+	}
+	if i.OcrTextHasPrefix != nil {
+		predicates = append(predicates, screenshot.OcrTextHasPrefix(*i.OcrTextHasPrefix))
+	}
+	if i.OcrTextHasSuffix != nil {
+		predicates = append(predicates, screenshot.OcrTextHasSuffix(*i.OcrTextHasSuffix))
+	}
+	if i.OcrTextIsNil {
+		predicates = append(predicates, screenshot.OcrTextIsNil())
+	}
+	if i.OcrTextNotNil {
+		predicates = append(predicates, screenshot.OcrTextNotNil())
+	}
+	if i.OcrTextEqualFold != nil {
+		predicates = append(predicates, screenshot.OcrTextEqualFold(*i.OcrTextEqualFold))
+	}
+	if i.OcrTextContainsFold != nil {
+		predicates = append(predicates, screenshot.OcrTextContainsFold(*i.OcrTextContainsFold))
 	}
 
 	if i.HasHost != nil {
