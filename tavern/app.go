@@ -588,30 +588,57 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			sched.Close()
 			return nil, fmt.Errorf("failed to initialize OCR: %w", err)
 		}
+		ocrURL := strings.TrimSuffix(hostCheckURL, hostcheck.Audience) + ocr.Audience
+		verify := ocr.VerifyLoopback
+		target := scheduler.HTTPTarget{URL: ocrURL, Method: http.MethodPost}
+		if schedulerURL.Scheme != "mem" {
+			email := EnvOCRSchedulerServiceAccount.String()
+			if email == "" {
+				client.Close()
+				sched.Close()
+				return nil, fmt.Errorf("OCR_SCHEDULER_SERVICE_ACCOUNT must be set when using an external scheduler")
+			}
+			verify = ocr.OIDCVerifier(email, ocrURL)
+			target.OIDCServiceAccountEmail = email
+			target.OIDCAudience = ocrURL
+		}
 		routes[ocr.Audience] = tavernhttp.Endpoint{
-			Handler:              ocr.NewHandler(client, pubKey, vision),
+			Handler:              ocr.NewHandler(client, vision, verify),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		}
-		ocrToken, err := ocr.NewToken(privKey)
-		if err != nil {
-			client.Close()
-			sched.Close()
-			return nil, fmt.Errorf("failed to sign OCR job token: %w", err)
+		job := scheduler.Job{
+			Name:       "screenshot-ocr-poll",
+			Schedule:   hostCheckSchedule,
+			HTTPTarget: target,
 		}
-		ocrURL := strings.TrimSuffix(hostCheckURL, hostcheck.Audience) + ocr.Audience
-		if err := sched.Schedule(ctx, scheduler.Job{
-			Name:     "screenshot-ocr-poll",
-			Schedule: hostCheckSchedule,
-			HTTPTarget: scheduler.HTTPTarget{
-				URL:     ocrURL,
-				Method:  http.MethodPost,
-				Headers: map[string]string{"Authorization": "Bearer " + ocrToken},
-			},
-		}); err != nil && !errors.Is(err, scheduler.ErrJobExists) {
+		if reconciler, ok := sched.(scheduler.JobReconciler); ok {
+			err = reconciler.Ensure(ctx, job)
+		} else {
+			err = sched.Schedule(ctx, job)
+		}
+		if err != nil && !errors.Is(err, scheduler.ErrJobExists) {
 			client.Close()
 			sched.Close()
 			return nil, fmt.Errorf("failed to schedule OCR job: %w", err)
+		}
+	} else {
+		cleanupScheduler := sched
+		if cleanupURI := EnvOCRSchedulerURI.String(); cleanupURI != "" && cleanupURI != schedulerURI {
+			cleanupScheduler, err = scheduler.New(ctx, cleanupURI)
+			if err != nil {
+				client.Close()
+				sched.Close()
+				return nil, fmt.Errorf("failed to initialize OCR cleanup scheduler: %w", err)
+			}
+			defer cleanupScheduler.Close()
+		}
+		if reconciler, ok := cleanupScheduler.(scheduler.JobReconciler); ok {
+			if err := reconciler.Disable(ctx, "screenshot-ocr-poll"); err != nil {
+				client.Close()
+				sched.Close()
+				return nil, fmt.Errorf("failed to pause disabled OCR job: %w", err)
+			}
 		}
 	}
 

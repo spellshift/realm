@@ -2,52 +2,56 @@ package ocr
 
 import (
 	"context"
-	"crypto/ed25519"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"google.golang.org/api/idtoken"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/screenshot"
 )
 
 const Audience = "/internal/ocr-check"
 
-func NewToken(key ed25519.PrivateKey) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.RegisteredClaims{
-		Audience: jwt.ClaimStrings{Audience},
-	})
-	return token.SignedString(key)
-}
-
-func verifyToken(raw string, key ed25519.PublicKey) error {
-	token, err := jwt.ParseWithClaims(raw, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
-			return nil, fmt.Errorf("unexpected signing method")
-		}
-		return key, nil
-	}, jwt.WithAudience(Audience))
-	if err != nil {
-		return fmt.Errorf("invalid OCR token: %w", err)
-	}
-	if !token.Valid {
-		return fmt.Errorf("invalid OCR token")
+func VerifyLoopback(r *http.Request) error {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil || !net.ParseIP(host).IsLoopback() {
+		return fmt.Errorf("OCR worker request is not from loopback")
 	}
 	return nil
 }
 
-func NewHandler(graph *ent.Client, key ed25519.PublicKey, recognizer Recognizer) http.Handler {
+func OIDCVerifier(serviceAccountEmail, audience string) func(*http.Request) error {
+	return func(r *http.Request) error {
+		auth := strings.Fields(r.Header.Get("Authorization"))
+		if len(auth) != 2 || !strings.EqualFold(auth[0], "Bearer") {
+			return fmt.Errorf("missing OIDC bearer token")
+		}
+		claims, err := idtoken.Validate(r.Context(), auth[1], audience)
+		if err != nil {
+			return fmt.Errorf("invalid OIDC token: %w", err)
+		}
+		if claims.Issuer != "https://accounts.google.com" && claims.Issuer != "accounts.google.com" {
+			return fmt.Errorf("unexpected OIDC issuer")
+		}
+		if claims.Claims["email"] != serviceAccountEmail || claims.Claims["email_verified"] != true {
+			return fmt.Errorf("unexpected OIDC identity")
+		}
+		return nil
+	}
+}
+
+func NewHandler(graph *ent.Client, recognizer Recognizer, verify func(*http.Request) error) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		auth := strings.Fields(r.Header.Get("Authorization"))
-		if len(auth) != 2 || !strings.EqualFold(auth[0], "Bearer") || verifyToken(auth[1], key) != nil {
+		if verify(r) != nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -68,7 +72,7 @@ func processPending(ctx context.Context, graph *ent.Client, recognizer Recognize
 			screenshot.Or(screenshot.OcrLeaseUntilIsNil(), screenshot.OcrLeaseUntilLT(now)),
 		).
 		Select(screenshot.FieldID, screenshot.FieldOcrAttempts).
-		Limit(25).
+		Limit(10).
 		All(ctx)
 	if err != nil {
 		return fmt.Errorf("query pending screenshots: %w", err)
@@ -117,17 +121,17 @@ func processImage(ctx context.Context, graph *ent.Client, recognizer Recognizer,
 	if err != nil {
 		slog.ErrorContext(ctx, "screenshot OCR failed", "screenshot_id", image.ID, "attempt", image.OcrAttempts+1, "err", err)
 		if isPermanent(err) {
-			if _, saveErr := graph.Screenshot.UpdateOneID(image.ID).SetOcrRequested(false).ClearOcrLeaseUntil().Save(ctx); saveErr != nil {
+			if _, saveErr := graph.Screenshot.Update().Where(screenshot.ID(image.ID), screenshot.OcrRequested(true), screenshot.OcrAttemptsEQ(image.OcrAttempts+1)).SetOcrRequested(false).ClearOcrLeaseUntil().Save(ctx); saveErr != nil {
 				slog.ErrorContext(ctx, "failed to mark screenshot OCR as failed", "screenshot_id", image.ID, "err", saveErr)
 			}
 			return
 		}
-		if _, saveErr := graph.Screenshot.UpdateOneID(image.ID).SetOcrLeaseUntil(time.Now().Add(retryDelay(image.OcrAttempts + 1))).Save(ctx); saveErr != nil {
+		if _, saveErr := graph.Screenshot.Update().Where(screenshot.ID(image.ID), screenshot.OcrRequested(true), screenshot.OcrAttemptsEQ(image.OcrAttempts+1)).SetOcrLeaseUntil(time.Now().Add(retryDelay(image.OcrAttempts + 1))).Save(ctx); saveErr != nil {
 			slog.ErrorContext(ctx, "failed to schedule screenshot OCR retry", "screenshot_id", image.ID, "err", saveErr)
 		}
 		return
 	}
-	if _, err := graph.Screenshot.UpdateOneID(image.ID).
+	if _, err := graph.Screenshot.Update().Where(screenshot.ID(image.ID), screenshot.OcrRequested(true), screenshot.OcrAttemptsEQ(image.OcrAttempts+1)).
 		SetOcrText(text).
 		SetOcrRequested(false).
 		ClearOcrLeaseUntil().

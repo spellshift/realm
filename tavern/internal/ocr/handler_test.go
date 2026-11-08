@@ -2,8 +2,6 @@ package ocr_test
 
 import (
 	"context"
-	"crypto/ed25519"
-	"crypto/rand"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +20,17 @@ type fakeRecognizer struct {
 	calls int
 }
 
+type waitingRecognizer struct {
+	started chan struct{}
+	release chan struct{}
+}
+
+func (w *waitingRecognizer) Recognize(_ context.Context, _ []byte) (string, error) {
+	close(w.started)
+	<-w.release
+	return "stale text", nil
+}
+
 func (f *fakeRecognizer) Recognize(_ context.Context, _ []byte) (string, error) {
 	f.calls++
 	return f.text, f.err
@@ -38,19 +47,15 @@ func TestWorkerWritesOCRTextWithoutChangingImage(t *testing.T) {
 		SetContent([]byte("image data")).
 		SetOcrRequested(true).
 		SaveX(ctx)
-	pub, private, err := ed25519.GenerateKey(rand.Reader)
-	require.NoError(t, err)
-	token, err := ocr.NewToken(private)
-	require.NoError(t, err)
 	fake := &fakeRecognizer{text: "recognized text"}
-	handler := ocr.NewHandler(graph, pub, fake)
+	handler := ocr.NewHandler(graph, fake, ocr.VerifyLoopback)
 	unauthorized := httptest.NewRecorder()
 	handler.ServeHTTP(unauthorized, httptest.NewRequest(http.MethodPost, ocr.Audience, nil))
 	require.Equal(t, http.StatusUnauthorized, unauthorized.Code)
 	require.Equal(t, 0, fake.calls)
 
 	req := httptest.NewRequest(http.MethodPost, ocr.Audience, nil)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.RemoteAddr = "127.0.0.1:12345"
 	res := httptest.NewRecorder()
 	handler.ServeHTTP(res, req)
 	require.Equal(t, http.StatusOK, res.Code)
@@ -72,14 +77,10 @@ func TestWorkerRetriesFailedOCR(t *testing.T) {
 	beacon := c2test.NewRandomBeacon(ctx, graph)
 	host := beacon.QueryHost().OnlyX(ctx)
 	image := graph.Screenshot.Create().SetHost(host).SetName("screen.png").SetContent([]byte("image data")).SetOcrRequested(true).SaveX(ctx)
-	pub, private, err := ed25519.GenerateKey(rand.Reader)
-	require.NoError(t, err)
-	token, err := ocr.NewToken(private)
-	require.NoError(t, err)
 	fake := &fakeRecognizer{err: errors.New("temporary error")}
-	handler := ocr.NewHandler(graph, pub, fake)
+	handler := ocr.NewHandler(graph, fake, ocr.VerifyLoopback)
 	req := httptest.NewRequest(http.MethodPost, ocr.Audience, nil)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.RemoteAddr = "127.0.0.1:12345"
 
 	for range 4 {
 		res := httptest.NewRecorder()
@@ -103,4 +104,31 @@ func TestWorkerRetriesFailedOCR(t *testing.T) {
 	updated = graph.Screenshot.GetX(ctx, image.ID)
 	require.Equal(t, "eventually recognized", *updated.OcrText)
 	require.False(t, updated.OcrRequested)
+}
+
+func TestStaleWorkerCannotOverwriteNewClaim(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	beacon := c2test.NewRandomBeacon(ctx, graph)
+	host := beacon.QueryHost().OnlyX(ctx)
+	image := graph.Screenshot.Create().SetHost(host).SetName("screen.png").SetContent([]byte("image data")).SetOcrRequested(true).SaveX(ctx)
+	recognizer := &waitingRecognizer{started: make(chan struct{}), release: make(chan struct{})}
+	handler := ocr.NewHandler(graph, recognizer, ocr.VerifyLoopback)
+	req := httptest.NewRequest(http.MethodPost, ocr.Audience, nil)
+	req.RemoteAddr = "127.0.0.1:12345"
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+	}()
+	<-recognizer.started
+	newLease := time.Now().Add(2 * time.Minute)
+	graph.Screenshot.UpdateOneID(image.ID).AddOcrAttempts(1).SetOcrLeaseUntil(newLease).ExecX(ctx)
+	close(recognizer.release)
+	<-done
+	updated := graph.Screenshot.GetX(ctx, image.ID)
+	require.True(t, updated.OcrRequested)
+	require.Equal(t, 2, updated.OcrAttempts)
+	require.Nil(t, updated.OcrText)
+	require.WithinDuration(t, newLease, *updated.OcrLeaseUntil, time.Second)
 }

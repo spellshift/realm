@@ -30,12 +30,50 @@ func (m *mockIterator) Next() (*schedulerpb.Job, error) {
 type mockClient struct {
 	jobs    []*schedulerpb.Job
 	created []*schedulerpb.CreateJobRequest
+	updated []*schedulerpb.UpdateJobRequest
+	paused  []*schedulerpb.PauseJobRequest
+	resumed []*schedulerpb.ResumeJobRequest
 }
 
 func (m *mockClient) CreateJob(_ context.Context, req *schedulerpb.CreateJobRequest) (*schedulerpb.Job, error) {
 	m.created = append(m.created, req)
+	req.Job.State = schedulerpb.Job_ENABLED
 	m.jobs = append(m.jobs, req.GetJob())
 	return req.GetJob(), nil
+}
+
+func (m *mockClient) UpdateJob(_ context.Context, req *schedulerpb.UpdateJobRequest) (*schedulerpb.Job, error) {
+	m.updated = append(m.updated, req)
+	for i, job := range m.jobs {
+		if job.Name == req.Job.Name {
+			req.Job.State = job.State
+			m.jobs[i] = req.Job
+			break
+		}
+	}
+	return req.Job, nil
+}
+
+func (m *mockClient) PauseJob(_ context.Context, req *schedulerpb.PauseJobRequest) (*schedulerpb.Job, error) {
+	m.paused = append(m.paused, req)
+	for i, job := range m.jobs {
+		if job.Name == req.Name {
+			m.jobs[i].State = schedulerpb.Job_PAUSED
+			return m.jobs[i], nil
+		}
+	}
+	return nil, nil
+}
+
+func (m *mockClient) ResumeJob(_ context.Context, req *schedulerpb.ResumeJobRequest) (*schedulerpb.Job, error) {
+	m.resumed = append(m.resumed, req)
+	for i, job := range m.jobs {
+		if job.Name == req.Name {
+			m.jobs[i].State = schedulerpb.Job_ENABLED
+			return m.jobs[i], nil
+		}
+	}
+	return nil, nil
 }
 
 func (m *mockClient) ListJobs(_ context.Context, _ *schedulerpb.ListJobsRequest) jobIterator {
@@ -112,6 +150,40 @@ func TestScheduleDuplicate(t *testing.T) {
 	}
 	if len(mock.created) != 1 {
 		t.Fatalf("expected CreateJob not to be called again, got %d calls", len(mock.created))
+	}
+}
+
+func TestEnsureReconcilesOIDCJob(t *testing.T) {
+	mock := &mockClient{}
+	s := &Scheduler{client: mock, parent: "projects/test-proj/locations/us-central1"}
+	job := scheduler.Job{Name: "screenshot-ocr-poll", Schedule: "* * * * *", HTTPTarget: scheduler.HTTPTarget{
+		URL: "https://old.example/internal/ocr-check", Method: "POST", OIDCServiceAccountEmail: "ocr@example.iam.gserviceaccount.com", OIDCAudience: "https://old.example/internal/ocr-check",
+	}}
+	if err := s.Ensure(context.Background(), job); err != nil {
+		t.Fatal(err)
+	}
+	if len(mock.created) != 1 || mock.jobs[0].GetHttpTarget().GetOidcToken().GetServiceAccountEmail() != job.HTTPTarget.OIDCServiceAccountEmail {
+		t.Fatal("expected OIDC job to be created")
+	}
+	job.HTTPTarget.URL = "https://new.example/internal/ocr-check"
+	job.HTTPTarget.OIDCAudience = job.HTTPTarget.URL
+	if err := s.Ensure(context.Background(), job); err != nil {
+		t.Fatal(err)
+	}
+	if len(mock.updated) != 1 || mock.jobs[0].GetHttpTarget().GetUri() != job.HTTPTarget.URL || mock.jobs[0].GetHttpTarget().GetOidcToken().GetAudience() != job.HTTPTarget.OIDCAudience {
+		t.Fatal("expected existing OIDC job target to be updated")
+	}
+	if err := s.Disable(context.Background(), job.Name); err != nil {
+		t.Fatal(err)
+	}
+	if len(mock.paused) != 1 || mock.jobs[0].GetState() != schedulerpb.Job_PAUSED {
+		t.Fatal("expected job to be paused")
+	}
+	if err := s.Ensure(context.Background(), job); err != nil {
+		t.Fatal(err)
+	}
+	if len(mock.resumed) != 1 || mock.jobs[0].GetState() != schedulerpb.Job_ENABLED {
+		t.Fatal("expected job to be resumed")
 	}
 }
 
