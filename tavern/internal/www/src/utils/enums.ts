@@ -15,6 +15,7 @@ export enum PageNavItem {
     admin="Admin",
     processes="Processes",
     files="Files",
+    credentials="Credentials",
     agentBuilder="Agent Builder"
 }
 export enum SupportedPlatforms {
@@ -132,6 +133,12 @@ export enum HostFileOrderField {
     LastModifiedAt = "LAST_MODIFIED_AT",
     Name = "NAME",
     Size = "SIZE",
+}
+
+export enum HostCredentialOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Principal = "PRINCIPAL",
 }
 
 export enum RepositoryOrderField {
