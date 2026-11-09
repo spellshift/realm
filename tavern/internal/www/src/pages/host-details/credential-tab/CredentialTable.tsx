@@ -4,7 +4,7 @@ import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Tooltip from "../../../components/tavern-base-ui/Tooltip";
 import { VirtualizedTable } from "../../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../../components/tavern-base-ui/virtualized-table/types";
-import { GET_CREDENTIAL_DETAIL_QUERY } from "../../../utils/queries";
+import { GET_HOST_CREDENTIALS } from "../../../utils/queries";
 import { CredentialNode, HostCredentialsQueryTopLevel } from "../../../utils/interfacesQuery";
 import Credential from "./Credential";
 
@@ -35,8 +35,8 @@ const CredentialTable = ({ hostId, data, showLastModified = false }: CredentialT
 
     const getVariables = useCallback(
         (id: string) => ({
-            hostId: hostId !== undefined ? String(hostId) : "",
-            credentialId: id,
+            where: hostId !== undefined ? { id: hostId } : undefined,
+            credentialWhere: { id },
         }),
         [hostId]
     );
@@ -121,7 +121,7 @@ const CredentialTable = ({ hostId, data, showLastModified = false }: CredentialT
         <VirtualizedTable<CredentialNode, HostCredentialsQueryTopLevel>
             items={items}
             columns={columns}
-            query={GET_CREDENTIAL_DETAIL_QUERY}
+            query={GET_HOST_CREDENTIALS}
             getVariables={getVariables}
             extractData={extractData}
             height="60vh"

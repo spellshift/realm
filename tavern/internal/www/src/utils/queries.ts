@@ -435,29 +435,6 @@ export const GET_HOST_CREDENTIALS = gql`
         }
 }`;
 
-export const GET_CREDENTIAL_DETAIL_QUERY = gql`
-    query GetCredentialDetail($hostId: ID!, $credentialId: ID!) {
-        hosts(where: { id: $hostId }) {
-            edges {
-                node {
-                    credentials(where: { id: $credentialId }, first: 1) {
-                        edges {
-                            node {
-                                id
-                                createdAt
-                                lastModifiedAt
-                                principal
-                                kind
-                                secret
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-`;
-
 export const GET_BEACON_IDS_QUERY = gql`
     query GetBeaconIds(
         $where: BeaconWhereInput
