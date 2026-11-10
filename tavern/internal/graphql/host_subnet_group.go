@@ -1,0 +1,71 @@
+package graphql
+
+import (
+	"context"
+	"fmt"
+	"sort"
+
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/tag"
+)
+
+// groupHostsBySubnet creates or refreshes group tags for hosts with a reported subnet.
+func groupHostsBySubnet(ctx context.Context, client *ent.Client) ([]*ent.Tag, error) {
+	hosts, err := client.Host.Query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query hosts: %w", err)
+	}
+
+	bySubnet := make(map[string][]int)
+	for _, h := range hosts {
+		if h.Subnet == "" {
+			continue
+		}
+		bySubnet[h.Subnet] = append(bySubnet[h.Subnet], h.ID)
+	}
+
+	subnets := make([]string, 0, len(bySubnet))
+	for subnet := range bySubnet {
+		subnets = append(subnets, subnet)
+	}
+	sort.Strings(subnets)
+	if len(subnets) == 0 {
+		return []*ent.Tag{}, nil
+	}
+
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize transaction: %w", err)
+	}
+	createdOrUpdatedIDs := make([]int, 0, len(subnets))
+	for _, subnet := range subnets {
+		name := "Subnet: " + subnet
+		existing, err := tx.Tag.Query().Where(tag.Name(name)).Only(ctx)
+		if err != nil && !ent.IsNotFound(err) {
+			return nil, rollback(tx, fmt.Errorf("failed to query tag %q: %w", name, err))
+		}
+		if existing != nil {
+			if existing.Kind != tag.KindGroup {
+				return nil, rollback(tx, fmt.Errorf("tag %q already exists with kind %q", name, existing.Kind))
+			}
+			if _, err := existing.Update().ClearHosts().AddHostIDs(bySubnet[subnet]...).Save(ctx); err != nil {
+				return nil, rollback(tx, fmt.Errorf("failed to update tag %q: %w", name, err))
+			}
+			createdOrUpdatedIDs = append(createdOrUpdatedIDs, existing.ID)
+			continue
+		}
+		created, err := tx.Tag.Create().
+			SetName(name).
+			SetKind(tag.KindGroup).
+			AddHostIDs(bySubnet[subnet]...).
+			Save(ctx)
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to create tag %q: %w", name, err))
+		}
+		createdOrUpdatedIDs = append(createdOrUpdatedIDs, created.ID)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+	}
+	return client.Tag.Query().Where(tag.IDIn(createdOrUpdatedIDs...)).Order(ent.Asc(tag.FieldName)).All(ctx)
+}

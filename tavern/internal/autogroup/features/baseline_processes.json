@@ -1,0 +1,748 @@
+{
+  "PLATFORM_BSD": [
+    {
+      "process": "/usr/sbin/sshd",
+      "host_pct": 1.0,
+      "host_count": 30,
+      "total_hosts": 30
+    },
+    {
+      "process": "/sbin/devd",
+      "host_pct": 1.0,
+      "host_count": 30,
+      "total_hosts": 30
+    },
+    {
+      "process": "/usr/libexec/getty",
+      "host_pct": 1.0,
+      "host_count": 30,
+      "total_hosts": 30
+    },
+    {
+      "process": "/sbin/init",
+      "host_pct": 1.0,
+      "host_count": 30,
+      "total_hosts": 30
+    },
+    {
+      "process": "/usr/sbin/cron",
+      "host_pct": 0.9667,
+      "host_count": 29,
+      "total_hosts": 30
+    },
+    {
+      "process": "/usr/sbin/daemon",
+      "host_pct": 0.9667,
+      "host_count": 29,
+      "total_hosts": 30
+    },
+    {
+      "process": "/usr/sbin/syslogd",
+      "host_pct": 0.9,
+      "host_count": 27,
+      "total_hosts": 30
+    }
+  ],
+  "PLATFORM_LINUX": [
+    {
+      "process": "cpuhp/0",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "cpuhp/1",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "kcompactd0",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "kdevtmpfs",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "ksoftirqd/0",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "ksoftirqd/1",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "kthreadd",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "migration/0",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "migration/1",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "oom_reaper",
+      "host_pct": 0.952,
+      "host_count": 317,
+      "total_hosts": 333
+    },
+    {
+      "process": "/usr/lib/systemd/systemd-journald",
+      "host_pct": 0.9369,
+      "host_count": 312,
+      "total_hosts": 333
+    },
+    {
+      "process": "kswapd0",
+      "host_pct": 0.9249,
+      "host_count": 308,
+      "total_hosts": 333
+    },
+    {
+      "process": "/usr/bin/udevadm",
+      "host_pct": 0.9219,
+      "host_count": 307,
+      "total_hosts": 333
+    },
+    {
+      "process": "/usr/lib/systemd/systemd-logind",
+      "host_pct": 0.9099,
+      "host_count": 303,
+      "total_hosts": 333
+    }
+  ],
+  "PLATFORM_UNSPECIFIED": [
+    {
+      "process": "accounts-daemon",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "asr-notify",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "at-spi-bus-laun",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "at-spi2-registr",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "auditd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "automountd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "colord",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "console-kit-dae",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "coremond",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "cron",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "dbus-daemon",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "dbus-launch",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "devchassisd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "devfsadm",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "dhcpagent",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "dlmgmtd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "fmd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "fsflush",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gam_server",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gdm-session-wor",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gjs-console",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-a11y-settin",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-color",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-datetime",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-housekeepin",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-keyboard",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-media-keys",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-power",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-print-notif",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-printer",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-screensaver",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-sharing",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-smartcard",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gsd-sound",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gssd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "hald",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "hald-addon-stor",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "hald-runner",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "hotplugd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "httpd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ibmgmtd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ibus-daemon",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ibus-dconf",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ibus-engine-sim",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ibus-portal",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ibus-x11",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "in.mpathd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "in.ndpd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "inetd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "init",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "intrd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ipmgmtd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "iscsid",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "kcfd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "kmem_task",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "labeld",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "local-cfg",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "mutter-x11-fram",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "nginx",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "nscd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "nwamd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "pageout",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "pfexecd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "picld",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "polkitd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "postwaittq",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "pulseaudio",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "rmvolmgr",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "rotatelogs",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "rpcbind",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "rsyslogd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "sched",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "sendmail",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "smbclntd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "smtp-notify",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "sstored",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "svc.configd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "svc.zones",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "syseventd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "sysobjd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "ttymon",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "utmpd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "vbiosd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "vmtasks",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "vtdaemon",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "zfs_tasks",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "zonestatd",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "zpool-rpool",
+      "host_pct": 1.0,
+      "host_count": 18,
+      "total_hosts": 18
+    },
+    {
+      "process": "gnome-shell",
+      "host_pct": 0.9444,
+      "host_count": 17,
+      "total_hosts": 18
+    }
+  ],
+  "PLATFORM_WINDOWS": [
+    {
+      "process": "c:\\\\windows\\\\system32\\\\csrss.exe",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "idle",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\lsass.exe",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\services.exe",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\smss.exe",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\svchost.exe",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "system",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\wininit.exe",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\winlogon.exe",
+      "host_pct": 1.0,
+      "host_count": 259,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\wbem\\\\wmiprvse.exe",
+      "host_pct": 0.9923,
+      "host_count": 257,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\conhost.exe",
+      "host_pct": 0.9768,
+      "host_count": 253,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\dwm.exe",
+      "host_pct": 0.9575,
+      "host_count": 248,
+      "total_hosts": 259
+    },
+    {
+      "process": "c:\\\\windows\\\\system32\\\\logonui.exe",
+      "host_pct": 0.9073,
+      "host_count": 235,
+      "total_hosts": 259
+    }
+  ]
+}

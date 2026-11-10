@@ -81,6 +81,11 @@ func PrimaryIP(v string) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldPrimaryIP, v))
 }
 
+// Subnet applies equality check predicate on the "subnet" field. It's identical to SubnetEQ.
+func Subnet(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldSubnet, v))
+}
+
 // ExternalIP applies equality check predicate on the "external_ip" field. It's identical to ExternalIPEQ.
 func ExternalIP(v string) predicate.Host {
 	return predicate.Host(sql.FieldEQ(FieldExternalIP, v))
@@ -389,6 +394,81 @@ func PrimaryIPEqualFold(v string) predicate.Host {
 // PrimaryIPContainsFold applies the ContainsFold predicate on the "primary_ip" field.
 func PrimaryIPContainsFold(v string) predicate.Host {
 	return predicate.Host(sql.FieldContainsFold(FieldPrimaryIP, v))
+}
+
+// SubnetEQ applies the EQ predicate on the "subnet" field.
+func SubnetEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldEQ(FieldSubnet, v))
+}
+
+// SubnetNEQ applies the NEQ predicate on the "subnet" field.
+func SubnetNEQ(v string) predicate.Host {
+	return predicate.Host(sql.FieldNEQ(FieldSubnet, v))
+}
+
+// SubnetIn applies the In predicate on the "subnet" field.
+func SubnetIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldIn(FieldSubnet, vs...))
+}
+
+// SubnetNotIn applies the NotIn predicate on the "subnet" field.
+func SubnetNotIn(vs ...string) predicate.Host {
+	return predicate.Host(sql.FieldNotIn(FieldSubnet, vs...))
+}
+
+// SubnetGT applies the GT predicate on the "subnet" field.
+func SubnetGT(v string) predicate.Host {
+	return predicate.Host(sql.FieldGT(FieldSubnet, v))
+}
+
+// SubnetGTE applies the GTE predicate on the "subnet" field.
+func SubnetGTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldGTE(FieldSubnet, v))
+}
+
+// SubnetLT applies the LT predicate on the "subnet" field.
+func SubnetLT(v string) predicate.Host {
+	return predicate.Host(sql.FieldLT(FieldSubnet, v))
+}
+
+// SubnetLTE applies the LTE predicate on the "subnet" field.
+func SubnetLTE(v string) predicate.Host {
+	return predicate.Host(sql.FieldLTE(FieldSubnet, v))
+}
+
+// SubnetContains applies the Contains predicate on the "subnet" field.
+func SubnetContains(v string) predicate.Host {
+	return predicate.Host(sql.FieldContains(FieldSubnet, v))
+}
+
+// SubnetHasPrefix applies the HasPrefix predicate on the "subnet" field.
+func SubnetHasPrefix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasPrefix(FieldSubnet, v))
+}
+
+// SubnetHasSuffix applies the HasSuffix predicate on the "subnet" field.
+func SubnetHasSuffix(v string) predicate.Host {
+	return predicate.Host(sql.FieldHasSuffix(FieldSubnet, v))
+}
+
+// SubnetIsNil applies the IsNil predicate on the "subnet" field.
+func SubnetIsNil() predicate.Host {
+	return predicate.Host(sql.FieldIsNull(FieldSubnet))
+}
+
+// SubnetNotNil applies the NotNil predicate on the "subnet" field.
+func SubnetNotNil() predicate.Host {
+	return predicate.Host(sql.FieldNotNull(FieldSubnet))
+}
+
+// SubnetEqualFold applies the EqualFold predicate on the "subnet" field.
+func SubnetEqualFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldEqualFold(FieldSubnet, v))
+}
+
+// SubnetContainsFold applies the ContainsFold predicate on the "subnet" field.
+func SubnetContainsFold(v string) predicate.Host {
+	return predicate.Host(sql.FieldContainsFold(FieldSubnet, v))
 }
 
 // ExternalIPEQ applies the EQ predicate on the "external_ip" field.

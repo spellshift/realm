@@ -218,6 +218,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if req.Beacon.Host.PrimaryIp != "" {
 		hostCreate.SetPrimaryIP(req.Beacon.Host.PrimaryIp)
 	}
+	if req.Beacon.Host.Subnet != "" {
+		hostCreate.SetSubnet(req.Beacon.Host.Subnet)
+	}
 
 	// Only update external IP if it's not NOOP
 	if clientIP != redirectors.ExternalIPNoop {

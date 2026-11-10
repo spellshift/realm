@@ -67,6 +67,7 @@ message Host {
 
     Platform platform = 3;
     string primary_ip = 4;
+    string subnet = 5;
 }
 
 

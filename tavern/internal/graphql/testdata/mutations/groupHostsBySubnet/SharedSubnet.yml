@@ -1,0 +1,20 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `hosts` (id, identifier, platform, primary_ip, subnet, created_at, last_modified_at)
+    VALUES (1010,"host-a","PLATFORM_LINUX","10.1.2.10","10.1.2.0/24","2024-01-22 14:51:13","2024-01-22 14:51:13");
+  INSERT INTO `hosts` (id, identifier, platform, primary_ip, subnet, created_at, last_modified_at)
+    VALUES (1011,"host-b","PLATFORM_LINUX","10.1.2.11","10.1.2.0/24","2024-01-22 14:51:13","2024-01-22 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation GroupHostsBySubnet {
+    groupHostsBySubnet {
+      name
+      kind
+    }
+  }
+expected:
+  groupHostsBySubnet:
+    - name: "Subnet: 10.1.2.0/24"
+      kind: "group"

