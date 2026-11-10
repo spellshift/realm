@@ -52,7 +52,7 @@ const ScreenshotsTab = () => {
                     <img src={imageURL(screenshot.id)} alt="" loading="lazy" className="w-16 h-11 object-contain bg-gray-100 rounded-sm shrink-0" />
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-xs text-gray-900" title={screenshot.name}>{screenshot.name}</span>
-                        <span className="block truncate text-xs text-gray-500">{capturedAt(screenshot.createdAt)} · {formatBytes(screenshot.size)}</span>
+                        <span className="block truncate text-xs text-gray-600">{capturedAt(screenshot.createdAt)} · {formatBytes(screenshot.size)}</span>
                     </span>
                 </button>
                 <Tooltip label={`Download ${screenshot.name}`}>
@@ -92,8 +92,8 @@ const ScreenshotsTab = () => {
             )}
 
             {!error && screenshots.length > 0 && selected && (
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,300px)_minmax(0,1fr)] gap-4 min-h-[60vh]">
-                    <div className="border border-gray-200 rounded-md overflow-hidden flex flex-col min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,300px)_minmax(0,1fr)] gap-4 lg:min-h-[60vh] [--screenshot-list-height:min(25dvh,220px)] lg:[--screenshot-list-height:60vh] [--screenshot-list-min-height:0px] lg:[--screenshot-list-min-height:320px]">
+                    <div className="order-2 lg:order-1 border border-gray-200 rounded-md overflow-hidden flex flex-col min-h-0">
                         <VirtualizedCardList
                             items={screenshotIds}
                             renderCard={renderThumbnail}
@@ -103,12 +103,12 @@ const ScreenshotsTab = () => {
                             dynamicSizing={false}
                             gap={0}
                             padding="0"
-                            height="60vh"
-                            minHeight="320px"
+                            height="var(--screenshot-list-height)"
+                            minHeight="var(--screenshot-list-min-height)"
                         />
                     </div>
 
-                    <div className="border border-gray-200 rounded-md overflow-hidden flex flex-col min-w-0 h-[60vh] min-h-[320px]">
+                    <div className="order-1 lg:order-2 border border-gray-200 rounded-md overflow-hidden flex flex-col min-w-0 h-[30dvh] min-h-[220px] lg:h-[60vh] lg:min-h-[320px]">
                         <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-200 text-sm">
                             <span className="truncate font-medium text-gray-900" title={selected.name}>{selected.name}</span>
                             <div className="flex items-center gap-1 shrink-0">
