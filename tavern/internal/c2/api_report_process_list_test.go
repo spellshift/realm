@@ -18,13 +18,15 @@ import (
 
 func TestReportProcessList(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
 
 	// Test Data
 	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
 	existingTask := c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier)
+	token := mintJWT(existingBeacon.ID)
+	foreignToken := mintJWT(c2test.NewRandomBeacon(ctx, graph).ID)
 	existingHost := existingBeacon.QueryHost().OnlyX(ctx)
 
 	// Test Cases
@@ -123,6 +125,16 @@ func TestReportProcessList(t *testing.T) {
 				},
 			},
 			wantResp: nil,
+			wantCode: codes.NotFound,
+		},
+		{
+			name: "Foreign_Beacon",
+			req: &c2pb.ReportProcessListRequest{
+				Context: &c2pb.ReportProcessListRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: foreignToken},
+				},
+				List: &epb.ProcessList{List: []*epb.Process{{Pid: 999, Name: "denied"}}},
+			},
 			wantCode: codes.NotFound,
 		},
 	}

@@ -450,7 +450,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 
 		// Generate JWT with beacon ID
-		jwtToken, err := srv.generateTaskJWT()
+		jwtToken, err := srv.generateTaskJWT(beaconID)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to generate JWT for task (id=%d): %w", taskID, err))
 		}
@@ -479,7 +479,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 
 		// Generate JWT for ShellTask
-		shellJwtToken, err := srv.generateTaskJWT()
+		shellJwtToken, err := srv.generateTaskJWT(beaconID)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to generate JWT for shell task (id=%d): %w", shellTaskID, err))
 		}
