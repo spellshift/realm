@@ -21,6 +21,14 @@ export const TagSummaryCard: FC = () => {
     const { rows, hostCount, loading, error } = useTagSummaryData(tagKind);
     const columns = useTagSummaryColumns();
     const { data: authorization } = useAuthorization();
+    let emptyDetails = hostCount === 0
+        ? "Ask an admin to generate and deploy an agent."
+        : "Ask an admin to assign tags.";
+    if (authorization?.me?.isAdmin) {
+        emptyDetails = hostCount === 0
+            ? "Add a host before auto tagging."
+            : "Organize hosts into groups and services.";
+    }
     const {
         applyAutoTags,
         busyAction,
@@ -66,9 +74,7 @@ export const TagSummaryCard: FC = () => {
                     <EmptyState
                         type={EmptyStateType.noData}
                         label={hostCount === 0 ? "No hosts found" : `No ${tagKind} tags found`}
-                        details={authorization?.me?.isAdmin
-                            ? (hostCount === 0 ? "Add a host before auto tagging." : "Organize hosts into groups and services.")
-                            : undefined}
+                        details={emptyDetails}
                     >
                         {authorization?.me?.isAdmin && (
                             <Button
