@@ -94,35 +94,54 @@ export const TagSummaryCard: FC = () => {
                             <h2 className="text-lg font-semibold text-gray-900">Auto tagging options</h2>
                             <p className="mt-1 text-sm text-gray-600">Choose which tags to apply to your hosts.</p>
                         </div>
-                        <div className="flex flex-col gap-3">
-                            <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeGroups ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <Field className={`relative rounded-md border ${includeGroups ? "border-purple-200 bg-purple-50" : "border-gray-200 bg-white"}`}>
                                 <Checkbox
                                     checked={includeGroups}
                                     onChange={setIncludeGroups}
                                     disabled={busyAction !== null}
-                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
+                                    className={`absolute right-4 top-4 z-10 flex h-4 w-4 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
                                 >
                                     {includeGroups && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
                                 </Checkbox>
-                                <div className="flex flex-col">
-                                    <Label className="text-sm font-medium text-gray-900">Groups</Label>
-                                    <Description className="text-xs text-gray-500">Refresh group tags</Description>
-                                </div>
+                                <Label className="flex h-full cursor-pointer flex-col gap-2 p-3">
+                                    <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
+                                        <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
+                                            <path d="M15 22h28m13 0h26m12 0h12" />
+                                            <circle cx="12" cy="22" r="7" fill="white" />
+                                            <circle cx="50" cy="22" r="7" fill="white" />
+                                            <circle cx="89" cy="22" r="7" fill="white" />
+                                            <circle cx="110" cy="22" r="7" fill="white" />
+                                        </svg>
+                                    </span>
+                                    <span className="text-sm font-medium text-gray-900">Group by subnet</span>
+                                    <Description as="span" className="text-xs text-gray-500">Hosts on the same reported subnet get one group tag.</Description>
+                                </Label>
                             </Field>
-                            <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeServices ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
+                            <Field className={`relative rounded-md border ${includeServices ? "border-purple-200 bg-purple-50" : "border-gray-200 bg-white"}`}>
                                 <Checkbox
                                     checked={includeServices}
                                     onChange={setIncludeServices}
                                     disabled={busyAction !== null}
-                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
+                                    className={`absolute right-4 top-4 z-10 flex h-4 w-4 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
                                 >
                                     {includeServices && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
                                 </Checkbox>
-                                <div className="flex flex-col">
-                                    <Label className="text-sm font-medium text-gray-900">Services</Label>
-                                    <Description className="text-xs text-gray-500">Create service tags</Description>
-                                </div>
+                                <Label className="flex h-full cursor-pointer flex-col gap-2 p-3">
+                                    <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
+                                        <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
+                                            <rect x="5" y="8" width="29" height="29" rx="5" fill="white" />
+                                            <rect x="45" y="8" width="29" height="29" rx="5" fill="white" />
+                                            <rect x="85" y="8" width="29" height="29" rx="5" fill="white" />
+                                            <path d="M13 16h13M13 22h10M53 16h13M53 22h10M93 16h13M93 22h10" />
+                                        </svg>
+                                    </span>
+                                    <span className="text-sm font-medium text-gray-900">Cluster by processes</span>
+                                    <Description as="span" className="text-xs text-gray-500">Process list data creates service tags for similar hosts.</Description>
+                                </Label>
                             </Field>
+                        </div>
+                        <div>
                             {includeServices && (
                                 <Field className="flex flex-col gap-1">
                                     <Label className="text-sm font-medium text-gray-900">Number of service tags (optional)</Label>
