@@ -154,7 +154,7 @@ export const TagSummaryCard: FC = () => {
                                     if (await applyAutoTags(action)) setAutoTagOpen(false);
                                 }}
                             >
-                                Confirm auto tag
+                                Confirm
                             </Button>
                         </div>
                     </div>
