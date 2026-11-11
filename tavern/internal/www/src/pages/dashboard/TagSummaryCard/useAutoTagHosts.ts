@@ -3,7 +3,7 @@ import { useApolloClient, useMutation } from "@apollo/client";
 import { useToast } from "@chakra-ui/react";
 import { GROUP_HOSTS_BY_SUBNET, RUN_HOST_AUTOGROUP } from "./queries";
 
-export type AutoTagAction = "groups" | "services" | "both" | "both-custom";
+export type AutoTagAction = "groups" | "services" | "both";
 
 export const useAutoTagHosts = (hostCount: number) => {
     const [serviceCountInput, setServiceCountInput] = useState("");
@@ -21,7 +21,7 @@ export const useAutoTagHosts = (hostCount: number) => {
         if (hostCount === 0) return false;
         const hasCount = serviceCountInput.trim() !== "";
         const k = Number(serviceCountInput);
-        if (action !== "both" && action !== "groups" && hasCount && (!Number.isInteger(k) || k < 1 || k > 2147483647)) {
+        if (action !== "groups" && hasCount && (!Number.isInteger(k) || k < 1 || k > 2147483647)) {
             toast({ title: "Enter a positive whole number of service tags", status: "error", duration: 4000, isClosable: true });
             return false;
         }
@@ -31,12 +31,12 @@ export const useAutoTagHosts = (hostCount: number) => {
         let serviceCount = 0;
         let succeeded = false;
         try {
-            if (action === "groups" || action === "both" || action === "both-custom") {
+            if (action === "groups" || action === "both") {
                 const result = await groupBySubnet();
                 groupCount = result.data?.groupHostsBySubnet?.length ?? 0;
             }
             if (action !== "groups") {
-                const result = await runHostAutogroup({ variables: { k: action === "both" || !hasCount ? null : k } });
+                const result = await runHostAutogroup({ variables: { k: hasCount ? k : null } });
                 serviceCount = result.data?.runHostAutogroup?.length ?? 0;
             }
             toast({

@@ -1,7 +1,8 @@
 import { FC, useState } from "react";
-import { Checkbox, Description, Field, Input, Label, Popover, PopoverButton, PopoverPanel, Tab, TabGroup, TabList } from "@headlessui/react";
-import { Check, ChevronDown, Tags } from "lucide-react";
+import { Checkbox, Description, Field, Input, Label, Tab, TabGroup, TabList } from "@headlessui/react";
+import { Check, Tags } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import Modal from "../../../components/tavern-base-ui/Modal";
 import { Table } from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { useAuthorization } from "../../../context/AuthorizationContext";
@@ -15,6 +16,7 @@ const TAB_LABELS = ["Group", "Service"];
 
 export const TagSummaryCard: FC = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [autoTagOpen, setAutoTagOpen] = useState(false);
     const tagKind = TAB_KINDS[selectedIndex];
     const { rows, hostCount, loading, error } = useTagSummaryData(tagKind);
     const columns = useTagSummaryColumns();
@@ -69,96 +71,14 @@ export const TagSummaryCard: FC = () => {
                             : undefined}
                     >
                         {authorization?.me?.isAdmin && (
-                            <Popover className="relative flex items-center justify-center">
-                                <Button
-                                    leftIcon={<Tags className="w-5 h-5" />}
-                                    buttonStyle={{ color: "purple", size: "md" }}
-                                    className="rounded-r-none"
-                                    disabled={autoTagDisabled}
-                                    isLoading={busyAction === "both"}
-                                    onClick={() => applyAutoTags("both")}
-                                >
-                                    Auto tag all
-                                </Button>
-                                <PopoverButton
-                                    as={Button}
-                                    aria-label="Advanced auto tag options"
-                                    buttonStyle={{ color: "purple", size: "md", xPadding: "xs" }}
-                                    className="rounded-l-none border-l border-purple-400"
-                                    disabled={autoTagDisabled}
-                                    leftIcon={<ChevronDown className="w-5 h-5" />}
-                                />
-                                <PopoverPanel className="absolute bottom-full left-1/2 z-50 mb-2 w-80 -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-                                    {({ close }) => (
-                                        <div className="flex flex-col gap-3">
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-900">Auto tagging options</p>
-                                                <p className="text-xs text-gray-500">Choose which tags to apply.</p>
-                                            </div>
-                                            <div className="flex flex-col gap-2">
-                                                <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeGroups ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
-                                                    <Checkbox
-                                                        checked={includeGroups}
-                                                        onChange={setIncludeGroups}
-                                                        disabled={busyAction !== null}
-                                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
-                                                    >
-                                                        {includeGroups && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                                                    </Checkbox>
-                                                    <div className="flex flex-col">
-                                                        <Label className="text-sm font-medium text-gray-900">Groups</Label>
-                                                        <Description className="text-xs text-gray-500">Refresh group tags</Description>
-                                                    </div>
-                                                </Field>
-                                                <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeServices ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
-                                                    <Checkbox
-                                                        checked={includeServices}
-                                                        onChange={setIncludeServices}
-                                                        disabled={busyAction !== null}
-                                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
-                                                    >
-                                                        {includeServices && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                                                    </Checkbox>
-                                                    <div className="flex flex-col">
-                                                        <Label className="text-sm font-medium text-gray-900">Services</Label>
-                                                        <Description className="text-xs text-gray-500">Create service tags</Description>
-                                                    </div>
-                                                </Field>
-                                            </div>
-                                            {includeServices && (
-                                                <Field className="flex flex-col gap-1">
-                                                    <Label className="text-sm font-medium text-gray-900">Number of service tags (optional)</Label>
-                                                    <Input
-                                                        id="autoTagServiceCount"
-                                                        type="number"
-                                                        min={1}
-                                                        step={1}
-                                                        placeholder="Leave blank for automatic"
-                                                        value={serviceCountInput}
-                                                        onChange={(event) => setServiceCountInput(event.target.value)}
-                                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                                                    />
-                                                </Field>
-                                            )}
-                                            <div className="flex justify-end">
-                                                <Button
-                                                    buttonStyle={{ color: "purple", size: "sm" }}
-                                                    disabled={autoTagDisabled || (!includeGroups && !includeServices)}
-                                                    isLoading={busyAction !== null}
-                                                    onClick={async () => {
-                                                        const action: AutoTagAction = includeGroups
-                                                            ? (includeServices ? "both-custom" : "groups")
-                                                            : "services";
-                                                        if (await applyAutoTags(action)) close();
-                                                    }}
-                                                >
-                                                    Run selected
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </PopoverPanel>
-                            </Popover>
+                            <Button
+                                leftIcon={<Tags className="w-5 h-5" />}
+                                buttonStyle={{ color: "purple", size: "md" }}
+                                disabled={autoTagDisabled}
+                                onClick={() => setAutoTagOpen(true)}
+                            >
+                                Auto tag
+                            </Button>
                         )}
                     </EmptyState>
                 </div>
@@ -166,6 +86,79 @@ export const TagSummaryCard: FC = () => {
                 <div className="h-72 w-full overflow-x-scroll">
                     <Table columns={columns} data={rows} initialSorting={[{ id: "tagName", desc: false }]} />
                 </div>
+            )}
+            {authorization?.me?.isAdmin && (
+                <Modal isOpen={autoTagOpen} setOpen={setAutoTagOpen} size="sm">
+                    <div className="flex h-full flex-col gap-6">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-900">Auto tagging options</h2>
+                            <p className="mt-1 text-sm text-gray-600">Choose which tags to apply to your hosts.</p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeGroups ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
+                                <Checkbox
+                                    checked={includeGroups}
+                                    onChange={setIncludeGroups}
+                                    disabled={busyAction !== null}
+                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
+                                >
+                                    {includeGroups && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                                </Checkbox>
+                                <div className="flex flex-col">
+                                    <Label className="text-sm font-medium text-gray-900">Groups</Label>
+                                    <Description className="text-xs text-gray-500">Refresh group tags</Description>
+                                </div>
+                            </Field>
+                            <Field className={`flex items-center gap-3 rounded-md border p-3 ${includeServices ? "border-purple-200 bg-purple-50" : "border-gray-200"}`}>
+                                <Checkbox
+                                    checked={includeServices}
+                                    onChange={setIncludeServices}
+                                    disabled={busyAction !== null}
+                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
+                                >
+                                    {includeServices && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                                </Checkbox>
+                                <div className="flex flex-col">
+                                    <Label className="text-sm font-medium text-gray-900">Services</Label>
+                                    <Description className="text-xs text-gray-500">Create service tags</Description>
+                                </div>
+                            </Field>
+                            {includeServices && (
+                                <Field className="flex flex-col gap-1">
+                                    <Label className="text-sm font-medium text-gray-900">Number of service tags (optional)</Label>
+                                    <Input
+                                        id="autoTagServiceCount"
+                                        type="number"
+                                        min={1}
+                                        step={1}
+                                        placeholder="Leave blank for automatic"
+                                        value={serviceCountInput}
+                                        onChange={(event) => setServiceCountInput(event.target.value)}
+                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                    />
+                                </Field>
+                            )}
+                        </div>
+                        <div className="mt-auto flex justify-end gap-2">
+                            <Button buttonVariant="ghost" buttonStyle={{ color: "gray", size: "md" }} disabled={busyAction !== null} onClick={() => setAutoTagOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                buttonStyle={{ color: "purple", size: "md" }}
+                                disabled={autoTagDisabled || (!includeGroups && !includeServices)}
+                                isLoading={busyAction !== null}
+                                onClick={async () => {
+                                    const action: AutoTagAction = includeGroups
+                                        ? (includeServices ? "both" : "groups")
+                                        : "services";
+                                    if (await applyAutoTags(action)) setAutoTagOpen(false);
+                                }}
+                            >
+                                Confirm auto tag
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
             )}
         </div>
     );
