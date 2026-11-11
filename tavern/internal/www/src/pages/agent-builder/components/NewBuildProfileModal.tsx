@@ -19,7 +19,7 @@ export const NewBuildProfileModal: FC<NewBuildProfileModalProps> = ({
     onSave,
 }) => {
     return (
-        <Modal isOpen={isOpen} setOpen={setOpen} size="lg">
+        <Modal isOpen={isOpen} setOpen={setOpen} size="xl">
             <div className="flex flex-col gap-4 pb-6" data-testid="new-profile-modal">
                 <NewBuildProfile
                     catalog={catalog}
