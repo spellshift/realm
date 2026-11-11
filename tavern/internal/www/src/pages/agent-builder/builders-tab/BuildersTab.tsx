@@ -1,5 +1,4 @@
 import { ApolloError } from "@apollo/client";
-import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
@@ -13,13 +12,13 @@ export const BuildersTab = ({
     builders,
     loading,
     error,
+    onEnroll,
 }: {
     builders: Builder[];
     loading: boolean;
     error?: ApolloError;
+    onEnroll: () => void;
 }) => {
-    const navigate = useNavigate();
-    const enroll = () => navigate("/admin/builders/enroll");
 
     return (
         <div className="flex flex-col gap-2">
@@ -33,7 +32,7 @@ export const BuildersTab = ({
                         buttonVariant="ghost"
                         buttonStyle={{ color: "gray", size: "sm" }}
                         leftIcon={<Plus className="w-4 h-4" />}
-                        onClick={enroll}
+                        onClick={onEnroll}
                     >
                         Enroll builder
                     </Button>
@@ -52,7 +51,7 @@ export const BuildersTab = ({
                         <Button
                             leftIcon={<Plus className="w-4 h-4" />}
                             buttonStyle={{ color: "purple", size: "md" }}
-                            onClick={enroll}
+                            onClick={onEnroll}
                         >
                             Enroll builder
                         </Button>

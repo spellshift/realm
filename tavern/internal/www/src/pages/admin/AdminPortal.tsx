@@ -16,6 +16,7 @@ import AdminTabs from "./components/AdminTabs";
 import { ProfilesTab } from "../agent-builder/profiles-tab";
 import { BuildersTab } from "../agent-builder/builders-tab";
 import NewBuildProfileModal from "../agent-builder/components/NewBuildProfileModal";
+import EnrollBuilderModal from "../agent-builder/components/EnrollBuilderModal";
 import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, useBuilders, useBuildProfiles } from "../agent-builder/queries";
 import { BuildProfile } from "../agent-builder/types";
 
@@ -28,6 +29,7 @@ export const AdminPortal = () => {
     const selectedIndex = tabIndex >= 0 ? tabIndex : 0;
 
     const toast = useToast();
+    const [enrollModalOpen, setEnrollModalOpen] = useState(false);
     const [newProfileModalOpen, setNewProfileModalOpen] = useState(false);
     const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
     const [deleteProfile] = useMutation(DELETE_BUILD_PROFILE, {
@@ -135,10 +137,12 @@ export const AdminPortal = () => {
                                 builders={builders}
                                 loading={buildersLoading}
                                 error={buildersError}
+                                onEnroll={() => setEnrollModalOpen(true)}
                             />
                         </TabPanel>
                     </TabPanels>
                 </TabGroup>
+                <EnrollBuilderModal isOpen={enrollModalOpen} setOpen={setEnrollModalOpen} />
                 <NewBuildProfileModal
                     isOpen={newProfileModalOpen}
                     setOpen={setNewProfileModalOpen}

@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import { MemoryRouter } from "react-router-dom";
 import { print } from "graphql";
-import EnrollBuilderPage from "./EnrollBuilderPage";
+import EnrollBuilderModal from "./EnrollBuilderModal";
 
 const createToken = vi.fn();
 const useQuery = vi.fn();
@@ -20,9 +19,10 @@ vi.mock("@apollo/client", async (importOriginal) => {
     };
 });
 
-const renderPage = () => render(<MemoryRouter><EnrollBuilderPage /></MemoryRouter>);
+const setOpen = vi.fn();
+const renderPage = () => render(<EnrollBuilderModal isOpen setOpen={setOpen} />);
 
-describe("EnrollBuilderPage", () => {
+describe("EnrollBuilderModal", () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -55,5 +55,17 @@ describe("EnrollBuilderPage", () => {
         await waitFor(() => expect(screen.getByText("second-token")).toBeInTheDocument());
         expect(screen.queryByText("temporary failure")).not.toBeInTheDocument();
         expect(createToken).toHaveBeenCalledTimes(2);
+    });
+
+    it("closes from Cancel before generating and from Done after", async () => {
+        createToken.mockResolvedValue({ data: { createBuilderEnrollmentToken: "test-token" } });
+        renderPage();
+        fireEvent.click(screen.getByRole("button", { name: "cancel enrollment" }));
+        expect(setOpen).toHaveBeenCalledWith(false);
+
+        fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+        await waitFor(() => expect(screen.getByText("test-token")).toBeInTheDocument());
+        fireEvent.click(screen.getByRole("button", { name: "Done" }));
+        expect(setOpen).toHaveBeenCalledTimes(2);
     });
 });

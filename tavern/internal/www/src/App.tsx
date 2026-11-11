@@ -20,8 +20,6 @@ import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
 import Profile from "./pages/profile/Profile";
 import AgentBuilderWizardPage from "./pages/agent-builder/AgentBuilderWizardPage";
-import EnrollBuilderPage from "./pages/agent-builder/EnrollBuilderPage";
-import { AdminAccessGate } from "./components/admin-access-gate";
 
 
 const router = createBrowserRouter([
@@ -72,10 +70,6 @@ const router = createBrowserRouter([
       {
         path: "admin",
         element: <AdminPortal />,
-      },
-      {
-        path: "admin/builders/enroll",
-        element: <AdminAccessGate><EnrollBuilderPage /></AdminAccessGate>,
       },
       {
         path: "profile",
