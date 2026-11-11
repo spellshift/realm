@@ -21608,6 +21608,7 @@ type ScreenshotMutation struct {
 	addsize           *int64
 	hash              *string
 	content           *[]byte
+	thumbnail         *[]byte
 	clearedFields     map[string]struct{}
 	host              *int
 	clearedhost       bool
@@ -21980,6 +21981,55 @@ func (m *ScreenshotMutation) ResetContent() {
 	delete(m.clearedFields, screenshot.FieldContent)
 }
 
+// SetThumbnail sets the "thumbnail" field.
+func (m *ScreenshotMutation) SetThumbnail(b []byte) {
+	m.thumbnail = &b
+}
+
+// Thumbnail returns the value of the "thumbnail" field in the mutation.
+func (m *ScreenshotMutation) Thumbnail() (r []byte, exists bool) {
+	v := m.thumbnail
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThumbnail returns the old "thumbnail" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldThumbnail(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThumbnail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThumbnail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThumbnail: %w", err)
+	}
+	return oldValue.Thumbnail, nil
+}
+
+// ClearThumbnail clears the value of the "thumbnail" field.
+func (m *ScreenshotMutation) ClearThumbnail() {
+	m.thumbnail = nil
+	m.clearedFields[screenshot.FieldThumbnail] = struct{}{}
+}
+
+// ThumbnailCleared returns if the "thumbnail" field was cleared in this mutation.
+func (m *ScreenshotMutation) ThumbnailCleared() bool {
+	_, ok := m.clearedFields[screenshot.FieldThumbnail]
+	return ok
+}
+
+// ResetThumbnail resets all changes to the "thumbnail" field.
+func (m *ScreenshotMutation) ResetThumbnail() {
+	m.thumbnail = nil
+	delete(m.clearedFields, screenshot.FieldThumbnail)
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
 func (m *ScreenshotMutation) SetHostID(id int) {
 	m.host = &id
@@ -22131,7 +22181,7 @@ func (m *ScreenshotMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ScreenshotMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, screenshot.FieldCreatedAt)
 	}
@@ -22149,6 +22199,9 @@ func (m *ScreenshotMutation) Fields() []string {
 	}
 	if m.content != nil {
 		fields = append(fields, screenshot.FieldContent)
+	}
+	if m.thumbnail != nil {
+		fields = append(fields, screenshot.FieldThumbnail)
 	}
 	return fields
 }
@@ -22170,6 +22223,8 @@ func (m *ScreenshotMutation) Field(name string) (ent.Value, bool) {
 		return m.Hash()
 	case screenshot.FieldContent:
 		return m.Content()
+	case screenshot.FieldThumbnail:
+		return m.Thumbnail()
 	}
 	return nil, false
 }
@@ -22191,6 +22246,8 @@ func (m *ScreenshotMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldHash(ctx)
 	case screenshot.FieldContent:
 		return m.OldContent(ctx)
+	case screenshot.FieldThumbnail:
+		return m.OldThumbnail(ctx)
 	}
 	return nil, fmt.Errorf("unknown Screenshot field %s", name)
 }
@@ -22241,6 +22298,13 @@ func (m *ScreenshotMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetContent(v)
+		return nil
+	case screenshot.FieldThumbnail:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThumbnail(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Screenshot field %s", name)
@@ -22293,6 +22357,9 @@ func (m *ScreenshotMutation) ClearedFields() []string {
 	if m.FieldCleared(screenshot.FieldContent) {
 		fields = append(fields, screenshot.FieldContent)
 	}
+	if m.FieldCleared(screenshot.FieldThumbnail) {
+		fields = append(fields, screenshot.FieldThumbnail)
+	}
 	return fields
 }
 
@@ -22312,6 +22379,9 @@ func (m *ScreenshotMutation) ClearField(name string) error {
 		return nil
 	case screenshot.FieldContent:
 		m.ClearContent()
+		return nil
+	case screenshot.FieldThumbnail:
+		m.ClearThumbnail()
 		return nil
 	}
 	return fmt.Errorf("unknown Screenshot nullable field %s", name)
@@ -22338,6 +22408,9 @@ func (m *ScreenshotMutation) ResetField(name string) error {
 		return nil
 	case screenshot.FieldContent:
 		m.ResetContent()
+		return nil
+	case screenshot.FieldThumbnail:
+		m.ResetThumbnail()
 		return nil
 	}
 	return fmt.Errorf("unknown Screenshot field %s", name)

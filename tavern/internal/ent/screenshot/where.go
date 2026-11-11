@@ -85,6 +85,11 @@ func Content(v []byte) predicate.Screenshot {
 	return predicate.Screenshot(sql.FieldEQ(FieldContent, v))
 }
 
+// Thumbnail applies equality check predicate on the "thumbnail" field. It's identical to ThumbnailEQ.
+func Thumbnail(v []byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldThumbnail, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Screenshot {
 	return predicate.Screenshot(sql.FieldEQ(FieldCreatedAt, v))
@@ -393,6 +398,56 @@ func ContentIsNil() predicate.Screenshot {
 // ContentNotNil applies the NotNil predicate on the "content" field.
 func ContentNotNil() predicate.Screenshot {
 	return predicate.Screenshot(sql.FieldNotNull(FieldContent))
+}
+
+// ThumbnailEQ applies the EQ predicate on the "thumbnail" field.
+func ThumbnailEQ(v []byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldEQ(FieldThumbnail, v))
+}
+
+// ThumbnailNEQ applies the NEQ predicate on the "thumbnail" field.
+func ThumbnailNEQ(v []byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNEQ(FieldThumbnail, v))
+}
+
+// ThumbnailIn applies the In predicate on the "thumbnail" field.
+func ThumbnailIn(vs ...[]byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldIn(FieldThumbnail, vs...))
+}
+
+// ThumbnailNotIn applies the NotIn predicate on the "thumbnail" field.
+func ThumbnailNotIn(vs ...[]byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNotIn(FieldThumbnail, vs...))
+}
+
+// ThumbnailGT applies the GT predicate on the "thumbnail" field.
+func ThumbnailGT(v []byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGT(FieldThumbnail, v))
+}
+
+// ThumbnailGTE applies the GTE predicate on the "thumbnail" field.
+func ThumbnailGTE(v []byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldGTE(FieldThumbnail, v))
+}
+
+// ThumbnailLT applies the LT predicate on the "thumbnail" field.
+func ThumbnailLT(v []byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLT(FieldThumbnail, v))
+}
+
+// ThumbnailLTE applies the LTE predicate on the "thumbnail" field.
+func ThumbnailLTE(v []byte) predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldLTE(FieldThumbnail, v))
+}
+
+// ThumbnailIsNil applies the IsNil predicate on the "thumbnail" field.
+func ThumbnailIsNil() predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldIsNull(FieldThumbnail))
+}
+
+// ThumbnailNotNil applies the NotNil predicate on the "thumbnail" field.
+func ThumbnailNotNil() predicate.Screenshot {
+	return predicate.Screenshot(sql.FieldNotNull(FieldThumbnail))
 }
 
 // HasHost applies the HasEdge predicate on the "host" edge.
