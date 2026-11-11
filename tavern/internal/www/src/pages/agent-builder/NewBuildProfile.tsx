@@ -4,7 +4,7 @@ import AlertError from "../../components/tavern-base-ui/AlertError";
 import { CREATE_BUILD_PROFILE, UPDATE_BUILD_PROFILE, GET_BUILD_PROFILES, mapProfile, profileInput, ProfileRecord } from "./queries";
 import { safelyJsonParse } from "../../utils/utils";
 import { Heading, Textarea } from "@chakra-ui/react";
-import { TrashIcon, PlusIcon, ChevronDownIcon, ChevronUpIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { Trash2, Plus, ChevronDown, ChevronUp, TriangleAlert } from "lucide-react";
 import Button from "../../components/tavern-base-ui/button/Button";
 import FormTextField from "../../components/tavern-base-ui/FormTextField";
 import SingleDropdownSelector from "../../components/tavern-base-ui/SingleDropdownSelector";
@@ -23,7 +23,7 @@ import {
 } from "./types";
 
 const textareaClass =
-    "block w-full p-2 font-mono text-xs placeholder-gray-500 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600";
+    "block w-full p-2 font-mono text-xs placeholder-gray-500 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600";
 
 const advancedScriptFields = [
     { label: "Build script", defaultValue: "{{.BuildCommand}}", rows: 2 },
@@ -170,7 +170,7 @@ export const NewBuildProfile = ({
                 </p>
             </div>
 
-            <div className="flex flex-col gap-4 rounded-md border border-gray-200 p-4">
+            <div className="flex flex-col gap-4">
                 <FormTextField
                     htmlFor="profileName"
                     label="Name"
@@ -197,11 +197,11 @@ export const NewBuildProfile = ({
                 />
             </div>
 
-            <div className="flex flex-col gap-3 rounded-md border border-gray-200 p-4">
+            <div className="flex flex-col gap-3 pt-2">
                 <Heading size="sm">Transports ({transports.length})</Heading>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                     {transports.map((t) => (
-                        <div key={t.id} className="flex items-center gap-3 rounded-md border border-gray-200 p-3 min-w-0">
+                        <div key={t.id} className="flex items-center gap-3 min-w-0">
                             <div className="flex flex-col min-w-0 flex-1">
                                 <span className="text-sm font-medium text-gray-900">
                                     {TRANSPORT_TYPES.find((type) => type.value === t.type)?.label} · Every {t.interval}s
@@ -218,7 +218,7 @@ export const NewBuildProfile = ({
                                 disabled={transports.length === 1}
                                 aria-label="remove transport"
                             >
-                                <TrashIcon className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" />
                             </Button>
                         </div>
                     ))}
@@ -226,7 +226,7 @@ export const NewBuildProfile = ({
                 <Button
                     buttonVariant="ghost"
                     buttonStyle={{ color: "purple", size: "sm" }}
-                    leftIcon={<PlusIcon className="w-4 h-4" />}
+                    leftIcon={<Plus className="w-4 h-4" />}
                     onClick={openAddTransport}
                     className="w-fit"
                 >
@@ -234,24 +234,22 @@ export const NewBuildProfile = ({
                 </Button>
             </div>
 
-            <div className="flex flex-col gap-3 rounded-md border border-gray-200 p-4">
+            <div className="flex flex-col gap-3 pt-2">
                 <Heading size="sm">Bundled tomes ({tomes.length})</Heading>
                 {!hasPersistenceTome && (
-                    <div className="rounded-md bg-amber-50 py-2 px-3">
-                        <div className="flex flex-row gap-2">
-                            <ExclamationTriangleIcon className="h-5 w-5 text-amber-400 flex-shrink-0" aria-hidden="true" />
-                            <p className="text-sm text-amber-700">
-                                {NO_INSTALL_WARNING}
-                            </p>
-                        </div>
+                    <div className="flex flex-row gap-2">
+                        <TriangleAlert className="h-5 w-5 text-amber-400 flex-shrink-0" aria-hidden="true" />
+                        <p className="text-sm text-amber-700">
+                            {NO_INSTALL_WARNING}
+                        </p>
                     </div>
                 )}
                 {tomes.length === 0 && !addingTome && (
                     <p className="text-sm text-gray-500">No tomes bundled yet.</p>
                 )}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                     {tomes.map((t) => (
-                        <div key={t.id} className="flex flex-row items-center justify-between rounded-md border border-gray-200 p-3">
+                        <div key={t.id} className="flex flex-row items-center justify-between">
                             <div className="flex flex-col">
                                 <span className="text-sm font-medium text-gray-900">{t.tomeName}</span>
                                 <span className="text-xs text-gray-500">{t.paramSummary}</span>
@@ -262,14 +260,14 @@ export const NewBuildProfile = ({
                                 onClick={() => setTomes((list) => list.filter((x) => x.id !== t.id))}
                                 aria-label="remove tome"
                             >
-                                <TrashIcon className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" />
                             </Button>
                         </div>
                     ))}
                 </div>
 
                 {addingTome ? (
-                    <div className="flex flex-col gap-3 rounded-md border border-gray-200 p-3">
+                    <div className="flex flex-col gap-3 pt-1">
                         <FormRadioGroup
                             label="Choose a tome"
                             data={catalog}
@@ -295,7 +293,7 @@ export const NewBuildProfile = ({
                     <Button
                         buttonVariant="ghost"
                         buttonStyle={{ color: "purple", size: "sm" }}
-                        leftIcon={<PlusIcon className="w-4 h-4" />}
+                        leftIcon={<Plus className="w-4 h-4" />}
                         onClick={() => setAddingTome(true)}
                         className="w-fit"
                     >
@@ -304,14 +302,14 @@ export const NewBuildProfile = ({
                 )}
             </div>
 
-            <div className="flex flex-col gap-2 border-t border-gray-200 pt-4">
+            <div className="flex flex-col gap-2 pt-2">
                 <button
                     type="button"
                     className="flex flex-row items-center gap-1 text-sm font-medium text-purple-700 text-left w-fit"
                     onClick={() => setShowAdvanced((v) => !v)}
                 >
                     Advanced
-                    {showAdvanced ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
+                    {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 <p className="text-xs text-gray-500 -mt-1">
                     Go-template build/setup scripts and artifact path. Defaults work for

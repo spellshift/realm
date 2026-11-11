@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { ChevronDownIcon, ChevronRightIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
-import { Tooltip } from "@chakra-ui/react";
 
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import Tooltip from "../../../components/tavern-base-ui/Tooltip";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import { TomeTactic } from "../../../utils/enums";

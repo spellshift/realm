@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@apollo/client";
+import { useToast } from "@chakra-ui/react";
 import { TabGroup, TabPanels, TabPanel } from "@headlessui/react";
 import { useSearchParams } from "react-router-dom";
 import { AdminAccessGate } from "../../components/admin-access-gate";
@@ -26,10 +27,23 @@ export const AdminPortal = () => {
     const tabIndex = TAB_NAMES.indexOf(tabParam as typeof TAB_NAMES[number]);
     const selectedIndex = tabIndex >= 0 ? tabIndex : 0;
 
+    const toast = useToast();
     const [newProfileModalOpen, setNewProfileModalOpen] = useState(false);
     const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
     const [deleteProfile] = useMutation(DELETE_BUILD_PROFILE, {
         refetchQueries: [{ query: GET_BUILD_PROFILES }],
+        onCompleted: () => {
+            toast({ title: "Build profile deleted", status: "success", duration: 2000, isClosable: true });
+        },
+        onError: (err) => {
+            toast({
+                title: "Failed to delete build profile",
+                description: err.message,
+                status: "error",
+                duration: 4000,
+                isClosable: true,
+            });
+        },
     });
 
     const {
