@@ -540,6 +540,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/cdn/screenshots/": tavernhttp.Endpoint{
 			Handler: cdn.NewScreenshotDownloadHandler(client, "/cdn/screenshots/"),
 		},
+		"/cdn/screenshots/all/": tavernhttp.Endpoint{
+			Handler: cdn.NewHostScreenshotsDownloadHandler(client, "/cdn/screenshots/all/"),
+		},
 		"/assets/download/": tavernhttp.Endpoint{
 			Handler: cdn.NewDownloadHandler(client, "/assets/download/"),
 		},
