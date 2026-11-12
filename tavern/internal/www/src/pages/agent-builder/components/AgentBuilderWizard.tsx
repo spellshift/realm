@@ -24,6 +24,9 @@ const STEPS = [
     { name: "Confirm details", description: "Step 3", href: "#", step: 2 },
 ];
 
+// Match the 40px search box beside each filter select so their placeholders line up.
+const FILTER_SELECT_STYLES = { control: (base: any) => ({ ...base, minHeight: 40 }) };
+
 type ProfileFilter = { label: string; value: string; kind: "os" | "format" | "tomeType" };
 
 const OS_OPTIONS: ProfileFilter[] = [
@@ -237,6 +240,7 @@ export const AgentBuilderWizard = ({
                                                 )}
                                             </div>
                                             <Select<ProfileFilter, true>
+                                styles={FILTER_SELECT_STYLES}
                                                 isSearchable
                                                 isMulti
                                                 options={PROFILE_FILTER_OPTIONS}
@@ -332,6 +336,7 @@ export const AgentBuilderWizard = ({
                                                 )}
                                             </div>
                                             <Select<ProfileFilter, true>
+                                styles={FILTER_SELECT_STYLES}
                                                 isSearchable
                                                 isMulti
                                                 options={TARGET_FILTER_OPTIONS}

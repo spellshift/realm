@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation } from "@apollo/client";
-import { Heading } from "@chakra-ui/react";
 import AlertError from "../../components/tavern-base-ui/AlertError";
 import { FormSteps } from "../../components/form-steps";
 import { CREATE_BUILD_PROFILE, UPDATE_BUILD_PROFILE, GET_BUILD_PROFILES, mapProfile, profileInput, ProfileRecord } from "./queries";
@@ -102,12 +101,6 @@ export const NewBuildProfile = ({
 
     return (
         <div className="flex flex-col gap-4 w-full min-w-0">
-            <div className="flex flex-col gap-1">
-                <Heading size="sm">{isEditing ? "Edit build profile" : "New build profile"}</Heading>
-                <p className="text-sm text-gray-500">
-                    Set the defaults operators will use when creating a build.
-                </p>
-            </div>
             {error && <AlertError label="Unable to save profile" details={error} />}
 
             <div className="flex flex-row gap-6">

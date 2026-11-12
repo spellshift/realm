@@ -1,7 +1,6 @@
-import { Textarea } from "@chakra-ui/react";
+import { ReactNode } from "react";
+import { Input, Textarea } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import FormTextField from "../../../components/tavern-base-ui/FormTextField";
-import { textareaClass } from "./constants";
 
 type BasicsStepProps = {
     name: string;
@@ -14,6 +13,13 @@ type BasicsStepProps = {
     onCancel: () => void;
     onNext: () => void;
 };
+
+const Field = ({ htmlFor, label, children }: { htmlFor: string; label: string; children: ReactNode }) => (
+    <div className="flex flex-col gap-1">
+        <label htmlFor={htmlFor} className="font-medium text-gray-700">{label}</label>
+        {children}
+    </div>
+);
 
 export const BasicsStep = ({
     name,
@@ -32,30 +38,39 @@ export const BasicsStep = ({
             <p className="text-sm text-gray-700 italic">Name the profile and set its build image.</p>
         </div>
         <div className="flex flex-col gap-4">
-            <FormTextField
-                htmlFor="profileName"
-                label="Name"
-                placeholder="e.g. Stealth DNS"
-                value={name}
-                onChange={(e) => onNameChange(e.target.value)}
-            />
-            <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">Description</label>
+            <Field htmlFor="profileName" label="Name">
+                <Input
+                    id="profileName"
+                    name="profileName"
+                    size="sm"
+                    colorScheme="purple"
+                    placeholder="e.g. Stealth DNS"
+                    value={name}
+                    onChange={(e) => onNameChange(e.target.value)}
+                />
+            </Field>
+            <Field htmlFor="profileDescription" label="Description">
                 <Textarea
-                    className={textareaClass + " font-sans"}
+                    id="profileDescription"
+                    size="sm"
+                    colorScheme="purple"
                     rows={2}
                     placeholder="What is this profile for?"
                     value={description}
                     onChange={(e) => onDescriptionChange(e.target.value)}
                 />
-            </div>
-            <FormTextField
-                htmlFor="buildImage"
-                label="Build image"
-                placeholder="spellshift/devcontainer:main"
-                value={buildImage}
-                onChange={(e) => onBuildImageChange(e.target.value)}
-            />
+            </Field>
+            <Field htmlFor="buildImage" label="Build image">
+                <Input
+                    id="buildImage"
+                    name="buildImage"
+                    size="sm"
+                    colorScheme="purple"
+                    placeholder="spellshift/devcontainer:main"
+                    value={buildImage}
+                    onChange={(e) => onBuildImageChange(e.target.value)}
+                />
+            </Field>
         </div>
         <div className="flex flex-row gap-2">
             <Button buttonVariant="ghost" onClick={onCancel}>Cancel</Button>

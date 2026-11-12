@@ -107,6 +107,7 @@ export const TransportsStep = ({ transports, setTransports, onBack, onNext }: Tr
                                 <SingleDropdownSelector
                                     key={`${draft.id}-${draft.type}`}
                                     label="Type"
+                                    size="sm"
                                     options={TRANSPORT_TYPES.map((type) => ({ label: type.label, value: type.value }))}
                                     defaultValue={TRANSPORT_TYPES.find((type) => type.value === draft.type)}
                                     setSelectedOption={(option: { value: TransportConfig["type"] }) =>
