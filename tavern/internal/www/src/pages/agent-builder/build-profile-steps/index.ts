@@ -3,3 +3,4 @@ export { TransportsStep } from "./TransportsStep";
 export { TomesStep } from "./TomesStep";
 export { ReviewStep } from "./ReviewStep";
 export { advancedScriptFields } from "./constants";
+export { UNIQUE_FIELD_INDEX, uniqueJsonError } from "./validation";

@@ -4,6 +4,7 @@ import { Textarea } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { NO_INSTALL_WARNING, TRANSPORT_TYPES, TomeRef, TransportConfig } from "../types";
 import { advancedScriptFields, textareaClass } from "./constants";
+import { UNIQUE_FIELD_INDEX } from "./validation";
 
 type ReviewStepProps = {
     name: string;
@@ -13,6 +14,7 @@ type ReviewStepProps = {
     tomes: TomeRef[];
     hasPersistenceTome: boolean;
     scripts: string[];
+    uniqueError: string | null;
     setScripts: Dispatch<SetStateAction<string[]>>;
     isEditing: boolean;
     saving: boolean;
@@ -29,6 +31,7 @@ export const ReviewStep = ({
     tomes,
     hasPersistenceTome,
     scripts,
+    uniqueError,
     setScripts,
     isEditing,
     saving,
@@ -36,7 +39,8 @@ export const ReviewStep = ({
     onBack,
     onSave,
 }: ReviewStepProps) => {
-    const [showAdvanced, setShowAdvanced] = useState(false);
+    // Open Advanced up front when a value in it needs fixing, so the error is visible.
+    const [showAdvanced, setShowAdvanced] = useState(!!uniqueError);
 
     return (
         <div className="flex flex-col gap-6">
@@ -121,6 +125,7 @@ export const ReviewStep = ({
                                 <label className="block text-sm font-medium text-gray-900">{field.label}</label>
                                 <Textarea className={textareaClass} rows={field.rows} value={scripts[index]} onChange={(event) => setScripts((current) => current.map((value, i) => i === index ? event.target.value : value))} />
                                 {field.description && <p className="text-xs text-gray-500">{field.description}</p>}
+                                {index === UNIQUE_FIELD_INDEX && uniqueError && <p role="alert" className="text-xs text-red-600">{uniqueError}</p>}
                             </div>
                         ))}
                     </div>

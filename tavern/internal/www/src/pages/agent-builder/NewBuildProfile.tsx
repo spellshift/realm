@@ -4,7 +4,7 @@ import { Heading } from "@chakra-ui/react";
 import AlertError from "../../components/tavern-base-ui/AlertError";
 import { FormSteps } from "../../components/form-steps";
 import { CREATE_BUILD_PROFILE, UPDATE_BUILD_PROFILE, GET_BUILD_PROFILES, mapProfile, profileInput, ProfileRecord } from "./queries";
-import { BasicsStep, TransportsStep, TomesStep, ReviewStep, advancedScriptFields } from "./build-profile-steps";
+import { BasicsStep, TransportsStep, TomesStep, ReviewStep, advancedScriptFields, UNIQUE_FIELD_INDEX, uniqueJsonError } from "./build-profile-steps";
 import { DEFAULT_TRANSPORT, Tome, TransportConfig, TomeRef, BuildProfile } from "./types";
 
 const STEPS = [
@@ -66,13 +66,13 @@ export const NewBuildProfile = ({
 
     const hasPersistenceTome = tomes.some((t) => t.tactic === "PERSISTENCE");
     const basicsValid = !!name.trim() && !!buildImage.trim();
+    const uniqueError = uniqueJsonError(scripts[UNIQUE_FIELD_INDEX]);
 
     const handleSave = async () => {
-        if (!name.trim() || saving) return;
+        if (!name.trim() || saving || uniqueError) return;
         setError(null);
         setSubmitting(true);
         try {
-            if (scripts[5].trim()) JSON.parse(scripts[5]);
             let profileRecord = savedProfileRecord;
             if (!profileRecord) {
                 const profile: BuildProfile = {
@@ -156,10 +156,11 @@ export const NewBuildProfile = ({
                             tomes={tomes}
                             hasPersistenceTome={hasPersistenceTome}
                             scripts={scripts}
+                            uniqueError={uniqueError}
                             setScripts={setScripts}
                             isEditing={isEditing}
                             saving={saving}
-                            canSave={basicsValid && !!scripts[0].trim() && !!scripts[1].trim()}
+                            canSave={basicsValid && !!scripts[0].trim() && !!scripts[1].trim() && !uniqueError}
                             onBack={() => setCurrStep(2)}
                             onSave={handleSave}
                         />
