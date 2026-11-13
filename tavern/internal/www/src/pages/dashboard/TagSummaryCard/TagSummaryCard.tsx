@@ -107,8 +107,8 @@ export const TagSummaryCard: FC = () => {
                                 onClick={() => setIncludeGroups(!includeGroups)}
                                 disabled={busyAction !== null}
                                 className={`flex h-full flex-col gap-2 rounded-md border-2 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-500" : "border-gray-200"}`}
-                        >
-                                <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
+                            >
+                                <span className="flex h-16 items-center justify-center">
                                     <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
                                         <path d="M15 22h28m13 0h26m12 0h12" />
                                         <circle cx="12" cy="22" r="7" fill="white" />
@@ -126,8 +126,8 @@ export const TagSummaryCard: FC = () => {
                                 onClick={() => setIncludeServices(!includeServices)}
                                 disabled={busyAction !== null}
                                 className={`flex h-full flex-col gap-2 rounded-md border-2 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-500" : "border-gray-200"}`}
-                        >
-                                <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
+                            >
+                                <span className="flex h-16 items-center justify-center">
                                     <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
                                         <rect x="5" y="8" width="29" height="29" rx="5" fill="white" />
                                         <rect x="45" y="8" width="29" height="29" rx="5" fill="white" />
