@@ -91,16 +91,8 @@ func FrozenTome(bundle []byte, tomeID int) ([]byte, error) {
 	}
 }
 
-// ResolveBuildRecipe renders a profile's setup script, build command, and
-// output path for one target. setupScript is the already input>profile
-// resolved setup script (see CreateBuildTask), rendered here rather than in
-// profile.Setupscript directly so callers can override it per-task before
-// templating happens.
-//
-// All three recipes are rendered against the same values, notably a freshly
-// generated BuildDir (see NewBuildDir) -- this is what lets the setup
-// script clone the repo into an arbitrary unique directory while the build
-// script and artifact path still agree on exactly where to find it.
+// ResolveBuildRecipe renders a profile's setup, build, and artifact paths.
+// The local debug executor substitutes a private build directory at execution.
 func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.Host_Platform, format TargetFormat) (string, string, string, error) {
 	if err := ValidateTargetFormat(os, format); err != nil {
 		return "", "", "", err
@@ -109,7 +101,7 @@ func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.H
 	if err != nil {
 		return "", "", "", err
 	}
-	buildDir := NewBuildDir()
+	buildDir := DockerBuildDir
 	values := map[string]string{
 		"BuildCommand": command,
 		"ArtifactPath": DeriveArtifactPath(os, buildDir),
