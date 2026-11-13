@@ -21,6 +21,7 @@ func TestPortalClose(t *testing.T) {
 	// 1. Setup Data (Task)
 	taskID, err := CreateTask(ctx, env.EntClient)
 	require.NoError(t, err)
+	beaconID := env.EntClient.Task.GetX(ctx, taskID).QueryBeacon().OnlyX(ctx).ID
 
 	// 2. Start C2.CreatePortal (Agent Side)
 	c2Stream, err := env.C2Client.CreatePortal(ctx)
@@ -31,7 +32,7 @@ func TestPortalClose(t *testing.T) {
 		Context: &c2pb.CreatePortalRequest_TaskContext{
 			TaskContext: &c2pb.TaskContext{
 				TaskId: int64(taskID),
-				Jwt:    generateJWT(t, env.PrivKey),
+				Jwt:    generateJWT(t, env.PrivKey, beaconID),
 			},
 		},
 	})

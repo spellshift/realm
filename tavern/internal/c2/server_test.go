@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
@@ -12,8 +13,12 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/enttest"
 )
 
 func TestGetClientIP(t *testing.T) {
@@ -177,9 +182,9 @@ func TestJWTValidate(t *testing.T) {
 	}
 
 	claims := jwt.MapClaims{
-		"task_id": 1234,
-		"iat":     time.Now().Unix(),
-		"exp":     time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		ClaimBeaconID: 1234,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -187,8 +192,50 @@ func TestJWTValidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to sign JWT: %v", err)
 	}
-	// Verify
-	err = srv.ValidateJWT(tokenStr)
-	fmt.Println(err)
+	// Verify bound token succeeds and returns the beacon ID
+	beaconID, err := srv.ValidateJWT(tokenStr)
 	assert.Nil(t, err)
+	assert.Equal(t, 1234, beaconID)
+
+	// Verify unbound (legacy) token without beacon_id is rejected
+	legacyClaims := jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	}
+	legacyToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, legacyClaims)
+	legacyStr, err := legacyToken.SignedString(privKey)
+	if err != nil {
+		t.Fatalf("failed to sign JWT: %v", err)
+	}
+	_, err = srv.ValidateJWT(legacyStr)
+	assert.NotNil(t, err)
+
+	for _, bad := range []json.Number{"1.5", "9223372036854775808"} {
+		badToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+			ClaimBeaconID: bad,
+			"exp":         time.Now().Add(time.Hour).Unix(),
+		})
+		badStr, err := badToken.SignedString(privKey)
+		assert.NoError(t, err)
+		_, err = srv.ValidateJWT(badStr)
+		assert.Error(t, err, "expected rejection for beacon_id claim %s", bad)
+	}
+}
+
+func TestLoadShellTaskForBeacon(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	host := graph.Host.Create().SetIdentifier("host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	beacon := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	foreign := graph.Beacon.Create().SetHost(host).SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	user := graph.User.Create().SetOauthID("user").SetName("user").SetPhotoURL("photo").SaveX(ctx)
+	shell := graph.Shell.Create().SetBeacon(beacon).SetOwner(user).SetData([]byte{}).SaveX(ctx)
+	shellTask := graph.ShellTask.Create().SetShell(shell).SetCreator(user).SetInput("id").SetStreamID("stream").SetSequenceID(1).SaveX(ctx)
+	srv := Server{graph: graph}
+
+	_, err := srv.loadShellTaskForBeacon(ctx, shellTask.ID, beacon.ID)
+	require.NoError(t, err)
+	_, err = srv.loadShellTaskForBeacon(ctx, shellTask.ID, foreign.ID)
+	require.True(t, ent.IsNotFound(err))
 }

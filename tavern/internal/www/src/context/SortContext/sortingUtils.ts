@@ -1,5 +1,5 @@
 import { Option } from "../../components/tavern-base-ui/SingleDropdownSelector";
-import { AssetOrderField, HostCredentialOrderField, HostFileOrderField, HostOrderField, OrderDirection, PageNavItem, ProcessOrderField, QuestOrderField, TaskOrderField } from "../../utils/enums";
+import { AssetOrderField, HostCredentialOrderField, HostFileOrderField, HostOrderField, OrderDirection, PageNavItem, ProcessOrderField, QuestOrderField, ScreenshotOrderField, TaskOrderField } from "../../utils/enums";
 import { OrderByField } from "../../utils/interfacesQuery";
 
 export const sortablePageNavItems = [
@@ -10,13 +10,14 @@ export const sortablePageNavItems = [
     PageNavItem.processes,
     PageNavItem.files,
     PageNavItem.credentials,
+    PageNavItem.screenshots,
 ] as const;
 
 export type SortablePageNavItem = typeof sortablePageNavItems[number];
 
 export type Sorts = Record<SortablePageNavItem, OrderByField>
 
-type CreateOrdeFieldOptions = QuestOrderField | TaskOrderField | HostOrderField | AssetOrderField | ProcessOrderField | HostFileOrderField | HostCredentialOrderField;
+type CreateOrdeFieldOptions = QuestOrderField | TaskOrderField | HostOrderField | AssetOrderField | ProcessOrderField | HostFileOrderField | HostCredentialOrderField | ScreenshotOrderField;
 
 export function formatEnumLabel(enumValue: string): string {
     return enumValue
@@ -42,6 +43,7 @@ export const orderFieldOptionsMap = {
     [PageNavItem.processes]: createOrderFieldOptions(ProcessOrderField),
     [PageNavItem.files]: createOrderFieldOptions(HostFileOrderField),
     [PageNavItem.credentials]: createOrderFieldOptions(HostCredentialOrderField),
+    [PageNavItem.screenshots]: createOrderFieldOptions(ScreenshotOrderField),
 };
 
 export const defaultSorts: Sorts = {
@@ -72,5 +74,9 @@ export const defaultSorts: Sorts = {
     [PageNavItem.credentials]: {
         direction: OrderDirection.Asc,
         field: HostCredentialOrderField.Principal
+    },
+    [PageNavItem.screenshots]: {
+        direction: OrderDirection.Desc,
+        field: ScreenshotOrderField.CreatedAt
     }
 }

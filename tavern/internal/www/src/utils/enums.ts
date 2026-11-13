@@ -16,7 +16,8 @@ export enum PageNavItem {
     processes="Processes",
     files="Files",
     credentials="Credentials",
-    agentBuilder="Agent Builder"
+    agentBuilder="Agent Builder",
+    screenshots="Screenshots"
 }
 export enum SupportedPlatforms {
     Windows="PLATFORM_WINDOWS",
@@ -139,6 +140,15 @@ export enum HostCredentialOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",
     Principal = "PRINCIPAL",
+}
+
+// Mirrors ent's ScreenshotOrderField (tavern/internal/graphql/schema/ent.graphql) --
+// the fields by which Screenshot connections can be ordered.
+export enum ScreenshotOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Name = "NAME",
+    Size = "SIZE",
 }
 
 export enum RepositoryOrderField {

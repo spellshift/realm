@@ -1,21 +1,22 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"image/png"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/tome"
 )
 
 // TestCreateTestData ensures createTestData runs without error and creates at least one beacon.
 func TestCreateTestData(t *testing.T) {
-	var (
-		ctx            = context.Background()
-	)
+	ctx := context.Background()
 	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
@@ -52,5 +53,22 @@ func TestCreateTestData(t *testing.T) {
 		// Total per group: 11 + 10 + 8 + 7 = 36
 		// Total for 3 groups: 36 * 3 = 108
 		assert.Equal(t, 108, count)
+	})
+
+	t.Run("ScreenshotsTest", func(t *testing.T) {
+		firstHost := graph.Host.Query().Where(host.Name("Group 1 - Service-1")).OnlyX(ctx)
+		screenshots := firstHost.QueryScreenshots().AllX(ctx)
+		require.Len(t, screenshots, 55)
+		contentSizes := make(map[uint64]struct{})
+		for _, screenshot := range screenshots {
+			_, err := png.DecodeConfig(bytes.NewReader(screenshot.Content))
+			require.NoError(t, err)
+			require.Equal(t, uint64(len(screenshot.Content)), screenshot.Size)
+			contentSizes[screenshot.Size] = struct{}{}
+		}
+		require.Greater(t, len(contentSizes), 1, "test images should exercise sorting by size")
+
+		secondHost := graph.Host.Query().Where(host.Name("Group 1 - Service-2")).OnlyX(ctx)
+		require.Equal(t, 3, secondHost.QueryScreenshots().CountX(ctx))
 	})
 }

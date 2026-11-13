@@ -77,7 +77,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
 	}
 
-	err := srv.ValidateJWT(jwtToken)
+	beaconID, err := srv.ValidateJWT(jwtToken)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	var shellTask *ent.ShellTask
 
 	if taskID != 0 {
-		t, err := srv.graph.Task.Get(ctx, int(taskID))
+		t, err := srv.loadTaskForBeacon(ctx, int(taskID), beaconID)
 		if ent.IsNotFound(err) {
 			return status.Errorf(codes.NotFound, "failed to find related task")
 		}
@@ -101,7 +101,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 		host = h
 	} else {
-		st, err := srv.graph.ShellTask.Get(ctx, int(shellTaskID))
+		st, err := srv.loadShellTaskForBeacon(ctx, int(shellTaskID), beaconID)
 		if ent.IsNotFound(err) {
 			return status.Errorf(codes.NotFound, "failed to find related shell task")
 		}
