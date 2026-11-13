@@ -1,6 +1,6 @@
 import { FC, useState } from "react";
 import { Field, Input, Label, Tab, TabGroup, TabList } from "@headlessui/react";
-import { Tags } from "lucide-react";
+import { Circle, CircleCheck, Tags } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import { Table } from "../../../components/tavern-base-ui/table/Table";
@@ -106,8 +106,11 @@ export const TagSummaryCard: FC = () => {
                                 aria-pressed={includeGroups}
                                 onClick={() => setIncludeGroups(!includeGroups)}
                                 disabled={busyAction !== null}
-                                className={`flex h-full flex-col gap-2 rounded-md border-2 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-500" : "border-gray-200"}`}
+                                className="relative flex h-full flex-col gap-2 rounded-md border border-gray-200 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
                             >
+                                {includeGroups
+                                    ? <CircleCheck className="absolute right-3 top-3 h-5 w-5 text-purple-600" aria-hidden="true" />
+                                    : <Circle className="absolute right-3 top-3 h-5 w-5 text-gray-400" aria-hidden="true" />}
                                 <span className="flex h-16 items-center justify-center">
                                     <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
                                         <path d="M15 22h28m13 0h26m12 0h12" />
@@ -125,8 +128,11 @@ export const TagSummaryCard: FC = () => {
                                 aria-pressed={includeServices}
                                 onClick={() => setIncludeServices(!includeServices)}
                                 disabled={busyAction !== null}
-                                className={`flex h-full flex-col gap-2 rounded-md border-2 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-500" : "border-gray-200"}`}
+                                className="relative flex h-full flex-col gap-2 rounded-md border border-gray-200 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
                             >
+                                {includeServices
+                                    ? <CircleCheck className="absolute right-3 top-3 h-5 w-5 text-purple-600" aria-hidden="true" />
+                                    : <Circle className="absolute right-3 top-3 h-5 w-5 text-gray-400" aria-hidden="true" />}
                                 <span className="flex h-16 items-center justify-center">
                                     <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
                                         <rect x="5" y="8" width="29" height="29" rx="5" fill="white" />
