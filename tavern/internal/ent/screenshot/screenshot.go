@@ -27,6 +27,8 @@ const (
 	FieldHash = "hash"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// FieldThumbnail holds the string denoting the thumbnail field in the database.
+	FieldThumbnail = "thumbnail"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTask holds the string denoting the task edge name in mutations.
@@ -67,6 +69,7 @@ var Columns = []string{
 	FieldSize,
 	FieldHash,
 	FieldContent,
+	FieldThumbnail,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "screenshots"

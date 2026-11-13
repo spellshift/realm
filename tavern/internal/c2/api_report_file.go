@@ -130,6 +130,16 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 	}
 
+	// Generate a low resolution thumbnail for use in thumbnail list views. This only depends on
+	// the already-buffered content (not the DB), so it is done before opening the transaction to
+	// avoid holding a DB connection/transaction open for the duration of image processing. If the
+	// content cannot be decoded as an image (or exceeds safe decode limits), skip the thumbnail
+	// rather than fail the whole report.
+	var thumbnail []byte
+	if isScreenshot {
+		thumbnail, _ = generateScreenshotThumbnail(content)
+	}
+
 	// Prepare Transaction
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
@@ -152,6 +162,10 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			SetSize(size).
 			SetHash(hash).
 			SetContent(content)
+
+		if len(thumbnail) > 0 {
+			builder.SetThumbnail(thumbnail)
+		}
 
 		if task != nil {
 			builder.SetTaskID(task.ID)
