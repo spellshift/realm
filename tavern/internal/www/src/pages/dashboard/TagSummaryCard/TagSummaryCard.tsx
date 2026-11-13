@@ -1,6 +1,6 @@
 import { FC, useState } from "react";
-import { Checkbox, Description, Field, Input, Label, Tab, TabGroup, TabList } from "@headlessui/react";
-import { Check, Tags } from "lucide-react";
+import { Field, Input, Label, Tab, TabGroup, TabList } from "@headlessui/react";
+import { Tags } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import { Table } from "../../../components/tavern-base-ui/table/Table";
@@ -97,60 +97,52 @@ export const TagSummaryCard: FC = () => {
                 <Modal isOpen={autoTagOpen} setOpen={setAutoTagOpen} size="sm">
                     <div className="flex h-full flex-col gap-6">
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-900">Auto tagging options</h2>
+                            <h2 className="text-lg font-semibold text-gray-700">Auto tagging options</h2>
                             <p className="mt-1 text-sm text-gray-600">Choose which tags to apply to your hosts.</p>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <Field className={`relative rounded-md border ${includeGroups ? "border-purple-200 bg-purple-50" : "border-gray-200 bg-white"}`}>
-                                <Checkbox
-                                    checked={includeGroups}
-                                    onChange={setIncludeGroups}
-                                    disabled={busyAction !== null}
-                                    className={`absolute right-4 top-4 z-10 flex h-4 w-4 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
-                                >
-                                    {includeGroups && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                                </Checkbox>
-                                <Label className="flex h-full cursor-pointer flex-col gap-2 p-3">
-                                    <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
-                                        <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
-                                            <path d="M15 22h28m13 0h26m12 0h12" />
-                                            <circle cx="12" cy="22" r="7" fill="white" />
-                                            <circle cx="50" cy="22" r="7" fill="white" />
-                                            <circle cx="89" cy="22" r="7" fill="white" />
-                                            <circle cx="110" cy="22" r="7" fill="white" />
-                                        </svg>
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">Group by subnet</span>
-                                    <Description as="span" className="text-xs text-gray-500">Hosts on the same reported subnet get one group tag.</Description>
-                                </Label>
-                            </Field>
-                            <Field className={`relative rounded-md border ${includeServices ? "border-purple-200 bg-purple-50" : "border-gray-200 bg-white"}`}>
-                                <Checkbox
-                                    checked={includeServices}
-                                    onChange={setIncludeServices}
-                                    disabled={busyAction !== null}
-                                    className={`absolute right-4 top-4 z-10 flex h-4 w-4 items-center justify-center rounded border focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-600 bg-purple-600" : "border-gray-400 bg-white"}`}
-                                >
-                                    {includeServices && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                                </Checkbox>
-                                <Label className="flex h-full cursor-pointer flex-col gap-2 p-3">
-                                    <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
-                                        <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
-                                            <rect x="5" y="8" width="29" height="29" rx="5" fill="white" />
-                                            <rect x="45" y="8" width="29" height="29" rx="5" fill="white" />
-                                            <rect x="85" y="8" width="29" height="29" rx="5" fill="white" />
-                                            <path d="M13 16h13M13 22h10M53 16h13M53 22h10M93 16h13M93 22h10" />
-                                        </svg>
-                                    </span>
-                                    <span className="text-sm font-medium text-gray-900">Cluster by processes</span>
-                                    <Description as="span" className="text-xs text-gray-500">Process list data creates service tags for similar hosts.</Description>
-                                </Label>
-                            </Field>
+                            <button
+                                type="button"
+                                aria-pressed={includeGroups}
+                                onClick={() => setIncludeGroups(!includeGroups)}
+                                disabled={busyAction !== null}
+                                className={`flex h-full flex-col gap-2 rounded-md border-2 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeGroups ? "border-purple-500" : "border-gray-200"}`}
+                        >
+                                <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
+                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
+                                        <path d="M15 22h28m13 0h26m12 0h12" />
+                                        <circle cx="12" cy="22" r="7" fill="white" />
+                                        <circle cx="50" cy="22" r="7" fill="white" />
+                                        <circle cx="89" cy="22" r="7" fill="white" />
+                                        <circle cx="110" cy="22" r="7" fill="white" />
+                                    </svg>
+                                </span>
+                                <span className="text-sm font-medium text-gray-700">Group by subnet</span>
+                                <span className="text-xs text-gray-500">Hosts on the same reported subnet get one group tag.</span>
+                            </button>
+                            <button
+                                type="button"
+                                aria-pressed={includeServices}
+                                onClick={() => setIncludeServices(!includeServices)}
+                                disabled={busyAction !== null}
+                                className={`flex h-full flex-col gap-2 rounded-md border-2 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 ${includeServices ? "border-purple-500" : "border-gray-200"}`}
+                        >
+                                <span className="flex h-16 items-center justify-center rounded-md border border-purple-100 bg-white">
+                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
+                                        <rect x="5" y="8" width="29" height="29" rx="5" fill="white" />
+                                        <rect x="45" y="8" width="29" height="29" rx="5" fill="white" />
+                                        <rect x="85" y="8" width="29" height="29" rx="5" fill="white" />
+                                        <path d="M13 16h13M13 22h10M53 16h13M53 22h10M93 16h13M93 22h10" />
+                                    </svg>
+                                </span>
+                                <span className="text-sm font-medium text-gray-700">Cluster by processes</span>
+                                <span className="text-xs text-gray-500">Process list data creates service tags for similar hosts.</span>
+                            </button>
                         </div>
                         <div>
                             {includeServices && (
                                 <Field className="flex flex-col gap-1">
-                                    <Label className="text-sm font-medium text-gray-900">Number of service tags (optional)</Label>
+                                    <Label className="text-base font-medium text-gray-700">Number of service tags</Label>
                                     <Input
                                         id="autoTagServiceCount"
                                         type="number"
@@ -159,12 +151,12 @@ export const TagSummaryCard: FC = () => {
                                         placeholder="Leave blank for automatic"
                                         value={serviceCountInput}
                                         onChange={(event) => setServiceCountInput(event.target.value)}
-                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600"
                                     />
                                 </Field>
                             )}
                         </div>
-                        <div className="mt-auto flex justify-end gap-2">
+                        <div className="flex justify-start gap-2">
                             <Button buttonVariant="ghost" buttonStyle={{ color: "gray", size: "md" }} disabled={busyAction !== null} onClick={() => setAutoTagOpen(false)}>
                                 Cancel
                             </Button>
