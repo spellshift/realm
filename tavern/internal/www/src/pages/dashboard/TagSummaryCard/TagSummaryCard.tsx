@@ -112,7 +112,7 @@ export const TagSummaryCard: FC = () => {
                                     ? <CircleCheck className="absolute right-3 top-3 h-5 w-5 text-purple-600" aria-hidden="true" />
                                     : <Circle className="absolute right-3 top-3 h-5 w-5 text-gray-400" aria-hidden="true" />}
                                 <span className="flex h-16 items-center justify-center">
-                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
+                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-gray-500" aria-hidden="true">
                                         <path d="M15 22h28m13 0h26m12 0h12" />
                                         <circle cx="12" cy="22" r="7" fill="white" />
                                         <circle cx="50" cy="22" r="7" fill="white" />
@@ -134,7 +134,7 @@ export const TagSummaryCard: FC = () => {
                                     ? <CircleCheck className="absolute right-3 top-3 h-5 w-5 text-purple-600" aria-hidden="true" />
                                     : <Circle className="absolute right-3 top-3 h-5 w-5 text-gray-400" aria-hidden="true" />}
                                 <span className="flex h-16 items-center justify-center">
-                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-purple-600" aria-hidden="true">
+                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-gray-500" aria-hidden="true">
                                         <rect x="5" y="8" width="29" height="29" rx="5" fill="white" />
                                         <rect x="45" y="8" width="29" height="29" rx="5" fill="white" />
                                         <rect x="85" y="8" width="29" height="29" rx="5" fill="white" />
