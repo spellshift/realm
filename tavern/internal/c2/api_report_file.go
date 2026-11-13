@@ -77,7 +77,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
 	}
 
-	err := srv.ValidateJWT(jwtToken)
+	beaconID, err := srv.ValidateJWT(jwtToken)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	var shellTask *ent.ShellTask
 
 	if taskID != 0 {
-		t, err := srv.graph.Task.Get(ctx, int(taskID))
+		t, err := srv.loadTaskForBeacon(ctx, int(taskID), beaconID)
 		if ent.IsNotFound(err) {
 			return status.Errorf(codes.NotFound, "failed to find related task")
 		}
@@ -101,7 +101,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 		host = h
 	} else {
-		st, err := srv.graph.ShellTask.Get(ctx, int(shellTaskID))
+		st, err := srv.loadShellTaskForBeacon(ctx, int(shellTaskID), beaconID)
 		if ent.IsNotFound(err) {
 			return status.Errorf(codes.NotFound, "failed to find related shell task")
 		}
@@ -130,6 +130,16 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 	}
 
+	// Generate a low resolution thumbnail for use in thumbnail list views. This only depends on
+	// the already-buffered content (not the DB), so it is done before opening the transaction to
+	// avoid holding a DB connection/transaction open for the duration of image processing. If the
+	// content cannot be decoded as an image (or exceeds safe decode limits), skip the thumbnail
+	// rather than fail the whole report.
+	var thumbnail []byte
+	if isScreenshot {
+		thumbnail, _ = generateScreenshotThumbnail(content)
+	}
+
 	// Prepare Transaction
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
@@ -152,6 +162,10 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			SetSize(size).
 			SetHash(hash).
 			SetContent(content)
+
+		if len(thumbnail) > 0 {
+			builder.SetThumbnail(thumbnail)
+		}
 
 		if task != nil {
 			builder.SetTaskID(task.ID)

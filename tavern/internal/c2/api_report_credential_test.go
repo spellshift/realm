@@ -19,13 +19,15 @@ import (
 
 func TestReportCredential(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
 
 	// Test Data
 	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
 	existingTask := c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier)
+	token := mintJWT(existingBeacon.ID)
+	foreignToken := mintJWT(c2test.NewRandomBeacon(ctx, graph).ID)
 	existingHost := existingBeacon.QueryHost().OnlyX(ctx)
 	existingCredential := graph.HostCredential.Create().
 		SetHost(existingHost).
@@ -148,6 +150,16 @@ func TestReportCredential(t *testing.T) {
 				},
 			},
 			wantResp: nil,
+			wantCode: codes.NotFound,
+		},
+		{
+			name: "ForeignBeacon",
+			req: &c2pb.ReportCredentialRequest{
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: foreignToken},
+				},
+				Credential: &epb.Credential{Principal: "denied", Secret: "denied", Kind: epb.Credential_KIND_PASSWORD},
+			},
 			wantCode: codes.NotFound,
 		},
 	}

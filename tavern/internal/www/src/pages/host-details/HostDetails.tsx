@@ -11,8 +11,9 @@ import { FilesTab } from "./files-tab";
 import { ShellTab } from "./shell-tab";
 import { PortalTab } from "./portal-tab";
 import HostHeader from "./components/HostHeader";
+import { ScreenshotsTab } from "./screenshots-tab";
 
-const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells", "portals"] as const;
+const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells", "portals", "screenshots"] as const;
 
 const HostDetails = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -52,6 +53,9 @@ const HostDetails = () => {
                         </TabPanel>
                         <TabPanel>
                             <PortalTab />
+                        </TabPanel>
+                        <TabPanel>
+                            <ScreenshotsTab />
                         </TabPanel>
                     </TabPanels>
                 </TabGroup>

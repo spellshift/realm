@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import SortingControls from '../SortingControls';
 import { SortsProvider, useSorts } from '../SortContext';
-import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../../../utils/enums';
+import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, ScreenshotOrderField, TaskOrderField } from '../../../utils/enums';
 import React from 'react';
 import { SortablePageNavItem } from '../sortingUtils';
 
@@ -98,6 +98,13 @@ describe('SortingControls', () => {
       expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Process Start Time)');
       expect(screen.getByTestId('icon-up')).toBeInTheDocument();
     });
+
+    it('should render with default screenshots sort settings', () => {
+      render(<TestWrapper sortType={PageNavItem.screenshots} />);
+
+      expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Created At)');
+      expect(screen.getByTestId('icon-down')).toBeInTheDocument();
+    });
   });
 
   describe('Sort field dropdown', () => {
@@ -132,6 +139,16 @@ describe('SortingControls', () => {
       expect(options).toHaveLength(Object.keys(TaskOrderField).length);
       expect(options.map((opt) => opt.textContent)).toContain('Last Modified At');
       expect(options.map((opt) => opt.textContent)).toContain('Created At');
+    });
+
+    it('should display correct field options for screenshots page', () => {
+      render(<TestWrapper sortType={PageNavItem.screenshots} />);
+
+      const fieldSelect = screen.getByTestId('select-field');
+      const options = Array.from(fieldSelect.querySelectorAll('option'));
+
+      expect(options).toHaveLength(Object.keys(ScreenshotOrderField).length);
+      expect(options.map((opt) => opt.textContent)).toEqual(['Created At', 'Last Modified At', 'Name', 'Size']);
     });
   });
 
@@ -199,6 +216,30 @@ describe('SortingControls', () => {
       await user.selectOptions(directionSelect, OrderDirection.Asc);
 
       expect(screen.getByTestId('icon-up')).toBeInTheDocument();
+    });
+
+    it('should update screenshots sort field and direction independently of other pages', async () => {
+      const user = userEvent.setup();
+      render(<TestWrapper sortType={PageNavItem.screenshots} includeDisplay />);
+
+      const getSorts = () => JSON.parse(screen.getByTestId('sorts-display').textContent || '{}');
+
+      const fieldSelect = screen.getByTestId('select-field');
+      await user.selectOptions(fieldSelect, ScreenshotOrderField.Size);
+
+      expect(getSorts()[PageNavItem.screenshots]).toEqual({
+        field: ScreenshotOrderField.Size,
+        direction: OrderDirection.Desc,
+      });
+
+      const directionSelect = screen.getByTestId('select-direction');
+      await user.selectOptions(directionSelect, OrderDirection.Asc);
+
+      expect(getSorts()[PageNavItem.screenshots]).toEqual({
+        field: ScreenshotOrderField.Size,
+        direction: OrderDirection.Asc,
+      });
+      expect(getSorts()[PageNavItem.hosts].field).toBe(HostOrderField.CreatedAt);
     });
 
     it('should only update sorts for the current page type', async () => {

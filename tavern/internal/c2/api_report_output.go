@@ -19,7 +19,8 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if taskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing task context")
 		}
-		if err := srv.ValidateJWT(taskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(taskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
@@ -43,7 +44,7 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		}
 
 		// Load Task
-		t, err := srv.graph.Task.Get(ctx, int(output.Id))
+		t, err := srv.loadTaskForBeacon(ctx, int(output.Id), beaconID)
 		if ent.IsNotFound(err) {
 			return nil, status.Errorf(codes.NotFound, "no task found (id=%d): %v", output.Id, err)
 		}
@@ -73,7 +74,8 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if shellTaskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing shell task context")
 		}
-		if err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt); err != nil {
+		beaconID, err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt)
+		if err != nil {
 			return nil, err
 		}
 
@@ -98,7 +100,7 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		}
 
 		// Load ShellTask
-		t, err := srv.graph.ShellTask.Get(ctx, int(output.Id))
+		t, err := srv.loadShellTaskForBeacon(ctx, int(output.Id), beaconID)
 		if ent.IsNotFound(err) {
 			return nil, status.Errorf(codes.NotFound, "no shell task found (id=%d): %v", output.Id, err)
 		}

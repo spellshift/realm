@@ -47,6 +47,7 @@ const cache = new InMemoryCache({
         files: relayStylePagination(["where", "orderBy"]),
         processes: relayStylePagination(["where", "orderBy"]),
         credentials: relayStylePagination(),
+        screenshots: relayStylePagination(["orderBy"]),
       },
     },
     Portal: {
