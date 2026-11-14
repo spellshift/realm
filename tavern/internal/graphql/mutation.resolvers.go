@@ -860,16 +860,19 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		bundleID = &bundle.ID
 	}
 
-	osName := strings.ToLower(strings.TrimPrefix(input.TargetOs.String(), "PLATFORM_"))
-	formatName := strings.ToLower(strings.TrimPrefix(targetFormat.String(), "TARGET_FORMAT_"))
-	profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
-	artifact, err := graph.Asset.Create().
-		SetName(fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, uuid.NewString())).
-		SetContent([]byte{}).
-		SetStatus(asset.StatusIN_PROGRESS).
-		Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("create build artifact placeholder: %w", err)
+	var artifact *ent.Asset
+	if artifactPath != "" {
+		osName := strings.ToLower(strings.TrimPrefix(input.TargetOs.String(), "PLATFORM_"))
+		formatName := strings.ToLower(strings.TrimPrefix(targetFormat.String(), "TARGET_FORMAT_"))
+		profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
+		artifact, err = graph.Asset.Create().
+			SetName(fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, uuid.NewString())).
+			SetContent([]byte{}).
+			SetStatus(asset.StatusIN_PROGRESS).
+			Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("create build artifact placeholder: %w", err)
+		}
 	}
 
 	// 8. Create the build task
@@ -882,8 +885,10 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetProfile(profile).
 		SetProfileAtCreation(snapshot).
 		SetNillableBundleID(bundleID).
-		SetArtifact(artifact).
 		SetSetupscript(setupScript)
+	if artifact != nil {
+		create.SetArtifact(artifact)
+	}
 
 	if unique != nil {
 		create.SetUnique(*unique)

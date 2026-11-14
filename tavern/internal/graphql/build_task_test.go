@@ -255,6 +255,37 @@ func TestCreateBuildTask(t *testing.T) {
 		assert.Equal(t, "/custom/path/to/binary", resp.CreateBuildTask.ArtifactPath)
 	})
 
+	t.Run("EmptyArtifactPath", func(t *testing.T) {
+		graph.BuildTask.Delete().ExecX(ctx)
+		graph.Builder.Delete().ExecX(ctx)
+
+		graph.Builder.Create().
+			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
+			SetUpstream("https://example.com").
+			SetLastSeenAt(time.Now()).
+			SaveX(ctx)
+
+		var resp struct {
+			CreateBuildTask struct {
+				ID           string
+				ArtifactPath string
+			}
+		}
+		err := gqlClient.Post(`mutation createBuildTask($input: CreateBuildTaskInput!) {
+			createBuildTask(input: $input) { id artifactPath }
+		}`, &resp, client.Var("input", map[string]any{
+			"targetOS":     "PLATFORM_LINUX",
+			"profileID":    defaultProfileID,
+			"artifactPath": "",
+		}))
+		require.NoError(t, err)
+		assert.Empty(t, resp.CreateBuildTask.ArtifactPath)
+		bt := graph.BuildTask.GetX(ctx, convertID(resp.CreateBuildTask.ID))
+		hasArtifact, err := bt.QueryArtifact().Exist(ctx)
+		require.NoError(t, err)
+		assert.False(t, hasArtifact, "artifactless build must not leave a pending asset")
+	})
+
 	t.Run("MultipleMatchingBuilders", func(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)

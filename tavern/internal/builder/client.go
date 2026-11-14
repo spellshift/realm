@@ -333,12 +333,14 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 
 	// Store the artifact before reporting success so an upload failure is visible
 	// on both the task and its asset.
-	if buildErr == nil && result != nil && result.Artifact != nil {
-		if err := uploadArtifact(ctx, client, task.Id, result); err != nil {
-			buildErr = fmt.Errorf("upload build artifact: %w", err)
+	if buildErr == nil {
+		if result != nil && result.Artifact != nil {
+			if err := uploadArtifact(ctx, client, task.Id, result); err != nil {
+				buildErr = fmt.Errorf("upload build artifact: %w", err)
+			}
+		} else if task.ArtifactPath != "" {
+			buildErr = fmt.Errorf("build produced no artifact")
 		}
-	} else if buildErr == nil {
-		buildErr = fmt.Errorf("build produced no artifact")
 	}
 
 	// Send the final message signaling completion.
