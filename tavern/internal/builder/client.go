@@ -331,6 +331,16 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 		return
 	}
 
+	// Store the artifact before reporting success so an upload failure is visible
+	// on both the task and its asset.
+	if buildErr == nil && result != nil && result.Artifact != nil {
+		if err := uploadArtifact(ctx, client, task.Id, result); err != nil {
+			buildErr = fmt.Errorf("upload build artifact: %w", err)
+		}
+	} else if buildErr == nil {
+		buildErr = fmt.Errorf("build produced no artifact")
+	}
+
 	// Send the final message signaling completion.
 	finalMsg := &builderpb.StreamBuildTaskOutputRequest{
 		TaskId:   task.Id,
@@ -357,13 +367,6 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 		return
 	}
 
-	// Upload artifact if the build succeeded and produced one.
-	if buildErr == nil && result != nil && result.Artifact != nil {
-		if err := uploadArtifact(ctx, client, task.Id, result); err != nil {
-			slog.ErrorContext(ctx, "failed to upload build artifact",
-				"task_id", task.Id, "error", err)
-		}
-	}
 }
 
 // uploadArtifact streams the build artifact to the server in chunks via the

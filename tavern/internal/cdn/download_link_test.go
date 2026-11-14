@@ -39,6 +39,8 @@ func TestDownloadLink(t *testing.T) {
 		SetAsset(existingAsset).
 		SetExpiresAt(time.Now().Add(-1 * time.Hour)).
 		SaveX(ctx)
+	pendingAsset := graph.Asset.Create().SetName("PendingLinkAsset").SetContent([]byte{}).SetStatus("IN_PROGRESS").SaveX(ctx)
+	pendingLink := graph.Link.Create().SetAsset(pendingAsset).SetExpiresAt(time.Now().Add(time.Hour)).SaveX(ctx)
 
 	handler := cdn.NewLinkDownloadHandler(graph, "/download/")
 
@@ -57,6 +59,12 @@ func TestDownloadLink(t *testing.T) {
 		{
 			name:       "NotFound",
 			reqURL:     "/download/nonexistent-path",
+			wantStatus: cdn.ErrFileNotFound.StatusCode,
+			wantBody:   []byte(fmt.Sprintf("%s\n", cdn.ErrFileNotFound.Error())),
+		},
+		{
+			name:       "PendingAsset",
+			reqURL:     fmt.Sprintf("/download/%s", pendingLink.Path),
 			wantStatus: cdn.ErrFileNotFound.StatusCode,
 			wantBody:   []byte(fmt.Sprintf("%s\n", cdn.ErrFileNotFound.Error())),
 		},

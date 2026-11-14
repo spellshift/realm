@@ -349,6 +349,7 @@ export interface LinkEdge {
 export interface AssetNode {
     id: string;
     name: string;
+    status: "FINISHED" | "IN_PROGRESS" | "ERROR";
     size: number;
     hash: string;
     createdAt: string;

@@ -507,6 +507,13 @@ func (r *mutationResolver) ClosePortal(ctx context.Context, portalID int) (*ent.
 
 // CreateLink is the resolver for the createLink field.
 func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error) {
+	a, err := r.client.Asset.Get(ctx, input.AssetID)
+	if err != nil {
+		return nil, err
+	}
+	if a.Status != asset.StatusFINISHED {
+		return nil, fmt.Errorf("asset is not ready for a link")
+	}
 	var creatorID *int
 	if creator := auth.UserFromContext(ctx); creator != nil {
 		creatorID = &creator.ID
@@ -853,6 +860,18 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		bundleID = &bundle.ID
 	}
 
+	osName := strings.ToLower(strings.TrimPrefix(input.TargetOs.String(), "PLATFORM_"))
+	formatName := strings.ToLower(strings.TrimPrefix(targetFormat.String(), "TARGET_FORMAT_"))
+	profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
+	artifact, err := graph.Asset.Create().
+		SetName(fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, uuid.NewString())).
+		SetContent([]byte{}).
+		SetStatus(asset.StatusIN_PROGRESS).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create build artifact placeholder: %w", err)
+	}
+
 	// 8. Create the build task
 	create := graph.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
@@ -863,6 +882,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetProfile(profile).
 		SetProfileAtCreation(snapshot).
 		SetNillableBundleID(bundleID).
+		SetArtifact(artifact).
 		SetSetupscript(setupScript)
 
 	if unique != nil {

@@ -165,6 +165,10 @@ func TestCreateBuildTask(t *testing.T) {
 
 		// Verify the builder edge
 		bt := graph.BuildTask.GetX(ctx, convertID(resp.CreateBuildTask.ID))
+		artifact := bt.QueryArtifact().OnlyX(ctx)
+		assert.Equal(t, "IN_PROGRESS", string(artifact.Status))
+		assert.Empty(t, artifact.Content)
+		assert.Contains(t, artifact.Name, "build/linux/bin/imix-")
 		assignedBuilder := bt.QueryBuilder().OnlyX(ctx)
 		assert.Equal(t, linuxBuilder.ID, assignedBuilder.ID)
 	})

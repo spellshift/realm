@@ -15,9 +15,9 @@ import (
 
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
-	"realm.pub/tavern/internal/namegen"
 )
 
 // Server implements the Builder gRPC service.
@@ -350,27 +350,34 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Error(codes.FailedPrecondition, "build task has no saved profile")
 	}
 
-	profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
-	randomName := namegen.NewSimple()
-
-	osName := strings.ToLower(strings.TrimPrefix(bt.TargetOs.String(), "PLATFORM_"))
-	formatName := strings.ToLower(strings.TrimPrefix(bt.TargetFormat.String(), "TARGET_FORMAT_"))
-	assetName := fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, randomName)
 	tx, err := s.graph.Tx(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "begin artifact transaction: %v", err)
 	}
 	defer tx.Rollback()
-	asset, err := tx.Client().Asset.Create().
-		SetName(assetName).
-		SetContent(buf.Bytes()).
-		Save(ctx)
+	bt, err = tx.Client().BuildTask.Get(ctx, bt.ID)
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to create asset: %v", err)
+		return status.Errorf(codes.Internal, "load build task: %v", err)
 	}
-
-	if _, err := tx.Client().BuildTask.UpdateOneID(bt.ID).SetArtifact(asset).Save(ctx); err != nil {
-		return status.Errorf(codes.Internal, "attach build artifact: %v", err)
+	if !bt.FinishedAt.IsZero() && (bt.ExitCode == nil || *bt.ExitCode != 0) {
+		return status.Error(codes.FailedPrecondition, "cannot upload artifact for failed build")
+	}
+	artifact, err := bt.QueryArtifact().Only(ctx)
+	if err == nil {
+		artifact, err = tx.Client().Asset.UpdateOne(artifact).
+			SetContent(buf.Bytes()).SetStatus(asset.StatusFINISHED).Save(ctx)
+	} else if ent.IsNotFound(err) {
+		profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
+		osName := strings.ToLower(strings.TrimPrefix(bt.TargetOs.String(), "PLATFORM_"))
+		formatName := strings.ToLower(strings.TrimPrefix(bt.TargetFormat.String(), "TARGET_FORMAT_"))
+		assetName := fmt.Sprintf("build/%s/%s/imix-%s-%d", osName, formatName, profileName, bt.ID)
+		artifact, err = tx.Client().Asset.Create().SetName(assetName).SetContent(buf.Bytes()).Save(ctx)
+		if err == nil {
+			_, err = tx.Client().BuildTask.UpdateOneID(bt.ID).SetArtifact(artifact).Save(ctx)
+		}
+	}
+	if err != nil {
+		return status.Errorf(codes.Internal, "save build artifact: %v", err)
 	}
 	if err := tx.Commit(); err != nil {
 		return status.Errorf(codes.Internal, "commit build artifact: %v", err)
@@ -379,12 +386,12 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 	slog.InfoContext(ctx, "build artifact uploaded",
 		"task_id", taskID,
 		"builder_id", b.ID,
-		"asset_id", asset.ID,
+		"asset_id", artifact.ID,
 		"size", buf.Len(),
 	)
 
 	return stream.SendAndClose(&builderpb.UploadBuildArtifactResponse{
-		AssetId: int64(asset.ID),
+		AssetId: int64(artifact.ID),
 	})
 }
 
@@ -477,7 +484,12 @@ func (s *Server) DownloadTome(req *builderpb.DownloadTomeRequest, stream builder
 // flushStreamOutput appends output and error to the build task in the database.
 // If finished is true, it also sets finished_at and exit_code to mark the task as complete.
 func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output string, errMsg string, finished bool, exitCode int64) error {
-	bt, err := s.graph.BuildTask.Get(ctx, taskID)
+	tx, err := s.graph.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	bt, err := tx.Client().BuildTask.Get(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to load build task %d: %w", taskID, err)
 	}
@@ -497,12 +509,15 @@ func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output strin
 		newError = bt.Error
 	}
 
-	update := s.graph.BuildTask.UpdateOne(bt).
+	update := tx.Client().BuildTask.UpdateOne(bt).
 		SetOutput(newOutput)
 	if newError != "" {
 		update = update.SetError(newError)
 	}
 	if finished {
+		if errMsg != "" && exitCode == 0 {
+			exitCode = -1
+		}
 		update = update.SetFinishedAt(time.Now()).
 			SetExitCode(int(exitCode))
 	}
@@ -510,6 +525,15 @@ func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output strin
 	if _, err := update.Save(ctx); err != nil {
 		return fmt.Errorf("failed to update build task %d: %w", taskID, err)
 	}
-
-	return nil
+	if finished && exitCode != 0 {
+		artifact, err := bt.QueryArtifact().Only(ctx)
+		if err == nil {
+			if err := tx.Client().Asset.UpdateOne(artifact).SetStatus(asset.StatusERROR).Exec(ctx); err != nil {
+				return fmt.Errorf("mark build artifact as failed: %w", err)
+			}
+		} else if !ent.IsNotFound(err) {
+			return fmt.Errorf("load build artifact: %w", err)
+		}
+	}
+	return tx.Commit()
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/errors"
 )
@@ -40,6 +41,9 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		// Ensure an asset is associated with the Link
 		a := l.Edges.Asset
 		if a == nil {
+			return ErrFileNotFound
+		}
+		if a.Status != asset.StatusFINISHED {
 			return ErrFileNotFound
 		}
 

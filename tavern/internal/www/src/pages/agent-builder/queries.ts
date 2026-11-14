@@ -39,7 +39,7 @@ export const GET_BUILD_TASKS = gql`
                 id targetOs targetFormat createdAt claimedAt startedAt finishedAt exitCode error
                 profile { id name }
                 profileAtCreation { name }
-                artifact { id name size hash creator { id name photoURL } }
+                artifact { id name size hash status creator { id name photoURL } }
             } }
         }
     }
@@ -93,7 +93,7 @@ export type BuildTask = {
     error: string | null;
     profile: { id: string; name: string };
     profileAtCreation: { name: string } | null;
-    artifact: { id: string; name: string; size: number; hash: string; creator?: UserNode | null } | null;
+    artifact: { id: string; name: string; size: number; hash: string; status: "FINISHED" | "IN_PROGRESS" | "ERROR"; creator?: UserNode | null } | null;
 };
 
 export function mapProfile(profile: ProfileRecord, catalog: Tome[]): BuildProfile {
@@ -154,7 +154,8 @@ export function taskStatus(task: BuildTask, now: number = Date.now()): BuildTask
         // whether an artifact was produced) is the source of truth; a
         // successful build can still have populated `error` text.
         if (task.exitCode !== 0) return "Failed";
-        if (task.artifact) return "Built";
+        if (task.artifact?.status === "FINISHED") return "Built";
+        if (task.artifact?.status === "ERROR") return "Failed";
         if (task.error?.includes(EXTRACTION_FAILURE_TEXT)) return "Failed";
         const elapsed = now - new Date(task.finishedAt).getTime();
         return elapsed > AWAITING_ARTIFACT_TIMEOUT_MS ? "Failed" : "Awaiting artifact";

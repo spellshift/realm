@@ -6,16 +6,17 @@ import Button from "../../../components/tavern-base-ui/button/Button";
 
 type DownloadButtonProps = {
     assetName: string;
+    disabled?: boolean;
 };
 
-const DownloadButton = ({ assetName }: DownloadButtonProps) => {
+const DownloadButton = ({ assetName, disabled = false }: DownloadButtonProps) => {
     const [isDownloading, setIsDownloading] = useState(false);
     const toast = useToast();
 
     const handleDownload = async (e: React.MouseEvent) => {
         e.stopPropagation();
 
-        if (isDownloading) {
+        if (isDownloading || disabled) {
             return;
         }
 
@@ -58,7 +59,7 @@ const DownloadButton = ({ assetName }: DownloadButtonProps) => {
                     ? <Ring size={14} lineWeight={2} speed={2} color="gray" />
                     : <ArrowDownToLine className="w-4 h-4" />
                 }
-                disabled={isDownloading}
+                disabled={isDownloading || disabled}
                 onClick={handleDownload}
                 aria-label="Download"
             />

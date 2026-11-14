@@ -119,6 +119,12 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             ),
         },
         {
+            key: 'status',
+            label: 'Status',
+            width: 'minmax(110px,1fr)',
+            render: (asset) => <span>{asset.status.replace('_', ' ')}</span>,
+        },
+        {
             key: 'creator',
             label: 'Creator',
             width: 'minmax(200px,2fr)',
@@ -193,12 +199,13 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             width: 'minmax(100px,1fr)',
             render: (asset) => (
                 <div className="flex flex-row gap-2">
-                    <DownloadButton assetName={asset.name} />
+                    <DownloadButton assetName={asset.name} disabled={asset.status !== "FINISHED"} />
                     <Tooltip label="Create Link" bg="white" color="black">
                         <Button
                             buttonVariant="ghost"
                             buttonStyle={{ color: "gray", size: "xs" }}
                             leftIcon={<Share className="w-4 h-4" />}
+                            disabled={asset.status !== "FINISHED"}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onCreateLink(asset.id, asset.name);
