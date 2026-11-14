@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	"realm.pub/tavern/internal/builder"
@@ -571,6 +573,16 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	defer conn.Close()
 
 	authClient := builderpb.NewBuilderClient(conn)
+	uploadAgain := func(taskID int64, content []byte) (*builderpb.UploadBuildArtifactResponse, error) {
+		stream, err := authClient.UploadBuildArtifact(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if err := stream.Send(&builderpb.UploadBuildArtifactRequest{TaskId: taskID, Chunk: content}); err != nil {
+			return nil, err
+		}
+		return stream.CloseAndRecv()
+	}
 
 	// Claim the task
 	claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
@@ -619,6 +631,18 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	assert.Equal(t, artifactData, asset.Content)
 	assert.Equal(t, len(artifactData), asset.Size)
 	assert.Equal(t, "FINISHED", string(asset.Status))
+	legacyAssetCount := graph.Asset.Query().CountX(ctx)
+	repeated, err := uploadAgain(task.Id, artifactData)
+	require.NoError(t, err)
+	assert.Equal(t, artifactResp.AssetId, repeated.AssetId)
+	_, err = uploadAgain(task.Id, []byte("different binary"))
+	assert.Equal(t, codes.FailedPrecondition, status.Code(err))
+	assert.Equal(t, legacyAssetCount, graph.Asset.Query().CountX(ctx))
+	legacyAfter := graph.Asset.GetX(ctx, asset.ID)
+	assert.Equal(t, asset.Content, legacyAfter.Content)
+	assert.Equal(t, asset.Status, legacyAfter.Status)
+	assert.Equal(t, asset.Hash, legacyAfter.Hash)
+	assert.Equal(t, asset.LastModifiedAt, legacyAfter.LastModifiedAt)
 
 	placeholder := graph.Asset.Create().SetName("build/linux/bin/pending-build").SetContent([]byte{}).SetStatus("IN_PROGRESS").SaveX(ctx)
 	pendingTask := graph.BuildTask.Create().
@@ -647,6 +671,16 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	finishedAsset := graph.Asset.GetX(ctx, placeholder.ID)
 	assert.Equal(t, "FINISHED", string(finishedAsset.Status))
 	assert.Equal(t, artifactData, finishedAsset.Content)
+	repeated, err = uploadAgain(int64(pendingTask.ID), artifactData)
+	require.NoError(t, err)
+	assert.Equal(t, int64(placeholder.ID), repeated.AssetId)
+	_, err = uploadAgain(int64(pendingTask.ID), []byte("different binary"))
+	assert.Equal(t, codes.FailedPrecondition, status.Code(err))
+	placeholderAfter := graph.Asset.GetX(ctx, placeholder.ID)
+	assert.Equal(t, finishedAsset.Content, placeholderAfter.Content)
+	assert.Equal(t, finishedAsset.Status, placeholderAfter.Status)
+	assert.Equal(t, finishedAsset.Hash, placeholderAfter.Hash)
+	assert.Equal(t, finishedAsset.LastModifiedAt, placeholderAfter.LastModifiedAt)
 }
 
 func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {
