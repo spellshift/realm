@@ -7,7 +7,7 @@ import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { useRerunQuestFormData } from "./useRerunQuestFormData";
 import { QuestNode } from "../../utils/interfacesQuery";
 
-interface RerunQuestDropdownProps {
+export interface RerunQuestDropdownProps {
     quest: QuestNode;
 }
 

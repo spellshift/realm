@@ -6,6 +6,9 @@ import { QuestQueryTopLevel } from "../../utils/interfacesQuery";
 import { GET_QUEST_DETAIL_QUERY } from "../quests/queries";
 import { RerunQuestDropdown } from "./RerunQuestDropdown";
 
+/** This component takes no props. */
+export type EditablePageHeaderProps = Record<string, never>;
+
 export const EditablePageHeader: FC = () => {
     const { questId } = useParams();
 

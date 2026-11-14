@@ -97,3 +97,5 @@ export const BeaconTable = ({
 };
 
 export default BeaconTable;
+
+export type { BeaconTableProps };

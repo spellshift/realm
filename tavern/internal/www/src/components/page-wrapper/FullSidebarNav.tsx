@@ -12,7 +12,7 @@ type FullSidebarNavProps = {
     handleSidebarMinimized: (arg: boolean) => void;
 }
 
-const FullSidebarNav = ({ currNavItem, handleSidebarMinimized }: FullSidebarNavProps) => {
+export const FullSidebarNav = ({ currNavItem, handleSidebarMinimized }: FullSidebarNavProps) => {
     const navigation = usePageNavigation();
     const { data } = useAuthorization();
     const user = data?.me;

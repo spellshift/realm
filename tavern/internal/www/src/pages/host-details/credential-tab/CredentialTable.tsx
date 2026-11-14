@@ -17,7 +17,7 @@ export interface CredentialTableProps {
 const getRowKey = (cred: CredentialNode, index: number): string =>
     cred.id ? String(cred.id) : `${cred.principal}-${cred.kind}-${index}`;
 
-const CredentialTable = ({ hostId, data, showLastModified = false }: CredentialTableProps) => {
+export const CredentialTable = ({ hostId, data, showLastModified = false }: CredentialTableProps) => {
     const currentDate = useMemo(() => new Date(), []);
 
     const items = useMemo(

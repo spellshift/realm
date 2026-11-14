@@ -43,3 +43,5 @@ export const TomeSelectionStep = ({ setCurrStep, formik, initialFilters }: TomeS
 };
 
 export default TomeSelectionStep;
+
+export type { TomeSelectionStepProps };

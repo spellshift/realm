@@ -3,7 +3,10 @@ import Button from "../tavern-base-ui/button/Button";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { FileTerminal } from "lucide-react";
 
-const EmptyStateNoQuests = () => {
+/** This component takes no props. */
+export type EmptyStateNoQuestsProps = Record<string, never>;
+
+export const EmptyStateNoQuests = () => {
     const { openModal } = useCreateQuestModal();
 
     return (

@@ -8,11 +8,13 @@ type Position = {
     left: number
 }
 
-export const ButtonDialogPopover = ({ children, label, leftIcon }: {
+export type ButtonDialogPopoverProps = {
     children: ReactElement,
     label: string,
     leftIcon: ReactElement
-}) => {
+};
+
+export const ButtonDialogPopover = ({ children, label, leftIcon }: ButtonDialogPopoverProps) => {
     const [isOpen, setIsOpen] = useState(false)
     const [position, setPosition] = useState<Position>({ top: 0, left: 0 })
     const [isMobile, setIsMobile] = useState(false)

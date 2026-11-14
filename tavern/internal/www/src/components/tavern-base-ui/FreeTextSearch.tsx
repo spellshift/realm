@@ -10,7 +10,7 @@ type Props = {
     isDisabled?: boolean;
     labelVisible?: boolean;
 }
-const FreeTextSearch = (props: Props) => {
+export const FreeTextSearch = (props: Props) => {
     const { placeholder, defaultValue, setSearch, isDisabled, labelVisible= true } = props;
     const [inputValue, setInputValue] = useState(defaultValue || "");
 

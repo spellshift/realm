@@ -1,7 +1,10 @@
 import { EmptyState, EmptyStateType } from "../tavern-base-ui/EmptyState";
 import Button from "../tavern-base-ui/button/Button";
 
-const EmptyStateNoBeacon = () => {
+/** This component takes no props. */
+export type EmptyStateNoBeaconProps = Record<string, never>;
+
+export const EmptyStateNoBeacon = () => {
     return (
         <EmptyState type={EmptyStateType.noData} label="No beacons found" details="Get started by deploying an imix agent on your target system.">
             <Button

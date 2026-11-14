@@ -16,7 +16,7 @@ type ModalProps = {
     size?: "sm" | "md" | "lg" | "xl"
 }
 
-const Modal: FC<ModalProps> = ({ isOpen, setOpen, size = "md", children }) => {
+export const Modal: FC<ModalProps> = ({ isOpen, setOpen, size = "md", children }) => {
     const modalSize = ModalWidth[size];
 
     return (

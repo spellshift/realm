@@ -1,7 +1,9 @@
 import { HomeIcon } from '@heroicons/react/20/solid'
 import { Link } from 'react-router-dom'
 
-export default function Breadcrumbs({ pages }: { pages: Array<{ label: string | undefined, link: string | undefined }> }) {
+export type BreadcrumbsProps = { pages: Array<{ label: string | undefined, link: string | undefined }> };
+
+export default function Breadcrumbs({ pages }: BreadcrumbsProps) {
     return (
         <nav aria-label="Breadcrumb" className="flex">
             <ol className="flex space-x-4 py-4">
@@ -38,3 +40,5 @@ export default function Breadcrumbs({ pages }: { pages: Array<{ label: string | 
         </nav>
     )
 }
+
+export { Breadcrumbs };

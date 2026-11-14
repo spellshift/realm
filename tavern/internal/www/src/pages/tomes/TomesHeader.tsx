@@ -6,7 +6,7 @@ import PageHeader from "../../components/tavern-base-ui/PageHeader";
 type TomesHeaderType = {
     setOpen: (arg: boolean) => void
 }
-const TomesHeader = ({ setOpen }: TomesHeaderType) => {
+export const TomesHeader = ({ setOpen }: TomesHeaderType) => {
 
     return (
         <div className="flex flex-col gap-4">
@@ -36,3 +36,5 @@ const TomesHeader = ({ setOpen }: TomesHeaderType) => {
     );
 }
 export default TomesHeader;
+
+export type TomesHeaderProps = TomesHeaderType;

@@ -63,3 +63,5 @@ export function VirtualizedCardItem<TData, TVariables = Record<string, unknown>>
         </div>
     );
 }
+
+export type { VirtualizedCardItemProps };

@@ -12,7 +12,7 @@ type MinimizedSidebarNavProps = {
     handleSidebarMinimized: (arg: boolean) => void
 }
 
-const MinimizedSidebarNav = ({ currNavItem, handleSidebarMinimized }: MinimizedSidebarNavProps) => {
+export const MinimizedSidebarNav = ({ currNavItem, handleSidebarMinimized }: MinimizedSidebarNavProps) => {
     const navigation = usePageNavigation();
     const { data } = useAuthorization();
     const user = data?.me;

@@ -36,3 +36,5 @@ export const BeaconOption = (props: Props) => {
 };
 
 export default React.memo(BeaconOption, areEqual);
+
+export type BeaconOptionProps = Props;

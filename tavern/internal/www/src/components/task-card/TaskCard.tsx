@@ -19,7 +19,7 @@ interface TaskCardType {
     task: TaskNode
 }
 
-const TaskCard: FC<TaskCardType> = ({ task }) => {
+export const TaskCard: FC<TaskCardType> = ({ task }) => {
     const defaultOpenTabIndex = task?.error ? 3 : 2;
 
     return (

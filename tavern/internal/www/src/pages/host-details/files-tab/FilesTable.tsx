@@ -9,7 +9,7 @@ import { FileDetailQueryResponse, FileNode } from "./types";
 import { format } from "date-fns";
 import { formatBytes } from "../../../utils/utils";
 
-interface FilesTableProps {
+export interface FilesTableProps {
     hostId: string;
     fileIds: string[];
 }

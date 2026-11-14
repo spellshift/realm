@@ -68,3 +68,5 @@ export const TomeTableWrapper = ({
 };
 
 export default TomeTableWrapper;
+
+export type { TomeTableWrapperProps };

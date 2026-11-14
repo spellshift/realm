@@ -7,7 +7,7 @@ import { BeaconTable } from "../beacon-selection/BeaconTable";
 import { TomeTableWrapper } from "../tome-selection/TomeTableWrapper";
 import { CopyableKeyValues } from "../../copyable-key-values";
 
-interface FinalizeSelectionProps {
+export interface FinalizeSelectionProps {
     setCurrStep: (step: number) => void;
     formik: ModalQuestFormikProps;
     loading?: boolean;

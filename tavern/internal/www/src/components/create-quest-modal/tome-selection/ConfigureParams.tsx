@@ -8,9 +8,11 @@ import {
 import { FieldInputParams } from "../../../utils/interfacesUI";
 import { ModalQuestFormikProps } from "../types";
 
-export const ConfigureParams = ({ formik }: {
+export type ConfigureParamsProps = {
     formik: ModalQuestFormikProps;
-}) => {
+};
+
+export const ConfigureParams = ({ formik }: ConfigureParamsProps) => {
     const params = formik.values.params;
 
     const handleParamChange = useCallback(

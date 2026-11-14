@@ -64,7 +64,7 @@ type CodeBlockProps = {
     inlineButton?: boolean;
 };
 
-const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inlineButton = false }: CodeBlockProps) => {
+export const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inlineButton = false }: CodeBlockProps) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {

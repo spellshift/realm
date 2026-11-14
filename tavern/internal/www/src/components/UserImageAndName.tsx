@@ -4,7 +4,9 @@ import { Image } from "@chakra-ui/react";
 import PlaceholderUser from "../assets/PlaceholderUser.png";
 import { UserNode } from "../utils/interfacesQuery";
 
-const UserImageAndName: FC<{ userData: UserNode | null | undefined }> = ({ userData }) => {
+export type UserImageAndNameProps = { userData: UserNode | null | undefined };
+
+export const UserImageAndName: FC<UserImageAndNameProps> = ({ userData }) => {
     const creatorImage = (userData?.photoURL && userData?.photoURL !== "") ? userData.photoURL : PlaceholderUser;
 
     return (

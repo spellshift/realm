@@ -6,7 +6,7 @@ import Button from "../../../../components/tavern-base-ui/button/Button";
 import FileCard, { FileItem } from "./FileCard";
 import { uploadFiles, MAX_FILE_SIZE } from "./upload";
 
-type UploadAssetModalProps = {
+export type UploadAssetModalProps = {
     isOpen: boolean;
     setOpen: (arg: boolean) => void;
     onUploadSuccess: () => void;
@@ -16,7 +16,7 @@ interface UploadFormValues {
     files: FileItem[];
 }
 
-const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUploadSuccess }) => {
+export const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUploadSuccess }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const folderInputRef = useRef<HTMLInputElement>(null);
 

@@ -2,6 +2,9 @@ import Button from "../../../../components/tavern-base-ui/button/Button";
 import { useCreateQuestModal } from "../../../../context/CreateQuestModalContext";
 import { useProcessQuestFormData } from "./useProcessQuestFormData";
 
+/** This component takes no props. */
+export type CreateProcessQuestButtonProps = Record<string, never>;
+
 export const CreateProcessQuestButton = () => {
     const { openModal } = useCreateQuestModal();
     const { fetchFormData, loading } = useProcessQuestFormData();

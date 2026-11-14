@@ -9,14 +9,14 @@ import { useUpdateUser } from "./hooks/useUpdateUser";
 import { GET_USER_DETAIL_QUERY } from "./queries";
 import { UserDetailQueryResponse } from "./types";
 
-interface UserTableProps {
+export interface UserTableProps {
     userIds: string[];
     currentUser: UserNode;
     hasMore?: boolean;
     onLoadMore?: () => void;
 }
 
-const UserTable = ({ userIds, currentUser, hasMore = false, onLoadMore }: UserTableProps) => {
+export const UserTable = ({ userIds, currentUser, hasMore = false, onLoadMore }: UserTableProps) => {
     const { submitUpdateUser } = useUpdateUser();
 
     const getVariables = useCallback((id: string) => ({ id }), []);

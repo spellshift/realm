@@ -9,7 +9,7 @@ import { checkIfBeaconOffline } from '../../utils/utils';
 import { PrincipalAdminTypes, SupportedTransports } from '../../utils/enums';
 import { CREATE_SHELL_MUTATION, GET_BEACONS_FOR_HOST_QUERY } from './queries';
 
-interface CreateShellButtonProps {
+export interface CreateShellButtonProps {
     hostId?: string;
     beaconId?: string;
 }

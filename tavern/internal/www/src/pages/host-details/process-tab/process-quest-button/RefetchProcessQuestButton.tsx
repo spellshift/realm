@@ -4,6 +4,9 @@ import { useProcessQuestFormData } from "./useProcessQuestFormData";
 import { RefreshCw } from "lucide-react";
 import Tooltip from "../../../../components/tavern-base-ui/Tooltip";
 
+/** This component takes no props. */
+export type RefetchProcessQuestButtonProps = Record<string, never>;
+
 export const RefetchProcessQuestButton = () => {
     const { openModal } = useCreateQuestModal();
     const { fetchFormData, loading } = useProcessQuestFormData();

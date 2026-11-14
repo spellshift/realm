@@ -3,7 +3,7 @@ import { useCreateQuestModal } from "../../../context/CreateQuestModalContext";
 import { usePortalQuestFormData } from "./usePortalQuestFormData";
 import { PlusIcon } from "lucide-react";
 
-interface CreatePortalQuestButtonProps {
+export interface CreatePortalQuestButtonProps {
     variant?: "solid" | "ghost";
     size?: "sm" | "md" | "lg" | "xs";
 }

@@ -12,7 +12,7 @@ import { checkIfBeaconOffline } from "../../../utils/utils";
 import UserImageAndName from "../../../components/UserImageAndName";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 
-interface ShellsTableProps {
+export interface ShellsTableProps {
     shellIds: string[];
     hasMore?: boolean;
     onLoadMore?: () => void;

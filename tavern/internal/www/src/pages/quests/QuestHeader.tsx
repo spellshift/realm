@@ -3,7 +3,10 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import Button from "../../components/tavern-base-ui/button/Button";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 
-const QuestHeader = () => {
+/** This component takes no props. */
+export type QuestHeaderProps = Record<string, never>;
+
+export const QuestHeader = () => {
     const { openModal } = useCreateQuestModal();
 
     return (

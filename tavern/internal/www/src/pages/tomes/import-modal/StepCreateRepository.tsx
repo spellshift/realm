@@ -6,12 +6,12 @@ import { RepositoryNode } from "../../../utils/interfacesQuery";
 import { useCreateRepositoryLink } from "../hooks/useCreateRepositoryLink";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
-type StepCreateRepositoryProps = {
+export type StepCreateRepositoryProps = {
     setCurrStep: (step: number) => void;
     setNewRepository: (repository: RepositoryNode) => void;
 }
 
-const StepCreateRepository: FC<StepCreateRepositoryProps> = ({ setCurrStep, setNewRepository }) => {
+export const StepCreateRepository: FC<StepCreateRepositoryProps> = ({ setCurrStep, setNewRepository }) => {
     const { submitRepositoryLink, error } = useCreateRepositoryLink(setCurrStep, setNewRepository);
 
     const formik = useFormik({

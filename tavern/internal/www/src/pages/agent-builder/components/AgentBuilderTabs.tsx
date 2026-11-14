@@ -8,16 +8,18 @@ const tabClass = ({ selected }: { selected: boolean }) =>
             : "border-transparent hover:bg-white hover:border-t-purple-600"
     }`;
 
+export type AgentBuilderTabsProps = {
+    agentCount: number;
+    profileCount: number;
+    builderCount: number;
+};
+
 /** Agent builder landing page's tab headers -- same folder-tab idiom as HostTabs. */
 export const AgentBuilderTabs = ({
     agentCount,
     profileCount,
     builderCount,
-}: {
-    agentCount: number;
-    profileCount: number;
-    builderCount: number;
-}) => (
+}: AgentBuilderTabsProps) => (
     <TabList className="flex flex-row gap-2 border-gray-200 w-full min-w-0 overflow-x-auto bg-gray-100">
         <Tab className={tabClass}>
             <PackageCheck className="w-4 h-4" />

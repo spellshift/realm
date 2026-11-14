@@ -141,3 +141,5 @@ export const TomeTable = ({
 };
 
 export default TomeTable;
+
+export type { TomeTableProps };

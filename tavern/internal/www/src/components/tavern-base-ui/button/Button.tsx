@@ -21,7 +21,7 @@ interface ButtonProps extends BaseButtonAttributes {
   buttonVariant?: "solid" | "outline" | "ghost";
 }
 
-const Button = forwardRef<Ref, ButtonProps>((props, ref) => {
+export const Button = forwardRef<Ref, ButtonProps>((props, ref) => {
   // destructure necessary props
   const { type, children, buttonStyle, buttonVariant, disabled, isLoading, leftIcon, rightIcon, className, ...rest } = props;
 

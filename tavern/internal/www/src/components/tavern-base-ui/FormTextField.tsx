@@ -4,7 +4,7 @@ type Props = {
     htmlFor: string;
     label: string;
 } & InputProps;
-const FormTextField = (props: Props) => {
+export const FormTextField = (props: Props) => {
     const {htmlFor, label, ...rest} = props;
     return (
         <div>

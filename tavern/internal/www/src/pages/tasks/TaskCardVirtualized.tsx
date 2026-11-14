@@ -4,7 +4,7 @@ import TaskCard from "../../components/task-card/TaskCard";
 import { GET_TASK_QUERY } from "../../utils/queries";
 import { TaskNode, TaskQueryTopLevel } from "../../utils/interfacesQuery";
 
-interface TaskCardVirtualizedProps {
+export interface TaskCardVirtualizedProps {
     itemId: string;
     isVisible: boolean;
 }

@@ -10,7 +10,7 @@ import CreateLinkForm from "./CreateLinkForm";
 import { generateRandomLinkPath } from "../../utils";
 import { useMutation } from "@apollo/client";
 
-type CreateLinkModalProps = {
+export type CreateLinkModalProps = {
     isOpen: boolean;
     setOpen: (arg: boolean) => void;
     assetId: string;
@@ -18,7 +18,7 @@ type CreateLinkModalProps = {
     onSuccess?: () => void;
 };
 
-const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName, onSuccess }) => {
+export const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName, onSuccess }) => {
     const [createLink] = useMutation(CREATE_LINK);
     const [createdLink, setCreatedLink] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);

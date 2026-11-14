@@ -9,7 +9,9 @@ import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 import { useTagOptions } from "./useTagOptions";
 
 
-export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTag, tagSaved?: TagNode, hostId?: string }) {
+export type EditableTagProps = { kind: KindOfTag, tagSaved?: TagNode, hostId?: string };
+
+export default function EditableTag({ kind, tagSaved, hostId }: EditableTagProps) {
     const { data } = useAuthorization();
     const { options, isLoading: optionsLoading } = useTagOptions(kind);
 
@@ -68,3 +70,5 @@ export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTa
         </div>
     );
 }
+
+export { EditableTag };

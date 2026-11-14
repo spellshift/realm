@@ -5,12 +5,12 @@ import { useNavigate } from "react-router-dom";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
-type AssetsHeaderProps = {
+export type AssetsHeaderProps = {
     setOpen: (arg: boolean) => void;
     onGenerateAgent?: () => void;
 };
 
-const AssetsHeader: FC<AssetsHeaderProps> = ({ setOpen, onGenerateAgent }) => {
+export const AssetsHeader: FC<AssetsHeaderProps> = ({ setOpen, onGenerateAgent }) => {
     const navigate = useNavigate();
     return (
         <div className="flex flex-col gap-4 justify-between">

@@ -72,7 +72,7 @@ const STEPS: StepConfig[] = [
     },
 ];
 
-const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete, refetchQueries }: CreateQuestModalProps) => {
+export const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete, refetchQueries }: CreateQuestModalProps) => {
     const [placeholderTitle] = useState(() => getRandomQuestName());
     const [currStep, setCurrStep] = useState(() => getInitialStep(initialFormData));
     const { submitQuest, loading } = useModalSubmitQuest(refetchQueries);

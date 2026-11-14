@@ -5,6 +5,9 @@ import { QuestTimelineChart } from "./QuestTimelineChart";
 import { MetricCard } from "../MetricCard";
 import { TIME_RANGE_CONFIG, TIME_RANGES } from "../utils/timeRange";
 
+/** This component takes no props. */
+export type QuestSummaryCardProps = Record<string, never>;
+
 export const QuestSummaryCard: FC = () => {
     const {
         selectedIndex,

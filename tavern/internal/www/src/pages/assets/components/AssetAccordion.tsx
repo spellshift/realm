@@ -10,12 +10,12 @@ import { useMutation } from "@apollo/client";
 import UserImageAndName from "../../../components/UserImageAndName";
 import moment from "moment";
 
-type AssetAccordionProps = {
+export type AssetAccordionProps = {
     asset: AssetNode;
     onUpdate: () => void;
 };
 
-const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
+export const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
     const toast = useToast();
     const [disableLink] = useMutation(DISABLE_LINK);
     const handleDisableLink = async (linkId: string) => {

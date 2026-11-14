@@ -72,3 +72,5 @@ export default function TablePagination(props: Props) {
     </nav>
   )
 };
+
+export { TablePagination };

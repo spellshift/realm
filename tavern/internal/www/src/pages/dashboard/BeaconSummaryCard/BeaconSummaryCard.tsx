@@ -5,6 +5,9 @@ import { useBeaconTimelineChart } from "./useBeaconTimelineChart";
 import { BeaconTimelineChart } from "./BeaconTimelineChart";
 import { MetricCard } from "../MetricCard";
 
+/** This component takes no props. */
+export type BeaconSummaryCardProps = Record<string, never>;
+
 export const BeaconSummaryCard: FC = () => {
     const {
         selectedIndex,

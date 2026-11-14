@@ -34,3 +34,5 @@ export const FormTextArea = (props: Props) => {
         </div>
     );
 }
+
+export type FormTextAreaProps = Props;

@@ -1,6 +1,6 @@
 import { Tooltip as ChakraTooltip, TooltipProps as ChakraTooltipProps } from "@chakra-ui/react";
 
-const Tooltip = ({ label, ...props }: ChakraTooltipProps) => {
+export const Tooltip = ({ label, ...props }: ChakraTooltipProps) => {
     return <ChakraTooltip
         label={label}
         bg="white"

@@ -17,7 +17,7 @@ type MobileNavProps = {
     currNavItem?: string;
 }
 
-const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavProps) => {
+export const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavProps) => {
     const navigation = usePageNavigation();
     const { data } = useAuthorization();
     const user = data?.me;

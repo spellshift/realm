@@ -91,3 +91,5 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
 };
 
 export default VirtualizedTableWrapper;
+
+export type { VirtualizedTableWrapperProps };

@@ -15,6 +15,9 @@ import { TagKind } from "./types";
 const TAB_KINDS: TagKind[] = ["group", "service"];
 const TAB_LABELS = ["Group", "Service"];
 
+/** This component takes no props. */
+export type TagSummaryCardProps = Record<string, never>;
+
 export const TagSummaryCard: FC = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [autoTagOpen, setAutoTagOpen] = useState(false);

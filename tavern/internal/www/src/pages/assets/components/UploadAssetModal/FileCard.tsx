@@ -21,7 +21,7 @@ export interface FileCardProps {
     onRemove: () => void;
 }
 
-const FileCard = ({ item, index, formik, onRemove }: FileCardProps) => {
+export const FileCard = ({ item, index, formik, onRemove }: FileCardProps) => {
     const [editingName, setEditingName] = useState<string | null>(null);
 
     const isPending = item.status === "pending";

@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, MoveRight } from "lucide-react";
 
 type TrendDirection = "up" | "down" | "same";
 
-interface MetricCardProps {
+export interface MetricCardProps {
     label?: string;
     count: number | string;
     timeframe?: string;

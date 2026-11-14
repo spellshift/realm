@@ -9,7 +9,7 @@ import { PrincipalAdminTypes } from "../../../utils/enums";
 import { ProcessNode } from "../../../utils/interfacesQuery";
 import { format } from "date-fns";
 
-interface ProcessesTableProps {
+export interface ProcessesTableProps {
     hostId: string;
     processIds: string[];
 }

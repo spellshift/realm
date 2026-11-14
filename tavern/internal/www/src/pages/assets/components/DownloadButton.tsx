@@ -4,11 +4,11 @@ import { Tooltip, useToast } from "@chakra-ui/react";
 import { Ring } from "@uiball/loaders";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
-type DownloadButtonProps = {
+export type DownloadButtonProps = {
     assetName: string;
 };
 
-const DownloadButton = ({ assetName }: DownloadButtonProps) => {
+export const DownloadButton = ({ assetName }: DownloadButtonProps) => {
     const [isDownloading, setIsDownloading] = useState(false);
     const toast = useToast();
 

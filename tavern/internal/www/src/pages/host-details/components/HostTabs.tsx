@@ -3,7 +3,10 @@ import { useHost } from "../../../context/HostContext";
 import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo, TerminalIcon, Shell, Images } from "lucide-react";
 
 
-const HostTabs = () => {
+/** This component takes no props. */
+export type HostTabsProps = Record<string, never>;
+
+export const HostTabs = () => {
     const { data: host, taskCount, totalShellCount, activeShellCount, totalPortalCount, activePortalCount } = useHost();
 
     return (

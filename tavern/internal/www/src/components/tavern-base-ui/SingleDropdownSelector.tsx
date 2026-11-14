@@ -12,7 +12,7 @@ type SingleDropdownSelectorProps = {
     isSearchable?: boolean;
     defaultValue?: Option
 }
-const SingleDropdownSelector: FC<SingleDropdownSelectorProps> = ({
+export const SingleDropdownSelector: FC<SingleDropdownSelectorProps> = ({
     label,
     options,
     setSelectedOption,

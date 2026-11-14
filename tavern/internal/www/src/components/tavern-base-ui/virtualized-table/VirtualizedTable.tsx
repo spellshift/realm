@@ -195,3 +195,5 @@ export function VirtualizedTable<TData, TResponse = unknown>({
         </div>
     );
 }
+
+export type { VirtualizedTableProps };

@@ -7,7 +7,10 @@ import { Globe, Network } from "lucide-react";
 import { getEnumKey } from "../../../utils/utils";
 import { SupportedPlatforms } from "../../../utils/enums";
 
-const HostDetailsSection = () => {
+/** This component takes no props. */
+export type HostDetailsSectionProps = Record<string, never>;
+
+export const HostDetailsSection = () => {
     const { data: host } = useHost();
 
     const serviceTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "service")]?.node;

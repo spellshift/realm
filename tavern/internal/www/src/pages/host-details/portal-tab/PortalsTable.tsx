@@ -77,7 +77,7 @@ const ClosePortalAction = ({ portal }: ClosePortalActionProps) => {
     );
 };
 
-interface PortalsTableProps {
+export interface PortalsTableProps {
     portalIds: string[];
     hasMore?: boolean;
     onLoadMore?: () => void;

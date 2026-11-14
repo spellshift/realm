@@ -6,13 +6,13 @@ import { RepositoryNode } from "../../../utils/interfacesQuery";
 import { useFetchRepositoryTome } from "../hooks/useFetchRepositoryTomes";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
-type StepAddDeploymentKeyProps = {
+export type StepAddDeploymentKeyProps = {
     setCurrStep: (step: number) => void;
     newRepository: RepositoryNode;
     setOpen: (arg: any) => any;
 }
 
-const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newRepository, setOpen }) => {
+export const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newRepository, setOpen }) => {
     const handleOnSuccess = () => {
         setOpen(false);
     }

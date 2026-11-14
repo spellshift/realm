@@ -42,11 +42,11 @@ const UNSUBSCRIBE_FROM_HOST = gql`
     }
 `;
 
-interface HostSubscriptionButtonProps {
+export interface HostSubscriptionButtonProps {
     hostId: string;
 }
 
-const HostSubscriptionButton = ({ hostId }: HostSubscriptionButtonProps) => {
+export const HostSubscriptionButton = ({ hostId }: HostSubscriptionButtonProps) => {
     const toast = useToast();
 
     const handleMutationError = useCallback((title: string) => (error: ApolloError) => {

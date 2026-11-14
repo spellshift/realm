@@ -4,7 +4,7 @@ import { getEnumKey } from "../utils/utils";
 import Badge from "./tavern-base-ui/badge/Badge";
 import { Globe, Network } from "lucide-react";
 
-const HostTile = ({ data }: { data: HostNode }) => {
+export const HostTile = ({ data }: { data: HostNode }) => {
     return (
         <div className="flex flex-col gap-2">
             <div>{data.name}</div>

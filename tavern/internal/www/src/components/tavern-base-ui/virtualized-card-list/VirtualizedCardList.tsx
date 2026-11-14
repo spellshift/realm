@@ -116,3 +116,5 @@ export const VirtualizedCardList = ({
         </div>
     );
 };
+
+export type { VirtualizedCardListProps };

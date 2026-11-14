@@ -42,3 +42,6 @@ const FreeTextSearch = (props: Props) => {
     );
 }
 export default FreeTextSearch;
+
+export type DebouncedFreeTextSearchProps = Props;
+export { FreeTextSearch as DebouncedFreeTextSearch };

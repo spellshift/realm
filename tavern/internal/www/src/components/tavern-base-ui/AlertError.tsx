@@ -5,7 +5,7 @@ type AlertErrorProps = {
     label: string,
     details: ReactNode
 }
-const AlertError: FC<AlertErrorProps> = ({ label, details }) => {
+export const AlertError: FC<AlertErrorProps> = ({ label, details }) => {
     return (
         <div className="rounded-md bg-red-50 py-2 px-4">
             <div className="flex flex-row gap-4">

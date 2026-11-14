@@ -12,7 +12,7 @@ import { PrincipalAdminTypes } from "../../utils/enums";
 import { HostNode } from "../../utils/interfacesQuery";
 import { CreateShellButton } from "../../components/create-shell-button/CreateShellButton";
 
-interface HostsTableProps {
+export interface HostsTableProps {
     hostIds: string[];
     hasMore?: boolean;
     onLoadMore?: () => void;

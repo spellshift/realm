@@ -5,7 +5,7 @@ import { RepositoryNode, TomeEdge } from "../../../utils/interfacesQuery";
 import StepAddDeploymentKey from "./StepAddDeploymentKey";
 import StepCreateRepository from "./StepCreateRepository";
 
-type ImportRepositoryModalProps = {
+export type ImportRepositoryModalProps = {
     isOpen: boolean,
     setOpen: (arg: any) => any,
 }
@@ -20,7 +20,7 @@ const defaultNewRepository: RepositoryNode = {
     owner: null
 };
 
-const ImportRepositoryModal: FC<ImportRepositoryModalProps> = ({ isOpen, setOpen }) => {
+export const ImportRepositoryModal: FC<ImportRepositoryModalProps> = ({ isOpen, setOpen }) => {
     const [newRepository, setNewRepository] = useState<RepositoryNode>(defaultNewRepository);
 
     const [currStep, setCurrStep] = useState(0);

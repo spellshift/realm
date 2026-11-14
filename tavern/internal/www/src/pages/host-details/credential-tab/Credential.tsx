@@ -5,11 +5,11 @@ import { EyeSlashIcon, EyeIcon } from "@heroicons/react/24/solid";
 
 const MAX_MASK_LENGTH = 32;
 
-interface CredentialProps {
+export interface CredentialProps {
     secret: string;
 }
 
-const Credential = ({ secret }: CredentialProps) => {
+export const Credential = ({ secret }: CredentialProps) => {
     const [hidden, setHidden] = useState(true);
     const safeSecret = secret ?? "";
     const maskedSecret = "*".repeat(Math.min(safeSecret.length, MAX_MASK_LENGTH));

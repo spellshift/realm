@@ -14,9 +14,11 @@ import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { RepositoryRow } from "../../../utils/interfacesUI";
 
 
-const RepositoryTable = ({ repositories }: {
+export type RepositoryTableProps = {
     repositories: Array<RepositoryRow>
-}) => {
+};
+
+export const RepositoryTable = ({ repositories }: RepositoryTableProps) => {
     const currentDate = new Date();
     const {
         importRepositoryTomes,

@@ -203,3 +203,5 @@ export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen, initialFilte
 };
 
 export default BeaconSelectionStep;
+
+export type { BeaconSelectionStepProps };

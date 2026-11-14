@@ -18,7 +18,7 @@ import DownloadButton from "./components/DownloadButton";
 import { formatBytes } from "../../utils/utils";
 import { useAuthorization } from "../../context/AuthorizationContext";
 
-interface AssetsTableProps {
+export interface AssetsTableProps {
     assetIds: string[];
     hasMore?: boolean;
     onLoadMore?: () => void;

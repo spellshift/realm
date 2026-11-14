@@ -12,7 +12,7 @@ interface BadgeProps {
     badgeStyle?: VariantProps<typeof solidBadge>;
 }
 
-const Badge: FC<BadgeProps> = (
+export const Badge: FC<BadgeProps> = (
     { children, leftIcon, rightIcon, badgeStyle, className, ...rest }
 ) => {
 

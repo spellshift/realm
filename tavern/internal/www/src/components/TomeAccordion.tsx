@@ -60,7 +60,7 @@ const ParamLabelsDisplay = ({ params }: ParamDisplayProps) => (
     </div>
 );
 
-const TomeAccordion = (props: Props) => {
+export const TomeAccordion = (props: Props) => {
     const {
         tome,
         params,

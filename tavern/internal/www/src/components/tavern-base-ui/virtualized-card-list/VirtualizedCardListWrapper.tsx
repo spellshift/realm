@@ -117,3 +117,5 @@ export const VirtualizedCardListWrapper: React.FC<VirtualizedCardListWrapperProp
 };
 
 export default VirtualizedCardListWrapper;
+
+export type { VirtualizedCardListWrapperProps };

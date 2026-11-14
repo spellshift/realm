@@ -13,7 +13,7 @@ import { checkIfBeaconOffline, getEnumKey } from "../../../utils/utils";
 import { CreateShellButton } from "../../../components/create-shell-button/CreateShellButton";
 import { useCreateQuestModal } from "../../../context/CreateQuestModalContext";
 
-interface BeaconsTableProps {
+export interface BeaconsTableProps {
     beaconIds: string[];
     hasMore?: boolean;
     onLoadMore?: () => void;

@@ -27,13 +27,13 @@ import useUrgentNotifications from '../../hooks/useUrgentNotifications';
 import { FileTerminal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-interface NotificationBellProps {
+export interface NotificationBellProps {
     buttonClassName?: string;
     iconClassName?: string;
     placement?: "bottom-end" | "top-start" | "top-end";
 }
 
-const NotificationBell: React.FC<NotificationBellProps> = ({
+export const NotificationBell: React.FC<NotificationBellProps> = ({
     buttonClassName,
     iconClassName,
     placement = "bottom-end",

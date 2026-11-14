@@ -3,7 +3,7 @@ import Modal from "../../../components/tavern-base-ui/Modal";
 import NewBuildProfile from "../NewBuildProfile";
 import { BuildProfile, Tome } from "../types";
 
-type NewBuildProfileModalProps = {
+export type NewBuildProfileModalProps = {
     isOpen: boolean;
     setOpen: (open: boolean) => void;
     catalog: Tome[];

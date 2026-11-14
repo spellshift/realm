@@ -4,7 +4,7 @@ import { UserQueryTopLevel } from "../utils/interfacesQuery";
 import { useFilters } from "../context/FilterContext/FilterContext";
 import { GET_USER_QUERY } from "../utils/queries";
 
-const UserFilterBar = () => {
+export const UserFilterBar = () => {
     const { filters, updateFilters } = useFilters();
     const { data, loading } = useQuery<UserQueryTopLevel>(GET_USER_QUERY);
 

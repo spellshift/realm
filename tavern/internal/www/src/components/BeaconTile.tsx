@@ -11,7 +11,7 @@ type Props = {
     isBeaconIconVisible?: boolean;
     className?: string;
 }
-const BeaconTile = (props: Props) => {
+export const BeaconTile = (props: Props) => {
     const { beacon, isBeaconIconVisible, className = "" } = props;
     const {
         host,

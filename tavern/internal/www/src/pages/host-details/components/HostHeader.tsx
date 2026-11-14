@@ -6,7 +6,10 @@ import { FileTerminal } from "lucide-react";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import HostSubscriptionButton from "./HostSubscriptionButton";
 
-const HostHeader = () => {
+/** This component takes no props. */
+export type HostHeaderProps = Record<string, never>;
+
+export const HostHeader = () => {
     const [, setSearchParams] = useSearchParams();
     const { openModal } = useCreateQuestModal();
     const { data: host } = useHost();

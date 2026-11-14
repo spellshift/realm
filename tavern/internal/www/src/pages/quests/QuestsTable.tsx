@@ -11,7 +11,7 @@ import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { useFilters } from "../../context/FilterContext";
 import { OrderDirection, TaskOrderField } from "../../utils/enums";
 
-interface QuestsTableProps {
+export interface QuestsTableProps {
     questIds: string[];
     hasMore?: boolean;
     onLoadMore?: () => void;
