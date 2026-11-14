@@ -2,13 +2,14 @@ import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
 import { BugAntIcon } from "@heroicons/react/24/outline";
-import { Tooltip, useToast } from "@chakra-ui/react";
+import { useToast } from "@chakra-ui/react";
 import { useMutation } from "@apollo/client";
 import moment from "moment";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtualized-table/types";
 import { AssetNode } from "../../utils/interfacesQuery";
 import Button from "../../components/tavern-base-ui/button/Button";
+import Tooltip from "../../components/tavern-base-ui/Tooltip";
 import UserImageAndName from "../../components/UserImageAndName";
 import { isAgentAsset, truncateAssetName } from "./utils";
 import { GET_ASSET_DETAIL_QUERY, DELETE_ASSET } from "./queries";
@@ -81,25 +82,25 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 return (
                     <div className="flex items-center gap-4">
                         {isAgent ? (
-                            <Tooltip label="Built agent artifact" bg="white" color="black">
+                            <Tooltip label="Built agent artifact">
                                 <div className="shrink-0" data-testid="agent-bug-icon">
                                     <BugAntIcon className="w-4 h-4 text-black" />
                                 </div>
                             </Tooltip>
                         ) : hasTomes ? (
-                            <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
+                            <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`}>
                                 <div className="shrink-0">
                                     <BookOpen className="w-4 h-4 text-gray-500" />
                                 </div>
                             </Tooltip>
                         ) : (
-                            <Tooltip label="Asset is not referenced by any tomes" bg="white" color="black">
+                            <Tooltip label="Asset is not referenced by any tomes">
                                 <div className="shrink-0">
                                     <FilePlus className="w-4 h-4 text-gray-400" />
                                 </div>
                             </Tooltip>
                         )}
-                        <Tooltip label={asset.name} bg="white" color="black">
+                        <Tooltip label={asset.name}>
                             <div
                                 className="cursor-pointer hover:text-purple-600 flex items-center gap-1"
                                 onClick={(e) => handleCopy(asset.name, e)}
@@ -150,7 +151,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             render: (asset) => {
                 const hash = asset.hash;
                 return (
-                    <Tooltip label={hash} bg="white" color="black">
+                    <Tooltip label={hash}>
                         <div
                             className="font-mono text-sm cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopy(hash, e)}
@@ -194,7 +195,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             render: (asset) => (
                 <div className="flex flex-row gap-2">
                     <DownloadButton assetName={asset.name} />
-                    <Tooltip label="Create Link" bg="white" color="black">
+                    <Tooltip label="Create Link">
                         <Button
                             buttonVariant="ghost"
                             buttonStyle={{ color: "gray", size: "xs" }}
@@ -207,10 +208,10 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                         />
                     </Tooltip>
                     {isAdmin && (
-                        <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : "Delete"} bg="white" color="black">
+                        <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : "Delete"}>
                             <Button
                                 buttonVariant="ghost"
-                                buttonStyle={{ color: "gray", size: "xs" }}
+                                buttonStyle={{ color: "red", size: "xs" }}
                                 leftIcon={<Trash2 className="w-4 h-4" />}
                                 disabled={asset.tomes.totalCount > 0}
                                 onClick={(e) => {

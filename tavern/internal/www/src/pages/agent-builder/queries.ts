@@ -201,6 +201,7 @@ export function useBuilders(options: { skip?: boolean } = {}) {
     const result = useQuery<{ builders: Connection<BuilderRecord> }>(GET_BUILDERS, {
         skip,
         fetchPolicy: "cache-and-network",
+        pollInterval: skip ? undefined : 30000,
     });
     const now = Date.now();
     const builders = nodes(result.data?.builders).map((builder) => mapBuilder(builder, now));
