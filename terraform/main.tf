@@ -12,10 +12,6 @@ terraform {
       source = "hashicorp/random"
     }
   }
-  backend "gcs" {
-    bucket = "tavern_tf_state"
-    prefix = "terraform/state"
-  }
 }
 
 resource "random_password" "defaultmysql" {
