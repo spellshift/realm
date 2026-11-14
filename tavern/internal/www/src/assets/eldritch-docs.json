@@ -1,7 +1,7 @@
 {
   "aes.decrypt": {
     "signature": "aes.decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes",
-    "description": "Decrypts data using AES (ECB/block mode with PKCS#7 padding).",
+    "description": "Decrypts data using AES-128 in CBC mode with PKCS#7 padding.\n\n`key` must be 16 bytes and `iv` must be 16 bytes; the IV is used to\nchain blocks (CBC), matching the `aes.encrypt` IV.",
     "kind": "function",
     "module": "aes",
     "params": [
@@ -45,7 +45,7 @@
   },
   "aes.encrypt": {
     "signature": "aes.encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes",
-    "description": "Encrypts data using AES (ECB/block mode with PKCS#7 padding).",
+    "description": "Encrypts data using AES-128 in CBC mode with PKCS#7 padding.\n\n`key` must be 16 bytes and `iv` must be 16 bytes; the IV is used to\nchain blocks (CBC) and must be kept alongside the ciphertext to\ndecrypt it later.",
     "kind": "function",
     "module": "aes",
     "params": [
@@ -2475,6 +2475,49 @@
       }
     ],
     "returnType": "Dict",
+    "deprecated": false
+  },
+  "ssh.session": {
+    "signature": "ssh.session(target: str, username: str, password: Optional<str> = None, key: Optional<str> = None, key_password: Optional<str> = None, port: Optional<int> = None, timeout: Optional<int> = None) -> <ssh_session>",
+    "description": "Creates a persistent SSH session for reuse across multiple commands.\n\nUnlike `exec` which opens a new connection per call, this establishes\none connection and returns a session object whose `exec()` can be called\nrepeatedly. This reduces authentication log noise and handshake latency.\n\n**Parameters**\n- `target` (`str`): The remote host IP or hostname.\n- `username` (`str`): SSH username.\n- `password` (`Option<str>`): SSH password (optional).\n- `key` (`Option<str>`): SSH private key (optional).\n- `key_password` (`Option<str>`): Password for the private key (optional).\n- `port` (`Option<int>`): The SSH port (optional, defaults to 22).\n- `timeout` (`Option<int>`): Connection timeout in seconds (optional, defaults to 3).\n\n**Returns**\n- `<ssh_session>`: A session object with methods:\n  - `exec(command: str) -> Dict{stdout, stderr, status}`\n  - `close() -> None`\n\n**Errors**\n- Returns an error string if connection fails.",
+    "kind": "function",
+    "module": "ssh",
+    "params": [
+      {
+        "name": "target",
+        "type": "str"
+      },
+      {
+        "name": "username",
+        "type": "str"
+      },
+      {
+        "name": "password",
+        "type": "Optional<str>",
+        "defaultValue": "None"
+      },
+      {
+        "name": "key",
+        "type": "Optional<str>",
+        "defaultValue": "None"
+      },
+      {
+        "name": "key_password",
+        "type": "Optional<str>",
+        "defaultValue": "None"
+      },
+      {
+        "name": "port",
+        "type": "Optional<int>",
+        "defaultValue": "None"
+      },
+      {
+        "name": "timeout",
+        "type": "Optional<int>",
+        "defaultValue": "None"
+      }
+    ],
+    "returnType": "<ssh_session>",
     "deprecated": false
   },
   "ssh": {

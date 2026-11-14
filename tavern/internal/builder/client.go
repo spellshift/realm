@@ -164,7 +164,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	sem := semaphore.NewWeighted(maxConcurrentBuilds)
 
 	// Check for tasks immediately, then poll on interval
-	if err := claimAndExecuteTasks(ctx, client, exec, sem); err != nil {
+	if err := claimAndExecuteTasks(ctx, cfg.CacheDir, client, exec, sem); err != nil {
 		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
@@ -179,14 +179,14 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 			sem.Acquire(context.Background(), maxConcurrentBuilds)
 			return ctx.Err()
 		case <-ticker.C:
-			if err := claimAndExecuteTasks(ctx, client, exec, sem); err != nil {
+			if err := claimAndExecuteTasks(ctx, cfg.CacheDir, client, exec, sem); err != nil {
 				slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 			}
 		}
 	}
 }
 
-func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, sem *semaphore.Weighted) error {
+func claimAndExecuteTasks(ctx context.Context, cacheDir string, client builderpb.BuilderClient, exec executor.Executor, sem *semaphore.Weighted) error {
 	// ClaimBuildTasks also refreshes the builder's last_seen_at heartbeat on
 	// the server, so this call must happen on every poll regardless of how
 	// many builds are currently running, instead of being blocked behind a
@@ -214,7 +214,7 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, e
 				return
 			}
 			defer sem.Release(1)
-			executeTask(ctx, client, exec, t)
+			executeTask(ctx, cacheDir, client, exec, t)
 		}(task)
 	}
 
@@ -223,7 +223,7 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, e
 
 // executeTask runs a single build task through the executor, streaming output
 // and errors back to the server via the StreamBuildTaskOutput RPC.
-func executeTask(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, task *builderpb.BuildTaskSpec) {
+func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderClient, exec executor.Executor, task *builderpb.BuildTaskSpec) {
 	// Download tomes before starting the build.
 	var tomes []executor.TomeData
 	for _, t := range task.Tomes {
@@ -318,6 +318,7 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 		SetupScript:     task.SetupScript,
 		PreBuildScript:  task.PreBuildScript,
 		PostBuildScript: task.PostBuildScript,
+		CacheDir:        cacheDir,
 		Tomes:           tomes,
 	}, outputCh, errorCh)
 

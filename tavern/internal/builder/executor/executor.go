@@ -16,6 +16,10 @@ const (
 	// with verbatim script echoes or long compiler/linker output lines, which
 	// would otherwise silently truncate the stream.
 	maxScanTokenSize = 1024 * 1024 // 1MB
+
+	// DefaultCachePath is the in-container mount point for the build cache
+	// when a BuildSpec sets CacheDir but not CachePath.
+	DefaultCachePath = "/realm-cache"
 )
 
 // streamBuildLines scans newline-delimited text from r and sends each line to ch.
@@ -39,9 +43,18 @@ func streamBuildLines(ctx context.Context, r io.Reader, ch chan<- string) {
 
 // BuildSpec contains the parameters for a build task execution.
 type BuildSpec struct {
-	TaskID      int64
-	TargetOS    string
-	BuildImage  string
+	TaskID     int64
+	TargetOS   string
+	BuildImage string
+
+	// CacheDir persists Docker build caches via a host bind mount.
+	// An empty value disables caching.
+	CacheDir string
+
+	// CachePath is the in-container mount point for CacheDir.
+	// An empty value uses DefaultCachePath.
+	CachePath string
+
 	BuildScript string
 
 	// ArtifactPath is the path inside the container to extract after the build.

@@ -70,6 +70,9 @@ export interface HostNode {
     files?:{
         totalCount: number;
     }
+    screenshots?: {
+        totalCount: number;
+    }
 }
 
 export interface HostEdge {

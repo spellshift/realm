@@ -743,6 +743,7 @@ var (
 		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "thumbnail", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "MEDIUMBLOB"}},
 		{Name: "screenshot_host", Type: field.TypeInt},
 		{Name: "shell_task_screenshots", Type: field.TypeInt, Nullable: true},
 		{Name: "task_screenshots", Type: field.TypeInt, Nullable: true},
@@ -755,19 +756,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "screenshots_hosts_host",
-				Columns:    []*schema.Column{ScreenshotsColumns[7]},
+				Columns:    []*schema.Column{ScreenshotsColumns[8]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "screenshots_shell_tasks_screenshots",
-				Columns:    []*schema.Column{ScreenshotsColumns[8]},
+				Columns:    []*schema.Column{ScreenshotsColumns[9]},
 				RefColumns: []*schema.Column{ShellTasksColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "screenshots_tasks_screenshots",
-				Columns:    []*schema.Column{ScreenshotsColumns[9]},
+				Columns:    []*schema.Column{ScreenshotsColumns[10]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

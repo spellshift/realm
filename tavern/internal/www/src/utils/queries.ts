@@ -410,13 +410,18 @@ export const GET_USER_QUERY = gql`
 `;
 
 export const GET_HOST_CREDENTIALS = gql`
-    query GetHostCredentials($where: HostWhereInput){
+    query GetHostCredentials(
+        $where: HostWhereInput,
+        $credentialWhere: HostCredentialWhereInput,
+        $orderBy: [HostCredentialOrder!]
+    ){
         hosts(where: $where) {
             edges{
                 node{
-                    credentials {
+                    credentials(where: $credentialWhere, orderBy: $orderBy) {
                       edges{
                         node{
+                          id
                           createdAt
                           lastModifiedAt
                           principal

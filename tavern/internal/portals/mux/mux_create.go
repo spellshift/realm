@@ -15,7 +15,7 @@ import (
 )
 
 // CreatePortal sets up a new portal for a task.
-func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, shellTaskID int) (int, func(), error) {
+func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, shellTaskID int, beaconID ...int) (int, func(), error) {
 	// 1. DB: Create ent.Portal record (State: Open)
 	var creator *ent.User
 	var beacon *ent.Beacon
@@ -25,8 +25,11 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 
 	if taskID > 0 {
 		// We need to fetch Task dependencies (Beacon, Owner/Creator) to satisfy Portal constraints.
-		t, err := client.Task.Query().
-			Where(task.ID(taskID)).
+		q := client.Task.Query().Where(task.ID(taskID))
+		if len(beaconID) > 0 {
+			q.Where(task.HasBeaconWith(entbeacon.ID(beaconID[0])))
+		}
+		t, err := q.
 			WithBeacon(func(bq *ent.BeaconQuery) {
 				bq.WithHost()
 			}).
@@ -42,8 +45,11 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 		beacon = t.Edges.Beacon
 		pCreate.SetTaskID(taskID)
 	} else if shellTaskID > 0 {
-		st, err := client.ShellTask.Query().
-			Where(shelltask.ID(shellTaskID)).
+		q := client.ShellTask.Query().Where(shelltask.ID(shellTaskID))
+		if len(beaconID) > 0 {
+			q.Where(shelltask.HasShellWith(entshell.HasBeaconWith(entbeacon.ID(beaconID[0]))))
+		}
+		st, err := q.
 			WithCreator().
 			WithShell(func(s *ent.ShellQuery) {
 				s.WithBeacon(func(bq *ent.BeaconQuery) {

@@ -21,9 +21,11 @@ import (
 
 func TestFetchAsset(t *testing.T) {
 	// Setup Dependencies
-	client, graph, close, token := c2test.New(t)
+	client, graph, close, mintJWT := c2test.New(t)
 	defer close()
 	ctx := context.Background()
+
+	token := mintJWT(c2test.NewRandomBeacon(ctx, graph).ID)
 
 	// Test Cases
 	type testCase struct {
@@ -46,6 +48,18 @@ func TestFetchAsset(t *testing.T) {
 			fileName: "large_file",
 			fileSize: 1024 * 1024 * 10, // 10 MB
 			req:      &c2pb.FetchAssetRequest{Name: "large_file"},
+			wantCode: codes.OK,
+		},
+		{
+			name:     "Shared_Asset_Shell_Context",
+			fileName: "shared_asset",
+			fileSize: 100,
+			req: &c2pb.FetchAssetRequest{
+				Name: "shared_asset",
+				Context: &c2pb.FetchAssetRequest_ShellTaskContext{
+					ShellTaskContext: &c2pb.ShellTaskContext{ShellTaskId: 999},
+				},
+			},
 			wantCode: codes.OK,
 		},
 		{

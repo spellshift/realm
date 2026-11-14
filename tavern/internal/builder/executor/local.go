@@ -46,6 +46,25 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 		return nil, fmt.Errorf("local executor is only supported on linux (for testing), got GOOS=%q", runtime.GOOS)
 	}
 
+	// Recipes use a stable path for Docker's cache. The local debug runtime
+	// shares a host filesystem, so give each build its own checkout instead.
+	buildDir, err := os.MkdirTemp("", "realm-build-local-*")
+	if err != nil {
+		return nil, fmt.Errorf("creating local build dir: %w", err)
+	}
+	defer os.RemoveAll(buildDir)
+	const recipeBuildDir = "/tmp/realm-build"
+	replace := func(s string) string { return strings.ReplaceAll(s, recipeBuildDir, buildDir) }
+	spec.SetupScript = replace(spec.SetupScript)
+	spec.PreBuildScript = replace(spec.PreBuildScript)
+	spec.BuildScript = replace(spec.BuildScript)
+	spec.PostBuildScript = replace(spec.PostBuildScript)
+	spec.ArtifactPath = replace(spec.ArtifactPath)
+	spec.Env = append([]string(nil), spec.Env...)
+	for i := range spec.Env {
+		spec.Env[i] = replace(spec.Env[i])
+	}
+
 	// Prepare local scratch directory with /scripts and /tomes.
 	tmpDir, err := prepareMountDir(spec)
 	if err != nil {

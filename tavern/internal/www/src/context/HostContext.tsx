@@ -33,6 +33,9 @@ export const GET_HOST_CONTEXT_QUERY = gql`
                     files {
                         totalCount
                     }
+                    screenshots {
+                        totalCount
+                    }
                     credentials {
                         totalCount
                     }
