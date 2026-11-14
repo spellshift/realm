@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
+import { Share, BookOpen, Copy, FilePlus, Trash2, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import { BugAntIcon } from "@heroicons/react/24/outline";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import { useMutation } from "@apollo/client";
@@ -122,7 +122,22 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             key: 'status',
             label: 'Status',
             width: 'minmax(110px,1fr)',
-            render: (asset) => <span>{asset.status.replace('_', ' ')}</span>,
+            render: (asset) => {
+                const statusDisplay = {
+                    FINISHED: { label: 'Finished', icon: <CheckCircle className="w-4 h-4 text-green-500" /> },
+                    IN_PROGRESS: { label: 'In progress', icon: <Loader2 className="w-4 h-4 text-purple-600 animate-spin" /> },
+                    ERROR: { label: 'Error', icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
+                }[asset.status];
+
+                return (
+                    <Tooltip label={statusDisplay.label} bg="white" color="black">
+                        <span role="img" aria-label={statusDisplay.label} className="inline-flex">
+                            {statusDisplay.icon}
+                        </span>
+                    </Tooltip>
+                );
+            },
+            renderSkeleton: () => <div className="h-4 w-4 bg-gray-200 rounded-full animate-pulse" />,
         },
         {
             key: 'creator',
