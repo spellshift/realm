@@ -110,6 +110,31 @@ The Terraform token stays the same across applies. With a persistent database, r
 
 For a manual deployment, set `REALM_BUILDER_ENROLLMENT_TOKENS` on Tavern to a comma-separated list of raw tokens. Tavern trims whitespace around each item and rejects blank items. It stores only token hashes in its database and seeds missing hashes at startup. Use a persistent database to preserve consumed-token state across restarts. Tavern's default in-memory SQLite database loses that state on restart, allowing configured tokens to be seeded again. Keep raw tokens out of logs and share each token only with its intended builder.
 
+### Builder VM
+
+Terraform can deploy a dedicated builder VM alongside Tavern using the same Container-Optimized OS (COS) compute instance pattern used by the DNS redirector. The VM runs the Tavern container in `builder` mode as a background task, so it continuously polls Tavern for build tasks. This is the recommended way to run a persistent builder in GCP.
+
+The builder VM:
+
+* Runs on COS (`cos-stable`) with `restartPolicy: Always`, so the builder container is restarted automatically.
+* Mounts the host Docker socket (`/var/run/docker.sock`) into the container so the builder's Docker executor can build agents, and mounts a generated builder config directory at `/etc/builder`.
+* Receives the enrollment token via the `REALM_BUILDER_ENROLLMENT_TOKEN` environment variable, so it enrolls itself on first boot (generating its mTLS identity) without manual intervention.
+* Connects to Tavern at `builder_upstream` (defaulting to the Tavern Cloud Run URL, or the OAuth domain when configured).
+
+The generated builder config is written to `/etc/builder/builder.yaml` on the VM and looks like:
+
+```yaml
+upstream: https://tavern.example.com
+supported_targets:
+  - linux
+  - windows
+executor: docker
+identity_file: /etc/builder/builder.identity
+poll_interval: 5
+```
+
+To disable the builder VM (for example when running builders elsewhere), set `builder_enabled=false`. To enroll an additional builder, rotate the enrollment token as described above and hand the new value to the new builder.
+
 #### CLI Variables
 
 |Name|Required|Description|
@@ -126,6 +151,13 @@ For a manual deployment, set `REALM_BUILDER_ENROLLMENT_TOKENS` on Tavern to a co
 |min_scale|No|The minimum number of containers to run, if set to 0 you may see cold boot latency.|
 |max_scale|No|The maximum number of containers to run.|
 |tavern_container_image|No|Override the default tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.|
+|builder_enabled|No|Deploy the Tavern builder VM. Set to `false` to skip builder deployment. Defaults to `true`.|
+|builder_machine_type|No|Machine type for the builder VM. Defaults to `f1-micro`.|
+|builder_boot_disk_image|No|Boot disk image for the builder VM (COS). Defaults to `cos-stable-121-18867-294-134`.|
+|builder_boot_disk_size|No|Boot disk size in GB for the builder VM. Defaults to `10`.|
+|builder_upstream|No|Upstream Tavern URL the builder enrolls against. Defaults to the Tavern Cloud Run URL (or the OAuth domain when configured).|
+|builder_supported_targets|No|Platforms the builder compiles for. Defaults to `[linux, windows]`.|
+|builder_enrollment_token|No|Sensitive. Preset the builder enrollment token. If empty, the generated token (output `builder_enrollment_token`) is used for both Tavern and the builder VM.|
 
 ### Manual Deployment Tips
 
