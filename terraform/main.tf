@@ -116,7 +116,7 @@ variable "builder_boot_disk_image" {
 variable "builder_boot_disk_size" {
   type        = number
   description = "Boot disk size in GB for the builder compute instance."
-  default     = 30
+  default     = 64
 }
 
 variable "builder_upstream" {
