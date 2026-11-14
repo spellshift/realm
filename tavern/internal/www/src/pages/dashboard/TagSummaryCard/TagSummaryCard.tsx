@@ -1,9 +1,15 @@
 import { FC, useState } from "react";
-import { Tab, TabGroup, TabList } from "@headlessui/react";
+import { Field, Input, Label, Tab, TabGroup, TabList } from "@headlessui/react";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { Tags } from "lucide-react";
+import Button from "../../../components/tavern-base-ui/button/Button";
+import Modal from "../../../components/tavern-base-ui/Modal";
 import { Table } from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
+import { useAuthorization } from "../../../context/AuthorizationContext";
 import { useTagSummaryData } from "./useTagSummaryData";
 import { useTagSummaryColumns } from "./useTagSummaryColumns";
+import { useAutoTagHosts, AutoTagAction } from "./useAutoTagHosts";
 import { TagKind } from "./types";
 
 const TAB_KINDS: TagKind[] = ["group", "service"];
@@ -11,9 +17,30 @@ const TAB_LABELS = ["Group", "Service"];
 
 export const TagSummaryCard: FC = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [autoTagOpen, setAutoTagOpen] = useState(false);
     const tagKind = TAB_KINDS[selectedIndex];
-    const { rows, loading, error } = useTagSummaryData(tagKind);
+    const { rows, hostCount, loading, error } = useTagSummaryData(tagKind);
     const columns = useTagSummaryColumns();
+    const { data: authorization } = useAuthorization();
+    let emptyDetails = hostCount === 0
+        ? "Ask an admin to generate and deploy an agent."
+        : "Ask an admin to assign tags.";
+    if (authorization?.me?.isAdmin) {
+        emptyDetails = hostCount === 0
+            ? "Add a host before auto tagging."
+            : "Organize hosts into groups and services.";
+    }
+    const {
+        applyAutoTags,
+        busyAction,
+        autoTagDisabled,
+        includeGroups,
+        setIncludeGroups,
+        includeServices,
+        setIncludeServices,
+        serviceCountInput,
+        setServiceCountInput,
+    } = useAutoTagHosts(hostCount);
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 py-2 px-6 flex flex-col gap-4">
@@ -44,11 +71,122 @@ export const TagSummaryCard: FC = () => {
             ) : error ? (
                 <EmptyState type={EmptyStateType.error} label="Failed to load tag data" details={error.message} />
             ) : rows.length === 0 ? (
-                <EmptyState type={EmptyStateType.noData} label={`No ${tagKind} tags found`} />
+                <div className="min-h-72">
+                    <EmptyState
+                        type={EmptyStateType.noData}
+                        label={hostCount === 0 ? "No hosts found" : `No ${tagKind} tags found`}
+                        details={emptyDetails}
+                    >
+                        {authorization?.me?.isAdmin && (
+                            <Button
+                                leftIcon={<Tags className="w-5 h-5" />}
+                                buttonStyle={{ color: "purple", size: "md" }}
+                                disabled={autoTagDisabled}
+                                onClick={() => setAutoTagOpen(true)}
+                            >
+                                Auto tag
+                            </Button>
+                        )}
+                    </EmptyState>
+                </div>
             ) : (
                 <div className="h-72 w-full overflow-x-scroll">
                     <Table columns={columns} data={rows} initialSorting={[{ id: "tagName", desc: false }]} />
                 </div>
+            )}
+            {authorization?.me?.isAdmin && (
+                <Modal isOpen={autoTagOpen} setOpen={setAutoTagOpen} size="sm">
+                    <div className="flex h-full flex-col gap-6">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-700">Auto tagging options</h2>
+                            <p className="mt-1 text-sm text-gray-600">Choose which tags to apply to your hosts.</p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <button
+                                type="button"
+                                aria-pressed={includeGroups}
+                                onClick={() => setIncludeGroups(!includeGroups)}
+                                disabled={busyAction !== null}
+                                className="relative flex h-full flex-col gap-2 rounded-md border border-gray-200 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
+                            >
+                                <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center text-purple-800" aria-hidden="true">
+                                    {includeGroups
+                                        ? <CheckCircleIcon className="w-6 h-6" />
+                                        : <span className="w-5 h-5 rounded-full border-2 border-black border-opacity-10" />}
+                                </span>
+                                <span className="flex h-16 items-center justify-center">
+                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-gray-500" aria-hidden="true">
+                                        <path d="M15 22h28m13 0h26m12 0h12" />
+                                        <circle cx="12" cy="22" r="7" fill="white" />
+                                        <circle cx="50" cy="22" r="7" fill="white" />
+                                        <circle cx="89" cy="22" r="7" fill="white" />
+                                        <circle cx="110" cy="22" r="7" fill="white" />
+                                    </svg>
+                                </span>
+                                <span className="text-sm font-medium text-gray-700">Group by subnet</span>
+                                <span className="text-xs text-gray-500">Hosts on the same reported subnet get one group tag.</span>
+                            </button>
+                            <button
+                                type="button"
+                                aria-pressed={includeServices}
+                                onClick={() => setIncludeServices(!includeServices)}
+                                disabled={busyAction !== null}
+                                className="relative flex h-full flex-col gap-2 rounded-md border border-gray-200 bg-white p-3 text-left transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
+                            >
+                                <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center text-purple-800" aria-hidden="true">
+                                    {includeServices
+                                        ? <CheckCircleIcon className="w-6 h-6" />
+                                        : <span className="w-5 h-5 rounded-full border-2 border-black border-opacity-10" />}
+                                </span>
+                                <span className="flex h-16 items-center justify-center">
+                                    <svg viewBox="0 0 120 45" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-10 w-28 text-gray-500" aria-hidden="true">
+                                        <rect x="5" y="8" width="29" height="29" rx="5" fill="white" />
+                                        <rect x="45" y="8" width="29" height="29" rx="5" fill="white" />
+                                        <rect x="85" y="8" width="29" height="29" rx="5" fill="white" />
+                                        <path d="M13 16h13M13 22h10M53 16h13M53 22h10M93 16h13M93 22h10" />
+                                    </svg>
+                                </span>
+                                <span className="text-sm font-medium text-gray-700">Cluster by processes</span>
+                                <span className="text-xs text-gray-500">Process list data creates service tags for similar hosts.</span>
+                            </button>
+                        </div>
+                        <div>
+                            {includeServices && (
+                                <Field className="flex flex-col gap-1">
+                                    <Label className="text-base font-medium text-gray-700">Number of service tags</Label>
+                                    <Input
+                                        id="autoTagServiceCount"
+                                        type="number"
+                                        min={1}
+                                        step={1}
+                                        placeholder="Leave blank for automatic"
+                                        value={serviceCountInput}
+                                        onChange={(event) => setServiceCountInput(event.target.value)}
+                                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                    />
+                                </Field>
+                            )}
+                        </div>
+                        <div className="flex justify-start gap-2">
+                            <Button buttonVariant="ghost" buttonStyle={{ color: "gray", size: "md" }} disabled={busyAction !== null} onClick={() => setAutoTagOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                buttonStyle={{ color: "purple", size: "md" }}
+                                disabled={autoTagDisabled || (!includeGroups && !includeServices)}
+                                isLoading={busyAction !== null}
+                                onClick={async () => {
+                                    const action: AutoTagAction = includeGroups
+                                        ? (includeServices ? "both" : "groups")
+                                        : "services";
+                                    if (await applyAutoTags(action)) setAutoTagOpen(false);
+                                }}
+                            >
+                                Confirm
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
             )}
         </div>
     );
