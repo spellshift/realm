@@ -98,7 +98,7 @@ func TransportTypeToString(t c2pb.Transport_Type) string {
 	case c2pb.Transport_TRANSPORT_GRPC:
 		return "grpc"
 	case c2pb.Transport_TRANSPORT_HTTP1:
-		return "http"
+		return "http1"
 	case c2pb.Transport_TRANSPORT_DNS:
 		return "dns"
 	case c2pb.Transport_TRANSPORT_ICMP:

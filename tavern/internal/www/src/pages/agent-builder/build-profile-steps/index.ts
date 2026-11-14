@@ -1,6 +1,7 @@
 export { BasicsStep } from "./BasicsStep";
 export { TransportsStep } from "./TransportsStep";
 export { TomesStep } from "./TomesStep";
+export { AdvancedStep } from "./AdvancedStep";
 export { ReviewStep } from "./ReviewStep";
 export { advancedScriptFields } from "./constants";
 export { UNIQUE_FIELD_INDEX, uniqueJsonError } from "./validation";

@@ -3,14 +3,15 @@ import { useMutation } from "@apollo/client";
 import AlertError from "../../components/tavern-base-ui/AlertError";
 import { FormSteps } from "../../components/form-steps";
 import { CREATE_BUILD_PROFILE, UPDATE_BUILD_PROFILE, GET_BUILD_PROFILES, mapProfile, profileInput, ProfileRecord } from "./queries";
-import { BasicsStep, TransportsStep, TomesStep, ReviewStep, advancedScriptFields, UNIQUE_FIELD_INDEX, uniqueJsonError } from "./build-profile-steps";
+import { BasicsStep, TransportsStep, TomesStep, AdvancedStep, ReviewStep, advancedScriptFields, UNIQUE_FIELD_INDEX, uniqueJsonError } from "./build-profile-steps";
 import { DEFAULT_TRANSPORT, Tome, TransportConfig, TomeRef, BuildProfile } from "./types";
 
 const STEPS = [
     { name: "Basics", description: "Step 1", href: "#", step: 0 },
     { name: "Transports", description: "Step 2", href: "#", step: 1 },
     { name: "Tomes", description: "Step 3", href: "#", step: 2 },
-    { name: "Review", description: "Step 4", href: "#", step: 3 },
+    { name: "Advanced", description: "Step 4", href: "#", step: 3 },
+    { name: "Review", description: "Step 5", href: "#", step: 4 },
 ];
 
 /**
@@ -141,6 +142,15 @@ export const NewBuildProfile = ({
                         />
                     )}
                     {currStep === 3 && (
+                        <AdvancedStep
+                            scripts={scripts}
+                            setScripts={setScripts}
+                            uniqueError={uniqueError}
+                            onBack={() => setCurrStep(2)}
+                            onNext={() => setCurrStep(4)}
+                        />
+                    )}
+                    {currStep === 4 && (
                         <ReviewStep
                             name={name}
                             description={description}
@@ -148,13 +158,10 @@ export const NewBuildProfile = ({
                             transports={transports}
                             tomes={tomes}
                             hasPersistenceTome={hasPersistenceTome}
-                            scripts={scripts}
-                            uniqueError={uniqueError}
-                            setScripts={setScripts}
                             isEditing={isEditing}
                             saving={saving}
                             canSave={basicsValid && !!scripts[0].trim() && !!scripts[1].trim() && !uniqueError}
-                            onBack={() => setCurrStep(2)}
+                            onBack={() => setCurrStep(3)}
                             onSave={handleSave}
                         />
                     )}
