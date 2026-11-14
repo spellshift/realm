@@ -1194,6 +1194,10 @@ locals {
   # preset token (var.builder_enrollment_token) and fall back to the generated one.
   builder_enrollment_token = var.builder_enrollment_token != "" ? var.builder_enrollment_token : random_password.builder_enrollment.result
 
+  # Mount point for the separate persistent disk backing the builder's
+  # Docker build cache (see google_compute_disk.builder_cache).
+  builder_cache_dir = "/mnt/disks/builder-cache"
+
   # Mount the cache disk
   builder_cache_mount_script = <<-EOT
     #! /bin/bash
