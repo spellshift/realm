@@ -32,6 +32,8 @@ type Screenshot struct {
 	Hash string `json:"hash,omitempty"`
 	// The content of the screenshot
 	Content []byte `json:"content,omitempty"`
+	// A low resolution, downscaled version of the screenshot content, used for thumbnail previews
+	Thumbnail []byte `json:"thumbnail,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ScreenshotQuery when eager-loading is set.
 	Edges                  ScreenshotEdges `json:"edges"`
@@ -94,7 +96,7 @@ func (*Screenshot) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case screenshot.FieldContent:
+		case screenshot.FieldContent, screenshot.FieldThumbnail:
 			values[i] = new([]byte)
 		case screenshot.FieldID, screenshot.FieldSize:
 			values[i] = new(sql.NullInt64)
@@ -164,6 +166,12 @@ func (s *Screenshot) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value != nil {
 				s.Content = *value
+			}
+		case screenshot.FieldThumbnail:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field thumbnail", values[i])
+			} else if value != nil {
+				s.Thumbnail = *value
 			}
 		case screenshot.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -254,6 +262,9 @@ func (s *Screenshot) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(fmt.Sprintf("%v", s.Content))
+	builder.WriteString(", ")
+	builder.WriteString("thumbnail=")
+	builder.WriteString(fmt.Sprintf("%v", s.Thumbnail))
 	builder.WriteByte(')')
 	return builder.String()
 }

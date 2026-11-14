@@ -51,6 +51,15 @@ func (Screenshot) Fields() []ent.Field {
 				entgql.Skip(), // Don't return content in GraphQL
 			).
 			Comment("The content of the screenshot"),
+		field.Bytes("thumbnail").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "MEDIUMBLOB", // Override MySQL, improve length maximum
+			}).
+			Annotations(
+				entgql.Skip(), // Don't return thumbnail in GraphQL
+			).
+			Comment("A low resolution, downscaled version of the screenshot content, used for thumbnail previews"),
 	}
 }
 

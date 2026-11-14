@@ -9,7 +9,7 @@ import { SortingControls } from "../../../context/SortContext";
 import { PageNavItem } from "../../../utils/enums";
 import { formatBytes } from "../../../utils/utils";
 import { useScreenshots } from "./useScreenshots";
-import { capturedAt, downloadAllURL, imageURL, sourceLabel } from "./utils";
+import { capturedAt, downloadAllURL, imageURL, sourceLabel, thumbnailURL } from "./utils";
 
 const ScreenshotsTab = () => {
     const { hostId } = useParams();
@@ -49,7 +49,7 @@ const ScreenshotsTab = () => {
                     aria-current={screenshot.id === selected?.id ? "true" : undefined}
                     className="flex items-center gap-2 min-w-0 flex-1 text-left"
                 >
-                    <img src={imageURL(screenshot.id)} alt="" loading="lazy" className="w-16 h-11 object-contain bg-gray-100 rounded-sm shrink-0" />
+                    <img src={thumbnailURL(screenshot.id)} alt="" loading="lazy" className="w-16 h-11 object-contain bg-gray-100 rounded-sm shrink-0" />
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-xs text-gray-900" title={screenshot.name}>{screenshot.name}</span>
                         <span className="block truncate text-xs text-gray-600">{capturedAt(screenshot.createdAt)} · {formatBytes(screenshot.size)}</span>

@@ -93,6 +93,12 @@ func (sc *ScreenshotCreate) SetContent(b []byte) *ScreenshotCreate {
 	return sc
 }
 
+// SetThumbnail sets the "thumbnail" field.
+func (sc *ScreenshotCreate) SetThumbnail(b []byte) *ScreenshotCreate {
+	sc.mutation.SetThumbnail(b)
+	return sc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (sc *ScreenshotCreate) SetHostID(id int) *ScreenshotCreate {
 	sc.mutation.SetHostID(id)
@@ -283,6 +289,10 @@ func (sc *ScreenshotCreate) createSpec() (*Screenshot, *sqlgraph.CreateSpec) {
 		_spec.SetField(screenshot.FieldContent, field.TypeBytes, value)
 		_node.Content = value
 	}
+	if value, ok := sc.mutation.Thumbnail(); ok {
+		_spec.SetField(screenshot.FieldThumbnail, field.TypeBytes, value)
+		_node.Thumbnail = value
+	}
 	if nodes := sc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -464,6 +474,24 @@ func (u *ScreenshotUpsert) ClearContent() *ScreenshotUpsert {
 	return u
 }
 
+// SetThumbnail sets the "thumbnail" field.
+func (u *ScreenshotUpsert) SetThumbnail(v []byte) *ScreenshotUpsert {
+	u.Set(screenshot.FieldThumbnail, v)
+	return u
+}
+
+// UpdateThumbnail sets the "thumbnail" field to the value that was provided on create.
+func (u *ScreenshotUpsert) UpdateThumbnail() *ScreenshotUpsert {
+	u.SetExcluded(screenshot.FieldThumbnail)
+	return u
+}
+
+// ClearThumbnail clears the value of the "thumbnail" field.
+func (u *ScreenshotUpsert) ClearThumbnail() *ScreenshotUpsert {
+	u.SetNull(screenshot.FieldThumbnail)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -597,6 +625,27 @@ func (u *ScreenshotUpsertOne) UpdateContent() *ScreenshotUpsertOne {
 func (u *ScreenshotUpsertOne) ClearContent() *ScreenshotUpsertOne {
 	return u.Update(func(s *ScreenshotUpsert) {
 		s.ClearContent()
+	})
+}
+
+// SetThumbnail sets the "thumbnail" field.
+func (u *ScreenshotUpsertOne) SetThumbnail(v []byte) *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetThumbnail(v)
+	})
+}
+
+// UpdateThumbnail sets the "thumbnail" field to the value that was provided on create.
+func (u *ScreenshotUpsertOne) UpdateThumbnail() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateThumbnail()
+	})
+}
+
+// ClearThumbnail clears the value of the "thumbnail" field.
+func (u *ScreenshotUpsertOne) ClearThumbnail() *ScreenshotUpsertOne {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.ClearThumbnail()
 	})
 }
 
@@ -899,6 +948,27 @@ func (u *ScreenshotUpsertBulk) UpdateContent() *ScreenshotUpsertBulk {
 func (u *ScreenshotUpsertBulk) ClearContent() *ScreenshotUpsertBulk {
 	return u.Update(func(s *ScreenshotUpsert) {
 		s.ClearContent()
+	})
+}
+
+// SetThumbnail sets the "thumbnail" field.
+func (u *ScreenshotUpsertBulk) SetThumbnail(v []byte) *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.SetThumbnail(v)
+	})
+}
+
+// UpdateThumbnail sets the "thumbnail" field to the value that was provided on create.
+func (u *ScreenshotUpsertBulk) UpdateThumbnail() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.UpdateThumbnail()
+	})
+}
+
+// ClearThumbnail clears the value of the "thumbnail" field.
+func (u *ScreenshotUpsertBulk) ClearThumbnail() *ScreenshotUpsertBulk {
+	return u.Update(func(s *ScreenshotUpsert) {
+		s.ClearThumbnail()
 	})
 }
 
