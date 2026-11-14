@@ -4,18 +4,23 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/google/uuid"
 )
 
 // DockerExecutor runs build tasks inside Docker containers.
@@ -71,6 +76,15 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	defer os.RemoveAll(tmpDir)
 
+	uncachedSpec := spec
+	hostConfig, cacheEnv, cachedSpec, cacheErr := prepareBuildCache(spec)
+	if cacheErr != nil {
+		slog.WarnContext(ctx, "failed to prepare build cache directory, building without cache",
+			"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", cacheErr)
+	} else {
+		spec = cachedSpec
+	}
+
 	slog.InfoContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
 
 	// The container entrypoint runs all scripts in /mnt/scripts in order.
@@ -79,20 +93,23 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; . \"$s\"; done",
 	}, " && ")
 
-	resp, err := d.client.ContainerCreate(ctx,
-		&container.Config{
-			Image:      spec.BuildImage,
-			Entrypoint: []string{"/bin/sh", "-c", entrypoint},
-			Env: append(slices.Clone(spec.Env),
-				"REALM_WORKSPACE_DIR=/mnt",
-				"REALM_TOMES_DIR=/mnt/tomes",
-			),
-		},
-		nil, // host config
-		nil, // networking config
-		nil, // platform
-		"",  // container name (auto-generated)
-	)
+	containerConfig := &container.Config{
+		Image:      spec.BuildImage,
+		Entrypoint: []string{"/bin/sh", "-c", entrypoint},
+		Env: append(append(slices.Clone(spec.Env),
+			"REALM_WORKSPACE_DIR=/mnt",
+			"REALM_TOMES_DIR=/mnt/tomes",
+		), cacheEnv...),
+	}
+	resp, err := d.client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
+	if err != nil && hostConfig != nil && ctx.Err() == nil {
+		slog.WarnContext(ctx, "failed to mount build cache, retrying without cache",
+			"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", err)
+		spec = uncachedSpec
+		containerConfig.Env = append(slices.Clone(spec.Env),
+			"REALM_WORKSPACE_DIR=/mnt", "REALM_TOMES_DIR=/mnt/tomes")
+		resp, err = d.client.ContainerCreate(ctx, containerConfig, nil, nil, nil, "")
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create container: %w", err)
 	}
@@ -289,4 +306,98 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 	}
 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)
+}
+
+// prepareBuildCache returns the optional mount and Cargo settings.
+func prepareBuildCache(spec BuildSpec) (*container.HostConfig, []string, BuildSpec, error) {
+	if spec.CacheDir == "" {
+		return nil, nil, spec, nil
+	}
+	cachePath := spec.CachePath
+	if cachePath == "" {
+		cachePath = DefaultCachePath
+	}
+	key := cacheKeyFor(spec)
+	if err := prepareCacheDir(spec.CacheDir, key); err != nil {
+		return nil, nil, spec, err
+	}
+	cargoTargetDir := path.Join(cachePath, "target", key)
+	hostConfig := &container.HostConfig{Mounts: []mount.Mount{{
+		Type: mount.TypeBind, Source: spec.CacheDir, Target: cachePath,
+	}}}
+	cacheEnv := []string{
+		"REALM_CACHE_DIR=" + cachePath,
+		"CARGO_HOME=" + path.Join(cachePath, "cargo"),
+		"CARGO_TARGET_DIR=" + cargoTargetDir,
+	}
+	return hostConfig, cacheEnv, cachedArtifactSpec(spec, cargoTargetDir), nil
+}
+
+// prepareCacheDir creates writable cache paths on the host.
+func prepareCacheDir(cacheDir, key string) error {
+	if !filepath.IsAbs(cacheDir) {
+		return fmt.Errorf("cache directory must be absolute: %q", cacheDir)
+	}
+	for _, dir := range []string{
+		cacheDir,
+		filepath.Join(cacheDir, "cargo"),
+		filepath.Join(cacheDir, "target"),
+		filepath.Join(cacheDir, "target", key),
+	} {
+		if err := os.MkdirAll(dir, 0o777); err != nil {
+			return fmt.Errorf("creating %q: %w", dir, err)
+		}
+		if err := os.Chmod(dir, 0o777); err != nil {
+			return fmt.Errorf("setting permissions on %q: %w", dir, err)
+		}
+	}
+	return nil
+}
+
+// remapArtifactPath moves default artifact paths into CARGO_TARGET_DIR.
+// Custom paths stay unchanged.
+func remapArtifactPath(artifactPath, cargoTargetDir string) string {
+	const defaultTarget = "/tmp/realm-build/realm/implants/target/"
+	if strings.HasPrefix(artifactPath, defaultTarget) {
+		return path.Join(cargoTargetDir, strings.TrimPrefix(artifactPath, defaultTarget))
+	}
+	// Tasks created before the recipe directory became stable still carry a
+	// UUID suffix in their saved artifact path.
+	const legacyPrefix = "/tmp/realm-build-"
+	if rest, ok := strings.CutPrefix(artifactPath, legacyPrefix); ok {
+		id, suffix, found := strings.Cut(rest, "/realm/implants/target/")
+		if found {
+			if _, err := uuid.Parse(id); err == nil {
+				return path.Join(cargoTargetDir, suffix)
+			}
+		}
+	}
+	return artifactPath
+}
+
+func cachedArtifactSpec(spec BuildSpec, cargoTargetDir string) BuildSpec {
+	artifactPath := remapArtifactPath(spec.ArtifactPath, cargoTargetDir)
+	if artifactPath == spec.ArtifactPath {
+		return spec
+	}
+	spec.ArtifactPath = artifactPath
+	spec.Env = slices.Clone(spec.Env)
+	for i, env := range spec.Env {
+		if strings.HasPrefix(env, "ARTIFACT_PATH=") {
+			spec.Env[i] = "ARTIFACT_PATH=" + artifactPath
+			break
+		}
+	}
+	return spec
+}
+
+// cacheKeyFor separates images and target platforms.
+// Cargo handles recipe differences and concurrent builds within each directory.
+func cacheKeyFor(spec BuildSpec) string {
+	h := sha256.New()
+	for _, s := range []string{spec.BuildImage, spec.TargetOS} {
+		_, _ = h.Write([]byte(s))
+		h.Write([]byte{0})
+	}
+	return hex.EncodeToString(h.Sum(nil))[:16]
 }

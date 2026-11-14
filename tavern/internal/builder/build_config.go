@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
@@ -15,6 +14,10 @@ const (
 
 	// DefaultBuildImage is the default Docker image for building agents.
 	DefaultBuildImage = "spellshift/devcontainer:main"
+
+	// DockerBuildDir keeps recipe paths stable for Docker caching.
+	// The local debug executor substitutes a private directory.
+	DockerBuildDir = "/tmp/realm-build"
 
 	// DefaultTargetFormat is the default output format for builds.
 	DefaultTargetFormat = builderpb.TargetFormat_TARGET_FORMAT_BIN
@@ -122,17 +125,8 @@ type ImixConfig struct {
 	Transports   []ImixTransportConfig `yaml:"transports"`
 }
 
-// NewBuildDir generates a unique build directory path for a single build
-// task. It's templated into the setup/build/artifact-path recipes (as
-// {{.BuildDir}}) so they all agree on exactly where the setup script clones
-// the repo, regardless of how that script gets there (no more hardcoding a
-// fixed path like /home/vscode that only matched one specific setup script).
-func NewBuildDir() string {
-	return fmt.Sprintf("/tmp/realm-build-%s", uuid.NewString())
-}
-
 // DeriveArtifactPath returns the artifact path inside the build container
-// based on the target OS, rooted at buildDir (see NewBuildDir).
+// based on the target OS, rooted at buildDir.
 func DeriveArtifactPath(os c2pb.Host_Platform, buildDir string) string {
 	target, ok := buildTarget[os]
 	if !ok {

@@ -104,6 +104,18 @@ func (su *ScreenshotUpdate) ClearContent() *ScreenshotUpdate {
 	return su
 }
 
+// SetThumbnail sets the "thumbnail" field.
+func (su *ScreenshotUpdate) SetThumbnail(b []byte) *ScreenshotUpdate {
+	su.mutation.SetThumbnail(b)
+	return su
+}
+
+// ClearThumbnail clears the value of the "thumbnail" field.
+func (su *ScreenshotUpdate) ClearThumbnail() *ScreenshotUpdate {
+	su.mutation.ClearThumbnail()
+	return su
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (su *ScreenshotUpdate) SetHostID(id int) *ScreenshotUpdate {
 	su.mutation.SetHostID(id)
@@ -276,6 +288,12 @@ func (su *ScreenshotUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if su.mutation.ContentCleared() {
 		_spec.ClearField(screenshot.FieldContent, field.TypeBytes)
+	}
+	if value, ok := su.mutation.Thumbnail(); ok {
+		_spec.SetField(screenshot.FieldThumbnail, field.TypeBytes, value)
+	}
+	if su.mutation.ThumbnailCleared() {
+		_spec.ClearField(screenshot.FieldThumbnail, field.TypeBytes)
 	}
 	if su.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -454,6 +472,18 @@ func (suo *ScreenshotUpdateOne) SetContent(b []byte) *ScreenshotUpdateOne {
 // ClearContent clears the value of the "content" field.
 func (suo *ScreenshotUpdateOne) ClearContent() *ScreenshotUpdateOne {
 	suo.mutation.ClearContent()
+	return suo
+}
+
+// SetThumbnail sets the "thumbnail" field.
+func (suo *ScreenshotUpdateOne) SetThumbnail(b []byte) *ScreenshotUpdateOne {
+	suo.mutation.SetThumbnail(b)
+	return suo
+}
+
+// ClearThumbnail clears the value of the "thumbnail" field.
+func (suo *ScreenshotUpdateOne) ClearThumbnail() *ScreenshotUpdateOne {
+	suo.mutation.ClearThumbnail()
 	return suo
 }
 
@@ -659,6 +689,12 @@ func (suo *ScreenshotUpdateOne) sqlSave(ctx context.Context) (_node *Screenshot,
 	}
 	if suo.mutation.ContentCleared() {
 		_spec.ClearField(screenshot.FieldContent, field.TypeBytes)
+	}
+	if value, ok := suo.mutation.Thumbnail(); ok {
+		_spec.SetField(screenshot.FieldThumbnail, field.TypeBytes, value)
+	}
+	if suo.mutation.ThumbnailCleared() {
+		_spec.ClearField(screenshot.FieldThumbnail, field.TypeBytes)
 	}
 	if suo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{

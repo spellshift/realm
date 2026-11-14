@@ -15,6 +15,7 @@ export enum PageNavItem {
     admin="Admin",
     processes="Processes",
     files="Files",
+    credentials="Credentials",
     agentBuilder="Agent Builder",
     screenshots="Screenshots"
 }
@@ -133,6 +134,12 @@ export enum HostFileOrderField {
     LastModifiedAt = "LAST_MODIFIED_AT",
     Name = "NAME",
     Size = "SIZE",
+}
+
+export enum HostCredentialOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Principal = "PRINCIPAL",
 }
 
 // Mirrors ent's ScreenshotOrderField (tavern/internal/graphql/schema/ent.graphql) --

@@ -186,6 +186,7 @@ describe("ScreenshotsTab", () => {
             Assets: { field: "CREATED_AT", direction: "DESC" },
             Processes: { field: "PROCESS_START_TIME", direction: "ASC" },
             Files: { field: "NAME", direction: "ASC" },
+            Credentials: { field: "PRINCIPAL", direction: "ASC" },
             Screenshots: { field: "NAME", direction: "ASC" },
         }));
 

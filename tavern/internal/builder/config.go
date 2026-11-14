@@ -36,6 +36,18 @@ type Config struct {
 	IdentityFile     string   `yaml:"identity_file"`
 	Upstream         string   `yaml:"upstream"`
 	Executor         string   `yaml:"executor"`
+
+	// CacheDir is a host directory shared with Docker and bind-mounted into builds.
+	// An empty value disables caching.
+	CacheDir string `yaml:"cache_dir"`
+}
+
+func defaultCacheDir() string {
+	base, err := os.UserCacheDir()
+	if err != nil {
+		base = os.TempDir()
+	}
+	return filepath.Join(base, "realm", "builder")
 }
 
 // DefaultConfig returns the settings used when no builder configuration is provided.
@@ -46,6 +58,7 @@ func DefaultConfig() *Config {
 		IdentityFile:     "builder.identity",
 		Upstream:         "http://127.0.0.1:8000",
 		Executor:         "docker",
+		CacheDir:         defaultCacheDir(),
 	}
 }
 
@@ -89,12 +102,12 @@ func parseConfigBytes(data []byte, executor *string) (*Config, error) {
 	}
 	for name := range fields {
 		switch name {
-		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval":
+		case "identity_file", "supported_targets", "upstream", "executor", "poll_interval", "cache_dir":
 		default:
 			return nil, fmt.Errorf("unknown builder config field %q", name)
 		}
 	}
-	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval"} {
+	for _, name := range []string{"identity_file", "supported_targets", "upstream", "poll_interval", "cache_dir"} {
 		if value, present := fields[name]; present && value == nil {
 			return nil, fmt.Errorf("%s must not be null", name)
 		}
@@ -154,6 +167,9 @@ func (cfg *Config) validate() error {
 		// valid
 	default:
 		return fmt.Errorf("unsupported executor %q, must be one of: docker, local", cfg.Executor)
+	}
+	if cfg.CacheDir != "" && !filepath.IsAbs(cfg.CacheDir) {
+		return fmt.Errorf("cache_dir must be an absolute path")
 	}
 	return nil
 }
