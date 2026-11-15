@@ -9,7 +9,6 @@ import { useMutation } from "@apollo/client";
 import { CREATE_BUILD_TASK, useBuildProfiles, useOnlineBuilderPlatforms } from "../queries";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
 import { ProfileSelectionTable } from "./ProfileSelectionTable";
-import EnrollBuilderModal from "./EnrollBuilderModal";
 import { TargetSelectionTable } from "./TargetSelectionTable";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
@@ -70,7 +69,6 @@ export const AgentBuilderWizard = ({
     const navigate = useNavigate();
     const toast = useToast();
     const [currStep, setCurrStep] = useState(0);
-    const [enrollOpen, setEnrollOpen] = useState(false);
     const { profiles, loading, error: profilesError } = useBuildProfiles();
     const { platforms, loading: buildersLoading, error: buildersError } = useOnlineBuilderPlatforms();
     const { data: authorization } = useAuthorization();
@@ -152,6 +150,7 @@ export const AgentBuilderWizard = ({
                 status: "success",
                 duration: 5000,
                 isClosable: true,
+                position: "bottom-right",
             });
             if (onComplete) {
                 onComplete(data.createBuildTask.id);
@@ -186,17 +185,16 @@ export const AgentBuilderWizard = ({
                                 ? "Enroll and start a builder before generating an agent."
                                 : "Ask an admin to enroll and start a builder before generating an agent."}>
                             {authorization?.me.isAdmin && <Button buttonStyle={{ color: "purple", size: "md" }}
-                                onClick={() => setEnrollOpen(true)}>Enroll builder</Button>}
+                                onClick={() => navigate("/admin?tab=builders")}>Enroll builder</Button>}
                         </EmptyState>
                     )}
                 </div>
-                {authorization?.me.isAdmin && <EnrollBuilderModal isOpen={enrollOpen} setOpen={setEnrollOpen} />}
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto w-full flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             {breadcrumbs}
 
             {profilesError && <AlertError label="Unable to load build profiles" details={profilesError.message} />}

@@ -1,15 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAssetIds } from "./useAssetIds";
 import AssetsHeader from "./components/AssetsHeader";
 import AssetsTable from "./AssetsTable";
 import CreateLinkModal from "./components/CreateLinkModal/CreateLinkModal";
+import AgentBuilderWizardModal from "../agent-builder/components/AgentBuilderWizardModal";
 import UploadAssetModal from "./components/UploadAssetModal/UploadAssetModal";
 import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
 import { PageNavItem } from "../../utils/enums";
 
 export const Assets = () => {
-    const navigate = useNavigate();
     const {
         data,
         assetIds,
@@ -22,6 +21,7 @@ export const Assets = () => {
 
     const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
     const [uploadAssetModalOpen, setUploadAssetModalOpen] = useState(false);
+    const [generateAgentOpen, setGenerateAgentOpen] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState<{ id: string; name: string } | null>(null);
 
     const handleCreateLink = (assetId: string, assetName: string) => {
@@ -34,7 +34,7 @@ export const Assets = () => {
             <div className="flex flex-col gap-6">
                 <AssetsHeader
                     setOpen={setUploadAssetModalOpen}
-                    onGenerateAgent={() => navigate("/assets/build")}
+                    onGenerateAgent={() => setGenerateAgentOpen(true)}
                 />
                 <VirtualizedTableWrapper
                     title="Assets"
@@ -61,6 +61,14 @@ export const Assets = () => {
                     assetId={selectedAsset.id}
                     assetName={selectedAsset.name}
                     onSuccess={refetch}
+                />
+            )}
+
+            {generateAgentOpen && (
+                <AgentBuilderWizardModal
+                    isOpen={generateAgentOpen}
+                    setOpen={setGenerateAgentOpen}
+                    onComplete={() => refetch()}
                 />
             )}
 

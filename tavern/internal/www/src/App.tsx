@@ -19,7 +19,6 @@ import Hosts from "./pages/hosts/Hosts";
 import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
 import Profile from "./pages/profile/Profile";
-import AgentBuilderWizardPage from "./pages/agent-builder/AgentBuilderWizardPage";
 
 
 const router = createBrowserRouter([
@@ -65,7 +64,7 @@ const router = createBrowserRouter([
       },
       {
         path: "assets/build",
-        element: <AgentBuilderWizardPage />,
+        element: <Navigate to="/assets" replace />,
       },
       {
         path: "admin",
@@ -81,7 +80,7 @@ const router = createBrowserRouter([
       },
       {
         path: "builder/new",
-        element: <Navigate to="/assets/build" replace />,
+        element: <Navigate to="/assets" replace />,
       },
     ]
   },
