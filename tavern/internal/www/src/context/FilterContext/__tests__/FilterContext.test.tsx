@@ -371,9 +371,11 @@ describe('FilterContext', () => {
       agentOnly: false,
     };
 
-    it('should count agent filter correctly', () => {
-      expect(calculateFilterCount(baseFilters, FilterFieldType.AGENT)).toBe(0);
-      expect(calculateFilterCount({ ...baseFilters, agentOnly: true }, FilterFieldType.AGENT)).toBe(1);
+    it('should count asset fields (user + agent type) correctly', () => {
+      expect(calculateFilterCount(baseFilters, FilterFieldType.ASSET_FIELDS)).toBe(0);
+      expect(calculateFilterCount({ ...baseFilters, userId: '1' }, FilterFieldType.ASSET_FIELDS)).toBe(1);
+      expect(calculateFilterCount({ ...baseFilters, agentOnly: true }, FilterFieldType.ASSET_FIELDS)).toBe(1);
+      expect(calculateFilterCount({ ...baseFilters, userId: '1', agentOnly: true }, FilterFieldType.ASSET_FIELDS)).toBe(2);
     });
 
     it('should count string fields correctly', () => {

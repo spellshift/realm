@@ -19,9 +19,6 @@ import Hosts from "./pages/hosts/Hosts";
 import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
 import Profile from "./pages/profile/Profile";
-import AgentBuilderWizardPage from "./pages/agent-builder/AgentBuilderWizardPage";
-import EnrollBuilderPage from "./pages/agent-builder/EnrollBuilderPage";
-import { AdminAccessGate } from "./components/admin-access-gate";
 
 
 const router = createBrowserRouter([
@@ -67,15 +64,11 @@ const router = createBrowserRouter([
       },
       {
         path: "assets/build",
-        element: <AgentBuilderWizardPage />,
+        element: <Navigate to="/assets" replace />,
       },
       {
         path: "admin",
         element: <AdminPortal />,
-      },
-      {
-        path: "admin/builders/enroll",
-        element: <AdminAccessGate><EnrollBuilderPage /></AdminAccessGate>,
       },
       {
         path: "profile",
@@ -87,7 +80,7 @@ const router = createBrowserRouter([
       },
       {
         path: "builder/new",
-        element: <Navigate to="/assets/build" replace />,
+        element: <Navigate to="/assets" replace />,
       },
     ]
   },

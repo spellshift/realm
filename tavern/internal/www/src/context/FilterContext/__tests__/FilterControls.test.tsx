@@ -51,6 +51,10 @@ vi.mock('../../../components/ButtonDialogPopover', () => ({
   ),
 }));
 
+vi.mock('../../../components/asset-filter-bar', () => ({
+  AssetFilterBar: () => <div data-testid="asset-fields-bar" />,
+}));
+
 vi.mock('../../../components/UserFilterBar', () => ({
   default: () => (
     <div data-testid="user-filter-bar" />
@@ -126,12 +130,12 @@ describe('FilterControls', () => {
       expect(screen.queryByTestId('beacon-filter-bar')).not.toBeInTheDocument();
     });
 
-    it('should render asset name, user, and agent filters for ASSETS page', () => {
+    it('should render asset name and combined asset fields filters for ASSETS page', () => {
       render(<TestWrapper path="/assets" />);
 
       expect(screen.getByTestId('free-text-search-Asset name')).toBeInTheDocument();
-      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
-      expect(screen.getByTestId('agent-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('asset-filter-bar')).toBeInTheDocument();
+      expect(screen.queryByTestId('user-filter-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('beacon-filter-bar')).not.toBeInTheDocument();
     });
 

@@ -1,6 +1,5 @@
 import { ApolloError } from "@apollo/client";
-import { useNavigate } from "react-router-dom";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { Plus } from "lucide-react";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -13,13 +12,13 @@ export const BuildersTab = ({
     builders,
     loading,
     error,
+    onEnroll,
 }: {
     builders: Builder[];
     loading: boolean;
     error?: ApolloError;
+    onEnroll: () => void;
 }) => {
-    const navigate = useNavigate();
-    const enroll = () => navigate("/admin/builders/enroll");
 
     return (
         <div className="flex flex-col gap-2">
@@ -32,8 +31,9 @@ export const BuildersTab = ({
                     <Button
                         buttonVariant="ghost"
                         buttonStyle={{ color: "gray", size: "sm" }}
-                        leftIcon={<PlusIcon className="w-4 h-4" />}
-                        onClick={enroll}
+                        className="h-10"
+                        leftIcon={<Plus className="w-4 h-4" />}
+                        onClick={onEnroll}
                     >
                         Enroll builder
                     </Button>
@@ -50,9 +50,9 @@ export const BuildersTab = ({
                         details="Add one to get started."
                     >
                         <Button
-                            leftIcon={<PlusIcon className="w-4 h-4" />}
+                            leftIcon={<Plus className="w-4 h-4" />}
                             buttonStyle={{ color: "purple", size: "md" }}
-                            onClick={enroll}
+                            onClick={onEnroll}
                         >
                             Enroll builder
                         </Button>

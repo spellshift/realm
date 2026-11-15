@@ -1,14 +1,16 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
+import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, CirclePause, CircleX } from "lucide-react";
+import { useToast } from "@chakra-ui/react";
+import { useMutation, useQuery } from "@apollo/client";
 import { BugAntIcon } from "@heroicons/react/24/outline";
-import { Tooltip, useToast } from "@chakra-ui/react";
-import { useMutation } from "@apollo/client";
+import { BuildTask, BuildTaskStatus, GET_BUILD_TASKS, taskStatus } from "../../utils/buildTasks";
 import moment from "moment";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtualized-table/types";
 import { AssetNode } from "../../utils/interfacesQuery";
 import Button from "../../components/tavern-base-ui/button/Button";
+import Tooltip from "../../components/tavern-base-ui/Tooltip";
 import UserImageAndName from "../../components/UserImageAndName";
 import { isAgentAsset, truncateAssetName } from "./utils";
 import { GET_ASSET_DETAIL_QUERY, DELETE_ASSET } from "./queries";
@@ -17,6 +19,33 @@ import AssetAccordion from "./components/AssetAccordion";
 import DownloadButton from "./components/DownloadButton";
 import { formatBytes } from "../../utils/utils";
 import { useAuthorization } from "../../context/AuthorizationContext";
+
+export type AssetBuildStatus = { status: BuildTaskStatus; error: string | null; exitCode: number | null };
+
+export const buildStatusLabel = ({ status, error, exitCode }: AssetBuildStatus): string => {
+    if (status === "Failed") return `Build failed (exit code ${exitCode ?? "unknown"}): ${error}`;
+    if (status === "Queued" || status === "Claimed") return "Queued";
+    return "Building";
+};
+
+// Same glyphs as TaskStatusField; Built rows show nothing.
+const AssetBuildStatusIcon = ({ status }: { status: BuildTaskStatus }) => {
+    switch (status) {
+        case "Queued":
+        case "Claimed":
+            return <CirclePause className="w-4 h-4 text-gray-700" />;
+        case "Building":
+        case "Awaiting artifact":
+            return <Clock className="w-4 h-4 text-gray-700" />;
+        case "Failed":
+            return <CircleX className="w-4 h-4 text-red-600" />;
+        default:
+            return null;
+    }
+};
+
+// Build artifacts are created empty when the build is queued; uploads reject empty content.
+const isPendingArtifact = (asset: AssetNode) => isAgentAsset(asset.name) && asset.size === 0;
 
 interface AssetsTableProps {
     assetIds: string[];
@@ -63,6 +92,21 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         });
     }, [toast]);
 
+    const { data: buildTasksData } = useQuery<{ buildTasks: { edges: Array<{ node: BuildTask | null } | null> | null } }>(
+        GET_BUILD_TASKS,
+        { fetchPolicy: "cache-and-network", pollInterval: 5000 },
+    );
+    const statusByAssetId = useMemo(() => {
+        const map = new Map<string, AssetBuildStatus>();
+        const now = Date.now();
+        for (const edge of buildTasksData?.buildTasks?.edges ?? []) {
+            const task = edge?.node;
+            if (!task?.artifact) continue;
+            map.set(task.artifact.id, { status: taskStatus(task, now), error: task.error, exitCode: task.exitCode });
+        }
+        return map;
+    }, [buildTasksData]);
+
     const getVariables = useCallback((id: string) => ({ id }), []);
 
     const extractData = useCallback((response: AssetDetailQueryResponse): AssetNode | null => {
@@ -76,38 +120,46 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             width: 'minmax(250px,3fr)',
             render: (asset) => {
                 const isAgent = isAgentAsset(asset.name);
+                const buildStatus = isAgent ? statusByAssetId.get(asset.id) : undefined;
                 const hasTomes = asset.tomes.totalCount > 0;
                 const truncatedName = truncateAssetName(asset.name);
                 return (
                     <div className="flex items-center gap-4">
                         {isAgent ? (
-                            <Tooltip label="Built agent artifact" bg="white" color="black">
+                            <Tooltip label="Built agent artifact">
                                 <div className="shrink-0" data-testid="agent-bug-icon">
                                     <BugAntIcon className="w-4 h-4 text-black" />
                                 </div>
                             </Tooltip>
                         ) : hasTomes ? (
-                            <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
+                            <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`}>
                                 <div className="shrink-0">
                                     <BookOpen className="w-4 h-4 text-gray-500" />
                                 </div>
                             </Tooltip>
                         ) : (
-                            <Tooltip label="Asset is not referenced by any tomes" bg="white" color="black">
+                            <Tooltip label="Asset is not referenced by any tomes">
                                 <div className="shrink-0">
                                     <FilePlus className="w-4 h-4 text-gray-400" />
                                 </div>
                             </Tooltip>
                         )}
-                        <Tooltip label={asset.name} bg="white" color="black">
-                            <div
-                                className="cursor-pointer hover:text-purple-600 flex items-center gap-1"
-                                onClick={(e) => handleCopy(asset.name, e)}
-                            >
+                        <div
+                            className="cursor-pointer hover:text-purple-600 flex items-center gap-1"
+                            onClick={(e) => handleCopy(asset.name, e)}
+                        >
+                            <Tooltip label={asset.name}>
                                 <span>{truncatedName}</span>
-                                <Copy className="w-3 h-3 text-gray-400 hover:text-purple-600" />
-                            </div>
-                        </Tooltip>
+                            </Tooltip>
+                            <Copy className="w-3 h-3 text-gray-400 hover:text-purple-600" data-testid="asset-copy-icon" />
+                        </div>
+                        {buildStatus && buildStatus.status !== "Built" && (
+                            <Tooltip label={buildStatusLabel(buildStatus)}>
+                                <div className="shrink-0 flex items-center" data-testid="agent-build-status" data-status={buildStatus.status}>
+                                    <AssetBuildStatusIcon status={buildStatus.status} />
+                                </div>
+                            </Tooltip>
+                        )}
                     </div>
                 );
             },
@@ -138,7 +190,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             key: 'size',
             label: 'Size',
             width: 'minmax(100px,1fr)',
-            render: (asset) => <span>{formatBytes(asset.size)}</span>,
+            render: (asset) => <span>{isPendingArtifact(asset) ? "—" : formatBytes(asset.size)}</span>,
             renderSkeleton: () => (
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
             ),
@@ -149,8 +201,9 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             width: 'minmax(150px,2fr)',
             render: (asset) => {
                 const hash = asset.hash;
+                if (isPendingArtifact(asset)) return <span>—</span>;
                 return (
-                    <Tooltip label={hash} bg="white" color="black">
+                    <Tooltip label={hash}>
                         <div
                             className="font-mono text-sm cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopy(hash, e)}
@@ -191,38 +244,43 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             key: 'actions',
             label: 'Actions',
             width: 'minmax(100px,1fr)',
-            render: (asset) => (
-                <div className="flex flex-row gap-2">
-                    <DownloadButton assetName={asset.name} />
-                    <Tooltip label="Create Link" bg="white" color="black">
-                        <Button
-                            buttonVariant="ghost"
-                            buttonStyle={{ color: "gray", size: "xs" }}
-                            leftIcon={<Share className="w-4 h-4" />}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onCreateLink(asset.id, asset.name);
-                            }}
-                            aria-label="Create Link"
-                        />
-                    </Tooltip>
-                    {isAdmin && (
-                        <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : "Delete"} bg="white" color="black">
+            render: (asset) => {
+                // Unbuilt/failed agent artifacts are empty placeholders: nothing to download or link.
+                const unbuilt = isAgentAsset(asset.name) && (statusByAssetId.get(asset.id)?.status ?? "Built") !== "Built";
+                return (
+                    <div className="flex flex-row gap-2">
+                        <DownloadButton assetName={asset.name} disabled={unbuilt} />
+                        <Tooltip label="Create Link">
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
-                                leftIcon={<Trash2 className="w-4 h-4" />}
-                                disabled={asset.tomes.totalCount > 0}
+                                leftIcon={<Share className="w-4 h-4" />}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    deleteAsset({ variables: { assetID: asset.id } });
+                                    onCreateLink(asset.id, asset.name);
                                 }}
-                                aria-label="Delete"
+                                disabled={unbuilt}
+                                aria-label="Create Link"
                             />
                         </Tooltip>
-                    )}
-                </div>
-            ),
+                        {isAdmin && (
+                            <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : unbuilt ? "Cannot delete: build is not complete" : "Delete"}>
+                                <Button
+                                    buttonVariant="ghost"
+                                    buttonStyle={{ color: "gray", size: "xs" }}
+                                    leftIcon={<Trash2 className="w-4 h-4" />}
+                                    disabled={asset.tomes.totalCount > 0 || unbuilt}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteAsset({ variables: { assetID: asset.id } });
+                                    }}
+                                    aria-label="Delete"
+                                />
+                            </Tooltip>
+                        )}
+                    </div>
+                );
+            },
             renderSkeleton: () => (
                 <div className="flex flex-row gap-2">
                     <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
@@ -230,7 +288,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 </div>
             ),
         },
-    ], [handleCopy, onCreateLink, isAdmin, deleteAsset]);
+    ], [handleCopy, onCreateLink, isAdmin, deleteAsset, statusByAssetId]);
 
     return (
         <VirtualizedTable<AssetNode, AssetDetailQueryResponse>

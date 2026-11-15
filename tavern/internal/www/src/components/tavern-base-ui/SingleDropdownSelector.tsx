@@ -10,19 +10,33 @@ type SingleDropdownSelectorProps = {
     options: Array<Option>;
     setSelectedOption: any;
     isSearchable?: boolean;
-    defaultValue?: Option
+    defaultValue?: Option;
+    /** "sm" matches Chakra's `<Input size="sm" />` (32px tall, 14px text) for use beside text inputs. */
+    size?: "sm" | "md";
 }
 const SingleDropdownSelector: FC<SingleDropdownSelectorProps> = ({
     label,
     options,
     setSelectedOption,
     isSearchable = true,
-    defaultValue
+    defaultValue,
+    size = "md",
 }) => {
+    const compact = size === "sm";
 
     const styles = {
+        container: (base: any) => ({
+            ...base,
+            ...(compact && { fontSize: "14px" }),
+        }),
+        valueContainer: (base: any) => ({
+            ...base,
+            // 10px + the 2px singleValue margin lines the text up with a 12px-padded Input.
+            ...(compact && { padding: "0 10px" }),
+        }),
         control: (base: any) => ({
             ...base,
+            ...(compact && { minHeight: "32px" }),
             border: "1px solid #cccccc",
             boxShadow: "none",
             "&:active": {
@@ -42,6 +56,7 @@ const SingleDropdownSelector: FC<SingleDropdownSelectorProps> = ({
         dropdownIndicator: (base: any) => ({
             ...base,
             color: "inherit",
+            ...(compact && { padding: "5px" }),
         }),
         singleValue: (base: any) => ({
             ...base,

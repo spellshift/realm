@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Pencil, Trash2 } from "lucide-react";
-import { Tooltip } from "@chakra-ui/react";
+import Tooltip from "../../../components/tavern-base-ui/Tooltip";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { TomeTactic } from "../../../utils/enums";
@@ -70,7 +70,7 @@ export const getProfileColumns = (
                 }
                 return (
                     <div className="flex flex-row gap-2 justify-end">
-                        <Tooltip label="Edit" bg="white" color="black">
+                        <Tooltip label="Edit">
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
@@ -82,10 +82,10 @@ export const getProfileColumns = (
                                 aria-label="Edit"
                             />
                         </Tooltip>
-                        <Tooltip label="Delete" bg="white" color="black">
+                        <Tooltip label="Delete">
                             <Button
                                 buttonVariant="ghost"
-                                buttonStyle={{ color: "gray", size: "xs" }}
+                                buttonStyle={{ color: "red", size: "xs" }}
                                 leftIcon={<Trash2 className="w-4 h-4" />}
                                 onClick={(e) => {
                                     e.stopPropagation();
