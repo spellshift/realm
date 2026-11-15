@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ApolloError } from "@apollo/client";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { Plus } from "lucide-react";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -38,7 +38,7 @@ export const ProfilesTab = ({
                         buttonVariant="ghost"
                         buttonStyle={{ color: "gray", size: "sm" }}
                         className="h-10"
-                        leftIcon={<PlusIcon className="w-4 h-4" />}
+                        leftIcon={<Plus className="w-4 h-4" />}
                         onClick={onAddProfile}
                     >
                         Add build profile
@@ -56,7 +56,7 @@ export const ProfilesTab = ({
                         details="Add one to get started."
                     >
                         <Button
-                            leftIcon={<PlusIcon className="w-4 h-4" />}
+                            leftIcon={<Plus className="w-4 h-4" />}
                             buttonStyle={{ color: "purple", size: "md" }}
                             onClick={onAddProfile}
                         >

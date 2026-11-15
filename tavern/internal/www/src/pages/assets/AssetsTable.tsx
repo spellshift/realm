@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, CirclePause, CircleX } from "lucide-react";
-import { Tooltip, useToast } from "@chakra-ui/react";
+import { useToast } from "@chakra-ui/react";
 import { useMutation, useQuery } from "@apollo/client";
 import { BugAntIcon } from "@heroicons/react/24/outline";
 import { BuildTask, BuildTaskStatus, GET_BUILD_TASKS, taskStatus } from "../../utils/buildTasks";
@@ -10,6 +10,7 @@ import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-ta
 import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtualized-table/types";
 import { AssetNode } from "../../utils/interfacesQuery";
 import Button from "../../components/tavern-base-ui/button/Button";
+import Tooltip from "../../components/tavern-base-ui/Tooltip";
 import UserImageAndName from "../../components/UserImageAndName";
 import { isAgentAsset, truncateAssetName } from "./utils";
 import { GET_ASSET_DETAIL_QUERY, DELETE_ASSET } from "./queries";
@@ -125,19 +126,19 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 return (
                     <div className="flex items-center gap-4">
                         {isAgent ? (
-                            <Tooltip label="Built agent artifact" bg="white" color="black">
+                            <Tooltip label="Built agent artifact">
                                 <div className="shrink-0" data-testid="agent-bug-icon">
                                     <BugAntIcon className="w-4 h-4 text-black" />
                                 </div>
                             </Tooltip>
                         ) : hasTomes ? (
-                            <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
+                            <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`}>
                                 <div className="shrink-0">
                                     <BookOpen className="w-4 h-4 text-gray-500" />
                                 </div>
                             </Tooltip>
                         ) : (
-                            <Tooltip label="Asset is not referenced by any tomes" bg="white" color="black">
+                            <Tooltip label="Asset is not referenced by any tomes">
                                 <div className="shrink-0">
                                     <FilePlus className="w-4 h-4 text-gray-400" />
                                 </div>
@@ -147,13 +148,13 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                             className="cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopy(asset.name, e)}
                         >
-                            <Tooltip label={asset.name} bg="white" color="black">
+                            <Tooltip label={asset.name}>
                                 <span>{truncatedName}</span>
                             </Tooltip>
                             <Copy className="w-3 h-3 text-gray-400 hover:text-purple-600" data-testid="asset-copy-icon" />
                         </div>
                         {buildStatus && buildStatus.status !== "Built" && (
-                            <Tooltip label={buildStatusLabel(buildStatus)} bg="white" color="black">
+                            <Tooltip label={buildStatusLabel(buildStatus)}>
                                 <div className="shrink-0 flex items-center" data-testid="agent-build-status" data-status={buildStatus.status}>
                                     <AssetBuildStatusIcon status={buildStatus.status} />
                                 </div>
@@ -202,7 +203,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 const hash = asset.hash;
                 if (isPendingArtifact(asset)) return <span>—</span>;
                 return (
-                    <Tooltip label={hash} bg="white" color="black">
+                    <Tooltip label={hash}>
                         <div
                             className="font-mono text-sm cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopy(hash, e)}
@@ -249,7 +250,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 return (
                     <div className="flex flex-row gap-2">
                         <DownloadButton assetName={asset.name} disabled={unbuilt} />
-                        <Tooltip label="Create Link" bg="white" color="black">
+                        <Tooltip label="Create Link">
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
@@ -263,7 +264,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                             />
                         </Tooltip>
                         {isAdmin && (
-                            <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : unbuilt ? "Cannot delete: build is not complete" : "Delete"} bg="white" color="black">
+                            <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : unbuilt ? "Cannot delete: build is not complete" : "Delete"}>
                                 <Button
                                     buttonVariant="ghost"
                                     buttonStyle={{ color: "gray", size: "xs" }}

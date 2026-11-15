@@ -120,7 +120,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		SetBuildImage("spellshift/devcontainer:windows").
 		SetBuildScript("cargo build --release --target x86_64-pc-windows-gnu").
 		SetArtifactPath("/out/imix.exe").
-		SetUnique("win-diag-02").
+		SetUnique(`[{"type":"env"},{"type":"file"}]`).
 		SetTransports([]builderpb.BuildProfileTransport{
 			{
 				URI:      "https://diag.internal.lan/c2",

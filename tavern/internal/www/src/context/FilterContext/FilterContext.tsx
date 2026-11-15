@@ -10,7 +10,7 @@ export enum FilterFieldType {
     TOME_MULTI_SEARCH = "tomeMultiSearch",
     ASSET_NAME = "assetName",
     USER = "user",
-    AGENT = "agent"
+    ASSET_FIELDS = "assetFields",
 }
 
 const STORAGE_KEY = 'realm-filters-v1.1'
@@ -114,8 +114,8 @@ export function calculateFilterCount(filters: Filters, field: FilterFieldType): 
             return filters.assetName !== "" ? 1 : 0;
         case FilterFieldType.USER:
             return filters.userId !== "" ? 1 : 0;
-        case FilterFieldType.AGENT:
-            return filters.agentOnly ? 1 : 0;
+        case FilterFieldType.ASSET_FIELDS:
+            return (filters.userId !== "" ? 1 : 0) + (filters.agentOnly ? 1 : 0);
         case FilterFieldType.BEACON_FIELDS:
             return filters.beaconFields.length;
         case FilterFieldType.TOME_FIELDS:
