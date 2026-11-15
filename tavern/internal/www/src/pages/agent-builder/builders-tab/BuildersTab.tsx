@@ -32,6 +32,7 @@ export const BuildersTab = ({
                     <Button
                         buttonVariant="ghost"
                         buttonStyle={{ color: "gray", size: "sm" }}
+                        className="h-10"
                         leftIcon={<PlusIcon className="w-4 h-4" />}
                         onClick={enroll}
                     >
