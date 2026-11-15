@@ -27,7 +27,7 @@ resource "random_password" "builder_enrollment" {
 
 output "builder_enrollment_token" {
   description = "One-time builder enrollment token to hand to a builder. Rotate explicitly after use."
-  value       = random_password.builder_enrollment.result
+  value       = local.builder_enrollment_token
   sensitive   = true
 }
 
@@ -93,6 +93,59 @@ variable "redirector_machine_type" {
   type = string
   description = "Machine type for redirector compute instances"
   default = "e2-small"
+}
+
+variable "builder_enabled" {
+  type        = bool
+  description = "Deploy the Tavern builder VM. Set to false to skip builder deployment entirely."
+  default     = true
+}
+
+variable "builder_machine_type" {
+  type        = string
+  description = "Machine type for the builder compute instance (defaults to f1-micro per deployment guidance)."
+  default     = "e2-medium"
+}
+
+variable "builder_boot_disk_image" {
+  type        = string
+  description = "Boot disk image for the builder compute instance (Container-Optimized OS)."
+  default     = "projects/cos-cloud/global/images/cos-stable-121-18867-294-134"
+}
+
+variable "builder_boot_disk_size" {
+  type        = number
+  description = "Boot disk size in GB for the builder compute instance. Only needs room for the COS OS and pulled Docker build images now that the Cargo build cache lives on builder_cache_disk_size's separate disk."
+  default     = 16
+}
+
+variable "builder_cache_disk_size" {
+  type        = number
+  description = "Size in GB of the separate persistent disk backing the builder's Docker build cache. Kept off the COS boot disk because COS mounts the boot disk's writable paths (/home, /var, /mnt/stateful_partition) noexec, which breaks running build scripts (e.g. cargo) directly out of a cache dir there."
+  default     = 50
+}
+
+variable "builder_upstream" {
+  type        = string
+  description = "Upstream Tavern URL the builder enrolls against and connects to over gRPC. Defaults to the Tavern Cloud Run URL (or the OAuth domain when configured)."
+  default     = ""
+}
+
+variable "builder_supported_targets" {
+  type        = list(string)
+  description = "Platforms the builder will compile agents for."
+  default     = ["linux", "windows"]
+  validation {
+    condition     = length(var.builder_supported_targets) > 0
+    error_message = "builder_supported_targets must list at least one platform (linux, windows, or macos)."
+  }
+}
+
+variable "builder_enrollment_token" {
+  type        = string
+  description = "Preset one-time builder enrollment token. If empty, the generated random token (output as builder_enrollment_token) is used."
+  default     = ""
+  sensitive   = true
 }
 
 variable "tavern_request_timeout_seconds" {
@@ -455,7 +508,7 @@ resource "google_cloud_run_service" "tavern" {
         }
         env {
           name  = "REALM_BUILDER_ENROLLMENT_TOKENS"
-          value = random_password.builder_enrollment.result
+          value = local.builder_enrollment_token
         }
 
         // Only configure GCP pubsub if it is not disabled
@@ -587,6 +640,24 @@ resource "google_project_iam_member" "redirector-logwriter-binding" {
   project = var.gcp_project
   role    = "roles/logging.logWriter"
   member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+}
+
+# Setup builder svc account
+resource "google_service_account" "svcbuiltavern_builder" {
+  account_id = "svcbuiltavern-builder"
+  description = "The service account Realm's Tavern Builder VM uses to connect to GCP based services. Managed by Terraform."
+}
+
+resource "google_project_iam_member" "builder-metricwriter-binding" {
+  project    = var.gcp_project
+  role       = "roles/monitoring.metricWriter"
+  member     = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
+}
+
+resource "google_project_iam_member" "builder-logwriter-binding" {
+  project    = var.gcp_project
+  role       = "roles/logging.logWriter"
+  member     = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
 }
 
 # Lookup the redirector domain if able
@@ -1106,6 +1177,165 @@ resource "google_dns_record_set" "redir_quic_record_a" {
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_quic[count.index].name
   rrdatas      = [google_compute_instance.quic_redirector[local.redirector_zones_quic[count.index].index].network_interface[0].access_config[0].nat_ip]
+}
+
+# Setup Tavern Builder VM
+# Reuses the Container-Optimized OS (COS) compute instance pattern used by the
+# DNS redirector. The VM runs the Tavern container in "builder" mode, mounting
+# the host Docker socket (so the Docker executor can build agents) and a
+# generated builder config file into the container.
+locals {
+  # Upstream Tavern URL the builder enrolls against and connects to via gRPC.
+  builder_upstream = var.builder_upstream != "" ? var.builder_upstream : (
+    var.oauth_domain != "" ? "https://${var.oauth_domain}" : google_cloud_run_service.tavern.status[0].url
+  )
+
+  # Enrollment token handed to the builder for first-time enrollment. Prefer a
+  # preset token (var.builder_enrollment_token) and fall back to the generated one.
+  builder_enrollment_token = var.builder_enrollment_token != "" ? var.builder_enrollment_token : random_password.builder_enrollment.result
+
+  # Mount point for the separate persistent disk backing the builder's
+  # Docker build cache (see google_compute_disk.builder_cache).
+  builder_cache_dir = "/mnt/disks/builder-cache"
+
+  # Mount the cache disk
+  builder_cache_mount_script = <<-EOT
+    #! /bin/bash
+    set -euo pipefail
+    DEVICE=/dev/disk/by-id/google-builder-cache
+    MOUNT_POINT=${local.builder_cache_dir}
+    mkdir -p "$MOUNT_POINT"
+    if ! blkid "$DEVICE" >/dev/null 2>&1; then
+      mkfs.ext4 -F "$DEVICE"
+    fi
+    if ! mountpoint -q "$MOUNT_POINT"; then
+      mount "$DEVICE" "$MOUNT_POINT"
+    fi
+    chmod 0777 "$MOUNT_POINT"
+  EOT
+
+  # Builder config rendered to YAML and written onto the VM host via cloud-config.
+  builder_config_yaml = yamlencode({
+    upstream          = local.builder_upstream
+    supported_targets = var.builder_supported_targets
+    executor          = "docker"
+    identity_file     = "/etc/builder/builder.identity"
+    poll_interval     = 5
+    cache_dir         = local.builder_cache_dir
+  })
+
+  # cloud-config that writes the builder config onto the COS host at /etc/builder.
+  # The interior builder YAML is embedded as a multi-line block scalar, so its
+  # indentation is preserved correctly inside the cloud-config document.
+  builder_user_data_def = "#cloud-config\n\n${yamlencode({
+    write_files = [
+      {
+        path        = "/etc/builder/builder.yaml"
+        permissions = "0644"
+        content     = local.builder_config_yaml
+      }
+    ]
+  })}"
+
+  # COS container declaration: run the Tavern container in builder mode, mounting
+  # the host Docker socket and the builder config directory.
+  builder_gce_def = yamlencode({
+    spec = {
+      containers = [{
+        image   = var.tavern_container_image
+        command = ["/app/tavern", "builder", "--config", "/etc/builder/builder.yaml"]
+        env = [
+          { name = "REALM_BUILDER_ENROLLMENT_TOKEN", value = local.builder_enrollment_token },
+          { name = "DOCKER_HOST", value = "unix:///var/run/docker.sock" },
+          { name = "ENABLE_JSON_LOGGING", value = "1" },
+          { name = "ENABLE_INSTANCE_ID_LOGGING", value = "1" },
+        ]
+        volumeMounts = [
+          { name = "dockersock", mountPath = "/var/run/docker.sock" },
+          { name = "builderconfig", mountPath = "/etc/builder" },
+          { name = "buildercache", mountPath = local.builder_cache_dir },
+        ]
+      }]
+      volumes = [
+        { name = "dockersock", hostPath = { path = "/var/run/docker.sock" } },
+        { name = "builderconfig", hostPath = { path = "/etc/builder" } },
+        { name = "buildercache", hostPath = { path = local.builder_cache_dir } },
+      ]
+      restartPolicy = "Always"
+    }
+  })
+}
+
+# Hash the builder config so we can force rebuilds on update
+resource "terraform_data" "builder_metadata_hash" {
+  count = var.builder_enabled ? 1 : 0
+  input = sha256("${local.builder_gce_def}-${local.builder_user_data_def}-${local.builder_cache_mount_script}")
+}
+
+# Separate persistent disk backing the builder's Docker build cache (see
+# builder_cache_dir/builder_cache_mount_script above for why this can't just
+# be a directory on the boot disk).
+resource "google_compute_disk" "builder_cache" {
+  count = var.builder_enabled ? 1 : 0
+  name  = "tavern-builder-cache"
+  type  = "pd-balanced"
+  zone  = "${var.gcp_region}-b"
+  size  = var.builder_cache_disk_size
+}
+
+resource "google_compute_instance" "builder" {
+  count        = var.builder_enabled ? 1 : 0
+  name         = "tavern-builder"
+  machine_type = var.builder_machine_type
+  zone         = "${var.gcp_region}-b"
+
+  boot_disk {
+    initialize_params {
+      image = var.builder_boot_disk_image
+      size  = var.builder_boot_disk_size
+    }
+  }
+
+  attached_disk {
+    source      = google_compute_disk.builder_cache[count.index].id
+    device_name = "builder-cache"
+  }
+
+  network_interface {
+    network = "default"
+    access_config {}
+  }
+
+  metadata = {
+    gce-container-declaration = local.builder_gce_def
+    user-data                 = local.builder_user_data_def
+    startup-script            = local.builder_cache_mount_script
+  }
+
+  allow_stopping_for_update = true
+
+  service_account {
+    email  = google_service_account.svcbuiltavern_builder.email
+    scopes = ["cloud-platform"]
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      terraform_data.builder_metadata_hash[count.index]
+    ]
+  }
+
+  depends_on = [
+    google_project_iam_member.builder-metricwriter-binding,
+    google_project_iam_member.builder-logwriter-binding,
+    google_project_service.compute_api,
+    google_cloud_run_service.tavern,
+  ]
+}
+
+output "builder_instance_ip" {
+  description = "External IP of the Tavern builder VM, or 'builder disabled' when the builder is not deployed."
+  value       = length(google_compute_instance.builder) > 0 ? google_compute_instance.builder[0].network_interface[0].access_config[0].nat_ip : "builder disabled"
 }
 
 # Setup auth and domain mappings

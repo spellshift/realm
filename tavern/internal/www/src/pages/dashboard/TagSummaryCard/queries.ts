@@ -48,3 +48,19 @@ export const GET_ALL_HOSTS_WITH_TAG_STATS = gql`
     }
   }
 `;
+
+export const GROUP_HOSTS_BY_SUBNET = gql`
+  mutation GroupHostsBySubnet {
+    groupHostsBySubnet {
+      id
+    }
+  }
+`;
+
+export const RUN_HOST_AUTOGROUP = gql`
+  mutation RunHostAutogroup($k: Int) {
+    runHostAutogroup(k: $k) {
+      id
+    }
+  }
+`;

@@ -1,5 +1,6 @@
 import { SupportedPlatforms, SupportedFormats, SupportedTransports, TomeTactic } from "../../utils/enums";
 import { UserNode } from "../../utils/interfacesQuery";
+import type { BuildTaskStatus } from "../../utils/buildTasks";
 
 export const NO_INSTALL_WARNING = "You haven't added a persistence tome yet, without it the install command won't persist the agent.";
 
@@ -154,7 +155,7 @@ export function BuilderHealthy(lastSeenAt: string | null, pollInterval: number, 
     return lastSeen >= now - 3 * pollInterval * 1000;
 }
 
-export type BuildTaskStatus = "Queued" | "Claimed" | "Building" | "Awaiting artifact" | "Built" | "Failed";
+export type { BuildTaskStatus };
 
 // One row per BuildTask shown in the "Built agents" tab's table -- queued,
 // claimed, and building tasks are included alongside finished ones so the
