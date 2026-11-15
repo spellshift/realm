@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, Wrench, CircleX } from "lucide-react";
+import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, CirclePause, CircleX } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import { useMutation, useQuery } from "@apollo/client";
 import { BugAntIcon } from "@heroicons/react/24/outline";
@@ -27,22 +27,24 @@ export const buildStatusLabel = ({ status, error, exitCode }: AssetBuildStatus):
     return "Building";
 };
 
-// Queued/Claimed show a clock, Building (and the brief awaiting-artifact gap)
-// a wrench, Failed a red X; Built rows show nothing.
+// Same glyphs as TaskStatusField; Built rows show nothing.
 const AssetBuildStatusIcon = ({ status }: { status: BuildTaskStatus }) => {
     switch (status) {
         case "Queued":
         case "Claimed":
-            return <Clock className="w-4 h-4 text-gray-500" />;
+            return <CirclePause className="w-4 h-4 text-gray-700" />;
         case "Building":
         case "Awaiting artifact":
-            return <Wrench className="w-4 h-4 text-gray-500" />;
+            return <Clock className="w-4 h-4 text-gray-700" />;
         case "Failed":
             return <CircleX className="w-4 h-4 text-red-600" />;
         default:
             return null;
     }
 };
+
+// Build artifacts are created empty when the build is queued; uploads reject empty content.
+const isPendingArtifact = (asset: AssetNode) => isAgentAsset(asset.name) && asset.size === 0;
 
 interface AssetsTableProps {
     assetIds: string[];
@@ -91,7 +93,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
 
     const { data: buildTasksData } = useQuery<{ buildTasks: { edges: Array<{ node: BuildTask | null } | null> | null } }>(
         GET_BUILD_TASKS,
-        { fetchPolicy: "cache-and-network" },
+        { fetchPolicy: "cache-and-network", pollInterval: 5000 },
     );
     const statusByAssetId = useMemo(() => {
         const map = new Map<string, AssetBuildStatus>();
@@ -123,13 +125,11 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 return (
                     <div className="flex items-center gap-4">
                         {isAgent ? (
-                            <div className="flex items-center gap-1 shrink-0">
-                                <Tooltip label="Built agent artifact" bg="white" color="black">
-                                    <div className="shrink-0" data-testid="agent-bug-icon">
-                                        <BugAntIcon className="w-4 h-4 text-black" />
-                                    </div>
-                                </Tooltip>
-                            </div>
+                            <Tooltip label="Built agent artifact" bg="white" color="black">
+                                <div className="shrink-0" data-testid="agent-bug-icon">
+                                    <BugAntIcon className="w-4 h-4 text-black" />
+                                </div>
+                            </Tooltip>
                         ) : hasTomes ? (
                             <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
                                 <div className="shrink-0">
@@ -189,7 +189,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             key: 'size',
             label: 'Size',
             width: 'minmax(100px,1fr)',
-            render: (asset) => <span>{formatBytes(asset.size)}</span>,
+            render: (asset) => <span>{isPendingArtifact(asset) ? "—" : formatBytes(asset.size)}</span>,
             renderSkeleton: () => (
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
             ),
@@ -200,6 +200,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             width: 'minmax(150px,2fr)',
             render: (asset) => {
                 const hash = asset.hash;
+                if (isPendingArtifact(asset)) return <span>—</span>;
                 return (
                     <Tooltip label={hash} bg="white" color="black">
                         <div
@@ -246,37 +247,37 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 // Unbuilt/failed agent artifacts are empty placeholders: nothing to download or link.
                 const unbuilt = isAgentAsset(asset.name) && (statusByAssetId.get(asset.id)?.status ?? "Built") !== "Built";
                 return (
-                <div className="flex flex-row gap-2">
-                    <DownloadButton assetName={asset.name} disabled={unbuilt} />
-                    <Tooltip label="Create Link" bg="white" color="black">
-                        <Button
-                            buttonVariant="ghost"
-                            buttonStyle={{ color: "gray", size: "xs" }}
-                            leftIcon={<Share className="w-4 h-4" />}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onCreateLink(asset.id, asset.name);
-                            }}
-                            disabled={unbuilt}
-                            aria-label="Create Link"
-                        />
-                    </Tooltip>
-                    {isAdmin && (
-                        <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : unbuilt ? "Cannot delete: build is not complete" : "Delete"} bg="white" color="black">
+                    <div className="flex flex-row gap-2">
+                        <DownloadButton assetName={asset.name} disabled={unbuilt} />
+                        <Tooltip label="Create Link" bg="white" color="black">
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
-                                leftIcon={<Trash2 className="w-4 h-4" />}
-                                disabled={asset.tomes.totalCount > 0 || unbuilt}
+                                leftIcon={<Share className="w-4 h-4" />}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    deleteAsset({ variables: { assetID: asset.id } });
+                                    onCreateLink(asset.id, asset.name);
                                 }}
-                                aria-label="Delete"
+                                disabled={unbuilt}
+                                aria-label="Create Link"
                             />
                         </Tooltip>
-                    )}
-                </div>
+                        {isAdmin && (
+                            <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : unbuilt ? "Cannot delete: build is not complete" : "Delete"} bg="white" color="black">
+                                <Button
+                                    buttonVariant="ghost"
+                                    buttonStyle={{ color: "gray", size: "xs" }}
+                                    leftIcon={<Trash2 className="w-4 h-4" />}
+                                    disabled={asset.tomes.totalCount > 0 || unbuilt}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteAsset({ variables: { assetID: asset.id } });
+                                    }}
+                                    aria-label="Delete"
+                                />
+                            </Tooltip>
+                        )}
+                    </div>
                 );
             },
             renderSkeleton: () => (

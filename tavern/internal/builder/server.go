@@ -351,9 +351,6 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Error(codes.FailedPrecondition, "build task has no saved profile")
 	}
 
-	// CreateBuildTask eagerly creates an empty placeholder artifact asset so the
-	// build is visible in the Assets list while running; fill it in. Tasks
-	// created before that behavior have no placeholder, so create one here.
 	tx, err := s.graph.Tx(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "begin artifact transaction: %v", err)

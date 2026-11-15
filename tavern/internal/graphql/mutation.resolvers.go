@@ -853,8 +853,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		bundleID = &bundle.ID
 	}
 
-	// Eagerly create an empty placeholder for the artifact so the build shows
-	// up in the Assets list while it runs. UploadBuildArtifact fills it in.
+	// Create an empty artifact placeholder so the build shows in the Assets list; the upload fills it in.
 	artifact, err := graph.Asset.Create().
 		SetName(builder.ArtifactAssetName(input.TargetOs, targetFormat, snapshot.Name)).
 		SetContent([]byte{}).
