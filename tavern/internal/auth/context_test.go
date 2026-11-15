@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/logging"
 )
 
 func TestContextFromSessionToken(t *testing.T) {
@@ -92,6 +93,12 @@ func TestContextFromSessionToken(t *testing.T) {
 				t.Fatalf("unexpected user id, want: %d, got: nil", tc.wantUserID)
 			}
 			assert.Equal(t, tc.wantUserID, u.ID)
+
+			actor := logging.ActorFromContext(authCtx)
+			assert.Equal(t, logging.ActorUser, actor.Kind)
+			assert.Equal(t, u.Name, actor.Name)
+			assert.Equal(t, tc.wantIsAdmin, actor.IsAdmin)
+			assert.Equal(t, "cookie", actor.AuthMethod)
 		})
 	}
 
@@ -177,7 +184,34 @@ func TestContextFromAccessToken(t *testing.T) {
 				t.Fatalf("unexpected user id, want: %d, got: nil", tc.wantUserID)
 			}
 			assert.Equal(t, tc.wantUserID, u.ID)
+
+			actor := logging.ActorFromContext(authCtx)
+			assert.Equal(t, logging.ActorUser, actor.Kind)
+			assert.Equal(t, u.Name, actor.Name)
+			assert.Equal(t, tc.wantIsAdmin, actor.IsAdmin)
+			assert.Equal(t, "access_token", actor.AuthMethod)
 		})
 	}
+}
 
+func TestContextFromUserPreservesAuthMethod(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	u := graph.User.Create().
+		SetName("operator").
+		SetOauthID("op_oauth").
+		SetPhotoURL("http://example.com/").
+		SetIsActivated(true).
+		SetIsAdmin(true).
+		SaveX(ctx)
+
+	base := logging.WithAuthMethod(ctx, "bypass")
+	userCtx := auth.ContextFromUser(base, u)
+	actor := logging.ActorFromContext(userCtx)
+	assert.Equal(t, logging.ActorUser, actor.Kind)
+	assert.Equal(t, "operator", actor.Name)
+	assert.True(t, actor.IsAdmin)
+	assert.Equal(t, "bypass", actor.AuthMethod)
 }

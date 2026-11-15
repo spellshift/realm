@@ -2,7 +2,6 @@ package hostcheck
 
 import (
 	"crypto/ed25519"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -10,7 +9,10 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/logging"
 )
+
+var log = logging.For("scheduler.hostcheck")
 
 // NewHandler returns an HTTP handler that checks all hosts for lost access.
 // It queries the database for hosts whose NextSeenAt has been missed by more
@@ -24,6 +26,10 @@ import (
 // with the server's ed25519 key and scoped to the host-check audience.
 func NewHandler(client *ent.Client, pubKey ed25519.PublicKey) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		traceID, reqID := logging.ExtractHTTPTrace(r.Header)
+		ctx := logging.WithTrace(r.Context(), traceID, reqID)
+		ctx = logging.WithEntrypoint(ctx, "scheduler")
+
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -36,12 +42,11 @@ func NewHandler(client *ent.Client, pubKey ed25519.PublicKey) http.Handler {
 			return
 		}
 		if err := VerifyToken(auth[1], pubKey); err != nil {
-			slog.ErrorContext(r.Context(), "hostcheck: invalid token", "err", err)
+			log.WarnContext(ctx, "invalid hostcheck token", "error", err)
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		ctx := r.Context()
 		now := time.Now()
 		cutoff := now.Add(-1 * time.Minute)
 
@@ -53,11 +58,12 @@ func NewHandler(client *ent.Client, pubKey ed25519.PublicKey) http.Handler {
 			).
 			All(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "hostcheck: failed to query hosts", "err", err)
+			log.ErrorContext(ctx, "failed to query hosts", "error", err)
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
 
+		lostCount := 0
 		for _, h := range hosts {
 			// Check if a HOST_ACCESS_LOST event already exists for this host
 			// since its NextSeenAt time. If so, we have already notified about
@@ -74,7 +80,7 @@ func NewHandler(client *ent.Client, pubKey ed25519.PublicKey) http.Handler {
 				).
 				Exist(ctx)
 			if err != nil {
-				slog.ErrorContext(ctx, "hostcheck: failed to query events", "err", err, "host_id", h.ID)
+				log.ErrorContext(ctx, "failed to query events", "error", err, "host_id", h.ID)
 				continue
 			}
 
@@ -89,11 +95,16 @@ func NewHandler(client *ent.Client, pubKey ed25519.PublicKey) http.Handler {
 				SetTimestamp(now.Unix()).
 				SetHostID(h.ID).
 				Exec(ctx); err != nil {
-				slog.ErrorContext(ctx, "hostcheck: failed to create HOST_ACCESS_LOST event", "err", err, "host_id", h.ID)
+				log.ErrorContext(ctx, "failed to create HOST_ACCESS_LOST event", "error", err, "host_id", h.ID)
 				continue
 			}
 
-			slog.InfoContext(ctx, "hostcheck: HOST_ACCESS_LOST event created", "host_id", h.ID, "host_identifier", h.Identifier)
+			lostCount++
+			log.InfoContext(ctx, "HOST_ACCESS_LOST event created", "host_id", h.ID, "host_name", h.Name, "host_identifier", h.Identifier)
+		}
+
+		if lostCount == 0 {
+			log.DebugContext(ctx, "completed host access check", "overdue_hosts", len(hosts), "newly_lost_hosts", 0)
 		}
 
 		w.WriteHeader(http.StatusOK)

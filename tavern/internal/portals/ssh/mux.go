@@ -13,11 +13,32 @@ import (
 
 	"github.com/google/uuid"
 	gossh "golang.org/x/crypto/ssh"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/portals/pnet"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/portals/stream"
 )
+
+var log = logging.For("portals.ssh")
+
+func ensurePortalStreamAttrs(ctx context.Context, portalID int, sshStreamID string) context.Context {
+	var attrs []slog.Attr
+	hasPortalID := false
+	for _, a := range logging.MetaFromContext(ctx).StreamAttrs {
+		if a.Key == "portal_id" {
+			hasPortalID = true
+			break
+		}
+	}
+	if !hasPortalID && portalID > 0 {
+		attrs = append(attrs, slog.Int("portal_id", portalID))
+	}
+	if sshStreamID != "" {
+		attrs = append(attrs, slog.String("ssh_stream_id", sshStreamID))
+	}
+	return logging.WithStreamAttrs(ctx, attrs...)
+}
 
 // AgentSenderFunc sends a mote directly over the gRPC stream to the connected agent.
 type AgentSenderFunc = stream.SenderFunc
@@ -71,15 +92,35 @@ func (m *Mux) HandleMote(ctx context.Context, mote *portalpb.Mote) {
 		if !exists {
 			m.pending[mote.StreamId] = append(m.pending[mote.StreamId], sshPayload)
 			m.mu.Unlock()
+			log.DebugContext(ctx, "buffering SSH payload prior to connect",
+				"portal_id", m.portalID,
+				"stream_id", mote.StreamId,
+				"kind", sshPayload.Kind.String(),
+			)
 			return
 		}
 		m.mu.Unlock()
+
+		if sshPayload.Kind == portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_RESIZE {
+			log.DebugContext(ctx, "queuing SSH window resize payload",
+				"portal_id", m.portalID,
+				"stream_id", mote.StreamId,
+				"rows", sshPayload.Rows,
+				"cols", sshPayload.Cols,
+			)
+		} else {
+			log.TraceContext(ctx, "queuing SSH input data payload",
+				"portal_id", m.portalID,
+				"stream_id", mote.StreamId,
+				"bytes", len(sshPayload.Data),
+			)
+		}
 
 		select {
 		case s.sshInCh <- sshPayload:
 		case <-s.ctx.Done():
 		default:
-			slog.WarnContext(ctx, "dropping SSH input payload due to full buffer", "portal_id", m.portalID, "stream_id", mote.StreamId)
+			log.WarnContext(ctx, "dropping SSH input payload due to full buffer", "portal_id", m.portalID, "stream_id", mote.StreamId)
 		}
 	case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE:
 		m.mu.Lock()
@@ -94,6 +135,7 @@ func (m *Mux) HandleMote(ctx context.Context, mote *portalpb.Mote) {
 		m.mu.Unlock()
 
 		if exists {
+			log.DebugContext(ctx, "closing SSH stream from operator close mote", "portal_id", m.portalID, "stream_id", mote.StreamId)
 			s.Close("SSH session closed by operator")
 		}
 	}
@@ -113,11 +155,13 @@ func (m *Mux) RouteAgentMote(mote *portalpb.Mote) bool {
 		return false
 	}
 
+	log.TraceContext(s.ctx, "routing agent TCP mote to SSH stream", "tcp_stream_id", mote.StreamId, "seq_id", mote.SeqId)
+
 	select {
 	case s.agentOutCh <- mote:
 	case <-s.ctx.Done():
 	default:
-		slog.Warn("dropping agent TCP mote for SSH stream due to full buffer", "portal_id", m.portalID, "stream_id", mote.StreamId)
+		log.WarnContext(s.ctx, "dropping agent TCP mote for SSH stream due to full buffer", "tcp_stream_id", mote.StreamId)
 	}
 	return true
 }
@@ -139,6 +183,7 @@ func (m *Mux) Close() {
 	clear(m.pending)
 	m.mu.Unlock()
 
+	log.Debug("closing SSH mux for portal", "portal_id", m.portalID, "active_streams", len(streams))
 	for _, s := range streams {
 		s.Close("Portal connection closed")
 	}
@@ -168,10 +213,10 @@ func (m *Mux) startStream(ctx context.Context, sshStreamID string, connectPayloa
 	}
 
 	tcpStreamID := uuid.New().String()
-	streamCtx, cancel := context.WithCancel(ctx)
+	streamCtx, cancel := context.WithCancel(ensurePortalStreamAttrs(ctx, m.portalID, sshStreamID))
 	topicOut := m.mux.TopicOut(m.portalID)
 	outWriter := stream.NewOrderedWriter(sshStreamID, func(outMote *portalpb.Mote) error {
-		pubCtx, pubCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		pubCtx, pubCancel := context.WithTimeout(logging.DetachContext(streamCtx), 5*time.Second)
 		defer pubCancel()
 		return m.mux.Publish(pubCtx, topicOut, outMote)
 	})
@@ -202,6 +247,12 @@ func (m *Mux) startStream(ctx context.Context, sshStreamID string, connectPayloa
 	m.tcpStreams[tcpStreamID] = s
 	m.mu.Unlock()
 
+	log.DebugContext(streamCtx, "starting portal SSH stream",
+		"tcp_stream_id", tcpStreamID,
+		"dst_addr", connectPayload.DstAddr,
+		"dst_port", connectPayload.DstPort,
+		"ssh_user", connectPayload.Username,
+	)
 	go s.run(connectPayload)
 }
 
@@ -209,7 +260,7 @@ func (s *portalSSHStream) sendConnected() {
 	if err := s.outWriter.WriteSSH(&portalpb.SSHPayload{
 		Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA,
 	}); err != nil {
-		slog.Debug("failed to publish SSH connected mote", "ssh_stream_id", s.sshStreamID, "err", err)
+		log.DebugContext(s.ctx, "failed to publish SSH connected mote", "error", err)
 	}
 }
 
@@ -219,16 +270,18 @@ func (s *portalSSHStream) sendData(data []byte) {
 	}
 	cp := make([]byte, len(data))
 	copy(cp, data)
+	log.TraceContext(s.ctx, "publishing SSH output data mote", "bytes", len(cp))
 	if err := s.outWriter.WriteSSH(&portalpb.SSHPayload{
 		Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA,
 		Data: cp,
 	}); err != nil {
-		slog.Debug("failed to publish SSH data mote", "ssh_stream_id", s.sshStreamID, "err", err)
+		log.DebugContext(s.ctx, "failed to publish SSH data mote", "error", err)
 	}
 }
 
 func (s *portalSSHStream) Close(reason string) {
 	s.closeOnce.Do(func() {
+		log.DebugContext(logging.DetachContext(s.ctx), "closing portal SSH stream", "reason", reason)
 		s.cancel()
 		_ = s.outWriter.WriteSSH(&portalpb.SSHPayload{
 			Kind: portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE,
@@ -332,6 +385,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 	port := int(connectPayload.DstPort)
 	user := connectPayload.Username
 	if host == "" || port <= 0 || user == "" {
+		log.WarnContext(s.ctx, "invalid SSH connection parameters", "dst_addr", host, "dst_port", port, "ssh_user", user)
 		s.Close("Invalid SSH connection parameters")
 		return
 	}
@@ -343,6 +397,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 			signer, err = gossh.ParsePrivateKeyWithPassphrase(keyBytes, []byte(connectPayload.Password))
 		}
 		if err != nil {
+			log.WarnContext(s.ctx, "invalid SSH private key", "ssh_user", user, "error", err)
 			s.Close(fmt.Sprintf("Invalid SSH private key: %v", err))
 			return
 		}
@@ -393,6 +448,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 
 	rawConn, err := pnet.Dial("tcp", hostPortStr, s.tcpStreamID, s.mux.sendToAgent, receiver)
 	if err != nil {
+		log.WarnContext(s.ctx, "failed to initialize portal TCP stream for SSH", "target", hostPortStr, "tcp_stream_id", s.tcpStreamID, "error", err)
 		s.Close(fmt.Sprintf("Failed to initialize portal TCP stream: %v", err))
 		return
 	}
@@ -402,8 +458,10 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 	conn := &activityConn{Conn: rawConn}
 	conn.SetIdleTimeout(handshakeIdleTimeout)
 
+	log.DebugContext(s.ctx, "initiating SSH handshake over portal", "target", hostPortStr, "ssh_user", user, "tcp_stream_id", s.tcpStreamID)
 	c, chans, reqs, err := gossh.NewClientConn(conn, hostPortStr, sshConfig)
 	if err != nil {
+		log.WarnContext(s.ctx, "SSH handshake failed", "target", hostPortStr, "ssh_user", user, "error", err)
 		s.Close(fmt.Sprintf("SSH handshake failed (%s@%s): %v", user, hostPortStr, err))
 		return
 	}
@@ -412,6 +470,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
+		log.WarnContext(s.ctx, "failed to open SSH session", "target", hostPortStr, "ssh_user", user, "error", err)
 		s.Close(fmt.Sprintf("Failed to open SSH session: %v", err))
 		return
 	}
@@ -432,33 +491,39 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 		gossh.TTY_OP_OSPEED: 14400,
 	}
 	if err := sshSession.RequestPty("xterm-256color", rows, cols, modes); err != nil {
+		log.WarnContext(s.ctx, "failed to request remote SSH PTY", "target", hostPortStr, "ssh_user", user, "error", err)
 		s.Close(fmt.Sprintf("Failed to request PTY: %v", err))
 		return
 	}
 
 	sshStdin, err := sshSession.StdinPipe()
 	if err != nil {
+		log.WarnContext(s.ctx, "failed to bind SSH stdin pipe", "target", hostPortStr, "error", err)
 		s.Close(fmt.Sprintf("Failed to bind stdin pipe: %v", err))
 		return
 	}
 	sshStdout, err := sshSession.StdoutPipe()
 	if err != nil {
+		log.WarnContext(s.ctx, "failed to bind SSH stdout pipe", "target", hostPortStr, "error", err)
 		s.Close(fmt.Sprintf("Failed to bind stdout pipe: %v", err))
 		return
 	}
 	sshStderr, err := sshSession.StderrPipe()
 	if err != nil {
+		log.WarnContext(s.ctx, "failed to bind SSH stderr pipe", "target", hostPortStr, "error", err)
 		s.Close(fmt.Sprintf("Failed to bind stderr pipe: %v", err))
 		return
 	}
 
 	if err := sshSession.Shell(); err != nil {
+		log.WarnContext(s.ctx, "failed to start remote SSH shell", "target", hostPortStr, "ssh_user", user, "error", err)
 		s.Close(fmt.Sprintf("Failed to start remote shell: %v", err))
 		return
 	}
 
 	// Handshake and shell startup succeeded; clear the handshake deadline and notify connected
 	conn.SetIdleTimeout(0)
+	log.DebugContext(s.ctx, "SSH session established over portal", "target", hostPortStr, "ssh_user", user, "rows", rows, "cols", cols)
 	s.sendConnected()
 
 	// Periodic SSH keepalive to detect stalled or dropped target connections
@@ -470,6 +535,7 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 			case <-s.ctx.Done():
 				return
 			case <-ticker.C:
+				log.TraceContext(s.ctx, "sending SSH keepalive request", "target", hostPortStr)
 				keepaliveDone := make(chan error, 1)
 				go func() {
 					_, _, err := sshClient.SendRequest("keepalive@openssh.com", true, nil)
@@ -480,10 +546,12 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 					return
 				case err := <-keepaliveDone:
 					if err != nil {
+						log.WarnContext(s.ctx, "SSH keepalive failed", "target", hostPortStr, "error", err)
 						s.Close(fmt.Sprintf("SSH connection lost: %v", err))
 						return
 					}
 				case <-time.After(10 * time.Second):
+					log.WarnContext(s.ctx, "SSH keepalive timed out", "target", hostPortStr)
 					s.Close("SSH connection timed out (keepalive unresponsive)")
 					return
 				}
@@ -545,15 +613,18 @@ func (s *portalSSHStream) run(connectPayload *portalpb.SSHPayload) {
 			switch payload.Kind {
 			case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA:
 				if len(payload.Data) > 0 {
+					log.TraceContext(s.ctx, "writing SSH stdin frame", "bytes", len(payload.Data))
 					if _, writeErr := sshStdin.Write(payload.Data); writeErr != nil {
 						return
 					}
 				}
 			case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_RESIZE:
 				if payload.Rows > 0 && payload.Cols > 0 {
+					log.DebugContext(s.ctx, "applying SSH window change", "rows", payload.Rows, "cols", payload.Cols)
 					_ = sshSession.WindowChange(int(payload.Rows), int(payload.Cols))
 				}
 			case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE:
+				log.DebugContext(s.ctx, "received SSH close payload on stream")
 				return
 			}
 		}

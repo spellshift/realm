@@ -2,23 +2,28 @@ package c2
 
 import (
 	"context"
+	"io"
 	"log/slog"
+	"strconv"
 	"time"
-
-	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/portal"
-	"realm.pub/tavern/internal/ent/shellpivot"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cryptocodec"
+	"realm.pub/tavern/internal/ent"
+	entbeacon "realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/portal"
+	"realm.pub/tavern/internal/ent/shellpivot"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/portals/tracepb"
 )
+
+var portalLog = logging.For("portals.c2")
 
 // keepAlivePingInterval defines the frequency to send no-op ping messages to the stream,
 // to keep it alive while waiting for input.
@@ -29,10 +34,15 @@ const (
 func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	// Setup Context
 	ctx := gstream.Context()
+	if logging.EntrypointFromContext(ctx) == "" {
+		ctx = logging.WithEntrypoint(ctx, "grpc")
+	}
+	ctx, _, _ = logging.EnsureTrace(ctx)
 
 	// Get initial message for registration
 	registerMsg, err := gstream.Recv()
 	if err != nil {
+		portalLog.WarnContext(ctx, "failed to receive portal registration message", "error", err)
 		return status.Errorf(codes.Internal, "failed to receive registration message: %v", err)
 	}
 
@@ -42,36 +52,84 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	if tc := registerMsg.GetTaskContext(); tc != nil {
 		beaconID, err = srv.ValidateJWT(tc.GetJwt())
 		if err != nil {
+			portalLog.WarnContext(ctx, "portal task context JWT validation failed", "error", err)
 			return err
 		}
 		taskID = int(tc.GetTaskId())
 	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
 		beaconID, err = srv.ValidateJWT(stc.GetJwt())
 		if err != nil {
+			portalLog.WarnContext(ctx, "portal shell task context JWT validation failed", "error", err)
 			return err
 		}
 		shellTaskID = int(stc.GetShellTaskId())
 	} else {
+		portalLog.WarnContext(ctx, "portal registration missing task or shell task context")
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
 	if taskID <= 0 && shellTaskID <= 0 {
+		portalLog.WarnContext(ctx, "portal registration has invalid task and shell task IDs", "beacon_id", beaconID, "task_id", taskID, "shell_task_id", shellTaskID)
 		return status.Errorf(codes.InvalidArgument, "invalid task ID or shell task ID")
+	}
+
+	var hostID int
+	var beaconName string
+	if b, bErr := srv.graph.Beacon.Query().Where(entbeacon.ID(beaconID)).WithHost().Only(ctx); bErr == nil {
+		beaconName = b.Name
+		if beaconName == "" {
+			beaconName = b.Identifier
+		}
+		if b.Edges.Host != nil {
+			hostID = b.Edges.Host.ID
+		}
+	}
+	if cur := logging.ActorFromContext(ctx); cur.Kind == logging.ActorUnknown || cur.Kind == logging.ActorAnonymous {
+		ctx = logging.WithActor(ctx, logging.Actor{
+			Kind:       logging.ActorBeacon,
+			ID:         strconv.Itoa(beaconID),
+			Name:       beaconName,
+			AuthMethod: "jwt",
+		})
 	}
 
 	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID, beaconID)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "shell_task_id", shellTaskID, "error", err)
+		portalLog.ErrorContext(ctx, "failed to create portal", "beacon_id", beaconID, "task_id", taskID, "shell_task_id", shellTaskID, "error", err)
 		return status.Errorf(codes.Internal, "failed to create portal: %v", err)
 	}
 	defer cleanup()
 
 	portalInTopic := srv.portalMux.TopicIn(portalID)
-	recv, cleanup := srv.portalMux.Subscribe(portalInTopic)
-	defer cleanup()
+	recv, subCleanup := srv.portalMux.Subscribe(portalInTopic)
+	defer subCleanup()
 
-	// Send CLOSE
-	defer sendPortalClose(context.Background(), srv.graph, srv.portalMux, portalID)
+	streamAttrs := []slog.Attr{
+		slog.Int("portal_id", portalID),
+		slog.Int("beacon_id", beaconID),
+	}
+	if hostID > 0 {
+		streamAttrs = append(streamAttrs, slog.Int("host_id", hostID))
+	}
+	ctx = logging.WithStreamAttrs(ctx, streamAttrs...)
+
+	portalAuditArgs := append(
+		logging.TargetIntAttrs("portal", portalID, ""),
+		logging.PortalAttrs(portalID, beaconID, hostID)...,
+	)
+	if taskID > 0 {
+		portalAuditArgs = append(portalAuditArgs, slog.Int("task_id", taskID))
+	}
+	if shellTaskID > 0 {
+		portalAuditArgs = append(portalAuditArgs, slog.Int("shell_task_id", shellTaskID))
+	}
+
+	portalLog.DebugContext(ctx, "agent created portal", "task_id", taskID, "shell_task_id", shellTaskID)
+	logging.Audit(ctx, "portal", "portal.created", "agent created portal", portalAuditArgs...)
+
+	// Send CLOSE when stream terminates (detached context preserves trace, actor, and stream attrs)
+	closeCtx := logging.DetachContext(ctx)
+	defer sendPortalClose(closeCtx, srv.graph, srv.portalMux, portalID, portalAuditArgs)
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
@@ -122,10 +180,11 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 			cancel()
 			return nil
 		case mote := <-agentSendCh:
+			portalLog.TraceContext(ctx, "sending mote to agent over gRPC", "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 			if err := gstream.Send(&c2pb.CreatePortalResponse{
 				Mote: mote,
 			}); err != nil {
-				slog.ErrorContext(ctx, "failed to send mote to agent over gRPC", "portal_id", portalID, "error", err)
+				portalLog.ErrorContext(ctx, "failed to send mote to agent over gRPC", "error", err)
 				cancel()
 				return err
 			}
@@ -135,6 +194,8 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 
 func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux, sshMux *ssh.Mux) {
 	portalOutTopic := mux.TopicOut(portalID)
+	portalLog.DebugContext(ctx, "starting agent portal output pump", "topic", portalOutTopic)
+	defer portalLog.DebugContext(ctx, "stopped agent portal output pump", "topic", portalOutTopic)
 
 	for {
 		// Return if context is done
@@ -147,7 +208,11 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 		// Receive from gRPC stream
 		req, err := gstream.Recv()
 		if err != nil {
-			slog.InfoContext(ctx, "portal gRPC stream closed", "portal_id", portalID, "error", err)
+			if err == io.EOF || status.Code(err) == codes.Canceled || ctx.Err() != nil {
+				portalLog.DebugContext(ctx, "agent portal gRPC stream closed", "error", err)
+			} else {
+				portalLog.WarnContext(ctx, "agent portal gRPC stream recv error", "error", err)
+			}
 			break
 		}
 		mote := req.GetMote()
@@ -157,28 +222,31 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 
 		// Skip keepalive motes
 		if bytesMote := mote.GetBytes(); bytesMote != nil && bytesMote.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE {
+			portalLog.TraceContext(ctx, "received keepalive mote from agent")
 			continue
 		}
 
 		// Route agent TCP/Close motes belonging to gRPC-side SSH sessions directly to the SSH mux
 		if sshMux != nil && sshMux.RouteAgentMote(mote) {
+			portalLog.TraceContext(ctx, "routed agent mote to SSH mux", "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 			continue
 		}
 
 		// TRACE: Server Agent Recv
 		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV); err != nil {
-			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Recv)", "error", err)
+			portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Recv)", "error", err)
 		}
 
 		// TRACE: Server Agent Pub
 		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_PUB); err != nil {
-			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Pub)", "error", err)
+			portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Pub)", "error", err)
 		}
 
 		// Publish to portal output topic
+		portalLog.TraceContext(ctx, "publishing agent mote to portal output topic", "topic", portalOutTopic, "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 		if err := mux.Publish(ctx, portalOutTopic, mote); err != nil {
-			slog.ErrorContext(ctx, "failed to publish mote to portal output topic",
-				"portal_id", portalID,
+			portalLog.ErrorContext(ctx, "failed to publish mote to portal output topic",
+				"topic", portalOutTopic,
 				"error", err,
 			)
 		}
@@ -186,6 +254,9 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 }
 
 func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSenderFunc, sshMux *ssh.Mux, recv <-chan *portalpb.Mote) {
+	portalLog.DebugContext(ctx, "starting agent portal input pump")
+	defer portalLog.DebugContext(ctx, "stopped agent portal input pump")
+
 	ticker := time.NewTicker(keepAlivePingInterval)
 	defer ticker.Stop()
 
@@ -194,14 +265,15 @@ func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSen
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			portalLog.TraceContext(ctx, "sending keepalive ping to agent")
 			if err := sendToAgent(&portalpb.Mote{
 				Payload: &portalpb.Mote_Bytes{
 					Bytes: &portalpb.BytesPayload{
 						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE,
 					},
 				},
-			}); err != nil {
-				slog.ErrorContext(ctx, "portal failed to send gRPC keep alive ping", "error", err)
+			}); err != nil && ctx.Err() == nil {
+				portalLog.ErrorContext(ctx, "portal failed to send gRPC keep alive ping", "error", err)
 			}
 		case mote := <-recv:
 			if mote == nil {
@@ -210,31 +282,30 @@ func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSen
 
 			// Intercept SSH portal motes and negotiate/manage SSH on this gRPC Tavern instance
 			if mote.GetSsh() != nil && sshMux != nil {
+				portalLog.TraceContext(ctx, "intercepted SSH mote for gRPC SSH mux", "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 				sshMux.HandleMote(ctx, mote)
 				continue
 			}
 
 			// TRACE: Server Agent Sub
 			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
-				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Sub)", "error", err)
+				portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Sub)", "error", err)
 			}
 
 			// TRACE: Server Agent Send
 			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SEND); err != nil {
-				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Send)", "error", err)
+				portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Send)", "error", err)
 			}
 
-			if err := sendToAgent(mote); err != nil {
-				slog.ErrorContext(ctx, "failed to send portal input message",
-					"portal_id", portalID,
-					"error", err,
-				)
+			portalLog.TraceContext(ctx, "queuing portal input mote for agent", "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
+			if err := sendToAgent(mote); err != nil && ctx.Err() == nil {
+				portalLog.ErrorContext(ctx, "failed to send portal input message", "error", err)
 			}
 
 			// Check for close message indicating portal termination
 			if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
 				if mote.GetStreamId() == "" {
-					slog.InfoContext(ctx, "received portal close, disconnecting agent", "portal_id", portalID)
+					portalLog.DebugContext(ctx, "received portal close mote, disconnecting agent")
 					return
 				}
 			}
@@ -242,31 +313,15 @@ func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSen
 	}
 }
 
-func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, portalID int) {
-	// Log portal close with beacon and host info
-	logAttrs := []any{"portal_id", portalID}
-	if p, err := graph.Portal.Get(ctx, portalID); err == nil {
-		if b, err := p.QueryBeacon().WithHost().Only(ctx); err == nil {
-			logAttrs = append(logAttrs, "beacon_id", b.ID)
-			if b.Edges.Host != nil {
-				logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
-			}
-		} else {
-			slog.WarnContext(ctx, "failed to query beacon for portal close log", "portal_id", portalID, "error", err)
-		}
-	} else {
-		slog.WarnContext(ctx, "failed to query portal for close log", "portal_id", portalID, "error", err)
-	}
-	slog.InfoContext(ctx, "portal closed", logAttrs...)
+func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, portalID int, auditArgs []any) {
+	portalLog.DebugContext(ctx, "closing agent portal")
+	logging.Audit(ctx, "portal", "portal.closed", "agent closed portal", auditArgs...)
 
 	// Update DB to Closed
 	if err := graph.Portal.UpdateOneID(portalID).
 		SetClosedAt(time.Now()).
-		Exec(context.Background()); err != nil {
-		slog.ErrorContext(ctx, "failed to update portal closed_at",
-			"portal_id", portalID,
-			"error", err,
-		)
+		Exec(ctx); err != nil {
+		portalLog.ErrorContext(ctx, "failed to update portal closed_at", "error", err)
 	}
 
 	// Close all open ShellPivots associated with this portal
@@ -276,12 +331,9 @@ func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, porta
 			shellpivot.HasPortalWith(portal.ID(portalID)),
 			shellpivot.ClosedAtIsNil(),
 		).
-		All(context.Background())
+		All(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to query open shell pivots for portal",
-			"portal_id", portalID,
-			"error", err,
-		)
+		portalLog.ErrorContext(ctx, "failed to query open shell pivots for portal", "error", err)
 	}
 
 	portalOutTopic := mux.TopicOut(portalID)
@@ -290,9 +342,8 @@ func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, porta
 		// Mark pivot as closed in DB
 		if err := graph.ShellPivot.UpdateOneID(p.ID).
 			SetClosedAt(now).
-			Exec(context.Background()); err != nil {
-			slog.ErrorContext(ctx, "failed to close shell pivot",
-				"portal_id", portalID,
+			Exec(ctx); err != nil {
+			portalLog.ErrorContext(ctx, "failed to close shell pivot",
 				"pivot_id", p.ID,
 				"error", err,
 			)
@@ -308,8 +359,7 @@ func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, porta
 				},
 			},
 		}); err != nil {
-			slog.ErrorContext(ctx, "failed to send close mote to shell pivot",
-				"portal_id", portalID,
+			portalLog.ErrorContext(ctx, "failed to send close mote to shell pivot",
 				"pivot_id", p.ID,
 				"stream_id", p.StreamID,
 				"error", err,
@@ -317,7 +367,7 @@ func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, porta
 		}
 	}
 
-	// Send portal-level CLOSE mote (no stream_id) to disconnect the agent
+	// Send portal-level CLOSE mote (no stream_id) to disconnect clients
 	if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
 		Payload: &portalpb.Mote_Bytes{
 			Bytes: &portalpb.BytesPayload{
@@ -326,9 +376,6 @@ func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, porta
 			},
 		},
 	}); err != nil {
-		slog.ErrorContext(ctx, "failed to notify subscribers that portal closed",
-			"portal_id", portalID,
-			"error", err,
-		)
+		portalLog.ErrorContext(ctx, "failed to notify subscribers that portal closed", "error", err)
 	}
 }

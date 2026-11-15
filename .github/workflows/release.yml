@@ -30,7 +30,7 @@ jobs:
       - name: 📦 Install System Dependencies
         run: sudo apt-get update && sudo apt-get install -y libpam0g-dev
       - name: 🔨 Build
-        run: go build -ldflags='-w -extldflags "-static"' -o ${{ runner.temp }}/realm_build/tavern ./tavern
+        run: go build -ldflags='-w -X main.DefaultLogSpec=prod -extldflags "-static"' -o ${{ runner.temp }}/realm_build/tavern ./tavern
       - name: 🌥️⬆️ Upload Assets
         uses: actions/upload-release-asset@v1
         env:

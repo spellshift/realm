@@ -11,16 +11,22 @@ import (
 )
 
 func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProcessListRequest) (*c2pb.ReportProcessListResponse, error) {
+	ctx, _ = enrichC2Context(ctx)
+
 	if req.List == nil || len(req.List.List) < 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide process list")
 	}
 
-	var host *ent.Host
-	var task *ent.Task
-	var shellTask *ent.ShellTask
+	var (
+		beaconID  int
+		err       error
+		host      *ent.Host
+		task      *ent.Task
+		shellTask *ent.ShellTask
+	)
 
 	if tc := req.GetTaskContext(); tc != nil {
-		beaconID, err := srv.ValidateJWT(tc.GetJwt())
+		ctx, beaconID, err = srv.ValidateJWTContext(ctx, tc.GetJwt())
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +41,7 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		}
 		host = h
 	} else if stc := req.GetShellTaskContext(); stc != nil {
-		beaconID, err := srv.ValidateJWT(stc.GetJwt())
+		ctx, beaconID, err = srv.ValidateJWTContext(ctx, stc.GetJwt())
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +59,7 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		return nil, status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	// 	Prepare Transaction
+	// Prepare Transaction
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to initialize transaction: %v", err)
@@ -110,6 +116,12 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 	if err := tx.Commit(); err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
+
+	reportLog.DebugContext(ctx, "beacon reported process list",
+		"host_id", host.ID,
+		"beacon_id", beaconID,
+		"process_count", len(processList),
+	)
 
 	return &c2pb.ReportProcessListResponse{}, nil
 }

@@ -7,15 +7,19 @@ import (
 	"strconv"
 	"time"
 
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/portals/stream"
 )
 
+var log = logging.For("portals.pnet")
+
 // Connection implements net.Conn over portal motes.
 type Connection struct {
-	network string
-	dstAddr string
-	dstPort uint32
+	network  string
+	dstAddr  string
+	dstPort  uint32
+	streamID string
 
 	reader *stream.OrderedReader
 	writer *stream.OrderedWriter
@@ -39,12 +43,15 @@ func Dial(network, address, streamID string, sender stream.SenderFunc, receiver 
 		return nil, fmt.Errorf("invalid port: %w", err)
 	}
 
+	log.Debug("dialing portal network stream", "network", network, "address", address, "stream_id", streamID)
+
 	return &Connection{
-		network: network,
-		dstAddr: host,
-		dstPort: uint32(port),
-		reader:  stream.NewOrderedReader(receiver),
-		writer:  stream.NewOrderedWriter(streamID, sender),
+		network:  network,
+		dstAddr:  host,
+		dstPort:  uint32(port),
+		streamID: streamID,
+		reader:   stream.NewOrderedReader(receiver),
+		writer:   stream.NewOrderedWriter(streamID, sender),
 	}, nil
 }
 
@@ -53,6 +60,7 @@ func (c *Connection) Read(b []byte) (n int, err error) {
 	if len(c.readBuf) > 0 {
 		n = copy(b, c.readBuf)
 		c.readBuf = c.readBuf[n:]
+		log.Trace("portal network read from buffer", "stream_id", c.streamID, "bytes", n)
 		return n, nil
 	}
 
@@ -67,8 +75,11 @@ func (c *Connection) Read(b []byte) (n int, err error) {
 		case *portalpb.Mote_Bytes:
 			if p.Bytes.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
 				if len(p.Bytes.Data) > 0 && string(p.Bytes.Data) != "EOF" {
-					return 0, fmt.Errorf("%s", string(p.Bytes.Data))
+					reason := string(p.Bytes.Data)
+					log.Debug("portal network stream closed with remote error", "network", c.network, "stream_id", c.streamID, "reason", reason)
+					return 0, fmt.Errorf("%s", reason)
 				}
+				log.Trace("portal network stream received EOF close mote", "network", c.network, "stream_id", c.streamID)
 				return 0, io.EOF
 			}
 			payloadData = p.Bytes.Data
@@ -89,6 +100,7 @@ func (c *Connection) Read(b []byte) (n int, err error) {
 		if n < len(payloadData) {
 			c.readBuf = payloadData[n:]
 		}
+		log.Trace("portal network read", "network", c.network, "stream_id", c.streamID, "bytes", n)
 		return n, nil
 	}
 }
@@ -115,11 +127,13 @@ func (c *Connection) Write(b []byte) (n int, err error) {
 	if err != nil {
 		return 0, err
 	}
+	log.Trace("portal network write", "network", c.network, "stream_id", c.streamID, "bytes", len(b))
 	return len(b), nil
 }
 
 // Close closes the connection.
 func (c *Connection) Close() error {
+	log.Debug("closing portal network stream", "network", c.network, "stream_id", c.streamID)
 	// Signal close
 	err := c.writer.WriteBytes(nil, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE)
 	c.reader.Close()

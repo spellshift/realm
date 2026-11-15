@@ -7,15 +7,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/oauth2"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/logging"
 )
+
+var oauthLog = logging.For("auth.oauth")
 
 const (
 	OAuthCookieName   = "oauth-state"
@@ -50,7 +53,7 @@ func NewOAuthLoginHandler(cfg oauth2.Config, privKey ed25519.PrivateKey) http.Ha
 		// Redirect to identity provider
 		http.Redirect(w, req, url, http.StatusFound)
 
-		slog.Info("oauth: starting flow for new login")
+		oauthLog.InfoContext(req.Context(), "oauth login flow started")
 	})
 }
 
@@ -58,9 +61,12 @@ func NewOAuthLoginHandler(cfg oauth2.Config, privKey ed25519.PrivateKey) http.Ha
 // redirected from the identity provider after a consent flow and initializes a user session
 func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, graph *ent.Client, profileURL string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
 		// Determine state presented in redirect
 		presentedState := req.FormValue("state")
 		if presentedState == "" {
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth authorization missing state", "reason", "missing_state")
 			http.Error(w, ErrOAuthNoStatePresented.Error(), http.StatusBadRequest)
 			return
 		}
@@ -74,6 +80,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			}
 		}
 		if oauthCookie == nil {
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth authorization missing state cookie", "reason", "missing_cookie")
 			http.Error(w, ErrOAuthNoCookieFound.Error(), http.StatusBadRequest)
 			return
 		}
@@ -89,30 +96,34 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			return pubKey, nil
 		})
 		if err != nil || !stateToken.Valid {
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth authorization invalid state cookie", "reason", "invalid_cookie")
 			http.Error(w, ErrOAuthInvalidCookie.Error(), http.StatusBadRequest)
 			return
 		}
 
 		// Ensure presented OAuth state matches expected (stored in JWT)
 		if presentedState != claims.ID {
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth authorization state mismatch", "reason", "invalid_state")
 			http.Error(w, ErrOAuthInvalidState.Error(), http.StatusUnauthorized)
 			return
 		}
 
 		// Exchange the authorization code for an access token from the IDP
 		code := req.FormValue("code")
-		accessToken, err := cfg.Exchange(req.Context(), code)
+		accessToken, err := cfg.Exchange(ctx, code)
 		if err != nil {
-			slog.ErrorContext(req.Context(), "oauth failed to exchange auth code for an access token", "err", err)
+			oauthLog.ErrorContext(ctx, "oauth failed to exchange auth code for an access token", "error", err)
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth token exchange failed", "reason", "exchange_failed")
 			http.Error(w, ErrOAuthExchangeFailed.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		// Obtain profile information from identity provider
-		client := cfg.Client(req.Context(), accessToken)
+		client := cfg.Client(ctx, accessToken)
 		resp, err := client.Get(profileURL)
 		if err != nil {
-			slog.ErrorContext(req.Context(), "oauth failed to obtain profile info", "err", err)
+			oauthLog.ErrorContext(ctx, "oauth failed to obtain profile info", "error", err)
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth profile fetch failed", "reason", "profile_fetch_failed")
 			http.Error(w, ErrOAuthFailedToObtainProfileInfo.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -128,12 +139,14 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		}
 		decoder := json.NewDecoder(resp.Body)
 		if err := decoder.Decode(&profile); err != nil {
-			slog.ErrorContext(req.Context(), "oauth failed to parse profile info", "err", err)
+			oauthLog.ErrorContext(ctx, "oauth failed to parse profile info", "error", err)
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth profile parse failed", "reason", "profile_parse_failed")
 			http.Error(w, ErrOAuthFailedToParseProfileInfo.Error(), http.StatusInternalServerError)
 			return
 		}
 		if profile.OAuthID == "" {
-			slog.ErrorContext(req.Context(), "oauth profile info was missing oauth id")
+			oauthLog.ErrorContext(ctx, "oauth profile info was missing oauth id")
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth profile missing subject id", "reason", "missing_oauth_id")
 			http.Error(w, ErrOAuthInvalidProfileInfo.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -141,7 +154,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		// Lookup the user
 		usr, err := graph.User.Query().
 			Where(user.OauthID(profile.OAuthID)).
-			Only(req.Context())
+			Only(ctx)
 		if err == nil {
 			http.SetCookie(w, &http.Cookie{
 				Name:     SessionCookieName,
@@ -150,28 +163,48 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 				HttpOnly: true,
 				Expires:  time.Now().AddDate(0, 1, 0),
 			})
-			slog.InfoContext(req.Context(), "oauth new login", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
+			authCtx := logging.WithActor(ctx, logging.Actor{
+				Kind:       logging.ActorUser,
+				ID:         strconv.Itoa(usr.ID),
+				Name:       usr.Name,
+				IsAdmin:    usr.IsAdmin,
+				AuthMethod: "oauth",
+			})
+			oauthLog.InfoContext(authCtx, "oauth user logged in",
+				"user_id", usr.ID,
+				"user_name", usr.Name,
+				"is_admin", usr.IsAdmin,
+				"is_activated", usr.IsActivated,
+			)
+			logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth user logged in",
+				"new_user", false,
+				"is_admin", usr.IsAdmin,
+				"is_activated", usr.IsActivated,
+				"user_id", usr.ID,
+				"user_name", usr.Name,
+			)
 			http.Redirect(w, req, "/", http.StatusFound)
 			return
 		}
 
 		// If we encountered a DB error, fail
 		if !ent.IsNotFound(err) {
-			slog.ErrorContext(req.Context(), "oauth failed to lookup user profile", "err", err)
+			oauthLog.ErrorContext(ctx, "oauth failed to lookup user profile", "error", err)
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth user lookup failed", "reason", "user_lookup_failed")
 			http.Error(w, ErrOAuthFailedUserLookup.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		// If the user is not yet registered, create the user
 		// Tavern uses a TOFU model, if this is the first user they are the admin
-		isTOFU := graph.User.Query().CountX(req.Context()) == 0
+		isTOFU := graph.User.Query().CountX(ctx) == 0
 		usr = graph.User.Create().
 			SetName(profile.Name).
 			SetOauthID(profile.OAuthID).
 			SetPhotoURL(profile.PhotoURL).
 			SetIsAdmin(isTOFU).
 			SetIsActivated(isTOFU).
-			SaveX(req.Context())
+			SaveX(ctx)
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     SessionCookieName,
@@ -180,7 +213,26 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			HttpOnly: true,
 			Expires:  time.Now().AddDate(0, 1, 0),
 		})
-		slog.InfoContext(req.Context(), "oauth registered new user %q", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
+		authCtx := logging.WithActor(ctx, logging.Actor{
+			Kind:       logging.ActorUser,
+			ID:         strconv.Itoa(usr.ID),
+			Name:       usr.Name,
+			IsAdmin:    usr.IsAdmin,
+			AuthMethod: "oauth",
+		})
+		oauthLog.InfoContext(authCtx, "oauth registered new user",
+			"user_id", usr.ID,
+			"user_name", usr.Name,
+			"is_admin", usr.IsAdmin,
+			"is_activated", usr.IsActivated,
+		)
+		logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth registered new user",
+			"new_user", true,
+			"is_admin", usr.IsAdmin,
+			"is_activated", usr.IsActivated,
+			"user_id", usr.ID,
+			"user_name", usr.Name,
+		)
 		http.Redirect(w, req, "/", http.StatusFound)
 	})
 }

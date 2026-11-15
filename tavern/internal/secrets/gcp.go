@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"log/slog"
 	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
@@ -40,7 +38,7 @@ func (g Gcp) GetValue(key string) ([]byte, error) {
 	// Call the API.
 	result, err := g.client.AccessSecretVersion(g.clientctx, accessRequest)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to access secret version: %v", err))
+		log.Error("failed to access secret version", "key", key, "project_id", g.projectID, "error", err)
 		return []byte{}, err
 	}
 
@@ -83,7 +81,7 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 
 	old_value, err := g.GetValue(key)
 	if err != nil && !strings.Contains(err.Error(), "code = NotFound") {
-		slog.Error(fmt.Sprintf("failed to get old secret: %v", err))
+		log.Error("failed to get existing secret", "key", key, "project_id", g.projectID, "error", err)
 		return []byte{}, err
 	}
 
@@ -102,7 +100,8 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	// Call the API.
 	_, err = g.client.AddSecretVersion(g.clientctx, addSecretVersionReq)
 	if err != nil {
-		log.Fatalf("failed to add secret version: %v", err)
+		log.Error("failed to add secret version", "key", key, "project_id", g.projectID, "error", err)
+		return []byte{}, err
 	}
 
 	return old_value, nil
@@ -117,16 +116,16 @@ func NewGcp(projectID string) (SecretsManager, error) {
 		tmp, err := GetCurrentGcpProject(ctx)
 		projectID = tmp
 		if err != nil {
-			slog.Error(fmt.Sprintf("failed to get current project ID: %v\n", err))
+			log.Error("failed to resolve current GCP project ID", "error", err)
 			return nil, err
 		}
 	}
-	log.Printf("[DEBUG] Using projectID: %s\n", projectID)
+	log.Debug("configured GCP secrets manager", "project_id", projectID)
 
 	// Create the client.
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to setup client: %v\n", err))
+		log.Error("failed to create GCP secretmanager client", "project_id", projectID, "error", err)
 		return nil, err
 	}
 

@@ -9,9 +9,12 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/logging"
 )
 
 func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputRequest) (*c2pb.ReportOutputResponse, error) {
+	ctx, _ = enrichC2Context(ctx)
+
 	switch msg := req.Message.(type) {
 	case *c2pb.ReportOutputRequest_TaskOutput:
 		// Handle Task Output
@@ -19,7 +22,9 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if taskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing task context")
 		}
-		beaconID, err := srv.ValidateJWT(taskOutputMsg.Context.Jwt)
+		var beaconID int
+		var err error
+		ctx, beaconID, err = srv.ValidateJWTContext(ctx, taskOutputMsg.Context.Jwt)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +63,7 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		}
 
 		// Update Task
-		_, err = t.Update().
+		updatedTask, err := t.Update().
 			SetNillableExecStartedAt(execStartedAt).
 			SetOutput(fmt.Sprintf("%s%s", t.Output, output.Output)).
 			SetNillableExecFinishedAt(execFinishedAt).
@@ -68,13 +73,40 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 			return nil, status.Errorf(codes.Internal, "failed to save submitted task result (id=%d): %v", t.ID, err)
 		}
 
+		if execFinishedAt != nil {
+			questID, _ := updatedTask.QueryQuest().OnlyID(ctx)
+			hostID, _ := updatedTask.QueryBeacon().QueryHost().OnlyID(ctx)
+			auditAttrs := make([]any, 0, 14)
+			auditAttrs = append(auditAttrs, logging.TargetIntAttrs("task", updatedTask.ID, "")...)
+			auditAttrs = append(auditAttrs,
+				"task_id", updatedTask.ID,
+				"quest_id", questID,
+				"beacon_id", beaconID,
+				"host_id", hostID,
+				"output_size", len(updatedTask.Output),
+			)
+			if updatedTask.Error != "" {
+				logging.AuditFailure(ctx, "c2", "c2.task_failed", "beacon task failed", auditAttrs...)
+			} else {
+				logging.Audit(ctx, "c2", "c2.task_completed", "beacon task completed", auditAttrs...)
+			}
+		} else {
+			reportLog.TraceContext(ctx, "received task output chunk",
+				"task_id", updatedTask.ID,
+				"beacon_id", beaconID,
+				"chunk_size", len(output.Output),
+			)
+		}
+
 	case *c2pb.ReportOutputRequest_ShellTaskOutput:
 		// Handle Shell Task Output
 		shellTaskOutputMsg := msg.ShellTaskOutput
 		if shellTaskOutputMsg.Context == nil {
 			return nil, status.Errorf(codes.InvalidArgument, "missing shell task context")
 		}
-		beaconID, err := srv.ValidateJWT(shellTaskOutputMsg.Context.Jwt)
+		var beaconID int
+		var err error
+		ctx, beaconID, err = srv.ValidateJWTContext(ctx, shellTaskOutputMsg.Context.Jwt)
 		if err != nil {
 			return nil, err
 		}
@@ -127,6 +159,12 @@ func (srv *Server) ReportOutput(ctx context.Context, req *c2pb.ReportOutputReque
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to save submitted shell task result (id=%d): %v", t.ID, err)
 		}
+		reportLog.TraceContext(ctx, "received shell task output",
+			"shell_task_id", t.ID,
+			"beacon_id", beaconID,
+			"chunk_size", len(output.Output),
+			"finished", execFinishedAt != nil,
+		)
 
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or missing message type")

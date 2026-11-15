@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
-	"log/slog"
 	"sort"
 	"sync"
 	"time"
@@ -17,8 +16,11 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/internal/c2/convpb"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/redirectors"
 )
+
+var log = logging.For("c2.conv")
 
 const (
 	MaxAckRangesInResponse = 20
@@ -58,7 +60,7 @@ func (m *Manager) HandleInit(packet *convpb.ConvPacket) ([]byte, error) {
 	}
 
 	if initPayload.FileSize == 0 && initPayload.TotalChunks > 0 {
-		slog.Warn("INIT packet missing file_size field", "conv_id", packet.ConversationId, "total_chunks", initPayload.TotalChunks)
+		log.Warn("INIT packet missing file_size field", "conv_id", packet.ConversationId, "total_chunks", initPayload.TotalChunks)
 	}
 
 	conv := &Conversation{
@@ -79,7 +81,7 @@ func (m *Manager) HandleInit(packet *convpb.ConvPacket) ([]byte, error) {
 		existing.mu.Lock()
 		defer existing.mu.Unlock()
 
-		slog.Debug("duplicate INIT for existing conversation", "conv_id", packet.ConversationId)
+		log.Trace("duplicate INIT for existing conversation", "conv_id", packet.ConversationId)
 
 		acks, nacks := computeAcksNacks(existing)
 		statusPacket := &convpb.ConvPacket{
@@ -99,10 +101,10 @@ func (m *Manager) HandleInit(packet *convpb.ConvPacket) ([]byte, error) {
 	m.mu.Unlock()
 
 	if evicted {
-		slog.Debug("LRU evicted oldest conversation to make room", "conv_id", conv.ID)
+		log.Trace("LRU evicted oldest conversation to make room", "conv_id", conv.ID)
 	}
 
-	slog.Debug("C2 conversation started", "conv_id", conv.ID, "method", conv.MethodPath,
+	log.Debug("C2 conversation started", "conv_id", conv.ID, "method", conv.MethodPath,
 		"total_chunks", conv.TotalChunks, "data_size", initPayload.FileSize)
 
 	statusPacket := &convpb.ConvPacket{
@@ -160,16 +162,16 @@ func (m *Manager) HandleData(ctx context.Context, upstream *grpc.ClientConn, pac
 
 	conv.Chunks[packet.Sequence] = packet.Data
 
-	slog.Debug("received chunk", "conv_id", conv.ID, "seq", packet.Sequence, "size", len(packet.Data), "total", len(conv.Chunks))
+	log.TraceContext(ctx, "received chunk", "conv_id", conv.ID, "seq", packet.Sequence, "size", len(packet.Data), "total", len(conv.Chunks))
 
 	if uint32(len(conv.Chunks)) == conv.TotalChunks {
 		conv.Completed = true
-		slog.Debug("C2 request complete, forwarding to upstream", "conv_id", conv.ID,
+		log.DebugContext(ctx, "C2 request complete, forwarding to upstream", "conv_id", conv.ID,
 			"method", conv.MethodPath, "total_chunks", conv.TotalChunks, "data_size", conv.ExpectedDataSize)
 
 		conv.mu.Unlock()
 		if err := m.processCompleted(ctx, upstream, conv, maxChunkSize, clientIP); err != nil {
-			slog.Error("upstream request failed, could not process completed conversation",
+			log.ErrorContext(ctx, "upstream request failed, could not process completed conversation",
 				"conv_id", conv.ID, "method", conv.MethodPath, "error", err)
 		}
 		conv.mu.Lock()
@@ -223,7 +225,7 @@ func (m *Manager) HandleFetch(packet *convpb.ConvPacket) ([]byte, error) {
 	defer conv.mu.Unlock()
 
 	if conv.ResponseData == nil {
-		slog.Debug("response not ready yet - upstream call in progress", "conv_id", conv.ID)
+		log.Trace("response not ready yet - upstream call in progress", "conv_id", conv.ID)
 		return []byte{}, nil
 	}
 
@@ -239,7 +241,7 @@ func (m *Manager) HandleFetch(packet *convpb.ConvPacket) ([]byte, error) {
 				return nil, fmt.Errorf("failed to marshal metadata: %w", err)
 			}
 
-			slog.Debug("returning response metadata", "conv_id", conv.ID, "total_chunks", len(conv.ResponseChunks),
+			log.Trace("returning response metadata", "conv_id", conv.ID, "total_chunks", len(conv.ResponseChunks),
 				"total_size", len(conv.ResponseData), "crc32", conv.ResponseCRC)
 
 			return metadataBytes, nil
@@ -255,13 +257,13 @@ func (m *Manager) HandleFetch(packet *convpb.ConvPacket) ([]byte, error) {
 			return nil, fmt.Errorf("invalid chunk index: %d (expected 1-%d)", fetchPayload.ChunkIndex, len(conv.ResponseChunks))
 		}
 
-		slog.Debug("returning response chunk", "conv_id", conv.ID, "chunk", fetchPayload.ChunkIndex,
+		log.Trace("returning response chunk", "conv_id", conv.ID, "chunk", fetchPayload.ChunkIndex,
 			"size", len(conv.ResponseChunks[chunkIndex]), "total_chunks", len(conv.ResponseChunks))
 
 		return conv.ResponseChunks[chunkIndex], nil
 	}
 
-	slog.Debug("returning response", "conv_id", conv.ID, "size", len(conv.ResponseData))
+	log.Trace("returning response", "conv_id", conv.ID, "size", len(conv.ResponseData))
 	return conv.ResponseData, nil
 }
 
@@ -371,7 +373,7 @@ func (m *Manager) processCompleted(ctx context.Context, upstream *grpc.ClientCon
 	convID := conv.ID
 	conv.mu.Unlock()
 
-	slog.Debug("reassembled data", "conv_id", convID, "size", len(fullData), "method", methodPath)
+	log.TraceContext(ctx, "reassembled data", "conv_id", convID, "size", len(fullData), "method", methodPath)
 
 	// Phase 2: forward to upstream without holding the lock so HandleFetch can proceed.
 	// HandleFetch returns an empty response while ResponseData == nil, and the agent retries.
@@ -400,11 +402,11 @@ func (m *Manager) processCompleted(ctx context.Context, upstream *grpc.ClientCon
 			}
 			conv.ResponseChunks = append(conv.ResponseChunks, responseData[i:end])
 		}
-		slog.Debug("response chunked", "conv_id", convID, "total_size", len(responseData),
+		log.TraceContext(ctx, "response chunked", "conv_id", convID, "total_size", len(responseData),
 			"chunks", len(conv.ResponseChunks), "crc32", conv.ResponseCRC)
 	} else {
 		conv.ResponseData = responseData
-		slog.Debug("stored response", "conv_id", convID, "size", len(responseData))
+		log.TraceContext(ctx, "stored response", "conv_id", convID, "size", len(responseData))
 	}
 
 	return nil
@@ -415,6 +417,7 @@ func forwardToUpstream(ctx context.Context, upstream *grpc.ClientConn, methodPat
 	md := metadata.New(map[string]string{})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	ctx = redirectors.SetRedirectedForHeader(ctx, clientIP)
+	ctx, _, _ = logging.InjectOutgoingGRPCTrace(ctx)
 
 	isClientStreaming := methodPath == "/c2.C2/ReportFile"
 	isServerStreaming := methodPath == "/c2.C2/FetchAsset"
@@ -447,7 +450,7 @@ func forwardToUpstream(ctx context.Context, upstream *grpc.ClientConn, methodPat
 			offset += int(msgLen)
 			chunkCount++
 		}
-		slog.Debug("sent client streaming chunks", "method", methodPath, "chunks", chunkCount)
+		log.TraceContext(ctx, "sent client streaming chunks", "method", methodPath, "chunks", chunkCount)
 	} else {
 		if err := stream.SendMsg(requestData); err != nil {
 			return nil, fmt.Errorf("failed to send request: %w", err)
@@ -478,7 +481,7 @@ func forwardToUpstream(ctx context.Context, upstream *grpc.ClientConn, methodPat
 				responseCount++
 			}
 		}
-		slog.Debug("received server streaming responses", "method", methodPath, "count", responseCount)
+		log.TraceContext(ctx, "received server streaming responses", "method", methodPath, "count", responseCount)
 	} else {
 		if err := stream.RecvMsg(&responseData); err != nil {
 			return nil, fmt.Errorf("failed to receive response: %w", err)

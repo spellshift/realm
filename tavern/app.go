@@ -10,12 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"entgo.io/contrib/entgql"
 	gqlgraphql "github.com/99designs/gqlgen/graphql"
@@ -43,6 +44,7 @@ import (
 	tavernhttp "realm.pub/tavern/internal/http"
 	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/logging"
 	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
@@ -65,8 +67,48 @@ import (
 	_ "realm.pub/tavern/internal/scheduler/mem"
 )
 
-func init() {
-	configureLogging()
+func logFlags() []cli.Flag {
+	return []cli.Flag{
+		cli.StringFlag{
+			Name:   "log",
+			Usage:  "Log preset or subsystem filter (e.g. dev, prod, portals, portals=debug, prod,c2=debug)",
+			Value:  DefaultLogSpec,
+			EnvVar: EnvLogSpec.Key,
+		},
+		cli.StringFlag{
+			Name:   "log-format",
+			Usage:  "Log output format override (text, json)",
+			EnvVar: EnvLogFormat.Key,
+		},
+	}
+}
+
+func applySubcommandLogFlags(c *cli.Context) error {
+	var (
+		cliSpec   string
+		cliFormat string
+		reconfig  bool
+		envSpec   = os.Getenv(EnvLogSpec.Key)
+		envFormat = os.Getenv(EnvLogFormat.Key)
+	)
+	if c.GlobalIsSet("log") {
+		cliSpec = c.GlobalString("log")
+	}
+	if c.IsSet("log") && (!c.GlobalIsSet("log") || c.String("log") != envSpec) {
+		cliSpec = c.String("log")
+		reconfig = true
+	}
+	if c.GlobalIsSet("log-format") {
+		cliFormat = c.GlobalString("log-format")
+	}
+	if c.IsSet("log-format") && (!c.GlobalIsSet("log-format") || c.String("log-format") != envFormat) {
+		cliFormat = c.String("log-format")
+		reconfig = true
+	}
+	if !reconfig {
+		return nil
+	}
+	return configureLogging(cliSpec, cliFormat)
 }
 
 func newApp(ctx context.Context) (app *cli.App) {
@@ -75,6 +117,17 @@ func newApp(ctx context.Context) (app *cli.App) {
 	app.Description = "Teamserver implementation for Realm, see https://docs.realm.pub for more details"
 	app.Usage = "Time for an Adventure!"
 	app.Version = Version
+	app.Flags = logFlags()
+	app.Before = func(c *cli.Context) error {
+		var cliSpec, cliFormat string
+		if c.IsSet("log") {
+			cliSpec = c.String("log")
+		}
+		if c.IsSet("log-format") {
+			cliFormat = c.String("log-format")
+		}
+		return configureLogging(cliSpec, cliFormat)
+	}
 	app.Action = func(c *cli.Context) error {
 		return runTavern(
 			ctx,
@@ -88,7 +141,7 @@ func newApp(ctx context.Context) (app *cli.App) {
 			Name:      "redirector",
 			Usage:     "Run a redirector connecting agents using a specific transport to the server",
 			ArgsUsage: "[upstream_address]",
-			Flags: []cli.Flag{
+			Flags: append([]cli.Flag{
 				cli.StringFlag{
 					Name:  "listen",
 					Usage: "Address to listen on for incoming redirector traffic (default: :8080)",
@@ -103,8 +156,11 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Name:  "tls-hostname",
 					Usage: "Enable TLS and use this hostname for certificate provisioning via ACME (e.g. redirector.example.com); falls back to self-signed if ACME fails",
 				},
-			},
+			}, logFlags()...),
 			Action: func(c *cli.Context) error {
+				if err := applySubcommandLogFlags(c); err != nil {
+					return err
+				}
 				var (
 					upstream    = c.Args().First()
 					listenOn    = c.String("listen")
@@ -128,10 +184,10 @@ func newApp(ctx context.Context) (app *cli.App) {
 					if err != nil {
 						return fmt.Errorf("failed to configure TLS: %w", err)
 					}
-					slog.InfoContext(ctx, "TLS configured for redirector", "hostname", tlsHostname)
+					startupLog.InfoContext(ctx, "TLS configured for redirector", "hostname", tlsHostname)
 				}
 
-				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn, "tls_hostname", tlsHostname)
+				startupLog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn, "tls_hostname", tlsHostname)
 				return redirectors.Run(ctx, transport, listenOn, upstream, tlsCfg)
 			},
 			Subcommands: cli.Commands{
@@ -156,7 +212,7 @@ func newApp(ctx context.Context) (app *cli.App) {
 		{
 			Name:  "builder",
 			Usage: "Run a builder that compiles agents for target platforms",
-			Flags: []cli.Flag{
+			Flags: append([]cli.Flag{
 				cli.StringFlag{
 					Name:  "config",
 					Usage: "Path to the builder YAML configuration file",
@@ -165,8 +221,11 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Name:  "executor",
 					Usage: "Executor to run builds with (docker, local)",
 				},
-			},
+			}, logFlags()...),
 			Action: func(c *cli.Context) error {
+				if err := applySubcommandLogFlags(c); err != nil {
+					return err
+				}
 				configPath := c.String("config")
 				var cliExec *string
 				if c.IsSet("executor") {
@@ -178,7 +237,7 @@ func newApp(ctx context.Context) (app *cli.App) {
 					return err
 				}
 
-				slog.InfoContext(ctx, "starting builder",
+				startupLog.InfoContext(ctx, "starting builder",
 					"config", configPath,
 					"supported_targets", cfg.SupportedTargets,
 					"executor", cfg.Executor,
@@ -244,17 +303,21 @@ func runTavern(ctx context.Context, options ...func(*Config)) error {
 			)
 		}
 		go func(ctx context.Context) {
-			slog.InfoContext(ctx, "metrics http server started", "metrics_addr", srv.MetricsHTTP.Addr)
-			if err := srv.MetricsHTTP.ListenAndServe(); err != nil {
-				slog.WarnContext(ctx, "metrics http server stopped", "err", err)
+			startupLog.InfoContext(ctx, "metrics http server started", "metrics_addr", srv.MetricsHTTP.Addr)
+			if err := srv.MetricsHTTP.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				startupLog.WarnContext(ctx, "metrics http server stopped", "error", err)
 			}
 		}(ctx)
 	}
 
 	// Listen & Serve HTTP Traffic
-	slog.InfoContext(ctx, "http server started", "http_addr", srv.HTTP.Addr)
+	startupLog.InfoContext(ctx, "http server started", "http_addr", srv.HTTP.Addr)
 	if err := srv.HTTP.ListenAndServe(); err != nil {
-		slog.ErrorContext(ctx, "http server stopped", "err", err)
+		if errors.Is(err, http.ErrServerClosed) {
+			startupLog.InfoContext(ctx, "http server stopped")
+		} else {
+			startupLog.ErrorContext(ctx, "http server stopped", "error", err)
+		}
 		return fmt.Errorf("http server stopped: %w", err)
 	}
 
@@ -266,16 +329,27 @@ type Server struct {
 	HTTP        *http.Server
 	MetricsHTTP *http.Server
 	client      *ent.Client
+	closeOnce   sync.Once
+	closeErr    error
 }
 
 // Close should always be called to clean up a Tavern server.
 func (srv *Server) Close() error {
-	srv.HTTP.Shutdown(context.Background())
-	if srv.MetricsHTTP == nil {
-		return srv.client.Close()
-	}
-	srv.MetricsHTTP.Shutdown(context.Background())
-	return srv.client.Close()
+	srv.closeOnce.Do(func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if srv.HTTP != nil {
+			_ = srv.HTTP.Shutdown(shutdownCtx)
+		}
+		if srv.MetricsHTTP != nil {
+			_ = srv.MetricsHTTP.Shutdown(shutdownCtx)
+		}
+		if srv.client != nil {
+			srv.closeErr = srv.client.Close()
+		}
+	})
+	return srv.closeErr
 }
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
@@ -317,18 +391,18 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Load Default Tomes
 	// Load Tools
 	if err := tools.UploadTools(ctx, client, tools.FileSystem); err != nil {
-		slog.ErrorContext(ctx, "failed to upload tools", "err", err)
+		startupLog.ErrorContext(ctx, "failed to upload tools", "error", err)
 	}
 
 	if cfg.IsDefaultTomeImportEnabled() {
 		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
-			slog.ErrorContext(ctx, "failed to upload default tomes", "err", err)
+			startupLog.ErrorContext(ctx, "failed to upload default tomes", "error", err)
 		}
 	}
 
 	// Ensure Default Build Profile
 	if err := ensureDefaultBuildProfile(ctx, client); err != nil {
-		slog.ErrorContext(ctx, "failed to ensure default build profile", "err", err)
+		startupLog.ErrorContext(ctx, "failed to ensure default build profile", "error", err)
 	}
 
 	// Initialize Git Tome Importer
@@ -362,19 +436,16 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
 	}
 
-	// Configure Request Logging
-	httpLogger := log.New(os.Stderr, "[HTTP] ", log.Flags())
-
 	// Configure Shell Muxes
 	wsShellMux, grpcShellMux := cfg.NewShellMuxes(ctx)
 	go func() {
 		if err := wsShellMux.Start(ctx); err != nil {
-			slog.ErrorContext(ctx, "websocket shell mux stopped", "err", err)
+			startupLog.ErrorContext(ctx, "websocket shell mux stopped", "error", err)
 		}
 	}()
 	go func() {
 		if err := grpcShellMux.Start(ctx); err != nil {
-			slog.ErrorContext(ctx, "grpc shell mux stopped", "err", err)
+			startupLog.ErrorContext(ctx, "grpc shell mux stopped", "error", err)
 		}
 	}()
 
@@ -383,13 +454,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Initialize Scheduler
 	schedulerURI := EnvSchedulerURI.String()
-	slog.InfoContext(ctx, "initializing scheduler", "uri", schedulerURI)
+	startupLog.InfoContext(ctx, "initializing scheduler", "uri", schedulerURI)
 	sched, err := scheduler.New(ctx, schedulerURI)
 	if err != nil {
 		client.Close()
 		return nil, fmt.Errorf("failed to initialize scheduler (uri=%q): %w", schedulerURI, err)
 	}
-	slog.InfoContext(ctx, "scheduler initialized successfully", "uri", schedulerURI)
+	startupLog.InfoContext(ctx, "scheduler initialized successfully", "uri", schedulerURI)
 
 	// Determine host check URL based on the scheduler backend.
 	// The in-memory scheduler fires HTTP requests from the same process,
@@ -432,14 +503,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		sched.Close()
 		return nil, fmt.Errorf("failed to generate host-check JWT: %w", err)
 	}
-	slog.InfoContext(ctx, "resolved host check configuration", "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
+	startupLog.InfoContext(ctx, "resolved host check configuration", "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
 
 	// Schedule a recurring host-lost check.
 	// In-memory: fires every 10 seconds via robfig/cron.
 	// GCP Cloud Scheduler: fires every minute (minimum supported granularity).
 	// If the job is already scheduled (e.g. from a previous startup), the
 	// scheduler will return an error which we log and ignore.
-	slog.InfoContext(ctx, "scheduling host-lost-poll job", "schedule", hostCheckSchedule)
+	startupLog.InfoContext(ctx, "scheduling host-lost-poll job", "schedule", hostCheckSchedule)
 	if err := sched.Schedule(ctx, scheduler.Job{
 		Name:     "host-lost-poll",
 		Schedule: hostCheckSchedule,
@@ -450,14 +521,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 	}); err != nil {
 		if errors.Is(err, scheduler.ErrJobExists) {
-			slog.InfoContext(ctx, "host-lost-poll job already scheduled, skipping")
+			startupLog.InfoContext(ctx, "host-lost-poll job already scheduled, skipping")
 		} else {
 			client.Close()
 			sched.Close()
 			return nil, fmt.Errorf("failed to schedule host-lost check (schedule=%q): %w", hostCheckSchedule, err)
 		}
 	} else {
-		slog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "schedule", hostCheckSchedule)
+		startupLog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "schedule", hostCheckSchedule)
 	}
 
 	// GraphQL Handler (shared with MCP)
@@ -573,7 +644,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/": tavernhttp.Endpoint{
-			Handler:          www.NewHandler(httpLogger),
+			Handler:          www.NewHandler(),
 			LoginRedirectURI: "/oauth/login",
 			AllowUnactivated: true,
 		},
@@ -585,13 +656,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Setup Profiling
 	if cfg.IsPProfEnabled() {
-		slog.WarnContext(ctx, "performance profiling is enabled, do not use in production as this may leak sensitive information")
+		startupLog.WarnContext(ctx, "performance profiling is enabled, do not use in production as this may leak sensitive information")
 		registerProfiler(routes)
 	}
 
 	// Setup MCP Server
 	if cfg.IsMCPEnabled() {
-		slog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
+		startupLog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
 		mcpHandler := tavernmcp.NewHandler(client, Version, gqlHandler)
 		routes["/mcp/"] = tavernhttp.Endpoint{
 			Handler: mcpHandler,
@@ -619,6 +690,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Enable HTTP/2
 	if err := http2.ConfigureServer(cfg.srv, &http2.Server{}); err != nil {
+		client.Close()
+		sched.Close()
 		return nil, fmt.Errorf("failed to configure http/2: %w", err)
 	}
 
@@ -630,7 +703,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Setup Metrics
 	if cfg.IsMetricsEnabled() {
-		slog.WarnContext(ctx, "metrics reporting is enabled, unauthenticated /metrics endpoint will be available", "metrics_addr", EnvHTTPMetricsListenAddr.String())
+		startupLog.WarnContext(ctx, "metrics reporting is enabled, unauthenticated /metrics endpoint will be available", "metrics_addr", EnvHTTPMetricsListenAddr.String())
 		tSrv.MetricsHTTP = newMetricsServer()
 	}
 
@@ -648,53 +721,76 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, options...))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
-	// Configure Raw Query Logging
-	logRawQuery := EnvLogGraphQLRawQuery.IsSet()
-
-	// GraphQL Logging
+	// Post-execution GraphQL operation logging
 	srv.AroundOperations(func(ctx context.Context, next gqlgraphql.OperationHandler) gqlgraphql.ResponseHandler {
-		// Authentication Information
-		var (
-			authID          = "unknown"
-			isActivated     = false
-			isAdmin         = false
-			isAuthenticated = false
-			authUserID      = 0
-			authUserName    = ""
-		)
-		id := auth.IdentityFromContext(ctx)
-		if id != nil {
-			authID = id.String()
-			isActivated = id.IsActivated()
-			isAdmin = id.IsAdmin()
-			isAuthenticated = id.IsAuthenticated()
+		if logging.EntrypointFromContext(ctx) != "mcp" {
+			ctx = logging.WithEntrypoint(ctx, "graphql")
 		}
-		if authUser := auth.UserFromContext(ctx); authUser != nil {
-			authUserID = authUser.ID
-			authUserName = authUser.Name
+		start := time.Now()
+		respHandler := next(ctx)
+		if respHandler == nil {
+			return nil
 		}
 
-		// Operation Context
-		oc := gqlgraphql.GetOperationContext(ctx)
+		return func(rctx context.Context) *gqlgraphql.Response {
+			resp := respHandler(rctx)
+			if resp == nil {
+				return nil
+			}
 
-		// Determine if Raw Query should be logged
-		args := []any{
-			"auth_generic_id", authID,
-			"auth_user_name", authUserName,
-			"auth_user_id", authUserID,
-			"is_admin", isAdmin,
-			"is_activated", isActivated,
-			"is_authenticated", isAuthenticated,
-			"operation", oc.OperationName,
-			"variables", oc.Variables,
-		}
-		if logRawQuery {
-			args = append(args, "raw_query", oc.RawQuery)
-		}
+			logCtx := rctx
+			if logging.EntrypointFromContext(logCtx) != "mcp" {
+				logCtx = logging.WithEntrypoint(logCtx, "graphql")
+			}
 
-		// Log Request
-		slog.InfoContext(ctx, "tavern graphql request", args...)
-		return next(ctx)
+			oc := gqlgraphql.GetOperationContext(rctx)
+			if oc == nil {
+				oc = gqlgraphql.GetOperationContext(ctx)
+			}
+
+			var (
+				opName string
+				opType = "query"
+				vars   map[string]any
+				rawQ   string
+			)
+			if oc != nil {
+				opName = oc.OperationName
+				if oc.Operation != nil {
+					if opName == "" {
+						opName = oc.Operation.Name
+					}
+					if oc.Operation.Operation != "" {
+						opType = string(oc.Operation.Operation)
+					}
+				}
+				vars = logging.ScrubMap(oc.Variables)
+				rawQ = oc.RawQuery
+			}
+
+			attrs := []any{
+				"operation", opName,
+				"operation_type", opType,
+				"variables", vars,
+				"duration_ms", time.Since(start).Milliseconds(),
+				"error_count", len(resp.Errors),
+			}
+			if logging.LogGraphQLRawQueryEnabled() {
+				attrs = append(attrs, "raw_query", rawQ)
+			}
+
+			targetLog := gqlQueryLog
+			if opType == "mutation" {
+				targetLog = gqlMutationLog
+			}
+			if len(resp.Errors) > 0 {
+				targetLog.WarnContext(logCtx, "graphql operation completed with errors", attrs...)
+			} else {
+				targetLog.InfoContext(logCtx, "graphql operation completed", attrs...)
+			}
+
+			return resp
+		}
 	})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -706,7 +802,7 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 func newSecretsManager() (secrets.SecretsManager, error) {
 	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
-		slog.Error("No configuration provided for secret manager path, using a potentially insecure default.")
+		startupLog.Warn("no configuration provided for secret manager path, using a potentially insecure default", "path", "/tmp/tavern-secrets")
 		return secrets.NewDebugFileSecrets("/tmp/tavern-secrets")
 	}
 	if EnvSecretsManagerPath.String() == "" {
@@ -785,8 +881,14 @@ func getBuilderCA() (caCert *x509.Certificate, caKey ed25519.PrivateKey, err err
 func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	portalSrv := portals.New(graph, portalMux)
 	grpcSrv := grpc.NewServer(
-		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
-		grpc.StreamInterceptor(grpcWithStreamMetrics),
+		grpc.ChainUnaryInterceptor(
+			grpcWithUnaryLogging,
+			grpcWithUnaryMetrics,
+		),
+		grpc.ChainStreamInterceptor(
+			grpcWithStreamLogging,
+			grpcWithStreamMetrics,
+		),
 	)
 	portalpb.RegisterPortalServer(grpcSrv, portalSrv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -808,10 +910,12 @@ func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate, serverP
 	builderSrv := builder.New(client, serverPubkey)
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			grpcWithUnaryLogging,
 			builder.NewMTLSAuthInterceptor(caCert, client),
 			grpcWithUnaryMetrics,
 		),
 		grpc.ChainStreamInterceptor(
+			grpcWithStreamLogging,
 			builder.NewMTLSStreamAuthInterceptor(caCert, client),
 			grpcWithStreamMetrics,
 		),
@@ -837,7 +941,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 	if err != nil {
 		panic(err)
 	}
-	slog.Info(fmt.Sprintf("public key: %s", base64.StdEncoding.EncodeToString(pub.Bytes())))
+	startupLog.Info("c2 server public key initialized", "server_pubkey", base64.StdEncoding.EncodeToString(pub.Bytes()))
 
 	// Get ED25519 private key for JWT signing
 	ed25519PubKey, ed25519PrivKey, err := getKeyPairEd25519()
@@ -851,8 +955,14 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 	}
 	grpcSrv := grpc.NewServer(
 		grpc.ForceServerCodecV2(xchacha),
-		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
-		grpc.StreamInterceptor(grpcWithStreamMetrics),
+		grpc.ChainUnaryInterceptor(
+			grpcWithUnaryLogging,
+			grpcWithUnaryMetrics,
+		),
+		grpc.ChainStreamInterceptor(
+			grpcWithStreamLogging,
+			grpcWithStreamMetrics,
+		),
 	)
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

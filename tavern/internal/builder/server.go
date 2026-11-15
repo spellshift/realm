@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -17,8 +16,11 @@ import (
 	"realm.pub/tavern/internal/ent"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/namegen"
 )
+
+var serverLog = logging.For("builder.server")
 
 // Server implements the Builder gRPC service.
 type Server struct {
@@ -50,7 +52,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 	if _, err := s.graph.Builder.UpdateOne(b).
 		SetLastSeenAt(now).
 		Save(ctx); err != nil {
-		slog.ErrorContext(ctx, "failed to update builder last_seen_at",
+		serverLog.ErrorContext(ctx, "failed to update builder last_seen_at",
 			"builder_id", b.ID, "error", err)
 	}
 
@@ -69,7 +71,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 	eligible := tasks[:0]
 	for _, task := range tasks {
 		if task.ProfileAtCreation == nil {
-			slog.WarnContext(ctx, "build task has no saved profile; recreate it to execute", "task_id", task.ID)
+			serverLog.WarnContext(ctx, "build task has no saved profile; recreate it to execute", "task_id", task.ID)
 			continue
 		}
 		eligible = append(eligible, task)
@@ -177,10 +179,16 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		})
 	}
 
-	slog.InfoContext(ctx, "builder claimed build tasks",
-		"builder_id", b.ID,
-		"task_count", len(resp.Tasks),
-	)
+	if len(resp.Tasks) > 0 {
+		serverLog.InfoContext(ctx, "builder claimed build tasks",
+			"builder_id", b.ID,
+			"task_count", len(resp.Tasks),
+		)
+	} else {
+		serverLog.DebugContext(ctx, "builder polled with no pending build tasks",
+			"builder_id", b.ID,
+		)
+	}
 
 	return resp, nil
 }
@@ -197,8 +205,10 @@ func (s *Server) StreamBuildTaskOutput(stream builderpb.Builder_StreamBuildTaskO
 	}
 
 	var (
-		taskID   int64
-		finished bool
+		taskID        int64
+		finished      bool
+		finalExitCode int64
+		finalError    string
 	)
 
 	for {
@@ -231,7 +241,7 @@ func (s *Server) StreamBuildTaskOutput(stream builderpb.Builder_StreamBuildTaskO
 
 			// Idempotency: if already finished, return success.
 			if !bt.FinishedAt.IsZero() {
-				slog.WarnContext(ctx, "duplicate stream for already-finished build task",
+				serverLog.WarnContext(ctx, "duplicate stream for already-finished build task",
 					"task_id", taskID, "builder_id", b.ID)
 				return stream.SendAndClose(&builderpb.StreamBuildTaskOutputResponse{})
 			}
@@ -241,7 +251,7 @@ func (s *Server) StreamBuildTaskOutput(stream builderpb.Builder_StreamBuildTaskO
 				if _, err := s.graph.BuildTask.UpdateOne(bt).
 					SetStartedAt(time.Now()).
 					Save(ctx); err != nil {
-					slog.ErrorContext(ctx, "failed to set started_at",
+					serverLog.ErrorContext(ctx, "failed to set started_at",
 						"task_id", taskID, "error", err)
 				}
 			}
@@ -253,6 +263,8 @@ func (s *Server) StreamBuildTaskOutput(stream builderpb.Builder_StreamBuildTaskO
 
 		if req.Finished {
 			finished = true
+			finalExitCode = req.ExitCode
+			finalError = req.Error
 		}
 
 		// Flush every message to the database immediately.
@@ -271,11 +283,26 @@ func (s *Server) StreamBuildTaskOutput(stream builderpb.Builder_StreamBuildTaskO
 		return status.Error(codes.InvalidArgument, "no messages received")
 	}
 
-	slog.InfoContext(ctx, "build task stream completed",
-		"task_id", taskID,
-		"builder_id", b.ID,
-		"finished", finished,
-	)
+	if finished {
+		if finalExitCode != 0 || finalError != "" {
+			logging.AuditFailure(ctx, "builder", "build_task.failed", "build task failed",
+				"build_task_id", int(taskID),
+				"builder_id", b.ID,
+				"exit_code", int(finalExitCode),
+			)
+		} else {
+			logging.Audit(ctx, "builder", "build_task.completed", "build task completed",
+				"build_task_id", int(taskID),
+				"builder_id", b.ID,
+				"exit_code", int(finalExitCode),
+			)
+		}
+	} else {
+		serverLog.InfoContext(ctx, "build task stream closed before completion",
+			"task_id", taskID,
+			"builder_id", b.ID,
+		)
+	}
 
 	return stream.SendAndClose(&builderpb.StreamBuildTaskOutputResponse{})
 }
@@ -376,12 +403,13 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Errorf(codes.Internal, "commit build artifact: %v", err)
 	}
 
-	slog.InfoContext(ctx, "build artifact uploaded",
-		"task_id", taskID,
+	auditAttrs := make([]any, 0, 12)
+	auditAttrs = append(auditAttrs,
+		"build_task_id", bt.ID,
 		"builder_id", b.ID,
-		"asset_id", asset.ID,
-		"size", buf.Len(),
 	)
+	auditAttrs = append(auditAttrs, logging.AssetAttrs(asset.ID, asset.Name, asset.Hash, asset.Size)...)
+	logging.Audit(ctx, "builder", "build_task.artifact_uploaded", "build artifact uploaded", auditAttrs...)
 
 	return stream.SendAndClose(&builderpb.UploadBuildArtifactResponse{
 		AssetId: int64(asset.ID),
@@ -464,7 +492,7 @@ func (s *Server) DownloadTome(req *builderpb.DownloadTomeRequest, stream builder
 		}
 	}
 
-	slog.InfoContext(ctx, "tome downloaded",
+	serverLog.DebugContext(ctx, "tome downloaded",
 		"task_id", req.TaskId,
 		"tome_id", req.TomeId,
 		"builder_id", b.ID,

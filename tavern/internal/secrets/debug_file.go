@@ -2,8 +2,6 @@ package secrets
 
 import (
 	"errors"
-	"fmt"
-	"log/slog"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -40,13 +38,13 @@ func (s DebugFileSecrets) GetName() string {
 func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
 	path, err := s.ensureSecretsFileExist()
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to create secrets file %s: %v", path, err))
+		log.Error("failed to create secrets file", "path", path, "key", key, "error", err)
 		return []byte{}, err
 	}
 
 	secrets, err := s.getYamlStruct(path)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to parse YAML file %s: %v", path, err))
+		log.Error("failed to load secrets YAML file", "path", path, "key", key, "error", err)
 		return []byte{}, err
 	}
 
@@ -73,7 +71,7 @@ func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
 
 	err = s.setYamlStruct(path, secrets)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to update YAML file %s: %v", path, err))
+		log.Error("failed to update secrets YAML file", "path", path, "key", key, "error", err)
 		return []byte{}, err
 	}
 
@@ -85,7 +83,11 @@ func (s DebugFileSecrets) GetValue(key string) ([]byte, error) {
 
 	secrets, err := s.getYamlStruct(path)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to parse YAML file %s: %v", path, err))
+		if errors.Is(err, os.ErrNotExist) {
+			log.Debug("secrets YAML file does not exist yet", "path", path, "key", key)
+		} else {
+			log.Error("failed to load secrets YAML file", "path", path, "key", key, "error", err)
+		}
 		return []byte{}, err
 	}
 
@@ -101,20 +103,20 @@ func (s DebugFileSecrets) GetValue(key string) ([]byte, error) {
 func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
 	data, err := yaml.Marshal(secrets)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to parse file YAML %s: %v", path, err))
+		log.Error("failed to marshal secrets YAML", "path", path, "error", err)
 		return err
 	}
 
 	file, err := os.OpenFile(path, os.O_RDWR, DEFAULT_PERMS)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to open secrets file %s: %v", path, err))
+		log.Error("failed to open secrets file", "path", path, "error", err)
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(data)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to read file %s: %v", path, err))
+		log.Error("failed to write secrets file", "path", path, "error", err)
 		return err
 	}
 
@@ -124,7 +126,9 @@ func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
 func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	file, err := os.OpenFile(path, os.O_RDWR, DEFAULT_PERMS)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to open secrets file %s: %v", path, err))
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Error("failed to open secrets file", "path", path, "error", err)
+		}
 		return Secrets{}, err
 	}
 	defer file.Close()
@@ -132,7 +136,7 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	data := make([]byte, MAX_FILE_SIZE)
 	n, err := file.Read(data)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to read file %s: %v", path, err))
+		log.Error("failed to read secrets file", "path", path, "error", err)
 		return Secrets{}, err
 	}
 
@@ -141,7 +145,7 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	var secrets Secrets
 	err = yaml.Unmarshal(data, &secrets)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to parse file YAML %s: %v", path, err))
+		log.Error("failed to unmarshal secrets YAML", "path", path, "error", err)
 		return Secrets{}, err
 	}
 
@@ -154,7 +158,7 @@ func (s DebugFileSecrets) ensureSecretsFileExist() (string, error) {
 		// Create file
 		f, err := os.OpenFile(s.Path, os.O_CREATE, DEFAULT_PERMS)
 		if err != nil {
-			slog.Error(fmt.Sprintf("failed to create file %s", s.Path))
+			log.Error("failed to create secrets file", "path", s.Path, "error", err)
 			return s.Path, err
 		}
 		defer f.Close()
@@ -162,7 +166,7 @@ func (s DebugFileSecrets) ensureSecretsFileExist() (string, error) {
 		// Write empty struct to file
 		err = s.setYamlStruct(s.Path, Secrets{})
 		if err != nil {
-			slog.Error("failed to set yaml struct")
+			log.Error("failed to initialize secrets YAML file", "path", s.Path, "error", err)
 			return s.Path, err
 		}
 	}

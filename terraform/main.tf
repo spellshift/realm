@@ -536,20 +536,8 @@ resource "google_cloud_run_service" "tavern" {
           value = ""
         }
         env {
-          name = "ENABLE_DEBUG_LOGGING"
-          value = ""
-        }
-        env {
-          name = "ENABLE_JSON_LOGGING"
-          value = "1"
-        }
-        env {
-          name = "ENABLE_INSTANCE_ID_LOGGING"
-          value = "1"
-        }
-        env {
-          name = "ENABLE_GRAPHQL_RAW_QUERY_LOGGING"
-          value = "1"
+          name = "TAVERN_LOG"
+          value = "prod"
         }
 
         env {
@@ -720,7 +708,7 @@ locals {
       containers = [{
         image   = var.tavern_container_image
         command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", var.redirector_upstream]
-        env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
+        env     = [{ name = "TAVERN_LOG", value = "prod" }]
         ports   = [
           {
             containerPort = 443
@@ -788,8 +776,8 @@ resource "google_cloud_run_service" "redirector" {
         image = var.tavern_container_image
         command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, var.redirector_upstream]
         env {
-          name = "ENABLE_DEBUG_LOGGING"
-          value = "true"
+          name = "TAVERN_LOG"
+          value = "prod"
         }
         ports {
           container_port = 8080
@@ -887,8 +875,8 @@ locals {
         command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", var.redirector_upstream]
         env = [
           {
-            name  = "ENABLE_DEBUG_LOGGING"
-            value = ""
+            name  = "TAVERN_LOG"
+            value = "prod"
           }
         ]
         ports   = [
@@ -1001,7 +989,7 @@ locals {
       containers = [{
         image   = var.tavern_container_image
         command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", var.redirector_upstream]
-        env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
+        env     = [{ name = "TAVERN_LOG", value = "prod" }]
       }]
       restartPolicy = "Always"
     }
@@ -1220,8 +1208,7 @@ locals {
         env = [
           { name = "REALM_BUILDER_ENROLLMENT_TOKEN", value = local.builder_enrollment_token },
           { name = "DOCKER_HOST", value = "unix:///var/run/docker.sock" },
-          { name = "ENABLE_JSON_LOGGING", value = "1" },
-          { name = "ENABLE_INSTANCE_ID_LOGGING", value = "1" },
+          { name = "TAVERN_LOG", value = "prod" },
         ]
         volumeMounts = [
           { name = "dockersock", mountPath = "/var/run/docker.sock" },

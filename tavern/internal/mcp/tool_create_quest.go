@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -12,6 +12,7 @@ import (
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/logging"
 )
 
 // createQuestTool returns the create_quest MCP tool.
@@ -59,6 +60,8 @@ var confirmSchema = map[string]any{
 // handleCreateQuest returns a tool handler that creates a quest after eliciting user confirmation.
 func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		ctx = ensureMCPToolContext(ctx)
+
 		client := clientFromContext(ctx)
 		if client == nil {
 			return mcp.NewToolResultError("internal error: no database client"), nil
@@ -100,26 +103,55 @@ func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to load tome: %v", err)), nil
 		}
 
-		// Look up beacon names for the elicitation message.
+		// Look up beacons (and their hosts) for elicitation summary and audit correlation.
 		const maxBeaconNames = 8
 		beacons, err := client.Beacon.Query().
 			Where(beacon.IDIn(beaconIDs...)).
-			Limit(maxBeaconNames + 1).
+			WithHost().
 			All(ctx)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to look up beacons: %v", err)), nil
 		}
-		beaconNames := make([]string, 0, len(beacons))
+
+		beaconNames := make([]string, 0, min(len(beacons), maxBeaconNames))
+		seenHosts := make(map[int]struct{}, len(beacons))
+		hostIDs := make([]int, 0, len(beacons))
 		for _, b := range beacons {
-			beaconNames = append(beaconNames, b.Name)
+			if len(beaconNames) < maxBeaconNames {
+				beaconNames = append(beaconNames, b.Name)
+			}
+			if b.Edges.Host != nil {
+				hid := b.Edges.Host.ID
+				if _, ok := seenHosts[hid]; !ok {
+					seenHosts[hid] = struct{}{}
+					hostIDs = append(hostIDs, hid)
+				}
+			}
 		}
+		sort.Ints(hostIDs)
+
 		beaconSummary := strings.Join(beaconNames, ", ")
 		if len(beaconIDs) > maxBeaconNames {
-			beaconSummary = strings.Join(beaconNames[:min(len(beaconNames), maxBeaconNames)], ", ") + fmt.Sprintf(" and %d more", len(beaconIDs)-maxBeaconNames)
+			beaconSummary += fmt.Sprintf(" and %d more", len(beaconIDs)-maxBeaconNames)
+		}
+
+		emitDenied := func(action mcp.ElicitationResponseAction) {
+			deniedAttrs := make([]any, 0, 14)
+			deniedAttrs = append(deniedAttrs, logging.TomeAttrs(questTome.ID, questTome.Name, string(questTome.Tactic))...)
+			deniedAttrs = append(deniedAttrs,
+				"quest_name", name,
+				"parameters", logging.ScrubJSONValue(params),
+				"beacon_ids", beaconIDs,
+				"host_ids", hostIDs,
+				"elicitation_action", string(action),
+				"elicitation_confirmed", false,
+			)
+			logging.AuditDenied(ctx, "quest", "quest.created", "quest creation via MCP denied by user elicitation", deniedAttrs...)
 		}
 
 		// Request human-in-the-loop confirmation before creating the quest.
 		// If elicitation is not supported by the client session, proceed without it.
+		elicitConfirmed := false
 		elicitResult, err := mcpSrv.RequestElicitation(ctx, mcp.ElicitationRequest{
 			Params: mcp.ElicitationParams{
 				Message:         fmt.Sprintf("Create quest %q using tome %q targeting beacon(s): %s?", name, questTome.Name, beaconSummary),
@@ -129,14 +161,17 @@ func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
 		if err == nil {
 			// Elicitation was supported; check the user's response.
 			if elicitResult.Action != mcp.ElicitationResponseActionAccept {
+				emitDenied(elicitResult.Action)
 				return mcp.NewToolResultError("quest creation cancelled by user"), nil
 			}
 			// Verify the user explicitly confirmed.
 			if content, ok := elicitResult.Content.(map[string]any); ok {
 				if confirmed, _ := content["confirm"].(bool); !confirmed {
+					emitDenied(elicitResult.Action)
 					return mcp.NewToolResultError("quest creation cancelled by user"), nil
 				}
 			}
+			elicitConfirmed = true
 		} else if err != mcpserver.ErrElicitationNotSupported && err != mcpserver.ErrNoActiveSession {
 			return mcp.NewToolResultError(fmt.Sprintf("elicitation failed: %v", err)), nil
 		}
@@ -166,15 +201,29 @@ func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
 		}
 
 		// Create tasks for each beacon
+		taskCount := 0
 		for _, beaconID := range beaconIDs {
 			_, err := client.Task.Create().
 				SetQuestID(newQuest.ID).
 				SetBeaconID(beaconID).
 				Save(ctx)
 			if err != nil {
-				slog.ErrorContext(ctx, "failed to create task for beacon", "beacon_id", beaconID, "err", err)
+				toolsLog.ErrorContext(ctx, "failed to create task for beacon", "beacon_id", beaconID, "error", err)
+				continue
 			}
+			taskCount++
 		}
+
+		auditAttrs := make([]any, 0, 16)
+		auditAttrs = append(auditAttrs, logging.QuestAttrs(newQuest.ID, newQuest.Name, newQuest.Parameters)...)
+		auditAttrs = append(auditAttrs, logging.TomeAttrs(questTome.ID, questTome.Name, string(questTome.Tactic))...)
+		auditAttrs = append(auditAttrs,
+			"beacon_ids", beaconIDs,
+			"host_ids", hostIDs,
+			"task_count", taskCount,
+			"elicitation_confirmed", elicitConfirmed,
+		)
+		logging.Audit(ctx, "quest", "quest.created", "quest created via MCP", auditAttrs...)
 
 		result := map[string]any{
 			"id":   newQuest.ID,

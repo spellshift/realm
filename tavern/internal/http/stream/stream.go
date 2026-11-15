@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log/slog"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -150,7 +149,7 @@ func newOrderKey() string {
 	buf := make([]byte, 16)
 	_, err := io.ReadFull(rand.Reader, buf)
 	if err != nil {
-		slog.Error("failed to generate order key, defaulting to empty string!", "error", err)
+		muxLog.Error("failed to generate order key, defaulting to empty string!", "error", err)
 		return ""
 	}
 	return base64.StdEncoding.EncodeToString(buf)
@@ -172,7 +171,7 @@ type sessionBuffer struct {
 func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, emit func(*pubsub.Message)) {
 	index, ok := parseOrderIndex(msg)
 	if !ok {
-		slog.DebugContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
+		muxLog.TraceContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
 		emit(msg)
 		return
 	}
@@ -183,7 +182,7 @@ func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message,
 	}
 
 	if index < buf.nextToSend {
-		slog.ErrorContext(ctx, "dropping message because subsequent message has already been sent",
+		muxLog.WarnContext(ctx, "dropping message because subsequent message has already been sent",
 			"msg_log_id", msg.LoggableID,
 			"next_to_send", buf.nextToSend,
 			"order_index", index,
@@ -207,7 +206,7 @@ func (buf *sessionBuffer) flushBuffer(ctx context.Context, emit func(*pubsub.Mes
 						lowestIndex = k
 					}
 				}
-				slog.ErrorContext(ctx, "sessionBuffer overflow, skipping message to catch up",
+				muxLog.WarnContext(ctx, "sessionBuffer overflow, skipping message to catch up",
 					"skipped_message_index", buf.nextToSend,
 					"new_index", lowestIndex,
 					"buffered_msgs_count", len(buf.data),

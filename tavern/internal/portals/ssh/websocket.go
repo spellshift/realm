@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
@@ -24,6 +25,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	entshell "realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/http/shell"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
@@ -47,13 +49,20 @@ type WebsocketControlMessage struct {
 type PivotSession struct {
 	PivotID       int
 	PortalID      int
+	BeaconID      int
+	HostID        int
+	Target        string
+	SSHUser       string
+	CredentialID  int
 	StreamID      string
+	SessionCtx    context.Context
 	CancelContext context.CancelFunc
 	seqID         uint64
 
 	mu            sync.Mutex
 	closed        bool
 	connected     bool
+	failed        bool
 	history       []byte
 	dirty         bool
 	activeSockets map[*websocket.Conn]chan interface{}
@@ -72,11 +81,49 @@ func (ps *PivotSession) nextSeqID() uint64 {
 func (ps *PivotSession) MarkConnected() bool {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
-	if ps.connected {
+	if ps.connected || ps.failed {
 		return false
 	}
 	ps.connected = true
 	return true
+}
+
+func (ps *PivotSession) MarkFailed() {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	ps.failed = true
+}
+
+func (ps *PivotSession) MarkFailedIfNotConnected() bool {
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+	if ps.connected || ps.failed {
+		return false
+	}
+	ps.failed = true
+	return true
+}
+
+func (ps *PivotSession) auditArgs() []any {
+	args := append(
+		logging.TargetIntAttrs("pivot", ps.PivotID, ps.Target),
+		slog.Int("pivot_id", ps.PivotID),
+		slog.Int("portal_id", ps.PortalID),
+	)
+	if ps.BeaconID > 0 {
+		args = append(args, slog.Int("beacon_id", ps.BeaconID))
+	}
+	if ps.HostID > 0 {
+		args = append(args, slog.Int("host_id", ps.HostID))
+	}
+	if ps.Target != "" {
+		args = append(args, slog.String("target", ps.Target))
+	}
+	if ps.SSHUser != "" {
+		args = append(args, slog.String("ssh_user", ps.SSHUser))
+	}
+	args = append(args, slog.Int("credential_id", ps.CredentialID))
+	return args
 }
 
 func (ps *PivotSession) Broadcast(msg interface{}) {
@@ -166,6 +213,7 @@ func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
 		return
 	}
 	ps.closed = true
+	wasFailed := ps.failed
 	ps.mu.Unlock()
 
 	cacheMu.Lock()
@@ -176,9 +224,23 @@ func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
 		ps.CancelContext()
 	}
 
+	dbCtx := logging.DetachContext(ctx)
+
 	// Final flush & close
-	ps.FlushHistory(ctx, graph)
-	_ = graph.ShellPivot.UpdateOneID(ps.PivotID).SetClosedAt(time.Now()).Exec(ctx)
+	ps.FlushHistory(dbCtx, graph)
+	_ = graph.ShellPivot.UpdateOneID(ps.PivotID).SetClosedAt(time.Now()).Exec(dbCtx)
+
+	auditCtx := ps.SessionCtx
+	if actor := logging.ActorFromContext(ctx); actor.Kind != logging.ActorUnknown && actor.Kind != logging.ActorAnonymous {
+		auditCtx = dbCtx
+	}
+	if auditCtx == nil {
+		auditCtx = dbCtx
+	}
+	if !wasFailed {
+		log.DebugContext(auditCtx, "closed SSH pivot session", "target", ps.Target, "ssh_user", ps.SSHUser)
+		logging.Audit(auditCtx, "portal", "portal.ssh_pivot_closed", "SSH pivot closed", ps.auditArgs()...)
+	}
 
 	// Notify and close all active socket channels so writer goroutines flush before closing
 	ps.mu.Lock()
@@ -210,13 +272,58 @@ func NewHandler(graph *ent.Client, mux *mux.Mux) *Handler {
 	}
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func enrichHTTPWebsocketContext(r *http.Request) context.Context {
 	ctx := r.Context()
+	if logging.EntrypointFromContext(ctx) == "" {
+		ctx = logging.WithEntrypoint(ctx, "websocket")
+	}
+	if logging.ClientIPFromContext(ctx) == "" {
+		clientIP := logging.NormalizeClientIP(
+			r.RemoteAddr,
+			r.Header.Get("X-Redirected-For"),
+			r.Header.Get("X-Forwarded-For"),
+		)
+		ctx = logging.WithClientIP(ctx, clientIP)
+	}
+	ctx, _, _ = logging.EnsureTrace(ctx)
+
+	if u := auth.UserFromContext(ctx); u != nil {
+		if cur := logging.ActorFromContext(ctx); cur.Kind == logging.ActorUnknown || cur.Kind == logging.ActorAnonymous {
+			ctx = logging.WithActor(ctx, logging.Actor{
+				Kind:    logging.ActorUser,
+				ID:      strconv.Itoa(u.ID),
+				Name:    u.Name,
+				IsAdmin: u.IsAdmin,
+			})
+		}
+	}
+	return ctx
+}
+
+func bindPivotStreamAttrs(ctx context.Context, pivotID, portalID, beaconID, hostID int) context.Context {
+	var attrs []slog.Attr
+	if pivotID > 0 {
+		attrs = append(attrs, slog.Int("pivot_id", pivotID))
+	}
+	if portalID > 0 {
+		attrs = append(attrs, slog.Int("portal_id", portalID))
+	}
+	if beaconID > 0 {
+		attrs = append(attrs, slog.Int("beacon_id", beaconID))
+	}
+	if hostID > 0 {
+		attrs = append(attrs, slog.Int("host_id", hostID))
+	}
+	return logging.WithStreamAttrs(ctx, attrs...)
+}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := enrichHTTPWebsocketContext(r)
 
 	// Upgrade to websocket first to send errors over ws
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to upgrade ssh websocket", "error", err)
+		log.ErrorContext(ctx, "failed to upgrade ssh websocket", "error", err)
 		return
 	}
 	defer wsConn.Close()
@@ -256,6 +363,37 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return h.graph.ShellPivot.Get(ctx, pivotID)
 			})
 			if err == nil {
+				var portalID, beaconID, hostID int
+				if pEnt, pErr := pivotEnt.QueryPortal().WithBeacon(func(bq *ent.BeaconQuery) { bq.WithHost() }).Only(ctx); pErr == nil && pEnt != nil {
+					portalID = pEnt.ID
+					if pEnt.Edges.Beacon != nil {
+						beaconID = pEnt.Edges.Beacon.ID
+						if pEnt.Edges.Beacon.Edges.Host != nil {
+							hostID = pEnt.Edges.Beacon.Edges.Host.ID
+						}
+					}
+				}
+				ctx = bindPivotStreamAttrs(ctx, pivotID, portalID, beaconID, hostID)
+
+				reconnectArgs := append(
+					logging.TargetIntAttrs("pivot", pivotID, pivotEnt.Destination),
+					slog.Int("pivot_id", pivotID),
+				)
+				if portalID > 0 {
+					reconnectArgs = append(reconnectArgs, slog.Int("portal_id", portalID))
+				}
+				if beaconID > 0 {
+					reconnectArgs = append(reconnectArgs, slog.Int("beacon_id", beaconID))
+				}
+				if hostID > 0 {
+					reconnectArgs = append(reconnectArgs, slog.Int("host_id", hostID))
+				}
+				if pivotEnt.Destination != "" {
+					reconnectArgs = append(reconnectArgs, slog.String("target", pivotEnt.Destination))
+				}
+				log.DebugContext(ctx, "serving persisted history for closed SSH pivot", "target", pivotEnt.Destination)
+				logging.Audit(ctx, "portal", "portal.ssh_pivot_reconnected", "operator reconnected to SSH pivot", reconnectArgs...)
+
 				if pivotEnt.Data != "" {
 					_ = wsConn.WriteJSON(shell.WebsocketTaskOutputMessage{
 						Kind:   shell.WebsocketMessageKindOutput,
@@ -270,6 +408,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					Status: "closed",
 				})
 			} else {
+				log.WarnContext(ctx, "SSH pivot session not found for reconnect", "pivot_id", pivotID, "error", err)
 				sendWsError("pivot session not found or expired")
 			}
 			_ = wsConn.WriteControl(
@@ -282,6 +421,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		pivotSession = sess
+		ctx = bindPivotStreamAttrs(ctx, sess.PivotID, sess.PortalID, sess.BeaconID, sess.HostID)
+		log.DebugContext(ctx, "operator reconnected to active SSH pivot", "target", sess.Target, "ssh_user", sess.SSHUser)
+		logging.Audit(ctx, "portal", "portal.ssh_pivot_reconnected", "operator reconnected to SSH pivot", sess.auditArgs()...)
 	} else {
 		// Create new session
 		if portalIDStr == "" || target == "" {
@@ -295,12 +437,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Parse target: defaults to root@<target>:22
+		// Parse target: defaults to root@<target>:22 (NEVER log raw target, password, or privateKey!)
 		user := "root"
 		hasExplicitUser := false
 		password := ""
 		var privateKey []byte
 		hostPortStr := target
+		var credID int
 
 		if atIdx := strings.LastIndex(target, "@"); atIdx != -1 {
 			userPassStr := target[:atIdx]
@@ -317,7 +460,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if credentialIDStr != "" {
-			if credID, err := strconv.Atoi(credentialIDStr); err == nil && credID > 0 {
+			if parsedCredID, err := strconv.Atoi(credentialIDStr); err == nil && parsedCredID > 0 {
+				credID = parsedCredID
 				cred, err := shell.RetryOnLock(ctx, func() (*ent.HostCredential, error) {
 					return h.graph.HostCredential.Get(ctx, credID)
 				})
@@ -353,14 +497,37 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			hostPortStr = net.JoinHostPort(host, portStr)
 		}
 
+		var beaconID, hostID int
+		emitSetupFailure := func(reason string) {
+			failArgs := []any{
+				slog.Int("portal_id", portalID),
+				slog.String("target", hostPortStr),
+				slog.String("ssh_user", user),
+				slog.Int("credential_id", credID),
+				slog.String("error", reason),
+			}
+			if beaconID > 0 {
+				failArgs = append(failArgs, slog.Int("beacon_id", beaconID))
+			}
+			if hostID > 0 {
+				failArgs = append(failArgs, slog.Int("host_id", hostID))
+			}
+			failArgs = append(logging.TargetIntAttrs("portal", portalID, hostPortStr), failArgs...)
+			log.WarnContext(ctx, "SSH pivot setup failed", "portal_id", portalID, "target", hostPortStr, "ssh_user", user, "error", reason)
+			logging.AuditFailure(ctx, "portal", "portal.ssh_pivot_failed", "SSH pivot setup failed", failArgs...)
+		}
+
 		// Verify Portal (and upgrade to the beacon's newest open portal if a newer one exists)
 		p, err := shell.RetryOnLock(ctx, func() (*ent.Portal, error) {
 			return h.graph.Portal.Query().
 				Where(portal.ID(portalID)).
-				WithBeacon().
+				WithBeacon(func(bq *ent.BeaconQuery) {
+					bq.WithHost()
+				}).
 				Only(ctx)
 		})
 		if err != nil {
+			emitSetupFailure("portal not found")
 			sendWsError("portal not found")
 			return
 		}
@@ -371,6 +538,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						portal.HasBeaconWith(beacon.ID(p.Edges.Beacon.ID)),
 						portal.ClosedAtIsNil(),
 					).
+					WithBeacon(func(bq *ent.BeaconQuery) {
+						bq.WithHost()
+					}).
 					Order(ent.Desc(portal.FieldID)).
 					First(ctx)
 			})
@@ -379,7 +549,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				portalID = latestPortal.ID
 			}
 		}
+		if p.Edges.Beacon != nil {
+			beaconID = p.Edges.Beacon.ID
+			if p.Edges.Beacon.Edges.Host != nil {
+				hostID = p.Edges.Beacon.Edges.Host.ID
+			}
+		}
 		if !p.ClosedAt.IsZero() {
+			emitSetupFailure("portal is closed")
 			sendWsError("portal is closed")
 			return
 		}
@@ -397,6 +574,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Open Portal Mux
 		cleanupPortal, err := h.mux.OpenPortal(ctx, portalID)
 		if err != nil {
+			emitSetupFailure(fmt.Sprintf("failed to open portal: %v", err))
 			sendWsError(fmt.Sprintf("Failed to open portal: %v", err))
 			return
 		}
@@ -431,18 +609,27 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return createReq.Save(ctx)
 		})
 		if err != nil {
+			emitSetupFailure(fmt.Sprintf("failed to create shell pivot: %v", err))
 			sendWsError(fmt.Sprintf("Failed to create shell pivot: %v", err))
 			cleanupPortal()
 			return
 		}
 
-		sessionCtx, cancelSession := context.WithCancel(context.Background())
+		ctx = bindPivotStreamAttrs(ctx, pivotEnt.ID, portalID, beaconID, hostID)
+		detachedSessionBase := logging.DetachContext(ctx)
+		sessionCtx, cancelSession := context.WithCancel(detachedSessionBase)
 		recvCh, recvCleanup := h.mux.Subscribe(topicOut)
 
 		pivotSession = &PivotSession{
-			PivotID:  pivotEnt.ID,
-			PortalID: portalID,
-			StreamID: streamID,
+			PivotID:      pivotEnt.ID,
+			PortalID:     portalID,
+			BeaconID:     beaconID,
+			HostID:       hostID,
+			Target:       hostPortStr,
+			SSHUser:      user,
+			CredentialID: credID,
+			StreamID:     streamID,
+			SessionCtx:   detachedSessionBase,
 			CancelContext: func() {
 				cancelSession()
 				recvCleanup()
@@ -456,9 +643,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cacheMu.Unlock()
 
 		var closeOnce sync.Once
-		closePivot := func() {
+		closePivot := func(closeCtx context.Context) {
 			closeOnce.Do(func() {
-				pivotSession.Close(context.Background(), h.graph)
+				pivotSession.Close(closeCtx, h.graph)
 			})
 		}
 
@@ -470,7 +657,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				case m, ok := <-recvCh:
 					if !ok {
-						closePivot()
+						if pivotSession.MarkFailedIfNotConnected() {
+							failArgs := append(pivotSession.auditArgs(), slog.String("error", "portal output stream closed before SSH connected"))
+							log.WarnContext(detachedSessionBase, "SSH pivot failed before connection established", "target", hostPortStr, "ssh_user", user)
+							logging.AuditFailure(detachedSessionBase, "portal", "portal.ssh_pivot_failed", "SSH pivot connection failed", failArgs...)
+						}
+						closePivot(detachedSessionBase)
 						return
 					}
 					if m.StreamId != streamID {
@@ -480,6 +672,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						switch sshPayload.Kind {
 						case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_DATA:
 							if pivotSession.MarkConnected() {
+								log.DebugContext(sessionCtx, "SSH pivot connected", "target", hostPortStr, "ssh_user", user, "credential_id", credID)
+								logging.Audit(sessionCtx, "portal", "portal.ssh_pivot_opened", "operator opened SSH pivot", pivotSession.auditArgs()...)
 								recordSuccessfulPivotNetworkHost(sessionCtx, h.graph, portalID, host, int(dstPort))
 								pivotSession.Broadcast(shell.WebsocketStatusMessage{
 									Kind:    shell.WebsocketMessageKindStatus,
@@ -488,25 +682,37 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								})
 							}
 							if len(sshPayload.Data) > 0 {
+								log.TraceContext(sessionCtx, "forwarding SSH output frame to websocket", "bytes", len(sshPayload.Data))
 								pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
 									Kind:   shell.WebsocketMessageKindOutput,
 									Output: string(sshPayload.Data),
 								})
 							}
 						case portalpb.SSHPayloadKind_SSH_PAYLOAD_KIND_CLOSE:
+							reason := string(sshPayload.Data)
+							if pivotSession.MarkFailedIfNotConnected() {
+								failArgs := append(pivotSession.auditArgs(), slog.String("error", reason))
+								log.WarnContext(detachedSessionBase, "SSH pivot handshake or dial failed", "target", hostPortStr, "ssh_user", user, "reason", reason)
+								logging.AuditFailure(detachedSessionBase, "portal", "portal.ssh_pivot_failed", "SSH pivot connection failed", failArgs...)
+							}
 							if len(sshPayload.Data) > 0 {
 								pivotSession.Broadcast(shell.WebsocketErrorMessage{
 									Kind:  shell.WebsocketMessageKindError,
-									Error: string(sshPayload.Data),
+									Error: reason,
 								})
 							}
-							closePivot()
+							closePivot(detachedSessionBase)
 							return
 						}
 						continue
 					}
 					if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
-						closePivot()
+						if pivotSession.MarkFailedIfNotConnected() {
+							failArgs := append(pivotSession.auditArgs(), slog.String("error", "portal closed before SSH session connected"))
+							log.WarnContext(detachedSessionBase, "SSH pivot failed due to portal close", "target", hostPortStr, "ssh_user", user)
+							logging.AuditFailure(detachedSessionBase, "portal", "portal.ssh_pivot_failed", "SSH pivot connection failed", failArgs...)
+						}
+						closePivot(detachedSessionBase)
 						return
 					}
 				}
@@ -522,7 +728,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				case <-sessionCtx.Done():
 					return
 				case <-ticker.C:
-					pivotSession.FlushHistory(context.Background(), h.graph)
+					pivotSession.FlushHistory(detachedSessionBase, h.graph)
 				}
 			}
 		}()
@@ -534,6 +740,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Publish SSH_PAYLOAD_KIND_CONNECT mote to instruct the gRPC-receiving Tavern instance
 		// to initiate the SSH protocol over the portal stream.
+		log.DebugContext(ctx, "publishing SSH connect mote to portal",
+			"target", hostPortStr,
+			"ssh_user", user,
+			"credential_id", credID,
+			"stream_id", streamID,
+		)
 		connectMote := &portalpb.Mote{
 			StreamId: streamID,
 			SeqId:    0,
@@ -551,12 +763,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 		if err := h.mux.Publish(sessionCtx, topicIn, connectMote); err != nil {
+			pivotSession.MarkFailed()
+			failArgs := append(pivotSession.auditArgs(), slog.String("error", err.Error()))
+			log.ErrorContext(ctx, "failed to publish SSH connect mote", "target", hostPortStr, "ssh_user", user, "error", err)
+			logging.AuditFailure(ctx, "portal", "portal.ssh_pivot_failed", "SSH pivot connection failed", failArgs...)
 			sendWsError(fmt.Sprintf("Failed to send SSH connect mote: %v", err))
-			closePivot()
+			closePivot(ctx)
 			return
 		}
 
-		h.serveSocketIO(ctx, wsConn, pivotSession, outCh, closePivot)
+		h.serveSocketIO(ctx, wsConn, pivotSession, outCh, func() { closePivot(ctx) })
 		return
 	}
 
@@ -566,7 +782,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer pivotSession.RemoveSocket(wsConn)
 
 	closePivot := func() {
-		pivotSession.Close(context.Background(), h.graph)
+		pivotSession.Close(ctx, h.graph)
 	}
 
 	h.serveSocketIO(ctx, wsConn, pivotSession, outCh, closePivot)
@@ -585,6 +801,7 @@ func (h *Handler) serveSocketIO(
 	// Single writer goroutine for websocket
 	go func() {
 		for msg := range outCh {
+			log.TraceContext(ctx, "writing SSH websocket frame")
 			if err := wsConn.WriteJSON(msg); err != nil {
 				errCh <- err
 				return
@@ -607,6 +824,7 @@ func (h *Handler) serveSocketIO(
 			}
 			switch ctrlMsg.Kind {
 			case shell.WebsocketMessageKindInput:
+				log.TraceContext(ctx, "forwarding websocket SSH input frame", "bytes", len(ctrlMsg.Input))
 				mote := &portalpb.Mote{
 					StreamId: pivotSession.StreamID,
 					SeqId:    pivotSession.nextSeqID(),
@@ -623,6 +841,7 @@ func (h *Handler) serveSocketIO(
 				}
 			case "resize":
 				if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+					log.DebugContext(ctx, "forwarding websocket SSH window resize", "rows", ctrlMsg.Rows, "cols", ctrlMsg.Cols)
 					mote := &portalpb.Mote{
 						StreamId: pivotSession.StreamID,
 						SeqId:    pivotSession.nextSeqID(),
@@ -637,6 +856,7 @@ func (h *Handler) serveSocketIO(
 					_ = h.mux.Publish(ctx, topicIn, mote)
 				}
 			case "close":
+				log.DebugContext(ctx, "received websocket SSH close control message")
 				mote := &portalpb.Mote{
 					StreamId: pivotSession.StreamID,
 					SeqId:    pivotSession.nextSeqID(),
@@ -841,11 +1061,11 @@ func recordSuccessfulPivotNetworkHost(ctx context.Context, graph *ent.Client, po
 		fmt.Sprintf("Discovered via SSH pivot to %s", targetHost),
 	)
 	if err != nil {
-		slog.Error("failed to find or create target network for pivot", "target", targetHost, "error", err)
+		log.ErrorContext(ctx, "failed to find or create target network for pivot", "target", targetHost, "error", err)
 	}
 
 	if _, err := upsertNetworkHost(ctx, graph, name, hostname, ipAddr, subnet, targetPort, matchedHost, targetNet); err != nil {
-		slog.Error("failed to upsert target network host for pivot", "target", targetHost, "error", err)
+		log.ErrorContext(ctx, "failed to upsert target network host for pivot", "target", targetHost, "error", err)
 	}
 
 	srcHost, err := graph.Portal.Query().
@@ -873,7 +1093,7 @@ func recordSuccessfulPivotNetworkHost(ctx context.Context, graph *ent.Client, po
 		fmt.Sprintf("Network for host %s", srcHost.Name),
 	)
 	if err != nil {
-		slog.Error("failed to find or create source network for pivot", "host", srcHost.Name, "error", err)
+		log.ErrorContext(ctx, "failed to find or create source network for pivot", "host", srcHost.Name, "error", err)
 	}
 
 	srcName := srcHost.Name
@@ -885,6 +1105,6 @@ func recordSuccessfulPivotNetworkHost(ctx context.Context, graph *ent.Client, po
 	}
 
 	if _, err := upsertNetworkHost(ctx, graph, srcName, srcName, srcIP, srcSubnet, 0, srcHost, srcNet, targetNet); err != nil {
-		slog.Error("failed to upsert source network host for pivot", "host", srcHost.Name, "error", err)
+		log.ErrorContext(ctx, "failed to upsert source network host for pivot", "host", srcHost.Name, "error", err)
 	}
 }

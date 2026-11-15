@@ -10,10 +10,11 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/logging"
 )
 
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
-	ctx := stream.Context()
+	ctx, _ := enrichC2Context(stream.Context())
 
 	var jwt string
 	if tc := req.GetTaskContext(); tc != nil {
@@ -24,7 +25,7 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	_, err := srv.ValidateJWT(jwt)
+	ctx, beaconID, err := srv.ValidateJWTContext(ctx, jwt)
 	if err != nil {
 		return err
 	}
@@ -52,6 +53,10 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 	for {
 		// Check Empty Buffer
 		if buf.Len() < 1 {
+			auditAttrs := make([]any, 0, 8)
+			auditAttrs = append(auditAttrs, logging.AssetAttrs(a.ID, a.Name, a.Hash, a.Size)...)
+			auditAttrs = append(auditAttrs, "beacon_id", beaconID)
+			logging.Audit(ctx, "c2", "c2.asset_fetched", "beacon fetched asset", auditAttrs...)
 			return nil
 		}
 
@@ -72,7 +77,8 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 			Chunk: chunk,
 		})
 		if sendErr != nil {
-			return status.Errorf(codes.Internal, "failed to send file content: %v", err)
+			return status.Errorf(codes.Internal, "failed to send file content: %v", sendErr)
 		}
+		reportLog.TraceContext(ctx, "sent asset chunk", "asset_id", a.ID, "chunk_size", len(chunk))
 	}
 }

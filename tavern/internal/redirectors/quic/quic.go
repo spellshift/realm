@@ -7,14 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"strings"
 
 	"github.com/quic-go/quic-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/redirectors"
 )
+
+var log = logging.For("redirectors.quic")
 
 func init() {
 	redirectors.Register("quic", &Redirector{})
@@ -44,7 +46,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 	defer listener.Close()
 
-	slog.Info("quic redirector: started", "listen_on", listenOn)
+	log.InfoContext(ctx, "started QUIC redirector", "listen_on", listenOn)
 
 	go func() {
 		<-ctx.Done()
@@ -58,7 +60,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 			case <-ctx.Done():
 				return nil
 			default:
-				slog.Error("quic redirector: failed to accept connection", "error", err)
+				log.ErrorContext(ctx, "failed to accept connection", "error", err)
 				continue
 			}
 		}
@@ -69,9 +71,9 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 
 func (r *Redirector) handleConnection(ctx context.Context, conn *quic.Conn, upstream *grpc.ClientConn) {
 	clientIP := conn.RemoteAddr().String()
-	slog.Info("quic redirector: client connected", "source", clientIP)
+	log.DebugContext(ctx, "client connected", "source", clientIP)
 	defer func() {
-		slog.Info("quic redirector: client disconnected", "source", clientIP)
+		log.DebugContext(ctx, "client disconnected", "source", clientIP)
 	}()
 
 	for {
@@ -84,13 +86,15 @@ func (r *Redirector) handleConnection(ctx context.Context, conn *quic.Conn, upst
 		go func(stream *quic.Stream) {
 			defer stream.Close()
 			if err := r.handleStream(ctx, stream, clientIP, upstream); err != nil {
-				slog.Error("quic redirector: stream error", "source", clientIP, "error", err)
+				log.ErrorContext(ctx, "stream error", "source", clientIP, "error", err)
 			}
 		}(stream)
 	}
 }
 
 func (r *Redirector) handleStream(ctx context.Context, stream *quic.Stream, clientIP string, upstream *grpc.ClientConn) error {
+	streamCtx, _, _ := logging.EnsureTrace(ctx)
+
 	// 1. Read 2-byte method path length
 	var pathLen uint16
 	if err := binary.Read(stream, binary.BigEndian, &pathLen); err != nil {
@@ -104,16 +108,17 @@ func (r *Redirector) handleStream(ctx context.Context, stream *quic.Stream, clie
 	}
 	methodPath := string(pathBytes)
 
-	slog.Info("quic redirector: request", "source", clientIP, "destination", methodPath)
+	log.DebugContext(streamCtx, "forwarding QUIC request", "source", clientIP, "destination", methodPath)
 
 	// Determine framing rules based on the method
 	clientFramed, serverFramed := getFraming(methodPath)
 
 	// 3. Establish stream to upstream gRPC
-	streamCtx := metadata.NewOutgoingContext(ctx, metadata.MD{})
+	streamCtx = metadata.NewOutgoingContext(streamCtx, metadata.MD{})
 	streamCtx = redirectors.SetRedirectedForHeader(streamCtx, clientIP)
+	outCtx, _, _ := logging.InjectOutgoingGRPCTrace(streamCtx)
 
-	cs, err := upstream.NewStream(streamCtx, &grpc.StreamDesc{
+	cs, err := upstream.NewStream(outCtx, &grpc.StreamDesc{
 		StreamName:    methodPath,
 		ServerStreams: true,
 		ClientStreams: true,

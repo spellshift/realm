@@ -7,9 +7,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
+
+var log = logging.For("portals.mux")
 
 var (
 	msgsPublished = prometheus.NewCounterVec(

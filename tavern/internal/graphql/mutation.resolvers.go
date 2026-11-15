@@ -14,7 +14,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	mathrand "math/rand"
 	"strings"
 	"time"
@@ -34,106 +33,134 @@ import (
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/portals/portalpb"
 )
 
 // DropAllData is the resolver for the dropAllData field.
 func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
+	actx := auditCtx(ctx)
+	failDrop := func(err error) (bool, error) {
+		logging.AuditFailure(actx, "admin", "admin.drop_all_data", "failed to drop engagement data", "error", err.Error())
+		return false, err
+	}
+
 	// Initialize Transaction
 	tx, err := r.client.Tx(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to initialize transaction: %w", err)
+		return failDrop(fmt.Errorf("failed to initialize transaction: %w", err))
 	}
 	client := tx.Client()
 
 	// Delete relevant ents
 	// We must delete children before parents to avoid foreign key constraint violations
 	if _, err := client.Notification.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete notifications: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete notifications: %w", err)))
 	}
 	if _, err := client.Event.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete events: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete events: %w", err)))
 	}
 	if _, err := client.BeaconHistory.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete beacon histories: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete beacon histories: %w", err)))
 	}
 	if _, err := client.ShellPivot.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete shell pivots: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete shell pivots: %w", err)))
 	}
 	if _, err := client.ShellTask.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete shell tasks: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete shell tasks: %w", err)))
 	}
 	if _, err := client.Portal.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete portals: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete portals: %w", err)))
 	}
 	if _, err := client.OperatorNote.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete operator notes: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete operator notes: %w", err)))
 	}
 	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete shells: %w", err)))
 	}
 	if _, err := client.HostCredential.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete hostcredentials: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete hostcredentials: %w", err)))
 	}
 	if _, err := client.HostFile.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete hostfiles: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete hostfiles: %w", err)))
 	}
 	if _, err := client.HostProcess.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete hostprocesses: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete hostprocesses: %w", err)))
 	}
 	if _, err := client.Task.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete tasks: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete tasks: %w", err)))
 	}
 	if _, err := client.Beacon.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete beacons: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete beacons: %w", err)))
 	}
 	if _, err := client.Quest.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete quests: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete quests: %w", err)))
 	}
 	if _, err := client.Link.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete links: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete links: %w", err)))
 	}
 	if _, err := client.NetworkHost.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete network hosts: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete network hosts: %w", err)))
 	}
 	if _, err := client.Network.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete networks: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete networks: %w", err)))
 	}
 	if _, err := client.Host.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete hosts: %w", err)))
 	}
 	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete tags: %w", err)))
 	}
 	if _, err := client.BuildTask.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete build tasks: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete build tasks: %w", err)))
 	}
 	if _, err := client.Builder.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete builders: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete builders: %w", err)))
 	}
 	if _, err := client.Adventure.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete adventures: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete adventures: %w", err)))
 	}
 	if _, err := client.ScheduledTask.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete scheduled tasks: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to delete scheduled tasks: %w", err)))
 	}
 
 	// Commit
 	if err := tx.Commit(); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+		return failDrop(rollback(tx, fmt.Errorf("failed to commit transaction: %w", err)))
 	}
 
+	logging.Audit(actx, "admin", "admin.drop_all_data", "dropped all engagement data")
 	return true, nil
 }
 
 // RunHostAutogroup is the resolver for the runHostAutogroup field.
 func (r *mutationResolver) RunHostAutogroup(ctx context.Context, k *int) ([]*ent.Tag, error) {
-	return runHostAutogroup(ctx, r.client, k)
+	tags, err := runHostAutogroup(ctx, r.client, k)
+	if err != nil {
+		return nil, err
+	}
+	attrs := []any{
+		"group_count", len(tags),
+		"tag_ids", collectTagIDs(tags),
+	}
+	if k != nil {
+		attrs = append(attrs, "requested_k", *k)
+	}
+	logging.Audit(auditCtx(ctx), "host", "host.autogroup_ran", "ran host autogroup", attrs...)
+	return tags, nil
 }
 
 // GroupHostsBySubnet is the resolver for the groupHostsBySubnet field.
 func (r *mutationResolver) GroupHostsBySubnet(ctx context.Context) ([]*ent.Tag, error) {
-	return groupHostsBySubnet(ctx, r.client)
+	tags, err := groupHostsBySubnet(ctx, r.client)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "host", "host.subnet_grouped", "grouped hosts by subnet",
+		"group_count", len(tags),
+		"tag_ids", collectTagIDs(tags),
+	)
+	return tags, nil
 }
 
 // CreateQuest is the resolver for the createQuest field.
@@ -272,12 +299,34 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 		return nil, fmt.Errorf("failed to load created quest: %w", err)
 	}
 
+	hostIDs := resolveHostIDsForBeacons(ctx, r.client, beaconIDs)
+	attrs := make([]any, 0, 14)
+	attrs = append(attrs, logging.QuestAttrs(quest.ID, quest.Name, quest.Parameters)...)
+	attrs = append(attrs, logging.TomeAttrs(questTome.ID, questTome.Name, string(questTome.Tactic))...)
+	attrs = append(attrs,
+		"beacon_ids", beaconIDs,
+		"task_count", len(beaconIDs),
+	)
+	if len(hostIDs) > 0 {
+		attrs = append(attrs, "host_ids", hostIDs)
+	}
+	logging.Audit(auditCtx(ctx), "quest", "quest.created", "quest created", attrs...)
+
 	return quest, nil
 }
 
 // UpdateBeacon is the resolver for the updateBeacon field.
 func (r *mutationResolver) UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error) {
-	return r.client.Beacon.UpdateOneID(beaconID).SetInput(input).Save(ctx)
+	b, err := r.client.Beacon.UpdateOneID(beaconID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := logging.BeaconAttrs(b.ID, b.Name, b.Identifier)
+	if hid, hErr := b.QueryHost().OnlyID(ctx); hErr == nil && hid > 0 {
+		attrs = append(attrs, "host_id", hid)
+	}
+	logging.Audit(auditCtx(ctx), "host", "beacon.updated", "beacon updated", attrs...)
+	return b, nil
 }
 
 // CreateShell is the resolver for the createShell field.
@@ -286,12 +335,31 @@ func (r *mutationResolver) CreateShell(ctx context.Context, input ent.CreateShel
 	if owner := auth.UserFromContext(ctx); owner != nil {
 		mutation.SetOwnerID(owner.ID)
 	}
-	return mutation.Save(ctx)
+	sh, err := mutation.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	beaconID := input.BeaconID
+	var hostID int
+	if b, bErr := sh.QueryBeacon().WithHost().Only(ctx); bErr == nil && b != nil {
+		beaconID = b.ID
+		if b.Edges.Host != nil {
+			hostID = b.Edges.Host.ID
+		}
+	}
+	logging.Audit(auditCtx(ctx), "shell", "shell.created", "shell created", logging.ShellAttrs(sh.ID, beaconID, hostID)...)
+	return sh, nil
 }
 
 // UpdateHost is the resolver for the updateHost field.
 func (r *mutationResolver) UpdateHost(ctx context.Context, hostID int, input ent.UpdateHostInput) (*ent.Host, error) {
-	return r.client.Host.UpdateOneID(hostID).SetInput(input).Save(ctx)
+	h, err := r.client.Host.UpdateOneID(hostID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "host", "host.updated", "host updated", logging.HostAttrs(h.ID, h.Name, h.Identifier)...)
+	return h, nil
 }
 
 // FavoriteHost is the resolver for the favoriteHost field.
@@ -332,12 +400,32 @@ func (r *mutationResolver) UnsubscribeFromHost(ctx context.Context, hostID int) 
 
 // CreateTag is the resolver for the createTag field.
 func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error) {
-	return r.client.Tag.Create().SetInput(input).Save(ctx)
+	t, err := r.client.Tag.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("tag", t.ID, t.Name),
+		"tag_id", t.ID,
+		"tag_name", t.Name,
+		"kind", string(t.Kind),
+	)
+	logging.Audit(auditCtx(ctx), "host", "tag.created", "tag created", attrs...)
+	return t, nil
 }
 
 // UpdateTag is the resolver for the updateTag field.
 func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error) {
-	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
+	t, err := r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("tag", t.ID, t.Name),
+		"tag_id", t.ID,
+		"tag_name", t.Name,
+		"kind", string(t.Kind),
+	)
+	logging.Audit(auditCtx(ctx), "host", "tag.updated", "tag updated", attrs...)
+	return t, nil
 }
 
 // DeleteAsset is the resolver for the deleteAsset field.
@@ -359,6 +447,7 @@ func (r *mutationResolver) DeleteAsset(ctx context.Context, assetID int) (int, e
 	if err := r.client.Asset.DeleteOneID(assetID).Exec(ctx); err != nil {
 		return 0, err
 	}
+	logging.Audit(auditCtx(ctx), "cdn", "cdn.asset_deleted", "asset deleted", logging.AssetAttrs(a.ID, a.Name, a.Hash, a.Size)...)
 	return assetID, nil
 }
 
@@ -369,22 +458,51 @@ func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeI
 		uploaderID = &uploader.ID
 	}
 
-	return r.client.Tome.Create().
+	t, err := r.client.Tome.Create().
 		SetNillableUploaderID(uploaderID).
 		SetInput(input).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := logging.TomeAttrs(t.ID, t.Name, string(t.Tactic))
+	if t.Tactic != "" {
+		attrs = append(attrs, "tactic", string(t.Tactic))
+	}
+	logging.Audit(auditCtx(ctx), "host", "tome.created", "tome created", attrs...)
+	return t, nil
 }
 
 // UpdateTome is the resolver for the updateTome field.
 func (r *mutationResolver) UpdateTome(ctx context.Context, tomeID int, input ent.UpdateTomeInput) (*ent.Tome, error) {
-	return r.client.Tome.UpdateOneID(tomeID).SetInput(input).Save(ctx)
+	t, err := r.client.Tome.UpdateOneID(tomeID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := logging.TomeAttrs(t.ID, t.Name, string(t.Tactic))
+	if t.Tactic != "" {
+		attrs = append(attrs, "tactic", string(t.Tactic))
+	}
+	logging.Audit(auditCtx(ctx), "host", "tome.updated", "tome updated", attrs...)
+	return t, nil
 }
 
 // DeleteTome is the resolver for the deleteTome field.
 func (r *mutationResolver) DeleteTome(ctx context.Context, tomeID int) (int, error) {
+	existing, _ := r.client.Tome.Get(ctx, tomeID)
 	if err := r.client.Tome.DeleteOneID(tomeID).Exec(ctx); err != nil {
 		return 0, err
 	}
+	var tomeName, tactic string
+	if existing != nil {
+		tomeName = existing.Name
+		tactic = string(existing.Tactic)
+	}
+	attrs := logging.TomeAttrs(tomeID, tomeName, tactic)
+	if tactic != "" {
+		attrs = append(attrs, "tactic", tactic)
+	}
+	logging.Audit(auditCtx(ctx), "host", "tome.deleted", "tome deleted", attrs...)
 	return tomeID, nil
 }
 
@@ -395,10 +513,18 @@ func (r *mutationResolver) CreateRepository(ctx context.Context, input ent.Creat
 		ownerID = &owner.ID
 	}
 
-	return r.client.Repository.Create().
+	repo, err := r.client.Repository.Create().
 		SetInput(input).
 		SetNillableOwnerID(ownerID).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "host", "repository.created", "repository created",
+		"repository_id", repo.ID,
+		"repository_url", repo.URL,
+	)
+	return repo, nil
 }
 
 // ImportRepository is the resolver for the importRepository field.
@@ -432,7 +558,15 @@ func (r *mutationResolver) ImportRepository(ctx context.Context, repoID int, inp
 		return nil, err
 	}
 
-	return repo.Update().SetLastImportedAt(time.Now()).Save(ctx)
+	updated, err := repo.Update().SetLastImportedAt(time.Now()).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "host", "repository.imported", "repository imported",
+		"repository_id", updated.ID,
+		"repository_url", updated.URL,
+	)
+	return updated, nil
 }
 
 // ResetUserAPIKey is the resolver for the resetUserAPIKey field.
@@ -448,17 +582,48 @@ func (r *mutationResolver) ResetUserAPIKey(ctx context.Context) (*ent.User, erro
 	}
 	newToken := base64.StdEncoding.EncodeToString(buf)
 
-	return r.client.User.UpdateOneID(authUser.ID).SetAccessToken(newToken).Save(ctx)
+	u, err := r.client.User.UpdateOneID(authUser.ID).SetAccessToken(newToken).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "auth", "user.api_key_reset", "user API key reset",
+		"target_user_id", u.ID,
+		"target_user_name", u.Name,
+	)
+	return u, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error) {
-	return r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)
+	u, err := r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "admin", "user.updated", "user updated",
+		"target_user_id", u.ID,
+		"target_user_name", u.Name,
+		"is_activated", u.IsActivated,
+		"is_admin", u.IsAdmin,
+	)
+	return u, nil
 }
 
 // CreateCredential is the resolver for the createCredential field.
 func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error) {
-	return r.client.HostCredential.Create().SetInput(input).Save(ctx)
+	cred, err := r.client.HostCredential.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("credential", cred.ID, cred.Principal),
+		"credential_id", cred.ID,
+		"principal", cred.Principal,
+		"kind", cred.Kind.String(),
+	)
+	if input.HostID != nil {
+		attrs = append(attrs, "host_id", *input.HostID)
+	}
+	logging.Audit(auditCtx(ctx), "host", "credential.created", "credential created", attrs...)
+	return cred, nil
 }
 
 // ClosePortal is the resolver for the closePortal field.
@@ -476,17 +641,16 @@ func (r *mutationResolver) ClosePortal(ctx context.Context, portalID int) (*ent.
 		return nil, fmt.Errorf("portal %d is already closed", portalID)
 	}
 
-	// Log portal close with beacon and host info
-	logAttrs := []any{"portal_id", portalID}
-	if b, err := p.QueryBeacon().WithHost().Only(ctx); err == nil {
-		logAttrs = append(logAttrs, "beacon_id", b.ID)
+	actx := auditCtx(ctx)
+	var beaconID, hostID int
+	if b, bErr := p.QueryBeacon().WithHost().Only(ctx); bErr == nil {
+		beaconID = b.ID
 		if b.Edges.Host != nil {
-			logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
+			hostID = b.Edges.Host.ID
 		}
 	} else {
-		slog.WarnContext(ctx, "failed to query beacon for portal close log", "portal_id", portalID, "error", err)
+		mutationLog.WarnContext(actx, "failed to query beacon for portal close", "portal_id", portalID, "error", bErr)
 	}
-	slog.InfoContext(ctx, "portal close requested", logAttrs...)
 
 	// Publish CLOSE message with an empty stream ID to the portal's input topic
 	// so the agent receives it and tears down the portal connections.
@@ -499,9 +663,13 @@ func (r *mutationResolver) ClosePortal(ctx context.Context, portalID int) (*ent.
 		},
 	})
 	if err != nil {
+		logging.AuditFailure(actx, "portal", "portal.close_requested", "failed to publish close message to portal",
+			append(logging.PortalAttrs(p.ID, beaconID, hostID), "error", err.Error())...,
+		)
 		return nil, fmt.Errorf("failed to publish close message to portal: %w", err)
 	}
 
+	logging.Audit(actx, "portal", "portal.close_requested", "portal close requested", logging.PortalAttrs(p.ID, beaconID, hostID)...)
 	return p, nil
 }
 
@@ -511,22 +679,37 @@ func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkI
 	if creator := auth.UserFromContext(ctx); creator != nil {
 		creatorID = &creator.ID
 	}
-	return r.client.Link.Create().
+	l, err := r.client.Link.Create().
 		SetNillableCreatorID(creatorID).
 		SetInput(input).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "cdn", "cdn.link_created", "CDN link created", linkAuditAttrs(ctx, l, input.AssetID)...)
+	return l, nil
 }
 
 // UpdateLink is the resolver for the updateLink field.
 func (r *mutationResolver) UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error) {
-	return r.client.Link.UpdateOneID(linkID).SetInput(input).Save(ctx)
+	l, err := r.client.Link.UpdateOneID(linkID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "cdn", "cdn.link_updated", "CDN link updated", linkAuditAttrs(ctx, l, 0)...)
+	return l, nil
 }
 
 // DisableLink is the resolver for the disableLink field.
 func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Link, error) {
-	return r.client.Link.UpdateOneID(linkID).
+	l, err := r.client.Link.UpdateOneID(linkID).
 		SetExpiresAt(time.Now().Add(-1 * time.Second)).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "cdn", "cdn.link_disabled", "CDN link disabled", linkAuditAttrs(ctx, l, 0)...)
+	return l, nil
 }
 
 // CreateBuilderEnrollmentToken is the resolver for the createBuilderEnrollmentToken field.
@@ -537,15 +720,29 @@ func (r *mutationResolver) CreateBuilderEnrollmentToken(ctx context.Context) (st
 	}
 	token := base64.RawURLEncoding.EncodeToString(raw)
 	hash := sha256.Sum256([]byte(token))
-	_, err := r.client.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
-	return token, err
+	tok, err := r.client.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	attrs := append(logging.TargetIntAttrs("builder_enrollment_token", tok.ID, ""), "token_id", tok.ID)
+	logging.Audit(auditCtx(ctx), "admin", "builder.enrollment_token_created", "builder enrollment token created", attrs...)
+	return token, nil
 }
 
 // DeleteBuilder is the resolver for the deleteBuilder field.
 func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (int, error) {
+	existing, _ := r.client.Builder.Get(ctx, builderID)
 	if err := r.client.Builder.DeleteOneID(builderID).Exec(ctx); err != nil {
 		return 0, err
 	}
+	var identifier string
+	if existing != nil {
+		identifier = existing.Identifier
+	}
+	logging.Audit(auditCtx(ctx), "admin", "builder.deleted", "builder deleted",
+		"builder_id", builderID,
+		"builder_identifier", identifier,
+	)
 	return builderID, nil
 }
 
@@ -600,7 +797,15 @@ func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.
 		creator.SetTomes(tomes)
 	}
 
-	return creator.Save(ctx)
+	profile, err := creator.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "builder", "build_profile.created", "build profile created",
+		"build_profile_id", profile.ID,
+		"profile_name", profile.Name,
+	)
+	return profile, nil
 }
 
 // UpdateBuildProfile is the resolver for the updateBuildProfile field.
@@ -670,7 +875,15 @@ func (r *mutationResolver) UpdateBuildProfile(ctx context.Context, profileID int
 	}
 	updater.SetTomes(tomes)
 
-	return updater.Save(ctx)
+	updated, err := updater.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "builder", "build_profile.updated", "build profile updated",
+		"build_profile_id", updated.ID,
+		"profile_name", updated.Name,
+	)
+	return updated, nil
 }
 
 // DeleteBuildProfile is the resolver for the deleteBuildProfile field.
@@ -689,6 +902,10 @@ func (r *mutationResolver) DeleteBuildProfile(ctx context.Context, profileID int
 	if err := r.client.BuildProfile.DeleteOneID(profileID).Exec(ctx); err != nil {
 		return 0, err
 	}
+	logging.Audit(auditCtx(ctx), "builder", "build_profile.deleted", "build profile deleted",
+		"build_profile_id", profileID,
+		"profile_name", profile.Name,
+	)
 	return profileID, nil
 }
 
@@ -877,19 +1094,44 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("commit build task: %w", err)
 	}
+	logging.Audit(auditCtx(ctx), "builder", "build_task.created", "build task created",
+		"build_task_id", bt.ID,
+		"profile_name", profile.Name,
+		"target_os", input.TargetOs.String(),
+		"target_format", targetFormat.String(),
+		"builder_id", selected.ID,
+	)
 	return bt.Unwrap(), nil
 }
 
 // CreateScheduledTask is the resolver for the createScheduledTask field.
 func (r *mutationResolver) CreateScheduledTask(ctx context.Context, input ent.CreateScheduledTaskInput) (*ent.ScheduledTask, error) {
-	return r.client.ScheduledTask.Create().SetInput(input).Save(ctx)
+	st, err := r.client.ScheduledTask.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "quest", "scheduled_task.created", "scheduled task created",
+		"scheduled_task_id", st.ID,
+		"scheduled_task_name", st.Name,
+		"cron_expr", st.RunOnSchedule,
+	)
+	return st, nil
 }
 
 // DisableScheduledTask is the resolver for the disableScheduledTask field.
 func (r *mutationResolver) DisableScheduledTask(ctx context.Context, scheduledTaskID int) (*ent.ScheduledTask, error) {
-	return r.client.ScheduledTask.UpdateOneID(scheduledTaskID).
+	st, err := r.client.ScheduledTask.UpdateOneID(scheduledTaskID).
 		SetDisabled(true).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logging.Audit(auditCtx(ctx), "quest", "scheduled_task.disabled", "scheduled task disabled",
+		"scheduled_task_id", st.ID,
+		"scheduled_task_name", st.Name,
+		"cron_expr", st.RunOnSchedule,
+	)
+	return st, nil
 }
 
 // MarkNotificationsAsRead is the resolver for the markNotificationsAsRead field.
@@ -946,45 +1188,108 @@ func (r *mutationResolver) MarkNotificationsAsArchived(ctx context.Context, noti
 
 // DeleteAllNotifications is the resolver for the deleteAllNotifications field.
 func (r *mutationResolver) DeleteAllNotifications(ctx context.Context) (bool, error) {
-	if _, err := r.client.Notification.Delete().Exec(ctx); err != nil {
+	deletedCount, err := r.client.Notification.Delete().Exec(ctx)
+	if err != nil {
 		return false, fmt.Errorf("failed to delete notifications: %w", err)
 	}
+	logging.Audit(auditCtx(ctx), "admin", "notifications.cleared", "cleared all notifications",
+		"deleted_count", deletedCount,
+	)
 	return true, nil
 }
 
 // CreateNetwork is the resolver for the createNetwork field.
 func (r *mutationResolver) CreateNetwork(ctx context.Context, input ent.CreateNetworkInput) (*ent.Network, error) {
-	return r.client.Network.Create().SetInput(input).Save(ctx)
+	n, err := r.client.Network.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("network", n.ID, n.Name),
+		"network_id", n.ID,
+		"network_name", n.Name,
+		"subnet", n.Subnet,
+	)
+	logging.Audit(auditCtx(ctx), "host", "network.created", "network created", attrs...)
+	return n, nil
 }
 
 // UpdateNetwork is the resolver for the updateNetwork field.
 func (r *mutationResolver) UpdateNetwork(ctx context.Context, networkID int, input ent.UpdateNetworkInput) (*ent.Network, error) {
-	return r.client.Network.UpdateOneID(networkID).SetInput(input).Save(ctx)
+	n, err := r.client.Network.UpdateOneID(networkID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("network", n.ID, n.Name),
+		"network_id", n.ID,
+		"network_name", n.Name,
+		"subnet", n.Subnet,
+	)
+	logging.Audit(auditCtx(ctx), "host", "network.updated", "network updated", attrs...)
+	return n, nil
 }
 
 // DeleteNetwork is the resolver for the deleteNetwork field.
 func (r *mutationResolver) DeleteNetwork(ctx context.Context, networkID int) (int, error) {
+	existing, _ := r.client.Network.Get(ctx, networkID)
 	if err := r.client.Network.DeleteOneID(networkID).Exec(ctx); err != nil {
 		return 0, err
 	}
+	var name string
+	if existing != nil {
+		name = existing.Name
+	}
+	attrs := append(logging.TargetIntAttrs("network", networkID, name),
+		"network_id", networkID,
+	)
+	if name != "" {
+		attrs = append(attrs, "network_name", name)
+	}
+	logging.Audit(auditCtx(ctx), "host", "network.deleted", "network deleted", attrs...)
 	return networkID, nil
 }
 
 // CreateNetworkHost is the resolver for the createNetworkHost field.
 func (r *mutationResolver) CreateNetworkHost(ctx context.Context, input ent.CreateNetworkHostInput) (*ent.NetworkHost, error) {
-	return r.client.NetworkHost.Create().SetInput(input).Save(ctx)
+	nh, err := r.client.NetworkHost.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("network_host", nh.ID, nh.Name),
+		"network_host_id", nh.ID,
+		"ip_address", nh.IPAddress,
+	)
+	logging.Audit(auditCtx(ctx), "host", "network_host.created", "network host created", attrs...)
+	return nh, nil
 }
 
 // UpdateNetworkHost is the resolver for the updateNetworkHost field.
 func (r *mutationResolver) UpdateNetworkHost(ctx context.Context, networkHostID int, input ent.UpdateNetworkHostInput) (*ent.NetworkHost, error) {
-	return r.client.NetworkHost.UpdateOneID(networkHostID).SetInput(input).Save(ctx)
+	nh, err := r.client.NetworkHost.UpdateOneID(networkHostID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("network_host", nh.ID, nh.Name),
+		"network_host_id", nh.ID,
+		"ip_address", nh.IPAddress,
+	)
+	logging.Audit(auditCtx(ctx), "host", "network_host.updated", "network host updated", attrs...)
+	return nh, nil
 }
 
 // DeleteNetworkHost is the resolver for the deleteNetworkHost field.
 func (r *mutationResolver) DeleteNetworkHost(ctx context.Context, networkHostID int) (int, error) {
+	existing, _ := r.client.NetworkHost.Get(ctx, networkHostID)
 	if err := r.client.NetworkHost.DeleteOneID(networkHostID).Exec(ctx); err != nil {
 		return 0, err
 	}
+	var name string
+	if existing != nil {
+		name = existing.Name
+	}
+	attrs := append(logging.TargetIntAttrs("network_host", networkHostID, name),
+		"network_host_id", networkHostID,
+	)
+	logging.Audit(auditCtx(ctx), "host", "network_host.deleted", "network host deleted", attrs...)
 	return networkHostID, nil
 }
 
@@ -1004,7 +1309,15 @@ func (r *mutationResolver) CreateOperatorNote(ctx context.Context, input ent.Cre
 	if author := auth.UserFromContext(ctx); author != nil {
 		creator.SetAuthorID(author.ID)
 	}
-	return creator.Save(ctx)
+	note, err := creator.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("operator_note", note.ID, ""),
+		"operator_note_id", note.ID,
+	)
+	logging.Audit(auditCtx(ctx), "host", "operator_note.created", "operator note created", attrs...)
+	return note, nil
 }
 
 // UpdateOperatorNote is the resolver for the updateOperatorNote field.
@@ -1035,6 +1348,10 @@ func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteI
 			return nil, err
 		}
 		if !owned {
+			attrs := append(logging.TargetIntAttrs("operator_note", operatorNoteID, ""),
+				"operator_note_id", operatorNoteID,
+			)
+			logging.AuditDenied(auditCtx(ctx), "host", "operator_note.updated", "unauthorized operator note update", attrs...)
 			return nil, errors.New("unauthorized")
 		}
 	}
@@ -1076,7 +1393,15 @@ func (r *mutationResolver) UpdateOperatorNote(ctx context.Context, operatorNoteI
 		}
 		input.AddShellIDs = filtered
 	}
-	return r.client.OperatorNote.UpdateOneID(operatorNoteID).SetInput(input).Save(ctx)
+	note, err := r.client.OperatorNote.UpdateOneID(operatorNoteID).SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	attrs := append(logging.TargetIntAttrs("operator_note", note.ID, ""),
+		"operator_note_id", note.ID,
+	)
+	logging.Audit(auditCtx(ctx), "host", "operator_note.updated", "operator note updated", attrs...)
+	return note, nil
 }
 
 // DeleteOperatorNote is the resolver for the deleteOperatorNote field.
@@ -1092,12 +1417,20 @@ func (r *mutationResolver) DeleteOperatorNote(ctx context.Context, operatorNoteI
 			return 0, err
 		}
 		if !owned {
+			attrs := append(logging.TargetIntAttrs("operator_note", operatorNoteID, ""),
+				"operator_note_id", operatorNoteID,
+			)
+			logging.AuditDenied(auditCtx(ctx), "host", "operator_note.deleted", "unauthorized operator note deletion", attrs...)
 			return 0, errors.New("unauthorized")
 		}
 	}
 	if err := r.client.OperatorNote.DeleteOneID(operatorNoteID).Exec(ctx); err != nil {
 		return 0, err
 	}
+	attrs := append(logging.TargetIntAttrs("operator_note", operatorNoteID, ""),
+		"operator_note_id", operatorNoteID,
+	)
+	logging.Audit(auditCtx(ctx), "host", "operator_note.deleted", "operator note deleted", attrs...)
 	return operatorNoteID, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/errors"
+	"realm.pub/tavern/internal/logging"
 )
 
 // maxFileIDLen is the maximum length the string for a file id may be.
@@ -18,7 +19,7 @@ const (
 // NewHostFileDownloadHandler returns an HTTP handler responsible for downloading a HostFile from the CDN.
 func NewHostFileDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 	return errors.WrapHandler(func(w http.ResponseWriter, req *http.Request) error {
-		ctx := req.Context()
+		ctx := cdnAuditCtx(req)
 
 		// Get the HostFile ID from the request URI
 		fileIDStr := strings.TrimPrefix(req.URL.Path, prefix)
@@ -37,16 +38,18 @@ func NewHostFileDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		// query where possible.
 		if hash := req.Header.Get(HeaderIfNoneMatch); hash != "" {
 			if exists := fileQuery.Clone().Where(hostfile.Hash(hash)).ExistX(ctx); exists {
+				downloadLog.DebugContext(ctx, "hostfile not modified", "host_file_id", fileID)
 				return ErrFileNotModified
 			}
 		}
 
 		// Ensure the file exists
 		if exists := fileQuery.Clone().ExistX(ctx); !exists {
+			downloadLog.DebugContext(ctx, "hostfile not found", "host_file_id", fileID)
 			return ErrFileNotFound
 		}
 
-		f := fileQuery.OnlyX(ctx)
+		f := fileQuery.WithHost().OnlyX(ctx)
 
 		// Set Etag to hash of file
 		w.Header().Set(HeaderEtag, f.Hash)
@@ -54,6 +57,19 @@ func NewHostFileDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		// Set Content-Type and serve content in chunks
 		w.Header().Set("Content-Type", "application/octet-stream")
 		serveChunkedContent(w, f.Content, f.LastModifiedAt)
+
+		attrs := append(logging.TargetIntAttrs("host_file", f.ID, f.Path),
+			"host_file_id", f.ID,
+			"path", f.Path,
+			"size", f.Size,
+		)
+		if f.Edges.Host != nil {
+			attrs = append(attrs, "host_id", f.Edges.Host.ID)
+			if f.Edges.Host.Name != "" {
+				attrs = append(attrs, "host_name", f.Edges.Host.Name)
+			}
+		}
+		logging.Audit(ctx, "cdn", "cdn.hostfile_downloaded", "host file downloaded from CDN", attrs...)
 
 		return nil
 	})
