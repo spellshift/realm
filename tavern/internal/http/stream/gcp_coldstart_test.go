@@ -44,19 +44,24 @@ func TestPreventPubSubColdStarts_ValidInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
+	topicName := newTopicName("coldstart-valid")
 	// Create a mock topic and subscription.
-	topic, err := pubsub.OpenTopic(ctx, "mem://valid")
-	if err != nil {
-		t.Fatalf("Failed to open topic: %v", err)
-	}
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://valid")
-	if err != nil {
-		t.Fatalf("Failed to open subscription: %v", err)
-	}
-	defer sub.Shutdown(ctx)
+	topic, err := pubsub.OpenTopic(ctx, topicName)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = topic.Shutdown(context.Background()) })
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sub.Shutdown(context.Background()) })
 
-	go stream.PreventPubSubColdStarts(ctx, 50*time.Millisecond, "mem://valid", "mem://valid")
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		stream.PreventPubSubColdStarts(ctx, 50*time.Millisecond, topicName, topicName)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+	})
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)
@@ -72,18 +77,23 @@ func TestPreventPubSubColdStarts_ZeroInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	topic, err := pubsub.OpenTopic(ctx, "mem://zero")
-	if err != nil {
-		t.Fatalf("Failed to open topic: %v", err)
-	}
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://zero")
-	if err != nil {
-		t.Fatalf("Failed to open subscription: %v", err)
-	}
-	defer sub.Shutdown(ctx)
+	topicName := newTopicName("coldstart-zero")
+	topic, err := pubsub.OpenTopic(ctx, topicName)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = topic.Shutdown(context.Background()) })
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sub.Shutdown(context.Background()) })
 
-	go stream.PreventPubSubColdStarts(ctx, 0, "mem://zero", "mem://zero")
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		stream.PreventPubSubColdStarts(ctx, 0, topicName, topicName)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+	})
 
 	// Expect to not receive a message and for the context to timeout
 	_, err = sub.Receive(ctx)
@@ -95,18 +105,23 @@ func TestPreventPubSubColdStarts_SubMillisecondInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	topic, err := pubsub.OpenTopic(ctx, "mem://sub")
-	if err != nil {
-		t.Fatalf("Failed to open topic: %v", err)
-	}
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://sub")
-	if err != nil {
-		t.Fatalf("Failed to open subscription: %v", err)
-	}
-	defer sub.Shutdown(ctx)
+	topicName := newTopicName("coldstart-sub")
+	topic, err := pubsub.OpenTopic(ctx, topicName)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = topic.Shutdown(context.Background()) })
+	sub, err := pubsub.OpenSubscription(ctx, topicName)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sub.Shutdown(context.Background()) })
 
-	go stream.PreventPubSubColdStarts(ctx, 1*time.Microsecond, "mem://sub", "mem://sub")
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		stream.PreventPubSubColdStarts(ctx, 1*time.Microsecond, topicName, topicName)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+	})
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)
@@ -132,7 +147,7 @@ func TestPreventPubSubColdStarts_StructuredErrorLogging(t *testing.T) {
 	ctx := context.Background()
 
 	// Case 1: Invalid output topic URL logs structured "topic" (output topic) and "error" without !BADKEY or %q/%v
-	stream.PreventPubSubColdStarts(ctx, 10*time.Millisecond, "invalidscheme://bad-output-topic", "mem://valid-input-topic")
+	stream.PreventPubSubColdStarts(ctx, 10*time.Millisecond, "invalidscheme://bad-output-topic", newTopicName("coldstart-valid-in"))
 	rawOut := strings.TrimSpace(logBuf.String())
 	require.NotEmpty(t, rawOut)
 	assert.NotContains(t, rawOut, "!BADKEY")
@@ -146,12 +161,13 @@ func TestPreventPubSubColdStarts_StructuredErrorLogging(t *testing.T) {
 	assert.NotEmpty(t, outRec["error"])
 
 	// Case 2: Valid output topic + invalid input topic logs topicShellInput (NOT topicShellOutput!)
-	validOutTopic, err := pubsub.OpenTopic(ctx, "mem://coldstart-valid-out")
+	validOutName := newTopicName("coldstart-valid-out")
+	validOutTopic, err := pubsub.OpenTopic(ctx, validOutName)
 	require.NoError(t, err)
-	defer validOutTopic.Shutdown(ctx)
+	t.Cleanup(func() { _ = validOutTopic.Shutdown(context.Background()) })
 
 	logBuf.Reset()
-	stream.PreventPubSubColdStarts(ctx, 10*time.Millisecond, "mem://coldstart-valid-out", "invalidscheme://bad-input-topic")
+	stream.PreventPubSubColdStarts(ctx, 10*time.Millisecond, validOutName, "invalidscheme://bad-input-topic")
 	rawIn := strings.TrimSpace(logBuf.String())
 	require.NotEmpty(t, rawIn)
 	assert.NotContains(t, rawIn, "!BADKEY")

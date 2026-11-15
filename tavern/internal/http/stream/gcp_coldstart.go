@@ -32,6 +32,8 @@ func PreventPubSubColdStarts(ctx context.Context, interval time.Duration, topicS
 		)
 		return
 	}
+	defer func() { _ = pubOutput.Shutdown(context.Background()) }()
+
 	pubInput, err := pubsub.OpenTopic(ctx, topicShellInput)
 	if err != nil {
 		pubsubLog.ErrorContext(ctx, "warmup failed to connect to pubsub input topic, cold-start latency may impact user experience",
@@ -40,6 +42,7 @@ func PreventPubSubColdStarts(ctx context.Context, interval time.Duration, topicS
 		)
 		return
 	}
+	defer func() { _ = pubInput.Shutdown(context.Background()) }()
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -55,6 +58,9 @@ func PreventPubSubColdStarts(ctx context.Context, interval time.Duration, topicS
 				},
 				Body: []byte{0},
 			}); err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				pubsubLog.ErrorContext(ctx, "warmup failed to publish shell output keep-alive no op. GCP coldstart latency may be encountered.",
 					"topic", topicShellOutput,
 					"error", err,
@@ -67,6 +73,9 @@ func PreventPubSubColdStarts(ctx context.Context, interval time.Duration, topicS
 				},
 				Body: []byte{0},
 			}); err != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				pubsubLog.ErrorContext(ctx, "warmup failed to publish shell input keep-alive no op. GCP coldstart latency may be encountered.",
 					"topic", topicShellInput,
 					"error", err,
