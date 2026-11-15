@@ -1,27 +1,13 @@
-import { ReactElement, useCallback } from "react";
+import { useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Tooltip, useToast } from "@chakra-ui/react";
-import { Share, Copy, Trash2, CircleCheck, CircleX, CirclePause } from "lucide-react";
-import { Ring } from "@uiball/loaders";
+import { Share, Copy, Trash2 } from "lucide-react";
+import BuildStatusIcon from "../../../components/BuildStatusIcon";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import UserImageAndName from "../../../components/UserImageAndName";
 import DownloadButton from "../../assets/components/DownloadButton";
-import { BuildTaskRow, BuildTaskStatus, PLATFORM_LABELS } from "../types";
-
-// Status icon for the leading cell of the "Agent & Profile" column -- mirrors
-// TaskStatusField.tsx / quest task rows: a pure icon (no badge/tooltip
-// wrapper) so the row's status reads at a glance alongside the agent name.
-// Queued/Claimed share the same paused icon; Building and the brief
-// post-build "Awaiting artifact" gap share the same in-progress spinner.
-const STATUS_ICON: Record<BuildTaskStatus, ReactElement> = {
-    Queued: <CirclePause className="w-5 h-5 text-gray-400 shrink-0" />,
-    Claimed: <CirclePause className="w-5 h-5 text-gray-400 shrink-0" />,
-    Building: <span className="shrink-0"><Ring size={16} lineWeight={2.5} speed={2} color="#7C3AED" /></span>,
-    "Awaiting artifact": <span className="shrink-0"><Ring size={16} lineWeight={2.5} speed={2} color="#7C3AED" /></span>,
-    Built: <CircleCheck className="w-5 h-5 text-green-600 shrink-0" />,
-    Failed: <CircleX className="w-5 h-5 text-red-600 shrink-0" />,
-};
+import { BuildTaskRow, PLATFORM_LABELS } from "../types";
 
 // Hash cell -- matches AssetsTable.tsx's truncated-hash-plus-copy pattern,
 // including the "Copied to clipboard" toast on click.
@@ -69,7 +55,7 @@ export const buildTaskColumns = (
             const primary = task.artifactName ?? task.profileName;
             return (
                 <div className="flex flex-row items-center gap-2 min-w-0 w-full overflow-hidden">
-                    <div className="shrink-0">{STATUS_ICON[task.status]}</div>
+                    <div className="shrink-0"><BuildStatusIcon status={task.status} /></div>
                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
                         <div className="flex items-center gap-2 min-w-0 overflow-hidden">
                             <span className="block font-semibold text-gray-900 text-sm font-mono truncate" title={primary}>
