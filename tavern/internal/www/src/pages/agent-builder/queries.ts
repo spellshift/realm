@@ -1,4 +1,5 @@
 import { gql, useQuery } from "@apollo/client";
+import { BuildTask, GET_BUILD_TASKS, taskStatus } from "../../utils/buildTasks";
 import { formatDistanceToNow } from "date-fns";
 import { UserNode } from "../../utils/interfacesQuery";
 import { Builder, BuilderHealthy, BuildProfile, BuildTaskRow, Tome, TransportConfig, Platform, Format } from "./types";
@@ -30,18 +31,6 @@ export const GET_ENROLLED_BUILDER = gql`
 export const GET_ONLINE_BUILDER_PLATFORMS = gql`
     query OnlineAgentBuilderPlatforms {
         onlineBuilderPlatforms
-    }
-`;
-export const GET_BUILD_TASKS = gql`
-    query AgentBuildTasks {
-        buildTasks(orderBy: [{ field: CREATED_AT, direction: DESC }]) {
-            edges { node {
-                id targetOs targetFormat createdAt claimedAt startedAt finishedAt exitCode error
-                profile { id name }
-                profileAtCreation { name }
-                artifact { id name size hash creator { id name photoURL } }
-            } }
-        }
     }
 `;
 export const CREATE_BUILD_PROFILE = gql`
@@ -80,21 +69,9 @@ export type ProfileRecord = Omit<BuildProfile, "transports" | "tomes" | "tomeCou
     transports: Array<Omit<TransportConfig, "id" | "type"> & { type: string }>;
     tomes: Array<{ tomeID: number; params: string }> | null;
 };
+export { GET_BUILD_TASKS, taskStatus };
+export type { BuildTask };
 export type BuilderRecord = Omit<Builder, "supportedTargets" | "lastSeenAtRaw" | "online"> & { supportedTargets: string[] };
-export type BuildTask = {
-    id: string;
-    targetOs: string;
-    targetFormat: string;
-    createdAt: string;
-    claimedAt: string | null;
-    startedAt: string | null;
-    finishedAt: string | null;
-    exitCode: number | null;
-    error: string | null;
-    profile: { id: string; name: string };
-    profileAtCreation: { name: string } | null;
-    artifact: { id: string; name: string; size: number; hash: string; creator?: UserNode | null } | null;
-};
 
 export function mapProfile(profile: ProfileRecord, catalog: Tome[]): BuildProfile {
     const tomes = (profile.tomes ?? []).map((reference, index) => {
@@ -130,37 +107,6 @@ export function profileInput(profile: BuildProfile) {
         transports: profile.transports.map(({ type, uri, interval, extra }) => ({ type, uri, interval, extra })),
         tomes: profile.tomes.map(({ tomeId, params }) => ({ tomeID: tomeId, params })),
     };
-}
-
-// DockerExecutor.Build (tavern/internal/builder/executor/docker.go) reports a
-// failed artifact extraction by returning an error containing this text
-// alongside a successful (0) exit code, specifically so a successful build
-// with a missing artifact isn't mistaken for one still in progress.
-const EXTRACTION_FAILURE_TEXT = "artifact extraction failed";
-
-// A finished task with exitCode 0 and no artifact yet is normally just the
-// brief gap before the builder's separate UploadBuildArtifact call lands --
-// but if extraction failed, or the upload itself silently never arrives
-// (the builder only logs that failure locally), no artifact is ever coming.
-// Treat either case, or a gap that's stretched well past that window, as
-// terminal so the row doesn't spin forever.
-const AWAITING_ARTIFACT_TIMEOUT_MS = 5 * 60 * 1000;
-
-export function taskStatus(task: BuildTask, now: number = Date.now()): BuildTaskRow["status"] {
-    if (task.finishedAt) {
-        // `error` holds whatever the build container wrote to stderr, which
-        // for a normal cargo build includes non-fatal progress/warnings --
-        // it isn't reliable evidence of failure on its own. exitCode (and
-        // whether an artifact was produced) is the source of truth; a
-        // successful build can still have populated `error` text.
-        if (task.exitCode !== 0) return "Failed";
-        if (task.artifact) return "Built";
-        if (task.error?.includes(EXTRACTION_FAILURE_TEXT)) return "Failed";
-        const elapsed = now - new Date(task.finishedAt).getTime();
-        return elapsed > AWAITING_ARTIFACT_TIMEOUT_MS ? "Failed" : "Awaiting artifact";
-    }
-    if (task.startedAt) return "Building";
-    return task.claimedAt ? "Claimed" : "Queued";
 }
 
 // Every BuildTask becomes a row -- queued/claimed/building tasks render
