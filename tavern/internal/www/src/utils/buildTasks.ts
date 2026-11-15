@@ -48,6 +48,13 @@ const EXTRACTION_FAILURE_TEXT = "artifact extraction failed";
 // terminal so the row doesn't spin forever.
 const AWAITING_ARTIFACT_TIMEOUT_MS = 5 * 60 * 1000;
 
+// CreateBuildTask eagerly attaches an empty placeholder asset so the build is
+// visible in the Assets list while it runs; UploadBuildArtifact fills it in
+// (and rejects empty uploads), so a zero-size artifact is not yet uploaded.
+export function uploadedArtifact(task: BuildTask): BuildTask["artifact"] {
+    return task.artifact && task.artifact.size > 0 ? task.artifact : null;
+}
+
 export function taskStatus(task: BuildTask, now: number = Date.now()): BuildTaskStatus {
     if (task.finishedAt) {
         // `error` holds whatever the build container wrote to stderr, which
@@ -56,7 +63,7 @@ export function taskStatus(task: BuildTask, now: number = Date.now()): BuildTask
         // whether an artifact was produced) is the source of truth; a
         // successful build can still have populated `error` text.
         if (task.exitCode !== 0) return "Failed";
-        if (task.artifact) return "Built";
+        if (uploadedArtifact(task)) return "Built";
         if (task.error?.includes(EXTRACTION_FAILURE_TEXT)) return "Failed";
         const elapsed = now - new Date(task.finishedAt).getTime();
         return elapsed > AWAITING_ARTIFACT_TIMEOUT_MS ? "Failed" : "Awaiting artifact";

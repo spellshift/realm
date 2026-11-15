@@ -1,5 +1,5 @@
 import { gql, useQuery } from "@apollo/client";
-import { BuildTask, GET_BUILD_TASKS, taskStatus } from "../../utils/buildTasks";
+import { BuildTask, GET_BUILD_TASKS, taskStatus, uploadedArtifact } from "../../utils/buildTasks";
 import { formatDistanceToNow } from "date-fns";
 import { UserNode } from "../../utils/interfacesQuery";
 import { Builder, BuilderHealthy, BuildProfile, BuildTaskRow, Tome, TransportConfig, Platform, Format } from "./types";
@@ -116,6 +116,7 @@ export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
     const now = Date.now();
     return tasks.map((task) => {
         const status = taskStatus(task, now);
+        const artifact = uploadedArtifact(task);
         const timestamp = formatDistanceToNow(new Date(task.finishedAt ?? task.createdAt), { addSuffix: true });
         return {
             id: task.id,
@@ -125,13 +126,13 @@ export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
             format: task.targetFormat as Format,
             error: task.error ?? (status === "Failed" && task.exitCode === 0 ? "The build finished but no artifact was produced." : null),
             exitCode: task.exitCode,
-            creator: (task.artifact?.creator as UserNode) ?? null,
+            creator: (artifact?.creator as UserNode) ?? null,
             timestamp,
-            assetId: task.artifact?.id ?? null,
-            assetName: task.artifact?.name ?? null,
-            artifactName: task.artifact ? task.artifact.name.split("/").pop()! : null,
-            artifactSize: task.artifact ? `${(task.artifact.size / 1024 / 1024).toFixed(2)} MB` : null,
-            artifactHash: task.artifact ? task.artifact.hash : null,
+            assetId: artifact?.id ?? null,
+            assetName: artifact?.name ?? null,
+            artifactName: artifact ? artifact.name.split("/").pop()! : null,
+            artifactSize: artifact ? `${(artifact.size / 1024 / 1024).toFixed(2)} MB` : null,
+            artifactHash: artifact ? artifact.hash : null,
         };
     });
 }

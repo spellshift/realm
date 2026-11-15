@@ -853,6 +853,16 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		bundleID = &bundle.ID
 	}
 
+	// Eagerly create an empty placeholder for the artifact so the build shows
+	// up in the Assets list while it runs. UploadBuildArtifact fills it in.
+	artifact, err := graph.Asset.Create().
+		SetName(builder.ArtifactAssetName(input.TargetOs, targetFormat, snapshot.Name)).
+		SetContent([]byte{}).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create build artifact placeholder: %w", err)
+	}
+
 	// 8. Create the build task
 	create := graph.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
@@ -863,6 +873,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetProfile(profile).
 		SetProfileAtCreation(snapshot).
 		SetNillableBundleID(bundleID).
+		SetArtifact(artifact).
 		SetSetupscript(setupScript)
 
 	if unique != nil {

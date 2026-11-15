@@ -1,10 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
+import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, Wrench, CircleX } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import { useMutation, useQuery } from "@apollo/client";
 import { BugAntIcon } from "@heroicons/react/24/outline";
-import BuildStatusIcon from "../../components/BuildStatusIcon";
 import { BuildTask, BuildTaskStatus, GET_BUILD_TASKS, taskStatus } from "../../utils/buildTasks";
 import moment from "moment";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
@@ -26,6 +25,23 @@ export const buildStatusLabel = ({ status, error, exitCode }: AssetBuildStatus):
     if (status === "Failed") return `Build failed (exit code ${exitCode ?? "unknown"}): ${error}`;
     if (status === "Queued" || status === "Claimed") return "Queued";
     return "Building";
+};
+
+// Queued/Claimed show a clock, Building (and the brief awaiting-artifact gap)
+// a wrench, Failed a red X; Built rows show nothing.
+const AssetBuildStatusIcon = ({ status }: { status: BuildTaskStatus }) => {
+    switch (status) {
+        case "Queued":
+        case "Claimed":
+            return <Clock className="w-4 h-4 text-gray-500" />;
+        case "Building":
+        case "Awaiting artifact":
+            return <Wrench className="w-4 h-4 text-gray-500" />;
+        case "Failed":
+            return <CircleX className="w-4 h-4 text-red-600" />;
+        default:
+            return null;
+    }
 };
 
 interface AssetsTableProps {
@@ -113,13 +129,6 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                                         <BugAntIcon className="w-4 h-4 text-black" />
                                     </div>
                                 </Tooltip>
-                                {buildStatus && buildStatus.status !== "Built" && (
-                                    <Tooltip label={buildStatusLabel(buildStatus)} bg="white" color="black">
-                                        <div className="shrink-0 flex items-center" data-testid="agent-build-status" data-status={buildStatus.status}>
-                                            <BuildStatusIcon status={buildStatus.status} size={14} />
-                                        </div>
-                                    </Tooltip>
-                                )}
                             </div>
                         ) : hasTomes ? (
                             <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
@@ -143,6 +152,13 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                             </Tooltip>
                             <Copy className="w-3 h-3 text-gray-400 hover:text-purple-600" data-testid="asset-copy-icon" />
                         </div>
+                        {buildStatus && buildStatus.status !== "Built" && (
+                            <Tooltip label={buildStatusLabel(buildStatus)} bg="white" color="black">
+                                <div className="shrink-0 flex items-center" data-testid="agent-build-status" data-status={buildStatus.status}>
+                                    <AssetBuildStatusIcon status={buildStatus.status} />
+                                </div>
+                            </Tooltip>
+                        )}
                     </div>
                 );
             },
@@ -226,9 +242,12 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             key: 'actions',
             label: 'Actions',
             width: 'minmax(100px,1fr)',
-            render: (asset) => (
+            render: (asset) => {
+                // Unbuilt/failed agent artifacts are empty placeholders: nothing to download or link.
+                const unbuilt = isAgentAsset(asset.name) && (statusByAssetId.get(asset.id)?.status ?? "Built") !== "Built";
+                return (
                 <div className="flex flex-row gap-2">
-                    <DownloadButton assetName={asset.name} />
+                    <DownloadButton assetName={asset.name} disabled={unbuilt} />
                     <Tooltip label="Create Link" bg="white" color="black">
                         <Button
                             buttonVariant="ghost"
@@ -238,16 +257,17 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                                 e.stopPropagation();
                                 onCreateLink(asset.id, asset.name);
                             }}
+                            disabled={unbuilt}
                             aria-label="Create Link"
                         />
                     </Tooltip>
                     {isAdmin && (
-                        <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : "Delete"} bg="white" color="black">
+                        <Tooltip label={asset.tomes.totalCount > 0 ? "Cannot delete: asset is associated with tome(s)" : unbuilt ? "Cannot delete: build is not complete" : "Delete"} bg="white" color="black">
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
                                 leftIcon={<Trash2 className="w-4 h-4" />}
-                                disabled={asset.tomes.totalCount > 0}
+                                disabled={asset.tomes.totalCount > 0 || unbuilt}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     deleteAsset({ variables: { assetID: asset.id } });
@@ -257,7 +277,8 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                         </Tooltip>
                     )}
                 </div>
-            ),
+                );
+            },
             renderSkeleton: () => (
                 <div className="flex flex-row gap-2">
                     <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>

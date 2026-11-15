@@ -14,6 +14,7 @@ import (
 	yaml "gopkg.in/yaml.v3"
 
 	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -350,27 +351,35 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Error(codes.FailedPrecondition, "build task has no saved profile")
 	}
 
-	profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
-	randomName := namegen.NewSimple()
-
-	osName := strings.ToLower(strings.TrimPrefix(bt.TargetOs.String(), "PLATFORM_"))
-	formatName := strings.ToLower(strings.TrimPrefix(bt.TargetFormat.String(), "TARGET_FORMAT_"))
-	assetName := fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, randomName)
+	// CreateBuildTask eagerly creates an empty placeholder artifact asset so the
+	// build is visible in the Assets list while running; fill it in. Tasks
+	// created before that behavior have no placeholder, so create one here.
 	tx, err := s.graph.Tx(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "begin artifact transaction: %v", err)
 	}
 	defer tx.Rollback()
-	asset, err := tx.Client().Asset.Create().
-		SetName(assetName).
-		SetContent(buf.Bytes()).
-		Save(ctx)
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to create asset: %v", err)
-	}
-
-	if _, err := tx.Client().BuildTask.UpdateOneID(bt.ID).SetArtifact(asset).Save(ctx); err != nil {
-		return status.Errorf(codes.Internal, "attach build artifact: %v", err)
+	var asset *ent.Asset
+	if existing, err := bt.QueryArtifact().Only(ctx); err == nil {
+		asset, err = tx.Client().Asset.UpdateOne(existing).
+			SetContent(buf.Bytes()).
+			Save(ctx)
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to update asset: %v", err)
+		}
+	} else if ent.IsNotFound(err) {
+		asset, err = tx.Client().Asset.Create().
+			SetName(ArtifactAssetName(bt.TargetOs, bt.TargetFormat, profile.Name)).
+			SetContent(buf.Bytes()).
+			Save(ctx)
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to create asset: %v", err)
+		}
+		if _, err := tx.Client().BuildTask.UpdateOneID(bt.ID).SetArtifact(asset).Save(ctx); err != nil {
+			return status.Errorf(codes.Internal, "attach build artifact: %v", err)
+		}
+	} else {
+		return status.Errorf(codes.Internal, "query build artifact: %v", err)
 	}
 	if err := tx.Commit(); err != nil {
 		return status.Errorf(codes.Internal, "commit build artifact: %v", err)
@@ -386,6 +395,14 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 	return stream.SendAndClose(&builderpb.UploadBuildArtifactResponse{
 		AssetId: int64(asset.ID),
 	})
+}
+
+// ArtifactAssetName generates the unique asset name for a build's artifact.
+func ArtifactAssetName(targetOS c2pb.Host_Platform, targetFormat builderpb.TargetFormat, profileName string) string {
+	profileName = strings.ReplaceAll(strings.ToLower(profileName), " ", "-")
+	osName := strings.ToLower(strings.TrimPrefix(targetOS.String(), "PLATFORM_"))
+	formatName := strings.ToLower(strings.TrimPrefix(targetFormat.String(), "TARGET_FORMAT_"))
+	return fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, namegen.NewSimple())
 }
 
 // DownloadTome streams a tome's packaged content (tar.gz) to the builder client in chunks.
