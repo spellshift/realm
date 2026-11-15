@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { Share, BookOpen, Copy, FilePlus, Trash2 } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import { useMutation, useQuery } from "@apollo/client";
-import AntIcon from "../../components/icons/AntIcon";
+import { BugAntIcon } from "@heroicons/react/24/outline";
 import BuildStatusIcon from "../../components/BuildStatusIcon";
 import { BuildTask, BuildTaskStatus, GET_BUILD_TASKS, taskStatus } from "../../utils/buildTasks";
 import moment from "moment";
@@ -109,8 +109,8 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                         {isAgent ? (
                             <div className="flex items-center gap-1 shrink-0">
                                 <Tooltip label="Built agent artifact" bg="white" color="black">
-                                    <div className="shrink-0" data-testid="agent-ant-icon">
-                                        <AntIcon className="w-4 h-4 text-black" />
+                                    <div className="shrink-0" data-testid="agent-bug-icon">
+                                        <BugAntIcon className="w-4 h-4 text-black" />
                                     </div>
                                 </Tooltip>
                                 {buildStatus && buildStatus.status !== "Built" && (
