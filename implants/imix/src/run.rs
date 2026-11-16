@@ -215,7 +215,7 @@ async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()>
             log::info!(
                 "memguard skip: below threshold (sleep={:.2}s < min={:.2})",
                 sleep_secs,
-                crate::memguard::MIN_ENCRYPT_INTERVAL_SECS
+                crate::memguard::min_encrypt_interval_secs()
             );
         }
     }

