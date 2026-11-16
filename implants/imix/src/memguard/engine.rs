@@ -1,6 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use core::ffi::c_void;
+use core::sync::atomic::{AtomicBool, Ordering};
 
 use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
@@ -21,6 +22,10 @@ const MAX_SKIP: usize = 1024;
 const CAPACITY_MARGIN: usize = 256;
 const THREAD_BASIC_INFORMATION_CLASS: u32 = 0;
 const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
+
+// Process-wide singleton guard: only one MemGuard may own an encrypted state
+// region at a time, so instances never cross-encrypt each other's bookkeeping.
+static LIVE: AtomicBool = AtomicBool::new(false);
 
 type NtQuerySystemInformationFn = extern "system" fn(u32, *mut c_void, u32, *mut u32) -> i32;
 type NtQueryInformationThreadFn =
@@ -67,6 +72,7 @@ struct State {
     skip_static_count: usize,
     skip_count: usize,
     skip_failed: bool,
+    decrypt_cursor: usize,
     entries: *mut PageEntry,
     #[allow(dead_code)]
     nt_query_system_information: NtQuerySystemInformationFn,
@@ -80,13 +86,21 @@ pub struct MemGuard {
 
 impl MemGuard {
     pub fn new() -> Option<Self> {
+        if LIVE
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            return None;
+        }
         let ntdll = unsafe { GetModuleHandleW(NTDLL_W.as_ptr()) };
         if ntdll.is_null() {
+            LIVE.store(false, Ordering::Release);
             return None;
         }
         let qsi = unsafe { GetProcAddress(ntdll, b"NtQuerySystemInformation\0".as_ptr()) };
         let qit = unsafe { GetProcAddress(ntdll, b"NtQueryInformationThread\0".as_ptr()) };
         if qsi.is_null() || qit.is_null() {
+            LIVE.store(false, Ordering::Release);
             return None;
         }
         let nt_query_system_information: NtQuerySystemInformationFn =
@@ -107,6 +121,7 @@ impl MemGuard {
             )
         };
         if !skip_ok {
+            LIVE.store(false, Ordering::Release);
             return None;
         }
 
@@ -119,15 +134,24 @@ impl MemGuard {
             )
         } {
             Some(v) => v,
-            None => return None,
+            None => {
+                LIVE.store(false, Ordering::Release);
+                return None;
+            }
         };
         let region_bytes = match capacity.checked_mul(core::mem::size_of::<PageEntry>()) {
             Some(v) => v,
-            None => return None,
+            None => {
+                LIVE.store(false, Ordering::Release);
+                return None;
+            }
         };
         let region_size = match header_offset.checked_add(region_bytes) {
             Some(v) => v,
-            None => return None,
+            None => {
+                LIVE.store(false, Ordering::Release);
+                return None;
+            }
         };
 
         let region_base = unsafe {
@@ -139,6 +163,7 @@ impl MemGuard {
             ) as *mut u8
         };
         if region_base.is_null() {
+            LIVE.store(false, Ordering::Release);
             return None;
         }
 
@@ -157,6 +182,7 @@ impl MemGuard {
                     skip_static_count,
                     skip_count: skip_static_count,
                     skip_failed: false,
+                    decrypt_cursor: 0,
                     entries,
                     nt_query_system_information,
                     nt_query_information_thread,
@@ -166,6 +192,7 @@ impl MemGuard {
             let s = &mut *state;
             if !add_skip_region(&mut s.skip, &mut s.skip_count, region_base, region_size) {
                 VirtualFree(region_base as *mut c_void, 0, MEM_RELEASE);
+                LIVE.store(false, Ordering::Release);
                 return None;
             }
             s.skip_static_count = s.skip_count;
@@ -237,7 +264,14 @@ impl Drop for MemGuard {
             if s.count != 0 {
                 decrypt_state(self.state);
             }
-            VirtualFree(s.region_base as *mut c_void, 0, MEM_RELEASE);
+            if s.count == 0 {
+                VirtualFree(s.region_base as *mut c_void, 0, MEM_RELEASE);
+                LIVE.store(false, Ordering::Release);
+            }
+            // Otherwise decrypt failed and pages are still PAGE_NOACCESS. The
+            // region is intentionally leaked (not freed) so the VEH can still
+            // consult the page list, and LIVE stays set so no instance can be
+            // created that would cross-encrypt this still-encrypted region.
         }
     }
 }
@@ -452,6 +486,8 @@ unsafe fn encrypt_state(state: *mut State) -> bool {
     if (*state).count != 0 || (*state).skip_failed {
         return false;
     }
+    // A fresh cycle always starts from a clean decrypt cursor.
+    (*state).decrypt_cursor = 0;
     let capacity = (*state).capacity;
     let entries = (*state).entries;
     let mut failed = false;
@@ -512,12 +548,18 @@ unsafe fn decrypt_state(state: *mut State) -> bool {
     let s = &mut *state;
     let entries = s.entries;
     let n = s.count;
-    for i in 0..n {
+    // Resume from the cursor so a failed decrypt can be retried without
+    // re-XORing pages that are already plaintext. Invariant for the VEH:
+    // entries[..decrypt_cursor] are plaintext/accessible, entries[decrypt_cursor..]
+    // are still encrypted (PAGE_NOACCESS).
+    let mut i = s.decrypt_cursor;
+    while i < n {
         let e = &*entries.add(i);
         let page = e.base;
         // The page is PAGE_NOACCESS; make it writable before mutating it.
         let mut old = 0u32;
         if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_READWRITE, &mut old) == 0 {
+            s.decrypt_cursor = i;
             return false;
         }
         let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
@@ -527,10 +569,13 @@ unsafe fn decrypt_state(state: *mut State) -> bool {
         if e.orig_protect != PAGE_READWRITE {
             let mut old = 0u32;
             if VirtualProtect(page as *const c_void, PAGE_SIZE, e.orig_protect, &mut old) == 0 {
+                s.decrypt_cursor = i;
                 return false;
             }
         }
+        i += 1;
     }
+    s.decrypt_cursor = 0;
     s.count = 0;
     true
 }
@@ -561,6 +606,13 @@ mod tests {
             core::ptr::copy_nonoverlapping(pattern.as_ptr(), buf, PAGE_SIZE);
 
             let mut guard = MemGuard::new().expect("memguard init");
+
+            // Singleton guard: a second concurrent instance must be refused
+            // while one is already alive.
+            assert!(
+                MemGuard::new().is_none(),
+                "second MemGuard::new() must return None while one is alive"
+            );
 
             for cycle in 0..2 {
                 assert!(guard.encrypt(), "encrypt failed (cycle {cycle})");
