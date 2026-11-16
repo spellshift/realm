@@ -19,7 +19,9 @@ impl MemGuard {
         false
     }
 
-    pub fn add_exclusion(&mut self, _base: *const u8, _len: usize) {}
+    pub fn add_exclusion(&mut self, _base: *const u8, _len: usize) -> bool {
+        false
+    }
 
     pub fn clear_dynamic_exclusions(&mut self) {}
 

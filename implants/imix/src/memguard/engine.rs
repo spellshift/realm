@@ -20,6 +20,7 @@ const WALK_START: usize = 0x1_0000;
 const MAX_SKIP: usize = 1024;
 const CAPACITY_MARGIN: usize = 256;
 const THREAD_BASIC_INFORMATION_CLASS: u32 = 0;
+const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
 
 type NtQuerySystemInformationFn = extern "system" fn(u32, *mut c_void, u32, *mut u32) -> i32;
 type NtQueryInformationThreadFn =
@@ -65,6 +66,7 @@ struct State {
     count: usize,
     skip_static_count: usize,
     skip_count: usize,
+    skip_failed: bool,
     entries: *mut PageEntry,
     #[allow(dead_code)]
     nt_query_system_information: NtQuerySystemInformationFn,
@@ -72,18 +74,11 @@ struct State {
     skip: [SkipRange; MAX_SKIP],
 }
 
-/// Core memory obfuscation guard.
-///
-/// All bookkeeping lives in a single unencrypted `VirtualAlloc`'d region so the
-/// encrypt/decrypt paths never allocate. Construct with [`MemGuard::new`].
 pub struct MemGuard {
     state: *mut State,
 }
 
 impl MemGuard {
-    /// Allocate the unencrypted state region, resolve ntdll natives, enumerate
-    /// the current process threads and build the static skip-list, and pre-size
-    /// the encrypted-page list. Returns `None` if any step fails.
     pub fn new() -> Option<Self> {
         let ntdll = unsafe { GetModuleHandleW(NTDLL_W.as_ptr()) };
         if ntdll.is_null() {
@@ -104,23 +99,36 @@ impl MemGuard {
             len: 0,
         }; MAX_SKIP];
         let mut static_skip_count: usize = 0;
-        unsafe {
+        let skip_ok = unsafe {
             build_static_skip(
                 &mut static_skip,
                 &mut static_skip_count,
                 nt_query_information_thread,
-            );
+            )
+        };
+        if !skip_ok {
+            return None;
         }
 
         let page_count = unsafe { count_candidates(&static_skip, static_skip_count) };
         let capacity = page_count + CAPACITY_MARGIN;
-        let header_offset = unsafe {
+        let header_offset = match unsafe {
             round_up(
                 core::mem::size_of::<State>(),
                 core::mem::align_of::<PageEntry>(),
             )
+        } {
+            Some(v) => v,
+            None => return None,
         };
-        let region_size = header_offset + capacity * core::mem::size_of::<PageEntry>();
+        let region_bytes = match capacity.checked_mul(core::mem::size_of::<PageEntry>()) {
+            Some(v) => v,
+            None => return None,
+        };
+        let region_size = match header_offset.checked_add(region_bytes) {
+            Some(v) => v,
+            None => return None,
+        };
 
         let region_base = unsafe {
             VirtualAlloc(
@@ -137,8 +145,6 @@ impl MemGuard {
         let entries = unsafe { region_base.add(header_offset) as *mut PageEntry };
         let skip_static_count = static_skip_count;
 
-        // Build the State header in place, then append the state region itself
-        // to the skip-list so encrypt never touches our own bookkeeping.
         unsafe {
             let state = region_base as *mut State;
             core::ptr::write(
@@ -150,6 +156,7 @@ impl MemGuard {
                     count: 0,
                     skip_static_count,
                     skip_count: skip_static_count,
+                    skip_failed: false,
                     entries,
                     nt_query_system_information,
                     nt_query_information_thread,
@@ -157,7 +164,10 @@ impl MemGuard {
                 },
             );
             let s = &mut *state;
-            add_skip_region(&mut s.skip, &mut s.skip_count, region_base, region_size);
+            if !add_skip_region(&mut s.skip, &mut s.skip_count, region_base, region_size) {
+                VirtualFree(region_base as *mut c_void, 0, MEM_RELEASE);
+                return None;
+            }
             s.skip_static_count = s.skip_count;
         }
 
@@ -166,38 +176,33 @@ impl MemGuard {
         })
     }
 
-    /// Encrypt every collected private RW page: XOR with [`XOR_KEY`] and switch
-    /// the page to `PAGE_NOACCESS`. Pages in the skip-list are left untouched.
-    /// Returns `false` if a previous cycle was not decrypted first.
     pub fn encrypt(&mut self) -> bool {
         unsafe { encrypt_state(self.state) }
     }
 
-    /// Decrypt every encrypted page, restoring each to its original protection,
-    /// page-by-page so a faulting thread can resume immediately.
     pub fn decrypt(&mut self) -> bool {
         unsafe { decrypt_state(self.state) }
     }
 
-    /// Extend the skip-list with a caller-provided (base, len) exclusion. Used by
-    /// later phases to protect suspended-thread stack windows and similar ranges.
-    pub fn add_exclusion(&mut self, base: *const u8, len: usize) {
+    pub fn add_exclusion(&mut self, base: *const u8, len: usize) -> bool {
         unsafe {
             let s = &mut *self.state;
-            add_skip_region(&mut s.skip, &mut s.skip_count, base as *mut u8, len);
+            let ok = add_skip_region(&mut s.skip, &mut s.skip_count, base as *mut u8, len);
+            if !ok {
+                s.skip_failed = true;
+            }
+            ok
         }
     }
 
-    /// Drop any caller-provided exclusions, restoring the static skip-list.
     pub fn clear_dynamic_exclusions(&mut self) {
         unsafe {
             let s = &mut *self.state;
             s.skip_count = s.skip_static_count;
+            s.skip_failed = false;
         }
     }
 
-    /// O(log n) lookup of the encrypted-page entry covering `addr`, used by the
-    /// VEH in a later phase. Returns `None` if the address is not encrypted.
     pub fn find_encrypted_page(&self, addr: *const u8) -> Option<usize> {
         unsafe {
             let s = &*self.state;
@@ -220,7 +225,6 @@ impl MemGuard {
         }
     }
 
-    /// Number of currently encrypted pages.
     pub fn encrypted_count(&self) -> usize {
         unsafe { (*self.state).count }
     }
@@ -238,8 +242,8 @@ impl Drop for MemGuard {
     }
 }
 
-unsafe fn round_up(value: usize, align: usize) -> usize {
-    (value + align - 1) & !(align - 1)
+unsafe fn round_up(value: usize, align: usize) -> Option<usize> {
+    value.checked_add(align - 1).map(|x| x & !(align - 1))
 }
 
 unsafe fn add_skip_region(
@@ -247,19 +251,23 @@ unsafe fn add_skip_region(
     count: &mut usize,
     base: *mut u8,
     len: usize,
-) {
+) -> bool {
     if *count < MAX_SKIP && len > 0 {
         skip[*count] = SkipRange { base, len };
         *count += 1;
+        true
+    } else {
+        false
     }
 }
 
 unsafe fn is_excluded(skip: &[SkipRange], count: usize, page: *mut u8) -> bool {
     let p = page as usize;
-    let pend = p + PAGE_SIZE;
+    let pend = p.checked_add(PAGE_SIZE).unwrap_or(usize::MAX);
     for i in 0..count {
-        let sb = skip[i].base as usize;
-        let se = sb + skip[i].len;
+        let s = &skip[i];
+        let sb = s.base as usize;
+        let se = sb.checked_add(s.len).unwrap_or(usize::MAX);
         if p < se && sb < pend {
             return true;
         }
@@ -337,23 +345,26 @@ unsafe fn build_static_skip(
     static_skip: &mut [SkipRange; MAX_SKIP],
     skip_count: &mut usize,
     nt_query_information_thread: NtQueryInformationThreadFn,
-) {
+) -> bool {
     let pid = GetCurrentProcessId();
     let snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
     if snap == INVALID_HANDLE_VALUE {
-        return;
+        return false;
     }
     let mut te: THREADENTRY32 = core::mem::zeroed();
     te.dwSize = core::mem::size_of::<THREADENTRY32>() as u32;
+    let mut ok = true;
     if Thread32First(snap, &mut te) != 0 {
         loop {
-            if te.th32OwnerProcessID == pid {
-                add_thread_skip(
+            if te.th32OwnerProcessID == pid
+                && !add_thread_skip(
                     static_skip,
                     skip_count,
                     te.th32ThreadID,
                     nt_query_information_thread,
-                );
+                )
+            {
+                ok = false;
             }
             if Thread32Next(snap, &mut te) == 0 {
                 break;
@@ -361,6 +372,7 @@ unsafe fn build_static_skip(
         }
     }
     CloseHandle(snap);
+    ok
 }
 
 unsafe fn add_thread_skip(
@@ -368,10 +380,10 @@ unsafe fn add_thread_skip(
     skip_count: &mut usize,
     tid: u32,
     nt_query_information_thread: NtQueryInformationThreadFn,
-) {
+) -> bool {
     let h = OpenThread(THREAD_QUERY_INFORMATION, 0, tid);
     if h.is_null() {
-        return;
+        return false;
     }
     let mut tbi = core::mem::MaybeUninit::<ThreadBasicInformation>::uninit();
     let status = nt_query_information_thread(
@@ -381,17 +393,22 @@ unsafe fn add_thread_skip(
         core::mem::size_of::<ThreadBasicInformation>() as u32,
         core::ptr::null_mut(),
     );
+    let mut ok = true;
     if status >= 0 {
         let tbi = tbi.assume_init();
         let teb = tbi.teb_base;
         if !teb.is_null() {
             let teb_size = region_size_of(teb);
-            add_skip_region(static_skip, skip_count, teb as *mut u8, teb_size);
+            if !add_skip_region(static_skip, skip_count, teb as *mut u8, teb_size) {
+                ok = false;
+            }
 
             let peb = *(teb.add(0x60) as *const *mut c_void);
             if !peb.is_null() {
                 let peb_size = region_size_of(peb);
-                add_skip_region(static_skip, skip_count, peb as *mut u8, peb_size);
+                if !add_skip_region(static_skip, skip_count, peb as *mut u8, peb_size) {
+                    ok = false;
+                }
             }
 
             let stack_base = *(teb.add(0x08) as *const *mut c_void);
@@ -400,31 +417,49 @@ unsafe fn add_thread_skip(
                 && !stack_limit.is_null()
                 && stack_base as usize > stack_limit as usize
             {
-                add_skip_region(
+                if !add_skip_region(
                     static_skip,
                     skip_count,
                     stack_limit as *mut u8,
                     stack_base as usize - stack_limit as usize,
-                );
+                ) {
+                    ok = false;
+                }
             }
 
             let tls = *(teb.add(0x58) as *const *mut c_void);
             if !tls.is_null() {
                 let page = (tls as usize & !(PAGE_SIZE - 1)) as *mut u8;
-                add_skip_region(static_skip, skip_count, page, PAGE_SIZE);
+                if !add_skip_region(static_skip, skip_count, page, PAGE_SIZE) {
+                    ok = false;
+                }
+            }
+
+            let tls_exp = *(teb.add(TLS_EXPANSION_SLOTS_OFFSET) as *const *mut c_void);
+            if !tls_exp.is_null() {
+                let tls_exp_size = region_size_of(tls_exp);
+                if !add_skip_region(static_skip, skip_count, tls_exp as *mut u8, tls_exp_size) {
+                    ok = false;
+                }
             }
         }
     }
     CloseHandle(h);
+    ok
 }
 
 unsafe fn encrypt_state(state: *mut State) -> bool {
-    if (*state).count != 0 {
+    if (*state).count != 0 || (*state).skip_failed {
         return false;
     }
     let capacity = (*state).capacity;
     let entries = (*state).entries;
+    let mut failed = false;
+    let mut stop = false;
     virtual_walk(WALK_START, |base, size, st, protect, ty| {
+        if stop {
+            return;
+        }
         if st == MEM_COMMIT
             && ty == MEM_PRIVATE
             && protect == PAGE_READWRITE
@@ -435,27 +470,42 @@ unsafe fn encrypt_state(state: *mut State) -> bool {
             while p + PAGE_SIZE <= end {
                 let page = p as *mut u8;
                 let s = &*state;
-                if !is_excluded(&s.skip, s.skip_count, page) {
-                    let s = &mut *state;
-                    if s.count < capacity {
-                        let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
-                        for b in slice.iter_mut() {
-                            *b ^= XOR_KEY;
-                        }
-                        let idx = s.count;
-                        let e = &mut *entries.add(idx);
-                        e.base = page;
-                        e.orig_protect = protect;
-                        let mut old = 0u32;
-                        VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_NOACCESS, &mut old);
-                        s.count += 1;
+                if is_excluded(&s.skip, s.skip_count, page) {
+                    p += PAGE_SIZE;
+                    continue;
+                }
+                let s = &mut *state;
+                if s.count >= capacity {
+                    failed = true;
+                    stop = true;
+                    break;
+                }
+                // Page is currently PAGE_READWRITE, so it can be mutated in place.
+                let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
+                for b in slice.iter_mut() {
+                    *b ^= XOR_KEY;
+                }
+                let mut old = 0u32;
+                if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_NOACCESS, &mut old) != 0 {
+                    let idx = s.count;
+                    let e = &mut *entries.add(idx);
+                    e.base = page;
+                    e.orig_protect = protect;
+                    s.count += 1;
+                } else {
+                    // Protection failed: revert to plaintext and leave the page RW
+                    // so it is never left holding ciphertext.
+                    let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
+                    for b in slice.iter_mut() {
+                        *b ^= XOR_KEY;
                     }
+                    failed = true;
                 }
                 p += PAGE_SIZE;
             }
         }
     });
-    true
+    !failed
 }
 
 unsafe fn decrypt_state(state: *mut State) -> bool {
@@ -465,12 +515,21 @@ unsafe fn decrypt_state(state: *mut State) -> bool {
     for i in 0..n {
         let e = &*entries.add(i);
         let page = e.base;
+        // The page is PAGE_NOACCESS; make it writable before mutating it.
+        let mut old = 0u32;
+        if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_READWRITE, &mut old) == 0 {
+            return false;
+        }
         let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
         for b in slice.iter_mut() {
             *b ^= XOR_KEY;
         }
-        let mut old = 0u32;
-        VirtualProtect(page as *const c_void, PAGE_SIZE, e.orig_protect, &mut old);
+        if e.orig_protect != PAGE_READWRITE {
+            let mut old = 0u32;
+            if VirtualProtect(page as *const c_void, PAGE_SIZE, e.orig_protect, &mut old) == 0 {
+                return false;
+            }
+        }
     }
     s.count = 0;
     true
@@ -503,43 +562,62 @@ mod tests {
 
             let mut guard = MemGuard::new().expect("memguard init");
 
-            assert!(guard.encrypt(), "encrypt failed");
+            for cycle in 0..2 {
+                assert!(guard.encrypt(), "encrypt failed (cycle {cycle})");
 
-            let mut mbi = core::mem::MaybeUninit::<MEMORY_BASIC_INFORMATION>::uninit();
-            let r = VirtualQuery(
-                buf as *const c_void,
-                mbi.as_mut_ptr(),
-                core::mem::size_of::<MEMORY_BASIC_INFORMATION>(),
-            );
-            assert!(r != 0, "VirtualQuery failed");
-            assert_eq!(
-                mbi.assume_init().Protect,
-                PAGE_NOACCESS,
-                "buffer should be NOACCESS after encrypt"
-            );
+                let mut mbi = core::mem::MaybeUninit::<MEMORY_BASIC_INFORMATION>::uninit();
+                let r = VirtualQuery(
+                    buf as *const c_void,
+                    mbi.as_mut_ptr(),
+                    core::mem::size_of::<MEMORY_BASIC_INFORMATION>(),
+                );
+                assert!(r != 0, "VirtualQuery failed (cycle {cycle})");
+                assert_eq!(
+                    mbi.assume_init().Protect,
+                    PAGE_NOACCESS,
+                    "buffer should be NOACCESS after encrypt (cycle {cycle})"
+                );
 
-            let mut old = 0u32;
-            assert!(
-                VirtualProtect(buf as *const c_void, PAGE_SIZE, PAGE_READONLY, &mut old) != 0,
-                "VirtualProtect RO failed"
-            );
-            let mut enc = [0u8; PAGE_SIZE];
-            core::ptr::copy_nonoverlapping(buf, enc.as_mut_ptr(), PAGE_SIZE);
-            assert!(
-                VirtualProtect(buf as *const c_void, PAGE_SIZE, PAGE_NOACCESS, &mut old) != 0,
-                "VirtualProtect NA failed"
-            );
+                let mut old = 0u32;
+                assert!(
+                    VirtualProtect(buf as *const c_void, PAGE_SIZE, PAGE_READONLY, &mut old) != 0,
+                    "VirtualProtect RO failed (cycle {cycle})"
+                );
+                let mut enc = [0u8; PAGE_SIZE];
+                core::ptr::copy_nonoverlapping(buf, enc.as_mut_ptr(), PAGE_SIZE);
+                assert!(
+                    VirtualProtect(buf as *const c_void, PAGE_SIZE, PAGE_NOACCESS, &mut old) != 0,
+                    "VirtualProtect NA failed (cycle {cycle})"
+                );
 
-            for i in 0..PAGE_SIZE {
-                assert_eq!(enc[i], pattern[i] ^ XOR_KEY, "byte {i} not XOR'd");
-            }
+                for i in 0..PAGE_SIZE {
+                    assert_eq!(
+                        enc[i],
+                        pattern[i] ^ XOR_KEY,
+                        "byte {i} not XOR'd (cycle {cycle})"
+                    );
+                }
 
-            assert!(guard.decrypt(), "decrypt failed");
+                assert!(guard.decrypt(), "decrypt failed (cycle {cycle})");
 
-            let mut dec = [0u8; PAGE_SIZE];
-            core::ptr::copy_nonoverlapping(buf, dec.as_mut_ptr(), PAGE_SIZE);
-            for i in 0..PAGE_SIZE {
-                assert_eq!(dec[i], pattern[i], "byte {i} not restored");
+                let mut mbi = core::mem::MaybeUninit::<MEMORY_BASIC_INFORMATION>::uninit();
+                let r = VirtualQuery(
+                    buf as *const c_void,
+                    mbi.as_mut_ptr(),
+                    core::mem::size_of::<MEMORY_BASIC_INFORMATION>(),
+                );
+                assert!(r != 0, "VirtualQuery failed (cycle {cycle})");
+                assert_eq!(
+                    mbi.assume_init().Protect,
+                    PAGE_READWRITE,
+                    "buffer should be READWRITE after decrypt (cycle {cycle})"
+                );
+
+                let mut dec = [0u8; PAGE_SIZE];
+                core::ptr::copy_nonoverlapping(buf, dec.as_mut_ptr(), PAGE_SIZE);
+                for i in 0..PAGE_SIZE {
+                    assert_eq!(dec[i], pattern[i], "byte {i} not restored (cycle {cycle})");
+                }
             }
 
             VirtualFree(buf as *mut c_void, 0, MEM_RELEASE);
