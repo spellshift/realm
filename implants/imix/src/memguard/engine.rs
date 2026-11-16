@@ -445,21 +445,12 @@ unsafe fn add_thread_skip(
                 }
             }
 
-            let stack_base = *(teb.add(0x08) as *const *mut c_void);
-            let stack_limit = *(teb.add(0x10) as *const *mut c_void);
-            if !stack_base.is_null()
-                && !stack_limit.is_null()
-                && stack_base as usize > stack_limit as usize
-            {
-                if !add_skip_region(
-                    static_skip,
-                    skip_count,
-                    stack_limit as *mut u8,
-                    stack_base as usize - stack_limit as usize,
-                ) {
-                    ok = false;
-                }
-            }
+            // NOTE: Phase 2 moves stack exclusion to the per-cycle path. The
+            // watchdog excludes only the +-RSP_HOT_WINDOW_PAGES window around
+            // each suspended thread's captured Rsp, so the rest of every stack
+            // is now encrypted. Whole-stack exclusion here would prevent that,
+            // so it is intentionally omitted from the static (init-time) skip.
+            // The TEB, PEB, and TLS blocks below remain statically excluded.
 
             let tls = *(teb.add(0x58) as *const *mut c_void);
             if !tls.is_null() {
@@ -590,6 +581,9 @@ mod tests {
 
     #[test]
     fn encrypt_decrypt_roundtrip() {
+        // Serialize with the watchdog integration test which also creates the
+        // process-wide MemGuard singleton.
+        let _g = crate::memguard::TEST_LOCK.lock().unwrap();
         unsafe {
             let buf = VirtualAlloc(
                 core::ptr::null(),
