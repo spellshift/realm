@@ -1,14 +1,12 @@
 import React from "react";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import "@testing-library/jest-dom";
 
 import TabContextMenu from "../TabContextMenu";
-import GraphPivotsSection from "../graph/GraphPivotsSection";
 import { formatPivotTabLabel } from "../../utils/networkGraphUtils";
-import { ShellPivotItem } from "../../hooks/useShellData";
 
-describe("PivotTabRename - TabContextMenu, Context Drawer & Inline Rename", () => {
+describe("PivotTabRename - TabContextMenu & Inline Rename", () => {
     it("renders TabContextMenu with Rename and Minimize options", () => {
         const onRename = vi.fn();
         const onClose = vi.fn();
@@ -80,107 +78,6 @@ describe("PivotTabRename - TabContextMenu, Context Drawer & Inline Rename", () =
 
         fireEvent.keyDown(window, { key: "Escape" });
         expect(onClose).toHaveBeenCalled();
-    });
-
-    it("allows renaming pivot tabs directly from the context drawer (GraphPivotsSection)", () => {
-        const onRenamePivot = vi.fn();
-        const onResetPivotName = vi.fn();
-        const pivots: ShellPivotItem[] = [
-            {
-                id: "p1",
-                kind: "ssh",
-                destination: "admin@10.0.0.1:22",
-                activeTarget: "admin@10.0.0.1:22",
-            },
-        ];
-
-        const { rerender } = render(
-            <GraphPivotsSection
-                portalId={1}
-                pivots={pivots}
-                onRenamePivot={onRenamePivot}
-                onResetPivotName={onResetPivotName}
-            />
-        );
-
-        // Initial view shows auto-named label
-        expect(screen.getByText("10.0.0.1")).toBeInTheDocument();
-
-        // Clicking the rename pencil icon switches to inline input
-        const renameBtn = screen.getByRole("button", { name: /rename pivot 10\.0\.0\.1/i });
-        fireEvent.click(renameBtn);
-
-        const input = screen.getByTestId("rename-pivot-input-p1");
-        expect(input).toBeInTheDocument();
-        expect(input).toHaveValue("10.0.0.1");
-
-        // Type a new title and submit with Enter
-        fireEvent.change(input, { target: { value: "Prod Database Bastion" } });
-        fireEvent.keyDown(input, { key: "Enter" });
-
-        expect(onRenamePivot).toHaveBeenCalledWith("p1", "Prod Database Bastion");
-
-        // Rerender with customTitle set
-        const updatedPivots: ShellPivotItem[] = [
-            {
-                ...pivots[0],
-                customTitle: "Prod Database Bastion",
-            },
-        ];
-
-        rerender(
-            <GraphPivotsSection
-                portalId={1}
-                pivots={updatedPivots}
-                onRenamePivot={onRenamePivot}
-                onResetPivotName={onResetPivotName}
-            />
-        );
-
-        expect(screen.getByText("Prod Database Bastion")).toBeInTheDocument();
-
-        // Reset button should now be visible
-        const resetBtn = screen.getByRole("button", {
-            name: /reset name for prod database bastion/i,
-        });
-        expect(resetBtn).toBeInTheDocument();
-        fireEvent.click(resetBtn);
-
-        expect(onResetPivotName).toHaveBeenCalledWith("p1");
-    });
-
-    it("verifies double-click and escape cancellation in context drawer inline rename", () => {
-        const onRenamePivot = vi.fn();
-        const pivots: ShellPivotItem[] = [
-            {
-                id: "pty-1",
-                kind: "pty",
-                destination: "PTY",
-                activeTarget: "PTY",
-            },
-        ];
-
-        render(
-            <GraphPivotsSection
-                portalId={1}
-                pivots={pivots}
-                onRenamePivot={onRenamePivot}
-            />
-        );
-
-        const label = screen.getByTitle("Double-click to rename");
-        fireEvent.doubleClick(label);
-
-        const input = screen.getByTestId("rename-pivot-input-pty-1");
-        expect(input).toBeInTheDocument();
-
-        // Change text but press Escape
-        fireEvent.change(input, { target: { value: "Unsaved Name" } });
-        fireEvent.keyDown(input, { key: "Escape" });
-
-        expect(onRenamePivot).not.toHaveBeenCalled();
-        expect(screen.queryByTestId("rename-pivot-input-pty-1")).not.toBeInTheDocument();
-        expect(screen.getByTitle("Double-click to rename")).toHaveTextContent("PTY");
     });
 
     it("supports inline editing directly on the tab bar via double-click and blur/enter", () => {
@@ -259,16 +156,15 @@ describe("PivotTabRename - TabContextMenu, Context Drawer & Inline Rename", () =
         expect(screen.getByRole("button", { name: "Minimize Gateway tab" })).toBeInTheDocument();
     });
 
-    it("verifies manual rename strictly overrides PTY and SSH auto-naming", () => {
-        // 1. PTY tab default auto-naming
+    it("verifies static PTY naming and manual rename override", () => {
+        // 1. PTY tab always defaults to static "PTY" regardless of command
         const ptyTab = { type: "pty", target: "PTY" };
         expect(formatPivotTabLabel(ptyTab)).toBe("PTY");
 
-        // PTY tab auto-naming updates from executed command
         const ptyWithCmd = { type: "pty", target: "cat /etc/passwd" };
-        expect(formatPivotTabLabel(ptyWithCmd)).toBe("cat /etc/passwd");
+        expect(formatPivotTabLabel(ptyWithCmd)).toBe("PTY");
 
-        // Manually renamed PTY tab overrides any auto-named command
+        // Manually renamed PTY tab overrides static label
         const renamedPty = {
             type: "pty",
             target: "cat /etc/passwd",
@@ -296,9 +192,9 @@ describe("PivotTabRename - TabContextMenu, Context Drawer & Inline Rename", () =
         };
         expect(formatPivotTabLabel(renamedSsh)).toBe("Jumpbox Alpha");
 
-        // Clearing custom title restores auto-naming
+        // Clearing custom title restores default static PTY / host IP naming
         const restoredPty = { ...renamedPty, customTitle: undefined };
-        expect(formatPivotTabLabel(restoredPty)).toBe("cat /etc/passwd");
+        expect(formatPivotTabLabel(restoredPty)).toBe("PTY");
 
         const restoredSsh = { ...renamedSsh, customTitle: "" };
         expect(formatPivotTabLabel(restoredSsh)).toBe("192.168.1.100");

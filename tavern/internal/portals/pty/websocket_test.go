@@ -321,3 +321,51 @@ func TestPTYResizeMessage(t *testing.T) {
 		t.Fatal("timed out waiting for PTY resize mote")
 	}
 }
+
+func TestClosePivotSession(t *testing.T) {
+	env := setupPTYTestEnv(t)
+	defer env.Close()
+	ctx := context.Background()
+
+	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.TaskEnt.ID, 0)
+	require.NoError(t, err)
+	defer agentCleanup()
+
+	url := fmt.Sprintf("%s?portal_id=%d", env.WSURL, portalID)
+	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	var pivot *ent.ShellPivot
+	require.Eventually(t, func() bool {
+		pivots, qErr := env.EntClient.ShellPivot.Query().All(ctx)
+		if qErr != nil || len(pivots) != 1 {
+			return false
+		}
+		pivot = pivots[0]
+		return true
+	}, 2*time.Second, 20*time.Millisecond)
+
+	require.True(t, pty.ClosePivotSession(ctx, env.EntClient, pivot.ID))
+	require.False(t, pty.ClosePivotSession(ctx, env.EntClient, pivot.ID))
+
+	updated, err := env.EntClient.ShellPivot.Get(ctx, pivot.ID)
+	require.NoError(t, err)
+	assert.False(t, updated.ClosedAt.IsZero())
+
+	ws.SetReadDeadline(time.Now().Add(2 * time.Second))
+	sawClosedStatus := false
+	for {
+		_, data, readErr := ws.ReadMessage()
+		if readErr != nil {
+			break
+		}
+		var statusMsg shell.WebsocketStatusMessage
+		if json.Unmarshal(data, &statusMsg) == nil && statusMsg.Kind == shell.WebsocketMessageKindStatus && statusMsg.Status == "closed" {
+			sawClosedStatus = true
+			break
+		}
+	}
+	assert.True(t, sawClosedStatus, "expected websocket client to receive closed status on ClosePivotSession")
+}
+

@@ -5,6 +5,8 @@ import { BrowserRouter } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing";
 import "@testing-library/jest-dom";
 
+import { AuthorizationContext } from "../../../../context/AuthorizationContext";
+import { resetSharedDrawerHeightForTests } from "../EldritchCodeEditor";
 import InterpreterStatusBanner from "../InterpreterStatusBanner";
 import MultiLineComposer, {
     DEFAULT_RC_ALIASES_SCRIPT,
@@ -30,7 +32,9 @@ import { parseComposerScriptForTome } from "../../utils/tomeComposerUtils";
 import SessionSettings from "../SessionSettings";
 import ShellHistoryDrawer from "../ShellHistoryDrawer";
 import ShellPivotsDrawer from "../ShellPivotsDrawer";
-import ShellKnowledgeDrawer from "../ShellKnowledgeDrawer";
+import HostsTreeDrawer from "../../../../components/hosts-tree/HostsTreeDrawer";
+import CredentialModal from "../graph/CredentialModal";
+import HostModal from "../graph/HostModal";
 import ShellScratchpad, {
     SCRATCHPAD_STORAGE_KEY,
     loadScratchpadState,
@@ -51,8 +55,6 @@ import {
     getEldritchSignatureHelp,
     getUserDefinedFunctions,
     getUserDefinedVariables,
-    registerUserDefinedFunction,
-    registerUserDefinedVariable,
     registerUserSymbolsFromCode,
     stdlibRegistry,
 } from "../../utils/eldritchLsp";
@@ -63,6 +65,8 @@ import {
     formatPortListInput,
     formatSubnetCidr,
     getIpv4SubnetPrefix,
+    hasPivotActivity,
+    isBeaconOnline,
     parsePortList,
     togglePortInList,
 } from "../../utils/networkGraphUtils";
@@ -74,7 +78,6 @@ import {
 } from "../../../../lib/browser-adapter";
 import {
     KnowledgeCredentialItem,
-    KnowledgeFileItem,
     KnowledgeHostItem,
     ShellPivotItem,
     ShellTaskItem,
@@ -159,16 +162,10 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(onOpenScratchpad).toHaveBeenCalledTimes(1);
         expect(onCloseScratchpad).not.toHaveBeenCalled();
 
-        // Step 6: Agent Callback (closes scratchpad and highlights Next on bottom-right bar, pre-renders queue indicator)
+        // Step 6: Agent Callback (closes scratchpad and highlights Next on bottom-right bar)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Agent Callback")).toBeInTheDocument();
         expect(onCloseScratchpad).toHaveBeenCalledTimes(1);
-        expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
-
-        // Step 7: Queued & Executing Tasks
-        fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Queued & Executing Tasks")).toBeInTheDocument();
-        expect(onQueueStepChange).toHaveBeenLastCalledWith(true);
 
         // Step 7: Async Mode (positioned above bottom status bar element without overlapping)
         const nonInteractiveEl = document.createElement("span");
@@ -192,19 +189,18 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         expect(dialog).toBeInTheDocument();
         expect(dialog.style.bottom).toBe(`${window.innerHeight - 760 + 14}px`);
         expect(dialog.style.top).toBe("");
-        expect(onQueueStepChange).toHaveBeenLastCalledWith(false);
         document.body.removeChild(nonInteractiveEl);
 
-        // Step 8: Context
+        // Step 8: Access
         fireEvent.click(screen.getByText("Next"));
-        expect(screen.getByText("Context")).toBeInTheDocument();
+        expect(screen.getByText("Access")).toBeInTheDocument();
         expect(
             screen.getByText(
-                /Explore Realm's knowledge graph with a view tailored for your operation\. Your pivoting sessions, PTYs, and other operational info are stored here\./i
+                /Navigate hosts, shells, pivots, and PTYs, add target hosts or credentials, and jump straight into SSH pivots from one unified Access drawer\./i
             )
         ).toBeInTheDocument();
 
-        // Step 9: Going Interactive (Portal in Context drawer / status bar)
+        // Step 9: Going Interactive (Portal in status bar)
         fireEvent.click(screen.getByText("Next"));
         expect(screen.getByText("Going Interactive")).toBeInTheDocument();
         expect(onPortalStepChange).toHaveBeenLastCalledWith(false);
@@ -482,9 +478,12 @@ describe("ShellWalkthrough & InterpreterStatusBanner", () => {
         );
 
         expect(screen.getByTestId("stuck-interpreter-banner")).toBeInTheDocument();
-        expect(screen.getByText(/Interpreter Busy or Potentially Stuck/i)).toBeInTheDocument();
+        expect(screen.getByText('sys.shell("sleep 9999")')).toBeInTheDocument();
+        expect(screen.getByText(/is taking longer than expected\. \(45s\)/i)).toBeInTheDocument();
 
-        fireEvent.click(screen.getByText(/New Interpreter/i));
+        const newInterpreterBtn = screen.getByRole("button", { name: /New Interpreter/i });
+        expect(newInterpreterBtn.querySelector("svg.lucide-terminal")).toBeInTheDocument();
+        fireEvent.click(newInterpreterBtn);
         expect(onSpawnFreshShell).toHaveBeenCalled();
     });
 
@@ -673,16 +672,9 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         render(<StatefulComposerAndSessionSettings />);
 
         expect(screen.getByTestId("composer-syntax-highlight")).toBeInTheDocument();
-        const lspStatusBtn = screen.getByTestId("eldritch-lsp-status");
-        expect(lspStatusBtn).toBeInTheDocument();
-        expect(lspStatusBtn).not.toHaveTextContent("eldritch-lsp");
-        expect(screen.queryByTestId("eldritch-lsp-status-popover")).not.toBeInTheDocument();
-        fireEvent.mouseEnter(lspStatusBtn);
-        const noErrorsPopover = screen.getByTestId("eldritch-lsp-status-popover");
-        expect(noErrorsPopover).toBeInTheDocument();
-        expect(noErrorsPopover).toHaveTextContent("No errors");
-        fireEvent.mouseLeave(lspStatusBtn);
-        expect(screen.queryByTestId("eldritch-lsp-status-popover")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("eldritch-lsp-status")).not.toBeInTheDocument();
+        expect(screen.getByText("Eldritch")).toBeInTheDocument();
+        expect(screen.getByTitle("Eldritch Composer")).toHaveClass("text-gray-400");
         expect(screen.getByTestId("composer-resize-handle")).toBeInTheDocument();
         expect(screen.queryByTestId("composer-rc-tab")).not.toBeInTheDocument();
 
@@ -718,12 +710,14 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect(scriptTextarea.value).toContain('file.list(input_params["path"])');
         expect(scriptTextarea.value).not.toContain("process.list()");
 
-        // SessionSettings drawer renders radio toggle in the left settings panel above Font Size with label "Enable RC", and initial chooser with "Setup Aliases" above "Load RC Tome" or "or custom"
+        // SessionSettings drawer renders title "Settings", radio toggle & Font Size in the RIGHT panel so text editors stay aligned
         expect(screen.getByTestId("session-settings-drawer")).toBeInTheDocument();
-        const leftSettingsPanel = screen.getByTestId("session-settings-left-panel");
+        expect(screen.getByText("Settings")).toBeInTheDocument();
+        expect(screen.queryByTestId("rc-eldritch-lsp-status")).not.toBeInTheDocument();
+        const rightSettingsPanel = screen.getByTestId("session-settings-right-panel");
         const rcToggle = screen.getByTestId("session-settings-rc-toggle");
-        expect(leftSettingsPanel).toContainElement(rcToggle);
-        expect(leftSettingsPanel).toHaveTextContent(/Enable RC[\s\S]*Font Size/);
+        expect(rightSettingsPanel).toContainElement(rcToggle);
+        expect(rightSettingsPanel).toHaveTextContent(/Enable RC[\s\S]*Font Size/);
         expect(rcToggle).toHaveAttribute("aria-checked", "false");
         expect(rcToggle).not.toHaveClass("bg-purple-600");
 
@@ -749,9 +743,6 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect(rcTextarea.value).toContain("def ps(");
         expect(rcTextarea.value).toContain("def netstat(");
 
-        // Lint checkmark matches composer view (green text-emerald-400)
-        expect(screen.getByTestId("rc-eldritch-lsp-status")).toHaveClass("text-emerald-400");
-
         // Open SHELL_RC Tome picker in SessionSettings -> only shows SHELL_RC tomes ("Shell Aliases")
         fireEvent.click(screen.getByTestId("session-settings-tome-picker-button"));
         expect(screen.getByTestId("session-settings-tome-picker-popover")).toBeInTheDocument();
@@ -764,8 +755,9 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect(diagnostics).toHaveLength(0);
     });
 
-    it("splits the RC pane vertically with a left settings panel to increase, decrease, and reset terminal and Eldritch editor font sizes between min 6 and max 28", () => {
+    it("places inline font size numeric input with vertical +/- buttons on the right settings panel between min 6 and max 28", () => {
         window.localStorage.clear();
+        resetSharedDrawerHeightForTests();
         expect(MIN_SHELL_FONT_SIZE).toBe(6);
         expect(MAX_SHELL_FONT_SIZE).toBe(28);
         expect(clampShellFontSize(2)).toBe(6);
@@ -813,20 +805,19 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
 
         render(<StatefulFontSizeShellUI />);
 
-        const leftPanel = screen.getByTestId("session-settings-left-panel");
+        const rightPanel = screen.getByTestId("session-settings-right-panel");
+        const fontSizeControl = screen.getByTestId("session-settings-font-size-control");
+        const fontSizeInput = screen.getByTestId("session-settings-font-size-input") as HTMLInputElement;
         const decreaseBtn = screen.getByTestId("session-settings-font-decrease");
         const increaseBtn = screen.getByTestId("session-settings-font-increase");
-        const resetBtn = screen.getByTestId("session-settings-font-reset");
 
-        expect(leftPanel).toContainElement(decreaseBtn);
-        expect(leftPanel).toContainElement(increaseBtn);
-        expect(leftPanel).toContainElement(resetBtn);
+        expect(rightPanel).toContainElement(fontSizeControl);
+        expect(fontSizeControl).toContainElement(fontSizeInput);
+        expect(fontSizeControl).toContainElement(increaseBtn);
+        expect(fontSizeControl).toContainElement(decreaseBtn);
         expect(decreaseBtn).toHaveAttribute("aria-label", "Decrease font size");
         expect(increaseBtn).toHaveAttribute("aria-label", "Increase font size");
-        expect(resetBtn).toHaveAttribute("aria-label", "Reset font size");
-        expect(decreaseBtn.querySelector("svg.lucide-a-arrow-down")).toBeInTheDocument();
-        expect(increaseBtn.querySelector("svg.lucide-a-arrow-up")).toBeInTheDocument();
-        expect(resetBtn).toBeDisabled();
+        expect(fontSizeInput.value).toBe(String(DEFAULT_SHELL_FONT_SIZE));
 
         const rcEditor = screen.getByLabelText(
             "Shared Eldritch RC script editor"
@@ -835,6 +826,11 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
             "Multi-line Eldritch script editor"
         ) as HTMLTextAreaElement;
         const promptSpinner = screen.getByTestId("shell-prompt-spinner");
+
+        // Config panel appears AFTER the editor pane in DOM order so editors stay left-aligned
+        expect(
+            rcEditor.compareDocumentPosition(rightPanel) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
 
         expect(rcEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
         expect(composerEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
@@ -852,7 +848,6 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect((promptSpinner.lastElementChild as HTMLElement).style.fontSize).toBe("28px");
         expect(loadShellFontSize()).toBe(28);
         expect(increaseBtn).toBeDisabled();
-        expect(resetBtn).not.toBeDisabled();
 
         // Decrease font size down to MIN_SHELL_FONT_SIZE (6)
         for (let size = MAX_SHELL_FONT_SIZE; size > MIN_SHELL_FONT_SIZE; size--) {
@@ -864,20 +859,15 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         expect((promptSpinner.lastElementChild as HTMLElement).style.fontSize).toBe("6px");
         expect(loadShellFontSize()).toBe(6);
         expect(decreaseBtn).toBeDisabled();
-        expect(resetBtn).not.toBeDisabled();
 
-        // Reset font size back to DEFAULT_SHELL_FONT_SIZE (13)
-        fireEvent.click(resetBtn);
-        expect(rcEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
-        expect(composerEditor.style.fontSize).toBe(`${DEFAULT_SHELL_FONT_SIZE}px`);
-        expect((promptSpinner.lastElementChild as HTMLElement).style.fontSize).toBe(
-            `${DEFAULT_SHELL_FONT_SIZE}px`
-        );
-        expect(loadShellFontSize()).toBe(DEFAULT_SHELL_FONT_SIZE);
-        expect(resetBtn).toBeDisabled();
+        // Typing directly into the inline numeric input updates font size
+        fireEvent.change(fontSizeInput, { target: { value: "18" } });
+        expect(rcEditor.style.fontSize).toBe("18px");
+        expect(composerEditor.style.fontSize).toBe("18px");
+        expect(loadShellFontSize()).toBe(18);
     });
 
-    it("renders Save Tome button with plus overlay next to Tome button and guides user through creating a Tome from the composer script", async () => {
+    it("renders composer action buttons in Run -> Save Tome -> Load Tome -> Close order and guides user through creating a Tome with author from AuthorizationContext", async () => {
         const initialScript = [
             "# Tome: File List",
             "# List files and directories with metadata.",
@@ -987,30 +977,54 @@ describe("MultiLineComposer, SessionSettings (RC Drawer & SHELL_RC Tomes) & eldr
         const StatefulSaveTomeComposer = () => {
             const [code, setCode] = React.useState(initialScript);
             return (
-                <MockedProvider mocks={[createTomeMock, getShellTomesMock]} addTypename={false}>
-                    <MultiLineComposer
-                        isOpen={true}
-                        onToggle={vi.fn()}
-                        code={code}
-                        onChange={setCode}
-                        onRunCode={vi.fn()}
-                        tomes={sampleTomes}
-                        defaultAuthor="alice"
-                        onTomeCreated={onTomeCreated}
-                    />
-                </MockedProvider>
+                <AuthorizationContext.Provider
+                    value={{
+                        data: {
+                            me: {
+                                id: "u-alice",
+                                name: "alice",
+                                photoURL: "",
+                                isActivated: true,
+                                isAdmin: true,
+                            },
+                        },
+                        isLoading: false,
+                        error: undefined,
+                    }}
+                >
+                    <MockedProvider mocks={[createTomeMock, getShellTomesMock]} addTypename={false}>
+                        <MultiLineComposer
+                            isOpen={true}
+                            onToggle={vi.fn()}
+                            code={code}
+                            onChange={setCode}
+                            onRunCode={vi.fn()}
+                            tomes={sampleTomes}
+                            onTomeCreated={onTomeCreated}
+                        />
+                    </MockedProvider>
+                </AuthorizationContext.Provider>
             );
         };
 
         render(<StatefulSaveTomeComposer />);
 
-        const tomePickerBtn = screen.getByTestId("composer-tome-picker-button");
+        const runBtn = screen.getByRole("button", { name: /^Run$/i });
         const saveTomeBtn = screen.getByTestId("composer-save-tome-button");
+        const tomePickerBtn = screen.getByTestId("composer-tome-picker-button");
+        const closeBtn = screen.getByLabelText("Close composer");
         expect(saveTomeBtn).toBeInTheDocument();
         expect(saveTomeBtn.textContent).toBe("");
         expect(screen.getByTestId("composer-save-tome-plus-icon")).toBeInTheDocument();
+        // Verify exact order: Run -> Save Tome -> Load Tome -> Close
         expect(
-            tomePickerBtn.compareDocumentPosition(saveTomeBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+            runBtn.compareDocumentPosition(saveTomeBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            saveTomeBtn.compareDocumentPosition(tomePickerBtn) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            tomePickerBtn.compareDocumentPosition(closeBtn) & Node.DOCUMENT_POSITION_FOLLOWING
         ).toBeTruthy();
 
         // Click Save Tome button -> opens modal at Step 1 (Details) with vertical FormSteps progression
@@ -1431,7 +1445,7 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
         fireEvent.click(screen.getByText("View Saved Transcript"));
         expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.15:22", "42");
 
-        // Pivot tab labels omit IDs and show IP for SSH or truncated last command for PTY (ignoring "exit")
+        // Pivot tab labels omit IDs and show IP for SSH or static "PTY" for PTY (no dynamic command naming)
         expect(formatPivotTabLabel({ type: "ssh", target: "root:secret@10.0.0.15:22" })).toBe("10.0.0.15");
         expect(formatPivotTabLabel({ type: "pty", target: "PTY #90194313217" })).toBe("PTY");
         expect(formatPivotTabLabel({ type: "pty", target: "exit" })).toBe("PTY");
@@ -1440,9 +1454,9 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
                 type: "pty",
                 target: "cat /etc/shadow && grep root /etc/passwd",
             })
-        ).toBe("cat /etc/shadow && grep ...");
+        ).toBe("PTY");
 
-        // Manual rename overrides any auto-naming for PTY and SSH
+        // Manual rename overrides default naming for PTY and SSH
         expect(
             formatPivotTabLabel({
                 type: "pty",
@@ -1580,7 +1594,7 @@ describe("ShellHistoryDrawer & ShellPivotsDrawer", () => {
     });
 });
 
-describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
+describe("Access Drawer (HostsTreeDrawer) & SshConnectionModal", () => {
     const sampleCreds: KnowledgeCredentialItem[] = [
         {
             id: "cred-1",
@@ -1616,155 +1630,6 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             sameSubnet: true,
         },
     ];
-
-    const sampleFiles: KnowledgeFileItem[] = [
-        {
-            id: "file-77",
-            path: "/etc/shadow.bak",
-            size: 1024,
-            permissions: "-rw-------",
-            owner: "root",
-            createdAt: "2025-01-01T12:00:00Z",
-            hostId: "h-2",
-            hostName: "db-01",
-            isCurrentHost: false,
-        },
-    ];
-
-    it("renders unified minimalist Knowledge Graph & Pivots drawer with adjacent hosts, pivots, shells, credentials, and files", () => {
-        const onOpenSshWithTarget = vi.fn();
-        const onOpenPivotTab = vi.fn();
-        const onOpenPty = vi.fn();
-        const onOpenSshModal = vi.fn();
-
-        render(
-            <MockedProvider mocks={[]} addTypename={false}>
-                <BrowserRouter>
-                    <ShellKnowledgeDrawer
-                        isOpen={true}
-                        onClose={vi.fn()}
-                        currentShellId="1"
-                        currentHostId="h-1"
-                        currentHostName="web-01"
-                        currentHostIp="10.0.0.10"
-                        portalId={99}
-                        pivots={[
-                            {
-                                id: "piv-10",
-                                kind: "SSH",
-                                destination: "root@10.0.0.20:22",
-                                closedAt: "2025-01-01T12:15:00Z",
-                                hostName: "web-01",
-                            },
-                            {
-                                id: "piv-11",
-                                kind: "PTY",
-                                destination: "pty",
-                                activeTarget: "cat /etc/shadow && grep root /etc/passwd",
-                                closedAt: null,
-                                hostName: "web-01",
-                            },
-                        ]}
-                        hostCredentials={sampleCreds}
-                        allCredentials={sampleCreds}
-                        networkHosts={sampleHosts}
-                        hostFiles={sampleFiles}
-                        hostProcessCount={42}
-                        hostShells={[
-                            {
-                                id: "1",
-                                createdAt: "2025-01-01T12:00:00Z",
-                                beaconId: "b-1",
-                                beaconName: "beacon-web",
-                                beaconPrincipal: "root",
-                                hostName: "web-01",
-                                isCurrentHost: true,
-                            },
-                            {
-                                id: "2",
-                                createdAt: "2025-01-01T12:05:00Z",
-                                beaconId: "b-2",
-                                beaconName: "beacon-db",
-                                beaconPrincipal: "postgres",
-                                hostName: "db-01",
-                                isCurrentHost: false,
-                            },
-                        ]}
-                        lastKnowledgeSyncAt={Date.now()}
-                        onRefetchKnowledgeGraph={vi.fn()}
-                        onOpenPty={onOpenPty}
-                        onOpenSshModal={onOpenSshModal}
-                        onOpenPivotTab={onOpenPivotTab}
-                        onOpenSshWithTarget={onOpenSshWithTarget}
-                    />
-                </BrowserRouter>
-            </MockedProvider>
-        );
-
-        expect(screen.getByRole("heading", { name: "Context" })).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "All" })).not.toBeInTheDocument();
-        expect(screen.queryByLabelText("Refresh knowledge graph")).not.toBeInTheDocument();
-        const closePortalBtn = screen.getByLabelText("Close portal");
-        expect(closePortalBtn).toHaveClass("text-red-400");
-
-        // Verify Context drawer tab order: Pivots -> Shells -> Hosts -> Creds -> Files
-        const pivotsTab = screen.getByRole("button", { name: "Pivots" });
-        const shellsTab = screen.getByRole("button", { name: "Shells" });
-        const hostsTab = screen.getByRole("button", { name: "Hosts" });
-        const credsTab = screen.getByRole("button", { name: "Creds" });
-        const filesTab = screen.getByRole("button", { name: "Files" });
-        expect(pivotsTab.compareDocumentPosition(shellsTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(shellsTab.compareDocumentPosition(hostsTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(hostsTab.compareDocumentPosition(credsTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(credsTab.compareDocumentPosition(filesTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-
-        // Default tab is Pivots: displays tab-formatted pivot names and supports reopen/transcript
-        expect(screen.getByText("10.0.0.20")).toBeInTheDocument();
-        expect(screen.getByText("cat /etc/shadow && grep ...")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Reopen" }));
-        expect(onOpenSshWithTarget).toHaveBeenCalledWith("root@10.0.0.20:22");
-        fireEvent.click(screen.getByRole("button", { name: "Transcript" }));
-        expect(onOpenPivotTab).toHaveBeenCalledWith("ssh", "root@10.0.0.20:22", "piv-10");
-        fireEvent.click(screen.getByRole("button", { name: "Switch" }));
-        expect(onOpenPivotTab).toHaveBeenCalledWith(
-            "pty",
-            "cat /etc/shadow && grep root /etc/passwd",
-            "piv-11"
-        );
-
-        // Switch to Hosts tab: adjacent host renders IP, subnet, open ports, link to /hosts/h-2, and Pivot button
-        fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
-        const hostLink = screen.getByRole("link", { name: "db-01" });
-        expect(hostLink).toHaveAttribute("href", "/hosts/h-2");
-        expect(screen.getByText("10.0.0.20")).toBeInTheDocument();
-        expect(screen.getByText("10.0.0.0/24")).toBeInTheDocument();
-        expect(screen.getByText("ports: :22, :5432")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Pivot" }));
-        expect(onOpenSshWithTarget).toHaveBeenCalledWith("10.0.0.20:22");
-
-        // Switch to Shells tab: displays beacon name and user@host subtext, and switches to other shell
-        fireEvent.click(screen.getByRole("button", { name: "Shells" }));
-        expect(screen.getByText("beacon-db")).toBeInTheDocument();
-        expect(screen.getByText("postgres@db-01")).toBeInTheDocument();
-        expect(screen.queryByText(/Shell #/i)).not.toBeInTheDocument();
-        const switchShellLink = screen.getByRole("link", { name: "Switch" });
-        expect(switchShellLink).toHaveAttribute("href", "/shells/2");
-
-        // Switch to Creds tab: reveal secret & launch SSH Pivot from credential
-        fireEvent.click(screen.getByRole("button", { name: "Creds" }));
-        expect(screen.getByText("svc_backup")).toBeInTheDocument();
-        fireEvent.click(screen.getByLabelText("Reveal secret"));
-        expect(screen.getByText("Winter2025!")).toBeInTheDocument();
-        fireEvent.click(screen.getByText("SSH Pivot"));
-        expect(onOpenSshWithTarget).toHaveBeenCalledWith("svc_backup@10.0.0.10:22", "cred-1");
-
-        // Switch to Files tab: reported file download link
-        fireEvent.click(screen.getByRole("button", { name: "Files" }));
-        const downloadLink = screen.getByLabelText("Download /etc/shadow.bak") as HTMLAnchorElement;
-        expect(downloadLink).toBeInTheDocument();
-        expect(downloadLink.getAttribute("href")).toBe("/cdn/hostfiles/file-77");
-        expect(downloadLink.hasAttribute("download")).toBe(true);
-    });
 
     it("computes unified adjacent hosts, credentials, pivots, shells, and files in networkGraphUtils", () => {
         expect(getIpv4SubnetPrefix("10.0.0.15")).toBe("10.0.0.");
@@ -1955,9 +1820,10 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         expect(result.nearbyPivots).toHaveLength(1);
     });
 
-    it("populates SshConnectionModal target from Quick Fill hosts and credentials (including SSH keys)", () => {
+    it("populates SshConnectionModal target from Quick Fill hosts and credentials, filters creds by selected host, removes Port field, and saves inline + credentials", async () => {
         const onConnect = vi.fn();
         const onLoadIntoComposer = vi.fn();
+        const onCredentialCreated = vi.fn();
         const credsWithSshKey: KnowledgeCredentialItem[] = [
             ...sampleCreds,
             {
@@ -1973,38 +1839,108 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             },
         ];
 
+        const createInlineCredMock = {
+            request: {
+                query: CREATE_CREDENTIAL_MUTATION,
+                variables: {
+                    input: {
+                        principal: "dbops",
+                        secret: "InlinePass2026!",
+                        kind: "KIND_PASSWORD",
+                        networkHostIDs: ["nh-2"],
+                        hostID: "h-2",
+                    },
+                },
+            },
+            result: {
+                data: {
+                    createCredential: {
+                        id: "cred-inline-saved",
+                        principal: "dbops",
+                        kind: "KIND_PASSWORD",
+                        secret: "InlinePass2026!",
+                        createdAt: "2026-01-01T00:00:00Z",
+                    },
+                },
+            },
+        };
+
         render(
-            <SshConnectionModal
-                isOpen={true}
-                onClose={vi.fn()}
-                onConnect={onConnect}
-                credentials={credsWithSshKey}
-                hosts={sampleHosts}
-                onLoadIntoComposer={onLoadIntoComposer}
-            />
+            <MockedProvider mocks={[createInlineCredMock]} addTypename={false}>
+                <SshConnectionModal
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    onConnect={onConnect}
+                    credentials={credsWithSshKey}
+                    hosts={sampleHosts}
+                    onCredentialCreated={onCredentialCreated}
+                    onLoadIntoComposer={onLoadIntoComposer}
+                />
+            </MockedProvider>
         );
 
+        expect(screen.getByRole("heading", { name: "Pivot" })).toBeInTheDocument();
+        expect(screen.queryByText("SSH Connection")).not.toBeInTheDocument();
+        const pivotTypeSelect = screen.getByLabelText("Pivot Type") as HTMLSelectElement;
+        expect(pivotTypeSelect.value).toBe("SSH");
+        expect(screen.getByTestId("pivot-modal-available-pivots")).toHaveTextContent(
+            /Available Pivots/i
+        );
         expect(screen.getByText("Quick Fill")).toBeInTheDocument();
         expect(screen.queryByText("Quick Fill from Knowledge Graph")).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Password")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Port/i)).not.toBeInTheDocument();
 
-        // Select host db-01 (10.0.0.20) and password credential svc_backup
+        // Initially both credentials are visible (unfiltered)
+        expect(screen.getByTestId("ssh-cred-option-cred-1")).toBeInTheDocument();
+        expect(screen.getByTestId("ssh-cred-option-cred-ssh-key-2")).toBeInTheDocument();
+
+        // Select host db-01 (10.0.0.20): cred-1 (web-01) is filtered out while deploy (db-01) remains
+        fireEvent.click(screen.getByTestId("ssh-host-option-h-2"));
+        expect(screen.queryByTestId("ssh-cred-option-cred-1")).not.toBeInTheDocument();
+        expect(screen.getByTestId("ssh-cred-option-cred-ssh-key-2")).toBeInTheDocument();
+
+        // Select deploy credential on db-01
+        fireEvent.click(screen.getByTestId("ssh-cred-option-cred-ssh-key-2"));
+        const input = screen.getByLabelText("Target") as HTMLInputElement;
+        expect(input.value).toBe("deploy@10.0.0.20:22");
+
+        // Add inline credential via + button (no nested modal opened)
+        fireEvent.click(screen.getByTestId("ssh-add-credential-button"));
+        expect(screen.getByTestId("ssh-inline-credential-editor")).toBeInTheDocument();
+        expect(screen.queryByTestId("credential-modal")).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("New credential principal"), {
+            target: { value: "dbops" },
+        });
+        fireEvent.change(screen.getByLabelText("New credential secret"), {
+            target: { value: "InlinePass2026!" },
+        });
+        fireEvent.click(screen.getByTestId("ssh-save-inline-credential"));
+
+        await waitFor(() => {
+            expect(onCredentialCreated).toHaveBeenCalledWith(
+                expect.objectContaining({ id: "cred-inline-saved", principal: "dbops" }),
+                "h-2"
+            );
+        });
+        expect(input.value).toBe("dbops@10.0.0.20:22");
+
+        // Unselect host db-01 to clear filter, verify cred-1 reappears and works with 10.0.0.20
         fireEvent.click(screen.getByTestId("ssh-host-option-h-2"));
         fireEvent.click(screen.getByTestId("ssh-cred-option-cred-1"));
-
-        const input = screen.getByLabelText("Target") as HTMLInputElement;
         expect(input.value).toBe("svc_backup@10.0.0.20:22");
 
-        // Switch selection to SSH key credential deploy
+        // Re-select SSH key credential deploy and connect
         fireEvent.click(screen.getByTestId("ssh-cred-option-cred-ssh-key-2"));
         expect(input.value).toBe("deploy@10.0.0.20:22");
 
         fireEvent.click(screen.getByText("Connect"));
-        expect(onConnect).toHaveBeenCalledWith("deploy@10.0.0.20:22", "cred-ssh-key-2");
+        expect(onConnect).toHaveBeenCalledWith("deploy@10.0.0.20:22", "cred-ssh-key-2", "SSH");
     });
 
-    it("does not close the Context drawer when ShellWalkthrough is closed or re-rendered", () => {
-        const onCloseContextDrawer = vi.fn();
+    it("does not close the Access drawer when ShellWalkthrough is closed or re-rendered", () => {
+        const onCloseAccessDrawer = vi.fn();
         const { rerender } = render(
             <ShellWalkthrough
                 isOpen={false}
@@ -2013,14 +1949,14 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
                 onCloseComposer={() => { }}
                 onOpenSessionSettings={() => { }}
                 onCloseSessionSettings={() => { }}
-                onOpenContextDrawer={() => { }}
-                onCloseContextDrawer={onCloseContextDrawer}
+                onOpenAccessDrawer={() => { }}
+                onCloseAccessDrawer={onCloseAccessDrawer}
             />
         );
 
-        expect(onCloseContextDrawer).not.toHaveBeenCalled();
+        expect(onCloseAccessDrawer).not.toHaveBeenCalled();
 
-        // Simulate parent re-render (e.g., clicking Context drawer toggle button) with fresh inline callbacks
+        // Simulate parent re-render (e.g., clicking Access drawer toggle button) with fresh inline callbacks
         rerender(
             <ShellWalkthrough
                 isOpen={false}
@@ -2029,17 +1965,17 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
                 onCloseComposer={() => { }}
                 onOpenSessionSettings={() => { }}
                 onCloseSessionSettings={() => { }}
-                onOpenContextDrawer={() => { }}
-                onCloseContextDrawer={onCloseContextDrawer}
+                onOpenAccessDrawer={() => { }}
+                onCloseAccessDrawer={onCloseAccessDrawer}
             />
         );
 
-        expect(onCloseContextDrawer).not.toHaveBeenCalled();
+        expect(onCloseAccessDrawer).not.toHaveBeenCalled();
     });
 
-    it("supports documenting a reachable host, editing a discovered host (associating credentials & modifying open/closed ports), and creating new credentials", async () => {
-        const onRefetchKnowledgeGraph = vi.fn();
-        const onOpenSshWithTarget = vi.fn();
+    it("supports creating hosts and credentials from the Access drawer and editing discovered hosts via HostModal", async () => {
+        const onHostSaved = vi.fn();
+        const onCredentialCreated = vi.fn();
 
         const createNetworkHostMock = {
             request: {
@@ -2148,7 +2084,25 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             },
         };
 
-        render(
+        const fileserverHost: KnowledgeHostItem = {
+            id: "nh-30",
+            networkHostId: "nh-30",
+            name: "fileserver",
+            hostname: "fileserver",
+            primaryIP: "10.0.0.30",
+            ipAddress: "10.0.0.30",
+            subnet: "10.0.0.0/24",
+            openPorts: [22, 445],
+            tags: [],
+            beaconCount: 0,
+            credentialCount: 0,
+            credentials: [],
+            isCurrentHost: false,
+            sharedTags: [],
+            sameSubnet: true,
+        };
+
+        const { rerender } = render(
             <MockedProvider
                 mocks={[
                     createNetworkHostMock,
@@ -2159,35 +2113,26 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
                 addTypename={false}
             >
                 <BrowserRouter>
-                    <ShellKnowledgeDrawer
+                    <HostsTreeDrawer
                         isOpen={true}
                         onClose={vi.fn()}
                         currentShellId="1"
                         currentHostId="h-1"
                         currentHostName="web-01"
                         currentHostIp="10.0.0.10"
-                        portalId={99}
+                        hosts={sampleHosts}
+                        shells={[]}
                         pivots={[]}
-                        hostCredentials={sampleCreds}
-                        allCredentials={sampleCreds}
-                        networkHosts={sampleHosts}
-                        hostFiles={sampleFiles}
-                        hostShells={[]}
-                        onRefetchKnowledgeGraph={onRefetchKnowledgeGraph}
-                        onOpenSshWithTarget={onOpenSshWithTarget}
+                        availableCredentials={sampleCreds}
+                        onHostSaved={onHostSaved}
+                        onCredentialCreated={onCredentialCreated}
                     />
                 </BrowserRouter>
             </MockedProvider>
         );
 
-        // 1. Switch to Hosts tab and click the right-aligned + button next to "Discovered Hosts"
-        fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
-        const discoveredHeader = screen.getByText(/Discovered Hosts \(1\)/i);
-        const addHostBtn = screen.getByTestId("add-host-button");
-        expect(discoveredHeader.parentElement).toContainElement(addHostBtn);
-        expect(discoveredHeader.parentElement).toHaveClass("justify-between");
-
-        fireEvent.click(addHostBtn);
+        // 1. Click Monitor+ button in Access drawer header to create a host
+        fireEvent.click(screen.getByTestId("hosts-tree-add-button"));
         expect(screen.getByTestId("host-modal")).toBeInTheDocument();
         expect(screen.getByText("New Host")).toBeInTheDocument();
         const hostSubmitBtn = screen.getByTestId("host-modal-submit");
@@ -2207,50 +2152,19 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         fireEvent.click(screen.getByTestId("host-modal-submit"));
 
         await waitFor(() => {
-            expect(screen.getByText("fileserver")).toBeInTheDocument();
-        });
-        expect(screen.getByText("10.0.0.30")).toBeInTheDocument();
-        expect(screen.getByText("ports: :22, :445")).toBeInTheDocument();
-        expect(onRefetchKnowledgeGraph).toHaveBeenCalled();
-
-        // 2. Edit existing discovered host db-01: close port 5432, open port 443, and associate credential svc_backup
-        fireEvent.click(screen.getByTestId("edit-host-h-2"));
-        expect(screen.getByTestId("host-modal")).toBeInTheDocument();
-        expect(screen.getByText("Edit Host")).toBeInTheDocument();
-
-        // Close port 5432 by clicking its port pill
-        const port5432Pill = screen.getByTestId("host-port-pill-5432");
-        expect(port5432Pill).toHaveAttribute("aria-pressed", "true");
-        fireEvent.click(port5432Pill);
-        expect(port5432Pill).toHaveAttribute("aria-pressed", "false");
-        expect((screen.getByLabelText("Open Ports") as HTMLInputElement).value).toBe("22");
-
-        // Add port 443 via Open Ports input
-        fireEvent.change(screen.getByLabelText("Open Ports"), {
-            target: { value: "22, 443" },
+            expect(onHostSaved).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: "nh-nh-30",
+                    networkHostId: "nh-30",
+                    name: "fileserver",
+                    ipAddress: "10.0.0.30",
+                }),
+                "create"
+            );
         });
 
-        // Associate credential svc_backup (cred-1)
-        const credOption = screen.getByTestId("host-cred-option-cred-1");
-        expect(credOption).toHaveAttribute("aria-pressed", "false");
-        fireEvent.click(credOption);
-        expect(credOption).toHaveAttribute("aria-pressed", "true");
-
-        fireEvent.click(screen.getByTestId("host-modal-submit"));
-
-        await waitFor(() => {
-            expect(screen.getByText("ports: :22, :443")).toBeInTheDocument();
-        });
-        expect(screen.getByText("creds: svc_backup")).toBeInTheDocument();
-
-        // 3. Switch to Creds tab and click the right-aligned + button to create a new credential
-        fireEvent.click(screen.getByRole("button", { name: "Creds" }));
-        const credsHeader = screen.getByText(/Credentials \(1\)/i);
-        const addCredBtn = screen.getByTestId("add-credential-button");
-        expect(credsHeader.parentElement).toContainElement(addCredBtn);
-        expect(credsHeader.parentElement).toHaveClass("justify-between");
-
-        fireEvent.click(addCredBtn);
+        // 2. Click KeyRound+ button in Access drawer header to create a credential for the current host
+        fireEvent.click(screen.getByTestId("hosts-tree-add-credential-button"));
         expect(screen.getByTestId("credential-modal")).toBeInTheDocument();
         expect(screen.getByText("New Credential")).toBeInTheDocument();
         const credSubmitBtn = screen.getByTestId("credential-modal-submit");
@@ -2269,12 +2183,43 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
         fireEvent.click(screen.getByTestId("credential-modal-submit"));
 
         await waitFor(() => {
-            expect(screen.getByText("deploy")).toBeInTheDocument();
+            expect(onCredentialCreated).toHaveBeenCalledWith(
+                expect.objectContaining({ id: "cred-99", principal: "deploy" }),
+                undefined
+            );
         });
-        expect(screen.getByText(/Credentials \(2\)/i)).toBeInTheDocument();
 
-        // 4. Create a credential associated with a discovered NetworkHost ("fileserver") from the Host dropdown
-        fireEvent.click(screen.getByTestId("add-credential-button"));
+        // 3. Re-render Access drawer with fileserver in hosts list and create a credential bound to fileserver
+        rerender(
+            <MockedProvider
+                mocks={[
+                    createNetworkHostMock,
+                    updateNetworkHostMock,
+                    createCredentialMock,
+                    createNetworkHostCredMock,
+                ]}
+                addTypename={false}
+            >
+                <BrowserRouter>
+                    <HostsTreeDrawer
+                        isOpen={true}
+                        onClose={vi.fn()}
+                        currentShellId="1"
+                        currentHostId="h-1"
+                        currentHostName="web-01"
+                        currentHostIp="10.0.0.10"
+                        hosts={[...sampleHosts, fileserverHost]}
+                        shells={[]}
+                        pivots={[]}
+                        availableCredentials={sampleCreds}
+                        onHostSaved={onHostSaved}
+                        onCredentialCreated={onCredentialCreated}
+                    />
+                </BrowserRouter>
+            </MockedProvider>
+        );
+
+        fireEvent.click(screen.getByTestId("hosts-tree-add-credential-button"));
         expect(screen.getByTestId("credential-modal")).toBeInTheDocument();
 
         fireEvent.change(screen.getByLabelText("Principal / Username"), {
@@ -2284,20 +2229,135 @@ describe("ShellKnowledgeDrawer & SshConnectionModal", () => {
             target: { value: "PgPass2026!" },
         });
         fireEvent.change(screen.getByLabelText("Host"), {
-            target: { value: "nh-nh-30" },
+            target: { value: "nh-30" },
         });
 
         fireEvent.click(screen.getByTestId("credential-modal-submit"));
 
         await waitFor(() => {
-            expect(screen.getByText("postgres")).toBeInTheDocument();
+            expect(onCredentialCreated).toHaveBeenCalledWith(
+                expect.objectContaining({ id: "cred-100", principal: "postgres" }),
+                "nh-30"
+            );
         });
-        expect(screen.getByText("@fileserver")).toBeInTheDocument();
-        expect(screen.getByText(/Credentials \(3\)/i)).toBeInTheDocument();
 
-        // Verify the NetworkHost in the Hosts tab also shows the newly associated credential
-        fireEvent.click(screen.getByRole("button", { name: "Hosts" }));
-        expect(screen.getByText("creds: postgres")).toBeInTheDocument();
+        // 4. Verify editing discovered host db-01 via HostModal (ports + credential association)
+        render(
+            <MockedProvider mocks={[updateNetworkHostMock]} addTypename={false}>
+                <HostModal
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    initialHost={sampleHosts[0]}
+                    availableCredentials={sampleCreds}
+                    onHostSaved={onHostSaved}
+                />
+            </MockedProvider>
+        );
+
+        expect(screen.getByTestId("host-modal")).toBeInTheDocument();
+        expect(screen.getByText("Edit Host")).toBeInTheDocument();
+
+        const port5432Pill = screen.getByTestId("host-port-pill-5432");
+        expect(port5432Pill).toHaveAttribute("aria-pressed", "true");
+        fireEvent.click(port5432Pill);
+        expect(port5432Pill).toHaveAttribute("aria-pressed", "false");
+        expect((screen.getByLabelText("Open Ports") as HTMLInputElement).value).toBe("22");
+
+        fireEvent.change(screen.getByLabelText("Open Ports"), {
+            target: { value: "22, 443" },
+        });
+
+        const credOption = screen.getByTestId("host-cred-option-cred-1");
+        expect(credOption).toHaveAttribute("aria-pressed", "false");
+        fireEvent.click(credOption);
+        expect(credOption).toHaveAttribute("aria-pressed", "true");
+
+        fireEvent.click(screen.getByTestId("host-modal-submit"));
+
+        await waitFor(() => {
+            expect(onHostSaved).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: "h-2",
+                    networkHostId: "nh-2",
+                    openPorts: [22, 443],
+                }),
+                "edit"
+            );
+        });
+    });
+
+    it("automatically associates CredentialModal submissions with the current host resolved from hosts when currentHostId prop is omitted", async () => {
+        const onCredentialCreated = vi.fn();
+        const fallbackCredMock = {
+            request: {
+                query: CREATE_CREDENTIAL_MUTATION,
+                variables: {
+                    input: {
+                        hostID: "h-curr-fallback",
+                        principal: "svc-auto",
+                        secret: "AutoAssoc2026!",
+                        kind: "KIND_PASSWORD",
+                    },
+                },
+            },
+            result: {
+                data: {
+                    createCredential: {
+                        id: "cred-fallback-1",
+                        principal: "svc-auto",
+                        kind: "KIND_PASSWORD",
+                        secret: "AutoAssoc2026!",
+                        createdAt: "2026-01-01T00:00:00Z",
+                    },
+                },
+            },
+        };
+
+        render(
+            <MockedProvider mocks={[fallbackCredMock]} addTypename={false}>
+                <CredentialModal
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    hosts={[
+                        {
+                            id: "h-curr-fallback",
+                            hostId: "h-curr-fallback",
+                            name: "pivot-box",
+                            primaryIP: "10.0.5.5",
+                            tags: [],
+                            beaconCount: 1,
+                            credentials: [],
+                            credentialCount: 0,
+                            isCurrentHost: true,
+                            sharedTags: [],
+                            sameSubnet: true,
+                        },
+                    ]}
+                    onCredentialCreated={onCredentialCreated}
+                />
+            </MockedProvider>
+        );
+
+        expect(screen.getByLabelText("Host")).toHaveTextContent("pivot-box (10.0.5.5)");
+        fireEvent.change(screen.getByLabelText("Principal / Username"), {
+            target: { value: "svc-auto" },
+        });
+        fireEvent.change(screen.getByLabelText("Secret / Password"), {
+            target: { value: "AutoAssoc2026!" },
+        });
+        fireEvent.click(screen.getByTestId("credential-modal-submit"));
+
+        await waitFor(() => {
+            expect(onCredentialCreated).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: "cred-fallback-1",
+                    principal: "svc-auto",
+                    hostId: "h-curr-fallback",
+                    isCurrentHost: true,
+                }),
+                undefined
+            );
+        });
     });
 
     it("prevents hidden TabPanels from corrupting PTY dimensions and preserves htop alternate-screen redraws", () => {
@@ -2685,5 +2745,198 @@ describe("ShellScratchpad", () => {
             expect(loadScratchpadState().noteId).toBe("fresh-note-100");
         });
         expect(screen.queryByTestId("scratchpad-offline-badge")).not.toBeInTheDocument();
+    });
+
+    it("renders synchronized line numbers in Scratchpad and shares vertical drawer height across Composer, Settings, and Scratchpad", async () => {
+        resetSharedDrawerHeightForTests();
+        localStorage.removeItem(SCRATCHPAD_STORAGE_KEY);
+
+        const emptyNotesMock = {
+            request: { query: GET_OPERATOR_NOTES },
+            result: { data: { operatorNotes: { edges: [] } } },
+        };
+
+        const { unmount } = render(
+            <MockedProvider mocks={[emptyNotesMock]} addTypename={false}>
+                <ShellScratchpad isOpen={true} onToggle={vi.fn()} shellId="s-height-1" />
+            </MockedProvider>
+        );
+
+        const textarea = screen.getByTestId("scratchpad-textarea") as HTMLTextAreaElement;
+        fireEvent.change(textarea, { target: { value: "line 1\nline 2\nline 3" } });
+
+        const gutter = screen.getByTestId("scratchpad-line-numbers");
+        expect(gutter).toHaveTextContent("1");
+        expect(gutter).toHaveTextContent("2");
+        expect(gutter).toHaveTextContent("3");
+
+        // Resize Scratchpad via keyboard ArrowUp (+20px from default height)
+        const resizeHandle = screen.getByTestId("scratchpad-resize-handle");
+        fireEvent.keyDown(resizeHandle, { key: "ArrowUp" });
+
+        const storedHeight = localStorage.getItem("tavern_shell_drawer_height_v1");
+        expect(storedHeight).not.toBeNull();
+        unmount();
+
+        // Composer reads and uses the exact shared height
+        render(
+            <MultiLineComposer
+                isOpen={true}
+                onToggle={vi.fn()}
+                code="print(1)"
+                onChange={vi.fn()}
+                onRunCode={vi.fn()}
+            />
+        );
+        const composerEditor = screen.getByLabelText("Multi-line Eldritch script editor");
+        const composerHeightWrapper = composerEditor.closest('[style*="height"]');
+        expect(composerHeightWrapper).toHaveStyle({ height: `${storedHeight}px` });
+    });
+});
+
+describe("Knowledge Graph deduplication, pivot filtering & beacon liveness", () => {
+    it("deduplicates Host and NetworkHost sharing the same primary IP, hides failed closed pivots, and sorts live shells before dead ones", () => {
+        const now = Date.now();
+        const futureIso = new Date(now + 60_000).toISOString();
+        const staleIso = new Date(now - 600_000).toISOString();
+
+        expect(isBeaconOnline({ nextSeenAt: futureIso, interval: 60 }, now)).toBe(true);
+        expect(isBeaconOnline({ nextSeenAt: staleIso, interval: 60 }, now)).toBe(false);
+
+        expect(hasPivotActivity({ closedAt: null, data: "" })).toBe(true);
+        expect(hasPivotActivity({ closedAt: "2025-01-01T00:00:00Z", data: "" })).toBe(false);
+        expect(
+            hasPivotActivity({
+                closedAt: "2025-01-01T00:00:00Z",
+                data: "\x1b[31m[-] dial tcp 10.0.0.5:22: connection refused\x1b[0m\r\n",
+            })
+        ).toBe(false);
+        expect(
+            hasPivotActivity({
+                closedAt: "2025-01-01T00:00:00Z",
+                data: "root@app-01:~# whoami\nroot\n",
+            })
+        ).toBe(true);
+
+        const res = buildUnifiedGraphData({
+            currentHostNode: { id: "h-1", name: "jump", primaryIP: "10.0.0.1" },
+            hostId: "h-1",
+            currentShellId: "s-1",
+            currentHostTags: [],
+            currentShellPivots: [
+                {
+                    id: "piv-failed",
+                    kind: "SSH",
+                    destination: "root@10.0.0.50:22",
+                    closedAt: "2025-01-01T00:00:00Z",
+                    data: "[-] permission denied\n",
+                },
+                {
+                    id: "piv-ok",
+                    kind: "SSH",
+                    destination: "root@10.0.0.50:22",
+                    closedAt: null,
+                    data: "",
+                },
+            ],
+            knowledgeData: {
+                hosts: {
+                    edges: [
+                        {
+                            node: {
+                                id: "h-50",
+                                name: "app-01",
+                                primaryIP: "10.0.0.50",
+                                beacons: {
+                                    edges: [
+                                        {
+                                            node: {
+                                                id: "b-dead",
+                                                name: "beacon-dead",
+                                                principal: "root",
+                                                nextSeenAt: staleIso,
+                                                interval: 60,
+                                                shells: {
+                                                    edges: [
+                                                        {
+                                                            node: {
+                                                                id: "s-dead",
+                                                                createdAt: "2025-01-01T12:00:00Z",
+                                                                closedAt: null,
+                                                                activeUsers: { edges: [] },
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                        {
+                                            node: {
+                                                id: "b-live",
+                                                name: "beacon-live",
+                                                principal: "www-data",
+                                                nextSeenAt: futureIso,
+                                                interval: 60,
+                                                shells: {
+                                                    edges: [
+                                                        {
+                                                            node: {
+                                                                id: "s-live",
+                                                                createdAt: "2025-01-01T11:00:00Z",
+                                                                closedAt: null,
+                                                                activeUsers: {
+                                                                    edges: [
+                                                                        {
+                                                                            node: {
+                                                                                id: "u1",
+                                                                                name: "alice",
+                                                                                photoURL: "",
+                                                                            },
+                                                                        },
+                                                                    ],
+                                                                },
+                                                            },
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                },
+                networkHosts: {
+                    edges: [
+                        {
+                            node: {
+                                id: "nh-50",
+                                name: "app-01",
+                                hostname: "app-01.corp",
+                                ipAddress: "10.0.0.50",
+                                openPorts: [22, 80],
+                                host: null, // No explicit foreign key, but matches h-50 by IP & name
+                                networks: { edges: [] },
+                            },
+                        },
+                    ],
+                },
+            },
+        });
+
+        // Hosts deduplicated to 1 merged entry instead of 2 duplicates
+        expect(res.networkHosts).toHaveLength(1);
+        expect(res.networkHosts[0].openPorts).toEqual([22, 80]);
+        expect(res.networkHosts[0].hostId).toBe("h-50");
+
+        // Failed pivot is hidden
+        expect(res.nearbyPivots.map((p) => p.id)).toEqual(["piv-ok"]);
+
+        // Live shell sorts ahead of dead shell
+        expect(res.hostShells.map((s) => s.id)).toEqual(["s-live", "s-dead"]);
+        expect(res.hostShells[0].beaconOnline).toBe(true);
+        expect(res.hostShells[0].activeUsers).toEqual([{ id: "u1", name: "alice", photoURL: "" }]);
+        expect(res.hostShells[1].beaconOnline).toBe(false);
     });
 });

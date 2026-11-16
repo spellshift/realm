@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 import { Code2, Play, Plus, Search, X } from "lucide-react";
-import { analyzeEldritchCode } from "../utils/eldritchLsp";
 import { ShellTomeItem } from "../hooks/useShellData";
 import EldritchCodeEditor, {
-    EldritchLspStatusButton,
     useResizableEditorHeight,
 } from "./EldritchCodeEditor";
 import SaveTomeModal from "./SaveTomeModal";
@@ -263,7 +261,6 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
     const [tomeSearchQuery, setTomeSearchQuery] = useState<string>("");
     const [saveTomeModalOpen, setSaveTomeModalOpen] = useState<boolean>(false);
     const [localSavedTomes, setLocalSavedTomes] = useState<ShellTomeItem[]>([]);
-    const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState<boolean>(true);
 
     const { editorHeight, handleResizeMouseDown, handleResizeKeyDown } =
         useResizableEditorHeight();
@@ -315,8 +312,6 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
         }
     }, [tomePickerOpen]);
 
-    const diagnostics = useMemo(() => analyzeEldritchCode(code), [code]);
-
     const handleSelectTome = (tome: ShellTomeItem) => {
         const formatted = formatTomeForComposer(tome);
         onChange(formatted);
@@ -351,21 +346,47 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
             <div className="flex items-center justify-between gap-2 px-3 py-1 bg-gray-900 border-b border-gray-800 text-xs text-gray-400 select-none">
                 <div className="flex items-center gap-1.5">
                     <span
-                        className="inline-flex items-center justify-center p-1 text-purple-400"
+                        className="inline-flex items-center justify-center p-1 text-gray-400"
                         title="Eldritch Composer"
                     >
                         <Code2 className="w-4 h-4" />
                     </span>
-
-                    <EldritchLspStatusButton
-                        diagnostics={diagnostics}
-                        onClick={() => setShowDiagnosticsPanel((prev) => !prev)}
-                        testId="eldritch-lsp-status"
-                        includeWarningSubcountOnError={true}
-                    />
+                    <span className="font-medium text-gray-300">Eldritch</span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                    <button
+                        type="button"
+                        disabled={!code.trim() || disabled}
+                        onClick={() => onRunCode(code)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors shadow-sm"
+                        title="Execute script in shell (Ctrl+Enter / Cmd+Enter)"
+                    >
+                        <Play className="w-3 h-3 fill-current" />
+                        Run
+                    </button>
+
+                    {/* Save Tome Button (Tome icon with Plus overlayed) */}
+                    <button
+                        type="button"
+                        data-testid="composer-save-tome-button"
+                        aria-label="Save Tome"
+                        title="Save Tome"
+                        onClick={() => {
+                            setTomePickerOpen(false);
+                            setSaveTomeModalOpen(true);
+                        }}
+                        className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                    >
+                        <span className="relative inline-flex items-center justify-center">
+                            <BookOpenIcon className="w-4 h-4" />
+                            <Plus
+                                data-testid="composer-save-tome-plus-icon"
+                                className="w-2.5 h-2.5 absolute -top-1 -right-1 bg-gray-900 rounded-full stroke-[2.5]"
+                            />
+                        </span>
+                    </button>
+
                     {/* Searchable Eldritch Tome Picker */}
                     <div ref={tomePickerRef} className="relative flex items-center">
                         <button
@@ -440,38 +461,6 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                         )}
                     </div>
 
-                    {/* Save Tome Button (Tome icon with Plus overlayed, aligned next to existing Tome button) */}
-                    <button
-                        type="button"
-                        data-testid="composer-save-tome-button"
-                        aria-label="Save Tome"
-                        title="Save Tome"
-                        onClick={() => {
-                            setTomePickerOpen(false);
-                            setSaveTomeModalOpen(true);
-                        }}
-                        className="inline-flex items-center justify-center p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                    >
-                        <span className="relative inline-flex items-center justify-center">
-                            <BookOpenIcon className="w-4 h-4" />
-                            <Plus
-                                data-testid="composer-save-tome-plus-icon"
-                                className="w-2.5 h-2.5 absolute -top-1 -right-1 bg-gray-900 rounded-full stroke-[2.5]"
-                            />
-                        </span>
-                    </button>
-
-                    <button
-                        type="button"
-                        disabled={!code.trim() || disabled}
-                        onClick={() => onRunCode(code)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors shadow-sm"
-                        title="Execute script in shell (Ctrl+Enter / Cmd+Enter)"
-                    >
-                        <Play className="w-3 h-3 fill-current" />
-                        Run
-                    </button>
-
                     <button
                         type="button"
                         onClick={onToggle}
@@ -493,7 +482,7 @@ const MultiLineComposer: React.FC<MultiLineComposerProps> = ({
                 fontSize={fontSize}
                 ariaLabel="Multi-line Eldritch script editor"
                 testIdPrefix="composer"
-                showDiagnosticsPanel={showDiagnosticsPanel}
+                showDiagnosticsPanel={true}
                 autoFocus={isOpen}
                 textareaRefExternal={textareaRef}
             />

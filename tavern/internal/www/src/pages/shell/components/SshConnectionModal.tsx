@@ -1,19 +1,37 @@
-import React, { Fragment, useEffect, useMemo, useState } from "react";
+import React, { Fragment, useContext, useEffect, useMemo, useState } from "react";
+import { getApolloContext } from "@apollo/client";
 import { Dialog, Transition } from "@headlessui/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { Code2, KeyRound, Server, Terminal } from "lucide-react";
+import { Check, Code2, CornerDownRight, KeyRound, Monitor, Plus, X } from "lucide-react";
+import { CREATE_CREDENTIAL_MUTATION } from "../graphql";
 import { KnowledgeCredentialItem, KnowledgeHostItem } from "../hooks/useShellData";
+import { formatSubnetCidr } from "../utils/networkGraphUtils";
 
-interface SshConnectionModalProps {
+export type PivotType = "SSH";
+
+const PIVOT_TYPE_OPTIONS: { value: PivotType; label: string }[] = [
+    { value: "SSH", label: "SSH" },
+];
+
+export interface PivotModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConnect: (target: string, credentialId?: string) => void;
+    onConnect: (target: string, credentialId?: string, pivotType?: PivotType) => void;
     initialTarget?: string;
     initialCredentialId?: string;
     credentials?: KnowledgeCredentialItem[];
     hosts?: KnowledgeHostItem[];
+    currentHostId?: string;
+    onCredentialCreated?: (cred: KnowledgeCredentialItem, targetHostId?: string) => void;
     onLoadIntoComposer?: (code: string) => void;
 }
+
+type SshConnectionModalProps = PivotModalProps;
+
+const CREDENTIAL_KIND_OPTIONS = [
+    { value: "KIND_PASSWORD", label: "Password" },
+    { value: "KIND_SSH_KEY", label: "SSH Key" },
+];
 
 const formatCredKind = (kind?: string) => {
     if (!kind) return "CRED";
@@ -48,6 +66,31 @@ const parseSshTarget = (raw: string): { username: string; password: string; host
     };
 };
 
+const splitHostAndPort = (hostPort: string): { host: string; port: string } => {
+    const trimmed = hostPort.trim();
+    if (!trimmed) {
+        return { host: "", port: "" };
+    }
+    if (trimmed.startsWith("[")) {
+        const bracketEnd = trimmed.indexOf("]");
+        if (bracketEnd !== -1) {
+            const after = trimmed.slice(bracketEnd + 1);
+            if (after.startsWith(":")) {
+                return { host: trimmed.slice(0, bracketEnd + 1), port: after.slice(1) };
+            }
+            return { host: trimmed, port: "" };
+        }
+    }
+    const lastColon = trimmed.lastIndexOf(":");
+    if (lastColon > 0 && trimmed.indexOf(":") === lastColon) {
+        return {
+            host: trimmed.slice(0, lastColon),
+            port: trimmed.slice(lastColon + 1),
+        };
+    }
+    return { host: trimmed, port: "" };
+};
+
 const buildSshTarget = (username: string, password: string, hostPort: string): string => {
     const hp = hostPort.trim();
     const user = username.trim();
@@ -62,46 +105,93 @@ const buildSshTarget = (username: string, password: string, hostPort: string): s
     return `${authPart}@${hp}`;
 };
 
-const KnownHostsPicker: React.FC<{
+const doesCredMatchHost = (cred: KnowledgeCredentialItem, host: KnowledgeHostItem): boolean => {
+    if (host.hostId && cred.hostId && String(cred.hostId) === String(host.hostId)) {
+        return true;
+    }
+    if (cred.hostId && String(cred.hostId) === String(host.id)) {
+        return true;
+    }
+    if ((host.credentials || []).some((hc) => String(hc.id) === String(cred.id))) {
+        return true;
+    }
+    const hostIps = new Set(
+        [host.ipAddress, host.primaryIP, host.externalIP]
+            .filter(Boolean)
+            .map((ip) => String(ip).trim())
+    );
+    if (cred.hostPrimaryIP && hostIps.has(String(cred.hostPrimaryIP).trim())) {
+        return true;
+    }
+    const hostNames = new Set(
+        [host.name, host.hostname]
+            .filter(Boolean)
+            .map((n) => String(n).trim().toLowerCase())
+    );
+    if (cred.hostName && hostNames.has(String(cred.hostName).trim().toLowerCase())) {
+        return true;
+    }
+    return false;
+};
+
+const AvailablePivotsPicker: React.FC<{
     hosts: KnowledgeHostItem[];
-    selectedHostIp: string;
+    selectedHostId: string;
     onSelectHost: (host: KnowledgeHostItem) => void;
-}> = ({ hosts, selectedHostIp, onSelectHost }) => {
+}> = ({ hosts, selectedHostId, onSelectHost }) => {
     if (hosts.length === 0) {
         return null;
     }
 
     return (
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" data-testid="pivot-modal-available-pivots">
             <div className="text-[11px] text-gray-400 flex items-center gap-1">
-                <Server size={11} className="text-blue-400" />
-                <span>Known Hosts ({hosts.length})</span>
+                <Monitor size={11} className="text-purple-400" />
+                <span>Available Pivots ({hosts.length})</span>
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+            <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
                 {hosts.map((h) => {
-                    const ip = h.ipAddress || h.primaryIP || h.name;
-                    const isSelected = selectedHostIp === ip;
-                    const pillClass = isSelected
-                        ? "bg-blue-600/30 border-blue-400 text-blue-100"
+                    const isSelected = selectedHostId === h.id;
+                    const rowClass = isSelected
+                        ? "bg-purple-600/25 border-purple-400 text-purple-100"
                         : "bg-[#1d222e] hover:bg-[#262c3c] border-[#2f3647] text-gray-300";
+                    const ip = h.ipAddress || h.primaryIP || "";
+                    const subnet = h.subnet || formatSubnetCidr(ip);
+                    const subMeta = [ip, subnet].filter(Boolean).join(" · ");
 
                     return (
                         <button
                             key={h.id}
                             type="button"
+                            aria-pressed={isSelected}
                             data-testid={`ssh-host-option-${h.id}`}
                             onClick={() => onSelectHost(h)}
-                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono border transition-colors ${pillClass}`}
+                            className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs border text-left transition-colors ${rowClass}`}
                         >
-                            <span>{h.name}</span>
-                            {h.primaryIP && (
-                                <span className="text-gray-400">({h.primaryIP})</span>
-                            )}
-                            {h.isCurrentHost && (
-                                <span className="px-1 rounded bg-purple-500/20 text-purple-300 text-[10px]">
-                                    this host
-                                </span>
-                            )}
+                            <span className="flex items-center gap-1.5 min-w-0">
+                                <Monitor className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+                                <span className="font-mono font-medium truncate">{h.name}</span>
+                                {subMeta && (
+                                    <span className="text-[11px] font-mono text-gray-400 truncate">
+                                        ({subMeta})
+                                    </span>
+                                )}
+                            </span>
+                            <span className="flex items-center gap-1 shrink-0">
+                                {(h.openPorts || []).slice(0, 3).map((port) => (
+                                    <span
+                                        key={port}
+                                        className="px-1 py-0.5 rounded bg-[#12151c] text-gray-400 text-[10px] font-mono"
+                                    >
+                                        :{port}
+                                    </span>
+                                ))}
+                                {h.isCurrentHost && (
+                                    <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px]">
+                                        this host
+                                    </span>
+                                )}
+                            </span>
                         </button>
                     );
                 })}
@@ -114,11 +204,14 @@ const CredentialPickerList: React.FC<{
     credentials: KnowledgeCredentialItem[];
     selectedCredId: string;
     onSelectCred: (cred: KnowledgeCredentialItem) => void;
-}> = ({ credentials, selectedCredId, onSelectCred }) => {
+    filteredHostName?: string;
+}> = ({ credentials, selectedCredId, onSelectCred, filteredHostName }) => {
     if (credentials.length === 0) {
         return (
             <div className="text-xs text-gray-500 py-1">
-                No credentials available yet. Add an SSH key or password in Context → Creds.
+                {filteredHostName
+                    ? `No credentials associated with ${filteredHostName}. Use + to add one.`
+                    : "No credentials available yet. Use + to add one."}
             </div>
         );
     }
@@ -172,6 +265,93 @@ const CredentialPickerList: React.FC<{
     );
 };
 
+interface InlineCredentialEditorProps {
+    principal: string;
+    kind: string;
+    secret: string;
+    isSaving: boolean;
+    error: string | null;
+    onPrincipalChange: (val: string) => void;
+    onKindChange: (val: string) => void;
+    onSecretChange: (val: string) => void;
+    onSave: () => void;
+    onCancel: () => void;
+}
+
+const InlineCredentialEditor: React.FC<InlineCredentialEditorProps> = ({
+    principal,
+    kind,
+    secret,
+    isSaving,
+    error,
+    onPrincipalChange,
+    onKindChange,
+    onSecretChange,
+    onSave,
+    onCancel,
+}) => {
+    return (
+        <div
+            data-testid="ssh-inline-credential-editor"
+            className="rounded-md bg-[#12151c] border border-purple-500/40 p-2.5 space-y-2"
+        >
+            <div className="grid grid-cols-2 gap-2">
+                <input
+                    type="text"
+                    aria-label="New credential principal"
+                    placeholder="Principal (e.g. root)"
+                    value={principal}
+                    onChange={(e) => onPrincipalChange(e.target.value)}
+                    className="px-2 py-1 rounded bg-[#1a1f2b] border border-[#2f3647] text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                />
+                <select
+                    aria-label="New credential kind"
+                    value={kind}
+                    onChange={(e) => onKindChange(e.target.value)}
+                    className="px-2 py-1 rounded bg-[#1a1f2b] border border-[#2f3647] text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                >
+                    {CREDENTIAL_KIND_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <input
+                type="text"
+                aria-label="New credential secret"
+                placeholder={kind === "KIND_SSH_KEY" ? "-----BEGIN OPENSSH PRIVATE KEY-----" : "Password or secret"}
+                value={secret}
+                onChange={(e) => onSecretChange(e.target.value)}
+                className="w-full px-2 py-1 rounded bg-[#1a1f2b] border border-[#2f3647] text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+            />
+            {error && (
+                <div className="text-[11px] text-red-400">{error}</div>
+            )}
+            <div className="flex items-center justify-end gap-1.5">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+                >
+                    <X className="w-3 h-3" />
+                    Cancel
+                </button>
+                <button
+                    type="button"
+                    data-testid="ssh-save-inline-credential"
+                    disabled={!principal.trim() || !secret.trim() || isSaving}
+                    onClick={onSave}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-700 hover:bg-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-white transition-colors"
+                >
+                    <Check className="w-3 h-3" />
+                    Save
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     isOpen,
     onClose,
@@ -180,41 +360,56 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     initialCredentialId = "",
     credentials = [],
     hosts = [],
+    currentHostId,
+    onCredentialCreated,
     onLoadIntoComposer,
 }) => {
+    const apolloClient = useContext(getApolloContext())?.client;
+
+    const [pivotType, setPivotType] = useState<PivotType>("SSH");
     const [target, setTarget] = useState(initialTarget);
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [hostPort, setHostPort] = useState<string>("");
+    const [selectedHostId, setSelectedHostId] = useState<string>("");
     const [selectedHostIp, setSelectedHostIp] = useState<string>("");
-    const [selectedPort, setSelectedPort] = useState<string>("22");
     const [selectedCredId, setSelectedCredId] = useState<string>(initialCredentialId);
+    const [localCredentials, setLocalCredentials] = useState<KnowledgeCredentialItem[]>([]);
+
+    const [isAddingCred, setIsAddingCred] = useState(false);
+    const [newCredPrincipal, setNewCredPrincipal] = useState("");
+    const [newCredKind, setNewCredKind] = useState("KIND_PASSWORD");
+    const [newCredSecret, setNewCredSecret] = useState("");
+    const [isSavingCred, setIsSavingCred] = useState(false);
+    const [credSaveError, setCredSaveError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (isOpen) {
-            const parsed = parseSshTarget(initialTarget);
-            setTarget(initialTarget);
-            setUsername(parsed.username);
-            setPassword(parsed.password);
-            setHostPort(parsed.hostPort);
-            setSelectedCredId(initialCredentialId || "");
-            if (parsed.hostPort) {
-                const lastColon = parsed.hostPort.lastIndexOf(":");
-                if (lastColon > 0) {
-                    setSelectedHostIp(parsed.hostPort.slice(0, lastColon));
-                    setSelectedPort(parsed.hostPort.slice(lastColon + 1) || "22");
-                } else {
-                    setSelectedHostIp(parsed.hostPort);
-                    setSelectedPort("22");
-                }
-            } else {
-                setSelectedHostIp("");
-                setSelectedPort("22");
-            }
+        if (!isOpen) {
+            return;
         }
+        const parsed = parseSshTarget(initialTarget);
+        const { host } = splitHostAndPort(parsed.hostPort);
+        setPivotType("SSH");
+        setTarget(initialTarget);
+        setUsername(parsed.username);
+        setPassword(parsed.password);
+        setHostPort(parsed.hostPort);
+        setSelectedCredId(initialCredentialId || "");
+        setSelectedHostIp(host);
+        setSelectedHostId("");
+        setIsAddingCred(false);
+        setNewCredPrincipal("");
+        setNewCredKind("KIND_PASSWORD");
+        setNewCredSecret("");
+        setCredSaveError(null);
     }, [isOpen, initialTarget, initialCredentialId]);
 
-    const relevantCreds = useMemo(() => {
+    const selectedHost = useMemo(
+        () => hosts.find((h) => h.id === selectedHostId) || null,
+        [hosts, selectedHostId]
+    );
+
+    const allCombinedCreds = useMemo(() => {
         const byId = new Map<string, KnowledgeCredentialItem>();
         for (const c of credentials) {
             if (c?.id) {
@@ -228,8 +423,21 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                 }
             }
         }
-        const activeHost = selectedHostIp || hostPort.split(":")[0] || "";
-        return Array.from(byId.values()).sort((a, b) => {
+        for (const c of localCredentials) {
+            if (c?.id) {
+                byId.set(String(c.id), c);
+            }
+        }
+        return Array.from(byId.values());
+    }, [credentials, hosts, localCredentials]);
+
+    const relevantCreds = useMemo(() => {
+        const filtered = selectedHost
+            ? allCombinedCreds.filter((c) => doesCredMatchHost(c, selectedHost))
+            : allCombinedCreds;
+
+        const activeHost = selectedHostIp || splitHostAndPort(hostPort).host || "";
+        return [...filtered].sort((a, b) => {
             const aMatchesHost = Boolean(
                 activeHost && (a.hostPrimaryIP === activeHost || a.hostName === activeHost)
             );
@@ -244,7 +452,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
             }
             return (a.principal || "").localeCompare(b.principal || "");
         });
-    }, [credentials, hosts, selectedHostIp, hostPort]);
+    }, [allCombinedCreds, selectedHost, selectedHostIp, hostPort]);
 
     const handleTargetChange = (nextTarget: string) => {
         setTarget(nextTarget);
@@ -252,26 +460,21 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         setUsername(parsed.username);
         setPassword(parsed.password);
         setHostPort(parsed.hostPort);
-        if (parsed.hostPort) {
-            const lastColon = parsed.hostPort.lastIndexOf(":");
-            if (lastColon > 0) {
-                setSelectedHostIp(parsed.hostPort.slice(0, lastColon));
-                setSelectedPort(parsed.hostPort.slice(lastColon + 1) || "22");
-            } else {
-                setSelectedHostIp(parsed.hostPort);
-                setSelectedPort("22");
-            }
-        } else {
-            setSelectedHostIp("");
-        }
+        const { host } = splitHostAndPort(parsed.hostPort);
+        setSelectedHostIp(host);
     };
 
-    const applySelection = (credId: string, hostIp: string, port: string) => {
-        const cred = relevantCreds.find((c) => c.id === credId);
-        const fallbackHost = hostPort.split(":")[0] || "";
+    const currentExplicitPort = (): string => {
+        const { port } = splitHostAndPort(hostPort);
+        return port || "22";
+    };
+
+    const applySelection = (credId: string, hostIp: string, credsList = allCombinedCreds) => {
+        const cred = credsList.find((c) => c.id === credId);
+        const fallbackHost = splitHostAndPort(hostPort).host || "";
         const ip = hostIp || fallbackHost || "127.0.0.1";
-        const p = port || "22";
-        const nextHostPort = `${ip}:${p}`;
+        const port = currentExplicitPort();
+        const nextHostPort = `${ip}:${port}`;
         setHostPort(nextHostPort);
         if (cred) {
             setUsername(cred.principal);
@@ -285,9 +488,12 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     const handleSelectCred = (cred: KnowledgeCredentialItem) => {
         if (selectedCredId === cred.id) {
             setSelectedCredId("");
-            const fallbackHost = selectedHostIp || hostPort.split(":")[0] || "";
+            const fallbackHost = selectedHostIp || splitHostAndPort(hostPort).host || "";
             if (fallbackHost) {
-                setTarget(buildSshTarget(username || cred.principal || "root", "", `${fallbackHost}:${selectedPort || "22"}`));
+                const port = currentExplicitPort();
+                setTarget(
+                    buildSshTarget(username || cred.principal || "root", "", `${fallbackHost}:${port}`)
+                );
             }
             return;
         }
@@ -296,13 +502,125 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         if (!selectedHostIp && cred.hostPrimaryIP) {
             setSelectedHostIp(cred.hostPrimaryIP);
         }
-        applySelection(cred.id, ip, selectedPort);
+        applySelection(cred.id, ip);
     };
 
     const handleSelectHost = (host: KnowledgeHostItem) => {
+        if (selectedHostId === host.id) {
+            setSelectedHostId("");
+            return;
+        }
+        setSelectedHostId(host.id);
         const ip = host.ipAddress || host.primaryIP || host.name;
         setSelectedHostIp(ip);
-        applySelection(selectedCredId, ip, selectedPort);
+
+        const activeCred = allCombinedCreds.find((c) => c.id === selectedCredId);
+        const keepCredId = activeCred && doesCredMatchHost(activeCred, host) ? selectedCredId : "";
+        if (keepCredId !== selectedCredId) {
+            setSelectedCredId(keepCredId);
+        }
+        applySelection(keepCredId, ip);
+    };
+
+    const handleSaveInlineCredential = async () => {
+        const cleanPrincipal = newCredPrincipal.trim();
+        if (!cleanPrincipal || !newCredSecret.trim() || isSavingCred) {
+            return;
+        }
+
+        setIsSavingCred(true);
+        setCredSaveError(null);
+
+        const targetHost =
+            selectedHost ||
+            hosts.find(
+                (h) =>
+                    selectedHostIp &&
+                    (h.ipAddress === selectedHostIp ||
+                        h.primaryIP === selectedHostIp ||
+                        h.name === selectedHostIp)
+            ) ||
+            hosts.find((h) => h.isCurrentHost) ||
+            null;
+
+        const resolvedHostId = targetHost?.hostId || targetHost?.id || currentHostId || "h-current";
+        const resolvedHostName =
+            targetHost?.name || targetHost?.hostname || targetHost?.ipAddress || targetHost?.primaryIP || "Current Host";
+        const resolvedHostIp =
+            targetHost?.ipAddress || targetHost?.primaryIP || selectedHostIp || undefined;
+
+        let createdCred: KnowledgeCredentialItem = {
+            id: `cred-inline-${Date.now()}`,
+            principal: cleanPrincipal,
+            secret: newCredSecret,
+            kind: newCredKind,
+            createdAt: new Date().toISOString(),
+            hostId: resolvedHostId,
+            hostName: resolvedHostName,
+            hostPrimaryIP: resolvedHostIp,
+            isCurrentHost: Boolean(targetHost?.isCurrentHost ?? !targetHost),
+        };
+
+        try {
+            if (apolloClient) {
+                const input: Record<string, any> = {
+                    principal: cleanPrincipal,
+                    secret: newCredSecret,
+                    kind: newCredKind,
+                };
+                if (targetHost) {
+                    if (
+                        targetHost.networkHostId &&
+                        !targetHost.networkHostId.startsWith("nh-custom-")
+                    ) {
+                        input.networkHostIDs = [targetHost.networkHostId];
+                    }
+                    if (targetHost.hostId && !targetHost.hostId.startsWith("nh-")) {
+                        input.hostID = targetHost.hostId;
+                    }
+                } else if (currentHostId) {
+                    input.hostID = currentHostId;
+                }
+                const res = await apolloClient.mutate({
+                    mutation: CREATE_CREDENTIAL_MUTATION,
+                    variables: { input },
+                });
+                const node = res.data?.createCredential;
+                if (node?.id) {
+                    createdCred = {
+                        ...createdCred,
+                        id: String(node.id),
+                        principal: node.principal || createdCred.principal,
+                        kind: node.kind || createdCred.kind,
+                        secret: node.secret || createdCred.secret,
+                        createdAt: node.createdAt || createdCred.createdAt,
+                    };
+                }
+            }
+
+            const nextCombined = [...allCombinedCreds, createdCred];
+            setLocalCredentials((prev) => [...prev, createdCred]);
+            setSelectedCredId(createdCred.id);
+            const ip = selectedHostIp || createdCred.hostPrimaryIP || "";
+            if (ip) {
+                if (!selectedHostIp && createdCred.hostPrimaryIP) {
+                    setSelectedHostIp(createdCred.hostPrimaryIP);
+                }
+                applySelection(createdCred.id, ip, nextCombined);
+            } else {
+                setUsername(createdCred.principal);
+            }
+
+            onCredentialCreated?.(createdCred, targetHost?.id);
+            setIsAddingCred(false);
+            setNewCredPrincipal("");
+            setNewCredSecret("");
+            setNewCredKind("KIND_PASSWORD");
+        } catch (err: any) {
+            setCredSaveError(err?.message || "Failed to create credential.");
+        } finally {
+            setIsSavingCred(false);
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -310,9 +628,9 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
         const finalTarget = target.trim();
         if (finalTarget) {
             if (selectedCredId) {
-                onConnect(finalTarget, selectedCredId);
+                onConnect(finalTarget, selectedCredId, pivotType);
             } else {
-                onConnect(finalTarget);
+                onConnect(finalTarget, undefined, pivotType);
             }
             handleClose();
         }
@@ -320,9 +638,10 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
 
     const handleStageSshExec = () => {
         if (!onLoadIntoComposer) return;
-        const cred = relevantCreds.find((c) => c.id === selectedCredId);
-        const ip = selectedHostIp || cred?.hostPrimaryIP || hostPort.split(":")[0] || "127.0.0.1";
-        const portNum = parseInt(selectedPort, 10) || 22;
+        const cred = allCombinedCreds.find((c) => c.id === selectedCredId);
+        const { host: parsedHost, port: parsedPort } = splitHostAndPort(hostPort);
+        const ip = selectedHostIp || cred?.hostPrimaryIP || parsedHost || "127.0.0.1";
+        const portNum = parseInt(parsedPort, 10) || 22;
         const principal = username || cred?.principal || "root";
         const authArg = isSshKeyCredential(cred)
             ? `key=${JSON.stringify(cred?.secret || "")}`
@@ -333,13 +652,16 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     };
 
     const handleClose = () => {
+        setPivotType("SSH");
         setTarget("");
         setUsername("");
         setPassword("");
         setHostPort("");
         setSelectedCredId("");
+        setSelectedHostId("");
         setSelectedHostIp("");
-        setSelectedPort("22");
+        setIsAddingCred(false);
+        setCredSaveError(null);
         onClose();
     };
 
@@ -371,8 +693,8 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                         <Dialog.Panel className="w-full max-w-lg rounded-lg bg-gray-900 border border-gray-700 shadow-2xl">
                             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
                                 <Dialog.Title className="text-white font-semibold text-sm flex items-center gap-2">
-                                    <Terminal className="w-4 h-4 text-purple-400" />
-                                    SSH Connection
+                                    <CornerDownRight className="w-4 h-4 text-purple-400" />
+                                    Pivot
                                 </Dialog.Title>
                                 <button
                                     onClick={handleClose}
@@ -383,61 +705,117 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
                             </div>
 
                             <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
-                                <div>
-                                    <label htmlFor="ssh-target" className="block text-xs font-medium text-gray-300 mb-1.5">
-                                        Target
-                                    </label>
-                                    <input
-                                        id="ssh-target"
-                                        type="text"
-                                        value={target}
-                                        onChange={(e) => handleTargetChange(e.target.value)}
-                                        placeholder="user@host:port or host:port"
-                                        className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                        autoFocus
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label htmlFor="pivot-type" className="block text-xs font-medium text-gray-300 mb-1.5">
+                                            Pivot Type
+                                        </label>
+                                        <select
+                                            id="pivot-type"
+                                            data-testid="pivot-type-select"
+                                            value={pivotType}
+                                            onChange={(e) => setPivotType(e.target.value as PivotType)}
+                                            className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                        >
+                                            {PIVOT_TYPE_OPTIONS.map((opt) => (
+                                                <option key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <label htmlFor="ssh-target" className="block text-xs font-medium text-gray-300 mb-1.5">
+                                            Target
+                                        </label>
+                                        <input
+                                            id="ssh-target"
+                                            type="text"
+                                            value={target}
+                                            onChange={(e) => handleTargetChange(e.target.value)}
+                                            placeholder="user@host:22 or host:22"
+                                            className="w-full px-3 py-2 bg-[#12151c] border border-[#343b4d] rounded-md text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                            autoFocus
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="rounded-md bg-[#151821] border border-[#2a3040] p-3 space-y-3">
                                     <div className="text-xs font-semibold text-purple-300 flex items-center justify-between">
                                         <span>Quick Fill</span>
-                                        <div className="flex items-center gap-1.5 font-normal text-gray-400">
-                                            <span>Port:</span>
-                                            <input
-                                                type="text"
-                                                aria-label="Port"
-                                                value={selectedPort}
-                                                onChange={(e) => {
-                                                    setSelectedPort(e.target.value);
-                                                    applySelection(selectedCredId, selectedHostIp, e.target.value);
-                                                }}
-                                                className="w-14 px-1.5 py-0.5 rounded bg-[#101218] border border-[#2e3444] text-xs font-mono text-gray-200"
-                                            />
-                                        </div>
+                                        {selectedHost && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedHostId("")}
+                                                className="text-[11px] font-normal text-gray-400 hover:text-gray-200 transition-colors"
+                                            >
+                                                Clear host filter
+                                            </button>
+                                        )}
                                     </div>
 
-                                    <KnownHostsPicker
+                                    <AvailablePivotsPicker
                                         hosts={hosts}
-                                        selectedHostIp={selectedHostIp}
+                                        selectedHostId={selectedHostId}
                                         onSelectHost={handleSelectHost}
                                     />
 
                                     <div className="space-y-1.5">
-                                        <div className="text-[11px] text-gray-400 flex items-center gap-1">
-                                            <KeyRound size={11} className="text-amber-400" />
-                                            <span>Credentials ({relevantCreds.length})</span>
+                                        <div className="flex items-center justify-between text-[11px] text-gray-400">
+                                            <span className="flex items-center gap-1">
+                                                <KeyRound size={11} className="text-amber-400" />
+                                                <span>Credentials ({relevantCreds.length})</span>
+                                                {selectedHost && (
+                                                    <span className="text-blue-300">
+                                                        · {selectedHost.name}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                data-testid="ssh-add-credential-button"
+                                                aria-label="Add credential"
+                                                title="Add credential"
+                                                onClick={() => {
+                                                    setIsAddingCred((prev) => !prev);
+                                                    setCredSaveError(null);
+                                                }}
+                                                className="p-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                            >
+                                                <Plus size={12} />
+                                            </button>
                                         </div>
+
+                                        {isAddingCred && (
+                                            <InlineCredentialEditor
+                                                principal={newCredPrincipal}
+                                                kind={newCredKind}
+                                                secret={newCredSecret}
+                                                isSaving={isSavingCred}
+                                                error={credSaveError}
+                                                onPrincipalChange={setNewCredPrincipal}
+                                                onKindChange={setNewCredKind}
+                                                onSecretChange={setNewCredSecret}
+                                                onSave={handleSaveInlineCredential}
+                                                onCancel={() => {
+                                                    setIsAddingCred(false);
+                                                    setCredSaveError(null);
+                                                }}
+                                            />
+                                        )}
+
                                         <CredentialPickerList
                                             credentials={relevantCreds}
                                             selectedCredId={selectedCredId}
                                             onSelectCred={handleSelectCred}
+                                            filteredHostName={selectedHost?.name}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between pt-1">
                                     <div>
-                                        {onLoadIntoComposer && (
+                                        {onLoadIntoComposer && pivotType === "SSH" && (
                                             <button
                                                 type="button"
                                                 onClick={handleStageSshExec}
@@ -474,4 +852,5 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({
     );
 };
 
+export const PivotModal = SshConnectionModal;
 export default SshConnectionModal;

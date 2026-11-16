@@ -1,6 +1,7 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AlertError from "../../components/tavern-base-ui/AlertError";
 import { AccessGate } from "../../components/access-gate";
+import { AuthorizationContext } from "../../context/AuthorizationContext";
 import { useShellData } from "./hooks/useShellData";
 import { useCallbackTimer } from "./hooks/useCallbackTimer";
 import { useShellTerminal } from "./hooks/useShellTerminal";
@@ -19,19 +20,24 @@ import MultiLineComposer, {
 import SessionSettings from "./components/SessionSettings";
 import ShellScratchpad from "./components/ShellScratchpad";
 import ShellHistoryDrawer from "./components/ShellHistoryDrawer";
-import ShellKnowledgeDrawer from "./components/ShellKnowledgeDrawer";
 import ShellSidebar from "./components/ShellSidebar";
 import ShellWalkthrough from "./components/ShellWalkthrough";
+import HostsTreeDrawer from "../../components/hosts-tree/HostsTreeDrawer";
+import eldritchLogo from "../../assets/eldrich.png";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast, Tooltip } from "@chakra-ui/react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useContext } from "react";
 import { useMutation } from "@apollo/client";
 import SshTerminal from "./components/SshTerminal";
 import PtyTerminal from "./components/PtyTerminal";
 import TabContextMenu from "./components/TabContextMenu";
-import { CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
-import { formatPivotTabLabel, extractPivotTargetHost } from "./utils/networkGraphUtils";
+import { CLOSE_PIVOT_MUTATION, CLOSE_PORTAL_MUTATION, CREATE_SHELL_MUTATION } from "./graphql";
+import {
+  formatPivotTabLabel,
+  hasPivotActivity,
+  isMatchingPivotTarget,
+} from "./utils/networkGraphUtils";
 import { DEFAULT_RC_ALIASES_SCRIPT, registerUserSymbolsFromCode } from "./utils/eldritchLsp";
-import { Minus, SquareTerminal, Terminal, WifiOff } from "lucide-react";
+import { Minus, SquareTerminal, Terminal } from "lucide-react";
 
 export { formatPivotTabLabel };
 
@@ -48,17 +54,29 @@ const NUX_STORAGE_KEY = "tavern_shell_nux_dismissed_v1";
 const PIVOT_TARGETS_STORAGE_KEY = "tavern_shell_pivot_targets_v1";
 const PIVOT_CUSTOM_TITLES_STORAGE_KEY = "tavern_shell_pivot_custom_titles_v1";
 
-const getMainTabIndicatorClass = (
-  connectionStatus: string,
-  isConnecting: boolean
-): string => {
-  if (connectionStatus === "connected") {
-    return "bg-emerald-400";
+const MainTabIcon: React.FC<{
+  connectionStatus: string;
+  isConnecting: boolean;
+  closedAt?: string | null;
+}> = ({ connectionStatus, isConnecting, closedAt }) => {
+  if (closedAt || (!isConnecting && connectionStatus === "disconnected")) {
+    return (
+      <span
+        data-testid="main-tab-disconnected-dot"
+        className="w-2 h-2 rounded-full bg-red-500 inline-block shrink-0"
+      />
+    );
   }
-  if (isConnecting || connectionStatus === "reconnecting") {
-    return "bg-amber-400 animate-pulse";
-  }
-  return "bg-red-500";
+  return (
+    <img
+      data-testid="main-tab-eldritch-icon"
+      src={eldritchLogo}
+      alt="Eldritch"
+      className={`w-3.5 h-3.5 rounded-sm object-contain shrink-0 ${
+        isConnecting || connectionStatus === "reconnecting" ? "animate-pulse" : ""
+      }`}
+    />
+  );
 };
 
 const PortalTabIcon: React.FC<{
@@ -69,9 +87,10 @@ const PortalTabIcon: React.FC<{
   if (isDisconnected) {
     return (
       <Tooltip label="Terminal session ended" hasArrow>
-        <span className="text-red-400 flex items-center gap-1">
-          <WifiOff className="w-3.5 h-3.5" />
-        </span>
+        <span
+          data-testid="tab-disconnected-dot"
+          className="w-2 h-2 rounded-full bg-red-500 inline-block shrink-0"
+        />
       </Tooltip>
     );
   }
@@ -89,15 +108,53 @@ const PortalTabIcon: React.FC<{
   );
 };
 
+const InlineTabRenameInput: React.FC<{
+  inputRef: React.RefObject<HTMLInputElement>;
+  tabLabel: string;
+  value: string;
+  onChange: (value: string) => void;
+  onCommit: () => void;
+  onCancel: () => void;
+}> = ({ inputRef, tabLabel, value, onChange, onCommit, onCancel }) => (
+  <input
+    ref={inputRef}
+    type="text"
+    data-testid="inline-rename-tab-input"
+    aria-label={`Rename ${tabLabel} tab`}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        onCommit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        onCancel();
+      }
+    }}
+    onBlur={onCommit}
+    onClick={(e) => e.stopPropagation()}
+    onMouseDown={(e) => e.stopPropagation()}
+    onDoubleClick={(e) => e.stopPropagation()}
+    className="bg-[#12151c] text-white text-xs px-1.5 py-0.5 rounded border border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 min-w-[70px] max-w-[140px]"
+  />
+);
+
 const ShellContent = () => {
   const { shellId } = useParams<{ shellId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useToast();
+  const authContext = useContext(AuthorizationContext);
+  const currentUserId = authContext?.data?.me?.id ? String(authContext.data.me.id) : undefined;
+  const currentOperatorName = authContext?.data?.me?.name?.trim();
 
   // Workspace drawers & composer state
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  const [hostsOpen, setHostsOpen] = useState(false);
 
   const {
     loading,
@@ -116,17 +173,14 @@ const ShellContent = () => {
     pivots,
     tomes,
     refetchTomes,
-    hostCredentials,
     allCredentials,
     networkHosts,
-    hostFiles,
-    hostProcessCount,
     hostShells,
-    lastKnowledgeSyncAt,
+    currentHostBeacons,
     refetchHistory,
     refetchKnowledgeGraph,
     refetchShell,
-  } = useShellData(shellId, { historyOpen, knowledgeOpen });
+  } = useShellData(shellId, { historyOpen, hostsOpen });
 
   const { timeUntilCallback, isMissedCallback, isLateCheckin, callbackStats } = useCallbackTimer(
     beaconData,
@@ -291,46 +345,6 @@ const ShellContent = () => {
     }
   }, [editingTabId]);
 
-  const handleRenamePivot = useCallback(
-    (pivotIdStr: string, newTitle: string) => {
-      const trimmed = newTitle.trim();
-      recordCustomTitle(pivotIdStr, trimmed || undefined);
-      setPortalTabs((prev) =>
-        prev.map((t) => {
-          if (t.pivotId && String(t.pivotId) === String(pivotIdStr)) {
-            recordCustomTitle(t.id, trimmed || undefined);
-            return {
-              ...t,
-              customTitle: trimmed || undefined,
-            };
-          }
-          return t;
-        })
-      );
-    },
-    [recordCustomTitle]
-  );
-
-  const handleResetPivotName = useCallback(
-    (pivotIdStr: string) => {
-      recordCustomTitle(pivotIdStr, undefined);
-      setPortalTabs((prev) =>
-        prev.map((t) => {
-          if (t.pivotId && String(t.pivotId) === String(pivotIdStr)) {
-            recordCustomTitle(t.id, undefined);
-            return {
-              ...t,
-              customTitle: undefined,
-            };
-          }
-          return t;
-        })
-      );
-    },
-    [recordCustomTitle]
-  );
-  const lastUnboundPtyTargetRef = useRef<string>("");
-
   const recordPivotTarget = useCallback((pivotIdStr: string, target: string) => {
     if (!pivotIdStr || !target || target.toUpperCase() === "PTY") return;
     setPivotTargets((prev) => {
@@ -369,7 +383,6 @@ const ShellContent = () => {
     setTabStatuses({});
     initializedPivotsShellRef.current = undefined;
     knownPivotIdsRef.current = new Set();
-    lastUnboundPtyTargetRef.current = "";
   }, [shellId]);
 
   const handleBindTabPivotId = useCallback(
@@ -382,20 +395,14 @@ const ShellContent = () => {
         );
         return withoutDuplicate.map((t) => {
           if (t.id !== tabId) return t;
-          const targetToSave =
-            t.target && t.target !== "PTY" ? t.target : lastUnboundPtyTargetRef.current;
           if (t.customTitle) {
             recordCustomTitle(pidStr, t.customTitle);
           }
-          if (targetToSave) {
-            recordPivotTarget(pidStr, targetToSave);
-            if (lastUnboundPtyTargetRef.current === targetToSave) {
-              lastUnboundPtyTargetRef.current = "";
-            }
+          if (t.target && t.target !== "PTY") {
+            recordPivotTarget(pidStr, t.target);
           }
           return {
             ...t,
-            target: targetToSave || t.target,
             pivotId: pidStr,
           };
         });
@@ -405,54 +412,6 @@ const ShellContent = () => {
     },
     [recordPivotTarget, recordCustomTitle, refetchHistory, refetchKnowledgeGraph]
   );
-
-  const handleUpdateTabTarget = useCallback(
-    (tabId: string, nextTarget: string) => {
-      if (nextTarget.trim().toLowerCase() === "exit") return;
-      setPortalTabs((prev) => {
-        const matched = prev.find((t) => t.id === tabId);
-        if (matched?.customTitle) {
-          return prev;
-        }
-        if (matched?.pivotId) {
-          recordPivotTarget(String(matched.pivotId), nextTarget);
-        } else if (matched?.type === "pty") {
-          lastUnboundPtyTargetRef.current = nextTarget;
-        }
-        return prev.map((t) => (t.id === tabId ? { ...t, target: nextTarget } : t));
-      });
-    },
-    [recordPivotTarget]
-  );
-
-  const isMatchingPivotTarget = (
-    type: string,
-    pendingTarget?: string,
-    incomingTarget?: string
-  ): boolean => {
-    if (!pendingTarget || !incomingTarget) return true;
-    if (type.toLowerCase() === "pty") return true;
-    if (pendingTarget === incomingTarget) return true;
-
-    // Strip credentials (user:pass@ or user@)
-    const stripUser = (s: string) => (s.includes("@") ? s.split("@").pop() || s : s).trim();
-    const cleanPending = stripUser(pendingTarget);
-    const cleanIncoming = stripUser(incomingTarget);
-    if (cleanPending === cleanIncoming) return true;
-
-    // Compare with/without default :22 port
-    const stripPort22 = (s: string) => s.replace(/:22$/, "");
-    if (stripPort22(cleanPending) === stripPort22(cleanIncoming)) return true;
-
-    // Compare extracted hosts
-    const hostPending = extractPivotTargetHost(pendingTarget);
-    const hostIncoming = extractPivotTargetHost(incomingTarget);
-    if (hostPending && hostIncoming && hostPending.toLowerCase() === hostIncoming.toLowerCase()) {
-      return true;
-    }
-
-    return false;
-  };
 
   const handleOpenPortalTab = useCallback(
     (
@@ -588,12 +547,6 @@ const ShellContent = () => {
         const closingTab = prev[idx];
         if (closingTab?.pivotId && closingTab.target && closingTab.target !== "PTY") {
           recordPivotTarget(String(closingTab.pivotId), closingTab.target);
-        } else if (
-          closingTab?.type === "pty" &&
-          closingTab.target &&
-          closingTab.target !== "PTY"
-        ) {
-          lastUnboundPtyTargetRef.current = closingTab.target;
         }
         const next = prev.filter((t) => t.id !== tabId);
         setTabIndex((currentTabIdx) => {
@@ -611,27 +564,40 @@ const ShellContent = () => {
     [recordPivotTarget]
   );
 
-  // Populate active pivots on initial load without hijacking focus from the main REPL tab,
-  // and focus newly created pivots that appear after initial load.
+  // Populate active pivots on initial load without hijacking focus from the main REPL tab
+  // unless a specific pivotId search param was requested when switching hosts.
   useEffect(() => {
     if (!shellData?.node?.pivots?.edges) return;
     const isInitialLoad = initializedPivotsShellRef.current !== shellId;
     initializedPivotsShellRef.current = shellId;
+    const requestedPivotId = searchParams.get("pivotId");
 
     shellData.node.pivots.edges.forEach((edge: any) => {
       const pivot = edge.node;
-      if (!pivot?.id) return;
+      if (!pivot?.id || !hasPivotActivity(pivot)) return;
       const pivotIdStr = String(pivot.id);
       const alreadyKnown = knownPivotIdsRef.current.has(pivotIdStr);
       knownPivotIdsRef.current.add(pivotIdStr);
 
-      if (!pivot.closedAt && !alreadyKnown) {
+      const isRequested = Boolean(requestedPivotId && pivotIdStr === String(requestedPivotId));
+      if ((!pivot.closedAt && !alreadyKnown) || isRequested) {
         const label =
           pivot.kind?.toUpperCase() === "PTY" ? "PTY" : pivot.destination;
-        handleOpenPortalTab(pivot.kind.toLowerCase(), label, pivotIdStr, !isInitialLoad);
+        handleOpenPortalTab(
+          pivot.kind.toLowerCase(),
+          label,
+          pivotIdStr,
+          !isInitialLoad || isRequested
+        );
       }
     });
-  }, [shellData, shellId, handleOpenPortalTab]);
+
+    if (requestedPivotId) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("pivotId");
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [shellData, shellId, searchParams, setSearchParams, handleOpenPortalTab]);
 
   const {
     termRef,
@@ -722,6 +688,8 @@ const ShellContent = () => {
   }, [tabIndex, composerOpen, scratchpadOpen, focusTerminal]);
 
   const [closePortalMutation] = useMutation(CLOSE_PORTAL_MUTATION);
+  const [closePivotMutation] = useMutation(CLOSE_PIVOT_MUTATION);
+  const [closingPivotIds, setClosingPivotIds] = useState<string[]>([]);
   const [createShellMutation, { loading: isSpawningShell }] = useMutation(CREATE_SHELL_MUTATION);
 
   const handleSpawnFreshShell = useCallback(async () => {
@@ -769,6 +737,46 @@ const ShellContent = () => {
     navigate,
     toast,
   ]);
+
+  const handleCreateShellOnHost = useCallback(
+    async ({ hostName, beaconId }: { hostId?: string; hostName?: string; beaconId?: string }) => {
+      if (!beaconId) {
+        toast({
+          title: "Cannot create shell",
+          description: `No active beacon is available on ${hostName || "this host"}.`,
+          status: "warning",
+          duration: 4000,
+          isClosable: true,
+        });
+        return;
+      }
+      try {
+        const response = await createShellMutation({
+          variables: { beaconId },
+        });
+        const newShellId = response.data?.createShell?.id;
+        if (newShellId) {
+          toast({
+            title: "New shell created",
+            description: `Opened Shell #${newShellId}${hostName ? ` on ${hostName}` : ""}.`,
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+          navigate(`/shells/${newShellId}`);
+        }
+      } catch (err: any) {
+        toast({
+          title: "Failed to create shell",
+          description: err?.message || "An error occurred while creating a shell.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    },
+    [createShellMutation, navigate, toast]
+  );
 
   const handleExport = () => {
     const inputs = getSessionInputs();
@@ -829,6 +837,61 @@ const ShellContent = () => {
     handleOpenPortalTab("pty", "PTY", undefined, true);
   };
 
+  const handleClosePivot = useCallback(
+    async (pivot: { id: string; kind?: string; destination?: string }) => {
+      const pivotIdStr = String(pivot.id);
+      if (!pivotIdStr) return;
+
+      setClosingPivotIds((prev) =>
+        prev.includes(pivotIdStr) ? prev : [...prev, pivotIdStr]
+      );
+
+      const matchingTabIds = portalTabs
+        .filter(
+          (t) =>
+            String(t.pivotId) === pivotIdStr || t.id === `pivot-${pivotIdStr}`
+        )
+        .map((t) => t.id);
+      for (const tabId of matchingTabIds) {
+        handleClosePortalTab(tabId);
+      }
+
+      try {
+        await closePivotMutation({ variables: { pivotID: pivotIdStr } });
+        await Promise.allSettled([refetchHistory(), refetchKnowledgeGraph()]);
+        const isPty = String(pivot.kind || "").toLowerCase() === "pty";
+        toast({
+          title: isPty ? "PTY closed" : "Pivot closed",
+          description: isPty
+            ? "The PTY session has been terminated."
+            : `Closed pivot ${pivot.destination || `#${pivotIdStr}`}.`,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (err: any) {
+        toast({
+          title: "Failed to close session",
+          description:
+            err?.message || "An error occurred while closing the pivot.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setClosingPivotIds((prev) => prev.filter((id) => id !== pivotIdStr));
+      }
+    },
+    [
+      portalTabs,
+      handleClosePortalTab,
+      closePivotMutation,
+      refetchHistory,
+      refetchKnowledgeGraph,
+      toast,
+    ]
+  );
+
   const handleLoadIntoComposer = useCallback((code: string) => {
     setTabIndex(0);
     setComposerCode(code);
@@ -884,12 +947,12 @@ const ShellContent = () => {
           onCloseSessionSettings={() => {
             setActiveBottomPanel((prev) => (prev === "settings" ? null : prev));
           }}
-          onOpenContextDrawer={() => {
-            setKnowledgeOpen(true);
+          onOpenAccessDrawer={() => {
+            setHostsOpen(true);
             setHistoryOpen(false);
           }}
-          onCloseContextDrawer={() => {
-            setKnowledgeOpen(false);
+          onCloseAccessDrawer={() => {
+            setHostsOpen(false);
           }}
           onPortalStepChange={setActionsMenuTourOpen}
           onQueueStepChange={setQueueTourOpen}
@@ -910,19 +973,19 @@ const ShellContent = () => {
           historyOpen={historyOpen}
           onToggleHistory={() => {
             setHistoryOpen((prev) => !prev);
-            setKnowledgeOpen(false);
+            setHostsOpen(false);
           }}
           historyCount={shellTasks.length}
           activeQueueCount={activeQueuedTasks.length + activeRunningTasks.length}
           pivotCount={pivots.filter((p) => !p.closedAt).length}
-          knowledgeOpen={knowledgeOpen}
-          onToggleKnowledge={() => {
-            setKnowledgeOpen((prev) => !prev);
+          hostsOpen={hostsOpen}
+          onToggleHosts={() => {
+            setHostsOpen((prev) => !prev);
             setHistoryOpen(false);
           }}
-          credentialCount={hostCredentials.length || allCredentials.length}
           credentials={allCredentials}
           hosts={networkHosts}
+          onCredentialCreated={() => refetchKnowledgeGraph()}
           sshModalOpenExternal={sshModalOpenExternal}
           sshModalInitialTarget={sshModalInitialTarget}
           sshModalInitialCredentialId={sshModalInitialCredentialId}
@@ -939,34 +1002,33 @@ const ShellContent = () => {
           onSpawnFreshShell={handleSpawnFreshShell}
           onReplayTutorial={() => {
             setHistoryOpen(false);
-            setKnowledgeOpen(false);
+            setHostsOpen(false);
             setShowNuxBanner(true);
           }}
           actionsMenuTourOpen={actionsMenuTourOpen}
         />
 
-        <InterpreterStatusBanner
-          closedAt={shellData?.node?.closedAt}
-          connectionStatus={connectionStatus}
-          connectionMessage={connectionMessage}
-          isConnecting={isConnecting}
-          stuckTask={
-            stuckTask && !completedTaskIdSet.has(String(stuckTask.id))
-              ? { task: stuckTask, elapsedSeconds: stuckElapsedSeconds }
-              : null
-          }
-          queuedTasks={activeQueuedTasks}
-          runningTasks={activeRunningTasks}
-          timeUntilCallback={timeUntilCallback}
-          onSpawnFreshShell={handleSpawnFreshShell}
-          isSpawningShell={isSpawningShell}
-          onReconnect={handleReconnect}
-        />
-
-        {/* Main Workspace Row: Terminal/Pivots + Optional History or Guide Drawer */}
+        {/* Main Workspace Row: Terminal/Pivots + Optional Drawers */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
           <ShellSidebar isOpen={sidebarOpen} />
           <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+            <InterpreterStatusBanner
+              closedAt={shellData?.node?.closedAt}
+              connectionStatus={connectionStatus}
+              connectionMessage={connectionMessage}
+              isConnecting={isConnecting}
+              stuckTask={
+                stuckTask && !completedTaskIdSet.has(String(stuckTask.id))
+                  ? { task: stuckTask, elapsedSeconds: stuckElapsedSeconds }
+                  : null
+              }
+              queuedTasks={activeQueuedTasks}
+              runningTasks={activeRunningTasks}
+              timeUntilCallback={timeUntilCallback}
+              onSpawnFreshShell={handleSpawnFreshShell}
+              isSpawningShell={isSpawningShell}
+              onReconnect={handleReconnect}
+            />
             <Tabs
               index={tabIndex}
               onChange={(index) => setTabIndex(index)}
@@ -997,11 +1059,10 @@ const ShellContent = () => {
                   className="text-xs font-medium px-3 py-1.5 rounded-t-md"
                 >
                   <span className="flex items-center gap-1.5">
-                    <span
-                      className={`w-2 h-2 rounded-full ${getMainTabIndicatorClass(
-                        connectionStatus,
-                        isConnecting
-                      )}`}
+                    <MainTabIcon
+                      connectionStatus={connectionStatus}
+                      isConnecting={isConnecting}
+                      closedAt={shellData?.node?.closedAt}
                     />
                     <span>{shellData?.node?.beacon?.name ?? "Eldritch Shell"}</span>
                   </span>
@@ -1055,31 +1116,13 @@ const ShellContent = () => {
                         />
 
                         {isEditing ? (
-                          <input
-                            ref={editInputRef}
-                            type="text"
-                            data-testid="inline-rename-tab-input"
-                            aria-label={`Rename ${tabLabel} tab`}
+                          <InlineTabRenameInput
+                            inputRef={editInputRef}
+                            tabLabel={tabLabel}
                             value={editingTabTitle}
-                            onChange={(e) => setEditingTabTitle(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                commitInlineRename(tab.id, editingTabTitle);
-                              } else if (e.key === "Escape") {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                cancelInlineRename();
-                              }
-                            }}
-                            onBlur={() => {
-                              commitInlineRename(tab.id, editingTabTitle);
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onDoubleClick={(e) => e.stopPropagation()}
-                            className="bg-[#12151c] text-white text-xs px-1.5 py-0.5 rounded border border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 min-w-[70px] max-w-[140px]"
+                            onChange={setEditingTabTitle}
+                            onCommit={() => commitInlineRename(tab.id, editingTabTitle)}
+                            onCancel={cancelInlineRename}
                           />
                         ) : (
                           <span
@@ -1165,7 +1208,7 @@ const ShellContent = () => {
                         pivotId={tab.pivotId ? parseInt(tab.pivotId, 10) : undefined}
                         shellId={shellId || ""}
                         isActive={tabIndex === idx + 1}
-                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${scratchpadOpen}:${shellFontSize}`}
+                        layoutKey={`${historyOpen}:${hostsOpen}:${composerOpen}:${sessionSettingsOpen}:${scratchpadOpen}:${shellFontSize}`}
                         fontSize={shellFontSize}
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
@@ -1182,7 +1225,7 @@ const ShellContent = () => {
                         pivotId={tab.pivotId ? parseInt(tab.pivotId, 10) : undefined}
                         shellId={shellId || ""}
                         isActive={tabIndex === idx + 1}
-                        layoutKey={`${knowledgeOpen}:${historyOpen}:${composerOpen}:${sessionSettingsOpen}:${scratchpadOpen}:${shellFontSize}`}
+                        layoutKey={`${historyOpen}:${hostsOpen}:${composerOpen}:${sessionSettingsOpen}:${scratchpadOpen}:${shellFontSize}`}
                         fontSize={shellFontSize}
                         onConnectionStatusChange={(status) =>
                           handleTabConnectionStatusChange(tab.id, status)
@@ -1190,7 +1233,6 @@ const ShellContent = () => {
                         onPivotCreated={(createdPivotId) =>
                           handleBindTabPivotId(tab.id, String(createdPivotId))
                         }
-                        onLastCommandChange={(cmd) => handleUpdateTabTarget(tab.id, cmd)}
                         onCloseTab={() => handleClosePortalTab(tab.id)}
                       />
                     )}
@@ -1212,7 +1254,7 @@ const ShellContent = () => {
               disabled={!!shellData?.node?.closedAt}
               tomes={tomes}
               fontSize={shellFontSize}
-              defaultAuthor={shellData?.node?.owner?.name}
+              defaultAuthor={currentOperatorName || shellData?.node?.owner?.name}
               onTomeCreated={(createdTome) => {
                 refetchTomes?.();
                 toast({
@@ -1251,64 +1293,54 @@ const ShellContent = () => {
             />
           </div>
 
-          <ShellKnowledgeDrawer
-            isOpen={knowledgeOpen}
-            onClose={() => setKnowledgeOpen(false)}
-            currentShellId={shellId}
+          <HostsTreeDrawer
+            isOpen={hostsOpen}
+            onClose={() => setHostsOpen(false)}
+            hosts={networkHosts}
+            shells={hostShells}
+            currentHostBeacons={currentHostBeacons}
+            shellTasks={allShellTasks}
+            pivots={pivots.map((p) => ({
+              ...p,
+              customTitle: customTitles[String(p.id)],
+            }))}
             currentHostId={shellData?.node?.beacon?.host?.id}
             currentHostName={shellData?.node?.beacon?.host?.name}
             currentHostIp={shellData?.node?.beacon?.host?.primaryIP}
-            portalId={portalId}
-            pivots={pivots.map((p) => {
-              const matchingTab =
-                portalTabs.find((t) => t.pivotId && String(t.pivotId) === String(p.id)) ||
-                (!p.closedAt && String(p.kind || "").toLowerCase() === "pty"
-                  ? portalTabs.find((t) => !t.pivotId && t.type === "pty")
-                  : undefined);
-              const activeTarget =
-                (matchingTab?.target && matchingTab.target !== "PTY"
-                  ? matchingTab.target
-                  : undefined) ||
-                pivotTargets[String(p.id)] ||
-                matchingTab?.target ||
-                (!p.closedAt && String(p.kind || "").toLowerCase() === "pty"
-                  ? lastUnboundPtyTargetRef.current || undefined
-                  : undefined);
-              const customTitle =
-                matchingTab?.customTitle || customTitles[String(p.id)];
-              return {
-                ...p,
-                ...(activeTarget ? { activeTarget } : {}),
-                ...(customTitle ? { customTitle } : {}),
-              };
-            })}
-            hostCredentials={hostCredentials}
-            allCredentials={allCredentials}
-            networkHosts={networkHosts}
-            hostFiles={hostFiles}
-            hostProcessCount={hostProcessCount}
-            hostShells={hostShells}
-            lastKnowledgeSyncAt={lastKnowledgeSyncAt}
-            onRefetchKnowledgeGraph={() => refetchKnowledgeGraph()}
-            onNewPortal={handleNewPortal}
-            onClosePortal={handleClosePortal}
+            currentShellId={shellId}
+            currentUserId={currentUserId}
+            currentUserName={currentOperatorName}
+            availableCredentials={allCredentials}
+            portalOpen={Boolean(portalId)}
             onOpenPty={handlePtyOpen}
-            onOpenSshModal={() => {
-              setSshModalInitialTarget("");
+            onSelectShell={(targetShellId) => {
+              if (String(targetShellId) !== String(shellId)) {
+                navigate(`/shells/${targetShellId}`);
+              }
+            }}
+            onCreateShellForHost={handleCreateShellOnHost}
+            onSelectPivot={(pivot, targetShellId) => {
+              if (targetShellId && String(targetShellId) !== String(shellId)) {
+                navigate(`/shells/${targetShellId}?pivotId=${pivot.id}`);
+                return;
+              }
+              const isPty = String(pivot.kind || "").toLowerCase() === "pty";
+              handleOpenPortalTab(
+                isPty ? "pty" : "ssh",
+                isPty ? "PTY" : pivot.destination || "SSH",
+                String(pivot.id),
+                true
+              );
+            }}
+            onOpenSshWithTarget={(target) => {
+              setSshModalInitialTarget(target);
               setSshModalInitialCredentialId(undefined);
               setSshModalOpenExternal(true);
             }}
-            onOpenPivotTab={(type, target, pivotId) =>
-              handleOpenPortalTab(type, target, pivotId, true)
-            }
-            onOpenSshWithTarget={(target, credentialId) => {
-              setSshModalInitialTarget(target);
-              setSshModalInitialCredentialId(credentialId);
-              setSshModalOpenExternal(true);
-            }}
-            onRenamePivot={handleRenamePivot}
-            onResetPivotName={handleResetPivotName}
-            onLoadIntoComposer={handleLoadIntoComposer}
+            onClosePivot={handleClosePivot}
+            closingPivotIds={closingPivotIds}
+            onHostSaved={() => refetchKnowledgeGraph()}
+            onCredentialCreated={() => refetchKnowledgeGraph()}
           />
 
           <ShellHistoryDrawer

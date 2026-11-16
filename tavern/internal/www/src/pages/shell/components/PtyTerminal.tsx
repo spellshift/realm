@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useRef } from "react";
 import { PortalStreamStatus, useStreamingTerminal } from "../hooks/useStreamingTerminal";
 
 interface PtyTerminalProps {
@@ -23,40 +23,9 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
     fontSize,
     onConnectionStatusChange,
     onPivotCreated,
-    onLastCommandChange,
 }) => {
-    const inputLineBufferRef = useRef<string>("");
     const portalIdRef = useRef<number>(portalId);
     portalIdRef.current = portalId;
-
-    const handleTerminalData = useCallback(
-        (data: string) => {
-            if (data === "\x03" || data === "\x15") {
-                inputLineBufferRef.current = "";
-                return;
-            }
-            if (data === "\x7f" || data === "\b") {
-                inputLineBufferRef.current = inputLineBufferRef.current.slice(0, -1);
-                return;
-            }
-            if (data.startsWith("\x1b")) {
-                return;
-            }
-            for (const ch of data) {
-                if (ch === "\r" || ch === "\n") {
-                    const cmd = inputLineBufferRef.current.trim();
-                    if (cmd && cmd.toLowerCase() !== "exit") {
-                        const truncated = cmd.length > 24 ? `${cmd.slice(0, 24)}...` : cmd;
-                        onLastCommandChange?.(truncated);
-                    }
-                    inputLineBufferRef.current = "";
-                } else if (ch.charCodeAt(0) >= 32) {
-                    inputLineBufferRef.current += ch;
-                }
-            }
-        },
-        [onLastCommandChange]
-    );
 
     const { termRef } = useStreamingTerminal({
         pivotId,
@@ -86,7 +55,6 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({
             sendResize(ws, Boolean(targetPivotId));
             term.focus();
         },
-        onTerminalData: handleTerminalData,
         onConnectionStatusChange,
         onPivotCreated,
     });

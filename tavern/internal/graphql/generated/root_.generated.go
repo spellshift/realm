@@ -453,6 +453,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ClosePivot                   func(childComplexity int, pivotID int) int
 		ClosePortal                  func(childComplexity int, portalID int) int
 		CreateBuildProfile           func(childComplexity int, input models.CreateBuildProfileInput) int
 		CreateBuildTask              func(childComplexity int, input models.CreateBuildTaskInput) int
@@ -2950,6 +2951,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Metrics.TasksByTome(childComplexity), true
+
+	case "Mutation.closePivot":
+		if e.ComplexityRoot.Mutation.ClosePivot == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_closePivot_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ClosePivot(childComplexity, args["pivotID"].(int)), true
 
 	case "Mutation.closePortal":
 		if e.ComplexityRoot.Mutation.ClosePortal == nil {
@@ -15339,6 +15352,7 @@ scalar Uint64
     # Portal
     ###
     closePortal(portalID: ID!): Portal! @requireRole(role: USER)
+    closePivot(pivotID: ID!): ShellPivot! @requireRole(role: USER)
 
     ###
     # Link

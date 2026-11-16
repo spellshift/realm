@@ -33,21 +33,80 @@ interface HistoryEntry {
     selectionEnd: number;
 }
 
+export const SHARED_DRAWER_HEIGHT_STORAGE_KEY = "tavern_shell_drawer_height_v1";
+
+let sharedDrawerHeightStore: number | null = null;
+const sharedDrawerHeightListeners = new Set<(height: number) => void>();
+
+function clampDrawerHeight(height: number): number {
+    if (!Number.isFinite(height)) {
+        return DEFAULT_EDITOR_HEIGHT;
+    }
+    return Math.max(MIN_EDITOR_HEIGHT, Math.min(MAX_EDITOR_HEIGHT, Math.round(height)));
+}
+
+export function loadSharedDrawerHeight(fallback: number = DEFAULT_EDITOR_HEIGHT): number {
+    if (sharedDrawerHeightStore !== null) {
+        return sharedDrawerHeightStore;
+    }
+    try {
+        const stored = localStorage.getItem(SHARED_DRAWER_HEIGHT_STORAGE_KEY);
+        if (stored !== null) {
+            const parsed = Number(stored);
+            if (Number.isFinite(parsed)) {
+                sharedDrawerHeightStore = clampDrawerHeight(parsed);
+                return sharedDrawerHeightStore;
+            }
+        }
+    } catch {
+        // Ignore storage errors
+    }
+    return clampDrawerHeight(fallback);
+}
+
+export function setSharedDrawerHeight(nextHeight: number): void {
+    const clamped = clampDrawerHeight(nextHeight);
+    sharedDrawerHeightStore = clamped;
+    try {
+        localStorage.setItem(SHARED_DRAWER_HEIGHT_STORAGE_KEY, String(clamped));
+    } catch {
+        // Ignore storage errors
+    }
+    sharedDrawerHeightListeners.forEach((listener) => listener(clamped));
+}
+
+export function resetSharedDrawerHeightForTests(): void {
+    sharedDrawerHeightStore = null;
+}
+
 export function useResizableEditorHeight(initialHeight: number = DEFAULT_EDITOR_HEIGHT) {
-    const [editorHeight, setEditorHeight] = useState<number>(initialHeight);
+    const [editorHeight, setEditorHeight] = useState<number>(() =>
+        loadSharedDrawerHeight(initialHeight)
+    );
+    const editorHeightRef = useRef<number>(editorHeight);
+    editorHeightRef.current = editorHeight;
+
     const isResizingRef = useRef<boolean>(false);
     const resizeStartYRef = useRef<number>(0);
-    const resizeStartHeightRef = useRef<number>(initialHeight);
+    const resizeStartHeightRef = useRef<number>(editorHeight);
+
+    useEffect(() => {
+        const handleSync = (next: number) => {
+            setEditorHeight(next);
+        };
+        sharedDrawerHeightListeners.add(handleSync);
+        setEditorHeight(loadSharedDrawerHeight(initialHeight));
+        return () => {
+            sharedDrawerHeightListeners.delete(handleSync);
+        };
+    }, [initialHeight]);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isResizingRef.current) return;
             const deltaY = resizeStartYRef.current - e.clientY;
-            const nextHeight = Math.max(
-                MIN_EDITOR_HEIGHT,
-                Math.min(MAX_EDITOR_HEIGHT, resizeStartHeightRef.current + deltaY)
-            );
-            setEditorHeight(nextHeight);
+            const nextHeight = clampDrawerHeight(resizeStartHeightRef.current + deltaY);
+            setSharedDrawerHeight(nextHeight);
         };
 
         const handleMouseUp = () => {
@@ -76,20 +135,20 @@ export function useResizableEditorHeight(initialHeight: number = DEFAULT_EDITOR_
             e.preventDefault();
             isResizingRef.current = true;
             resizeStartYRef.current = e.clientY;
-            resizeStartHeightRef.current = editorHeight;
+            resizeStartHeightRef.current = editorHeightRef.current;
             document.body.style.cursor = "ns-resize";
             document.body.style.userSelect = "none";
         },
-        [editorHeight]
+        []
     );
 
     const handleResizeKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === "ArrowUp") {
             e.preventDefault();
-            setEditorHeight((h) => Math.min(MAX_EDITOR_HEIGHT, h + 24));
+            setSharedDrawerHeight(editorHeightRef.current + 24);
         } else if (e.key === "ArrowDown") {
             e.preventDefault();
-            setEditorHeight((h) => Math.max(MIN_EDITOR_HEIGHT, h - 24));
+            setSharedDrawerHeight(editorHeightRef.current - 24);
         }
     }, []);
 

@@ -1,18 +1,16 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 import {
-    AArrowDown,
-    AArrowUp,
     ArrowRight,
-    RotateCcw,
+    Minus,
+    Plus,
     Search,
     Settings,
     X,
 } from "lucide-react";
-import { analyzeEldritchCode, registerUserSymbolsFromCode } from "../utils/eldritchLsp";
+import { registerUserSymbolsFromCode } from "../utils/eldritchLsp";
 import { ShellTomeItem } from "../hooks/useShellData";
 import EldritchCodeEditor, {
-    EldritchLspStatusButton,
     useResizableEditorHeight,
 } from "./EldritchCodeEditor";
 import {
@@ -51,103 +49,158 @@ interface SessionGeneralSettingsPanelProps {
     rcEnabled: boolean;
     onToggleRcEnabled: () => void;
     fontSize: number;
+    onFontSizeChange: (nextSize: number) => void;
     onDecreaseFontSize: () => void;
     onIncreaseFontSize: () => void;
-    onResetFontSize: () => void;
 }
 
 const SessionGeneralSettingsPanel: React.FC<SessionGeneralSettingsPanelProps> = ({
     rcEnabled,
     onToggleRcEnabled,
     fontSize,
+    onFontSizeChange,
     onDecreaseFontSize,
     onIncreaseFontSize,
-    onResetFontSize,
-}) => (
-    <div
-        data-testid="session-settings-left-panel"
-        className="w-44 shrink-0 border-r border-gray-800 bg-gray-900 p-2.5 flex flex-col gap-2 text-xs text-gray-300"
-    >
-        <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">Enable RC</span>
-            <button
-                type="button"
-                role="switch"
-                aria-checked={rcEnabled}
-                aria-label="Auto-run RC script on new shells"
-                data-testid="session-settings-rc-toggle"
-                onClick={onToggleRcEnabled}
-                title={
-                    rcEnabled
-                        ? "RC enabled (click to disable)"
-                        : "RC disabled (click to enable)"
-                }
-                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border transition-colors ${
-                    rcEnabled
-                        ? "bg-purple-600 border-purple-500"
-                        : "bg-gray-800 border-gray-700"
-                }`}
-            >
-                <span
-                    className={`pointer-events-none inline-block h-3 w-3 transform rounded-full transition-transform mt-0.25 ${
+}) => {
+    const [fontInputValue, setFontInputValue] = useState<string>(String(fontSize));
+
+    useEffect(() => {
+        setFontInputValue(String(fontSize));
+    }, [fontSize]);
+
+    const commitFontInput = () => {
+        const trimmed = fontInputValue.trim();
+        if (!trimmed) {
+            setFontInputValue(String(fontSize));
+            return;
+        }
+        const parsed = Number(trimmed);
+        if (!Number.isFinite(parsed)) {
+            setFontInputValue(String(fontSize));
+            return;
+        }
+        const clamped = clampShellFontSize(parsed);
+        onFontSizeChange(clamped);
+        setFontInputValue(String(clamped));
+    };
+
+    return (
+        <div
+            data-testid="session-settings-right-panel"
+            className="w-48 shrink-0 border-l border-gray-800 bg-gray-900 p-2.5 flex flex-col gap-2.5 text-xs text-gray-300"
+        >
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-gray-400">Enable RC</span>
+                <button
+                    type="button"
+                    role="switch"
+                    aria-checked={rcEnabled}
+                    aria-label="Auto-run RC script on new shells"
+                    data-testid="session-settings-rc-toggle"
+                    onClick={onToggleRcEnabled}
+                    title={
                         rcEnabled
-                            ? "translate-x-3 bg-white"
-                            : "translate-x-0.5 bg-gray-400"
+                            ? "RC enabled (click to disable)"
+                            : "RC disabled (click to enable)"
+                    }
+                    className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border transition-colors ${
+                        rcEnabled
+                            ? "bg-purple-600 border-purple-500"
+                            : "bg-gray-800 border-gray-700"
                     }`}
-                />
-            </button>
+                >
+                    <span
+                        className={`pointer-events-none inline-block h-3 w-3 transform rounded-full transition-transform mt-0.25 ${
+                            rcEnabled
+                                ? "translate-x-3 bg-white"
+                                : "translate-x-0.5 bg-gray-400"
+                        }`}
+                    />
+                </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+                <label
+                    htmlFor="session-settings-font-input"
+                    className="text-xs font-medium text-gray-400 shrink-0"
+                >
+                    Font Size
+                </label>
+
+                <div
+                    data-testid="session-settings-font-size-control"
+                    className="inline-flex items-stretch rounded-md border border-gray-700 bg-gray-800 overflow-hidden"
+                >
+                    <div className="flex items-center px-1.5 gap-0.5">
+                        <input
+                            id="session-settings-font-input"
+                            data-testid="session-settings-font-size-input"
+                            type="number"
+                            min={MIN_SHELL_FONT_SIZE}
+                            max={MAX_SHELL_FONT_SIZE}
+                            aria-label="Font size in pixels"
+                            value={fontInputValue}
+                            onChange={(e) => {
+                                const raw = e.target.value;
+                                setFontInputValue(raw);
+                                const parsed = Number(raw);
+                                if (raw.trim() !== "" && Number.isFinite(parsed)) {
+                                    if (
+                                        parsed >= MIN_SHELL_FONT_SIZE &&
+                                        parsed <= MAX_SHELL_FONT_SIZE
+                                    ) {
+                                        onFontSizeChange(parsed);
+                                    }
+                                }
+                            }}
+                            onBlur={commitFontInput}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    commitFontInput();
+                                } else if (e.key === "Escape") {
+                                    setFontInputValue(String(fontSize));
+                                }
+                            }}
+                            className="w-8 bg-transparent text-right font-mono text-xs text-gray-100 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <span
+                            data-testid="session-settings-font-size-value"
+                            className="font-mono text-[10px] text-gray-500 select-none"
+                        >
+                            px
+                        </span>
+                    </div>
+
+                    <div className="flex flex-col border-l border-gray-700 w-5">
+                        <button
+                            type="button"
+                            data-testid="session-settings-font-increase"
+                            aria-label="Increase font size"
+                            title={`Increase font size (${fontSize}px)`}
+                            disabled={fontSize >= MAX_SHELL_FONT_SIZE}
+                            onClick={onIncreaseFontSize}
+                            className="flex-1 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-b border-gray-700 py-0.5"
+                        >
+                            <Plus className="w-2.5 h-2.5" />
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="session-settings-font-decrease"
+                            aria-label="Decrease font size"
+                            title={`Decrease font size (${fontSize}px)`}
+                            disabled={fontSize <= MIN_SHELL_FONT_SIZE}
+                            onClick={onDecreaseFontSize}
+                            className="flex-1 flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors py-0.5"
+                        >
+                            <Minus className="w-2.5 h-2.5" />
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">Font Size</span>
-            <span
-                data-testid="session-settings-font-size-value"
-                className="font-mono text-xs text-gray-300"
-            >
-                {fontSize}px
-            </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-            <button
-                type="button"
-                data-testid="session-settings-font-decrease"
-                aria-label="Decrease font size"
-                title={`Decrease font size (${fontSize}px)`}
-                disabled={fontSize <= MIN_SHELL_FONT_SIZE}
-                onClick={onDecreaseFontSize}
-                className="inline-flex items-center justify-center p-1.5 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-                <AArrowDown className="w-4 h-4" />
-            </button>
-
-            <button
-                type="button"
-                data-testid="session-settings-font-increase"
-                aria-label="Increase font size"
-                title={`Increase font size (${fontSize}px)`}
-                disabled={fontSize >= MAX_SHELL_FONT_SIZE}
-                onClick={onIncreaseFontSize}
-                className="inline-flex items-center justify-center p-1.5 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-                <AArrowUp className="w-4 h-4" />
-            </button>
-
-            <button
-                type="button"
-                data-testid="session-settings-font-reset"
-                aria-label="Reset font size"
-                title={`Reset font size (${DEFAULT_SHELL_FONT_SIZE}px)`}
-                disabled={fontSize === DEFAULT_SHELL_FONT_SIZE}
-                onClick={onResetFontSize}
-                className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs text-gray-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors ml-auto"
-            >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset</span>
-            </button>
-        </div>
-    </div>
-);
+    );
+};
 
 interface RcInitialChooserProps {
     editorHeight: number;
@@ -245,7 +298,6 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
     const [isEditingScript, setIsEditingScript] = useState<boolean>(
         () => (controlledRcCode ?? loadRcScript()).trim().length > 0
     );
-    const [showDiagnosticsPanel, setShowDiagnosticsPanel] = useState<boolean>(true);
     const [tomePickerOpen, setTomePickerOpen] = useState<boolean>(false);
     const [tomeSearchQuery, setTomeSearchQuery] = useState<string>("");
 
@@ -296,10 +348,6 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
     const handleIncreaseFontSize = useCallback(() => {
         handleFontSizeChange(effectiveFontSize + 1);
     }, [effectiveFontSize, handleFontSizeChange]);
-
-    const handleResetFontSize = useCallback(() => {
-        handleFontSizeChange(DEFAULT_SHELL_FONT_SIZE);
-    }, [handleFontSizeChange]);
 
     const handleRcCodeChange = useCallback(
         (nextCode: string) => {
@@ -377,11 +425,6 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
         }
     }, [tomePickerOpen]);
 
-    const diagnostics = useMemo(
-        () => analyzeEldritchCode(effectiveRcCode),
-        [effectiveRcCode]
-    );
-
     const handleSelectRcTome = (tome: ShellTomeItem) => {
         const formatted = formatTomeForComposer(tome);
         setIsEditingScript(true);
@@ -433,21 +476,14 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
 
             {/* SessionSettings Toolbar Header */}
             <div className="flex items-center justify-between gap-2 px-3 py-1 bg-gray-900 border-b border-gray-800 text-xs text-gray-400 select-none">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     <span
                         className="inline-flex items-center justify-center p-1 text-gray-400"
                         title="Session Settings (RC)"
                     >
                         <Settings className="w-4 h-4" />
                     </span>
-
-                    {isEditingScript && (
-                        <EldritchLspStatusButton
-                            diagnostics={diagnostics}
-                            onClick={() => setShowDiagnosticsPanel((prev) => !prev)}
-                            testId="rc-eldritch-lsp-status"
-                        />
-                    )}
+                    <span className="font-medium text-gray-300">Settings</span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
@@ -535,17 +571,8 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
                 </div>
             </div>
 
-            {/* Vertically Split Body: Left General Settings Panel + Right RC Script Pane */}
+            {/* Vertically Split Body: Left RC Script Pane + Right General Settings Panel */}
             <div className="flex min-w-0">
-                <SessionGeneralSettingsPanel
-                    rcEnabled={effectiveRcEnabled}
-                    onToggleRcEnabled={handleToggleRcEnabled}
-                    fontSize={effectiveFontSize}
-                    onDecreaseFontSize={handleDecreaseFontSize}
-                    onIncreaseFontSize={handleIncreaseFontSize}
-                    onResetFontSize={handleResetFontSize}
-                />
-
                 <div className="flex-1 min-w-0">
                     {!isEditingScript ? (
                         <RcInitialChooser
@@ -566,12 +593,21 @@ const SessionSettings: React.FC<SessionSettingsProps> = ({
                             fontSize={effectiveFontSize}
                             ariaLabel="Shared Eldritch RC script editor"
                             testIdPrefix="session-settings"
-                            showDiagnosticsPanel={showDiagnosticsPanel}
+                            showDiagnosticsPanel={true}
                             autoFocus={isOpen && isEditingScript}
                             textareaRefExternal={textareaRef}
                         />
                     )}
                 </div>
+
+                <SessionGeneralSettingsPanel
+                    rcEnabled={effectiveRcEnabled}
+                    onToggleRcEnabled={handleToggleRcEnabled}
+                    fontSize={effectiveFontSize}
+                    onFontSizeChange={handleFontSizeChange}
+                    onDecreaseFontSize={handleDecreaseFontSize}
+                    onIncreaseFontSize={handleIncreaseFontSize}
+                />
             </div>
         </div>
     );

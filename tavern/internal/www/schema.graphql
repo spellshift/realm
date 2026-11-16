@@ -9224,6 +9224,7 @@ type Mutation {
     # Portal
     ###
     closePortal(portalID: ID!): Portal! @requireRole(role: USER)
+    closePivot(pivotID: ID!): ShellPivot! @requireRole(role: USER)
 
     ###
     # Link
