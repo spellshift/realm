@@ -51,12 +51,15 @@ const PAGE_SIZE: usize = 4096;
 const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
 const CONTEXT_CONTROL: u32 = 0x1;
 const THREAD_BASIC_INFORMATION_CLASS: u32 = 0;
-const THREAD_STATE_CLASS: u32 = 0x20;
+const SYSTEM_PROCESS_INFORMATION_CLASS: u32 = 5;
+const STATUS_INFO_LENGTH_MISMATCH: i32 = 0xC0000004u32 as i32;
 const THREAD_STATE_WAITING: u32 = 5;
 const MAX_THREADS: usize = 1024;
 
 type NtQueryInformationThreadFn =
     extern "system" fn(*mut c_void, u32, *mut c_void, u32, *mut u32) -> i32;
+
+type NtQuerySystemInformationFn = extern "system" fn(u32, *mut c_void, u32, *mut u32) -> i32;
 
 unsafe extern "system" {
     fn GetModuleHandleW(lpModuleName: *const u16) -> *mut c_void;
@@ -70,6 +73,12 @@ unsafe extern "system" {
     ) -> i32;
     fn ExitProcess(uExitCode: u32) -> !;
     fn GetThreadContext(hThread: *mut c_void, lpContext: *mut CONTEXT) -> i32;
+    fn NtQuerySystemInformation(
+        system_information_class: u32,
+        system_information: *mut c_void,
+        system_information_length: u32,
+        return_length: *mut u32,
+    ) -> i32;
 }
 
 #[derive(Clone, Copy, Default)]
@@ -178,10 +187,19 @@ fn ensure_watchdog() -> Option<&'static Sender<WatchdogCommand>> {
 
 fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
     let ntqit = resolve_ntquery();
+    let ntqsi = resolve_ntqsi();
     let mut guard: Option<MemGuard> = MemGuard::new();
 
     while let Ok(cmd) = cmd_rx.recv() {
         let ntqit = match ntqit {
+            Some(f) => f,
+            None => {
+                plain_sleep(cmd.interval_secs);
+                let _ = cmd.wake_tx.send(());
+                continue;
+            }
+        };
+        let ntqsi = match ntqsi {
             Some(f) => f,
             None => {
                 plain_sleep(cmd.interval_secs);
@@ -197,7 +215,7 @@ fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
                 continue;
             }
         };
-        let _ = run_cycle(g, ntqit, ntdll.0, ntdll.1, cmd.interval_secs);
+        let _ = run_cycle(g, ntqit, ntqsi, ntdll.0, ntdll.1, cmd.interval_secs);
         // The cycle only returns after a full decrypt (resume+wake) or a clean
         // skip; a failed decrypt terminates the process in `ensure_decrypted`.
         let _ = cmd.wake_tx.send(());
@@ -279,18 +297,117 @@ fn region_size_of(ptr: *mut c_void) -> usize {
     }
 }
 
-fn thread_state(ntqit: NtQueryInformationThreadFn, handle: *mut c_void) -> Option<u32> {
-    let mut state: u32 = 0;
-    let status = unsafe {
-        ntqit(
-            handle,
-            THREAD_STATE_CLASS,
-            &mut state as *mut u32 as *mut c_void,
-            4,
-            core::ptr::null_mut(),
-        )
-    };
-    if status >= 0 { Some(state) } else { None }
+/// Resolve NtQuerySystemInformation from ntdll (raw FFI). The engine
+/// already resolves this into its State, but re-resolving here keeps the change
+/// local to the watchdog.
+fn resolve_ntqsi() -> Option<NtQuerySystemInformationFn> {
+    unsafe {
+        let ntdll = GetModuleHandleW(wstr("ntdll.dll").as_ptr());
+        if ntdll.is_null() {
+            return None;
+        }
+        let p = GetProcAddress(ntdll, b"NtQuerySystemInformation\0".as_ptr());
+        if p.is_null() {
+            return None;
+        }
+        Some(core::mem::transmute(p))
+    }
+}
+
+/// Field offsets for the canonical Win8+ x64 `SYSTEM_PROCESS_INFORMATION` /
+/// `SYSTEM_THREAD_INFORMATION` layout (phnt-style). The thread tail offset is the
+/// historically fragile part, so the caller validates the parsed data against a
+/// ToolHelp-derived set before trusting it.
+const PROC_UNIQUE_PID_OFFSET: usize = 0x4C;
+const PROC_THREADS_OFFSET: usize = 0xF8;
+const THREAD_TID_OFFSET: usize = 0x30;
+const THREAD_STATE_OFFSET: usize = 0x44;
+const THREAD_ENTRY_SIZE: usize = 0x50;
+
+/// Query `NtQuerySystemInformation(SystemProcessInformation)` and return the
+/// (tid, ThreadState) pairs for the given PID. Allocation is fine here: this
+/// runs before the encrypted window opens and the `Vec` is dropped before
+/// `encrypt()` is ever called.
+fn query_process_threads(
+    ntqsi: NtQuerySystemInformationFn,
+    self_pid: u32,
+) -> Option<Vec<(u32, u32)>> {
+    let mut buf_len = 0x40000usize;
+    let mut buf: Vec<u8> = Vec::with_capacity(buf_len);
+    loop {
+        buf.resize(buf_len, 0);
+        let mut return_length: u32 = 0;
+        let status = unsafe {
+            ntqsi(
+                SYSTEM_PROCESS_INFORMATION_CLASS,
+                buf.as_mut_ptr() as *mut c_void,
+                buf_len as u32,
+                &mut return_length,
+            )
+        };
+        if status >= 0 {
+            return parse_process_threads(buf.as_ptr(), self_pid);
+        }
+        if status == STATUS_INFO_LENGTH_MISMATCH {
+            buf_len = buf_len.saturating_mul(2);
+            continue;
+        }
+        return None;
+    }
+}
+
+fn parse_process_threads(base: *const u8, self_pid: u32) -> Option<Vec<(u32, u32)>> {
+    let mut out: Vec<(u32, u32)> = Vec::new();
+    let mut offset: usize = 0;
+    loop {
+        let entry = unsafe { base.add(offset) };
+        let next = unsafe { core::ptr::read_unaligned(entry.add(0x00) as *const u32) } as usize;
+        let pid =
+            unsafe { core::ptr::read_unaligned(entry.add(PROC_UNIQUE_PID_OFFSET) as *const u32) };
+        let num_threads =
+            unsafe { core::ptr::read_unaligned(entry.add(0x04) as *const u32) } as usize;
+        if pid == self_pid {
+            let threads_base = unsafe { entry.add(PROC_THREADS_OFFSET) };
+            for i in 0..num_threads {
+                let t = unsafe { threads_base.add(i * THREAD_ENTRY_SIZE) };
+                let tid =
+                    unsafe { core::ptr::read_unaligned(t.add(THREAD_TID_OFFSET) as *const u32) };
+                let state =
+                    unsafe { core::ptr::read_unaligned(t.add(THREAD_STATE_OFFSET) as *const u32) };
+                out.push((tid, state));
+            }
+            return Some(out);
+        }
+        if next == 0 {
+            break;
+        }
+        offset = offset + next;
+    }
+    None
+}
+
+/// Fail-closed runtime validation of the system snapshot: the parsed thread count
+/// must match the ToolHelp-derived count, every parsed TID must be non-zero, and
+/// the set must contain all our ToolHelp TIDs. We never guess.
+fn validate_snapshot(snapshot: &[(u32, u32)], slots: &[ThreadSlot]) -> bool {
+    if snapshot.len() != slots.len() {
+        return false;
+    }
+    for (tid, _) in snapshot {
+        if *tid == 0 {
+            return false;
+        }
+    }
+    for s in slots {
+        if !snapshot.iter().any(|(t, _)| *t == s.tid) {
+            return false;
+        }
+    }
+    true
+}
+
+fn state_for(snapshot: &[(u32, u32)], tid: u32) -> Option<u32> {
+    snapshot.iter().find(|(t, _)| *t == tid).map(|(_, st)| *st)
 }
 
 fn rip_in_ntdll(rip: u64, ntdll_base: usize, ntdll_size: usize) -> bool {
@@ -610,6 +727,7 @@ fn run_dormancy(
     guard: &mut MemGuard,
     self_tid: u32,
     ntqit: NtQueryInformationThreadFn,
+    ntqsi: NtQuerySystemInformationFn,
     ntdll_base: usize,
     ntdll_size: usize,
     buf: &mut [ThreadSlot],
@@ -631,11 +749,32 @@ fn run_dormancy(
             return (DormancyResult::Fail, 0);
         }
 
+        // Authoritative thread-state comes from NtQuerySystemInformation
+        // (SystemProcessInformation). Per-thread NtQueryInformationThread(0x20) is
+        // invalid on the target (0x20 == ThreadCounterProfiling), so the system
+        // snapshot is the only reliable source. Drop our own TID (present in the
+        // snapshot but not in the ToolHelp candidate set).
+        let snapshot = match query_process_threads(ntqsi, self_tid) {
+            Some(s) => s
+                .into_iter()
+                .filter(|(tid, _)| *tid != self_tid)
+                .collect::<Vec<_>>(),
+            None => {
+                resume_all(&mut buf[..n]);
+                sleep_backoff(attempt);
+                continue;
+            }
+        };
+        if !validate_snapshot(&snapshot, &buf[..n]) {
+            resume_all(&mut buf[..n]);
+            sleep_backoff(attempt);
+            continue;
+        }
+
         // Pre-check: every candidate thread must report ThreadState == Waiting.
         let mut all_waiting = true;
-        for s in buf[..n].iter_mut() {
-            s.suspended = false;
-            if thread_state(ntqit, s.handle) != Some(THREAD_STATE_WAITING) {
+        for s in buf[..n].iter() {
+            if state_for(&snapshot, s.tid) != Some(THREAD_STATE_WAITING) {
                 all_waiting = false;
                 break;
             }
@@ -768,6 +907,7 @@ fn ensure_decrypted(guard: &mut MemGuard) {
 fn run_cycle(
     guard: &mut MemGuard,
     ntqit: NtQueryInformationThreadFn,
+    ntqsi: NtQuerySystemInformationFn,
     ntdll_base: usize,
     ntdll_size: usize,
     interval_secs: f64,
@@ -779,7 +919,15 @@ fn run_cycle(
         slots: &mut slot_buf,
     };
 
-    let (dormancy, n) = run_dormancy(guard, self_tid, ntqit, ntdll_base, ntdll_size, slots.slots);
+    let (dormancy, n) = run_dormancy(
+        guard,
+        self_tid,
+        ntqit,
+        ntqsi,
+        ntdll_base,
+        ntdll_size,
+        slots.slots,
+    );
     match dormancy {
         DormancyResult::Ok => {}
         DormancyResult::RetryExhausted => {
@@ -967,10 +1115,11 @@ mod tests {
         });
 
         let ntqit = resolve_ntquery().expect("NtQueryInformationThread unavailable");
+        let ntqsi = resolve_ntqsi().expect("NtQuerySystemInformation unavailable");
         let (ntdll_base, ntdll_size) = resolve_ntdll().expect("ntdll resolve");
         let mut guard = MemGuard::new().expect("memguard init");
 
-        let outcome = run_cycle(&mut guard, ntqit, ntdll_base, ntdll_size, 0.0);
+        let outcome = run_cycle(&mut guard, ntqit, ntqsi, ntdll_base, ntdll_size, 0.0);
         assert!(
             !outcome.skipped,
             "dormancy cycle should encrypt, not skip (parked thread not seen as dormant?)"
