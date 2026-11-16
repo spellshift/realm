@@ -189,6 +189,7 @@ fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
     let ntqit = resolve_ntquery();
     let ntqsi = resolve_ntqsi();
     let mut guard: Option<MemGuard> = MemGuard::new();
+    let mut calib: Option<SpiLayout> = None;
 
     while let Ok(cmd) = cmd_rx.recv() {
         let ntqit = match ntqit {
@@ -215,7 +216,15 @@ fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
                 continue;
             }
         };
-        let _ = run_cycle(g, ntqit, ntqsi, ntdll.0, ntdll.1, cmd.interval_secs);
+        let _ = run_cycle(
+            g,
+            ntqit,
+            ntqsi,
+            &mut calib,
+            ntdll.0,
+            ntdll.1,
+            cmd.interval_secs,
+        );
         // The cycle only returns after a full decrypt (resume+wake) or a clean
         // skip; a failed decrypt terminates the process in `ensure_decrypted`.
         let _ = cmd.wake_tx.send(());
@@ -318,20 +327,23 @@ fn resolve_ntqsi() -> Option<NtQuerySystemInformationFn> {
 /// `SYSTEM_THREAD_INFORMATION` layout (phnt-style). The thread tail offset is the
 /// historically fragile part, so the caller validates the parsed data against a
 /// ToolHelp-derived set before trusting it.
-const PROC_UNIQUE_PID_OFFSET: usize = 0x4C;
-const PROC_THREADS_OFFSET: usize = 0xF8;
 const THREAD_TID_OFFSET: usize = 0x30;
 const THREAD_STATE_OFFSET: usize = 0x44;
 const THREAD_ENTRY_SIZE: usize = 0x50;
 
-/// Query `NtQuerySystemInformation(SystemProcessInformation)` and return the
-/// (tid, ThreadState) pairs for the given PID. Allocation is fine here: this
-/// runs before the encrypted window opens and the `Vec` is dropped before
-/// `encrypt()` is ever called.
-fn query_process_threads(
-    ntqsi: NtQuerySystemInformationFn,
-    self_pid: u32,
-) -> Option<Vec<(u32, u32)>> {
+/// Calibrated byte offsets into the Win8+ x64 SYSTEM_PROCESS_INFORMATION layout.
+/// Self-calibrated at runtime against a ToolHelp oracle so the parse is robust
+/// across Windows versions (the fixed part of this struct is version-fragile).
+#[derive(Clone, Copy)]
+struct SpiLayout {
+    pid_offset: usize,
+    threads_offset: usize,
+}
+
+/// One SystemProcessInformation snapshot, growing the buffer on
+/// STATUS_INFO_LENGTH_MISMATCH. Allocation is fine here: this runs before the
+/// encrypted window opens and the `Vec` is dropped before `encrypt()`.
+fn query_raw(ntqsi: NtQuerySystemInformationFn) -> Option<Vec<u8>> {
     let mut buf_len = 0x40000usize;
     let mut buf: Vec<u8> = Vec::with_capacity(buf_len);
     loop {
@@ -346,7 +358,7 @@ fn query_process_threads(
             )
         };
         if status >= 0 {
-            return parse_process_threads(buf.as_ptr(), self_pid);
+            return Some(buf);
         }
         if status == STATUS_INFO_LENGTH_MISMATCH {
             buf_len = buf_len.saturating_mul(2);
@@ -356,18 +368,22 @@ fn query_process_threads(
     }
 }
 
-fn parse_process_threads(base: *const u8, self_pid: u32) -> Option<Vec<(u32, u32)>> {
+/// Parse the (tid, ThreadState) pairs for `self_pid` using the calibrated layout.
+fn parse_threads_at(base: *const u8, self_pid: u32, layout: &SpiLayout) -> Option<Vec<(u32, u32)>> {
     let mut out: Vec<(u32, u32)> = Vec::new();
     let mut offset: usize = 0;
     loop {
         let entry = unsafe { base.add(offset) };
         let next = unsafe { core::ptr::read_unaligned(entry.add(0x00) as *const u32) } as usize;
         let pid =
-            unsafe { core::ptr::read_unaligned(entry.add(PROC_UNIQUE_PID_OFFSET) as *const u32) };
+            unsafe { core::ptr::read_unaligned(entry.add(layout.pid_offset) as *const usize) };
         let num_threads =
             unsafe { core::ptr::read_unaligned(entry.add(0x04) as *const u32) } as usize;
-        if pid == self_pid {
-            let threads_base = unsafe { entry.add(PROC_THREADS_OFFSET) };
+        if pid == self_pid as usize {
+            if num_threads > 0x2000 {
+                return None;
+            }
+            let threads_base = unsafe { entry.add(layout.threads_offset) };
             for i in 0..num_threads {
                 let t = unsafe { threads_base.add(i * THREAD_ENTRY_SIZE) };
                 let tid =
@@ -384,6 +400,121 @@ fn parse_process_threads(base: *const u8, self_pid: u32) -> Option<Vec<(u32, u32
         offset = offset + next;
     }
     None
+}
+
+/// Snapshot the current process's thread TIDs via ToolHelp (oracle set, excluding
+/// the watchdog TID). Used both for calibration and the per-cycle TID-unchanged
+/// guard.
+fn toolhelp_tids(self_tid: u32) -> Vec<u32> {
+    let mut out: Vec<u32> = Vec::new();
+    unsafe {
+        let snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+        if snap.is_null() {
+            return out;
+        }
+        let mut te: THREADENTRY32 = core::mem::zeroed();
+        te.dwSize = core::mem::size_of::<THREADENTRY32>() as u32;
+        let mut first = true;
+        loop {
+            let ok = if first {
+                first = false;
+                Thread32First(snap, &mut te) != 0
+            } else {
+                Thread32Next(snap, &mut te) != 0
+            };
+            if !ok {
+                break;
+            }
+            if te.th32OwnerProcessID == GetCurrentProcessId() && te.th32ThreadID != self_tid {
+                out.push(te.th32ThreadID);
+            }
+        }
+        CloseHandle(snap);
+    }
+    out
+}
+
+fn sets_equal(a: &[u32], b: &[u32]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut a = a.to_vec();
+    let mut b = b.to_vec();
+    a.sort_unstable();
+    b.sort_unstable();
+    a == b
+}
+
+/// Self-calibrate the SPI layout. Walk candidate (pid_offset, threads_offset)
+/// pairs; accept the first whose parsed TID set exactly equals the ToolHelp oracle
+/// and whose ThreadState values are plausible (0..=8). Fail closed on no match.
+fn calibrate_spi(
+    ntqsi: NtQuerySystemInformationFn,
+    self_tid: u32,
+    oracle: &[u32],
+) -> Option<SpiLayout> {
+    let self_pid = unsafe { GetCurrentProcessId() };
+    let buf = query_raw(ntqsi)?;
+    let base = buf.as_ptr();
+    for pid_off in [0x40usize, 0x48, 0x50, 0x58] {
+        for thr_off in (0x80usize..=0x180usize).step_by(8) {
+            let mut offset: usize = 0;
+            loop {
+                let entry = unsafe { base.add(offset) };
+                let next =
+                    unsafe { core::ptr::read_unaligned(entry.add(0x00) as *const u32) } as usize;
+                let pid = unsafe { core::ptr::read_unaligned(entry.add(pid_off) as *const usize) };
+                let num =
+                    unsafe { core::ptr::read_unaligned(entry.add(0x04) as *const u32) } as usize;
+                if pid == self_pid as usize {
+                    if num > 0x2000 {
+                        break;
+                    }
+                    let tbase = unsafe { entry.add(thr_off) };
+                    let mut tids: Vec<u32> = Vec::with_capacity(num.min(0x2000));
+                    let mut plausible = true;
+                    for i in 0..num {
+                        let t = unsafe { tbase.add(i * THREAD_ENTRY_SIZE) };
+                        let tid = unsafe {
+                            core::ptr::read_unaligned(t.add(THREAD_TID_OFFSET) as *const u32)
+                        };
+                        let st = unsafe {
+                            core::ptr::read_unaligned(t.add(THREAD_STATE_OFFSET) as *const u32)
+                        };
+                        if st > 8 {
+                            plausible = false;
+                            break;
+                        }
+                        tids.push(tid);
+                    }
+                    if plausible {
+                        tids.retain(|&t| t != self_tid);
+                        if sets_equal(&tids, oracle) {
+                            return Some(SpiLayout {
+                                pid_offset: pid_off,
+                                threads_offset: thr_off,
+                            });
+                        }
+                    }
+                    break;
+                }
+                if next == 0 {
+                    break;
+                }
+                offset = offset + next;
+            }
+        }
+    }
+    None
+}
+
+fn query_process_threads(
+    ntqsi: NtQuerySystemInformationFn,
+    self_pid: u32,
+    layout: &SpiLayout,
+) -> Option<Vec<(u32, u32)>> {
+    let buf = query_raw(ntqsi)?;
+    parse_threads_at(buf.as_ptr(), self_pid, layout)
 }
 
 /// Fail-closed runtime validation of the system snapshot: the parsed thread count
@@ -728,6 +859,7 @@ fn run_dormancy(
     self_tid: u32,
     ntqit: NtQueryInformationThreadFn,
     ntqsi: NtQuerySystemInformationFn,
+    layout: &SpiLayout,
     ntdll_base: usize,
     ntdll_size: usize,
     buf: &mut [ThreadSlot],
@@ -754,7 +886,8 @@ fn run_dormancy(
         // invalid on the target (0x20 == ThreadCounterProfiling), so the system
         // snapshot is the only reliable source. Drop our own TID (present in the
         // snapshot but not in the ToolHelp candidate set).
-        let snapshot = match query_process_threads(ntqsi, self_tid) {
+        let self_pid = unsafe { GetCurrentProcessId() };
+        let snapshot = match query_process_threads(ntqsi, self_pid, layout) {
             Some(s) => s
                 .into_iter()
                 .filter(|(tid, _)| *tid != self_tid)
@@ -908,11 +1041,31 @@ fn run_cycle(
     guard: &mut MemGuard,
     ntqit: NtQueryInformationThreadFn,
     ntqsi: NtQuerySystemInformationFn,
+    calib: &mut Option<SpiLayout>,
     ntdll_base: usize,
     ntdll_size: usize,
     interval_secs: f64,
 ) -> CycleOutcome {
     let self_tid = unsafe { GetCurrentThreadId() };
+
+    if calib.is_none() {
+        let oracle = toolhelp_tids(self_tid);
+        match calibrate_spi(ntqsi, self_tid, &oracle) {
+            Some(layout) => {
+                emit_calib(layout.pid_offset, layout.threads_offset);
+                *calib = Some(layout);
+            }
+            None => {
+                emit_skip("layout calibration failed");
+                plain_sleep(interval_secs);
+                return CycleOutcome {
+                    pages: 0,
+                    skipped: true,
+                };
+            }
+        }
+    }
+    let layout = calib.unwrap();
 
     let mut slot_buf = [ThreadSlot::default(); MAX_THREADS];
     let mut slots = SlotsGuard {
@@ -924,6 +1077,7 @@ fn run_cycle(
         self_tid,
         ntqit,
         ntqsi,
+        &layout,
         ntdll_base,
         ntdll_size,
         slots.slots,
@@ -1082,6 +1236,22 @@ fn emit_wake(pages: usize, resumed: usize) {
     dbg_print(&b);
 }
 
+#[cfg(feature = "print_debug")]
+fn emit_calib(pid_off: usize, threads_off: usize) {
+    let mut b = StackBuf {
+        buf: [0u8; 160],
+        len: 0,
+    };
+    let _ = core::fmt::write(
+        &mut b,
+        format_args!("memguard calib: pid_off=0x{pid_off:x} threads_off=0x{threads_off:x}\n"),
+    );
+    dbg_print(&b);
+}
+
+#[cfg(not(feature = "print_debug"))]
+fn emit_calib(_pid_off: usize, _threads_off: usize) {}
+
 #[cfg(not(feature = "print_debug"))]
 fn emit_engage(_dormant: usize, _pages: usize, _interval: f64) {}
 
@@ -1119,7 +1289,10 @@ mod tests {
         let (ntdll_base, ntdll_size) = resolve_ntdll().expect("ntdll resolve");
         let mut guard = MemGuard::new().expect("memguard init");
 
-        let outcome = run_cycle(&mut guard, ntqit, ntqsi, ntdll_base, ntdll_size, 0.0);
+        let mut calib: Option<SpiLayout> = None;
+        let outcome = run_cycle(
+            &mut guard, ntqit, ntqsi, &mut calib, ntdll_base, ntdll_size, 0.0,
+        );
         assert!(
             !outcome.skipped,
             "dormancy cycle should encrypt, not skip (parked thread not seen as dormant?)"
