@@ -7,7 +7,7 @@ permalink: user-guide/imix
 ---
 ## Imix
 
-Imix is an offensive security implant designed for stealthy communication and adversary emulation. It functions as a [Beacon](/user-guide/terminology#beacon), receiving [Eldritch](/user-guide/terminology#eldritch) packages called [Tomes](/user-guide/terminology#tome) from a central server ([Tavern](/admin-guide/tavern)) and evaluating them on the host system. It supports several communication transports, described in [Transport configuration](#transport-configuration).
+Imix is an offensive security implant designed for stealthy communication and adversary emulation. It functions as a [Beacon](/user-guide/terminology#beacon), receiving [Eldritch](/user-guide/terminology#eldritch) packages called [Tomes](/user-guide/terminology#tome) from a central server ([Tavern](/admin-guide/tavern)) and evaluating them on the host system. It currently supports [gRPC over HTTP(s)](https://grpc.io/) as its primary communication mechanism, but can be extended to support additional transport channels (see the [developer guide](/dev-guide/tavern#agent-development) for more info).
 
 ## Configuration
 
@@ -154,7 +154,7 @@ For more complex setups, such as configuring multiple transports or specifying d
 ```yaml
 transports:
   - URI: <string>
-    type: <grpc|http1|quic|dns|icmp|tcp_bind>
+    type: <grpc|http1|dns|icmp>
     interval: <integer> # optional, seconds
     jitter: <float>     # optional, percentage eg 0.20 for 20%, defaults to 0.0
     extra: <json_string> # required (use "" if none)
@@ -163,7 +163,9 @@ server_pubkey: <string> # optional - defaults to checking the first transport UR
 
 ### Example: Multiple Transports
 
-This example configures Imix with gRPC, HTTP/1.1, QUIC, and DNS callbacks, plus a TCP Bind listener for agent chaining.
+This example configures Imix to use two transports:
+1.  A gRPC transport over HTTP.
+2.  A DNS transport as a fallback or alternative.
 
 ```bash
 export IMIX_CONFIG='
@@ -176,18 +178,10 @@ transports:
     type: "http1"
     interval: 5
     extra: ""
-  - URI: "quic://127.0.0.1:8443"
-    type: "quic"
-    interval: 5
-    extra: ""
   - URI: "dns://*"
     type: "dns"
     interval: 10
     extra: "{\"domain\": \"c2.example.com\", \"type\": \"txt\"}"
-  - URI: "tcp://0.0.0.0:8443"
-    type: "tcp_bind"
-    interval: 5
-    extra: ""
 server_pubkey: "YOUR_SERVER_PUBKEY_HERE"
 '
 
@@ -197,7 +191,7 @@ cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 
 ## Transport configuration
 
-Imix supports `grpc` (default), `http1`, `quic`, `dns`, `icmp`, and `tcp_bind`. The first five connect to Tavern directly or through a matching redirector. `tcp_bind` listens for an upstream agent to connect and is used for agent chaining; it does not use a Tavern redirector. The `uds` enum value is provided by the separate pro-transports package and is not part of the standard Imix build.
+Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `quic`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
 
 ### global configuration options
 - `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
@@ -232,11 +226,9 @@ This transport doesn't support eldritch functions that require bi-directional st
 
 The QUIC transport uses QUIC/UDP (via `realm-quic` ALPN) to communicate to the redirector/server.
 
-Set `uri` to `quic://host[:port]` or `quics://host[:port]`, for example `quic://c2.example.com:8443`. The corresponding redirector listens on UDP.
-
 This transport supports all eldritch functions, including those that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
 
-**Extra Keys Supported:** `rebind_interval` and `rebind_jitter` control local UDP port rebinding; see [QUIC Port Rebinding Configuration](#quic-port-rebinding-configuration).
+**Extra Keys Supported:** None
 
 
 ### dns
@@ -434,7 +426,7 @@ export IMIX_UNIQUE='[{"type":"env"},{"type":"registry","args":{"subkey":"SOFTWAR
 
 ## QUIC Port Rebinding Configuration
 
-When utilizing the `quic` transport with either a `quic://` or `quics://` URI, client-side port rebinding can be configured to dynamically migrate the local UDP socket port.
+When utilizing the `quic` or `quics` transport types, client-side port rebinding can be configured to dynamically migrate the local UDP socket port.
 
 Configure the parameters in the transport's `extra` JSON map:
 - `rebind_interval`: Integer string representing the base interval in seconds. Defaults to `220`.

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, CirclePause, CircleX, AlertTriangle, Loader2 } from "lucide-react";
+import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, CirclePause, CircleX, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@chakra-ui/react";
 import { useMutation, useQuery } from "@apollo/client";
 import { BugAntIcon } from "@heroicons/react/24/outline";
@@ -48,6 +48,7 @@ const AssetBuildStatusIcon = ({ status }: { status: BuildTaskStatus }) => {
 const isPendingArtifact = (asset: AssetNode) => asset.status !== "FINISHED";
 
 const ASSET_STATUS_DISPLAY = {
+    FINISHED: { label: "Finished", icon: <CheckCircle className="w-4 h-4 text-green-500" /> },
     IN_PROGRESS: { label: "In progress", icon: <Loader2 className="w-4 h-4 text-purple-600 animate-spin" /> },
     ERROR: { label: "Error", icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
 };
@@ -165,13 +166,6 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                                 </div>
                             </Tooltip>
                         )}
-                        {!isAgent && asset.status !== "FINISHED" && (
-                            <Tooltip label={ASSET_STATUS_DISPLAY[asset.status].label}>
-                                <span role="img" aria-label={ASSET_STATUS_DISPLAY[asset.status].label} className="shrink-0 inline-flex">
-                                    {ASSET_STATUS_DISPLAY[asset.status].icon}
-                                </span>
-                            </Tooltip>
-                        )}
                     </div>
                 );
             },
@@ -181,6 +175,22 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                     <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
                 </div>
             ),
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            width: 'minmax(110px,1fr)',
+            render: (asset) => {
+                const display = ASSET_STATUS_DISPLAY[asset.status];
+                return (
+                    <Tooltip label={display.label}>
+                        <span role="img" aria-label={display.label} className="inline-flex">
+                            {display.icon}
+                        </span>
+                    </Tooltip>
+                );
+            },
+            renderSkeleton: () => <div className="h-4 w-4 bg-gray-200 rounded-full animate-pulse" />,
         },
         {
             key: 'creator',

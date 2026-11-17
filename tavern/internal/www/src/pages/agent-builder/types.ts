@@ -64,7 +64,7 @@ export const PLATFORM_OPTIONS: PlatformOption[] = [
 
 // A build profile's transports are restricted to the subset of
 // SupportedTransports that imix/the builder actually support today.
-export type TransportTypeValue = SupportedTransports.GRPC | SupportedTransports.HTTP1 | SupportedTransports.DNS | SupportedTransports.ICMP | SupportedTransports.QUIC | SupportedTransports.TCP_BIND;
+export type TransportTypeValue = SupportedTransports.GRPC | SupportedTransports.HTTP1 | SupportedTransports.DNS | SupportedTransports.ICMP;
 
 // Mirrors builderpb.BuildProfileTransport (URI, Interval, Type) -- a
 // profile holds a priority-ordered list of these, not a flat string list.
@@ -74,8 +74,6 @@ export const TRANSPORT_TYPES: TransportType[] = [
     { label: "HTTP", value: SupportedTransports.HTTP1 },
     { label: "DNS", value: SupportedTransports.DNS },
     { label: "ICMP", value: SupportedTransports.ICMP },
-    { label: "QUIC", value: SupportedTransports.QUIC },
-    { label: "TCP Bind", value: SupportedTransports.TCP_BIND },
 ];
 
 export type TransportConfig = {
