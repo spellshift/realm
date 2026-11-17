@@ -13,12 +13,57 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	_ "realm.pub/tavern/internal/redirectors" // register "raw" gRPC codec
 )
+
+func TestFetchAssetUpstreamError(t *testing.T) {
+	for _, afterChunk := range []bool{false, true} {
+		t.Run(map[bool]string{false: "before first chunk", true: "after first chunk"}[afterChunk], func(t *testing.T) {
+			lis, err := net.Listen("tcp", "127.0.0.1:0")
+			require.NoError(t, err)
+			upstreamSrv := grpc.NewServer(
+				grpc.ForceServerCodec(encoding.GetCodec("raw")),
+				grpc.UnknownServiceHandler(func(_ any, stream grpc.ServerStream) error {
+					var request []byte
+					if err := stream.RecvMsg(&request); err != nil {
+						return err
+					}
+					if afterChunk {
+						if err := stream.SendMsg([]byte("chunk")); err != nil {
+							return err
+						}
+					}
+					return status.Error(codes.Internal, "upstream failed")
+				}),
+			)
+			go func() { _ = upstreamSrv.Serve(lis) }()
+			defer upstreamSrv.Stop()
+
+			conn, err := grpc.DialContext(context.Background(), lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+			require.NoError(t, err)
+			defer conn.Close()
+
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/c2.C2/FetchAsset", bytes.NewReader([]byte("request")))
+			handleFetchAssetStreaming(w, req, conn)
+			response := w.Result()
+			defer response.Body.Close()
+			if !afterChunk {
+				assert.Equal(t, http.StatusInternalServerError, response.StatusCode)
+				return
+			}
+			assert.Equal(t, http.StatusOK, response.StatusCode)
+			assert.Equal(t, "13", response.Trailer.Get("Grpc-Status"))
+			assert.Contains(t, response.Trailer.Get("Grpc-Message"), "upstream failed")
+		})
+	}
+}
 
 func TestGetClientIP(t *testing.T) {
 	tests := []struct {
