@@ -1,7 +1,8 @@
 import { SupportedPlatforms, SupportedFormats, SupportedTransports, TomeTactic } from "../../utils/enums";
 import { UserNode } from "../../utils/interfacesQuery";
+import type { BuildTaskStatus } from "../../utils/buildTasks";
 
-export const NO_INSTALL_WARNING = "No persistence tome is bundled. Without one, the install command won't persist the agent.";
+export const NO_INSTALL_WARNING = "You haven't added a persistence tome yet, without it the install command won't persist the agent.";
 
 // Matches builder.DefaultBuildProfileName (tavern/internal/builder/build_config.go) --
 // Tavern seeds a profile with this exact name on startup. The oldest matching
@@ -83,12 +84,17 @@ export type TransportConfig = {
     extra?: string;
 };
 
-// Mirrors builder.DefaultTransports (tavern/internal/builder/build_config.go).
+// Callback interval (seconds) every new transport starts with, whatever its type.
+export const DEFAULT_TRANSPORT_INTERVAL = 30;
+
+// Pre-filled transport for a new profile. Same URI/type as
+// builder.DefaultTransports (tavern/internal/builder/build_config.go), but with
+// the UI-wide default interval rather than that package's.
 export const DEFAULT_TRANSPORT: TransportConfig = {
     id: "t1",
     type: SupportedTransports.GRPC,
     uri: "http://127.0.0.1:8000",
-    interval: 5,
+    interval: DEFAULT_TRANSPORT_INTERVAL,
 };
 
 // Mirrors builderpb.BuildProfileTome (TomeID, Params) -- a reference to a
@@ -149,7 +155,7 @@ export function BuilderHealthy(lastSeenAt: string | null, pollInterval: number, 
     return lastSeen >= now - 3 * pollInterval * 1000;
 }
 
-export type BuildTaskStatus = "Queued" | "Claimed" | "Building" | "Awaiting artifact" | "Built" | "Failed";
+export type { BuildTaskStatus };
 
 // One row per BuildTask shown in the "Built agents" tab's table -- queued,
 // claimed, and building tasks are included alongside finished ones so the

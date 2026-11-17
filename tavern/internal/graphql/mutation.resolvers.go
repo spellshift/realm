@@ -862,11 +862,9 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 
 	var artifact *ent.Asset
 	if artifactPath != "" {
-		osName := strings.ToLower(strings.TrimPrefix(input.TargetOs.String(), "PLATFORM_"))
-		formatName := strings.ToLower(strings.TrimPrefix(targetFormat.String(), "TARGET_FORMAT_"))
-		profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
+		// Pending placeholder so the build shows in the Assets list; the upload fills it in.
 		artifact, err = graph.Asset.Create().
-			SetName(fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, uuid.NewString())).
+			SetName(builder.ArtifactAssetName(input.TargetOs, targetFormat, snapshot.Name)).
 			SetContent([]byte{}).
 			SetStatus(asset.StatusIN_PROGRESS).
 			Save(ctx)

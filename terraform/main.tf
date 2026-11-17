@@ -33,8 +33,13 @@ output "builder_enrollment_token" {
 
 variable "redirector_upstream" {
   type = string
-  description = "Upstream that redirectors should point to."
+  description = "Upstream that redirectors should point to. Defaults to oauth_domain when unset."
   default = ""
+}
+
+locals {
+  # Fall back to the oauth_domain when no explicit redirector_upstream is given.
+  redirector_upstream = var.redirector_upstream != "" ? var.redirector_upstream : var.oauth_domain
 }
 
 variable "redirector_dns_ns_prefix" {
@@ -115,8 +120,14 @@ variable "builder_boot_disk_image" {
 
 variable "builder_boot_disk_size" {
   type        = number
-  description = "Boot disk size in GB for the builder compute instance."
-  default     = 64
+  description = "Boot disk size in GB for the builder compute instance. Only needs room for the COS OS and pulled Docker build images now that the Cargo build cache lives on builder_cache_disk_size's separate disk."
+  default     = 16
+}
+
+variable "builder_cache_disk_size" {
+  type        = number
+  description = "Size in GB of the separate persistent disk backing the builder's Docker build cache. Kept off the COS boot disk because COS mounts the boot disk's writable paths (/home, /var, /mnt/stateful_partition) noexec, which breaks running build scripts (e.g. cargo) directly out of a cache dir there."
+  default     = 50
 }
 
 variable "builder_upstream" {
@@ -643,15 +654,15 @@ resource "google_service_account" "svcbuiltavern_builder" {
 }
 
 resource "google_project_iam_member" "builder-metricwriter-binding" {
-  project = var.gcp_project
-  role    = "roles/monitoring.metricWriter"
-  member  = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
+  project    = var.gcp_project
+  role       = "roles/monitoring.metricWriter"
+  member     = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
 }
 
 resource "google_project_iam_member" "builder-logwriter-binding" {
-  project = var.gcp_project
-  role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
+  project    = var.gcp_project
+  role       = "roles/logging.logWriter"
+  member     = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
 }
 
 # Lookup the redirector domain if able
@@ -719,7 +730,7 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", var.redirector_upstream]
+        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", local.redirector_upstream]
         env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
         ports   = [
           {
@@ -786,7 +797,7 @@ resource "google_cloud_run_service" "redirector" {
       containers {
         name = local.tavern_container_name
         image = var.tavern_container_image
-        command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, var.redirector_upstream]
+        command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, local.redirector_upstream]
         env {
           name = "ENABLE_DEBUG_LOGGING"
           value = "true"
@@ -884,7 +895,7 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", var.redirector_upstream]
+        command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", local.redirector_upstream]
         env = [
           {
             name  = "ENABLE_DEBUG_LOGGING"
@@ -1000,7 +1011,7 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", var.redirector_upstream]
+        command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", local.redirector_upstream]
         env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
       }]
       restartPolicy = "Always"
@@ -1188,6 +1199,26 @@ locals {
   # preset token (var.builder_enrollment_token) and fall back to the generated one.
   builder_enrollment_token = var.builder_enrollment_token != "" ? var.builder_enrollment_token : random_password.builder_enrollment.result
 
+  # Mount point for the separate persistent disk backing the builder's
+  # Docker build cache (see google_compute_disk.builder_cache).
+  builder_cache_dir = "/mnt/disks/builder-cache"
+
+  # Mount the cache disk
+  builder_cache_mount_script = <<-EOT
+    #! /bin/bash
+    set -euo pipefail
+    DEVICE=/dev/disk/by-id/google-builder-cache
+    MOUNT_POINT=${local.builder_cache_dir}
+    mkdir -p "$MOUNT_POINT"
+    if ! blkid "$DEVICE" >/dev/null 2>&1; then
+      mkfs.ext4 -F "$DEVICE"
+    fi
+    if ! mountpoint -q "$MOUNT_POINT"; then
+      mount "$DEVICE" "$MOUNT_POINT"
+    fi
+    chmod 0777 "$MOUNT_POINT"
+  EOT
+
   # Builder config rendered to YAML and written onto the VM host via cloud-config.
   builder_config_yaml = yamlencode({
     upstream          = local.builder_upstream
@@ -1195,6 +1226,7 @@ locals {
     executor          = "docker"
     identity_file     = "/etc/builder/builder.identity"
     poll_interval     = 5
+    cache_dir         = local.builder_cache_dir
   })
 
   # cloud-config that writes the builder config onto the COS host at /etc/builder.
@@ -1226,11 +1258,13 @@ locals {
         volumeMounts = [
           { name = "dockersock", mountPath = "/var/run/docker.sock" },
           { name = "builderconfig", mountPath = "/etc/builder" },
+          { name = "buildercache", mountPath = local.builder_cache_dir },
         ]
       }]
       volumes = [
         { name = "dockersock", hostPath = { path = "/var/run/docker.sock" } },
         { name = "builderconfig", hostPath = { path = "/etc/builder" } },
+        { name = "buildercache", hostPath = { path = local.builder_cache_dir } },
       ]
       restartPolicy = "Always"
     }
@@ -1240,7 +1274,18 @@ locals {
 # Hash the builder config so we can force rebuilds on update
 resource "terraform_data" "builder_metadata_hash" {
   count = var.builder_enabled ? 1 : 0
-  input = sha256("${local.builder_gce_def}-${local.builder_user_data_def}")
+  input = sha256("${local.builder_gce_def}-${local.builder_user_data_def}-${local.builder_cache_mount_script}")
+}
+
+# Separate persistent disk backing the builder's Docker build cache (see
+# builder_cache_dir/builder_cache_mount_script above for why this can't just
+# be a directory on the boot disk).
+resource "google_compute_disk" "builder_cache" {
+  count = var.builder_enabled ? 1 : 0
+  name  = "tavern-builder-cache"
+  type  = "pd-balanced"
+  zone  = "${var.gcp_region}-b"
+  size  = var.builder_cache_disk_size
 }
 
 resource "google_compute_instance" "builder" {
@@ -1256,6 +1301,11 @@ resource "google_compute_instance" "builder" {
     }
   }
 
+  attached_disk {
+    source      = google_compute_disk.builder_cache[count.index].id
+    device_name = "builder-cache"
+  }
+
   network_interface {
     network = "default"
     access_config {}
@@ -1264,6 +1314,7 @@ resource "google_compute_instance" "builder" {
   metadata = {
     gce-container-declaration = local.builder_gce_def
     user-data                 = local.builder_user_data_def
+    startup-script            = local.builder_cache_mount_script
   }
 
   allow_stopping_for_update = true

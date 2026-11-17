@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { FC, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
-import { useNavigate } from "react-router-dom";
-import Breadcrumbs from "../../components/Breadcrumbs";
-import PageHeader from "../../components/tavern-base-ui/PageHeader";
-import Button from "../../components/tavern-base-ui/button/Button";
-import AlertError from "../../components/tavern-base-ui/AlertError";
-import CodeBlock from "../../components/tavern-base-ui/CodeBlock";
-import { FormSteps } from "../../components/form-steps";
+import { Heading } from "@chakra-ui/react";
+import Modal from "../../../components/tavern-base-ui/Modal";
+import Button from "../../../components/tavern-base-ui/button/Button";
+import AlertError from "../../../components/tavern-base-ui/AlertError";
+import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
+import { FormSteps } from "../../../components/form-steps";
 
 const CREATE_BUILDER_ENROLLMENT_TOKEN = gql`
     mutation CreateBuilderEnrollmentToken {
@@ -19,8 +18,17 @@ const STEPS = [
     { name: "Start builder", description: "Step 2", href: "#", step: 1 },
 ];
 
-export const EnrollBuilderPage = () => {
-    const navigate = useNavigate();
+type EnrollBuilderModalProps = {
+    isOpen: boolean;
+    setOpen: (open: boolean) => void;
+};
+
+/**
+ * Slide-out for enrolling a builder. The token lives only in the inner
+ * component's state: closing the slide-out unmounts it, so the one-time
+ * token is gone the next time it opens.
+ */
+const EnrollBuilder = ({ onClose }: { onClose: () => void }) => {
     const [token, setToken] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [createToken, { loading }] = useMutation<{ createBuilderEnrollmentToken: string }>(CREATE_BUILDER_ENROLLMENT_TOKEN);
@@ -39,17 +47,14 @@ export const EnrollBuilderPage = () => {
         }
     };
 
-    const cancel = () => navigate("/admin?tab=builders");
-
     const quotedToken = token?.replace(/'/g, "'\\''");
 
     return (
-        <div className="max-w-4xl mx-auto w-full flex flex-col gap-6">
-            <Breadcrumbs pages={[
-                { label: "Admin", link: "/admin?tab=builders" },
-                { label: "Enroll builder", link: "/admin/builders/enroll" },
-            ]} />
-            <PageHeader title="Enroll builder" description="Generate a one-time token to enroll a builder." />
+        <div className="flex flex-col gap-4 w-full min-w-0 pb-6" data-testid="enroll-builder-modal">
+            <div className="flex flex-col gap-1">
+                <Heading size="sm">Enroll builder</Heading>
+                <p className="text-sm text-gray-500">Generate a one-time token to enroll a builder.</p>
+            </div>
             {error && <AlertError label="Unable to generate enrollment token" details={error} />}
             <div className="flex flex-row gap-6">
                 <div className="flex-shrink-0 mt-2 lg:block hidden">
@@ -59,12 +64,12 @@ export const EnrollBuilderPage = () => {
                     {token ? (
                         <div className="flex flex-col gap-4">
                             <h2 className="text-xl font-semibold">Start builder</h2>
-                            <p className="text-sm text-amber-700">Copy this token now. It will disappear when you leave or refresh this page.</p>
+                            <p className="text-sm text-amber-700">Copy this token now. It will disappear when you close this panel.</p>
                             <CodeBlock code={token} showCopyButton />
                             <p className="text-sm text-gray-700">From the Realm project root, run this command on the builder host. The token is used on first enrollment and the builder saves its identity locally.</p>
                             <CodeBlock code={`REALM_BUILDER_ENROLLMENT_TOKEN='${quotedToken}' go run ./tavern builder`} language="bash" showCopyButton />
                             <div className="flex flex-row gap-2">
-                                <Button buttonStyle={{ color: "purple", size: "md" }} onClick={cancel}>Done</Button>
+                                <Button buttonStyle={{ color: "purple", size: "md" }} onClick={onClose}>Done</Button>
                             </div>
                         </div>
                     ) : (
@@ -74,7 +79,7 @@ export const EnrollBuilderPage = () => {
                                 <Button
                                     buttonVariant="ghost"
                                     buttonStyle={{ color: "gray", size: "md" }}
-                                    onClick={cancel}
+                                    onClick={onClose}
                                     disabled={loading}
                                     aria-label="cancel enrollment"
                                 >
@@ -90,4 +95,10 @@ export const EnrollBuilderPage = () => {
     );
 };
 
-export default EnrollBuilderPage;
+export const EnrollBuilderModal: FC<EnrollBuilderModalProps> = ({ isOpen, setOpen }) => (
+    <Modal isOpen={isOpen} setOpen={setOpen} size="lg">
+        <EnrollBuilder onClose={() => setOpen(false)} />
+    </Modal>
+);
+
+export default EnrollBuilderModal;

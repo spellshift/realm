@@ -14,10 +14,12 @@ import (
 	yaml "gopkg.in/yaml.v3"
 
 	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/namegen"
 )
 
 // Server implements the Builder gRPC service.
@@ -446,6 +448,14 @@ func (s *Server) replyWithFinishedArtifact(ctx context.Context, stream builderpb
 		return status.Errorf(codes.Internal, "reload build artifact: %v", err)
 	}
 	return sendFinishedArtifact(stream, artifact, content)
+}
+
+// ArtifactAssetName generates the unique asset name for a build's artifact.
+func ArtifactAssetName(targetOS c2pb.Host_Platform, targetFormat builderpb.TargetFormat, profileName string) string {
+	profileName = strings.ReplaceAll(strings.ToLower(profileName), " ", "-")
+	osName := strings.ToLower(strings.TrimPrefix(targetOS.String(), "PLATFORM_"))
+	formatName := strings.ToLower(strings.TrimPrefix(targetFormat.String(), "TARGET_FORMAT_"))
+	return fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, namegen.NewSimple())
 }
 
 // DownloadTome streams a tome's packaged content (tar.gz) to the builder client in chunks.
