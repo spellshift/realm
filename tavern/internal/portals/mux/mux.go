@@ -3,7 +3,6 @@ package mux
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/google/uuid"
@@ -120,13 +119,8 @@ func WithPubSubClient(client *pubsub.Client) Option {
 
 // New creates a new Mux with the given options.
 func New(opts ...Option) *Mux {
-	prefix := os.Getenv("TAVERN_RESOURCE_PREFIX")
-	if prefix == "" {
-		prefix = "tavern"
-	}
 	m := &Mux{
-		serverID:       uuid.New().String(),
-		resourcePrefix: prefix,
+		serverID: uuid.New().String(),
 		subs: &SubscriberRegistry{
 			subs:       make(map[string][]chan *portalpb.Mote),
 			bufferSize: 15625, // Default
@@ -161,11 +155,17 @@ func New(opts ...Option) *Mux {
 
 // TopicIn returns the topic name for incoming messages to the portal.
 func (m *Mux) TopicIn(portalID int) string {
+	if m.resourcePrefix == "" {
+		return fmt.Sprintf("PORTAL_IN_%d", portalID)
+	}
 	return fmt.Sprintf("%s-PORTAL_IN_%d", m.resourcePrefix, portalID)
 }
 
 // TopicOut returns the topic name for outgoing messages from the portal.
 func (m *Mux) TopicOut(portalID int) string {
+	if m.resourcePrefix == "" {
+		return fmt.Sprintf("PORTAL_OUT_%d", portalID)
+	}
 	return fmt.Sprintf("%s-PORTAL_OUT_%d", m.resourcePrefix, portalID)
 }
 

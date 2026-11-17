@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
@@ -108,18 +107,14 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	return old_value, nil
 }
 
-func FormatSecretPrefix(resourcePrefix ...string) string {
-	rp := os.Getenv("TAVERN_RESOURCE_PREFIX")
-	if len(resourcePrefix) > 0 && resourcePrefix[0] != "" {
-		rp = resourcePrefix[0]
+func FormatSecretPrefix(resourcePrefix string) string {
+	if resourcePrefix == "" {
+		return "REALM"
 	}
-	if rp == "" {
-		rp = "tavern"
-	}
-	return fmt.Sprintf("%s-REALM", rp)
+	return fmt.Sprintf("%s-REALM", resourcePrefix)
 }
 
-func NewGcp(projectID string, resourcePrefix ...string) (SecretsManager, error) {
+func NewGcp(projectID, resourcePrefix string) (SecretsManager, error) {
 	ctx := context.Background()
 
 	// If unset try to figure out the current GCP
@@ -144,7 +139,7 @@ func NewGcp(projectID string, resourcePrefix ...string) (SecretsManager, error) 
 	return Gcp{
 		Name:      "Gcp",
 		projectID: projectID,
-		prefix:    FormatSecretPrefix(resourcePrefix...),
+		prefix:    FormatSecretPrefix(resourcePrefix),
 		client:    client,
 		clientctx: ctx,
 	}, nil

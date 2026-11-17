@@ -8,12 +8,7 @@ import (
 )
 
 func TestFormatSecretPrefix(t *testing.T) {
-	t.Setenv("TAVERN_RESOURCE_PREFIX", "")
-	assert.Equal(t, "tavern-REALM", secrets.FormatSecretPrefix())
-	assert.Equal(t, "tavern-REALM", secrets.FormatSecretPrefix(""))
-
-	t.Setenv("TAVERN_RESOURCE_PREFIX", "envpfx")
-	assert.Equal(t, "envpfx-REALM", secrets.FormatSecretPrefix())
+	assert.Equal(t, "REALM", secrets.FormatSecretPrefix(""))
 	assert.Equal(t, "abcxyz-REALM", secrets.FormatSecretPrefix("abcxyz"))
 }
 
