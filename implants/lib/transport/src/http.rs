@@ -326,13 +326,32 @@ impl HTTP {
         url.parse().context("Failed to parse URL")
     }
 
-    /// Create a base HTTP request builder with common gRPC headers
+    /// Create a base HTTP request builder for gRPC-framed HTTP/1.1 messages
     fn request_builder(&self, uri: hyper_legacy::Uri) -> hyper_legacy::http::request::Builder {
         hyper_legacy::Request::builder()
             .method(hyper_legacy::Method::POST)
             .uri(uri)
-            .header("Content-Type", "application/grpc")
+            .header("Content-Type", "application/octet-stream")
             .header("Connection", "close")
+    }
+
+    /// Reject HTTP and gRPC-shaped errors returned by an intermediary.
+    fn validate_grpc_status(headers: &hyper_legacy::HeaderMap) -> Result<()> {
+        if let Some(grpc_status) = headers.get("grpc-status") {
+            let status = grpc_status.to_str().unwrap_or("");
+            if status != "0" {
+                let message = headers
+                    .get("grpc-message")
+                    .and_then(|value| value.to_str().ok())
+                    .unwrap_or("");
+                return Err(anyhow::anyhow!(
+                    "gRPC error: status={} message={}",
+                    status,
+                    message
+                ));
+            }
+        }
+        Ok(())
     }
 
     /// Send HTTP request and validate status code
@@ -349,6 +368,8 @@ impl HTTP {
         if response.status() != StatusCode::OK {
             return Err(anyhow::anyhow!("HTTP error: {}", response.status()));
         }
+
+        Self::validate_grpc_status(response.headers())?;
 
         Ok(response)
     }
@@ -449,6 +470,14 @@ impl HTTP {
                 "Incomplete data remaining in buffer: {} bytes",
                 buffer.len()
             );
+        }
+
+        if let Some(trailers) = body
+            .trailers()
+            .await
+            .context("Failed to read response trailers")?
+        {
+            Self::validate_grpc_status(&trailers)?;
         }
 
         #[cfg(feature = "print_debug")]
@@ -1060,6 +1089,68 @@ mod tests {
     mod http_helpers_tests {
         use super::*;
 
+        struct StubClient {
+            status: hyper_legacy::StatusCode,
+            grpc_status: Option<&'static str>,
+            grpc_message: Option<&'static str>,
+        }
+
+        impl HttpClient for StubClient {
+            fn request(
+                &self,
+                _req: hyper_legacy::Request<hyper_legacy::Body>,
+            ) -> std::pin::Pin<
+                Box<
+                    dyn std::future::Future<
+                            Output = Result<
+                                hyper_legacy::Response<hyper_legacy::Body>,
+                                hyper_legacy::Error,
+                            >,
+                        > + Send
+                        + '_,
+                >,
+            > {
+                let mut response = hyper_legacy::Response::builder().status(self.status);
+                if let Some(status) = self.grpc_status {
+                    response = response.header("grpc-status", status);
+                }
+                if let Some(message) = self.grpc_message {
+                    response = response.header("grpc-message", message);
+                }
+                Box::pin(async move { Ok(response.body(hyper_legacy::Body::empty()).unwrap()) })
+            }
+        }
+
+        #[tokio::test]
+        async fn test_send_and_validate_grpc_status() {
+            for (grpc_status, expected_error) in [
+                (None, None),
+                (Some("0"), None),
+                (
+                    Some("14"),
+                    Some("gRPC error: status=14 message=upstream protocol error"),
+                ),
+            ] {
+                let http = HTTP {
+                    client: Arc::new(StubClient {
+                        status: StatusCode::OK,
+                        grpc_status,
+                        grpc_message: Some("upstream protocol error"),
+                    }),
+                    base_url: "http://localhost".to_string(),
+                };
+                let request = http
+                    .request_builder(http.build_uri("/test").unwrap())
+                    .body(hyper_legacy::Body::empty())
+                    .unwrap();
+                let result = http.send_and_validate(request).await;
+                match expected_error {
+                    Some(expected) => assert_eq!(result.unwrap_err().to_string(), expected),
+                    None => assert!(result.is_ok()),
+                }
+            }
+        }
+
         #[test]
         fn test_build_uri_success() {
             let http = HTTP {
@@ -1120,7 +1211,7 @@ mod tests {
             assert_eq!(request.method(), hyper_legacy::Method::POST);
             assert_eq!(
                 request.headers().get("content-type").unwrap(),
-                "application/grpc"
+                "application/octet-stream"
             );
         }
 

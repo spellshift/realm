@@ -69,7 +69,7 @@ func TestSetGRPCResponseHeaders(t *testing.T) {
 	w := httptest.NewRecorder()
 	setGRPCResponseHeaders(w)
 
-	assert.Equal(t, "application/grpc", w.Header().Get("Content-Type"))
+	assert.Equal(t, "application/octet-stream", w.Header().Get("Content-Type"))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
