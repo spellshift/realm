@@ -1,18 +1,6 @@
 package secrets_test
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"realm.pub/tavern/internal/secrets"
-)
-
-func TestFormatSecretPrefix(t *testing.T) {
-	assert.Equal(t, "tavern-REALM", secrets.FormatSecretPrefix("tavern"))
-	assert.Equal(t, "abcxyz-REALM", secrets.FormatSecretPrefix("abcxyz"))
-}
-
-// No way to test GCP Secret Manager API in CI without credentials, but worked in dev
+// No way to test this in CI but worked in dev
 
 // import (
 // 	"testing"
