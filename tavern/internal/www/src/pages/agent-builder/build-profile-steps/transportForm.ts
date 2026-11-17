@@ -17,6 +17,8 @@ const defaults: Record<TransportTypeValue, { uri: string; interval: number }> = 
     [SupportedTransports.HTTP1]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
     [SupportedTransports.DNS]: { uri: "dns://*", interval: DEFAULT_TRANSPORT_INTERVAL },
     [SupportedTransports.ICMP]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
+    [SupportedTransports.QUIC]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
+    [SupportedTransports.TCP_BIND]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
 };
 
 export const transportUriHint: Record<TransportTypeValue, string> = {
@@ -24,6 +26,8 @@ export const transportUriHint: Record<TransportTypeValue, string> = {
     [SupportedTransports.HTTP1]: "Use http1:// or https1://.",
     [SupportedTransports.DNS]: "Use dns://* for the system resolver, or dns://8.8.8.8:53 for a specific server.",
     [SupportedTransports.ICMP]: "Enter the IPv4 address or hostname of the ICMP redirector.",
+    [SupportedTransports.QUIC]: "Use quic:// or quics:// followed by a host and optional port.",
+    [SupportedTransports.TCP_BIND]: "Use tcp:// followed by a local bind address and port.",
 };
 
 export const transportUriPlaceholder: Record<TransportTypeValue, string> = {
@@ -31,6 +35,8 @@ export const transportUriPlaceholder: Record<TransportTypeValue, string> = {
     [SupportedTransports.HTTP1]: "https1://c2.example.com:8443",
     [SupportedTransports.DNS]: "dns://*",
     [SupportedTransports.ICMP]: "icmp://192.168.1.1",
+    [SupportedTransports.QUIC]: "quic://c2.example.com:8443",
+    [SupportedTransports.TCP_BIND]: "tcp://0.0.0.0:8443",
 };
 
 const parseExtra = (extra?: string): Record<string, string> => {
@@ -99,11 +105,25 @@ export const transportFieldErrors = (form: TransportForm): TransportFieldErrors 
             match[1].split(".").some((octet) => Number(octet) > 255))) {
             errors.uri = "Use icmp:// followed by an IPv4 address or hostname.";
         }
-    } else {
-        const schemes = type === SupportedTransports.GRPC ? ["http:", "https:"] : ["http1:", "https1:"];
+    } else if (type === SupportedTransports.TCP_BIND) {
         try {
             const parsed = new URL(value);
-            if (!schemes.includes(parsed.protocol) || !parsed.hostname) errors.uri = transportUriHint[type];
+            if (parsed.protocol !== "tcp:" || !parsed.hostname || !parsed.port ||
+                (parsed.pathname && parsed.pathname !== "/") || parsed.username || parsed.password) {
+                errors.uri = transportUriHint[type];
+            }
+        } catch {
+            errors.uri = transportUriHint[type];
+        }
+    } else {
+        const schemes = type === SupportedTransports.GRPC ? ["http:", "https:"]
+            : type === SupportedTransports.QUIC ? ["quic:", "quics:"] : ["http1:", "https1:"];
+        try {
+            const parsed = new URL(value);
+            if (!schemes.includes(parsed.protocol) || !parsed.hostname ||
+                (type === SupportedTransports.QUIC && (parsed.pathname !== "" || parsed.username || parsed.password))) {
+                errors.uri = transportUriHint[type];
+            }
         } catch {
             errors.uri = transportUriHint[type];
         }
