@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/namegen"
@@ -346,37 +347,67 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Error(codes.InvalidArgument, "empty artifact")
 	}
 
-	profile := bt.ProfileAtCreation
-	if profile == nil {
-		return status.Error(codes.FailedPrecondition, "build task has no saved profile")
-	}
-
 	tx, err := s.graph.Tx(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "begin artifact transaction: %v", err)
 	}
 	defer tx.Rollback()
-	var asset *ent.Asset
-	if existing, err := bt.QueryArtifact().Only(ctx); err == nil {
-		asset, err = tx.Client().Asset.UpdateOne(existing).
-			SetContent(buf.Bytes()).
-			Save(ctx)
-		if err != nil {
-			return status.Errorf(codes.Internal, "failed to update asset: %v", err)
+	bt, err = tx.Client().BuildTask.Get(ctx, bt.ID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "load build task: %v", err)
+	}
+	artifact, err := bt.QueryArtifact().Only(ctx)
+	if err == nil && artifact.Status == asset.StatusFINISHED {
+		return sendFinishedArtifact(stream, artifact, buf.Bytes())
+	}
+	if err != nil && !ent.IsNotFound(err) {
+		return status.Errorf(codes.Internal, "load build artifact: %v", err)
+	}
+	if bt.ProfileAtCreation == nil {
+		return status.Error(codes.FailedPrecondition, "build task has no saved profile")
+	}
+	if !bt.FinishedAt.IsZero() && (bt.ExitCode == nil || *bt.ExitCode != 0) {
+		return status.Error(codes.FailedPrecondition, "cannot upload artifact for failed build")
+	}
+	if err == nil {
+		// Guard the transition in the database: another upload may have
+		// finished this asset after it was read above.
+		updated, updateErr := tx.Client().Asset.Update().
+			Where(asset.ID(artifact.ID), asset.StatusNEQ(asset.StatusFINISHED)).
+			SetContent(buf.Bytes()).SetStatus(asset.StatusFINISHED).Save(ctx)
+		if updateErr != nil {
+			return status.Errorf(codes.Internal, "save build artifact: %v", updateErr)
+		}
+		if updated == 0 {
+			if err := tx.Rollback(); err != nil {
+				return status.Errorf(codes.Internal, "rollback artifact transaction: %v", err)
+			}
+			return s.replyWithFinishedArtifact(ctx, stream, bt.ID, buf.Bytes())
 		}
 	} else if ent.IsNotFound(err) {
-		asset, err = tx.Client().Asset.Create().
-			SetName(ArtifactAssetName(bt.TargetOs, bt.TargetFormat, profile.Name)).
-			SetContent(buf.Bytes()).
-			Save(ctx)
+		profileName := strings.ReplaceAll(strings.ToLower(bt.ProfileAtCreation.Name), " ", "-")
+		osName := strings.ToLower(strings.TrimPrefix(bt.TargetOs.String(), "PLATFORM_"))
+		formatName := strings.ToLower(strings.TrimPrefix(bt.TargetFormat.String(), "TARGET_FORMAT_"))
+		assetName := fmt.Sprintf("build/%s/%s/imix-%s-%d", osName, formatName, profileName, bt.ID)
+		artifact, err = tx.Client().Asset.Create().SetName(assetName).SetContent(buf.Bytes()).Save(ctx)
+		if err == nil {
+			_, err = tx.Client().BuildTask.UpdateOneID(bt.ID).SetArtifact(artifact).Save(ctx)
+		}
 		if err != nil {
-			return status.Errorf(codes.Internal, "failed to create asset: %v", err)
+			if !ent.IsConstraintError(err) {
+				return status.Errorf(codes.Internal, "save build artifact: %v", err)
+			}
+			// Legacy tasks have no placeholder. Concurrent uploads race to
+			// create the same deterministic asset name; read the winner after
+			// rolling back this transaction.
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				return status.Errorf(codes.Internal, "rollback artifact transaction: %v", rollbackErr)
+			}
+			return s.replyWithFinishedArtifact(ctx, stream, bt.ID, buf.Bytes())
 		}
-		if _, err := tx.Client().BuildTask.UpdateOneID(bt.ID).SetArtifact(asset).Save(ctx); err != nil {
-			return status.Errorf(codes.Internal, "attach build artifact: %v", err)
-		}
-	} else {
-		return status.Errorf(codes.Internal, "query build artifact: %v", err)
+	}
+	if err != nil {
+		return status.Errorf(codes.Internal, "save build artifact: %v", err)
 	}
 	if err := tx.Commit(); err != nil {
 		return status.Errorf(codes.Internal, "commit build artifact: %v", err)
@@ -385,13 +416,38 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 	slog.InfoContext(ctx, "build artifact uploaded",
 		"task_id", taskID,
 		"builder_id", b.ID,
-		"asset_id", asset.ID,
+		"asset_id", artifact.ID,
 		"size", buf.Len(),
 	)
 
 	return stream.SendAndClose(&builderpb.UploadBuildArtifactResponse{
-		AssetId: int64(asset.ID),
+		AssetId: int64(artifact.ID),
 	})
+}
+
+func sendFinishedArtifact(stream builderpb.Builder_UploadBuildArtifactServer, artifact *ent.Asset, content []byte) error {
+	if artifact.Status != asset.StatusFINISHED {
+		return status.Error(codes.Aborted, "build artifact upload is still in progress; retry")
+	}
+	if !bytes.Equal(artifact.Content, content) {
+		return status.Error(codes.FailedPrecondition, "build artifact already finished with different content")
+	}
+	return stream.SendAndClose(&builderpb.UploadBuildArtifactResponse{AssetId: int64(artifact.ID)})
+}
+
+func (s *Server) replyWithFinishedArtifact(ctx context.Context, stream builderpb.Builder_UploadBuildArtifactServer, taskID int, content []byte) error {
+	bt, err := s.graph.BuildTask.Get(ctx, taskID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "reload build task: %v", err)
+	}
+	artifact, err := bt.QueryArtifact().Only(ctx)
+	if ent.IsNotFound(err) {
+		return status.Error(codes.Aborted, "build artifact upload is still in progress; retry")
+	}
+	if err != nil {
+		return status.Errorf(codes.Internal, "reload build artifact: %v", err)
+	}
+	return sendFinishedArtifact(stream, artifact, content)
 }
 
 // ArtifactAssetName generates the unique asset name for a build's artifact.
@@ -491,7 +547,12 @@ func (s *Server) DownloadTome(req *builderpb.DownloadTomeRequest, stream builder
 // flushStreamOutput appends output and error to the build task in the database.
 // If finished is true, it also sets finished_at and exit_code to mark the task as complete.
 func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output string, errMsg string, finished bool, exitCode int64) error {
-	bt, err := s.graph.BuildTask.Get(ctx, taskID)
+	tx, err := s.graph.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	bt, err := tx.Client().BuildTask.Get(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to load build task %d: %w", taskID, err)
 	}
@@ -511,12 +572,15 @@ func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output strin
 		newError = bt.Error
 	}
 
-	update := s.graph.BuildTask.UpdateOne(bt).
+	update := tx.Client().BuildTask.UpdateOne(bt).
 		SetOutput(newOutput)
 	if newError != "" {
 		update = update.SetError(newError)
 	}
 	if finished {
+		if errMsg != "" && exitCode == 0 {
+			exitCode = -1
+		}
 		update = update.SetFinishedAt(time.Now()).
 			SetExitCode(int(exitCode))
 	}
@@ -524,6 +588,15 @@ func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output strin
 	if _, err := update.Save(ctx); err != nil {
 		return fmt.Errorf("failed to update build task %d: %w", taskID, err)
 	}
-
-	return nil
+	if finished && exitCode != 0 {
+		artifact, err := bt.QueryArtifact().Only(ctx)
+		if err == nil {
+			if err := tx.Client().Asset.UpdateOne(artifact).SetStatus(asset.StatusERROR).Exec(ctx); err != nil {
+				return fmt.Errorf("mark build artifact as failed: %w", err)
+			}
+		} else if !ent.IsNotFound(err) {
+			return fmt.Errorf("load build artifact: %w", err)
+		}
+	}
+	return tx.Commit()
 }

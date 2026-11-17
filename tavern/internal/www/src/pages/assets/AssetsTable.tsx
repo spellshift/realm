@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
-import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, CirclePause, CircleX } from "lucide-react";
+import { Share, BookOpen, Copy, FilePlus, Trash2, Clock, CirclePause, CircleX, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@chakra-ui/react";
 import { useMutation, useQuery } from "@apollo/client";
 import { BugAntIcon } from "@heroicons/react/24/outline";
@@ -44,8 +44,14 @@ const AssetBuildStatusIcon = ({ status }: { status: BuildTaskStatus }) => {
     }
 };
 
-// Build artifacts are created empty when the build is queued; uploads reject empty content.
-const isPendingArtifact = (asset: AssetNode) => isAgentAsset(asset.name) && asset.size === 0;
+// Build artifacts are created empty and IN_PROGRESS when the build is queued.
+const isPendingArtifact = (asset: AssetNode) => asset.status !== "FINISHED";
+
+const ASSET_STATUS_DISPLAY = {
+    FINISHED: { label: "Finished", icon: <CheckCircle className="w-4 h-4 text-green-500" /> },
+    IN_PROGRESS: { label: "In progress", icon: <Loader2 className="w-4 h-4 text-purple-600 animate-spin" /> },
+    ERROR: { label: "Error", icon: <AlertTriangle className="w-4 h-4 text-red-500" /> },
+};
 
 interface AssetsTableProps {
     assetIds: string[];
@@ -171,6 +177,22 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             ),
         },
         {
+            key: 'status',
+            label: 'Status',
+            width: 'minmax(110px,1fr)',
+            render: (asset) => {
+                const display = ASSET_STATUS_DISPLAY[asset.status];
+                return (
+                    <Tooltip label={display.label}>
+                        <span role="img" aria-label={display.label} className="inline-flex">
+                            {display.icon}
+                        </span>
+                    </Tooltip>
+                );
+            },
+            renderSkeleton: () => <div className="h-4 w-4 bg-gray-200 rounded-full animate-pulse" />,
+        },
+        {
             key: 'creator',
             label: 'Creator',
             width: 'minmax(200px,2fr)',
@@ -246,7 +268,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             width: 'minmax(100px,1fr)',
             render: (asset) => {
                 // Unbuilt/failed agent artifacts are empty placeholders: nothing to download or link.
-                const unbuilt = isAgentAsset(asset.name) && (statusByAssetId.get(asset.id)?.status ?? "Built") !== "Built";
+                const unbuilt = isPendingArtifact(asset) || (isAgentAsset(asset.name) && (statusByAssetId.get(asset.id)?.status ?? "Built") !== "Built");
                 return (
                     <div className="flex flex-row gap-2">
                         <DownloadButton assetName={asset.name} disabled={unbuilt} />

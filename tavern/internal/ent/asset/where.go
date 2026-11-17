@@ -165,6 +165,26 @@ func LastModifiedAtLTE(v time.Time) predicate.Asset {
 	return predicate.Asset(sql.FieldLTE(FieldLastModifiedAt, v))
 }
 
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.Asset {
+	return predicate.Asset(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.Asset {
+	return predicate.Asset(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.Asset {
+	return predicate.Asset(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.Asset {
+	return predicate.Asset(sql.FieldNotIn(FieldStatus, vs...))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Asset {
 	return predicate.Asset(sql.FieldEQ(FieldName, v))

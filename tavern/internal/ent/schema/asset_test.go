@@ -33,6 +33,12 @@ func TestAssetHooks(t *testing.T) {
 	assert.WithinRange(t, testAsset.CreatedAt, time.Now().Add(-1*time.Second), time.Now().Add(1*time.Second))
 	assert.WithinRange(t, testAsset.LastModifiedAt, time.Now().Add(-1*time.Second), time.Now().Add(1*time.Second))
 	assert.NotZero(t, testAsset.LastModifiedAt)
+	assert.Equal(t, "FINISHED", string(testAsset.Status))
+
+	updated := graph.Asset.UpdateOne(testAsset).SetStatus("ERROR").SaveX(context.Background())
+	assert.Equal(t, expectedSize, updated.Size)
+	assert.Equal(t, expectedHash, updated.Hash)
+	assert.Equal(t, expectedContent, updated.Content)
 }
 
 func TestMultipleTomes(t *testing.T) {

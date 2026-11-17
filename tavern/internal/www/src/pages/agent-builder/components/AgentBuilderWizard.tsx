@@ -146,7 +146,7 @@ export const AgentBuilderWizard = ({
             if (!data?.createBuildTask?.id) throw new Error("The server did not return a build task.");
             toast({
                 title: "Agent build started",
-                description: `Build task #${data.createBuildTask.id} queued. The generated artifact will appear in Assets once built.`,
+                description: `Build task #${data.createBuildTask.id} queued. Its artifact is now visible in Assets.`,
                 status: "success",
                 duration: 5000,
                 isClosable: true,

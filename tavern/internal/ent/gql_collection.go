@@ -460,6 +460,11 @@ func (a *AssetQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				selectedFields = append(selectedFields, asset.FieldLastModifiedAt)
 				fieldSeen[asset.FieldLastModifiedAt] = struct{}{}
 			}
+		case "status":
+			if _, ok := fieldSeen[asset.FieldStatus]; !ok {
+				selectedFields = append(selectedFields, asset.FieldStatus)
+				fieldSeen[asset.FieldStatus] = struct{}{}
+			}
 		case "name":
 			if _, ok := fieldSeen[asset.FieldName]; !ok {
 				selectedFields = append(selectedFields, asset.FieldName)

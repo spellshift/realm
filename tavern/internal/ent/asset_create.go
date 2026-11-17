@@ -53,6 +53,20 @@ func (ac *AssetCreate) SetNillableLastModifiedAt(t *time.Time) *AssetCreate {
 	return ac
 }
 
+// SetStatus sets the "status" field.
+func (ac *AssetCreate) SetStatus(a asset.Status) *AssetCreate {
+	ac.mutation.SetStatus(a)
+	return ac
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (ac *AssetCreate) SetNillableStatus(a *asset.Status) *AssetCreate {
+	if a != nil {
+		ac.SetStatus(*a)
+	}
+	return ac
+}
+
 // SetName sets the "name" field.
 func (ac *AssetCreate) SetName(s string) *AssetCreate {
 	ac.mutation.SetName(s)
@@ -185,6 +199,10 @@ func (ac *AssetCreate) defaults() error {
 		v := asset.DefaultLastModifiedAt()
 		ac.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := ac.mutation.Status(); !ok {
+		v := asset.DefaultStatus
+		ac.mutation.SetStatus(v)
+	}
 	if _, ok := ac.mutation.Size(); !ok {
 		v := asset.DefaultSize
 		ac.mutation.SetSize(v)
@@ -199,6 +217,14 @@ func (ac *AssetCreate) check() error {
 	}
 	if _, ok := ac.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Asset.last_modified_at"`)}
+	}
+	if _, ok := ac.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Asset.status"`)}
+	}
+	if v, ok := ac.mutation.Status(); ok {
+		if err := asset.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Asset.status": %w`, err)}
+		}
 	}
 	if _, ok := ac.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Asset.name"`)}
@@ -261,6 +287,10 @@ func (ac *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 	if value, ok := ac.mutation.LastModifiedAt(); ok {
 		_spec.SetField(asset.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
+	}
+	if value, ok := ac.mutation.Status(); ok {
+		_spec.SetField(asset.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
 	}
 	if value, ok := ac.mutation.Name(); ok {
 		_spec.SetField(asset.FieldName, field.TypeString, value)
@@ -391,6 +421,18 @@ func (u *AssetUpsert) UpdateLastModifiedAt() *AssetUpsert {
 	return u
 }
 
+// SetStatus sets the "status" field.
+func (u *AssetUpsert) SetStatus(v asset.Status) *AssetUpsert {
+	u.Set(asset.FieldStatus, v)
+	return u
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetUpsert) UpdateStatus() *AssetUpsert {
+	u.SetExcluded(asset.FieldStatus)
+	return u
+}
+
 // SetName sets the "name" field.
 func (u *AssetUpsert) SetName(v string) *AssetUpsert {
 	u.Set(asset.FieldName, v)
@@ -501,6 +543,20 @@ func (u *AssetUpsertOne) SetLastModifiedAt(v time.Time) *AssetUpsertOne {
 func (u *AssetUpsertOne) UpdateLastModifiedAt() *AssetUpsertOne {
 	return u.Update(func(s *AssetUpsert) {
 		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetUpsertOne) SetStatus(v asset.Status) *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetUpsertOne) UpdateStatus() *AssetUpsertOne {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateStatus()
 	})
 }
 
@@ -789,6 +845,20 @@ func (u *AssetUpsertBulk) SetLastModifiedAt(v time.Time) *AssetUpsertBulk {
 func (u *AssetUpsertBulk) UpdateLastModifiedAt() *AssetUpsertBulk {
 	return u.Update(func(s *AssetUpsert) {
 		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetStatus sets the "status" field.
+func (u *AssetUpsertBulk) SetStatus(v asset.Status) *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.SetStatus(v)
+	})
+}
+
+// UpdateStatus sets the "status" field to the value that was provided on create.
+func (u *AssetUpsertBulk) UpdateStatus() *AssetUpsertBulk {
+	return u.Update(func(s *AssetUpsert) {
+		s.UpdateStatus()
 	})
 }
 

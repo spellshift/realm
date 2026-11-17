@@ -16,7 +16,7 @@ const DownloadButton = ({ assetName, disabled = false }: DownloadButtonProps) =>
     const handleDownload = async (e: React.MouseEvent) => {
         e.stopPropagation();
 
-        if (isDownloading) {
+        if (isDownloading || disabled) {
             return;
         }
 

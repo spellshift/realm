@@ -37,6 +37,20 @@ func (au *AssetUpdate) SetLastModifiedAt(t time.Time) *AssetUpdate {
 	return au
 }
 
+// SetStatus sets the "status" field.
+func (au *AssetUpdate) SetStatus(a asset.Status) *AssetUpdate {
+	au.mutation.SetStatus(a)
+	return au
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (au *AssetUpdate) SetNillableStatus(a *asset.Status) *AssetUpdate {
+	if a != nil {
+		au.SetStatus(*a)
+	}
+	return au
+}
+
 // SetName sets the "name" field.
 func (au *AssetUpdate) SetName(s string) *AssetUpdate {
 	au.mutation.SetName(s)
@@ -238,6 +252,11 @@ func (au *AssetUpdate) defaults() error {
 
 // check runs all checks and user-defined validators on the builder.
 func (au *AssetUpdate) check() error {
+	if v, ok := au.mutation.Status(); ok {
+		if err := asset.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Asset.status": %w`, err)}
+		}
+	}
 	if v, ok := au.mutation.Name(); ok {
 		if err := asset.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Asset.name": %w`, err)}
@@ -270,6 +289,9 @@ func (au *AssetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := au.mutation.LastModifiedAt(); ok {
 		_spec.SetField(asset.FieldLastModifiedAt, field.TypeTime, value)
+	}
+	if value, ok := au.mutation.Status(); ok {
+		_spec.SetField(asset.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := au.mutation.Name(); ok {
 		_spec.SetField(asset.FieldName, field.TypeString, value)
@@ -428,6 +450,20 @@ type AssetUpdateOne struct {
 // SetLastModifiedAt sets the "last_modified_at" field.
 func (auo *AssetUpdateOne) SetLastModifiedAt(t time.Time) *AssetUpdateOne {
 	auo.mutation.SetLastModifiedAt(t)
+	return auo
+}
+
+// SetStatus sets the "status" field.
+func (auo *AssetUpdateOne) SetStatus(a asset.Status) *AssetUpdateOne {
+	auo.mutation.SetStatus(a)
+	return auo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (auo *AssetUpdateOne) SetNillableStatus(a *asset.Status) *AssetUpdateOne {
+	if a != nil {
+		auo.SetStatus(*a)
+	}
 	return auo
 }
 
@@ -645,6 +681,11 @@ func (auo *AssetUpdateOne) defaults() error {
 
 // check runs all checks and user-defined validators on the builder.
 func (auo *AssetUpdateOne) check() error {
+	if v, ok := auo.mutation.Status(); ok {
+		if err := asset.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Asset.status": %w`, err)}
+		}
+	}
 	if v, ok := auo.mutation.Name(); ok {
 		if err := asset.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Asset.name": %w`, err)}
@@ -694,6 +735,9 @@ func (auo *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error
 	}
 	if value, ok := auo.mutation.LastModifiedAt(); ok {
 		_spec.SetField(asset.FieldLastModifiedAt, field.TypeTime, value)
+	}
+	if value, ok := auo.mutation.Status(); ok {
+		_spec.SetField(asset.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := auo.mutation.Name(); ok {
 		_spec.SetField(asset.FieldName, field.TypeString, value)

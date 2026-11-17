@@ -349,6 +349,12 @@ type AssetWhereInput struct {
 	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
 	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
 
+	// "status" field predicates.
+	Status      *asset.Status  `json:"status,omitempty"`
+	StatusNEQ   *asset.Status  `json:"statusNEQ,omitempty"`
+	StatusIn    []asset.Status `json:"statusIn,omitempty"`
+	StatusNotIn []asset.Status `json:"statusNotIn,omitempty"`
+
 	// "name" field predicates.
 	Name             *string  `json:"name,omitempty"`
 	NameNEQ          *string  `json:"nameNEQ,omitempty"`
@@ -544,6 +550,18 @@ func (i *AssetWhereInput) P() (predicate.Asset, error) {
 	}
 	if i.LastModifiedAtLTE != nil {
 		predicates = append(predicates, asset.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Status != nil {
+		predicates = append(predicates, asset.StatusEQ(*i.Status))
+	}
+	if i.StatusNEQ != nil {
+		predicates = append(predicates, asset.StatusNEQ(*i.StatusNEQ))
+	}
+	if len(i.StatusIn) > 0 {
+		predicates = append(predicates, asset.StatusIn(i.StatusIn...))
+	}
+	if len(i.StatusNotIn) > 0 {
+		predicates = append(predicates, asset.StatusNotIn(i.StatusNotIn...))
 	}
 	if i.Name != nil {
 		predicates = append(predicates, asset.NameEQ(*i.Name))

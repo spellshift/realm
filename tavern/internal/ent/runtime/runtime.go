@@ -83,17 +83,17 @@ func init() {
 	// asset.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	asset.UpdateDefaultLastModifiedAt = assetDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// assetDescName is the schema descriptor for name field.
-	assetDescName := assetFields[0].Descriptor()
+	assetDescName := assetFields[1].Descriptor()
 	// asset.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	asset.NameValidator = assetDescName.Validators[0].(func(string) error)
 	// assetDescSize is the schema descriptor for size field.
-	assetDescSize := assetFields[1].Descriptor()
+	assetDescSize := assetFields[2].Descriptor()
 	// asset.DefaultSize holds the default value on creation for the size field.
 	asset.DefaultSize = assetDescSize.Default.(int)
 	// asset.SizeValidator is a validator for the "size" field. It is called by the builders before save.
 	asset.SizeValidator = assetDescSize.Validators[0].(func(int) error)
 	// assetDescHash is the schema descriptor for hash field.
-	assetDescHash := assetFields[2].Descriptor()
+	assetDescHash := assetFields[3].Descriptor()
 	// asset.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	asset.HashValidator = assetDescHash.Validators[0].(func(string) error)
 	beaconMixin := schema.Beacon{}.Mixin()

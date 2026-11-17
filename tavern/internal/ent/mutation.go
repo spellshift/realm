@@ -625,6 +625,7 @@ type AssetMutation struct {
 	id               *int
 	created_at       *time.Time
 	last_modified_at *time.Time
+	status           *asset.Status
 	name             *string
 	size             *int
 	addsize          *int
@@ -812,6 +813,42 @@ func (m *AssetMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err
 // ResetLastModifiedAt resets all changes to the "last_modified_at" field.
 func (m *AssetMutation) ResetLastModifiedAt() {
 	m.last_modified_at = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *AssetMutation) SetStatus(a asset.Status) {
+	m.status = &a
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *AssetMutation) Status() (r asset.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Asset entity.
+// If the Asset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AssetMutation) OldStatus(ctx context.Context) (v asset.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *AssetMutation) ResetStatus() {
+	m.status = nil
 }
 
 // SetName sets the "name" field.
@@ -1159,12 +1196,15 @@ func (m *AssetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AssetMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, asset.FieldCreatedAt)
 	}
 	if m.last_modified_at != nil {
 		fields = append(fields, asset.FieldLastModifiedAt)
+	}
+	if m.status != nil {
+		fields = append(fields, asset.FieldStatus)
 	}
 	if m.name != nil {
 		fields = append(fields, asset.FieldName)
@@ -1190,6 +1230,8 @@ func (m *AssetMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case asset.FieldLastModifiedAt:
 		return m.LastModifiedAt()
+	case asset.FieldStatus:
+		return m.Status()
 	case asset.FieldName:
 		return m.Name()
 	case asset.FieldSize:
@@ -1211,6 +1253,8 @@ func (m *AssetMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCreatedAt(ctx)
 	case asset.FieldLastModifiedAt:
 		return m.OldLastModifiedAt(ctx)
+	case asset.FieldStatus:
+		return m.OldStatus(ctx)
 	case asset.FieldName:
 		return m.OldName(ctx)
 	case asset.FieldSize:
@@ -1241,6 +1285,13 @@ func (m *AssetMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLastModifiedAt(v)
+		return nil
+	case asset.FieldStatus:
+		v, ok := value.(asset.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	case asset.FieldName:
 		v, ok := value.(string)
@@ -1339,6 +1390,9 @@ func (m *AssetMutation) ResetField(name string) error {
 		return nil
 	case asset.FieldLastModifiedAt:
 		m.ResetLastModifiedAt()
+		return nil
+	case asset.FieldStatus:
+		m.ResetStatus()
 		return nil
 	case asset.FieldName:
 		m.ResetName()

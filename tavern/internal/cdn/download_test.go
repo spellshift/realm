@@ -1,6 +1,7 @@
 package cdn_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -23,6 +24,7 @@ func TestDownload(t *testing.T) {
 
 	expectedContent := []byte("file_content")
 	existingAsset := newAsset(graph, "ExistingTestAsset", expectedContent)
+	pendingAsset := graph.Asset.Create().SetName("PendingTestAsset").SetContent([]byte{}).SetStatus("IN_PROGRESS").SaveX(context.Background())
 
 	t.Run("Asset", newDownloadTest(
 		graph,
@@ -50,6 +52,15 @@ func TestDownload(t *testing.T) {
 			assert.Equal(t, http.StatusNotFound, err.StatusCode)
 			assert.ErrorContains(t, err, cdn.ErrFileNotFound.Error())
 			assert.Empty(t, string(fileContent))
+		},
+	))
+	t.Run("PendingAsset", newDownloadTest(
+		graph,
+		newDownloadRequest(pendingAsset.Name, withIfNoneMatchHeader(pendingAsset.Hash)),
+		func(t *testing.T, fileContent []byte, err *errors.HTTP) {
+			require.NotNil(t, err)
+			assert.Equal(t, http.StatusNotFound, err.StatusCode)
+			assert.Empty(t, fileContent)
 		},
 	))
 	t.Run("ChunkedDownload", func(t *testing.T) {

@@ -24,6 +24,8 @@ type Asset struct {
 // Fields of the Asset.
 func (Asset) Fields() []ent.Field {
 	return []ent.Field{
+		field.Enum("status").Values("FINISHED", "IN_PROGRESS", "ERROR").Default("FINISHED").
+			Comment("Whether the asset content is ready for download."),
 		field.String("name").
 			NotEmpty().
 			Unique().
@@ -121,7 +123,10 @@ func HookDeriveAssetInfo() ent.Hook {
 			}
 
 			// Set the new size
-			content, _ := f.Content()
+			content, changed := f.Content()
+			if !changed {
+				return next.Mutate(ctx, m)
+			}
 			f.SetSize(len(content))
 
 			// Set the new hash

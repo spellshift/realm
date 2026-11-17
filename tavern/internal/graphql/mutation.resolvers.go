@@ -545,6 +545,13 @@ func (r *mutationResolver) ClosePivot(ctx context.Context, pivotID int) (*ent.Sh
 
 // CreateLink is the resolver for the createLink field.
 func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error) {
+	a, err := r.client.Asset.Get(ctx, input.AssetID)
+	if err != nil {
+		return nil, err
+	}
+	if a.Status != asset.StatusFINISHED {
+		return nil, fmt.Errorf("asset is not ready for a link")
+	}
 	var creatorID *int
 	if creator := auth.UserFromContext(ctx); creator != nil {
 		creatorID = &creator.ID
@@ -891,13 +898,17 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		bundleID = &bundle.ID
 	}
 
-	// Create an empty artifact placeholder so the build shows in the Assets list; the upload fills it in.
-	artifact, err := graph.Asset.Create().
-		SetName(builder.ArtifactAssetName(input.TargetOs, targetFormat, snapshot.Name)).
-		SetContent([]byte{}).
-		Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("create build artifact placeholder: %w", err)
+	var artifact *ent.Asset
+	if artifactPath != "" {
+		// Pending placeholder so the build shows in the Assets list; the upload fills it in.
+		artifact, err = graph.Asset.Create().
+			SetName(builder.ArtifactAssetName(input.TargetOs, targetFormat, snapshot.Name)).
+			SetContent([]byte{}).
+			SetStatus(asset.StatusIN_PROGRESS).
+			Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("create build artifact placeholder: %w", err)
+		}
 	}
 
 	// 8. Create the build task
@@ -910,8 +921,10 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetProfile(profile).
 		SetProfileAtCreation(snapshot).
 		SetNillableBundleID(bundleID).
-		SetArtifact(artifact).
 		SetSetupscript(setupScript)
+	if artifact != nil {
+		create.SetArtifact(artifact)
+	}
 
 	if unique != nil {
 		create.SetUnique(*unique)

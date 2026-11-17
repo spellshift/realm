@@ -3,6 +3,9 @@
 package asset
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"entgo.io/ent"
@@ -19,6 +22,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldLastModifiedAt holds the string denoting the last_modified_at field in the database.
 	FieldLastModifiedAt = "last_modified_at"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldSize holds the string denoting the size field in the database.
@@ -61,6 +66,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldLastModifiedAt,
+	FieldStatus,
 	FieldName,
 	FieldSize,
 	FieldHash,
@@ -117,6 +123,33 @@ var (
 	HashValidator func(string) error
 )
 
+// Status defines the type for the "status" enum field.
+type Status string
+
+// StatusFINISHED is the default value of the Status enum.
+const DefaultStatus = StatusFINISHED
+
+// Status values.
+const (
+	StatusFINISHED    Status = "FINISHED"
+	StatusIN_PROGRESS Status = "IN_PROGRESS"
+	StatusERROR       Status = "ERROR"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusFINISHED, StatusIN_PROGRESS, StatusERROR:
+		return nil
+	default:
+		return fmt.Errorf("asset: invalid enum value for status field: %q", s)
+	}
+}
+
 // OrderOption defines the ordering options for the Asset queries.
 type OrderOption func(*sql.Selector)
 
@@ -133,6 +166,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByLastModifiedAt orders the results by the last_modified_at field.
 func ByLastModifiedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastModifiedAt, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.
@@ -204,4 +242,22 @@ func newCreatorStep() *sqlgraph.Step {
 		sqlgraph.To(CreatorInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
 	)
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e Status) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *Status) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = Status(str)
+	if err := StatusValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid Status", str)
+	}
+	return nil
 }
