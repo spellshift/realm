@@ -42,11 +42,8 @@ func formatResourceNameWithPrefix(prefix, name string) string {
 	if prefix == "" {
 		prefix = "tavern"
 	}
-	if name == prefix || strings.HasPrefix(name, prefix+"-") || strings.HasPrefix(name, prefix+"_") {
+	if strings.HasPrefix(name, prefix+"-") || strings.HasPrefix(name, prefix+"_") {
 		return name
-	}
-	if name == "tavern" {
-		return prefix
 	}
 	if strings.HasPrefix(name, "tavern-") || strings.HasPrefix(name, "tavern_") {
 		return prefix + strings.TrimPrefix(name, "tavern")

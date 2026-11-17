@@ -190,7 +190,7 @@ func TestFormatResourceName(t *testing.T) {
 	t.Run("DefaultPrefix", func(t *testing.T) {
 		t.Setenv(EnvResourcePrefix.Key, "")
 		assert.Equal(t, "tavern", EnvResourcePrefix.String())
-		assert.Equal(t, "tavern", FormatResourceName("tavern"))
+		assert.Equal(t, "tavern-tavern", FormatResourceName("tavern"))
 		assert.Equal(t, "tavern-db", FormatResourceName("tavern-db"))
 		assert.Equal(t, "tavern-secrets", FormatResourceName("tavern-secrets"))
 		assert.Equal(t, "tavern-host-lost-poll", FormatResourceName("host-lost-poll"))
@@ -201,7 +201,7 @@ func TestFormatResourceName(t *testing.T) {
 	t.Run("CustomSixCharPrefix", func(t *testing.T) {
 		t.Setenv(EnvResourcePrefix.Key, "abcxyz")
 		assert.Equal(t, "abcxyz", EnvResourcePrefix.String())
-		assert.Equal(t, "abcxyz", FormatResourceName("tavern"))
+		assert.Equal(t, "abcxyz-tavern", FormatResourceName("tavern"))
 		assert.Equal(t, "abcxyz-db", FormatResourceName("tavern-db"))
 		assert.Equal(t, "abcxyz-secrets", FormatResourceName("tavern-secrets"))
 		assert.Equal(t, "abcxyz-host-lost-poll", FormatResourceName("host-lost-poll"))

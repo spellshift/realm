@@ -481,7 +481,7 @@ resource "google_pubsub_subscription" "shell_output-sub" {
 }
 
 resource "google_cloud_run_service" "tavern" {
-  name     = local.resource_prefix
+  name     = "${local.resource_prefix}-tavern"
   location = var.gcp_region
 
   traffic {
