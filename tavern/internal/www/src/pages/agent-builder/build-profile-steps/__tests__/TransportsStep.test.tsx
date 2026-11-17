@@ -51,4 +51,17 @@ describe("TransportsStep", () => {
         expect(saved[1].type).toBe(SupportedTransports.DNS);
         expect(JSON.parse(saved[1].extra ?? "")).toEqual({ domain: "c2.example.com", type: "aaaa" });
     });
+
+    it.each([
+        { label: "QUIC", type: SupportedTransports.QUIC, uri: "quic://c2.example.com:443" },
+        { label: "TCP Bind", type: SupportedTransports.TCP_BIND, uri: "tcp://0.0.0.0:443" },
+    ])("adds $label with the URI used by Imix", ({ label, type, uri }) => {
+        render(<Harness />);
+        fireEvent.click(screen.getByRole("button", { name: "Add transport" }));
+        fireEvent.click(screen.getByRole("button", { name: label }));
+        fireEvent.change(screen.getByRole("textbox", { name: "URI" }), { target: { value: uri } });
+        fireEvent.click(screen.getByRole("button", { name: "Add transport" }));
+        const saved = JSON.parse(screen.getByTestId("saved-transports").textContent ?? "[]") as TransportConfig[];
+        expect(saved[1]).toMatchObject({ type, uri });
+    });
 });

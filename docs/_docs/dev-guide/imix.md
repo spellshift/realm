@@ -294,13 +294,14 @@ Add a proxy for your feature to `realm/implants/imix/Cargo.toml`
 
 ```toml
 [features]
-default = ["install", "grpc", "http1", "dns", "doh", "custom", "icmp"]
+default = ["install", "grpc", "http1", "dns", "doh", "icmp", "tcp-bind", "quic"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
 doh = ["transport/doh"]
 icmp = ["transport/icmp"]
-custom = ["transport/custom"]
+tcp-bind = ["transport/tcp-bind"]
+quic = ["transport/quic"]
 ```
 
 **Note:** By default all transports are enabled by default but for advanced use cases they can be disabled via feature flags

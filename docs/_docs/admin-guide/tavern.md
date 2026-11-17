@@ -182,6 +182,8 @@ Realm includes five built-in redirector implementations:
 - **`dns`** - DNS to gRPC redirector
 - **`icmp`** - ICMP Echo to gRPC redirector
 
+The Imix `tcp_bind` transport is used for agent chaining and listens on the agent itself, so it has no Tavern redirector. See [TCP Bind transport](/user-guide/imix#tcp_bind).
+
 ### Basic Usage
 
 List available redirectors:
