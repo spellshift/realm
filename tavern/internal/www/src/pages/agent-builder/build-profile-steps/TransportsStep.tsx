@@ -101,6 +101,7 @@ const TransportEditor = ({ form, editing, error, setForm, onTypeChange, onCancel
             <div>
                 <span className="mb-1 block text-sm font-medium text-gray-700">Transport type<RequiredMark /></span>
                 <SegmentedControl label="Transport type" options={TRANSPORT_TYPES} value={type} onChange={onTypeChange} />
+                {type === SupportedTransports.TCP_BIND && <p className="mt-2 text-sm text-gray-600">The agent listens at this address for an upstream agent to connect.</p>}
             </div>
 
             <div className={isDNS ? "grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]" : "grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]"}>
