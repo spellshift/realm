@@ -4,7 +4,7 @@ const HISTORY_KEY = 'eldritch_repl_history';
 const ISSUE_BASE_URL = 'https://github.com/spellshift/realm/issues/new?labels=eldritch,bug';
 
 let repl = null;
-let currentVersion = '0.4.1';
+let currentVersion = '0.4.2';
 
 const widgetEl = document.getElementById('eldritch-repl-widget');
 const viewportEl = document.getElementById('repl-viewport');
