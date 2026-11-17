@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SupportedTransports } from "../../../../utils/enums";
 import { DEFAULT_TRANSPORT, TRANSPORT_TYPES, TransportConfig } from "../../types";
 import {
-    newTransportForm, switchTransportType, transportConfigFromForm, transportExtraSummary,
+    newTransportForm, normalizeTransportUri, switchTransportType, transportConfigFromForm, transportExtraSummary,
     transportFormError, transportFormFromConfig,
 } from "../transportForm";
 
@@ -43,6 +43,28 @@ describe("transport form", () => {
         expect(DEFAULT_TRANSPORT.interval).toBe(30);
     });
 
+    it.each([
+        [SupportedTransports.QUIC, "quic.aws-metadata.com", "quics://quic.aws-metadata.com:443"],
+        [SupportedTransports.GRPC, "grpc.aws-metadata.com", "https://grpc.aws-metadata.com"],
+        [SupportedTransports.HTTP1, "http1.aws-metadata.com", "https1://http1.aws-metadata.com"],
+        [SupportedTransports.ICMP, "icmp.aws-metadata.com", "icmp://icmp.aws-metadata.com"],
+        [SupportedTransports.TCP_BIND, "0.0.0.0", "tcp://0.0.0.0:9000"],
+        [SupportedTransports.QUIC, "quic.aws-metadata.com:8443", "quics://quic.aws-metadata.com:8443"],
+        [SupportedTransports.TCP_BIND, "0.0.0.0:8443", "tcp://0.0.0.0:8443"],
+    ] as const)("normalizes %s host %s to %s", (type, input, expected) => {
+        const form = newTransportForm(type);
+        form.transport.uri = input;
+        expect(normalizeTransportUri(type, input)).toBe(expected);
+        expect(transportFormError(form)).toBeNull();
+        expect(transportConfigFromForm(form).uri).toBe(expected);
+    });
+
+    it("preserves explicit URIs and leaves DNS and malformed input for validation", () => {
+        expect(normalizeTransportUri(SupportedTransports.QUIC, "quic://host:8443")).toBe("quic://host:8443");
+        expect(normalizeTransportUri(SupportedTransports.DNS, "dns.example.com")).toBe("dns.example.com");
+        expect(normalizeTransportUri(SupportedTransports.GRPC, "host/path")).toBe("host/path");
+    });
+
     it("checks the URI scheme for each type", () => {
         const grpc = newTransportForm(SupportedTransports.GRPC);
         grpc.transport.uri = "https1://c2.example.com";
@@ -75,8 +97,8 @@ describe("transport form", () => {
         tcp.transport.uri = "tcp://0.0.0.0:8443";
         expect(transportFormError(tcp)).toBeNull();
         tcp.transport.uri = "tcp://0.0.0.0";
-        expect(transportFormError(tcp)).toMatch(/local bind address and port/);
+        expect(transportFormError(tcp)).toMatch(/local bind address/);
         tcp.transport.uri = "tcp://0.0.0.0:0";
-        expect(transportFormError(tcp)).toMatch(/local bind address and port/);
+        expect(transportFormError(tcp)).toMatch(/local bind address/);
     });
 });

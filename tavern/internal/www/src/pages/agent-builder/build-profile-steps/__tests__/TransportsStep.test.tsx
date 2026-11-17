@@ -64,4 +64,18 @@ describe("TransportsStep", () => {
         const saved = JSON.parse(screen.getByTestId("saved-transports").textContent ?? "[]") as TransportConfig[];
         expect(saved[1]).toMatchObject({ type, uri });
     });
+
+    it("expands a bare QUIC host in the field and saves the Terraform port", () => {
+        render(<Harness />);
+        fireEvent.click(screen.getByRole("button", { name: "Add transport" }));
+        fireEvent.click(screen.getByRole("button", { name: "QUIC" }));
+        const uri = screen.getByRole("textbox", { name: "URI" });
+        fireEvent.change(uri, { target: { value: "quic.aws-metadata.com" } });
+        expect(screen.getByRole("button", { name: "Add transport" })).toBeEnabled();
+        fireEvent.blur(uri);
+        expect(uri).toHaveValue("quics://quic.aws-metadata.com:443");
+        fireEvent.click(screen.getByRole("button", { name: "Add transport" }));
+        const saved = JSON.parse(screen.getByTestId("saved-transports").textContent ?? "[]") as TransportConfig[];
+        expect(saved[1].uri).toBe("quics://quic.aws-metadata.com:443");
+    });
 });

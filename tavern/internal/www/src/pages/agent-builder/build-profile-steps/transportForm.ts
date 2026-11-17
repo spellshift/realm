@@ -22,21 +22,35 @@ const defaults: Record<TransportTypeValue, { uri: string; interval: number }> = 
 };
 
 export const transportUriHint: Record<TransportTypeValue, string> = {
-    [SupportedTransports.GRPC]: "Use http:// or https://.",
-    [SupportedTransports.HTTP1]: "Use http1:// or https1://.",
+    [SupportedTransports.GRPC]: "Enter a host, or use http:// or https://.",
+    [SupportedTransports.HTTP1]: "Enter a host, or use http1:// or https1://.",
     [SupportedTransports.DNS]: "Use dns://* for the system resolver, or dns://8.8.8.8:53 for a specific server.",
     [SupportedTransports.ICMP]: "Enter the IPv4 address or hostname of the ICMP redirector.",
-    [SupportedTransports.QUIC]: "Use quic:// or quics:// followed by a host and optional port.",
-    [SupportedTransports.TCP_BIND]: "Use tcp:// followed by a local bind address and port.",
+    [SupportedTransports.QUIC]: "Enter a host, or use quic:// or quics:// with an optional port.",
+    [SupportedTransports.TCP_BIND]: "Enter a local bind address, or use tcp:// with a port.",
 };
 
 export const transportUriPlaceholder: Record<TransportTypeValue, string> = {
-    [SupportedTransports.GRPC]: "https://c2.example.com:8443",
-    [SupportedTransports.HTTP1]: "https1://c2.example.com:8443",
+    [SupportedTransports.GRPC]: "grpc.example.com",
+    [SupportedTransports.HTTP1]: "http1.example.com",
     [SupportedTransports.DNS]: "dns://*",
-    [SupportedTransports.ICMP]: "icmp://192.168.1.1",
-    [SupportedTransports.QUIC]: "quic://c2.example.com:8443",
-    [SupportedTransports.TCP_BIND]: "tcp://0.0.0.0:8443",
+    [SupportedTransports.ICMP]: "icmp.example.com",
+    [SupportedTransports.QUIC]: "quic.example.com",
+    [SupportedTransports.TCP_BIND]: "0.0.0.0",
+};
+
+/** Add the default scheme and port to a bare host. */
+export const normalizeTransportUri = (type: TransportTypeValue, uri: string): string => {
+    const value = uri.trim();
+    if (!value || type === SupportedTransports.DNS || value.includes("://")) return value;
+    // Leave malformed inputs to validation instead of turning them into plausible URIs.
+    if (!/^[a-zA-Z0-9.-]+(?::\d{1,5})?$/.test(value)) return value;
+
+    if (type === SupportedTransports.QUIC) return `quics://${value.includes(":") ? value : `${value}:443`}`;
+    if (type === SupportedTransports.TCP_BIND) return `tcp://${value.includes(":") ? value : `${value}:9000`}`;
+    if (type === SupportedTransports.ICMP) return `icmp://${value}`;
+    if (type === SupportedTransports.HTTP1) return `https1://${value}`;
+    return `https://${value}`;
 };
 
 const parseExtra = (extra?: string): Record<string, string> => {
@@ -86,7 +100,7 @@ export type TransportFieldErrors = {
 
 export const transportFieldErrors = (form: TransportForm): TransportFieldErrors => {
     const { type, uri, interval } = form.transport;
-    const value = uri.trim();
+    const value = normalizeTransportUri(type, uri);
     const errors: TransportFieldErrors = {};
 
     if (!Number.isInteger(interval) || interval < 1) errors.interval = "Enter an interval of at least one second.";
@@ -151,7 +165,7 @@ export const transportFormError = (form: TransportForm): string | null => {
 };
 
 export const transportConfigFromForm = (form: TransportForm): TransportConfig => {
-    const transport = { ...form.transport, uri: form.transport.uri.trim() };
+    const transport = { ...form.transport, uri: normalizeTransportUri(form.transport.type, form.transport.uri) };
     const extra = parseExtra(transport.extra);
     delete extra.domain;
     delete extra.type;
