@@ -20,26 +20,19 @@ resource "random_password" "defaultmysql" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-resource "random_string" "resource_prefix" {
-  length  = 6
-  special = false
-  upper   = false
-  numeric = false
-}
-
 variable "resource_prefix" {
   type        = string
-  description = "Six-character prefix for GCP resource names to support multiple Tavern instances in the same project. Defaults to a random 6-character code."
-  default     = ""
+  description = "Six-character prefix for GCP resource names to support multiple Tavern instances in the same project. Defaults to tavern."
+  default     = "tavern"
 
   validation {
-    condition     = var.resource_prefix == "" || (can(regex("^[a-z][a-z0-9]{5}$", var.resource_prefix)) && !startswith(var.resource_prefix, "goog"))
+    condition     = can(regex("^[a-z][a-z0-9]{5}$", var.resource_prefix)) && !startswith(var.resource_prefix, "goog")
     error_message = "resource_prefix must be a 6-character string starting with a lowercase letter, containing only lowercase letters and digits, and not starting with 'goog'."
   }
 }
 
 locals {
-  resource_prefix = var.resource_prefix != "" ? var.resource_prefix : random_string.resource_prefix.result
+  resource_prefix = var.resource_prefix
 }
 
 output "resource_prefix" {
