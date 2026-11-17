@@ -205,10 +205,17 @@ func TestWithSubscriberBufferSize(t *testing.T) {
 }
 
 func TestWithResourcePrefix(t *testing.T) {
+	t.Setenv("TAVERN_RESOURCE_PREFIX", "")
 	mDefault := New()
 	assert.Equal(t, "tavern-PORTAL_IN_42", mDefault.TopicIn(42))
 	assert.Equal(t, "tavern-PORTAL_OUT_42", mDefault.TopicOut(42))
 	assert.True(t, strings.HasPrefix(mDefault.SubName(mDefault.TopicIn(42)), "tavern-PORTAL_IN_42_SUB_"))
+
+	t.Setenv("TAVERN_RESOURCE_PREFIX", "envpfx")
+	mEnv := New()
+	assert.Equal(t, "envpfx-PORTAL_IN_42", mEnv.TopicIn(42))
+	assert.Equal(t, "envpfx-PORTAL_OUT_42", mEnv.TopicOut(42))
+	assert.True(t, strings.HasPrefix(mEnv.SubName(mEnv.TopicIn(42)), "envpfx-PORTAL_IN_42_SUB_"))
 
 	mCustom := New(WithResourcePrefix("abcxyz"))
 	assert.Equal(t, "abcxyz-PORTAL_IN_42", mCustom.TopicIn(42))

@@ -3,6 +3,7 @@ package mux
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/google/uuid"
@@ -119,9 +120,13 @@ func WithPubSubClient(client *pubsub.Client) Option {
 
 // New creates a new Mux with the given options.
 func New(opts ...Option) *Mux {
+	prefix := os.Getenv("TAVERN_RESOURCE_PREFIX")
+	if prefix == "" {
+		prefix = "tavern"
+	}
 	m := &Mux{
 		serverID:       uuid.New().String(),
-		resourcePrefix: "tavern",
+		resourcePrefix: prefix,
 		subs: &SubscriberRegistry{
 			subs:       make(map[string][]chan *portalpb.Mote),
 			bufferSize: 15625, // Default
