@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -21,7 +20,10 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
+	"realm.pub/tavern/internal/logging"
 )
+
+var dockerLog = logging.For("builder.docker")
 
 // DockerExecutor runs build tasks inside Docker containers.
 // It pulls the specified image, creates a container using the build script
@@ -53,7 +55,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	defer close(outputCh)
 	defer close(errorCh)
 
-	slog.InfoContext(ctx, "pulling docker image", "image", spec.BuildImage, "task_id", spec.TaskID)
+	dockerLog.InfoContext(ctx, "pulling docker image", "image", spec.BuildImage, "task_id", spec.TaskID)
 
 	pullReader, err := d.client.ImagePull(ctx, spec.BuildImage, image.PullOptions{})
 	if err != nil {
@@ -79,13 +81,13 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	uncachedSpec := spec
 	hostConfig, cacheEnv, cachedSpec, cacheErr := prepareBuildCache(spec)
 	if cacheErr != nil {
-		slog.WarnContext(ctx, "failed to prepare build cache directory, building without cache",
+		dockerLog.WarnContext(ctx, "failed to prepare build cache directory, building without cache",
 			"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", cacheErr)
 	} else {
 		spec = cachedSpec
 	}
 
-	slog.InfoContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
+	dockerLog.DebugContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
 
 	// The container entrypoint runs all scripts in /mnt/scripts in order.
 	entrypoint := strings.Join([]string{
@@ -103,7 +105,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	resp, err := d.client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil && hostConfig != nil && ctx.Err() == nil {
-		slog.WarnContext(ctx, "failed to mount build cache, retrying without cache",
+		dockerLog.WarnContext(ctx, "failed to mount build cache, retrying without cache",
 			"task_id", spec.TaskID, "cache_dir", spec.CacheDir, "error", err)
 		spec = uncachedSpec
 		containerConfig.Env = append(slices.Clone(spec.Env),
@@ -119,7 +121,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	defer func() {
 		removeErr := d.client.ContainerRemove(context.Background(), containerID, container.RemoveOptions{Force: true})
 		if removeErr != nil {
-			slog.Warn("failed to remove container", "container_id", containerID, "error", removeErr)
+			dockerLog.WarnContext(ctx, "failed to remove container", "container_id", containerID, "error", removeErr)
 		}
 	}()
 
@@ -132,7 +134,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		return nil, fmt.Errorf("failed to start container: %w", err)
 	}
 
-	slog.InfoContext(ctx, "container started", "container_id", containerID, "task_id", spec.TaskID)
+	dockerLog.InfoContext(ctx, "container started", "container_id", containerID, "task_id", spec.TaskID)
 
 	// Attach to container logs to stream stdout and stderr.
 	logReader, err := d.client.ContainerLogs(ctx, containerID, container.LogsOptions{
@@ -160,10 +162,10 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		streamBuildLines(ctx, stderrPR, errorCh)
+		streamBuildLines(ctx, dockerLog, stderrPR, errorCh)
 	}()
 
-	streamBuildLines(ctx, stdoutPR, outputCh)
+	streamBuildLines(ctx, dockerLog, stdoutPR, outputCh)
 
 	// Wait for stderr goroutine to finish.
 	<-done
@@ -200,14 +202,14 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		// artifact. Surface it through the existing build-error stream
 		// (client.go sets StreamBuildTaskOutputRequest.Error from this
 		// return value) so it's indistinguishable from any other failure.
-		slog.WarnContext(ctx, "artifact extraction failed",
+		dockerLog.WarnContext(ctx, "artifact extraction failed",
 			"task_id", spec.TaskID, "path", spec.ArtifactPath, "error", extractErr)
 		return &buildResult, fmt.Errorf("artifact extraction failed: %w", extractErr)
 	}
 
 	buildResult.Artifact = data
 	buildResult.ArtifactName = name
-	slog.InfoContext(ctx, "artifact extracted",
+	dockerLog.InfoContext(ctx, "artifact extracted",
 		"task_id", spec.TaskID, "name", name, "size", len(data))
 
 	return &buildResult, nil

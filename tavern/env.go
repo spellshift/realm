@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"log/slog"
 	"os"
 	"strconv"
 )
@@ -23,11 +22,7 @@ func (env EnvBool) String() string {
 // Bool based on the environment variable value.
 // True if any non-empty value is set, false otherwise.
 func (env EnvBool) Bool() bool {
-	if val := os.Getenv(env.Key); val != "" {
-		return true
-	}
-	slog.Warn("missing configuration, using default value", "env_var", env.Key, "type", "bool", "default", false)
-	return false
+	return os.Getenv(env.Key) != ""
 }
 
 // IsSet returns true if the boolean is true.
@@ -51,7 +46,6 @@ func (env EnvString) String() string {
 	if val := os.Getenv(env.Key); val != "" {
 		return val
 	}
-	slog.Warn("missing configuration, using default value", "env_var", env.Key, "type", "string", "default", env.Default)
 	return env.Default
 }
 
@@ -65,7 +59,6 @@ type EnvInteger struct {
 func (env EnvInteger) Int() int {
 	envVar := os.Getenv(env.Key)
 	if envVar == "" {
-		slog.Warn("missing configuration, using default value", "env_var", env.Key, "type", "int", "default", env.Default)
 		return env.Default
 	}
 	val, err := strconv.Atoi(envVar)

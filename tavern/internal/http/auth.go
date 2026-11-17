@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	entuser "realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/logging"
 )
 
 func isTransientAuthDBError(err error) bool {
@@ -65,30 +65,31 @@ type bypassAuthenticator struct {
 // This will automatically authenticate requests as the first available user in the db.
 // If no users exist in the db, it will create one and authenticate as that user.
 // The created user will automatically be set to activated and promoted to administrator.
-// Returns an *http.Request associated with the authenticated identity.
-// Any issues with this authenticator will cause a panic.
+// Returns a context associated with the authenticated identity.
 func (authenticator *bypassAuthenticator) Authenticate(w http.ResponseWriter, r *http.Request) (context.Context, error) {
+	ctx := r.Context()
+
 	// Read SessionToken from auth cookie
 	authCookie, err := r.Cookie(auth.SessionCookieName)
 	var authUser *ent.User
 
 	if err == nil && authCookie != nil && authCookie.Value != "" {
-		authUser, err = withAuthDBRetry(r.Context(), func() (*ent.User, error) {
-			return authenticator.graph.User.Query().Where(entuser.SessionToken(authCookie.Value)).First(r.Context())
+		authUser, err = withAuthDBRetry(ctx, func() (*ent.User, error) {
+			return authenticator.graph.User.Query().Where(entuser.SessionToken(authCookie.Value)).First(ctx)
 		})
 		if err != nil && !ent.IsNotFound(err) {
-			slog.ErrorContext(r.Context(), "failed to query bypass user from session cookie", "err", err)
+			authSessionLog.ErrorContext(ctx, "failed to query bypass user from session cookie", "error", err)
 			return nil, err
 		}
 	}
 
 	// If the cookie didn't match or wasn't provided, try to find any existing user to act as the bypass user
 	if authUser == nil {
-		authUser, err = withAuthDBRetry(r.Context(), func() (*ent.User, error) {
-			return authenticator.graph.User.Query().First(r.Context())
+		authUser, err = withAuthDBRetry(ctx, func() (*ent.User, error) {
+			return authenticator.graph.User.Query().First(ctx)
 		})
 		if err != nil && !ent.IsNotFound(err) {
-			slog.ErrorContext(r.Context(), "failed to query first user for auth bypass", "err", err)
+			authSessionLog.ErrorContext(ctx, "failed to query first user for auth bypass", "error", err)
 			return nil, err
 		}
 	}
@@ -96,22 +97,22 @@ func (authenticator *bypassAuthenticator) Authenticate(w http.ResponseWriter, r 
 	// If there are still no users in the database at all, create the initial bypass user
 	if authUser == nil {
 		uid := fmt.Sprintf("bypass-%x", time.Now().UnixNano()%1000000)
-		authUser, err = withAuthDBRetry(r.Context(), func() (*ent.User, error) {
+		authUser, err = withAuthDBRetry(ctx, func() (*ent.User, error) {
 			return authenticator.graph.User.Create().
 				SetName(uid).
 				SetOauthID(uid).
 				SetPhotoURL("https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg").
 				SetIsActivated(true).
 				SetIsAdmin(true).
-				Save(r.Context())
+				Save(ctx)
 		})
 		if err != nil {
 			// Another concurrent request may have created the initial user simultaneously
-			authUser, err = withAuthDBRetry(r.Context(), func() (*ent.User, error) {
-				return authenticator.graph.User.Query().First(r.Context())
+			authUser, err = withAuthDBRetry(ctx, func() (*ent.User, error) {
+				return authenticator.graph.User.Query().First(ctx)
 			})
 			if err != nil {
-				slog.ErrorContext(r.Context(), "failed to create or load initial bypass user", "err", err)
+				authSessionLog.ErrorContext(ctx, "failed to create or load initial bypass user", "error", err)
 				return nil, err
 			}
 		}
@@ -128,7 +129,9 @@ func (authenticator *bypassAuthenticator) Authenticate(w http.ResponseWriter, r 
 		})
 	}
 
-	return auth.ContextFromUser(r.Context(), authUser), nil
+	authCtx := auth.ContextFromUser(ctx, authUser)
+	authCtx = logging.WithAuthMethod(authCtx, "bypass")
+	return authCtx, nil
 }
 
 type requestAuthenticator struct {
@@ -140,15 +143,22 @@ type requestAuthenticator struct {
 // If no authenticated identity is associated with the request, no error is returned.
 // Instead, the context will not be associated with an authenticated identity.
 func (authenticator *requestAuthenticator) Authenticate(w http.ResponseWriter, r *http.Request) (context.Context, error) {
+	ctx := r.Context()
+
 	// Check for Access Token
 	accessToken := r.Header.Get(auth.HeaderAPIAccessToken)
 	if accessToken != "" {
-		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, accessToken)
+		authCtx, err := auth.ContextFromAccessToken(ctx, authenticator.graph, accessToken)
 		if err != nil {
-			slog.ErrorContext(r.Context(), "failed to authenticate access token from header", "err", err)
 			if ent.IsNotFound(err) || ent.IsNotSingular(err) {
+				authSessionLog.WarnContext(ctx, "rejected invalid api access token", "method", r.Method, "path", r.URL.Path)
+				logging.AuditDenied(ctx, "auth", "auth.access_token_denied", "invalid api access token presented",
+					"method", r.Method,
+					"path", r.URL.Path,
+				)
 				return nil, ErrInvalidAccessToken
 			}
+			authSessionLog.ErrorContext(ctx, "failed to authenticate access token from header", "error", err)
 			return nil, err
 		}
 		return authCtx, nil
@@ -157,22 +167,32 @@ func (authenticator *requestAuthenticator) Authenticate(w http.ResponseWriter, r
 	// Read SessionToken from auth cookie
 	authCookie, err := r.Cookie(auth.SessionCookieName)
 	if err != nil && err != http.ErrNoCookie {
-		slog.ErrorContext(r.Context(), "failed to read auth cookie", "err", err)
+		authSessionLog.WarnContext(ctx, "failed to read auth cookie", "error", err)
+		logging.AuditDenied(ctx, "auth", "auth.cookie_denied", "malformed auth session cookie presented",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"reason", "malformed_cookie",
+		)
 		return nil, ErrReadingAuthCookie
 	}
 
 	// If no auth cookie provided, do not authenticate the context
 	if authCookie == nil {
-		return r.Context(), nil
+		return ctx, nil
 	}
 
 	// Create an authenticated context (if provided cookie is valid)
-	authCtx, err := auth.ContextFromSessionToken(r.Context(), authenticator.graph, authCookie.Value)
+	authCtx, err := auth.ContextFromSessionToken(ctx, authenticator.graph, authCookie.Value)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to create session from auth cookie", "err", err)
 		if ent.IsNotFound(err) || ent.IsNotSingular(err) {
+			authSessionLog.WarnContext(ctx, "rejected invalid auth session cookie", "method", r.Method, "path", r.URL.Path)
+			logging.AuditDenied(ctx, "auth", "auth.cookie_denied", "invalid auth session cookie presented",
+				"method", r.Method,
+				"path", r.URL.Path,
+			)
 			return nil, ErrInvalidAuthCookie
 		}
+		authSessionLog.ErrorContext(ctx, "failed to create session from auth cookie", "error", err)
 		return nil, err
 	}
 

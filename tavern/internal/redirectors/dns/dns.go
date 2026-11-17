@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash/crc32"
-	"log/slog"
 	"net"
 	"net/url"
 	"strings"
@@ -17,8 +16,11 @@ import (
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/internal/c2/conversation"
 	"realm.pub/tavern/internal/c2/convpb"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/redirectors"
 )
+
+var log = logging.For("redirectors.dns")
 
 const (
 	defaultUDPPort = "53"
@@ -90,7 +92,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 	defer conn.Close()
 
-	slog.Info("dns redirector: started", "listen_on", listenAddr, "base_domains", r.baseDomains)
+	log.InfoContext(ctx, "started DNS redirector", "listen_on", listenAddr, "base_domains", r.baseDomains)
 
 	buf := make([]byte, 4096)
 	for {
@@ -105,7 +107,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 					continue
 				}
-				slog.Error("dns redirector: incoming request failed, could not read UDP", "error", err)
+				log.ErrorContext(ctx, "incoming request failed, could not read UDP", "error", err)
 				continue
 			}
 
@@ -155,8 +157,10 @@ func ParseListenAddr(listenOn string) (string, []string, error) {
 }
 
 func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr *net.UDPAddr, query []byte, upstream *grpc.ClientConn) {
+	ctx, _, _ = logging.EnsureTrace(ctx)
+
 	if len(query) < dnsHeaderSize {
-		slog.Debug("query too short")
+		log.TraceContext(ctx, "query too short", "len", len(query))
 		return
 	}
 
@@ -164,17 +168,17 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	domain, queryType, hasOPT, err := r.parseDomainNameAndTypeWithOPT(query[dnsHeaderSize:])
 	if err != nil {
-		slog.Debug("failed to parse domain", "error", err)
+		log.TraceContext(ctx, "failed to parse domain", "error", err)
 		return
 	}
 
 	domain = strings.ToLower(domain)
 
-	slog.Debug("dns redirector: query details", "domain", domain, "query_type", queryType, "source", addr.String())
+	log.TraceContext(ctx, "received DNS query", "domain", domain, "query_type", queryType, "source", addr.String())
 
 	subdomain, err := r.extractSubdomain(domain)
 	if err != nil {
-		slog.Debug("domain doesn't match base domains", "domain", domain)
+		log.TraceContext(ctx, "domain does not match base domains", "domain", domain)
 		r.sendErrorResponse(conn, addr, transactionID, hasOPT)
 		return
 	}
@@ -184,9 +188,9 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		// For A record queries, return benign IP instead of NXDOMAIN
 		// Cloudflare does recursive lookups on subdomain components - if we return NXDOMAIN
 		// for the parent subdomain, it won't forward the full TXT query
-		slog.Debug("ignoring non-C2 query", "domain", domain, "error", err)
+		log.TraceContext(ctx, "ignoring non-C2 query", "domain", domain, "error", err)
 		if queryType == aRecordType {
-			slog.Debug("returning benign A record for non-C2 subdomain", "domain", domain)
+			log.TraceContext(ctx, "returning benign A record for non-C2 subdomain", "domain", domain)
 			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4(), hasOPT)
 			return
 		}
@@ -196,7 +200,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	}
 
 	if packet.Type == convpb.PacketType_PACKET_TYPE_UNSPECIFIED {
-		slog.Debug("ignoring packet with unspecified type", "domain", domain)
+		log.TraceContext(ctx, "ignoring packet with unspecified type", "domain", domain)
 		if queryType == aRecordType {
 			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4(), hasOPT)
 			return
@@ -207,7 +211,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	// Validate packet type is within valid range (protobuf can unmarshal garbage data)
 	if packet.Type < convpb.PacketType_PACKET_TYPE_INIT || packet.Type > convpb.PacketType_PACKET_TYPE_COMPLETE {
-		slog.Debug("ignoring packet with invalid type", "type", packet.Type, "domain", domain)
+		log.TraceContext(ctx, "ignoring packet with invalid type", "type", packet.Type, "domain", domain)
 		if queryType == aRecordType {
 			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4(), hasOPT)
 			return
@@ -216,7 +220,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		return
 	}
 
-	slog.Debug("parsed packet", "type", packet.Type, "seq", packet.Sequence, "conv_id", packet.ConversationId)
+	log.TraceContext(ctx, "parsed DNS packet", "type", packet.Type, "seq", packet.Sequence, "conv_id", packet.ConversationId)
 
 	maxChunkSize := queryTypeToMaxChunkSize(queryType)
 
@@ -236,10 +240,10 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	if err != nil {
 		if strings.Contains(err.Error(), "conversation not found") {
-			slog.Debug("packet for unknown conversation",
+			log.DebugContext(ctx, "packet for unknown conversation",
 				"type", packet.Type, "conv_id", packet.ConversationId)
 		} else {
-			slog.Error("dns redirector: upstream request failed", "type", packet.Type, "conv_id", packet.ConversationId, "source", addr.String(), "error", err)
+			log.ErrorContext(ctx, "upstream request failed", "type", packet.Type, "conv_id", packet.ConversationId, "source", addr.String(), "error", err)
 		}
 		r.sendErrorResponse(conn, addr, transactionID, hasOPT)
 		return
@@ -517,7 +521,7 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 	}
 
 	if _, err := conn.WriteToUDP(response, addr); err != nil {
-		slog.Error("dns redirector: incoming request failed, could not write DNS response", "destination", addr.String(), "error", err)
+		log.Error("incoming request failed, could not write DNS response", "destination", addr.String(), "error", err)
 	}
 }
 
@@ -538,6 +542,6 @@ func (r *Redirector) sendErrorResponse(conn *net.UDPConn, addr *net.UDPAddr, tra
 	}
 
 	if _, err := conn.WriteToUDP(response, addr); err != nil {
-		slog.Error("dns redirector: incoming request failed, could not write DNS error response", "destination", addr.String(), "error", err)
+		log.Error("incoming request failed, could not write DNS error response", "destination", addr.String(), "error", err)
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"net"
 	"os"
 	"runtime"
@@ -17,8 +16,11 @@ import (
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/internal/c2/conversation"
 	"realm.pub/tavern/internal/c2/convpb"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/redirectors"
 )
+
+var log = logging.For("redirectors.icmp")
 
 const (
 	ICMPChunkSize    = 1400
@@ -61,7 +63,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 	defer conn.Close()
 
-	slog.Info("icmp redirector: started", "listen_on", listenOn)
+	log.InfoContext(ctx, "started ICMP redirector", "listen_on", listenOn)
 
 	buf := make([]byte, 65536)
 	for {
@@ -77,7 +79,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				continue
 			}
-			slog.Error("icmp redirector: read error", "error", err)
+			log.ErrorContext(ctx, "read error", "error", err)
 			continue
 		}
 
@@ -95,20 +97,22 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 }
 
 func (r *Redirector) handle(ctx context.Context, conn *golicmp.PacketConn, src net.Addr, echo *golicmp.Echo, upstream *grpc.ClientConn) {
+	ctx, _, _ = logging.EnsureTrace(ctx)
+
 	var pkt convpb.ConvPacket
 	if err := proto.Unmarshal(echo.Data, &pkt); err != nil {
-		slog.Debug("icmp redirector: non-C2 ping, echoing reply", "src", src.String())
+		log.TraceContext(ctx, "non-C2 ping, echoing reply", "src", src.String())
 		reply, err := (&golicmp.Message{
 			Type: ipv4.ICMPTypeEchoReply,
 			Code: 0,
 			Body: &golicmp.Echo{ID: echo.ID, Seq: echo.Seq, Data: echo.Data},
 		}).Marshal(nil)
 		if err != nil {
-			slog.Error("icmp redirector: failed to marshal ping reply", "error", err)
+			log.ErrorContext(ctx, "failed to marshal ping reply", "error", err)
 			return
 		}
 		if _, err := conn.WriteTo(reply, src); err != nil {
-			slog.Error("icmp redirector: failed to write ping reply", "error", err)
+			log.ErrorContext(ctx, "failed to write ping reply", "error", err)
 		}
 		return
 	}
@@ -125,39 +129,41 @@ func (r *Redirector) handle(ctx context.Context, conn *golicmp.PacketConn, src n
 	case convpb.PacketType_PACKET_TYPE_COMPLETE:
 		responseData, err = r.manager.HandleComplete(&pkt)
 	default:
-		slog.Debug("icmp redirector: unknown packet type", "type", pkt.Type)
+		log.TraceContext(ctx, "unknown packet type", "type", pkt.Type)
 		return
 	}
 	if err != nil {
-		slog.Error("icmp redirector: handle error", "type", pkt.Type, "conv_id", pkt.ConversationId, "error", err)
+		log.ErrorContext(ctx, "handle error", "type", pkt.Type, "conv_id", pkt.ConversationId, "error", err)
 		return
 	}
 
-	// Log outgoing reply content to aid debugging.
-	var replyPkt convpb.ConvPacket
-	if parseErr := proto.Unmarshal(responseData, &replyPkt); parseErr == nil {
-		if replyPkt.Type == convpb.PacketType_PACKET_TYPE_STATUS {
-			slog.Debug("icmp redirector: sending STATUS reply",
-				"conv_id", pkt.ConversationId,
-				"req_type", pkt.Type,
-				"ack_ranges", len(replyPkt.Acks),
-				"nacks", replyPkt.Nacks,
-				"response_size", len(responseData),
-			)
+	// Log outgoing reply content at TRACE to aid wire debugging without unmarshaling on normal traffic.
+	if log.Enabled(ctx, logging.LevelTrace) {
+		var replyPkt convpb.ConvPacket
+		if parseErr := proto.Unmarshal(responseData, &replyPkt); parseErr == nil {
+			if replyPkt.Type == convpb.PacketType_PACKET_TYPE_STATUS {
+				log.TraceContext(ctx, "sending STATUS reply",
+					"conv_id", pkt.ConversationId,
+					"req_type", pkt.Type,
+					"ack_ranges", len(replyPkt.Acks),
+					"nacks", replyPkt.Nacks,
+					"response_size", len(responseData),
+				)
+			} else {
+				log.TraceContext(ctx, "sending reply",
+					"conv_id", pkt.ConversationId,
+					"req_type", pkt.Type,
+					"reply_type", replyPkt.Type,
+					"response_size", len(responseData),
+				)
+			}
 		} else {
-			slog.Debug("icmp redirector: sending reply",
+			log.TraceContext(ctx, "sending raw reply",
 				"conv_id", pkt.ConversationId,
 				"req_type", pkt.Type,
-				"reply_type", replyPkt.Type,
 				"response_size", len(responseData),
 			)
 		}
-	} else {
-		slog.Debug("icmp redirector: sending raw reply",
-			"conv_id", pkt.ConversationId,
-			"req_type", pkt.Type,
-			"response_size", len(responseData),
-		)
 	}
 
 	reply, err := (&golicmp.Message{
@@ -166,13 +172,13 @@ func (r *Redirector) handle(ctx context.Context, conn *golicmp.PacketConn, src n
 		Body: &golicmp.Echo{ID: echo.ID, Seq: echo.Seq, Data: responseData},
 	}).Marshal(nil)
 	if err != nil {
-		slog.Error("icmp redirector: failed to marshal reply", "error", err)
+		log.ErrorContext(ctx, "failed to marshal reply", "error", err)
 		return
 	}
 
 	if n, err := conn.WriteTo(reply, src); err != nil {
-		slog.Error("icmp redirector: failed to write reply", "destination", src.String(), "error", err)
+		log.ErrorContext(ctx, "failed to write reply", "destination", src.String(), "error", err)
 	} else {
-		slog.Debug("icmp redirector: sent reply", "conv_id", pkt.ConversationId, "dst", src.String(), "bytes", n)
+		log.TraceContext(ctx, "sent reply", "conv_id", pkt.ConversationId, "dst", src.String(), "bytes", n)
 	}
 }

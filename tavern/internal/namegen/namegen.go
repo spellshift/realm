@@ -3,12 +3,14 @@ package namegen
 import (
 	"crypto/rand"
 	"fmt"
-	"log/slog"
 	"math/big"
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/logging"
 )
+
+var namegenLog = logging.For("app.namegen")
 
 var (
 	adjectives = [...]string{
@@ -1123,7 +1125,7 @@ func getRandomAdjAdjNoun() (string, string, string) {
 func newRandInt(max int64) int64 {
 	nBig, err := rand.Int(rand.Reader, big.NewInt(max))
 	if err != nil {
-		slog.Error("failed to generate random number", "err", err, "default_value", 1337%max)
+		namegenLog.Error("failed to generate random number", "error", err, "default_value", 1337%max)
 		return 1337 % max
 	}
 	return nBig.Int64()

@@ -3,8 +3,11 @@ package pubsub
 import (
 	"context"
 
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/portals/portalpb"
 )
+
+var log = logging.For("portals.pubsub")
 
 // Publisher defines the interface for publishing motes.
 type Publisher interface {

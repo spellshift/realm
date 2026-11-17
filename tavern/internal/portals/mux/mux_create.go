@@ -12,6 +12,7 @@ import (
 	entshell "realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/logging"
 )
 
 // CreatePortal sets up a new portal for a task.
@@ -82,6 +83,31 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 		return 0, nil, fmt.Errorf("failed to create portal record: %w", err)
 	}
 
+	portalID := p.ID
+	topicIn := m.TopicIn(portalID)
+	topicOut := m.TopicOut(portalID)
+	subName := m.SubName(topicIn)
+
+	// 2. Provisioning (immediately after DB save so concurrent OpenPortal/Publish calls have topics & subscription ready)
+	if err := m.ensureTopic(ctx, topicIn); err != nil {
+		return portalID, nil, fmt.Errorf("failed to ensure topic in: %w", err)
+	}
+	if err := m.ensureTopic(ctx, topicOut); err != nil {
+		return portalID, nil, fmt.Errorf("failed to ensure topic out: %w", err)
+	}
+	if err := m.ensureSub(ctx, topicIn, subName); err != nil {
+		return portalID, nil, fmt.Errorf("failed to ensure subscription: %w", err)
+	}
+
+	streamAttrs := []slog.Attr{slog.Int("portal_id", p.ID)}
+	if beacon != nil {
+		streamAttrs = append(streamAttrs, slog.Int("beacon_id", beacon.ID))
+		if beacon.Edges.Host != nil {
+			streamAttrs = append(streamAttrs, slog.Int("host_id", beacon.Edges.Host.ID))
+		}
+	}
+	ctx = logging.WithStreamAttrs(ctx, streamAttrs...)
+
 	// Mark any older unclosed portals for this beacon as closed so stale portals are not selected
 	if beacon != nil {
 		if _, err := client.Portal.Update().
@@ -92,14 +118,14 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 			).
 			SetClosedAt(time.Now()).
 			Save(ctx); err != nil {
-			slog.WarnContext(ctx, "failed to close previous open portals for beacon", "beacon_id", beacon.ID, "portal_id", p.ID, "error", err)
+			log.WarnContext(ctx, "failed to close previous open portals for beacon", "error", err)
 		}
 	}
 
 	// Link newly created portal to its parent shell (and any open shells on the beacon) so GraphQL shell queries reflect it immediately
 	if parentShell != nil {
 		if err := parentShell.Update().AddPortals(p).Exec(ctx); err != nil {
-			slog.WarnContext(ctx, "failed to associate portal with parent shell", "portal_id", p.ID, "shell_id", parentShell.ID, "error", err)
+			log.WarnContext(ctx, "failed to associate portal with parent shell", "shell_id", parentShell.ID, "error", err)
 		}
 	} else if beacon != nil {
 		if _, err := client.Shell.Update().
@@ -109,38 +135,11 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 			).
 			AddPortals(p).
 			Save(ctx); err != nil {
-			slog.WarnContext(ctx, "failed to associate portal with open beacon shells", "portal_id", p.ID, "beacon_id", beacon.ID, "error", err)
+			log.WarnContext(ctx, "failed to associate portal with open beacon shells", "error", err)
 		}
 	}
 
-	// Log portal creation with beacon and host info
-	logAttrs := []any{"portal_id", p.ID}
-	if beacon != nil {
-		logAttrs = append(logAttrs, "beacon_id", beacon.ID)
-		if beacon.Edges.Host != nil {
-			logAttrs = append(logAttrs, "host_id", beacon.Edges.Host.ID)
-		}
-	}
-	slog.InfoContext(ctx, "portal created", logAttrs...)
-
-	portalID := p.ID
-	topicIn := m.TopicIn(portalID)
-	topicOut := m.TopicOut(portalID)
-	subName := m.SubName(topicIn)
-
-	// 2. Provisioning
-	// Ensure topics exist
-	if err := m.ensureTopic(ctx, topicIn); err != nil {
-		return portalID, nil, fmt.Errorf("failed to ensure topic in: %w", err)
-	}
-	if err := m.ensureTopic(ctx, topicOut); err != nil {
-		return portalID, nil, fmt.Errorf("failed to ensure topic out: %w", err)
-	}
-
-	// Ensure subscription exists
-	if err := m.ensureSub(ctx, topicIn, subName); err != nil {
-		return portalID, nil, fmt.Errorf("failed to ensure subscription: %w", err)
-	}
+	log.DebugContext(ctx, "portal provisioned in mux", "task_id", taskID, "shell_task_id", shellTaskID)
 
 	// 3. Connect
 	sub, err := m.openSubscription(ctx, topicIn, subName)
@@ -161,7 +160,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 
 	m.subMgr.active[subName] = sub
 
-	ctxLoop, cancelLoop := context.WithCancel(context.Background())
+	ctxLoop, cancelLoop := context.WithCancel(logging.DetachContext(ctx))
 	m.subMgr.cancelFuncs[subName] = cancelLoop
 	m.subMgr.Unlock()
 
@@ -170,6 +169,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 		m.receiveLoop(ctxLoop, topicIn, sub)
 	}()
 
+	teardownCtx := logging.DetachContext(ctx)
 	teardown := func() {
 		m.subMgr.Lock()
 		_, ok := m.subMgr.active[subName]
@@ -180,16 +180,18 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 		}
 		m.subMgr.Unlock()
 
-		if ok {
-			if cancel != nil {
-				cancel()
-			}
+		if ok && cancel != nil {
+			cancel()
 		}
 
+		log.DebugContext(teardownCtx, "tearing down mux portal subscription", "topic", topicIn, "subscription", subName)
+
 		// Update DB to Closed using ID
-		client.Portal.UpdateOneID(p.ID).
+		if _, err := client.Portal.UpdateOneID(p.ID).
 			SetClosedAt(time.Now()).
-			Save(context.Background())
+			Save(context.Background()); err != nil {
+			log.DebugContext(teardownCtx, "failed to update portal closed_at during mux teardown", "error", err)
+		}
 	}
 
 	return portalID, teardown, nil

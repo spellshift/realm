@@ -80,6 +80,8 @@ func (importer *GitImporter) Import(ctx context.Context, entRepo *ent.Repository
 		})
 	}
 
+	log.DebugContext(ctx, "cloning git repository for tome import", "repo_url", entRepo.URL)
+
 	// Clone Repository (In-Memory)
 	storage := memory.NewStorage()
 	repo, err := git.CloneContext(ctx, storage, nil, &git.CloneOptions{
@@ -118,6 +120,7 @@ func (importer *GitImporter) Import(ctx context.Context, entRepo *ent.Repository
 	}
 
 	// Import Tomes
+	importedCount := 0
 	namespace := parseNamespaceFromGit(entRepo.URL)
 	for _, path := range tomePaths {
 		// Apply Filters
@@ -136,8 +139,10 @@ func (importer *GitImporter) Import(ctx context.Context, entRepo *ent.Repository
 		if err := importer.importFromGitTree(ctx, repo, entRepo, namespace, tree, path); err != nil {
 			return fmt.Errorf("failed to import tome (%q): %w", path, err)
 		}
+		importedCount++
 	}
 
+	log.InfoContext(ctx, "imported tomes from git repository", "repo_url", entRepo.URL, "commit", commit.Hash.String(), "imported", importedCount)
 	return nil
 }
 
@@ -204,8 +209,9 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 
 		// Upload other assets
 		// TODO: Namespace tomes to prevent multi-repo conflicts
+		assetName := fmt.Sprintf("%s/%s", filepath.Base(path), name)
 		assetID, err := importer.graph.Asset.Create().
-			SetName(fmt.Sprintf("%s/%s", filepath.Base(path), name)).
+			SetName(assetName).
 			SetContent(data).
 			OnConflict().
 			UpdateNewValues().
@@ -213,6 +219,7 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 		if err != nil {
 			return fmt.Errorf("failed to upload tome asset %q: %w", name, err)
 		}
+		log.TraceContext(ctx, "imported git tome asset", "asset_name", assetName, "size", len(data))
 		tomeFileIDs = append(tomeFileIDs, assetID)
 	}
 
@@ -233,8 +240,9 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 	}
 
 	// Create the tome
+	tomeName := fmt.Sprintf("%s::%s", namespace, metadata.Name)
 	_, err = importer.graph.Tome.Create().
-		SetName(fmt.Sprintf("%s::%s", namespace, metadata.Name)).
+		SetName(tomeName).
 		SetDescription(metadata.Description).
 		SetAuthor(metadata.Author).
 		SetParamDefs(string(paramdefs)).
@@ -249,6 +257,7 @@ func (importer *GitImporter) importFromGitTree(ctx context.Context, repo *git.Re
 	if err != nil {
 		return fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
 	}
+	log.DebugContext(ctx, "imported git tome", "tome_name", tomeName, "assets", len(tomeFileIDs))
 	return nil
 }
 

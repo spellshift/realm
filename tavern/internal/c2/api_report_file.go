@@ -10,10 +10,10 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/logging"
 )
 
 func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
-
 	var (
 		taskID      int64
 		shellTaskID int64
@@ -29,7 +29,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		content []byte
 	)
 
-	ctx := stream.Context()
+	ctx, _ := enrichC2Context(stream.Context())
 
 	// Loop Input Stream
 	for {
@@ -77,7 +77,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
 	}
 
-	beaconID, err := srv.ValidateJWT(jwtToken)
+	ctx, beaconID, err := srv.ValidateJWTContext(ctx, jwtToken)
 	if err != nil {
 		return err
 	}
@@ -155,6 +155,8 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 	}()
 
+	savedSize := size
+	savedHash := hash
 	if isScreenshot {
 		builder := client.Screenshot.Create().
 			SetHostID(host.ID).
@@ -174,17 +176,12 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			builder.SetShellTaskID(shellTask.ID)
 		}
 
-		if task != nil {
-			builder.SetTaskID(task.ID)
-		}
-		if shellTask != nil {
-			builder.SetShellTaskID(shellTask.ID)
-		}
-
-		_, err = builder.Save(ctx)
+		sc, err := builder.Save(ctx)
 		if err != nil {
 			return rollback(tx, fmt.Errorf("failed to create screenshot: %w", err))
 		}
+		savedSize = sc.Size
+		savedHash = sc.Hash
 	} else {
 		// Create File
 		builder := client.HostFile.Create().
@@ -217,6 +214,8 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		if err != nil {
 			return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
 		}
+		savedSize = f.Size
+		savedHash = f.Hash
 
 		// Clear Previous Files, Set New File
 		_, err = client.Host.UpdateOneID(host.ID).
@@ -232,6 +231,22 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	if err := tx.Commit(); err != nil {
 		return rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
+
+	auditAttrs := []any{
+		"host_id", host.ID,
+		"beacon_id", beaconID,
+		"path", path,
+		"size", savedSize,
+		"hash", savedHash,
+		"kind", kind.String(),
+	}
+	if task != nil {
+		auditAttrs = append(auditAttrs, "task_id", task.ID)
+	}
+	if shellTask != nil {
+		auditAttrs = append(auditAttrs, "shell_task_id", shellTask.ID)
+	}
+	logging.Audit(ctx, "c2", "c2.file_reported", "beacon reported file", auditAttrs...)
 
 	return stream.SendAndClose(&c2pb.ReportFileResponse{})
 }

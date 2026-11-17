@@ -29,20 +29,22 @@ func TestNewShellHandler(t *testing.T) {
 	defer cancel()
 
 	// Topic for messages going TO the websocket (server -> shell)
-	outputTopic, err := pubsub.OpenTopic(ctx, "mem://websocket-output")
+	outputTopicName := newTopicName("websocket-output")
+	outputTopic, err := pubsub.OpenTopic(ctx, outputTopicName)
 	require.NoError(t, err)
-	defer outputTopic.Shutdown(ctx)
-	outputSub, err := pubsub.OpenSubscription(ctx, "mem://websocket-output")
+	t.Cleanup(func() { _ = outputTopic.Shutdown(context.Background()) })
+	outputSub, err := pubsub.OpenSubscription(ctx, outputTopicName)
 	require.NoError(t, err)
-	defer outputSub.Shutdown(ctx)
+	t.Cleanup(func() { _ = outputSub.Shutdown(context.Background()) })
 
 	// Topic for messages coming FROM the websocket (shell -> server)
-	inputTopic, err := pubsub.OpenTopic(ctx, "mem://websocket-input")
+	inputTopicName := newTopicName("websocket-input")
+	inputTopic, err := pubsub.OpenTopic(ctx, inputTopicName)
 	require.NoError(t, err)
-	defer inputTopic.Shutdown(ctx)
-	inputSub, err := pubsub.OpenSubscription(ctx, "mem://websocket-input")
+	t.Cleanup(func() { _ = inputTopic.Shutdown(context.Background()) })
+	inputSub, err := pubsub.OpenSubscription(ctx, inputTopicName)
 	require.NoError(t, err)
-	defer inputSub.Shutdown(ctx)
+	t.Cleanup(func() { _ = inputSub.Shutdown(context.Background()) })
 
 	// Create a test user
 	user, err := graph.User.Create().SetName("test-user").SetOauthID("test-oauth-id").SetPhotoURL("http://example.com/photo.jpg").Save(ctx)
@@ -76,7 +78,14 @@ func TestNewShellHandler(t *testing.T) {
 
 	// Create Mux with the correct topics
 	mux := stream.NewMux(inputTopic, outputSub)
-	go mux.Start(ctx)
+	muxDone := make(chan error, 1)
+	go func() {
+		muxDone <- mux.Start(ctx)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-muxDone
+	})
 
 	// Create a test shell
 	shell, err := graph.Shell.Create().SetData([]byte("test-data")).SetOwner(user).SetTask(task).SetBeacon(beacon).Save(ctx)

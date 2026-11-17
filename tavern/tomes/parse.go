@@ -10,7 +10,10 @@ import (
 	"gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/logging"
 )
+
+var log = logging.For("storage.tomes")
 
 // ErrParamNameInvalid occurs when a parameter definition specifies an invalid parameter name.
 // ErrParamTypeUnsupported occurs when a parameter definition specifies an unsupported parameter type.
@@ -86,6 +89,9 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
+	uploadedCount := 0
+	skippedCount := 0
+
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
@@ -98,6 +104,8 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			return rollback(tx, fmt.Errorf("failed to check if tome already exists: %w", err))
 		}
 		if exists {
+			skippedCount++
+			log.TraceContext(ctx, "skipping existing tome", "tome", entry.Name())
 			continue
 		}
 
@@ -145,6 +153,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			if err != nil {
 				return rollback(tx, fmt.Errorf("failed to upload tome asset %q: %w", path, err))
 			}
+			log.TraceContext(ctx, "uploaded tome asset", "asset_name", path, "size", len(content))
 			tomeAssets = append(tomeAssets, a)
 
 			return nil
@@ -171,6 +180,15 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			Save(ctx); err != nil {
 			return rollback(tx, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err))
 		}
+
+		uploadedCount++
+		log.DebugContext(ctx, "uploaded embedded tome", "tome_name", metadata.Name, "assets", len(tomeAssets))
+	}
+
+	if uploadedCount > 0 {
+		log.InfoContext(ctx, "uploaded embedded tomes", "uploaded", uploadedCount, "skipped", skippedCount)
+	} else {
+		log.DebugContext(ctx, "embedded tomes up to date", "skipped", skippedCount)
 	}
 	return nil
 }

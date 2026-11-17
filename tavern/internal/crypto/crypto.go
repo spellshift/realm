@@ -6,11 +6,13 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"fmt"
-	"log/slog"
 
 	"filippo.io/edwards25519"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/secrets"
 )
+
+var cryptoLog = logging.For("c2.crypto")
 
 // https://github.com/openssl/openssl/discussions/23905
 // ed25519ToX25519PrivateKey converts an ED25519 private key to X25519
@@ -48,7 +50,7 @@ func ed25519ToX25519PublicKey(edPubKey ed25519.PublicKey) ([]byte, error) {
 func generateKeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to generate ED25519 key pair: %v\n", err))
+		cryptoLog.Error("failed to generate ED25519 key pair", "error", err)
 		return nil, nil, err
 	}
 	return pubKey, privKey, nil

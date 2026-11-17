@@ -9,37 +9,39 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
-	"log/slog"
 	"math/big"
 	"net"
 	"time"
 
 	"github.com/caddyserver/certmagic"
+	"realm.pub/tavern/internal/logging"
 )
+
+var tlsLog = logging.For("redirectors.tls")
 
 // NewTLSConfig attempts to provision a TLS certificate using certmagic (ACME).
 // If all ACME challenges fail, it falls back to a self-signed certificate.
 // The hostname is used for certificate provisioning (e.g. "redirector.example.com").
 func NewTLSConfig(ctx context.Context, hostname string) (*tls.Config, error) {
-	slog.Debug("redirectors: configuring TLS", "hostname", hostname)
+	tlsLog.DebugContext(ctx, "configuring TLS", "hostname", hostname)
 
 	tlsCfg, err := tryACME(ctx, hostname)
 	if err != nil {
-		slog.Warn("ACME certificate provisioning failed, falling back to self-signed", "hostname", hostname, "error", err)
+		tlsLog.WarnContext(ctx, "ACME certificate provisioning failed, falling back to self-signed", "hostname", hostname, "error", err)
 	} else {
-		slog.Info("ACME certificate provisioned successfully", "hostname", hostname)
-		slog.Debug("redirectors: TLS config ready (ACME)", "hostname", hostname, "min_version", tlsCfg.MinVersion, "num_certificates", len(tlsCfg.Certificates))
+		tlsLog.InfoContext(ctx, "ACME certificate provisioned successfully", "hostname", hostname)
+		tlsLog.DebugContext(ctx, "TLS config ready (ACME)", "hostname", hostname, "min_version", tlsCfg.MinVersion, "num_certificates", len(tlsCfg.Certificates))
 		return tlsCfg, nil
 	}
 
 	// Fallback to self-signed
-	slog.Debug("redirectors: generating self-signed certificate", "hostname", hostname)
+	tlsLog.DebugContext(ctx, "generating self-signed certificate", "hostname", hostname)
 	tlsCfg, err = SelfSignedTLSConfig(hostname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate self-signed certificate: %w", err)
 	}
-	slog.Warn("using self-signed TLS certificate")
-	slog.Debug("redirectors: TLS config ready (self-signed)", "hostname", hostname, "num_certificates", len(tlsCfg.Certificates))
+	tlsLog.WarnContext(ctx, "using self-signed TLS certificate", "hostname", hostname)
+	tlsLog.DebugContext(ctx, "TLS config ready (self-signed)", "hostname", hostname, "num_certificates", len(tlsCfg.Certificates))
 	return tlsCfg, nil
 }
 
@@ -48,7 +50,7 @@ func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
 	profile := ""
 	if ip := net.ParseIP(host); ip != nil {
 		profile = "shortlived"
-		slog.Debug("redirectors: using short lived certificates")
+		tlsLog.DebugContext(ctx, "using short lived certificates", "host", host)
 	}
 	acme := certmagic.ACMEIssuer{
 		Agreed:  true,

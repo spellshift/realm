@@ -287,6 +287,59 @@ tavern redirector --transport grpc --listen ":9000" localhost:8000
 
 By default, Tavern will listen on `0.0.0.0:8000`. If you ever wish to change this bind address then simply supply it to the `HTTP_LISTEN_ADDR` environment variable.
 
+### Logging & Auditing
+
+Tavern uses a hierarchical, subsystem-aware structured logger controlled by `--log` (or `TAVERN_LOG`) across `tavern`, `tavern redirector`, and `tavern builder`.
+
+* **Release & Container Default (`prod`)**: Official releases and Docker images compile with `-X main.DefaultLogSpec=prod`. The `prod` preset outputs single-line JSON compatible with Google Cloud Logging (`severity`, `logging.googleapis.com/trace`, `logging.googleapis.com/spanId`, `logging.googleapis.com/sourceLocation`), includes `tavern_id` instance attribution and GraphQL `raw_query` fields, and enables `INFO` across all subsystems (including per-request ingress access logs and semantic `audit.*` events).
+* **Local Source Default (`dev`)**: Running from source (`go run ./tavern`) defaults to the `dev` preset, which renders human-readable text logs at `INFO` while quieting high-volume ingress access logs (`http.access`, `graphql.*`, `grpc.access`) to `WARN`.
+
+| Env Var / Flag | Description | Default | Required |
+| -------------- | ----------- | ------- | -------- |
+| `TAVERN_LOG` / `--log` | Named preset (`prod`, `dev`) and/or comma-separated `<subsystem>` (shorthand for `<subsystem>=debug`) or `<subsystem>=<level>` filter rules (`trace`, `debug`, `info`, `warn`, `error`, `off`). | `prod` (release) / `dev` (source) | No |
+| `TAVERN_LOG_FORMAT` / `--log-format` | Override log serialization format (`text` or `json`). | Preset default | No |
+| `TAVERN_AUDIT_FILE` | Optional file path that tees all semantic `audit.*` records as append-only JSONL regardless of the console `--log` filter. | Disabled | No |
+
+*Legacy environment variables (`ENABLE_DEBUG_LOGGING`, `ENABLE_JSON_LOGGING`, `ENABLE_INSTANCE_ID_LOGGING`, `ENABLE_GRAPHQL_RAW_QUERY_LOGGING`) remain supported for backwards compatibility when `TAVERN_LOG` and `TAVERN_LOG_FORMAT` are unset.*
+
+#### Subsystem Filter Examples
+
+Filter directives are evaluated left-to-right on dot-separated subsystem prefixes:
+
+```bash
+# Production JSON logging (default in containers/releases)
+tavern --log=prod
+
+# Focus exclusively on portal subsystems at DEBUG (shorthand for --log=portals=debug; unmatched subsystems default to ERROR)
+TAVERN_LOG=portals go run ./tavern
+go run ./tavern --log=portals
+
+# Combine a preset with targeted subsystem overrides
+tavern --log=prod,c2=debug,portals.ssh=trace
+
+# Enable per-request HTTP & GraphQL logs during local development
+go run ./tavern --log=dev,http.access=info,graphql=info
+
+# Run a redirector or builder with subsystem debug logging
+tavern redirector --log=redirectors --transport http1 --listen :8080 localhost:8000
+tavern builder --log=builder --config builder.yaml
+```
+
+#### Request Correlation (`X-Trace-ID` & `X-Request-ID`)
+
+Every HTTP, WebSocket, GraphQL, MCP, and gRPC request is assigned a 128-bit `trace_id` and 64-bit `request_id`:
+
+* Incoming W3C `traceparent`, `X-Cloud-Trace-Context`, `X-Trace-ID`, and `X-Request-ID` headers (and gRPC metadata equivalents) are honored automatically; missing identifiers are generated at ingress.
+* HTTP responses echo `X-Trace-ID` and `X-Request-ID` headers, and gRPC responses echo `x-trace-id` and `x-request-id` metadata.
+* Redirectors propagate trace metadata upstream so edge redirector logs and Tavern server logs share the same `trace_id`.
+
+#### Semantic Audit Trail
+
+Security-sensitive and operator actions (`audit.auth`, `audit.quest`, `audit.shell`, `audit.portal`, `audit.cdn`, `audit.c2`, `audit.host`, `audit.mcp`, `audit.builder`, `audit.admin`) emit structured audit events with automatic secret redaction (`[REDACTED]`):
+
+1. Emitted to the primary log stream (`log_kind="audit"`, `audit_action`, `audit_outcome`) for ingestion into Google Cloud Logging or other log collectors.
+2. Optionally mirrored to `TAVERN_AUDIT_FILE` as JSONL.
+
 ### Metrics
 
 By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
@@ -332,7 +385,6 @@ When no value is set for `MYSQL_ADDR`, the default SQLite backend is used:
 
 ```sh
 MYSQL_USER="admin" go run ./tavern/
-2022/03/08 05:46:06 no value found for environment var 'MYSQL_ADDR', starting tavern with SQLite
 ```
 
 ### OAuth
@@ -353,25 +405,18 @@ Here is an example of running Tavern locally with OAuth configured:
 
 ```sh
 OAUTH_CLIENT_ID=123 OAUTH_CLIENT_SECRET=456 OAUTH_DOMAIN=127.0.0.1 go run ./tavern
-2022/03/09 05:32:58 no value found for environment var 'MYSQL_ADDR', starting tavern with SQLite
-2022/03/09 05:32:58 listening on 0.0.0.0:80
 ```
 
 When no OAuth configuration is provided, authentication is disabled:
 
 ```sh
 go run ./tavern
-2022/03/09 05:24:43 no value found for environment var 'MYSQL_ADDR', starting tavern with SQLite
-2022/03/09 05:24:43 WARNING: OAuth is not configured, authentication disabled
 ```
 
 When partial OAuth configuration is provided, Tavern will error. This is to protect against inadvertently starting Tavern with authentication disabled.
 
 ```sh
 OAUTH_CLIENT_ID=123 go run ./tavern
-2022/03/09 05:31:46 no value found for environment var 'MYSQL_ADDR', starting tavern with SQLite
-2022/03/09 05:31:46 [FATAL] To configure OAuth, must provide value for environment var 'OAUTH_CLIENT_SECRET'
-exit status 1
 ```
 
 #### How it Works
@@ -443,10 +488,6 @@ Running Tavern with the `ENABLE_TEST_DATA` environment variable set will populat
 
 ```sh
 ENABLE_TEST_DATA=1 go run ./tavern
-2023/02/24 01:02:37 [WARN] MySQL is not configured, using SQLite
-2023/02/24 01:02:37 [WARN] OAuth is not configured, authentication disabled
-2023/02/24 01:02:37 [WARN] Test data is enabled
-2023/02/24 01:02:37 Starting HTTP server on 0.0.0.0:80
 ```
 
 ### Default Tomes
@@ -455,13 +496,6 @@ Running Tavern with the `DISABLE_DEFAULT_TOMES` environment variable set will di
 
 ```sh
 DISABLE_DEFAULT_TOMES=1 go run ./tavern
-2024/03/02 01:32:22 [WARN] No value for 'HTTP_LISTEN_ADDR' provided, defaulting to 0.0.0.0:8000
-2024/03/02 01:32:22 [WARN] MySQL is not configured, using SQLite
-2024/03/02 01:32:22 [WARN] OAuth is not configured, authentication disabled
-2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_IDLE_CONNS' provided, defaulting to 10
-2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_OPEN_CONNS' provided, defaulting to 100
-2024/03/02 01:32:22 [WARN] No value for 'DB_MAX_CONN_LIFETIME' provided, defaulting to 3600
-2024/03/02 01:32:22 Starting HTTP server on 0.0.0.0:80
 ```
 
 ### PPROF

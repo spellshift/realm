@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
 
@@ -20,7 +21,27 @@ import (
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/logging"
 )
+
+type oauthAuditCapture struct {
+	mu      sync.Mutex
+	entries []logging.AuditEntry
+}
+
+func (c *oauthAuditCapture) Enqueue(e logging.AuditEntry) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.entries = append(c.entries, e)
+}
+
+func (c *oauthAuditCapture) Snapshot() []logging.AuditEntry {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make([]logging.AuditEntry, len(c.entries))
+	copy(out, c.entries)
+	return out
+}
 
 // TestNewOAuthLoginHandler ensures the OAuth Login Handler exhibits expected behaviour
 func TestNewOAuthLoginHandler(t *testing.T) {
@@ -88,6 +109,10 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 		expectedAccessToken  = `90d64460d14870c08c81352a05dedd3465940a7c`
 		profileResp          = []byte(`{"sub":"goofygoober","picture":"photos.com/goofygoober","email":"goofygoober@google.com","name":"Mr. Goober","email_verified":true}`)
 	)
+	persister := &oauthAuditCapture{}
+	logging.SetAuditPersister(persister)
+	t.Cleanup(func() { logging.SetAuditPersister(nil) })
+
 	// Setup Test DB
 	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
@@ -178,6 +203,22 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	assert.NotEqual(t, usr.SessionToken, secondUsr.SessionToken)
 	assert.False(t, secondUsr.IsAdmin)
 	assert.False(t, secondUsr.IsActivated)
+
+	// Verify semantic audit records
+	entries := persister.Snapshot()
+	require.Len(t, entries, 3)
+	assert.Equal(t, "audit.auth", entries[0].Subsystem)
+	assert.Equal(t, "oauth.login_succeeded", entries[0].Action)
+	assert.Equal(t, true, entries[0].Details["new_user"])
+	assert.Equal(t, true, entries[0].Details["is_admin"])
+	assert.Equal(t, "oauth", entries[0].Actor.AuthMethod)
+
+	assert.Equal(t, "oauth.login_succeeded", entries[1].Action)
+	assert.Equal(t, false, entries[1].Details["new_user"])
+
+	assert.Equal(t, "oauth.login_succeeded", entries[2].Action)
+	assert.Equal(t, true, entries[2].Details["new_user"])
+	assert.Equal(t, false, entries[2].Details["is_admin"])
 }
 
 func getSessionCookie(cookies []*http.Cookie) *http.Cookie {
@@ -227,6 +268,10 @@ func TestNewOAuthAuthorizationHandler_DBError(t *testing.T) {
 		expectedAccessToken  = `90d64460d14870c08c81352a05dedd3465940a7c`
 		profileResp          = []byte(`{"sub":"goofygoober","picture":"photos.com/goofygoober","email":"goofygoober@google.com","name":"Mr. Goober","email_verified":true}`)
 	)
+	persister := &oauthAuditCapture{}
+	logging.SetAuditPersister(persister)
+	t.Cleanup(func() { logging.SetAuditPersister(nil) })
+
 	// Setup Test DB
 	graph := enttest.OpenTempDB(t)
 	// We deliberately close the graph to trigger a DB error during query
@@ -269,4 +314,9 @@ func TestNewOAuthAuthorizationHandler_DBError(t *testing.T) {
 	result := resp.Result()
 	// We expect 500 Internal Server Error, and no panic
 	assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
+
+	entries := persister.Snapshot()
+	require.Len(t, entries, 1)
+	assert.Equal(t, "oauth.login_failed", entries[0].Action)
+	assert.Equal(t, logging.OutcomeFailure, entries[0].Outcome)
 }

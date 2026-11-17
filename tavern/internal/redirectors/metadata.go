@@ -2,7 +2,6 @@ package redirectors
 
 import (
 	"context"
-	"log/slog"
 
 	"google.golang.org/grpc/metadata"
 )
@@ -19,11 +18,13 @@ func SetRedirectedForHeader(ctx context.Context, clientIP string) context.Contex
 		return ctx
 	}
 
-	outMd, _ := metadata.FromOutgoingContext(ctx)
-	if outMd == nil {
+	outMd, ok := metadata.FromOutgoingContext(ctx)
+	if !ok || outMd == nil {
 		outMd = metadata.New(nil)
+	} else {
+		outMd = outMd.Copy()
 	}
 	outMd.Set("x-redirected-for", clientIP)
-	slog.Debug("Setting redirected-for header", "clientIP", clientIP)
+	log.TraceContext(ctx, "setting x-redirected-for header", "client_ip", clientIP)
 	return metadata.NewOutgoingContext(ctx, outMd)
 }

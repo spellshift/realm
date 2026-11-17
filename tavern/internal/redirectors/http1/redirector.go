@@ -3,12 +3,14 @@ package http1
 import (
 	"context"
 	"crypto/tls"
-	"log/slog"
 	"net/http"
 
 	"google.golang.org/grpc"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/redirectors"
 )
+
+var log = logging.For("redirectors.http1")
 
 func init() {
 	redirectors.Register("http1", &Redirector{})
@@ -42,12 +44,12 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	srv.SetKeepAlivesEnabled(false)
 
 	if tlsConfig != nil {
-		slog.Debug("http1 redirector: TLS enabled", "listen_on", listenOn, "min_version", tlsConfig.MinVersion, "num_certificates", len(tlsConfig.Certificates))
-		slog.Info("http1 redirector: HTTPS started", "listen_on", listenOn)
+		log.DebugContext(ctx, "TLS enabled", "listen_on", listenOn, "min_version", tlsConfig.MinVersion, "num_certificates", len(tlsConfig.Certificates))
+		log.InfoContext(ctx, "started HTTPS redirector", "listen_on", listenOn)
 		return srv.ListenAndServeTLS("", "")
 	}
 
-	slog.Info("http1 redirector: HTTP started", "listen_on", listenOn)
+	log.InfoContext(ctx, "started HTTP redirector", "listen_on", listenOn)
 	return srv.ListenAndServe()
 }
 

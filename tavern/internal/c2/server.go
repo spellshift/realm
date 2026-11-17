@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log/slog"
 	"net"
 	"strconv"
 	"strings"
@@ -23,8 +23,14 @@ import (
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
+)
+
+var (
+	c2Log     = logging.For("c2")
+	reportLog = logging.For("c2.report")
 )
 
 type Server struct {
@@ -81,29 +87,42 @@ func GetClientIP(ctx context.Context) string {
 			}
 			if validateIP(clientIP) {
 				return clientIP
-			} else {
-				slog.Error("bad x-redirected-for ip", "ip", clientIP)
 			}
+			c2Log.WarnContext(ctx, "invalid x-redirected-for IP", "ip", clientIP)
 		}
 		if forwardedFor, exists := md["x-forwarded-for"]; exists && len(forwardedFor) > 0 {
 			// X-Forwarded-For is a comma-separated list, the first IP is the original client
 			clientIP := strings.TrimSpace(strings.Split(forwardedFor[0], ",")[0])
 			if validateIP(clientIP) {
 				return clientIP
-			} else {
-				slog.Error("bad x-forwarded-for ip", "ip", clientIP)
 			}
+			c2Log.WarnContext(ctx, "invalid x-forwarded-for IP", "ip", clientIP)
 		}
 	}
 
 	// Fallback to peer address
-	remoteIp := getRemoteIP(ctx)
-	if validateIP(remoteIp) {
-		return remoteIp
-	} else {
-		slog.Error("Bad remote IP", "ip", remoteIp)
+	remoteIP := getRemoteIP(ctx)
+	if validateIP(remoteIP) {
+		return remoteIP
 	}
+	if remoteIP == "unknown" {
+		c2Log.TraceContext(ctx, "no remote peer IP in context")
+		return "unknown"
+	}
+	c2Log.WarnContext(ctx, "invalid remote peer IP", "ip", remoteIP)
 	return "unknown"
+}
+
+func enrichC2Context(ctx context.Context) (context.Context, string) {
+	ctx, _, _ = logging.ExtractGRPCTrace(ctx)
+	if logging.EntrypointFromContext(ctx) == "" {
+		ctx = logging.WithEntrypoint(ctx, "grpc")
+	}
+	clientIP := GetClientIP(ctx)
+	if clientIP != "" && clientIP != "unknown" && clientIP != redirectors.ExternalIPNoop {
+		ctx = logging.WithClientIP(ctx, clientIP)
+	}
+	return ctx, clientIP
 }
 
 const ClaimBeaconID = "beacon_id"
@@ -125,7 +144,30 @@ func (srv *Server) generateTaskJWT(beaconID int) (string, error) {
 	return signedToken, nil
 }
 
+func classifyJWTError(jwttoken string, err error) string {
+	if strings.TrimSpace(jwttoken) == "" {
+		return "empty_token"
+	}
+	switch {
+	case errors.Is(err, jwt.ErrTokenExpired):
+		return "token_expired"
+	case errors.Is(err, jwt.ErrTokenSignatureInvalid):
+		return "invalid_signature"
+	case errors.Is(err, jwt.ErrTokenMalformed):
+		return "malformed_token"
+	default:
+		return "invalid_token"
+	}
+}
+
 func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
+	_, id, err := srv.ValidateJWTContext(context.Background(), jwttoken)
+	return id, err
+}
+
+// ValidateJWTContext verifies a C2 task JWT without ever logging the raw token,
+// emits c2.jwt_denied on failure, and attaches ActorBeacon attribution to ctx on success.
+func (srv *Server) ValidateJWTContext(ctx context.Context, jwttoken string) (context.Context, int, error) {
 	token, err := jwt.Parse(jwttoken, func(token *jwt.Token) (any, error) {
 		// 1. Verify the signing method is EdDSA
 		if _, ok := token.Method.(*jwt.SigningMethodEd25519); !ok {
@@ -136,19 +178,48 @@ func (srv *Server) ValidateJWT(jwttoken string) (int, error) {
 	}, jwt.WithJSONNumber())
 
 	if err != nil || !token.Valid {
-		return 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
+		logging.AuditDenied(ctx, "c2", "c2.jwt_denied", "invalid C2 task JWT",
+			"reason", classifyJWTError(jwttoken, err),
+		)
+		return ctx, 0, status.Errorf(codes.PermissionDenied, "invalid token: %v", err)
 	}
 
-	beaconID, ok := token.Claims.(jwt.MapClaims)[ClaimBeaconID].(json.Number)
+	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
+		logging.AuditDenied(ctx, "c2", "c2.jwt_denied", "invalid C2 task JWT",
+			"reason", "invalid_claims",
+		)
+		return ctx, 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
+	}
+
+	beaconID, ok := claims[ClaimBeaconID].(json.Number)
+	if !ok {
+		logging.AuditDenied(ctx, "c2", "c2.jwt_denied", "invalid C2 task JWT",
+			"reason", "invalid_beacon_id_claim",
+		)
+		return ctx, 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
 	}
 	id, err := strconv.Atoi(string(beaconID))
 	if err != nil || id <= 0 {
-		return 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
+		logging.AuditDenied(ctx, "c2", "c2.jwt_denied", "invalid C2 task JWT",
+			"reason", "invalid_beacon_id_claim",
+		)
+		return ctx, 0, status.Error(codes.PermissionDenied, "invalid beacon ID claim")
 	}
-	slog.Info(fmt.Sprintf("received valid JWT: %s", jwttoken))
-	return id, nil
+
+	actor := logging.Actor{
+		Kind:       logging.ActorBeacon,
+		ID:         strconv.Itoa(id),
+		AuthMethod: "task_jwt",
+	}
+	if srv.graph != nil {
+		if b, err := srv.graph.Beacon.Get(ctx, id); err == nil && b != nil {
+			actor.Name = b.Name
+		}
+	}
+	ctx = logging.WithActor(ctx, actor)
+	c2Log.TraceContext(ctx, "verified task JWT", "beacon_id", id)
+	return ctx, id, nil
 }
 
 func (srv *Server) loadTaskForBeacon(ctx context.Context, taskID, beaconID int) (*ent.Task, error) {

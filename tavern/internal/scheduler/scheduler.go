@@ -9,7 +9,11 @@ import (
 	"slices"
 	"sync"
 	"time"
+
+	"realm.pub/tavern/internal/logging"
 )
+
+var log = logging.For("scheduler")
 
 // ErrJobExists is returned when attempting to create a job that already exists.
 var ErrJobExists = errors.New("job already exists")
@@ -114,5 +118,6 @@ func New(ctx context.Context, uri string) (Scheduler, error) {
 		return nil, fmt.Errorf("scheduler: unknown driver %q (forgotten import?); registered drivers: %v", scheme, Drivers())
 	}
 
+	log.DebugContext(ctx, "opening scheduler driver", "driver", scheme)
 	return driver.Open(ctx, parsed)
 }

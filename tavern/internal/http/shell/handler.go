@@ -22,9 +22,12 @@ import (
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
+
+var log = logging.For("shells.ws")
 
 const (
 	colorCodeUsername = "\x1b[38;5;104m" // Realm Purple
@@ -106,17 +109,34 @@ type ShellSession struct {
 //	found, the websocket will automatically switch to Interactive Mode. When the portal closes or if too many errors
 //	occur the handler will automatically revert to Non-Interactive Mode and resume polling for open portals.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Load Authenticated User
-	authUser := auth.UserFromContext(r.Context())
-	var (
-		authUserName = "unknown"
-		authUserID   = 0
-	)
-	if authUser != nil {
-		authUserID = authUser.ID
-		authUserName = authUser.Name
+	reqCtx := r.Context()
+	if logging.EntrypointFromContext(reqCtx) == "" {
+		reqCtx = logging.WithEntrypoint(reqCtx, "websocket")
 	}
-	slog.InfoContext(r.Context(), "starting new shell session", "user_id", authUserID, "user_name", authUserName)
+	if logging.ClientIPFromContext(reqCtx) == "" {
+		clientIP := logging.NormalizeClientIP(
+			r.RemoteAddr,
+			r.Header.Get("X-Redirected-For"),
+			r.Header.Get("X-Forwarded-For"),
+		)
+		reqCtx = logging.WithClientIP(reqCtx, clientIP)
+	}
+	reqCtx, _, _ = logging.EnsureTrace(reqCtx)
+
+	// Load Authenticated User
+	authUser := auth.UserFromContext(reqCtx)
+	if authUser != nil {
+		if cur := logging.ActorFromContext(reqCtx); cur.Kind == logging.ActorUnknown || cur.Kind == logging.ActorAnonymous {
+			reqCtx = logging.WithActor(reqCtx, logging.Actor{
+				Kind:    logging.ActorUser,
+				ID:      strconv.Itoa(authUser.ID),
+				Name:    authUser.Name,
+				IsAdmin: authUser.IsAdmin,
+			})
+		}
+	}
+	r = r.WithContext(reqCtx)
+	log.DebugContext(reqCtx, "starting new shell session")
 
 	// Load the shell
 	sh, err := h.getShellForRequest(r)
@@ -133,16 +153,42 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var beaconID, hostID int
+	if sh.Edges.Beacon != nil {
+		beaconID = sh.Edges.Beacon.ID
+		if sh.Edges.Beacon.Edges.Host != nil {
+			hostID = sh.Edges.Beacon.Edges.Host.ID
+		}
+	}
+	streamAttrs := []slog.Attr{slog.Int("shell_id", sh.ID)}
+	if beaconID > 0 {
+		streamAttrs = append(streamAttrs, slog.Int("beacon_id", beaconID))
+	}
+	if hostID > 0 {
+		streamAttrs = append(streamAttrs, slog.Int("host_id", hostID))
+	}
+	reqCtx = logging.WithStreamAttrs(reqCtx, streamAttrs...)
+
 	// Upgrade to websocket
-	slog.InfoContext(r.Context(), "new shell websocket connection", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
+	log.DebugContext(reqCtx, "new shell websocket connection")
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "websocket failed to upgrade connection", "err", err, "shell_id", sh.ID)
+		log.ErrorContext(reqCtx, "websocket failed to upgrade connection", "error", err)
 		http.Error(w, "failed to upgrade to websocket", http.StatusFailedDependency)
 		return
 	}
 	defer wsConn.Close()
-	defer slog.InfoContext(r.Context(), "websocket shell connection closed", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
+
+	shellAuditArgs := append(
+		logging.TargetIntAttrs("shell", sh.ID, ""),
+		logging.ShellAttrs(sh.ID, beaconID, hostID)...,
+	)
+	logging.Audit(reqCtx, "shell", "shell.ws_connected", "operator connected to shell websocket", shellAuditArgs...)
+	defer func() {
+		disconnectCtx := logging.DetachContext(reqCtx)
+		log.DebugContext(disconnectCtx, "websocket shell connection closed")
+		logging.Audit(disconnectCtx, "shell", "shell.ws_disconnected", "operator disconnected from shell websocket", shellAuditArgs...)
+	}()
 
 	// Configure Websocket Connection
 	wsConn.SetReadLimit(h.maxMessageSize)
@@ -153,7 +199,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Initialize Synchronization
-	ctx, cancel := context.WithCancel(r.Context())
+	ctx, cancel := context.WithCancel(reqCtx)
 	var wg sync.WaitGroup
 	wsTaskInputCh := make(chan *WebsocketTaskInputMessage, h.maxTaskInputsBuffered)
 	wsTaskOutputCh := make(chan *WebsocketTaskOutputMessage, h.maxTaskOutputsBuffered)
@@ -270,7 +316,9 @@ func (h *Handler) getShellForRequest(r *http.Request) (*ent.Shell, error) {
 	sh, err := RetryOnLock(r.Context(), func() (*ent.Shell, error) {
 		return h.graph.Shell.Query().
 			Where(shell.ID(shellID)).
-			WithBeacon().
+			WithBeacon(func(bq *ent.BeaconQuery) {
+				bq.WithHost()
+			}).
 			Select(shell.FieldClosedAt).
 			Only(r.Context())
 	})
@@ -279,7 +327,7 @@ func (h *Handler) getShellForRequest(r *http.Request) (*ent.Shell, error) {
 			return nil, ErrShellNotFound
 		}
 
-		slog.ErrorContext(r.Context(), "websocket failed to load shell", "err", err, "shell_id", shellID)
+		log.ErrorContext(r.Context(), "websocket failed to load shell", "error", err, "shell_id", shellID)
 		return nil, fmt.Errorf("%s: %w", ErrShellLookupFailed.Error(), err)
 	}
 
@@ -300,7 +348,7 @@ func (h *Handler) pollForOpenPortals(ctx context.Context, sh *ent.Shell, portalC
 				First(ctx)
 		})
 		if err != nil && !ent.IsNotFound(err) {
-			slog.WarnContext(ctx, "failed to query open portals for shell", "error", err, "shell_id", sh.ID)
+			log.WarnContext(ctx, "failed to query open portals for shell", "error", err)
 			return
 		}
 		portalCh <- p
@@ -333,7 +381,7 @@ func (h *Handler) readMessagesFromWebsocket(ctx context.Context, conn *websocket
 			kind, msgData, err := conn.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					slog.ErrorContext(ctx, "shell websocket closed unexpectedly",
+					log.ErrorContext(ctx, "shell websocket closed unexpectedly",
 						"error", err,
 					)
 				}
@@ -403,27 +451,27 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 			return
 		case outputMsg, ok := <-outputCh:
 			if err := writeJSONMessage("shell_output", outputMsg, ok); err != nil {
-				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				log.ErrorContext(ctx, "failed to write message to websocket", "channel", "shell_output", "error", err)
 				return
 			}
 		case otherStreamMsg, ok := <-otherStreamCh:
 			if err := writeJSONMessage("shell_output_other", otherStreamMsg, ok); err != nil {
-				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				log.ErrorContext(ctx, "failed to write message to websocket", "channel", "shell_output_other", "error", err)
 				return
 			}
 		case taskErrMsg, ok := <-taskErrCh:
 			if err := writeJSONMessage("shell_task_errors", taskErrMsg, ok); err != nil {
-				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				log.ErrorContext(ctx, "failed to write message to websocket", "channel", "shell_task_errors", "error", err)
 				return
 			}
 		case errMsg, ok := <-errCh:
 			if err := writeJSONMessage("shell_errors", errMsg, ok); err != nil {
-				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				log.ErrorContext(ctx, "failed to write message to websocket", "channel", "shell_errors", "error", err)
 				return
 			}
 		case controlMsg, ok := <-controlCh:
 			if err := writeJSONMessage("shell_control", controlMsg, ok); err != nil {
-				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				log.ErrorContext(ctx, "failed to write message to websocket", "channel", "shell_control", "error", err)
 				return
 			}
 		case <-keepAliveTimer.C:
@@ -437,6 +485,14 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 
 // writeMessagesFromWebsocket receives input and control messages and writes them to the db / pubsub. If any errors occur, it writes them to the provided error channel.
 func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *ShellSession, streamID string, sh *ent.Shell, taskInputCh <-chan *WebsocketTaskInputMessage, controlCh chan<- *WebsocketControlFlowMessage, errCh chan<- *WebsocketErrorMessage) {
+	var beaconID, hostID int
+	if sh.Edges.Beacon != nil {
+		beaconID = sh.Edges.Beacon.ID
+		if sh.Edges.Beacon.Edges.Host != nil {
+			hostID = sh.Edges.Beacon.Edges.Host.ID
+		}
+	}
+
 	var sequenceID uint64
 	for {
 		select {
@@ -451,7 +507,7 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 			// Get Creator
 			creator := auth.UserFromContext(ctx)
 			if creator == nil {
-				slog.ErrorContext(ctx, "no creator found in context")
+				log.ErrorContext(ctx, "no creator found in context")
 				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to determine creator for shell task"))
 				continue
 			}
@@ -477,14 +533,33 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 			})
 
 			if err != nil {
-				slog.ErrorContext(ctx, "failed to create shell task", "error", err)
+				log.ErrorContext(ctx, "failed to create shell task", "error", err)
 				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to create shell task: %w", err))
 				continue
 			}
 
+			mode := "queued"
+			if activePortal != nil {
+				mode = "interactive"
+			}
+			taskAuditArgs := append(
+				logging.TargetIntAttrs("shell_task", task.ID, ""),
+				logging.ShellAttrs(sh.ID, beaconID, hostID)...,
+			)
+			taskAuditArgs = append(
+				taskAuditArgs,
+				slog.Int("shell_task_id", task.ID),
+				slog.String("mode", mode),
+				slog.String("command", msg.Input),
+			)
+			if activePortal != nil {
+				taskAuditArgs = append(taskAuditArgs, slog.Int("portal_id", activePortal.ID))
+			}
+			logging.Audit(ctx, "shell", "shell.task_created", "operator submitted shell task", taskAuditArgs...)
+
 			if activePortal != nil {
 				// Publish to Portal
-				slog.InfoContext(ctx, "publishing to portal", "portal_id", activePortal.ID, "stream_id", streamID)
+				log.TraceContext(ctx, "publishing to portal", "portal_id", activePortal.ID, "stream_id", streamID, "seq_id", sequenceID)
 				mote := &portalpb.Mote{
 					StreamId: streamID,
 					SeqId:    sequenceID,
@@ -496,22 +571,14 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 					},
 				}
 				if err := h.mux.Publish(ctx, h.mux.TopicIn(activePortal.ID), mote); err != nil {
-					slog.ErrorContext(ctx, "failed to publish shell input mote", "error", err)
-					// We don't error the task because it's already in DB, but maybe we should notify user?
+					log.ErrorContext(ctx, "failed to publish shell input mote", "portal_id", activePortal.ID, "error", err)
 				}
 			} else {
-				slog.InfoContext(ctx, "no active portal, queuing task", "shell_id", sh.ID, "shell_input", msg.Input)
+				log.DebugContext(ctx, "no active portal, queuing task", "shell_task_id", task.ID)
 				// No Active Portal: Send Control Flow Message
 				beaconName := "Unknown"
 				if sh.Edges.Beacon != nil {
 					beaconName = sh.Edges.Beacon.Name
-				} else {
-					// Need to load beacon if not loaded.
-					// We loaded it in ServeHTTP -> getShellForRequest -> WithBeacon()
-					// But we passed `sh`. `sh` should have Edges populated.
-					if sh.Edges.Beacon != nil {
-						beaconName = sh.Edges.Beacon.Name
-					}
 				}
 
 				controlCh <- &WebsocketControlFlowMessage{
@@ -520,8 +587,6 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 					Message: fmt.Sprintf("[*] Task Queued for %s", beaconName),
 				}
 			}
-			// We handle DB writes above (creation). Output writes happen in writeMessagesFromShell.
-			_ = task
 		}
 	}
 }
@@ -554,7 +619,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 		})
 
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to poll shell tasks", "error", err)
+			log.ErrorContext(ctx, "failed to poll shell tasks", "error", err)
 			return
 		}
 
@@ -631,7 +696,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 
 			// Handle CLOSE motes (portal closed via mutation or agent disconnect)
 			if bytesPayload := mote.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE && mote.StreamId == "" {
-				slog.InfoContext(ctx, "received portal close mote, downgrading to non-interactive mode")
+				log.DebugContext(ctx, "received portal close mote, downgrading to non-interactive mode")
 				session.mu.Lock()
 				portal := session.activePortal
 				session.activePortal = nil
@@ -653,6 +718,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			// We check for shell payload as it indicates output.
 			shellPayload := mote.GetShell()
 			if shellPayload != nil {
+				log.TraceContext(ctx, "received shell output mote from portal", "stream_id", mote.StreamId, "seq_id", mote.SeqId)
 				// It's output or completion for a shell task.
 				task, err := RetryOnLock(ctx, func() (*ent.ShellTask, error) {
 					return h.graph.ShellTask.Query().
@@ -665,7 +731,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				})
 
 				if err != nil {
-					slog.DebugContext(ctx, "failed to find shell task for mote", "stream_id", mote.StreamId, "seq_id", mote.SeqId)
+					log.DebugContext(ctx, "failed to find shell task for mote", "stream_id", mote.StreamId, "seq_id", mote.SeqId)
 					continue
 				}
 
@@ -768,7 +834,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				session.mu.Unlock()
 
 				if portal != nil {
-					slog.InfoContext(ctx, "portal poll detected closed portal, downgrading to non-interactive mode", "portal_id", portal.ID)
+					log.DebugContext(ctx, "portal poll detected closed portal, downgrading to non-interactive mode", "portal_id", portal.ID)
 					controlCh <- NewWebsocketPortalDowngradeMessage(portal)
 					if cleanup != nil {
 						cleanup()
@@ -796,7 +862,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			// Open Portal
 			portalCleanup, err := h.mux.OpenPortal(ctx, p.ID)
 			if err != nil {
-				slog.ErrorContext(ctx, "shell failed to upgrade with portal", "error", err, "portal_id", p.ID)
+				log.ErrorContext(ctx, "shell failed to upgrade with portal", "error", err, "portal_id", p.ID)
 				continue
 			}
 
@@ -817,6 +883,8 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			session.mu.Lock()
 			session.activePortal = p
 			session.mu.Unlock()
+
+			log.DebugContext(ctx, "upgraded shell session to interactive portal", "portal_id", p.ID)
 
 			// Inform browser that we've upgraded
 			controlCh <- NewWebsocketPortalUpgradeMessage(p)
@@ -859,7 +927,7 @@ func (h *Handler) manageUserPresence(ctx context.Context, sh *ent.Shell, u *ent.
 			return sh.QueryActiveUsers().Where(user.ID(u.ID)).Exist(ctx)
 		})
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to check active user presence", "error", err)
+			log.ErrorContext(ctx, "failed to check active user presence", "error", err)
 			return
 		}
 		if !exists {
@@ -867,7 +935,7 @@ func (h *Handler) manageUserPresence(ctx context.Context, sh *ent.Shell, u *ent.
 				return struct{}{}, sh.Update().AddActiveUsers(u).Exec(ctx)
 			})
 			if err != nil {
-				slog.ErrorContext(ctx, "failed to add active user", "error", err)
+				log.ErrorContext(ctx, "failed to add active user", "error", err)
 				return
 			}
 		}
@@ -879,14 +947,14 @@ func (h *Handler) manageUserPresence(ctx context.Context, sh *ent.Shell, u *ent.
 		if !added {
 			return
 		}
-		// Use a fresh context as the parent context is likely canceled
-		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		// Detach from canceled parent context while preserving trace and stream metadata
+		cleanupCtx, cancel := context.WithTimeout(logging.DetachContext(ctx), 5*time.Second)
 		defer cancel()
 		_, err := RetryOnLock(cleanupCtx, func() (struct{}, error) {
 			return struct{}{}, sh.Update().RemoveActiveUsers(u).Exec(cleanupCtx)
 		})
 		if err != nil {
-			slog.ErrorContext(cleanupCtx, "failed to remove active user", "error", err)
+			log.ErrorContext(cleanupCtx, "failed to remove active user", "error", err)
 		}
 	}()
 

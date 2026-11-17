@@ -7,19 +7,26 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/logging"
 )
 
 func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredentialRequest) (*c2pb.ReportCredentialResponse, error) {
+	ctx, _ = enrichC2Context(ctx)
+
 	if req.Credential == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide credential")
 	}
 
-	var host *ent.Host
-	var task *ent.Task
-	var shellTask *ent.ShellTask
+	var (
+		beaconID  int
+		err       error
+		host      *ent.Host
+		task      *ent.Task
+		shellTask *ent.ShellTask
+	)
 
 	if tc := req.GetTaskContext(); tc != nil {
-		beaconID, err := srv.ValidateJWT(tc.GetJwt())
+		ctx, beaconID, err = srv.ValidateJWTContext(ctx, tc.GetJwt())
 		if err != nil {
 			return nil, err
 		}
@@ -34,7 +41,7 @@ func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredent
 		}
 		host = h
 	} else if stc := req.GetShellTaskContext(); stc != nil {
-		beaconID, err := srv.ValidateJWT(stc.GetJwt())
+		ctx, beaconID, err = srv.ValidateJWTContext(ctx, stc.GetJwt())
 		if err != nil {
 			return nil, err
 		}
@@ -69,6 +76,21 @@ func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredent
 	if _, err := builder.Save(ctx); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save credential: %v", err)
 	}
+
+	// NEVER log req.Credential.Secret!
+	auditAttrs := []any{
+		"host_id", host.ID,
+		"beacon_id", beaconID,
+		"principal", req.Credential.Principal,
+		"kind", req.Credential.Kind.String(),
+	}
+	if task != nil {
+		auditAttrs = append(auditAttrs, "task_id", task.ID)
+	}
+	if shellTask != nil {
+		auditAttrs = append(auditAttrs, "shell_task_id", shellTask.ID)
+	}
+	logging.Audit(ctx, "c2", "c2.credential_reported", "beacon reported credential", auditAttrs...)
 
 	return &c2pb.ReportCredentialResponse{}, nil
 }
