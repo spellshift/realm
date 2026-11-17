@@ -27,6 +27,7 @@ export const useAssetIds = () => {
       variables: queryVariables,
       notifyOnNetworkStatusChange: true,
       fetchPolicy: 'cache-and-network',
+      pollInterval: 5000,
     }
   );
 

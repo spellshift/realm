@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/errors"
 	"realm.pub/tavern/internal/logging"
@@ -61,6 +62,9 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 				"link_path", linkPath,
 				"reason", "missing_asset",
 			)
+			return ErrFileNotFound
+		}
+		if a.Status != asset.StatusFINISHED {
 			return ErrFileNotFound
 		}
 

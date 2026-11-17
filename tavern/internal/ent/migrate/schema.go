@@ -27,6 +27,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"FINISHED", "IN_PROGRESS", "ERROR"}, Default: "FINISHED"},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
@@ -41,7 +42,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "assets_users_creator",
-				Columns:    []*schema.Column{AssetsColumns[7]},
+				Columns:    []*schema.Column{AssetsColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

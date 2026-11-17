@@ -40,6 +40,7 @@ export const GET_ASSET_DETAIL_QUERY = gql`
                 node {
                     id
                     name
+                    status
                     size
                     hash
                     createdAt

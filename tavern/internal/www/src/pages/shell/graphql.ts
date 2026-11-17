@@ -59,6 +59,7 @@ export const GET_SHELL = gql`
               destination
               port
               closedAt
+              data
             }
           }
         }
@@ -86,6 +87,7 @@ export const GET_SHELL_HISTORY = gql`
               destination
               port
               closedAt
+              data
             }
           }
         }
@@ -231,7 +233,10 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
               id
               name
               principal
+              transport
               lastSeenAt
+              nextSeenAt
+              interval
               shells {
                 edges {
                   node {
@@ -242,6 +247,15 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
                       id
                       name
                     }
+                    activeUsers {
+                      edges {
+                        node {
+                          id
+                          name
+                          photoURL
+                        }
+                      }
+                    }
                     pivots {
                       edges {
                         node {
@@ -251,6 +265,17 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
                           destination
                           port
                           closedAt
+                          data
+                        }
+                      }
+                    }
+                    shellTasks(last: 25) {
+                      edges {
+                        node {
+                          id
+                          input
+                          output
+                          error
                         }
                       }
                     }
@@ -288,7 +313,10 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
                 id
                 name
                 principal
+                transport
                 lastSeenAt
+                nextSeenAt
+                interval
                 shells {
                   edges {
                     node {
@@ -299,6 +327,15 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
                         id
                         name
                       }
+                      activeUsers {
+                        edges {
+                          node {
+                            id
+                            name
+                            photoURL
+                          }
+                        }
+                      }
                       pivots {
                         edges {
                           node {
@@ -308,6 +345,17 @@ export const GET_SHELL_KNOWLEDGE_GRAPH = gql`
                             destination
                             port
                             closedAt
+                            data
+                          }
+                        }
+                      }
+                      shellTasks(last: 25) {
+                        edges {
+                          node {
+                            id
+                            input
+                            output
+                            error
                           }
                         }
                       }
@@ -512,6 +560,15 @@ export const GET_PORTAL_STATUS = gql`
 export const CLOSE_PORTAL_MUTATION = gql`
   mutation ClosePortal($id: ID!) {
     closePortal(portalID: $id) {
+      id
+      closedAt
+    }
+  }
+`;
+
+export const CLOSE_PIVOT_MUTATION = gql`
+  mutation ClosePivot($pivotID: ID!) {
+    closePivot(pivotID: $pivotID) {
       id
       closedAt
     }

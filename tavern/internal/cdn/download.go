@@ -56,7 +56,7 @@ func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 			return ErrInvalidFileName
 		}
 
-		assetQuery := graph.Asset.Query().Where(asset.Name(assetName))
+		assetQuery := graph.Asset.Query().Where(asset.Name(assetName), asset.StatusEQ(asset.StatusFINISHED))
 
 		// If hash was provided, check to see if the asset has been updated. Note that
 		// http.ServeContent should handle this, but we want to avoid the expensive DB
@@ -75,6 +75,9 @@ func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		}
 
 		a := assetQuery.OnlyX(ctx)
+		if a.Status != asset.StatusFINISHED {
+			return ErrFileNotFound
+		}
 
 		// Set Etag to hash of asset
 		w.Header().Set(HeaderEtag, a.Hash)

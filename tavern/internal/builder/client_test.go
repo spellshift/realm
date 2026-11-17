@@ -38,6 +38,60 @@ func (f *fakeBuilderClient) StreamBuildTaskOutput(ctx context.Context, opts ...g
 	return &fakeStreamOutputClient{}, nil
 }
 
+type recordingBuildOutputStream struct {
+	grpc.ClientStream
+	final *builderpb.StreamBuildTaskOutputRequest
+}
+
+func (s *recordingBuildOutputStream) Send(req *builderpb.StreamBuildTaskOutputRequest) error {
+	if req.Finished {
+		s.final = req
+	}
+	return nil
+}
+
+func (s *recordingBuildOutputStream) CloseAndRecv() (*builderpb.StreamBuildTaskOutputResponse, error) {
+	return &builderpb.StreamBuildTaskOutputResponse{}, nil
+}
+
+type recordingBuilderClient struct {
+	builderpb.BuilderClient
+	stream *recordingBuildOutputStream
+}
+
+func (c *recordingBuilderClient) StreamBuildTaskOutput(context.Context, ...grpc.CallOption) (builderpb.Builder_StreamBuildTaskOutputClient, error) {
+	return c.stream, nil
+}
+
+func TestExecuteTask_ArtifactlessBuild(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		artifactPath string
+		wantError    string
+	}{
+		{name: "no artifact requested"},
+		{name: "expected artifact missing", artifactPath: "output/imix", wantError: "build produced no artifact"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			stream := &recordingBuildOutputStream{}
+			client := &recordingBuilderClient{stream: stream}
+			executeTask(context.Background(), "", client, executor.NewMockExecutor(), &builderpb.BuildTaskSpec{
+				Id:           1,
+				ArtifactPath: tc.artifactPath,
+			})
+			if stream.final == nil {
+				t.Fatal("missing final build message")
+			}
+			if stream.final.Error != tc.wantError {
+				t.Fatalf("final error = %q, want %q", stream.final.Error, tc.wantError)
+			}
+			if stream.final.ExitCode != 0 {
+				t.Fatalf("final exit code = %d, want 0", stream.final.ExitCode)
+			}
+		})
+	}
+}
+
 // TestExecuteTask_CancelsBuildContextOnStreamSendFailure verifies that when
 // the output stream's Send fails, executeTask cancels the context passed to
 // the executor instead of leaving it running forever. Without this,

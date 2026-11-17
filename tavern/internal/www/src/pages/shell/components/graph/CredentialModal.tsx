@@ -88,6 +88,22 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
         setSubmitError(null);
     }, [isOpen]);
 
+    const currentHostEntry = hosts.find((h) => h.isCurrentHost);
+    const effectiveCurrentHostId =
+        currentHostId ||
+        currentHostEntry?.hostId ||
+        (currentHostEntry && !currentHostEntry.networkHostId
+            ? currentHostEntry.id
+            : undefined);
+    const effectiveCurrentHostName =
+        currentHostName ||
+        currentHostEntry?.name ||
+        currentHostEntry?.hostname;
+    const effectiveCurrentHostIp =
+        currentHostIp ||
+        currentHostEntry?.primaryIP ||
+        currentHostEntry?.ipAddress;
+
     const adjacentHosts = hosts.filter((h) => !h.isCurrentHost);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -112,17 +128,17 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
 
         const resolvedHostId = matchedHost
             ? matchedHost.hostId || matchedHost.id
-            : currentHostId || "h-current";
+            : effectiveCurrentHostId || "h-current";
         const resolvedHostName = matchedHost
             ? matchedHost.name ||
               matchedHost.hostname ||
               matchedHost.ipAddress ||
               matchedHost.primaryIP ||
               matchedHost.id
-            : currentHostName || "Current Host";
+            : effectiveCurrentHostName || "Current Host";
         const resolvedHostIp = matchedHost
             ? matchedHost.ipAddress || matchedHost.primaryIP
-            : currentHostIp;
+            : effectiveCurrentHostIp;
         const isCurrHost = !matchedHost;
 
         try {
@@ -156,8 +172,16 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
                 ) {
                     input.hostID = matchedHost.hostId;
                 }
-            } else if (currentHostId) {
-                input.hostID = currentHostId;
+            } else if (
+                effectiveCurrentHostId &&
+                !effectiveCurrentHostId.startsWith("nh-")
+            ) {
+                input.hostID = effectiveCurrentHostId;
+            } else if (
+                currentHostEntry?.networkHostId &&
+                !currentHostEntry.networkHostId.startsWith("nh-custom-")
+            ) {
+                input.networkHostIDs = [currentHostEntry.networkHostId];
             }
             const res = await createCredential({
                 variables: { input },
@@ -187,8 +211,8 @@ export const CredentialModal: React.FC<CredentialModalProps> = ({
         return null;
     }
 
-    const currentHostOptionLabel = `${currentHostName || "Current Host"}${
-        currentHostIp ? ` (${currentHostIp})` : ""
+    const currentHostOptionLabel = `${effectiveCurrentHostName || "Current Host"}${
+        effectiveCurrentHostIp ? ` (${effectiveCurrentHostIp})` : ""
     }`;
 
     return (

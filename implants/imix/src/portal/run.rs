@@ -204,6 +204,21 @@ async fn handle_incoming_mote(
         return Ok(());
     }
 
+    // Handle stream-scoped Close Mote (PTY close or stale unknown stream)
+    if let Some(Payload::Bytes(ref bytes_payload)) = mote.payload
+        && bytes_payload.kind == BytesPayloadKind::Close as i32
+    {
+        if pty_manager
+            .handle_close(&mote.stream_id, out_tx.clone())
+            .await
+        {
+            return Ok(());
+        }
+        if !streams.contains_key(&mote.stream_id) {
+            return Ok(());
+        }
+    }
+
     // Handle Shell Mote
     let is_shell = matches!(mote.payload, Some(Payload::Shell(_)));
     if is_shell {

@@ -41,6 +41,7 @@ type MutationResolver interface {
 	UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error)
 	CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error)
 	ClosePortal(ctx context.Context, portalID int) (*ent.Portal, error)
+	ClosePivot(ctx context.Context, pivotID int) (*ent.ShellPivot, error)
 	CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error)
 	UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error)
 	DisableLink(ctx context.Context, linkID int) (*ent.Link, error)
@@ -69,6 +70,17 @@ type MutationResolver interface {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_closePivot_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "pivotID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["pivotID"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_closePortal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -2465,6 +2477,91 @@ func (ec *executionContext) fieldContext_Mutation_closePortal(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_closePivot(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_closePivot,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ClosePivot(ctx, fc.Args["pivotID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.ShellPivot
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.ShellPivot
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNShellPivot2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellPivot,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_closePivot(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ShellPivot_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ShellPivot_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_ShellPivot_lastModifiedAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_ShellPivot_closedAt(ctx, field)
+			case "streamID":
+				return ec.fieldContext_ShellPivot_streamID(ctx, field)
+			case "kind":
+				return ec.fieldContext_ShellPivot_kind(ctx, field)
+			case "destination":
+				return ec.fieldContext_ShellPivot_destination(ctx, field)
+			case "port":
+				return ec.fieldContext_ShellPivot_port(ctx, field)
+			case "data":
+				return ec.fieldContext_ShellPivot_data(ctx, field)
+			case "shell":
+				return ec.fieldContext_ShellPivot_shell(ctx, field)
+			case "portal":
+				return ec.fieldContext_ShellPivot_portal(ctx, field)
+			case "credential":
+				return ec.fieldContext_ShellPivot_credential(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ShellPivot", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_closePivot_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createLink(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4342,6 +4439,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "closePortal":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_closePortal(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "closePivot":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_closePivot(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

@@ -187,6 +187,7 @@ export function useBuildTasks(options: { skip?: boolean } = {}) {
     const result = useQuery<{ buildTasks: Connection<BuildTask> }>(GET_BUILD_TASKS, {
         skip,
         fetchPolicy: "cache-and-network",
+        pollInterval: 5000,
     });
     const tasks = nodes(result.data?.buildTasks);
     const rows = buildTaskRows(tasks);

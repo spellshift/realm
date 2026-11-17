@@ -980,3 +980,52 @@ TimeoutDone:
 	assert.NotEmpty(t, seenTCPStreamID)
 	assert.NotEqual(t, sshStreamID, seenTCPStreamID)
 }
+
+func TestClosePivotSession(t *testing.T) {
+	env := setupSSHTestEnv(t)
+	defer env.Close()
+	ctx := context.Background()
+
+	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.TaskEnt.ID, 0)
+	require.NoError(t, err)
+	defer agentCleanup()
+
+	wsURL := fmt.Sprintf("%s?portal_id=%d&shell_id=%d&target=operator:secret123@127.0.0.1:2222",
+		env.WSURL, portalID, env.ShellEnt.ID)
+	ws, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	var pivot *ent.ShellPivot
+	require.Eventually(t, func() bool {
+		pivots, qErr := env.EntClient.ShellPivot.Query().All(ctx)
+		if qErr != nil || len(pivots) != 1 {
+			return false
+		}
+		pivot = pivots[0]
+		return true
+	}, 2*time.Second, 20*time.Millisecond)
+
+	require.True(t, portalssh.ClosePivotSession(ctx, env.EntClient, pivot.ID))
+	require.False(t, portalssh.ClosePivotSession(ctx, env.EntClient, pivot.ID))
+
+	updated, err := env.EntClient.ShellPivot.Get(ctx, pivot.ID)
+	require.NoError(t, err)
+	assert.False(t, updated.ClosedAt.IsZero())
+
+	ws.SetReadDeadline(time.Now().Add(2 * time.Second))
+	sawClosedStatus := false
+	for {
+		_, data, readErr := ws.ReadMessage()
+		if readErr != nil {
+			break
+		}
+		var statusMsg shell.WebsocketStatusMessage
+		if json.Unmarshal(data, &statusMsg) == nil && statusMsg.Kind == shell.WebsocketMessageKindStatus && statusMsg.Status == "closed" {
+			sawClosedStatus = true
+			break
+		}
+	}
+	assert.True(t, sawClosedStatus, "expected websocket client to receive closed status on ClosePivotSession")
+}
+

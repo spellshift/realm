@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/event"
@@ -3044,6 +3045,35 @@ func (ec *executionContext) fieldContext_Asset_lastModifiedAt(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Asset_status(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Asset_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNAssetStatus2realmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Asset_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AssetStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3421,6 +3451,8 @@ func (ec *executionContext) fieldContext_AssetEdge_node(_ context.Context, field
 				return ec.fieldContext_Asset_createdAt(ctx, field)
 			case "lastModifiedAt":
 				return ec.fieldContext_Asset_lastModifiedAt(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
 			case "name":
 				return ec.fieldContext_Asset_name(ctx, field)
 			case "size":
@@ -5806,6 +5838,8 @@ func (ec *executionContext) fieldContext_BuildTask_bundle(_ context.Context, fie
 				return ec.fieldContext_Asset_createdAt(ctx, field)
 			case "lastModifiedAt":
 				return ec.fieldContext_Asset_lastModifiedAt(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
 			case "name":
 				return ec.fieldContext_Asset_name(ctx, field)
 			case "size":
@@ -5963,6 +5997,8 @@ func (ec *executionContext) fieldContext_BuildTask_artifact(_ context.Context, f
 				return ec.fieldContext_Asset_createdAt(ctx, field)
 			case "lastModifiedAt":
 				return ec.fieldContext_Asset_lastModifiedAt(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
 			case "name":
 				return ec.fieldContext_Asset_name(ctx, field)
 			case "size":
@@ -11067,6 +11103,8 @@ func (ec *executionContext) fieldContext_Link_asset(_ context.Context, field gra
 				return ec.fieldContext_Asset_createdAt(ctx, field)
 			case "lastModifiedAt":
 				return ec.fieldContext_Asset_lastModifiedAt(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
 			case "name":
 				return ec.fieldContext_Asset_name(ctx, field)
 			case "size":
@@ -15802,6 +15840,8 @@ func (ec *executionContext) fieldContext_Quest_bundle(_ context.Context, field g
 				return ec.fieldContext_Asset_createdAt(ctx, field)
 			case "lastModifiedAt":
 				return ec.fieldContext_Asset_lastModifiedAt(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
 			case "name":
 				return ec.fieldContext_Asset_name(ctx, field)
 			case "size":
@@ -23218,7 +23258,7 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold", "hasTomes", "hasTomesWith", "hasLinks", "hasLinksWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "status", "statusNEQ", "statusIn", "statusNotIn", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold", "hasTomes", "hasTomesWith", "hasLinks", "hasLinksWith", "hasCreator", "hasCreatorWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23414,6 +23454,34 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.LastModifiedAtLTE = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOAssetStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		case "statusNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusNEQ"))
+			data, err := ec.unmarshalOAssetStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StatusNEQ = data
+		case "statusIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusIn"))
+			data, err := ec.unmarshalOAssetStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatusᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StatusIn = data
+		case "statusNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusNotIn"))
+			data, err := ec.unmarshalOAssetStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatusᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StatusNotIn = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -45084,6 +45152,11 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "status":
+			out.Values[i] = ec._Asset_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "name":
 			out.Values[i] = ec._Asset_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -54157,6 +54230,16 @@ func (ec *executionContext) marshalNAssetOrderField2ᚖrealmᚗpubᚋtavernᚋin
 	return v
 }
 
+func (ec *executionContext) unmarshalNAssetStatus2realmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx context.Context, v any) (asset.Status, error) {
+	var res asset.Status
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAssetStatus2realmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx context.Context, sel ast.SelectionSet, v asset.Status) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNAssetWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetWhereInput(ctx context.Context, v any) (*ent.AssetWhereInput, error) {
 	res, err := ec.unmarshalInputAssetWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -55494,6 +55577,20 @@ func (ec *executionContext) marshalNShellOrderField2ᚖrealmᚗpubᚋtavernᚋin
 	return v
 }
 
+func (ec *executionContext) marshalNShellPivot2realmᚗpubᚋtavernᚋinternalᚋentᚐShellPivot(ctx context.Context, sel ast.SelectionSet, v ent.ShellPivot) graphql.Marshaler {
+	return ec._ShellPivot(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNShellPivot2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellPivot(ctx context.Context, sel ast.SelectionSet, v *ent.ShellPivot) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ShellPivot(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNShellPivotConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellPivotConnection(ctx context.Context, sel ast.SelectionSet, v *ent.ShellPivotConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -55988,6 +56085,59 @@ func (ec *executionContext) unmarshalOAssetOrder2ᚕᚖrealmᚗpubᚋtavernᚋin
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOAssetStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatusᚄ(ctx context.Context, v any) ([]asset.Status, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]asset.Status, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNAssetStatus2realmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOAssetStatus2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []asset.Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNAssetStatus2realmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOAssetStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx context.Context, v any) (*asset.Status, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(asset.Status)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOAssetStatus2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋassetᚐStatus(ctx context.Context, sel ast.SelectionSet, v *asset.Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOAssetWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetWhereInputᚄ(ctx context.Context, v any) ([]*ent.AssetWhereInput, error) {

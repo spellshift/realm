@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	"realm.pub/tavern/internal/builder"
@@ -415,6 +417,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 		SetBuildImage("golang:1.21").
 		SetDescription("The default profile4").
 		SaveX(ctx)
+	placeholder := graph.Asset.Create().SetName("build/linux/bin/failing-build").SetContent([]byte{}).SetStatus("IN_PROGRESS").SaveX(ctx)
 
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
@@ -423,6 +426,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 		SetProfileID(profile.ID).
 		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
 		SetBuilderID(builders[0].ID).
+		SetArtifact(placeholder).
 		SaveX(ctx)
 
 	lis := bufconn.Listen(1024 * 1024)
@@ -496,6 +500,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 	assert.Contains(t, reloaded.Error, "exit code 1")
 	assert.False(t, reloaded.FinishedAt.IsZero())
 	assert.False(t, reloaded.StartedAt.IsZero())
+	assert.Equal(t, "ERROR", string(graph.Asset.GetX(ctx, placeholder.ID).Status))
 }
 
 func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
@@ -568,6 +573,16 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	defer conn.Close()
 
 	authClient := builderpb.NewBuilderClient(conn)
+	uploadAgain := func(taskID int64, content []byte) (*builderpb.UploadBuildArtifactResponse, error) {
+		stream, err := authClient.UploadBuildArtifact(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if err := stream.Send(&builderpb.UploadBuildArtifactRequest{TaskId: taskID, Chunk: content}); err != nil {
+			return nil, err
+		}
+		return stream.CloseAndRecv()
+	}
 
 	// Claim the task
 	claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
@@ -615,6 +630,57 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	assert.Contains(t, asset.Name, "build/linux/bin/imix-")
 	assert.Equal(t, artifactData, asset.Content)
 	assert.Equal(t, len(artifactData), asset.Size)
+	assert.Equal(t, "FINISHED", string(asset.Status))
+	legacyAssetCount := graph.Asset.Query().CountX(ctx)
+	repeated, err := uploadAgain(task.Id, artifactData)
+	require.NoError(t, err)
+	assert.Equal(t, artifactResp.AssetId, repeated.AssetId)
+	_, err = uploadAgain(task.Id, []byte("different binary"))
+	assert.Equal(t, codes.FailedPrecondition, status.Code(err))
+	assert.Equal(t, legacyAssetCount, graph.Asset.Query().CountX(ctx))
+	legacyAfter := graph.Asset.GetX(ctx, asset.ID)
+	assert.Equal(t, asset.Content, legacyAfter.Content)
+	assert.Equal(t, asset.Status, legacyAfter.Status)
+	assert.Equal(t, asset.Hash, legacyAfter.Hash)
+	assert.Equal(t, asset.LastModifiedAt, legacyAfter.LastModifiedAt)
+
+	placeholder := graph.Asset.Create().SetName("build/linux/bin/pending-build").SetContent([]byte{}).SetStatus("IN_PROGRESS").SaveX(ctx)
+	pendingTask := graph.BuildTask.Create().
+		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
+		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
+		SetBuildScript("go build ./...").
+		SetProfileID(profile.ID).
+		SetProfileAtCreation(snapshotForTest(t, graph, profile)).
+		SetBuilderID(builders[0].ID).
+		SetArtifact(placeholder).
+		SaveX(ctx)
+	outputStream, err := authClient.StreamBuildTaskOutput(ctx)
+	require.NoError(t, err)
+	require.NoError(t, outputStream.Send(&builderpb.StreamBuildTaskOutputRequest{TaskId: int64(pendingTask.ID), Error: "compiler warning"}))
+	require.NoError(t, outputStream.Send(&builderpb.StreamBuildTaskOutputRequest{TaskId: int64(pendingTask.ID), Finished: true}))
+	_, err = outputStream.CloseAndRecv()
+	require.NoError(t, err)
+	assert.Equal(t, "IN_PROGRESS", string(graph.Asset.GetX(ctx, placeholder.ID).Status))
+
+	artifactStream, err = authClient.UploadBuildArtifact(ctx)
+	require.NoError(t, err)
+	require.NoError(t, artifactStream.Send(&builderpb.UploadBuildArtifactRequest{TaskId: int64(pendingTask.ID), Chunk: artifactData}))
+	artifactResp, err = artifactStream.CloseAndRecv()
+	require.NoError(t, err)
+	assert.Equal(t, int64(placeholder.ID), artifactResp.AssetId)
+	finishedAsset := graph.Asset.GetX(ctx, placeholder.ID)
+	assert.Equal(t, "FINISHED", string(finishedAsset.Status))
+	assert.Equal(t, artifactData, finishedAsset.Content)
+	repeated, err = uploadAgain(int64(pendingTask.ID), artifactData)
+	require.NoError(t, err)
+	assert.Equal(t, int64(placeholder.ID), repeated.AssetId)
+	_, err = uploadAgain(int64(pendingTask.ID), []byte("different binary"))
+	assert.Equal(t, codes.FailedPrecondition, status.Code(err))
+	placeholderAfter := graph.Asset.GetX(ctx, placeholder.ID)
+	assert.Equal(t, finishedAsset.Content, placeholderAfter.Content)
+	assert.Equal(t, finishedAsset.Status, placeholderAfter.Status)
+	assert.Equal(t, finishedAsset.Hash, placeholderAfter.Hash)
+	assert.Equal(t, finishedAsset.LastModifiedAt, placeholderAfter.LastModifiedAt)
 }
 
 func TestExecutorIntegration_ClaimAndExecuteWithLocalExecutor(t *testing.T) {

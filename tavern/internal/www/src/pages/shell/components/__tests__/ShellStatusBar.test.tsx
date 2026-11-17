@@ -26,23 +26,39 @@ describe("ShellStatusBar", () => {
         connectionMessage: "",
     };
 
-    it("renders connected status correctly", () => {
+    it("does not render connected icon when connectionStatus is connected", () => {
         const { container } = render(<ShellStatusBar {...defaultProps} connectionStatus="connected" />);
-        // Wifi icon should be present (green)
-        const connectedIcon = container.querySelector(".text-green-500");
-        expect(connectedIcon).toBeInTheDocument();
+        expect(container.querySelector(".text-green-500")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("status-bar-reconnect-indicator")).not.toBeInTheDocument();
     });
 
-    it("renders disconnected status correctly", () => {
+    it("renders disconnected status icon only for disconnection", () => {
         const { container } = render(<ShellStatusBar {...defaultProps} connectionStatus="disconnected" />);
         const disconnectedIcon = container.querySelector(".text-red-500");
         expect(disconnectedIcon).toBeInTheDocument();
+        expect(screen.getByTestId("status-bar-reconnect-indicator")).toBeInTheDocument();
     });
 
-    it("renders reconnecting status correctly", () => {
-        const { container } = render(<ShellStatusBar {...defaultProps} connectionStatus="reconnecting" />);
+    it("renders reconnecting status icon and orders bottom-right elements as reconnect -> async -> next", () => {
+        const { container } = render(
+            <ShellStatusBar
+                {...defaultProps}
+                connectionStatus="reconnecting"
+                timeUntilCallback="Next 5s"
+            />
+        );
         const reconnectingIcon = container.querySelector(".text-yellow-500.animate-spin");
         expect(reconnectingIcon).toBeInTheDocument();
+
+        const reconnectEl = screen.getByTestId("status-bar-reconnect-indicator");
+        const asyncEl = screen.getByTestId("status-bar-async-button");
+        const nextEl = screen.getByTestId("status-bar-next-callback");
+        expect(
+            reconnectEl.compareDocumentPosition(asyncEl) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            asyncEl.compareDocumentPosition(nextEl) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
     });
 
     it("displays portal active message when portalId is present without showing portal ID, and opens Close Portal warning dialog when clicked", () => {
@@ -108,27 +124,28 @@ describe("ShellStatusBar", () => {
         expect(onNewPortal).toHaveBeenCalledTimes(1);
     });
 
-    it("displays callback timer with 'Next' label and shows callback stats popover on hover", () => {
+    it("displays countdown callback timer and shows missed callbacks in callback stats popover on hover", () => {
         render(
             <ShellStatusBar
                 {...defaultProps}
-                timeUntilCallback="in 5 minutes"
+                timeUntilCallback="Next 5min"
                 callbackStats={{
                     intervalSeconds: 5,
                     formattedInterval: "5s",
                     sampleCount: 100,
+                    expectedCount: 103,
                     onTimeCount: 98,
                     lateCount: 2,
-                    onTimePercentage: 98,
+                    missedCount: 3,
+                    onTimePercentage: 95,
                     avgLatencyMs: 85,
                     lastSeenAt: "2025-01-01T12:00:00Z",
                     nextSeenAt: "2025-01-01T12:00:05Z",
                 }}
             />
         );
-        expect(screen.getByText("Next")).toBeInTheDocument();
+        expect(screen.getByText("Next 5min")).toBeInTheDocument();
         expect(screen.queryByText("Next callback:")).not.toBeInTheDocument();
-        expect(screen.getByText("in 5 minutes")).toBeInTheDocument();
         expect(screen.queryByTestId("status-bar-callback-popover")).not.toBeInTheDocument();
 
         const nextCallbackEl = screen.getByTestId("status-bar-next-callback");
@@ -137,37 +154,38 @@ describe("ShellStatusBar", () => {
         const popover = screen.getByTestId("status-bar-callback-popover");
         expect(popover).toBeInTheDocument();
         expect(screen.getByTestId("callback-stats-interval")).toHaveTextContent("5s");
-        expect(screen.getByTestId("callback-stats-ontime")).toHaveTextContent("98 / 100 (98%)");
+        expect(screen.getByTestId("callback-stats-ontime")).toHaveTextContent("98 / 103 (95%)");
+        expect(screen.getByTestId("callback-stats-missed")).toHaveTextContent("3");
 
         fireEvent.mouseLeave(nextCallbackEl);
         expect(screen.queryByTestId("status-bar-callback-popover")).not.toBeInTheDocument();
     });
 
-    it("highlights missed callback", () => {
-        render(<ShellStatusBar {...defaultProps} timeUntilCallback="expected 5 minutes ago" isMissedCallback={true} />);
-        const timer = screen.getByText("expected 5 minutes ago");
+    it("highlights missed callback countdown", () => {
+        render(<ShellStatusBar {...defaultProps} timeUntilCallback="Missing 1hr ago" isMissedCallback={true} />);
+        const timer = screen.getByText("Missing 1hr ago");
         expect(timer).toHaveClass("text-red-500 font-bold");
     });
 
-    it("maintains consistent callback time highlight width when switching between 'now' and 'in a few seconds'", () => {
+    it("maintains consistent callback time highlight width across countdown states", () => {
         const { rerender } = render(
-            <ShellStatusBar {...defaultProps} timeUntilCallback="now" />
+            <ShellStatusBar {...defaultProps} timeUntilCallback="Next now" />
         );
         const nextCallbackEl = screen.getByTestId("status-bar-next-callback");
-        expect(nextCallbackEl).toHaveTextContent("Nextnow");
+        expect(nextCallbackEl).toHaveTextContent("Next now");
         expect(nextCallbackEl).toHaveClass(
             "inline-grid",
             "place-items-center",
-            "min-w-[8.5rem]",
+            "min-w-[7rem]",
             "whitespace-nowrap",
-            "after:content-['Next_in_a_few_seconds']"
+            "after:content-['Missing_10min_ago']"
         );
         const classesWhenNow = nextCallbackEl.className;
 
         rerender(
-            <ShellStatusBar {...defaultProps} timeUntilCallback="in a few seconds" />
+            <ShellStatusBar {...defaultProps} timeUntilCallback="Next 5s" />
         );
-        expect(nextCallbackEl).toHaveTextContent("Nextin a few seconds");
+        expect(nextCallbackEl).toHaveTextContent("Next 5s");
         expect(nextCallbackEl.className).toBe(classesWhenNow);
     });
 
@@ -176,7 +194,7 @@ describe("ShellStatusBar", () => {
         expect(screen.getByText(/Terminated/i)).toBeInTheDocument();
     });
 
-    it("renders executing/queued spinner at bottom of screen with popover displaying currently running and queued commands", () => {
+    it("does not render a queue indicator at the bottom of the terminal even when tasks are queued or running", () => {
         render(
             <ShellStatusBar
                 {...defaultProps}
@@ -196,25 +214,13 @@ describe("ShellStatusBar", () => {
                         createdAt: "2025-01-01T12:01:00Z",
                         input: 'file.list("/etc")',
                     },
-                    {
-                        id: "t-q2",
-                        createdAt: "2025-01-01T12:02:00Z",
-                        input: "process.list()",
-                    },
                 ]}
             />
         );
-        const queueBtn = screen.getByTestId("status-bar-queue-button");
-        expect(queueBtn).toHaveTextContent(/1 executing/i);
-        expect(queueBtn).toHaveTextContent(/2 queued/i);
+        expect(screen.queryByTestId("status-bar-queue-button")).not.toBeInTheDocument();
         expect(screen.queryByTestId("status-bar-queue-popover")).not.toBeInTheDocument();
-
-        fireEvent.click(queueBtn);
-        const popover = screen.getByTestId("status-bar-queue-popover");
-        expect(popover).toBeInTheDocument();
-        expect(popover).toHaveTextContent('sys.shell("uname -a")');
-        expect(popover).toHaveTextContent('file.list("/etc")');
-        expect(popover).toHaveTextContent("process.list()");
+        expect(screen.queryByText(/executing/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/queued/i)).not.toBeInTheDocument();
     });
 
     it("renders sidebar toggle in top bar to the left of Home icon with LogOut when hidden by default and mirrored LogIn when expanded, and toggles icon-only ShellSidebar", () => {

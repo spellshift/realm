@@ -22,6 +22,8 @@ type Asset struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
+	// Whether the asset content is ready for download.
+	Status asset.Status `json:"status,omitempty"`
 	// The name of the asset, used to reference it for downloads
 	Name string `json:"name,omitempty"`
 	// The size of the asset in bytes
@@ -93,7 +95,7 @@ func (*Asset) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case asset.FieldID, asset.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case asset.FieldName, asset.FieldHash:
+		case asset.FieldStatus, asset.FieldName, asset.FieldHash:
 			values[i] = new(sql.NullString)
 		case asset.FieldCreatedAt, asset.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -131,6 +133,12 @@ func (a *Asset) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				a.LastModifiedAt = value.Time
+			}
+		case asset.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				a.Status = asset.Status(value.String)
 			}
 		case asset.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -219,6 +227,9 @@ func (a *Asset) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
 	builder.WriteString(a.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", a.Status))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(a.Name)
