@@ -7,7 +7,7 @@ import { TRANSPORT_TYPES, TransportConfig, TransportTypeValue } from "../types";
 import { SegmentedControl } from "./SegmentedControl";
 import { TransportList, transportLabel } from "./TransportList";
 import {
-    DohProvider, RecordType, TransportFieldErrors, TransportForm, newTransportForm, switchTransportType,
+    DohProvider, RecordType, TransportFieldErrors, TransportForm, newTransportForm, normalizeTransportUri, switchTransportType,
     transportConfigFromForm, transportFieldErrors, transportFormError, transportFormFromConfig,
     transportUriPlaceholder,
 } from "./transportForm";
@@ -106,7 +106,13 @@ const TransportEditor = ({ form, editing, error, setForm, onTypeChange, onCancel
 
             <div className={isDNS ? "grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]" : "grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]"}>
                 <TransportField id="transportUri" label="URI" required value={form.transport.uri}
-                    placeholder={transportUriPlaceholder[type]} error={fieldError("uri")} onBlur={() => touch("uri")}
+                    placeholder={transportUriPlaceholder[type]} error={fieldError("uri")} onBlur={() => {
+                        touch("uri");
+                        update((current) => ({ ...current, transport: {
+                            ...current.transport,
+                            uri: normalizeTransportUri(current.transport.type, current.transport.uri),
+                        } }));
+                    }}
                     onChange={(value) => update((current) => ({ ...current, transport: { ...current.transport, uri: value } }))} />
                 {isDNS && <TransportField id="transportDomain" label="Base domain" required value={form.domain}
                     placeholder="c2.example.com" error={fieldError("domain")} onBlur={() => touch("domain")}
