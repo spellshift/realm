@@ -7,8 +7,10 @@ import (
 
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
-	"golang.org/x/exp/slog"
+	"realm.pub/tavern/internal/logging"
 )
+
+var muxLog = logging.For("shells.mux")
 
 const (
 	// maxRegistrationBufSize defines the maximum receivers that can be buffered in the registration / unregistration channel
@@ -93,7 +95,7 @@ func (mux *Mux) Unregister(s *Stream) {
 
 // Start the mux, returning an error if polling ever fails.
 func (mux *Mux) Start(ctx context.Context) error {
-	slog.DebugContext(ctx, "mux starting to manage streams and polling")
+	muxLog.DebugContext(ctx, "mux starting to manage streams and polling")
 
 	// Message channel to receive messages from the poller
 	type pollResult struct {
@@ -123,19 +125,19 @@ func (mux *Mux) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			slog.DebugContext(ctx, "mux context finished, exiting")
+			muxLog.DebugContext(ctx, "mux context finished, exiting")
 			return ctx.Err()
 
 		case s := <-mux.register:
 			// Handle Registration
-			slog.DebugContext(ctx, "mux registering new stream", "stream_id", s.id)
+			muxLog.DebugContext(ctx, "mux registering new stream", "stream_id", s.id)
 			mux.streams[s] = true
 
 			// Send history to the new stream
 			if state, ok := mux.history[s.id]; ok && state.buffer != nil {
 				data := state.buffer.Bytes()
 				if len(data) > 0 {
-					slog.DebugContext(ctx, "mux sending history to new stream", "stream_id", s.id, "bytes", len(data))
+					muxLog.DebugContext(ctx, "mux sending history to new stream", "stream_id", s.id, "bytes", len(data))
 					msg := &pubsub.Message{
 						Body: data,
 						Metadata: map[string]string{
@@ -150,7 +152,7 @@ func (mux *Mux) Start(ctx context.Context) error {
 
 		case s := <-mux.unregister:
 			// Handle Unregistration
-			slog.DebugContext(ctx, "mux unregistering stream", "stream_id", s.id)
+			muxLog.DebugContext(ctx, "mux unregistering stream", "stream_id", s.id)
 			delete(mux.streams, s)
 			s.Close()
 
@@ -168,7 +170,7 @@ func (mux *Mux) Start(ctx context.Context) error {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
-				slog.ErrorContext(ctx, "mux failed to poll subscription", "error", res.err)
+				muxLog.ErrorContext(ctx, "mux failed to poll subscription", "error", res.err)
 				continue
 			}
 
@@ -186,16 +188,16 @@ func (mux *Mux) handleMessage(ctx context.Context, msg *pubsub.Message) {
 	// Get Message Metadata
 	msgID, ok := msg.Metadata["id"]
 	if !ok {
-		slog.DebugContext(ctx, "mux received message without 'id' for stream, ignoring")
+		muxLog.TraceContext(ctx, "mux received message without 'id' for stream, ignoring")
 		return
 	}
 	msgOrderKey, ok := msg.Metadata[metadataOrderKey]
 	if !ok {
-		slog.DebugContext(ctx, "mux received message without metadataOrderKey")
+		muxLog.TraceContext(ctx, "mux received message without metadataOrderKey", "msg_id", msgID)
 	}
 	msgOrderIndex, ok := msg.Metadata[metadataOrderIndex]
 	if !ok {
-		slog.DebugContext(ctx, "mux received message without msgOrderIndex")
+		muxLog.TraceContext(ctx, "mux received message without msgOrderIndex", "msg_id", msgID)
 	}
 
 	// Update History
@@ -227,7 +229,7 @@ func (mux *Mux) handleMessage(ctx context.Context, msg *pubsub.Message) {
 	}
 
 	// Broadcast Message
-	slog.DebugContext(ctx, "mux broadcasting received message",
+	muxLog.TraceContext(ctx, "mux broadcasting received message",
 		"msg_id", msgID,
 		"msg_order_key", msgOrderKey,
 		"msg_order_index", msgOrderIndex,
@@ -235,12 +237,12 @@ func (mux *Mux) handleMessage(ctx context.Context, msg *pubsub.Message) {
 	)
 	for s := range mux.streams {
 		if s == nil {
-			slog.ErrorContext(ctx, "mux found nil stream in map while broadcasting message, skipping stream", "msg_id", msgID)
+			muxLog.ErrorContext(ctx, "mux found nil stream in map while broadcasting message, skipping stream", "msg_id", msgID)
 			continue
 		}
 
 		if s.id == msgID {
-			slog.DebugContext(ctx, "mux sending message to stream",
+			muxLog.TraceContext(ctx, "mux sending message to stream",
 				"msg_id", msgID,
 				"stream_id", s.id,
 				"stream_order_key", s.orderKey,

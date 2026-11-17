@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/errors"
+	"realm.pub/tavern/internal/logging"
 )
 
 // DefaultMaxUploadSize defines the maximum number of bytes an uploaded asset can be.
@@ -24,7 +25,7 @@ const MaxMemory = 64 * 1024 * 1024 // 64MB
 // NewUploadHandler returns an HTTP handler responsible for uploading an asset to the CDN.
 func NewUploadHandler(graph *ent.Client) http.Handler {
 	return errors.WrapHandler(func(w http.ResponseWriter, req *http.Request) error {
-		ctx := req.Context()
+		ctx := cdnAuditCtx(req)
 
 		// 1. Parse the multipart form using a smaller memory footprint
 		if err := req.ParseMultipartForm(MaxMemory); err != nil {
@@ -73,18 +74,21 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 		// Open temp file in append mode
 		tempFile, err := os.OpenFile(tempFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
+			uploadLog.ErrorContext(ctx, "failed to open temporary upload file", "asset_name", assetName, "error", err)
 			return fmt.Errorf("failed to open temp file: %v", err)
 		}
 
 		// Write the current chunk to the temp file
 		if _, err := io.Copy(tempFile, file); err != nil {
 			tempFile.Close()
+			uploadLog.ErrorContext(ctx, "failed to write upload chunk", "asset_name", assetName, "chunk_index", chunkIndex, "error", err)
 			return fmt.Errorf("failed to write chunk: %v", err)
 		}
 		tempFile.Close()
 
 		// 5. If this is NOT the last chunk, return early with a success status
 		if chunkIndex < totalChunks-1 {
+			uploadLog.DebugContext(ctx, "received asset upload chunk", "asset_name", assetName, "chunk_index", chunkIndex, "total_chunks", totalChunks)
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, `{"status":"chunk %d received"}`, chunkIndex)
 			return nil
@@ -93,6 +97,7 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 		// 6. If it IS the last chunk, process the complete file
 		assetContent, err := os.ReadFile(tempFilePath)
 		if err != nil {
+			uploadLog.ErrorContext(ctx, "failed to read assembled upload file", "asset_name", assetName, "error", err)
 			return fmt.Errorf("failed to read complete file: %v", err)
 		}
 
@@ -104,24 +109,30 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 		exists := assetQuery.Clone().ExistX(ctx)
 
 		// Create or Update the asset in the database
-		var assetID int
+		var savedAsset *ent.Asset
 		if exists {
-			assetID = assetQuery.OnlyIDX(ctx)
-			graph.Asset.UpdateOneID(assetID).
+			assetID := assetQuery.OnlyIDX(ctx)
+			savedAsset = graph.Asset.UpdateOneID(assetID).
 				SetContent(assetContent).
 				SetNillableCreatorID(creatorID).
 				SaveX(ctx)
 		} else {
-			assetID = graph.Asset.Create().
+			savedAsset = graph.Asset.Create().
 				SetName(assetName).
 				SetContent(assetContent).
 				SetNillableCreatorID(creatorID).
-				SaveX(ctx).ID
+				SaveX(ctx)
 		}
+
+		auditAttrs := append(
+			logging.AssetAttrs(savedAsset.ID, savedAsset.Name, savedAsset.Hash, savedAsset.Size),
+			"overwritten", exists,
+		)
+		logging.Audit(ctx, "cdn", "cdn.asset_uploaded", "asset uploaded to CDN", auditAttrs...)
 
 		// Respond with JSON of the asset ID
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"data":{"asset":{"id":%d}}}`, assetID)
+		fmt.Fprintf(w, `{"data":{"asset":{"id":%d}}}`, savedAsset.ID)
 		return nil
 	})
 }

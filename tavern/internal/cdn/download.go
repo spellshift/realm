@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/errors"
+	"realm.pub/tavern/internal/logging"
 )
 
 // HeaderIfNoneMatch is the name of the header the client should set if they wish to only download the asset if it has been modified since the provided hash.
@@ -47,7 +48,7 @@ func serveChunkedContent(w http.ResponseWriter, content []byte, modTime time.Tim
 // NewDownloadHandler returns an HTTP handler responsible for downloading a asset from the CDN.
 func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 	return errors.WrapHandler(func(w http.ResponseWriter, req *http.Request) error {
-		ctx := req.Context()
+		ctx := cdnAuditCtx(req)
 
 		// Get the Asset name from the request URI
 		assetName := strings.TrimPrefix(req.URL.Path, prefix)
@@ -62,12 +63,14 @@ func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		// query where possible.
 		if hash := req.Header.Get(HeaderIfNoneMatch); hash != "" {
 			if exists := assetQuery.Clone().Where(asset.Hash(hash)).ExistX(ctx); exists {
+				downloadLog.DebugContext(ctx, "asset not modified", "asset_name", assetName)
 				return ErrFileNotModified
 			}
 		}
 
 		// Ensure the asset exists
 		if exists := assetQuery.Clone().ExistX(ctx); !exists {
+			downloadLog.DebugContext(ctx, "asset not found", "asset_name", assetName)
 			return ErrFileNotFound
 		}
 
@@ -83,6 +86,9 @@ func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		serveChunkedContent(w, a.Content, a.LastModifiedAt)
 
+		logging.Audit(ctx, "cdn", "cdn.asset_downloaded", "asset downloaded from CDN",
+			logging.AssetAttrs(a.ID, a.Name, a.Hash, a.Size)...,
+		)
 		return nil
 	})
 }

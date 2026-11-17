@@ -12,12 +12,16 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/http/shell"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
+
+var log = logging.For("portals.pty")
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -36,7 +40,11 @@ type WebsocketControlMessage struct {
 // PivotSession represents an active PTY session that can be shared among multiple websockets.
 type PivotSession struct {
 	PivotID       int
+	PortalID      int
+	BeaconID      int
+	HostID        int
 	StreamID      string
+	SessionCtx    context.Context
 	CancelContext context.CancelFunc
 	seqID         uint64
 
@@ -49,6 +57,21 @@ type PivotSession struct {
 
 func (ps *PivotSession) nextSeqID() uint64 {
 	return atomic.AddUint64(&ps.seqID, 1)
+}
+
+func (ps *PivotSession) auditArgs() []any {
+	args := append(
+		logging.TargetIntAttrs("pivot", ps.PivotID, "pty"),
+		slog.Int("pivot_id", ps.PivotID),
+		slog.Int("portal_id", ps.PortalID),
+	)
+	if ps.BeaconID > 0 {
+		args = append(args, slog.Int("beacon_id", ps.BeaconID))
+	}
+	if ps.HostID > 0 {
+		args = append(args, slog.Int("host_id", ps.HostID))
+	}
+	return args
 }
 
 // sessionCache maintains a map of active PivotSessions.
@@ -148,9 +171,21 @@ func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
 		ps.CancelContext()
 	}
 
+	dbCtx := logging.DetachContext(ctx)
+
 	// Final flush & close
-	ps.FlushHistory(ctx, graph)
-	_ = graph.ShellPivot.UpdateOneID(ps.PivotID).SetClosedAt(time.Now()).Exec(ctx)
+	ps.FlushHistory(dbCtx, graph)
+	_ = graph.ShellPivot.UpdateOneID(ps.PivotID).SetClosedAt(time.Now()).Exec(dbCtx)
+
+	auditCtx := ps.SessionCtx
+	if actor := logging.ActorFromContext(ctx); actor.Kind != logging.ActorUnknown && actor.Kind != logging.ActorAnonymous {
+		auditCtx = dbCtx
+	}
+	if auditCtx == nil {
+		auditCtx = dbCtx
+	}
+	log.DebugContext(auditCtx, "closed PTY pivot session")
+	logging.Audit(auditCtx, "portal", "portal.pty_pivot_closed", "PTY pivot closed", ps.auditArgs()...)
 
 	// Notify and close all active socket channels so writer goroutines flush before closing
 	ps.mu.Lock()
@@ -194,13 +229,58 @@ func NewHandler(graph *ent.Client, mux *mux.Mux) *Handler {
 	}
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func enrichHTTPWebsocketContext(r *http.Request) context.Context {
 	ctx := r.Context()
+	if logging.EntrypointFromContext(ctx) == "" {
+		ctx = logging.WithEntrypoint(ctx, "websocket")
+	}
+	if logging.ClientIPFromContext(ctx) == "" {
+		clientIP := logging.NormalizeClientIP(
+			r.RemoteAddr,
+			r.Header.Get("X-Redirected-For"),
+			r.Header.Get("X-Forwarded-For"),
+		)
+		ctx = logging.WithClientIP(ctx, clientIP)
+	}
+	ctx, _, _ = logging.EnsureTrace(ctx)
+
+	if u := auth.UserFromContext(ctx); u != nil {
+		if cur := logging.ActorFromContext(ctx); cur.Kind == logging.ActorUnknown || cur.Kind == logging.ActorAnonymous {
+			ctx = logging.WithActor(ctx, logging.Actor{
+				Kind:    logging.ActorUser,
+				ID:      strconv.Itoa(u.ID),
+				Name:    u.Name,
+				IsAdmin: u.IsAdmin,
+			})
+		}
+	}
+	return ctx
+}
+
+func bindPivotStreamAttrs(ctx context.Context, pivotID, portalID, beaconID, hostID int) context.Context {
+	var attrs []slog.Attr
+	if pivotID > 0 {
+		attrs = append(attrs, slog.Int("pivot_id", pivotID))
+	}
+	if portalID > 0 {
+		attrs = append(attrs, slog.Int("portal_id", portalID))
+	}
+	if beaconID > 0 {
+		attrs = append(attrs, slog.Int("beacon_id", beaconID))
+	}
+	if hostID > 0 {
+		attrs = append(attrs, slog.Int("host_id", hostID))
+	}
+	return logging.WithStreamAttrs(ctx, attrs...)
+}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := enrichHTTPWebsocketContext(r)
 
 	// Upgrade to websocket first to send errors over ws
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to upgrade pty websocket", "error", err)
+		log.ErrorContext(ctx, "failed to upgrade pty websocket", "error", err)
 		return
 	}
 	defer wsConn.Close()
@@ -248,6 +328,34 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return h.graph.ShellPivot.Get(ctx, pivotID)
 			})
 			if err == nil {
+				var portalID, beaconID, hostID int
+				if pEnt, pErr := pivotEnt.QueryPortal().WithBeacon(func(bq *ent.BeaconQuery) { bq.WithHost() }).Only(ctx); pErr == nil && pEnt != nil {
+					portalID = pEnt.ID
+					if pEnt.Edges.Beacon != nil {
+						beaconID = pEnt.Edges.Beacon.ID
+						if pEnt.Edges.Beacon.Edges.Host != nil {
+							hostID = pEnt.Edges.Beacon.Edges.Host.ID
+						}
+					}
+				}
+				ctx = bindPivotStreamAttrs(ctx, pivotID, portalID, beaconID, hostID)
+
+				reconnectArgs := append(
+					logging.TargetIntAttrs("pivot", pivotID, "pty"),
+					slog.Int("pivot_id", pivotID),
+				)
+				if portalID > 0 {
+					reconnectArgs = append(reconnectArgs, slog.Int("portal_id", portalID))
+				}
+				if beaconID > 0 {
+					reconnectArgs = append(reconnectArgs, slog.Int("beacon_id", beaconID))
+				}
+				if hostID > 0 {
+					reconnectArgs = append(reconnectArgs, slog.Int("host_id", hostID))
+				}
+				log.DebugContext(ctx, "serving persisted history for closed PTY pivot")
+				logging.Audit(ctx, "portal", "portal.pty_pivot_reconnected", "operator reconnected to PTY pivot", reconnectArgs...)
+
 				if pivotEnt.Data != "" {
 					_ = wsConn.WriteJSON(shell.WebsocketTaskOutputMessage{
 						Kind:   shell.WebsocketMessageKindOutput,
@@ -262,6 +370,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					Status: "closed",
 				})
 			} else {
+				log.WarnContext(ctx, "PTY pivot session not found for reconnect", "pivot_id", pivotID, "error", err)
 				sendWsError("pivot session not found or expired")
 			}
 			_ = wsConn.WriteControl(
@@ -274,6 +383,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		pivotSession = sess
+		ctx = bindPivotStreamAttrs(ctx, sess.PivotID, sess.PortalID, sess.BeaconID, sess.HostID)
+		log.DebugContext(ctx, "operator reconnected to active PTY pivot")
+		logging.Audit(ctx, "portal", "portal.pty_pivot_reconnected", "operator reconnected to PTY pivot", sess.auditArgs()...)
 	} else {
 		// Create new session
 		if portalIDStr == "" {
@@ -289,20 +401,36 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// Verify Portal
 		p, err := shell.RetryOnLock(ctx, func() (*ent.Portal, error) {
-			return h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+			return h.graph.Portal.Query().
+				Where(portal.ID(portalID)).
+				WithBeacon(func(bq *ent.BeaconQuery) {
+					bq.WithHost()
+				}).
+				Only(ctx)
 		})
 		if err != nil {
+			log.WarnContext(ctx, "portal not found for PTY pivot", "portal_id", portalID, "error", err)
 			sendWsError("portal not found")
 			return
 		}
 		if !p.ClosedAt.IsZero() {
+			log.WarnContext(ctx, "attempted to open PTY pivot on closed portal", "portal_id", portalID)
 			sendWsError("portal is closed")
 			return
+		}
+
+		var beaconID, hostID int
+		if p.Edges.Beacon != nil {
+			beaconID = p.Edges.Beacon.ID
+			if p.Edges.Beacon.Edges.Host != nil {
+				hostID = p.Edges.Beacon.Edges.Host.ID
+			}
 		}
 
 		// Open Portal Mux
 		cleanupPortal, err := h.mux.OpenPortal(ctx, portalID)
 		if err != nil {
+			log.ErrorContext(ctx, "failed to open portal for PTY pivot", "portal_id", portalID, "error", err)
 			sendWsError(fmt.Sprintf("Failed to open portal: %v", err))
 			return
 		}
@@ -331,19 +459,27 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return createReq.Save(ctx)
 		})
 		if err != nil {
+			log.ErrorContext(ctx, "failed to create PTY shell pivot", "portal_id", portalID, "error", err)
 			sendWsError(fmt.Sprintf("Failed to create shell pivot: %v", err))
 			cleanupPortal()
 			return
 		}
 
+		ctx = bindPivotStreamAttrs(ctx, pivotEnt.ID, portalID, beaconID, hostID)
+
 		// Setup portal communication
-		sessionCtx, cancelSession := context.WithCancel(context.Background())
+		detachedSessionBase := logging.DetachContext(ctx)
+		sessionCtx, cancelSession := context.WithCancel(detachedSessionBase)
 
 		recvCh, recvCleanup := h.mux.Subscribe(topicOut)
 
 		pivotSession = &PivotSession{
-			PivotID:  pivotEnt.ID,
-			StreamID: streamID,
+			PivotID:    pivotEnt.ID,
+			PortalID:   portalID,
+			BeaconID:   beaconID,
+			HostID:     hostID,
+			StreamID:   streamID,
+			SessionCtx: detachedSessionBase,
 			CancelContext: func() {
 				cancelSession()
 				recvCleanup()
@@ -357,9 +493,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		cacheMu.Unlock()
 
 		var closeOnce sync.Once
-		closePivot := func() {
+		closePivot := func(closeCtx context.Context) {
 			closeOnce.Do(func() {
-				pivotSession.Close(context.Background(), h.graph)
+				pivotSession.Close(closeCtx, h.graph)
 			})
 		}
 
@@ -377,7 +513,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				case m, ok := <-recvCh:
 					if !ok {
-						closePivot()
+						closePivot(detachedSessionBase)
 						return
 					}
 					// Only accept motes matching our streamID
@@ -386,11 +522,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 					// Check for close
 					if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
-						closePivot()
+						log.DebugContext(sessionCtx, "received PTY close mote from portal")
+						closePivot(detachedSessionBase)
 						return
 					}
 					// Handle PTY data
 					if bytesPayload := m.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY {
+						log.TraceContext(sessionCtx, "forwarding PTY output frame to websocket", "bytes", len(bytesPayload.Data))
 						pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
 							Kind:   shell.WebsocketMessageKindOutput,
 							Output: string(bytesPayload.Data),
@@ -409,7 +547,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				case <-sessionCtx.Done():
 					return
 				case <-ticker.C:
-					pivotSession.FlushHistory(context.Background(), h.graph)
+					pivotSession.FlushHistory(detachedSessionBase, h.graph)
 				}
 			}
 		}()
@@ -428,10 +566,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 		if err := h.mux.Publish(sessionCtx, topicIn, initMote); err != nil {
+			log.ErrorContext(ctx, "failed to publish PTY init mote", "error", err)
 			sendWsError(fmt.Sprintf("Failed to send PTY init mote: %v", err))
-			closePivot()
+			cacheMu.Lock()
+			delete(sessionCache, pivotEnt.ID)
+			cacheMu.Unlock()
+			pivotSession.CancelContext()
 			return
 		}
+
+		log.DebugContext(ctx, "operator opened PTY pivot", "stream_id", streamID, "rows", initRows, "cols", initCols)
+		logging.Audit(ctx, "portal", "portal.pty_pivot_opened", "operator opened PTY pivot", pivotSession.auditArgs()...)
 
 		if initRows > 0 && initCols > 0 {
 			initResizeMote := &portalpb.Mote{
@@ -445,7 +590,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 			if err := h.mux.Publish(sessionCtx, topicIn, initResizeMote); err != nil {
-				slog.ErrorContext(sessionCtx, "failed to publish initial pty resize", "error", err)
+				log.ErrorContext(sessionCtx, "failed to publish initial pty resize", "error", err)
 			}
 		}
 
@@ -465,6 +610,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					}
 					switch ctrlMsg.Kind {
 					case "close":
+						log.DebugContext(ctx, "received websocket PTY close control message")
 						closeMote := &portalpb.Mote{
 							StreamId: streamID,
 							SeqId:    pivotSession.nextSeqID(),
@@ -475,11 +621,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							},
 						}
 						_ = h.mux.Publish(sessionCtx, topicIn, closeMote)
-						closePivot()
+						closePivot(ctx)
 						errCh <- fmt.Errorf("closed")
 						return
 					case "resize":
 						if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+							log.DebugContext(ctx, "forwarding websocket PTY window resize", "rows", ctrlMsg.Rows, "cols", ctrlMsg.Cols)
 							resizeMote := &portalpb.Mote{
 								StreamId: streamID,
 								SeqId:    0,
@@ -496,6 +643,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 						}
 					case string(shell.WebsocketMessageKindInput):
+						log.TraceContext(ctx, "forwarding websocket PTY input frame", "bytes", len(ctrlMsg.Input))
 						mote := &portalpb.Mote{
 							StreamId: streamID,
 							SeqId:    pivotSession.nextSeqID(),
@@ -525,6 +673,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Writer goroutine: PivotSession output -> websocket
 		go func() {
 			for msg := range outCh {
+				log.TraceContext(ctx, "writing PTY websocket frame")
 				if err := wsConn.WriteJSON(msg); err != nil {
 					errCh <- err
 					return
@@ -551,6 +700,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Writer goroutine
 	go func() {
 		for msg := range outCh {
+			log.TraceContext(ctx, "writing PTY websocket frame")
 			if err := wsConn.WriteJSON(msg); err != nil {
 				errCh <- err
 				return
@@ -559,22 +709,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		errCh <- fmt.Errorf("closed")
 	}()
 
-	// Reader goroutine - for reconnects we need the portal info
-	// The pivot session tracks the stream context, but we need topicIn
-	// For reconnects, we look up the portal from the pivot once up front.
+	// Reader goroutine - for reconnects we use the stored portalID (or query once if unset).
 	go func() {
-		// Resolve portalID once to avoid per-keystroke DB queries
-		pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
-		if err != nil {
-			errCh <- err
-			return
+		portalID := pivotSession.PortalID
+		if portalID <= 0 {
+			pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			portalEnt, err := pivot.QueryPortal().Only(ctx)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			portalID = portalEnt.ID
 		}
-		portalEnt, err := pivot.QueryPortal().Only(ctx)
-		if err != nil {
-			errCh <- err
-			return
-		}
-		topicIn := h.mux.TopicIn(portalEnt.ID)
+		topicIn := h.mux.TopicIn(portalID)
 
 		for {
 			_, msg, err := wsConn.ReadMessage()
@@ -588,6 +739,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			switch ctrlMsg.Kind {
 			case "close":
+				log.DebugContext(ctx, "received websocket PTY close control message")
 				closeMote := &portalpb.Mote{
 					StreamId: pivotSession.StreamID,
 					SeqId:    pivotSession.nextSeqID(),
@@ -598,11 +750,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					},
 				}
 				_ = h.mux.Publish(ctx, topicIn, closeMote)
-				pivotSession.Close(context.Background(), h.graph)
+				pivotSession.Close(ctx, h.graph)
 				errCh <- fmt.Errorf("closed")
 				return
 			case "resize":
 				if ctrlMsg.Rows > 0 && ctrlMsg.Cols > 0 {
+					log.DebugContext(ctx, "forwarding websocket PTY window resize", "rows", ctrlMsg.Rows, "cols", ctrlMsg.Cols)
 					resizeMote := &portalpb.Mote{
 						StreamId: pivotSession.StreamID,
 						SeqId:    0,
@@ -614,10 +767,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						},
 					}
 					if err := h.mux.Publish(ctx, topicIn, resizeMote); err != nil {
-						slog.ErrorContext(ctx, "failed to publish pty resize", "error", err)
+						log.ErrorContext(ctx, "failed to publish pty resize", "error", err)
 					}
 				}
 			case string(shell.WebsocketMessageKindInput):
+				log.TraceContext(ctx, "forwarding websocket PTY input frame", "bytes", len(ctrlMsg.Input))
 				mote := &portalpb.Mote{
 					StreamId: pivotSession.StreamID,
 					SeqId:    pivotSession.nextSeqID(),
@@ -629,7 +783,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					},
 				}
 				if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
-					slog.ErrorContext(ctx, "failed to publish pty input", "error", err)
+					log.ErrorContext(ctx, "failed to publish pty input", "error", err)
 				}
 			}
 		}

@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"context"
 	"io"
-	"log/slog"
+
+	"realm.pub/tavern/internal/logging"
 )
 
 const (
@@ -23,10 +24,10 @@ const (
 )
 
 // streamBuildLines scans newline-delimited text from r and sends each line to ch.
-// It uses a larger-than-default buffer (see maxScanTokenSize) and logs a warning
+// It uses a larger-than-default buffer (see maxScanTokenSize) and logs an error
 // if the scan stops due to an error (e.g. a line still exceeding the buffer)
 // rather than silently dropping the remainder of the output.
-func streamBuildLines(ctx context.Context, r io.Reader, ch chan<- string) {
+func streamBuildLines(ctx context.Context, log *logging.Logger, r io.Reader, ch chan<- string) {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 64*1024), maxScanTokenSize)
 	for scanner.Scan() {
@@ -37,7 +38,7 @@ func streamBuildLines(ctx context.Context, r io.Reader, ch chan<- string) {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		slog.ErrorContext(ctx, "build output stream scan stopped early", "error", err)
+		log.ErrorContext(ctx, "build output stream scan stopped early", "error", err)
 	}
 }
 

@@ -3,11 +3,13 @@ package auth
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/logging"
 )
 
 var (
@@ -73,12 +75,30 @@ func contextFromIdentity(ctx context.Context, id Identity) context.Context {
 	return context.WithValue(ctx, ctxKey{}, id)
 }
 
+func contextWithUserActor(ctx context.Context, u *ent.User, authMethod string) context.Context {
+	uid := strconv.Itoa(u.ID)
+	if authMethod == "" {
+		existing := logging.ActorFromContext(ctx)
+		if existing.AuthMethod != "" && (existing.Kind == "" || (existing.Kind == logging.ActorUser && existing.ID == uid)) {
+			authMethod = existing.AuthMethod
+		}
+	}
+	ctx = contextFromIdentity(ctx, &userIdentity{true, u})
+	return logging.WithActor(ctx, logging.Actor{
+		Kind:       logging.ActorUser,
+		ID:         uid,
+		Name:       u.Name,
+		IsAdmin:    u.IsAdmin,
+		AuthMethod: authMethod,
+	})
+}
+
 // ContextFromUser returns a copy of parent context with the given user Identity associated with it.
 func ContextFromUser(ctx context.Context, u *ent.User) context.Context {
 	if u == nil {
 		return ctx
 	}
-	return contextFromIdentity(ctx, &userIdentity{true, u})
+	return contextWithUserActor(ctx, u, "")
 }
 
 func isTransientDBError(err error) bool {
@@ -125,7 +145,7 @@ func ContextFromSessionToken(ctx context.Context, graph *ent.Client, token strin
 		return nil, err
 	}
 
-	return contextFromIdentity(ctx, &userIdentity{true, u}), nil
+	return contextWithUserActor(ctx, u, "cookie"), nil
 }
 
 // ContextFromAccessToken returns a copy of parent context with a user Identity associated with it (if it exists).
@@ -139,7 +159,7 @@ func ContextFromAccessToken(ctx context.Context, graph *ent.Client, token string
 		return nil, err
 	}
 
-	return contextFromIdentity(ctx, &userIdentity{true, u}), nil
+	return contextWithUserActor(ctx, u, "access_token"), nil
 }
 
 // IdentityFromContext returns the identity associated with the provided context, or nil if no identity is associated.

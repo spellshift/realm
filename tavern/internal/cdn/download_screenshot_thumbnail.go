@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/errors"
+	"realm.pub/tavern/internal/logging"
 )
 
 // NewScreenshotThumbnailDownloadHandler streams the low resolution thumbnail of a Screenshot
@@ -25,18 +27,20 @@ func NewScreenshotThumbnailDownloadHandler(graph *ent.Client, prefix string) htt
 			return ErrInvalidFileID
 		}
 
-		ctx := req.Context()
+		ctx := cdnAuditCtx(req)
 
 		screenshotQuery := graph.Screenshot.Query().Where(screenshot.ID(screenshotID))
 
 		// If hash was provided, check to see if the file has been updated.
 		if hash := req.Header.Get(HeaderIfNoneMatch); hash != "" {
 			if exists := screenshotQuery.Clone().Where(screenshot.Hash(hash)).ExistX(ctx); exists {
+				downloadLog.DebugContext(ctx, "screenshot thumbnail not modified", "screenshot_id", screenshotID)
 				return ErrFileNotModified
 			}
 		}
 
 		if !screenshotQuery.Clone().ExistX(ctx) {
+			downloadLog.DebugContext(ctx, "screenshot thumbnail not found", "screenshot_id", screenshotID)
 			return ErrFileNotFound
 		}
 
@@ -44,7 +48,10 @@ func NewScreenshotThumbnailDownloadHandler(graph *ent.Client, prefix string) htt
 		// full resolution content is loaded separately, and only as a fallback for screenshots
 		// that have no thumbnail generated.
 		item := screenshotQuery.Clone().
-			Select(screenshot.FieldHash, screenshot.FieldCreatedAt, screenshot.FieldThumbnail).
+			Select(screenshot.FieldHash, screenshot.FieldCreatedAt, screenshot.FieldThumbnail, screenshot.FieldName).
+			WithHost(func(hq *ent.HostQuery) {
+				hq.Select(host.FieldID)
+			}).
 			OnlyX(ctx)
 
 		// Set Etag to hash of file
@@ -59,6 +66,15 @@ func NewScreenshotThumbnailDownloadHandler(graph *ent.Client, prefix string) htt
 		// Set Content-Type and serve content in chunks
 		w.Header().Set("Content-Type", "image/png")
 		serveChunkedContent(w, content, item.CreatedAt)
+
+		attrs := append(logging.TargetIntAttrs("screenshot", screenshotID, item.Name),
+			"screenshot_id", screenshotID,
+			"mode", "thumbnail",
+		)
+		if item.Edges.Host != nil {
+			attrs = append(attrs, "host_id", item.Edges.Host.ID)
+		}
+		logging.Audit(ctx, "cdn", "cdn.screenshot_downloaded", "screenshot thumbnail downloaded from CDN", attrs...)
 
 		return nil
 	})

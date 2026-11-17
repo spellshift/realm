@@ -3,7 +3,6 @@ package pubsub
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -85,6 +84,7 @@ func (drv *gcpDriver) EnsurePublisher(ctx context.Context, topic string) (Publis
 		topicPath = fmt.Sprintf("projects/%s/topics/%s", drv.GCP.Project(), topic)
 	}
 
+	log.DebugContext(ctx, "ensuring pubsub topic publisher", "topic", topicPath)
 	_, err := drv.GCP.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
 		Name: topicPath,
 	})
@@ -126,6 +126,7 @@ func (drv *gcpDriver) EnsureSubscriber(ctx context.Context, topic, subscription 
 		subscriptionPath = fmt.Sprintf("projects/%s/subscriptions/%s", drv.GCP.Project(), subscription)
 	}
 
+	log.DebugContext(ctx, "ensuring pubsub topic subscriber", "topic", topicPath, "subscription", subscriptionPath)
 	_, err := drv.GCP.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
 		Name:             subscriptionPath,
 		Topic:            topicPath,
@@ -158,6 +159,7 @@ func (pub *gcpPublisher) Publish(ctx context.Context, mote *portalpb.Mote) error
 	if err != nil {
 		return fmt.Errorf("failed to marshal mote: %w", err)
 	}
+	log.TraceContext(ctx, "publishing mote to pubsub driver", "bytes", len(data), "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 	result := pub.Publisher.Publish(ctx, &pubsub.Message{
 		Data: data,
 		Attributes: map[string]string{
@@ -191,14 +193,16 @@ func (s *gcpSubscriber) Receive(ctx context.Context, f func(context.Context, *po
 
 		// Loopback detection
 		if senderID, ok := msg.Attributes["server_id"]; ok && senderID == s.serverID {
+			log.TraceContext(ctx, "ignoring loopback pubsub mote", "server_id", senderID)
 			return
 		}
 
 		var mote portalpb.Mote
 		if err := proto.Unmarshal(msg.Data, &mote); err != nil {
-			slog.Error("subscriber failed to unmarshal mote", "err", err)
+			log.ErrorContext(ctx, "subscriber failed to unmarshal mote", "error", err)
 			return
 		}
+		log.TraceContext(ctx, "received mote from pubsub driver", "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 		f(ctx, &mote)
 	})
 }

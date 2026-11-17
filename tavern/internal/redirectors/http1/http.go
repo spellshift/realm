@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"time"
+
+	"realm.pub/tavern/internal/logging"
+	"realm.pub/tavern/internal/redirectors"
 )
 
 const (
@@ -56,11 +58,26 @@ func getFlusher(w http.ResponseWriter) (http.Flusher, bool) {
 
 // handleStreamError logs and returns an HTTP error for gRPC stream errors
 func handleStreamError(w http.ResponseWriter, message string, err error) {
-	slog.Error(fmt.Sprintf("[gRPC Stream Error] %s: %v\n", message, err))
+	log.Error("gRPC stream error", "message", message, "error", err)
 	http.Error(w, fmt.Sprintf("%s: %v", message, err), http.StatusInternalServerError)
 }
 
 // createRequestContext creates a context with timeout
 func createRequestContext(timeout time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), timeout)
+}
+
+// prepareUpstreamContext extracts or generates HTTP trace IDs, sets x-redirected-for,
+// and injects W3C traceparent / x-trace-id / x-request-id into outgoing gRPC metadata.
+func prepareUpstreamContext(r *http.Request, timeout time.Duration, clientIP string) (context.Context, context.CancelFunc) {
+	var headers http.Header
+	if r != nil {
+		headers = r.Header
+	}
+	traceID, reqID := logging.ExtractHTTPTrace(headers)
+	baseCtx := logging.WithTrace(context.Background(), traceID, reqID)
+	ctx, cancel := context.WithTimeout(baseCtx, timeout)
+	ctx = redirectors.SetRedirectedForHeader(ctx, clientIP)
+	ctx, _, _ = logging.InjectOutgoingGRPCTrace(ctx)
+	return ctx, cancel
 }

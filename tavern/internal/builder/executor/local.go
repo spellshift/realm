@@ -4,14 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+
+	"realm.pub/tavern/internal/logging"
 )
+
+var localLog = logging.For("builder.local")
 
 // LocalExecutor executes build tasks on the local host shell inside a
 // temporary scratch workspace.
@@ -75,7 +78,7 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 	}
 	defer os.RemoveAll(tmpDir)
 
-	slog.InfoContext(ctx, "starting local build", "task_id", spec.TaskID, "workspace", tmpDir)
+	localLog.InfoContext(ctx, "starting local build", "task_id", spec.TaskID, "workspace", tmpDir)
 
 	// Execute all scripts in scripts/ in alphabetical order, mirroring Docker's entrypoint.
 	entrypoint := strings.Join([]string{
@@ -114,12 +117,12 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 
 	go func() {
 		defer wg.Done()
-		streamBuildLines(ctx, stdoutPipe, outputCh)
+		streamBuildLines(ctx, localLog, stdoutPipe, outputCh)
 	}()
 
 	go func() {
 		defer wg.Done()
-		streamBuildLines(ctx, stderrPipe, errorCh)
+		streamBuildLines(ctx, localLog, stderrPipe, errorCh)
 	}()
 
 	wg.Wait()
@@ -151,14 +154,14 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 		// artifact. Surface it through the existing build-error stream
 		// (client.go sets StreamBuildTaskOutputRequest.Error from this
 		// return value) so it's indistinguishable from any other failure.
-		slog.WarnContext(ctx, "artifact extraction failed",
+		localLog.WarnContext(ctx, "artifact extraction failed",
 			"task_id", spec.TaskID, "path", spec.ArtifactPath, "error", extractErr)
 		return &buildResult, fmt.Errorf("artifact extraction failed: %w", extractErr)
 	}
 
 	buildResult.Artifact = data
 	buildResult.ArtifactName = name
-	slog.InfoContext(ctx, "artifact extracted",
+	localLog.InfoContext(ctx, "artifact extracted",
 		"task_id", spec.TaskID, "name", name, "size", len(data))
 
 	return &buildResult, nil

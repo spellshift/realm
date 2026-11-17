@@ -3,7 +3,6 @@ package gcp
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/url"
 	"strings"
 
@@ -11,8 +10,11 @@ import (
 	schedulerpb "cloud.google.com/go/scheduler/apiv1/schedulerpb"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/scheduler"
 )
+
+var log = logging.For("scheduler.gcp")
 
 func init() {
 	scheduler.Register("gcp", &Driver{})
@@ -66,7 +68,7 @@ func (d *Driver) Open(ctx context.Context, uri *url.URL) (scheduler.Scheduler, e
 		return nil, fmt.Errorf("scheduler/gcp: URI must specify a parent (e.g. gcp://projects/{project}/locations/{location})")
 	}
 
-	slog.InfoContext(ctx, "scheduler/gcp: creating Cloud Scheduler client", "parent", parent)
+	log.DebugContext(ctx, "creating Cloud Scheduler client", "parent", parent)
 
 	var opts []option.ClientOption
 	client, err := cloudscheduler.NewCloudSchedulerClient(ctx, opts...)
@@ -74,7 +76,7 @@ func (d *Driver) Open(ctx context.Context, uri *url.URL) (scheduler.Scheduler, e
 		return nil, fmt.Errorf("scheduler/gcp: failed to create client (parent=%q): %w", parent, err)
 	}
 
-	slog.InfoContext(ctx, "scheduler/gcp: client created successfully", "parent", parent)
+	log.InfoContext(ctx, "Cloud Scheduler client created", "parent", parent)
 
 	return &Scheduler{
 		client: &gcpClient{inner: client},
@@ -95,7 +97,7 @@ type Scheduler struct {
 func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	fullName := fmt.Sprintf("%s/jobs/%s", s.parent, job.Name)
 
-	slog.InfoContext(ctx, "scheduler/gcp: scheduling job", "name", fullName, "schedule", job.Schedule, "url", job.HTTPTarget.URL, "method", job.HTTPTarget.Method)
+	log.DebugContext(ctx, "scheduling job", "name", fullName, "schedule", job.Schedule, "url", job.HTTPTarget.URL, "method", job.HTTPTarget.Method)
 
 	// Check for an existing job with the same name.
 	if exists, err := s.jobExists(ctx, fullName); err != nil {
@@ -130,7 +132,7 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 		return fmt.Errorf("scheduler/gcp: failed to create job %q (schedule=%q, url=%q): %w", fullName, job.Schedule, job.HTTPTarget.URL, err)
 	}
 
-	slog.InfoContext(ctx, "scheduler/gcp: created job", "name", fullName, "schedule", job.Schedule, "url", job.HTTPTarget.URL)
+	log.InfoContext(ctx, "created scheduled job", "name", fullName, "schedule", job.Schedule, "url", job.HTTPTarget.URL)
 	return nil
 }
 
@@ -148,7 +150,7 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 func (s *Scheduler) ScheduleAt(ctx context.Context, job scheduler.OnceJob) error {
 	fullName := fmt.Sprintf("%s/jobs/%s", s.parent, job.Name)
 
-	slog.InfoContext(ctx, "scheduler/gcp: scheduling one-time job", "name", fullName, "at", job.At.UTC(), "url", job.HTTPTarget.URL, "method", job.HTTPTarget.Method)
+	log.DebugContext(ctx, "scheduling one-time job", "name", fullName, "at", job.At.UTC(), "url", job.HTTPTarget.URL, "method", job.HTTPTarget.Method)
 
 	// Check for an existing job with the same name.
 	if exists, err := s.jobExists(ctx, fullName); err != nil {
@@ -187,7 +189,7 @@ func (s *Scheduler) ScheduleAt(ctx context.Context, job scheduler.OnceJob) error
 		return fmt.Errorf("scheduler/gcp: failed to create one-time job %q (schedule=%q, url=%q): %w", fullName, schedule, job.HTTPTarget.URL, err)
 	}
 
-	slog.InfoContext(ctx, "scheduler/gcp: created one-time job", "name", fullName, "schedule", schedule, "target_time", utc, "url", job.HTTPTarget.URL)
+	log.InfoContext(ctx, "created one-time scheduled job", "name", fullName, "schedule", schedule, "target_time", utc, "url", job.HTTPTarget.URL)
 	return nil
 }
 

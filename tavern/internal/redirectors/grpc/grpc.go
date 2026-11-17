@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"log/slog"
 	"net"
 
 	"google.golang.org/grpc"
@@ -15,8 +14,11 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/redirectors"
 )
+
+var log = logging.For("redirectors.grpc")
 
 func init() {
 	redirectors.Register("grpc", &Redirector{})
@@ -37,13 +39,13 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 		grpc.ForceServerCodec(encoding.GetCodec("raw")),
 	}
 	if tlsConfig != nil {
-		slog.Debug("grpc redirector: TLS enabled", "listen_on", listenOn, "min_version", tlsConfig.MinVersion, "num_certificates", len(tlsConfig.Certificates))
+		log.DebugContext(ctx, "TLS enabled", "listen_on", listenOn, "min_version", tlsConfig.MinVersion, "num_certificates", len(tlsConfig.Certificates))
 		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
 	}
 
 	s := grpc.NewServer(serverOpts...)
 
-	slog.Info("grpc redirector: started", "listen_on", listenOn)
+	log.InfoContext(ctx, "started gRPC redirector", "listen_on", listenOn)
 
 	go func() {
 		<-ctx.Done()
@@ -55,39 +57,45 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 
 func (r *Redirector) handler(upstream *grpc.ClientConn) grpc.StreamHandler {
 	return func(srv any, ss grpc.ServerStream) error {
+		ctx, _, _ := logging.ExtractGRPCTrace(ss.Context())
+
 		fullMethodName, ok := grpc.MethodFromServerStream(ss)
 		if !ok {
-			slog.Error("grpc redirector: incoming request failed, could not get method from server stream")
+			log.ErrorContext(ctx, "incoming request failed, could not get method from server stream")
 			return status.Errorf(codes.Internal, "failed to get method from server stream")
 		}
 
-		ctx := ss.Context()
 		// Get the client's remote IP address
 		clientIP := c2.GetClientIP(ctx)
 
-		slog.Info("grpc redirector: request", "source", clientIP, "destination", fullMethodName)
+		log.DebugContext(ctx, "forwarding gRPC request", "source", clientIP, "destination", fullMethodName)
 
 		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {
-			ctx = metadata.NewOutgoingContext(ctx, md.Copy())
+			outMD := md.Copy()
+			outMD.Delete("traceparent")
+			outMD.Delete(logging.MetadataTraceIDKey)
+			outMD.Delete(logging.MetadataReqIDKey)
+			ctx = metadata.NewOutgoingContext(ctx, outMD)
 		}
 
-		// Set x-redirected-for header with the client IP
+		// Set x-redirected-for header first, then append outgoing W3C trace correlation headers.
 		ctx = redirectors.SetRedirectedForHeader(ctx, clientIP)
+		outCtx, _, _ := logging.InjectOutgoingGRPCTrace(ctx)
 
-		cs, err := upstream.NewStream(ctx, &grpc.StreamDesc{
+		cs, err := upstream.NewStream(outCtx, &grpc.StreamDesc{
 			StreamName:    fullMethodName,
 			ServerStreams: true,
 			ClientStreams: true,
 		}, fullMethodName, grpc.CallContentSubtype("raw"))
 		if err != nil {
-			slog.Error("grpc redirector: upstream request failed, could not create client stream", "method", fullMethodName, "source", clientIP, "error", err)
+			log.ErrorContext(ctx, "upstream request failed, could not create client stream", "method", fullMethodName, "source", clientIP, "error", err)
 			return fmt.Errorf("failed to create new client stream: %w", err)
 		}
 
 		errChan := make(chan error, 2)
-		go r.proxy(ss, cs, errChan, "client->upstream", fullMethodName, clientIP)
-		go r.proxy(cs, ss, errChan, "upstream->client", fullMethodName, clientIP)
+		go r.proxy(ctx, ss, cs, errChan, "client->upstream", fullMethodName, clientIP)
+		go r.proxy(ctx, cs, ss, errChan, "upstream->client", fullMethodName, clientIP)
 
 		err = <-errChan
 		if err == io.EOF {
@@ -95,7 +103,7 @@ func (r *Redirector) handler(upstream *grpc.ClientConn) grpc.StreamHandler {
 		}
 
 		if err != nil && err != io.EOF {
-			slog.Error("grpc redirector: proxy error", "method", fullMethodName, "source", clientIP, "error", err)
+			log.ErrorContext(ctx, "proxy error", "method", fullMethodName, "source", clientIP, "error", err)
 			return err
 		}
 
@@ -103,7 +111,7 @@ func (r *Redirector) handler(upstream *grpc.ClientConn) grpc.StreamHandler {
 	}
 }
 
-func (r *Redirector) proxy(from grpc.Stream, to grpc.Stream, errChan chan<- error, direction string, method string, clientIP string) {
+func (r *Redirector) proxy(ctx context.Context, from grpc.Stream, to grpc.Stream, errChan chan<- error, direction string, method string, clientIP string) {
 	for {
 		var msg []byte
 		if err := from.RecvMsg(&msg); err != nil {
@@ -114,13 +122,13 @@ func (r *Redirector) proxy(from grpc.Stream, to grpc.Stream, errChan chan<- erro
 				errChan <- io.EOF
 				return
 			}
-			slog.Error("grpc redirector: proxy receive failed", "direction", direction, "method", method, "source", clientIP, "error", err)
+			log.ErrorContext(ctx, "proxy receive failed", "direction", direction, "method", method, "source", clientIP, "error", err)
 			errChan <- err
 			return
 		}
 
 		if err := to.SendMsg(msg); err != nil {
-			slog.Error("grpc redirector: proxy send failed", "direction", direction, "method", method, "source", clientIP, "error", err)
+			log.ErrorContext(ctx, "proxy send failed", "direction", direction, "method", method, "source", clientIP, "error", err)
 			errChan <- err
 			return
 		}

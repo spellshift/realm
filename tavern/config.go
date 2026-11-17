@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -21,11 +20,14 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/portals/mux"
 	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/tomes"
 )
+
+var configLog = logging.For("app.config")
 
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
 var GlobalInstanceID = fmt.Sprintf("tavern-%s", namegen.New())
@@ -34,13 +36,19 @@ var (
 	// EnvEnableTestData if set will populate the database with test data.
 	// EnvEnableTestRunAndExit will start the application, but exit immediately after.
 	// EnvDisableDefaultTomes will prevent the default tomes from being imported on startup.
-	// EnvDebugLogging will emit verbose debug logs to help troubleshoot issues.
-	// EnvJSONLogging will emit logs in JSON format for easier parsing by log aggregators.
-	// EnvLogInstanceID will include the tavern instance id in log messages.
-	// EnvLogGraphQLRawQuery will include the raw GraphQL query in graphql log messages.
+	// EnvLogSpec sets the logging preset and subsystem filter (e.g. "prod", "dev", "portals=debug").
+	// EnvLogFormat overrides the log output format ("text" or "json").
+	// EnvAuditFile tees all semantic audit records as JSONL to the given file path.
+	// EnvDebugLogging will emit verbose debug logs to help troubleshoot issues (legacy).
+	// EnvJSONLogging will emit logs in JSON format for easier parsing by log aggregators (legacy).
+	// EnvLogInstanceID will include the tavern instance id in log messages (legacy).
+	// EnvLogGraphQLRawQuery will include the raw GraphQL query in graphql log messages (legacy).
 	EnvEnableTestData       = EnvBool{"ENABLE_TEST_DATA"}
 	EnvEnableTestRunAndExit = EnvBool{"ENABLE_TEST_RUN_AND_EXIT"}
 	EnvDisableDefaultTomes  = EnvBool{"DISABLE_DEFAULT_TOMES"}
+	EnvLogSpec              = EnvString{"TAVERN_LOG", ""}
+	EnvLogFormat            = EnvString{"TAVERN_LOG_FORMAT", ""}
+	EnvAuditFile            = EnvString{"TAVERN_AUDIT_FILE", ""}
 	EnvDebugLogging         = EnvBool{"ENABLE_DEBUG_LOGGING"}
 	EnvJSONLogging          = EnvBool{"ENABLE_JSON_LOGGING"}
 	EnvLogInstanceID        = EnvBool{"ENABLE_INSTANCE_ID_LOGGING"}
@@ -323,9 +331,9 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 
 		// Overwrite env var specification with newly created GCP PubSub Subscriptions
 		subShellInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopicID))
-		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
+		configLog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
 		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopicID))
-		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
+		configLog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 
 		// Start a goroutine to publish noop messages on an interval.
 		// This reduces cold-start latency for GCP PubSub which can improve shell user experience.
@@ -344,7 +352,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
 	}
 
-	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
+	configLog.DebugContext(ctx, "opening GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
 	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellOutput, err)
@@ -355,7 +363,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellInput, err)
 	}
 
-	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell input", "subscription_name", subShellInput)
+	configLog.DebugContext(ctx, "opening GCP PubSub subscription for shell input", "subscription_name", subShellInput)
 	subInput, err := pubsub.OpenSubscription(ctx, subShellInput)
 	if err != nil {
 		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
@@ -427,7 +435,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 
 		// If none are set, default to auth disabled
 		if clientID == "" && clientSecret == "" && domain == "" {
-			slog.Warn("oauth is not configured, authentication disabled")
+			configLog.Warn("oauth is not configured, authentication disabled")
 			return
 		}
 
@@ -442,7 +450,7 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			log.Fatalf("[FATAL] failed to configure oauth, must provide value for environment var 'OAUTH_DOMAIN'")
 		}
 		if !strings.HasPrefix(domain, "http") {
-			slog.Warn("domain not prefixed with scheme (http:// or https://), defaulting to https://", "oauth_domain", domain)
+			configLog.Warn("domain not prefixed with scheme (http:// or https://), defaulting to https://", "oauth_domain", domain)
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 
@@ -467,7 +475,7 @@ func ConfigureMySQLFromEnv() func(*Config) {
 
 		mysqlConfig.Addr = EnvMySQLAddr.String()
 		if mysqlConfig.Addr == "" {
-			slog.Warn("mysql is not configured, using sqlite")
+			configLog.Warn("mysql is not configured, using sqlite")
 			return
 		}
 

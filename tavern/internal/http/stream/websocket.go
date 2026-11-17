@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/logging"
 )
 
 const (
@@ -66,7 +67,7 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 			hasClosed, ok := message.Metadata[MetadataStreamClose]
 			if ok && hasClosed != "" {
 				// The producer ended the stream.
-				slog.DebugContext(ctx, "websocket closed due to producer ending stream",
+				muxLog.DebugContext(ctx, "websocket closed due to producer ending stream",
 					"stream_id", c.Stream.id,
 					"stream_order_key", c.Stream.orderKey,
 				)
@@ -83,12 +84,17 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				continue
 			}
 
+			muxLog.TraceContext(ctx, "writing stream message to websocket",
+				"stream_id", c.Stream.id,
+				"kind", kind,
+				"bytes", len(message.Body),
+			)
 			w, err := c.ws.NextWriter(websocket.BinaryMessage)
 			if err != nil {
 				return
 			}
 			if _, err := w.Write(message.Body); err != nil {
-				slog.ErrorContext(ctx, "failed to write message from producer to websocket",
+				muxLog.ErrorContext(ctx, "failed to write message from producer to websocket",
 					"stream_id", c.Stream.id,
 					"stream_order_key", c.Stream.orderKey,
 					"error", err,
@@ -110,7 +116,7 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				}
 
 				if _, err := w.Write(additionalMsg.Body); err != nil {
-					slog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
+					muxLog.ErrorContext(ctx, "failed to write additional message from producer to websocket",
 						"stream_id", c.Stream.id,
 						"stream_order_key", c.Stream.orderKey,
 						"error", err,
@@ -122,6 +128,7 @@ func (c *connector) WriteToWebsocket(ctx context.Context) {
 				return
 			}
 		case <-ticker.C:
+			muxLog.TraceContext(ctx, "sending websocket keepalive ping", "stream_id", c.Stream.id)
 			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
@@ -150,7 +157,7 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 			_, message, err := c.ws.ReadMessage()
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					slog.ErrorContext(ctx, "websocket closed unexpectedly",
+					muxLog.ErrorContext(ctx, "websocket closed unexpectedly",
 						"stream_id", c.Stream.id,
 						"stream_order_key", c.Stream.orderKey,
 						"error", err,
@@ -160,6 +167,11 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 			}
 
 			msgLen := len(message)
+			muxLog.TraceContext(ctx, "publishing websocket frame to stream mux",
+				"stream_id", c.Stream.id,
+				"kind", c.kind,
+				"bytes", msgLen,
+			)
 			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
@@ -167,7 +179,7 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 					MetadataMsgKind: c.kind,
 				},
 			}, c.mux); err != nil {
-				slog.ErrorContext(ctx, "websocket failed to publish message",
+				muxLog.ErrorContext(ctx, "websocket failed to publish message",
 					"stream_id", c.Stream.id,
 					"stream_order_key", c.Stream.orderKey,
 					"msg_len", msgLen,
@@ -181,15 +193,16 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 
 func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Client, shellID int, userID int) {
 	defer func() {
-		slog.DebugContext(ctx, "websocket checking user activity for shell before removal", "user_id", userID, "shell_id", shellID)
+		cleanupCtx := logging.DetachContext(ctx)
+		muxLog.DebugContext(cleanupCtx, "websocket checking user activity for shell before removal", "user_id", userID, "shell_id", shellID)
 
 		wasAdded, err := graph.Shell.Query().
 			Where(shell.ID(shellID)).
 			QueryActiveUsers().
 			Where(user.ID(userID)).
-			Exist(ctx)
+			Exist(cleanupCtx)
 		if err != nil {
-			slog.ErrorContext(ctx, "websocket failed to check user activity for shell", "err", err, "user_id", userID, "shell_id", shellID)
+			muxLog.ErrorContext(cleanupCtx, "websocket failed to check user activity for shell", "error", err, "user_id", userID, "shell_id", shellID)
 			return
 		}
 		if !wasAdded {
@@ -198,8 +211,8 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 
 		if _, err := graph.Shell.UpdateOneID(shellID).
 			RemoveActiveUserIDs(userID).
-			Save(ctx); err != nil {
-			slog.ErrorContext(ctx, "websocket failed to remove inactive user from shell", "err", err, "user_id", userID, "shell_id", shellID)
+			Save(cleanupCtx); err != nil {
+			muxLog.ErrorContext(cleanupCtx, "websocket failed to remove inactive user from shell", "error", err, "user_id", userID, "shell_id", shellID)
 			return
 		}
 	}()
@@ -220,7 +233,7 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 				Where(user.ID(userID)).
 				Exist(ctx)
 			if err != nil {
-				slog.ErrorContext(ctx, "websocket failed to check user activity for shell", "err", err, "user_id", userID, "shell_id", shellID)
+				muxLog.ErrorContext(ctx, "websocket failed to check user activity for shell", "error", err, "user_id", userID, "shell_id", shellID)
 				continue
 			}
 			if alreadyAdded {
@@ -230,11 +243,39 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 			if _, err := graph.Shell.UpdateOneID(shellID).
 				AddActiveUserIDs(userID).
 				Save(ctx); err != nil {
-				slog.ErrorContext(ctx, "websocket failed to add active user to shell", "err", err, "user_id", userID, "shell_id", shellID)
+				muxLog.ErrorContext(ctx, "websocket failed to add active user to shell", "error", err, "user_id", userID, "shell_id", shellID)
 			}
 		}
 	}
+}
 
+func enrichStreamRequestContext(r *http.Request) (context.Context, *ent.User) {
+	ctx := r.Context()
+	if logging.EntrypointFromContext(ctx) == "" {
+		ctx = logging.WithEntrypoint(ctx, "websocket")
+	}
+	if logging.ClientIPFromContext(ctx) == "" {
+		clientIP := logging.NormalizeClientIP(
+			r.RemoteAddr,
+			r.Header.Get("X-Redirected-For"),
+			r.Header.Get("X-Forwarded-For"),
+		)
+		ctx = logging.WithClientIP(ctx, clientIP)
+	}
+	ctx, _, _ = logging.EnsureTrace(ctx)
+
+	authUser := auth.UserFromContext(ctx)
+	if authUser != nil {
+		if cur := logging.ActorFromContext(ctx); cur.Kind == logging.ActorUnknown || cur.Kind == logging.ActorAnonymous {
+			ctx = logging.WithActor(ctx, logging.Actor{
+				Kind:    logging.ActorUser,
+				ID:      strconv.Itoa(authUser.ID),
+				Name:    authUser.Name,
+				IsAdmin: authUser.IsAdmin,
+			})
+		}
+	}
+	return ctx, authUser
 }
 
 // NewShellHandler provides an HTTP handler which handles a websocket for shell io.
@@ -242,18 +283,7 @@ func manageActiveUser(ctx context.Context, done <-chan struct{}, graph *ent.Clie
 // This ID represents which Shell ent the websocket will connect to.
 func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		// Load Authenticated User
-		authUser := auth.UserFromContext(ctx)
-		var (
-			authUserName = "unknown"
-			authUserID   = 0
-		)
-		if authUser != nil {
-			authUserID = authUser.ID
-			authUserName = authUser.Name
-		}
+		ctx, authUser := enrichStreamRequestContext(r)
 
 		// Parse Shell ID
 		shellIDStr := r.URL.Query().Get("shell_id")
@@ -270,17 +300,61 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 		// Load Shell
 		revShell, err := graph.Shell.Query().
 			Where(shell.ID(shellID)).
+			WithBeacon(func(bq *ent.BeaconQuery) {
+				bq.WithHost()
+			}).
 			Select(shell.FieldClosedAt).
 			Only(ctx)
 		if err != nil {
 			if ent.IsNotFound(err) {
 				http.Error(w, "shell not found", http.StatusNotFound)
 			} else {
-				slog.ErrorContext(ctx, "websocket failed to load shell", "err", err, "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
+				muxLog.ErrorContext(ctx, "websocket failed to load shell", "error", err, "shell_id", shellID)
 				http.Error(w, "failed to load shell", http.StatusInternalServerError)
 			}
 			return
 		}
+
+		var beaconID, hostID int
+		if revShell.Edges.Beacon != nil {
+			beaconID = revShell.Edges.Beacon.ID
+			if revShell.Edges.Beacon.Edges.Host != nil {
+				hostID = revShell.Edges.Beacon.Edges.Host.ID
+			}
+		}
+		streamAttrs := []slog.Attr{slog.Int("shell_id", shellID)}
+		if beaconID > 0 {
+			streamAttrs = append(streamAttrs, slog.Int("beacon_id", beaconID))
+		}
+		if hostID > 0 {
+			streamAttrs = append(streamAttrs, slog.Int("host_id", hostID))
+		}
+		ctx = logging.WithStreamAttrs(ctx, streamAttrs...)
+
+		// Prevent opening closed shells
+		if !revShell.ClosedAt.IsZero() {
+			http.Error(w, "shell already closed", http.StatusBadRequest)
+			return
+		}
+
+		// Start Websocket
+		muxLog.DebugContext(ctx, "new shell websocket connection")
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			muxLog.ErrorContext(ctx, "websocket failed to upgrade connection", "error", err)
+			return
+		}
+
+		shellAuditArgs := append(
+			logging.TargetIntAttrs("shell", shellID, ""),
+			logging.ShellAttrs(shellID, beaconID, hostID)...,
+		)
+		logging.Audit(ctx, "shell", "shell.ws_connected", "operator connected to shell websocket", shellAuditArgs...)
+		defer func() {
+			disconnectCtx := logging.DetachContext(ctx)
+			muxLog.DebugContext(disconnectCtx, "websocket shell connection closed")
+			logging.Audit(disconnectCtx, "shell", "shell.ws_disconnected", "operator disconnected from shell websocket", shellAuditArgs...)
+		}()
 
 		// Track Active User
 		var activeUserWG sync.WaitGroup
@@ -292,21 +366,6 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 				manageActiveUser(ctx, activeUserDoneCh, graph, shellID, userID)
 			}(ctx, revShell.ID, authUser.ID)
 		}
-
-		// Prevent opening closed shells
-		if !revShell.ClosedAt.IsZero() {
-			http.Error(w, "shell already closed", http.StatusBadRequest)
-			return
-		}
-
-		// Start Websocket
-		slog.InfoContext(ctx, "new shell websocket connection", "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
-		ws, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			slog.ErrorContext(ctx, "websocket failed to upgrade connection", "err", err, "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
-			return
-		}
-		defer slog.InfoContext(ctx, "websocket shell connection closed", "shell_id", shellID, "user_id", authUserID, "user_name", authUserName)
 
 		// Initialize Stream
 		stream := New(shellIDStr)
@@ -341,7 +400,7 @@ func NewShellHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 // It requires a query param "shell_id" be specified (must be an integer).
 func NewPingHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx, _ := enrichStreamRequestContext(r)
 
 		// Parse Shell ID
 		shellIDStr := r.URL.Query().Get("shell_id")
@@ -354,6 +413,7 @@ func NewPingHandler(graph *ent.Client, mux *Mux) http.HandlerFunc {
 			http.Error(w, "invalid 'shell_id' provided, must be integer", http.StatusBadRequest)
 			return
 		}
+		ctx = logging.WithStreamAttrs(ctx, slog.Int("shell_id", shellID))
 
 		// Check if shell exists (optional, but good for consistency)
 		exists, err := graph.Shell.Query().Where(shell.ID(shellID)).Exist(ctx)

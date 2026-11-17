@@ -12,7 +12,6 @@ import (
 	"image/draw"
 	"image/png"
 	"io"
-	"log/slog"
 	mrand "math/rand"
 	"net"
 	"time"
@@ -27,7 +26,7 @@ import (
 
 // createTestData populates the DB with some test data :)
 func createTestData(ctx context.Context, client *ent.Client) {
-	slog.WarnContext(ctx, "test data is enabled")
+	startupLog.WarnContext(ctx, "test data is enabled")
 
 	client.User.Create().
 		SetName("Admin").

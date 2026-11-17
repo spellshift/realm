@@ -93,6 +93,70 @@ You may download files from Tavern utilizing the `DownloadFile` gRPC method. Thi
 * `sha3-256-checksum`: Set to the SHA3 hash of the entire file.
 * `file-size`: Set to the number of bytes contained by the file.
 
+## Structured Logging & Auditing
+
+All Tavern packages emit structured logs via `realm.pub/tavern/internal/logging` rather than `fmt.Printf`, `std/log`, or global `slog` calls directly.
+
+### Subsystem Loggers
+
+Declare a package-level logger bound to a dotted subsystem name:
+
+```go
+package ssh
+
+import "realm.pub/tavern/internal/logging"
+
+var log = logging.For("portals.ssh")
+
+func handleSession(ctx context.Context, portalID int) {
+	log.InfoContext(ctx, "ssh portal session opened", "portal_id", portalID)
+	log.DebugContext(ctx, "negotiated ssh channel parameters", "portal_id", portalID)
+	log.TraceContext(ctx, "forwarded ssh frame", "bytes", 512)
+}
+```
+
+Always prefer `*Context` methods (`InfoContext`, `WarnContext`, `ErrorContext`, `DebugContext`, `TraceContext`) so `trace_id`, `request_id`, `actor`, `entrypoint`, `client_ip`, and bound stream attributes (`logging.WithStreamAttrs`) are attached automatically.
+
+### Subsystem Hierarchy
+
+Operators filter subsystems on dot boundaries via `--log` / `TAVERN_LOG` (e.g. `TAVERN_LOG=portals` or `--log=portals=debug` enables `portals.*` at `DEBUG` while quieting unmatched subsystems to `ERROR`):
+
+| Subsystem | Scope |
+| --------- | ----- |
+| `app.startup`, `app.config`, `app.metrics`, `app.namegen` | Server bootstrap, configuration, secrets, and Prometheus metrics |
+| `http.access`, `http.www` | HTTP ingress access logs and SPA static asset serving |
+| `graphql.query`, `graphql.mutation` | Post-execution GraphQL operation timing, variables, and error counts |
+| `grpc.access` | Unary and streaming gRPC access logs |
+| `auth.oauth`, `auth.session`, `auth.rda` | OAuth flows, session cookies/PATs, and Remote Device Auth |
+| `c2`, `c2.claim`, `c2.report`, `c2.conv`, `c2.crypto` | Agent callbacks, task claims/reports, conversations, and C2 cryptography |
+| `portals.c2`, `portals.grpc`, `portals.mux`, `portals.pnet`, `portals.pubsub`, `portals.ssh`, `portals.pty` | Agent & operator portal streams, PubSub mux, SSH proxy, and PTY WebSocket relay |
+| `shells.ws`, `shells.mux`, `shells.pubsub` | Interactive WebSocket shells and stream multiplexing |
+| `cdn.upload`, `cdn.download`, `cdn.link` | Asset uploads and link/hostfile/screenshot downloads |
+| `mcp.server`, `mcp.tools` | AI Model Context Protocol server and tool invocations |
+| `builder.auth`, `builder.server`, `builder.client`, `builder.docker`, `builder.local` | Builder enrollment, mTLS auth, build polling, and artifact compilation |
+| `redirectors`, `redirectors.<transport>` | Edge C2 redirectors (`grpc`, `http1`, `dns`, `icmp`, `quic`, `tls`) |
+| `scheduler`, `scheduler.mem`, `scheduler.gcp`, `scheduler.hostcheck` | Background cron scheduling and host-lost polling |
+| `storage.secrets`, `storage.tomes`, `storage.tools` | Secrets manager, Git tome repository imports, and embedded tools |
+| `audit.<domain>` | Semantic audit trail (`audit.auth`, `audit.quest`, `audit.shell`, `audit.portal`, `audit.cdn`, `audit.c2`, `audit.host`, `audit.mcp`, `audit.builder`, `audit.admin`) |
+
+### Semantic Auditing & Secret Redaction
+
+When implementing state-changing or security-relevant actions, emit a semantic audit record alongside operational diagnostics:
+
+```go
+logging.Audit(ctx, "quest", "quest.created", "created quest",
+	append(
+		logging.QuestAttrs(q.ID, q.Name, q.Parameters),
+		logging.TomeAttrs(t.ID, t.Name, string(t.Tactic))...,
+	)...,
+)
+```
+
+* Use `logging.Audit` (success), `logging.AuditDenied` (authorization/authentication denial), and `logging.AuditFailure` (operational failure).
+* Audit records are written to the structured log stream (for GCP Cloud Logging / stdout collectors) and mirrored to `TAVERN_AUDIT_FILE` when set.
+* Sensitive keys (`password`, `secret`, `token`, `access_token`, `session_token`, `private_key`, `csr`, `cookie`, `authorization`, etc.) are automatically scrubbed to `"[REDACTED]"`. Wrap explicit secret values with `logging.Redacted(val)` and scrub map/JSON payloads with `logging.ScrubMap` or `logging.ScrubJSONValue` (which never mutate caller maps in place).
+* When spawning background goroutines from a request, preserve trace and actor attribution without inheriting request cancellation via `bgCtx := logging.DetachContext(ctx)`.
+
 ## Performance Profiling
 
 Tavern supports built-in performance monitoring and debugging via the Golang [pprof tool](https://go.dev/blog/pprof) developed by Google. To run tavern with profiling enabled, ensure the `ENABLE_PPROF=1` environment variable is set.

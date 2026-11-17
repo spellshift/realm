@@ -1,10 +1,10 @@
 package http
 
 import (
-	"log/slog"
 	"net/http"
 
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/logging"
 )
 
 // An Endpoint wraps an HTTP handler with configuration options.
@@ -33,14 +33,22 @@ func (endpoint Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Require Authentication
 	if !endpoint.AllowUnauthenticated && !auth.IsAuthenticatedContext(ctx) {
-		slog.WarnContext(r.Context(), "http unauthenticated request forbidden", "http_method", r.Method, "http_url", r.URL.String())
+		authSessionLog.WarnContext(ctx, "http unauthenticated request forbidden", "method", r.Method, "path", r.URL.Path)
+		logging.AuditDenied(ctx, "auth", "auth.unauthenticated_denied", "unauthenticated request to protected endpoint",
+			"method", r.Method,
+			"path", r.URL.Path,
+		)
 		http.Error(w, "must authenticate", http.StatusUnauthorized)
 		return
 	}
 
 	// Require Activation
 	if !endpoint.AllowUnactivated && !auth.IsActivatedContext(ctx) {
-		slog.WarnContext(ctx, "http unactivated user request forbidden", "http_method", r.Method, "http_url", r.URL.String())
+		authSessionLog.WarnContext(ctx, "http unactivated user request forbidden", "method", r.Method, "path", r.URL.Path)
+		logging.AuditDenied(ctx, "auth", "auth.unactivated_denied", "unactivated user denied access to endpoint",
+			"method", r.Method,
+			"path", r.URL.Path,
+		)
 		http.Error(w, "must be activated", http.StatusForbidden)
 		return
 	}

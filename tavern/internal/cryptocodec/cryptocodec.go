@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log/slog"
 	"runtime/debug"
 	"strconv"
 
@@ -15,9 +14,13 @@ import (
 	"golang.org/x/crypto/chacha20poly1305"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/mem"
+	"realm.pub/tavern/internal/logging"
 )
 
-var session_pub_keys = NewSyncMap()
+var (
+	log              = logging.For("c2.crypto")
+	session_pub_keys = NewSyncMap()
+)
 
 // This size limits the number of concurrent connections each server can handle.
 // I can't imagine a single server handling more than 10k connections at once but just in case.
@@ -30,7 +33,7 @@ type SyncMap struct {
 func NewSyncMap() *SyncMap {
 	l, err := lru.New[int, []byte](LRUCACHE_SIZE)
 	if err != nil {
-		slog.Error("Failed to create LRU cache")
+		log.Error("failed to create session key LRU cache", "error", err)
 	}
 	return &SyncMap{Map: l}
 }
@@ -60,7 +63,7 @@ func castBytesToBufSlice(buf []byte) (mem.BufferSlice, error) {
 	r := bytes.NewBuffer(buf)
 	res, e := mem.ReadAll(r, mem.DefaultBufferPool())
 	if e != nil {
-		slog.Error(fmt.Sprintf("failed to read failure_bytes %s", e))
+		log.Error("failed to read buffer slice", "error", e)
 		return res, e
 	}
 	return res, nil
@@ -68,7 +71,7 @@ func castBytesToBufSlice(buf []byte) (mem.BufferSlice, error) {
 
 func init() {
 	encoding.RegisterCodecV2(StreamDecryptCodec{})
-	slog.Debug("[cryptocodec] application-layer cryptography registered xchacha20-poly1305 gRPC codec")
+	log.Debug("registered xchacha20-poly1305 gRPC codec")
 }
 
 type StreamDecryptCodec struct {
@@ -83,7 +86,7 @@ func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 	proto := encoding.GetCodecV2("proto")
 	res, err := proto.Marshal(v)
 	if err != nil {
-		slog.Error("Unable to marshall data")
+		log.Error("failed to marshal protobuf message", "error", err)
 		return res, err
 	}
 	enc_res := s.Csvc.Encrypt(res.Materialize())
@@ -97,12 +100,12 @@ func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
 
 	proto := encoding.GetCodecV2("proto")
 	if proto == nil {
-		slog.Error("'proto' codec is not registered")
+		log.Error("proto codec is not registered")
 		return errors.New("'proto' codec is not registered")
 	}
 	dec_mem_slice, err := castBytesToBufSlice(dec_buf)
 	if err != nil {
-		slog.Error("Unable to cast decrypted bytes to mem.BufferSlice")
+		log.Error("failed to cast decrypted bytes to buffer slice", "error", err)
 		return err
 	}
 	return proto.Unmarshal(dec_mem_slice, v)
@@ -127,13 +130,13 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 	x22519_curve := ecdh.X25519()
 	client_pub_key, err := x22519_curve.NewPublicKey(client_pub_key_bytes)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to create public key %v", err))
+		log.Debug("failed to parse client x25519 public key", "key_len", len(client_pub_key_bytes), "error", err)
 		return FAILURE_BYTES
 	}
 
 	shared_key, err := csvc.priv_key.ECDH(client_pub_key)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to get shared secret %v", err))
+		log.Debug("failed to derive x25519 shared secret", "error", err)
 		return FAILURE_BYTES
 	}
 
@@ -141,8 +144,12 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 }
 
 func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
+	if len(in_arr) == 0 {
+		log.Trace("received empty encrypted c2 frame")
+		return FAILURE_BYTES, FAILURE_BYTES
+	}
 	if len(in_arr) < x25519.Size {
-		slog.Error(fmt.Sprintf("input bytes too short %d expected at least %d", len(in_arr), x25519.Size))
+		log.Debug("encrypted c2 frame shorter than x25519 public key", "input_len", len(in_arr), "min_len", x25519.Size)
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -154,7 +161,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	ids, err := goAllIds()
 	if err != nil {
-		slog.Error("failed to get goid")
+		log.Error("failed to inspect goroutine id", "error", err)
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 	session_pub_keys.Store(ids.Id, client_pub_key_bytes)
@@ -164,7 +171,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	aead, err := chacha20poly1305.NewX(derived_key)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to create xchacha key %v", err))
+		log.Debug("failed to initialize xchacha20-poly1305 cipher", "error", err)
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -173,7 +180,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	// Read nonce & cipher text
 	if len(in_arr) < aead.NonceSize() {
-		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), aead.NonceSize()))
+		log.Debug("encrypted c2 payload shorter than nonce", "payload_len", len(in_arr), "min_len", aead.NonceSize())
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 	nonce, ciphertext := in_arr[:aead.NonceSize()], in_arr[aead.NonceSize():]
@@ -181,7 +188,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Decrypt
 	plaintext, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to decrypt %v", err))
+		log.Warn("failed to decrypt c2 frame", "error", err)
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
@@ -222,7 +229,7 @@ func GetSessionPubKey() ([]byte, bool) {
 func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	ids, err := goAllIds()
 	if err != nil {
-		slog.Error(fmt.Sprintf("unable to find GOID %s", err))
+		log.Error("failed to inspect goroutine id", "error", err)
 		return FAILURE_BYTES
 	}
 
@@ -240,7 +247,7 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	}
 
 	if !ok {
-		slog.Error(fmt.Sprintf("public key not found for id: %d (parent: %d)", ids.Id, ids.ParentId))
+		log.Debug("session public key not found for goroutine", "goid", ids.Id, "parent_goid", ids.ParentId)
 		return FAILURE_BYTES
 	}
 
@@ -248,13 +255,13 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
 	aead, err := chacha20poly1305.NewX(shared_key)
 	if err != nil {
-		slog.Error(fmt.Sprintf("failed to create xchacha key %v", err))
+		log.Error("failed to initialize xchacha20-poly1305 cipher", "error", err)
 		return FAILURE_BYTES
 	}
 
 	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(in_arr)+aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
-		slog.Error(fmt.Sprintf("Failed to encrypt %v", err))
+		log.Error("failed to generate xchacha20-poly1305 nonce", "error", err)
 		return FAILURE_BYTES
 	}
 	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)

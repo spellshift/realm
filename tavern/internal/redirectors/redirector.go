@@ -4,15 +4,16 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
 	"maps"
 	"slices"
 	"sync"
 
 	"google.golang.org/grpc"
+	"realm.pub/tavern/internal/logging"
 )
 
 var (
+	log         = logging.For("redirectors")
 	mu          sync.RWMutex
 	redirectors = make(map[string]Redirector)
 )
@@ -60,10 +61,10 @@ func Run(ctx context.Context, name string, listenOn string, upstreamAddr string,
 		return fmt.Errorf("failed to connect to upstream: %v", err)
 	}
 	defer func() {
-		slog.DebugContext(ctx, "redirectors: closing connection to upstream grpc", "redirector_name", name)
+		log.DebugContext(ctx, "closing connection to upstream gRPC", "redirector_name", name)
 		upstream.Close()
 	}()
-	slog.DebugContext(ctx, "redirectors: connected to upstream grpc", "redirector_name", name, "upstream_addr", upstreamAddr)
+	log.DebugContext(ctx, "connected to upstream gRPC", "redirector_name", name, "upstream_addr", upstreamAddr)
 
 	// Start the redirector
 	return redirector.Redirect(ctx, listenOn, upstream, tlsConfig)

@@ -9,7 +9,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/url"
 	"time"
 
@@ -20,7 +19,10 @@ import (
 
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/builder/executor"
+	"realm.pub/tavern/internal/logging"
 )
+
+var clientLog = logging.For("builder.client")
 
 const (
 	// maxConcurrentBuilds is the maximum number of builds that can run simultaneously.
@@ -115,7 +117,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	if err != nil {
 		return err
 	}
-	slog.InfoContext(ctx, "builder started",
+	clientLog.InfoContext(ctx, "builder started",
 		"id", identity.ID,
 		"supported_targets", cfg.SupportedTargets,
 		"upstream", cfg.Upstream,
@@ -165,7 +167,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 
 	// Check for tasks immediately, then poll on interval
 	if err := claimAndExecuteTasks(ctx, cfg.CacheDir, client, exec, sem); err != nil {
-		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
+		clientLog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
 	ticker := time.NewTicker(time.Duration(cfg.PollInterval) * time.Second)
@@ -180,7 +182,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 			return ctx.Err()
 		case <-ticker.C:
 			if err := claimAndExecuteTasks(ctx, cfg.CacheDir, client, exec, sem); err != nil {
-				slog.ErrorContext(ctx, "error processing build tasks", "error", err)
+				clientLog.ErrorContext(ctx, "error processing build tasks", "error", err)
 			}
 		}
 	}
@@ -197,7 +199,7 @@ func claimAndExecuteTasks(ctx context.Context, cacheDir string, client builderpb
 	}
 
 	for _, task := range resp.Tasks {
-		slog.InfoContext(ctx, "claimed build task",
+		clientLog.InfoContext(ctx, "claimed build task",
 			"task_id", task.Id,
 			"target_os", task.TargetOs,
 			"build_image", task.BuildImage,
@@ -209,7 +211,7 @@ func claimAndExecuteTasks(ctx context.Context, cacheDir string, client builderpb
 		// ClaimBuildTasks heartbeat) is never held up by build concurrency.
 		go func(t *builderpb.BuildTaskSpec) {
 			if err := sem.Acquire(ctx, 1); err != nil {
-				slog.ErrorContext(ctx, "failed to acquire semaphore for build task",
+				clientLog.ErrorContext(ctx, "failed to acquire semaphore for build task",
 					"task_id", t.Id, "error", err)
 				return
 			}
@@ -229,7 +231,7 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 	for _, t := range task.Tomes {
 		name, data, err := downloadTome(ctx, client, task.Id, t.Id)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to download tome",
+			clientLog.ErrorContext(ctx, "failed to download tome",
 				"task_id", task.Id, "tome_id", t.Id, "error", err)
 			return
 		}
@@ -239,7 +241,7 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 			Contents: data,
 			Params:   t.Params,
 		})
-		slog.InfoContext(ctx, "tome downloaded",
+		clientLog.DebugContext(ctx, "tome downloaded",
 			"task_id", task.Id, "tome_id", t.Id, "name", name, "size", len(data))
 	}
 
@@ -250,7 +252,7 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 
 	stream, err := client.StreamBuildTaskOutput(taskCtx)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to open build output stream",
+		clientLog.ErrorContext(ctx, "failed to open build output stream",
 			"task_id", task.Id, "error", err)
 		return
 	}
@@ -282,7 +284,7 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 					cancel()
 					continue
 				}
-				slog.InfoContext(ctx, "build output",
+				clientLog.DebugContext(ctx, "build output",
 					"task_id", task.Id, "line", line)
 			case line, ok := <-errCh:
 				if !ok {
@@ -300,7 +302,7 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 					cancel()
 					continue
 				}
-				slog.WarnContext(ctx, "build error output",
+				clientLog.DebugContext(ctx, "build stderr output",
 					"task_id", task.Id, "line", line)
 			}
 		}
@@ -326,7 +328,7 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 	<-collectorDone
 
 	if sendErr != nil {
-		slog.ErrorContext(ctx, "stream send failed during build",
+		clientLog.ErrorContext(ctx, "stream send failed during build",
 			"task_id", task.Id, "error", sendErr)
 		return
 	}
@@ -353,22 +355,24 @@ func executeTask(ctx context.Context, cacheDir string, client builderpb.BuilderC
 	}
 	if buildErr != nil {
 		finalMsg.Error = buildErr.Error()
-		slog.ErrorContext(ctx, "build task failed",
+		clientLog.ErrorContext(ctx, "build task failed",
 			"task_id", task.Id, "error", buildErr)
+	} else {
+		clientLog.InfoContext(ctx, "build task completed",
+			"task_id", task.Id)
 	}
 
 	if err := stream.Send(finalMsg); err != nil {
-		slog.ErrorContext(ctx, "failed to send final stream message",
+		clientLog.ErrorContext(ctx, "failed to send final stream message",
 			"task_id", task.Id, "error", err)
 		return
 	}
 
 	if _, err := stream.CloseAndRecv(); err != nil {
-		slog.ErrorContext(ctx, "failed to close build output stream",
+		clientLog.ErrorContext(ctx, "failed to close build output stream",
 			"task_id", task.Id, "error", err)
 		return
 	}
-
 }
 
 // uploadArtifact streams the build artifact to the server in chunks via the
@@ -407,7 +411,7 @@ func uploadArtifact(ctx context.Context, client builderpb.BuilderClient, taskID 
 		return fmt.Errorf("failed to close artifact stream: %w", err)
 	}
 
-	slog.InfoContext(ctx, "artifact uploaded",
+	clientLog.InfoContext(ctx, "artifact uploaded",
 		"task_id", taskID,
 		"asset_id", resp.AssetId,
 		"size", len(data),

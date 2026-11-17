@@ -6,12 +6,14 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"realm.pub/tavern/internal/logging"
 )
 
+var wwwLog = logging.For("http.www")
+
 // Handler is a custom handler for the single page react app - if the path doesn't exist the react app is returned.
-type Handler struct {
-	logger *log.Logger
-}
+type Handler struct{}
 
 // Content embedded from the application's build directory, includes the latest build of the UI.
 //
@@ -20,7 +22,6 @@ var Content embed.FS
 
 // ServeHTTP provides the Tavern UI, if the requested file does not exist it will serve index.html
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
 	// Serve the requested file
 	path := fmt.Sprintf("build/%s", strings.TrimPrefix(r.URL.Path, "/"))
 	content, err := Content.ReadFile(path)
@@ -32,21 +33,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else if strings.HasSuffix(path, ".wasm") {
 			w.Header().Add("Content-Type", "application/wasm")
 		}
-		w.Write(content)
+		_, _ = w.Write(content)
 		return
 	}
+
+	wwwLog.DebugContext(r.Context(), "serving SPA index.html fallback", "requested_path", r.URL.Path)
 
 	// Otherwise serve index.html
 	index, err := Content.ReadFile("build/index.html")
 	if err != nil {
-		h.logger.Printf("fatal error: failed to read index.html: %v", err)
+		wwwLog.ErrorContext(r.Context(), "failed to read embedded index.html", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.Write(index)
+	_, _ = w.Write(index)
 }
 
 // NewHandler creates and returns a handler for the Tavern UI.
-func NewHandler(logger *log.Logger) *Handler {
-	return &Handler{logger}
+func NewHandler(_ ...*log.Logger) *Handler {
+	return &Handler{}
 }

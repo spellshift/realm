@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"log/slog"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/shellpivot"
@@ -33,7 +32,7 @@ func (r *mutationResolver) publishPivotCloseMote(ctx context.Context, pivot *ent
 
 	closeMote := buildPivotCloseMote(pivot)
 	if err := r.portalMux.Publish(ctx, r.portalMux.TopicIn(portalEnt.ID), closeMote); err != nil {
-		slog.WarnContext(ctx, "failed to publish close mote for pivot",
+		mutationLog.WarnContext(ctx, "failed to publish close mote for pivot",
 			"pivot_id", pivot.ID,
 			"portal_id", portalEnt.ID,
 			"error", err,

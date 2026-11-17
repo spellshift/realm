@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,8 +11,11 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/scheduler"
 )
+
+var log = logging.For("scheduler.mem")
 
 func init() {
 	scheduler.Register("mem", &Driver{})
@@ -23,9 +25,10 @@ func init() {
 type Driver struct{}
 
 // Open returns a new in-memory Scheduler. The URI is not used.
-func (d *Driver) Open(_ context.Context, _ *url.URL) (scheduler.Scheduler, error) {
+func (d *Driver) Open(ctx context.Context, _ *url.URL) (scheduler.Scheduler, error) {
 	c := cron.New()
 	c.Start()
+	log.DebugContext(ctx, "started in-memory scheduler")
 	return &Scheduler{
 		cron:   c,
 		jobs:   make(map[string]cron.EntryID),
@@ -43,7 +46,7 @@ type Scheduler struct {
 
 // Schedule creates a job that fires on the given cron schedule.
 // It returns an error if a job with the same name already exists.
-func (s *Scheduler) Schedule(_ context.Context, job scheduler.Job) error {
+func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -59,12 +62,13 @@ func (s *Scheduler) Schedule(_ context.Context, job scheduler.Job) error {
 		return fmt.Errorf("scheduler/mem: invalid cron expression: %w", err)
 	}
 	s.jobs[job.Name] = id
+	log.DebugContext(ctx, "scheduled cron job", "job", job.Name, "schedule", job.Schedule, "url", job.HTTPTarget.URL)
 	return nil
 }
 
 // ScheduleAt creates a one-time job that fires at the given time.
 // It returns an error if a job with the same name already exists.
-func (s *Scheduler) ScheduleAt(_ context.Context, job scheduler.OnceJob) error {
+func (s *Scheduler) ScheduleAt(ctx context.Context, job scheduler.OnceJob) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -90,6 +94,7 @@ func (s *Scheduler) ScheduleAt(_ context.Context, job scheduler.OnceJob) error {
 		s.mu.Unlock()
 	})
 	s.timers[job.Name] = timer
+	log.DebugContext(ctx, "scheduled one-time job", "job", job.Name, "at", job.At.UTC(), "url", job.HTTPTarget.URL)
 	return nil
 }
 
@@ -118,9 +123,11 @@ func (s *Scheduler) fireHTTP(name string, target scheduler.HTTPTarget) {
 		body = strings.NewReader(string(target.Body))
 	}
 
+	log.Trace("firing scheduled job", "job", name, "method", method, "url", target.URL)
+
 	req, err := http.NewRequest(method, target.URL, body)
 	if err != nil {
-		slog.Error("scheduler/mem: failed to create request", "job", name, "error", err)
+		log.Error("failed to create request", "job", name, "error", err)
 		return
 	}
 	for k, v := range target.Headers {
@@ -129,12 +136,14 @@ func (s *Scheduler) fireHTTP(name string, target scheduler.HTTPTarget) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		slog.Error("scheduler/mem: request failed", "job", name, "error", err)
+		log.Error("scheduled job request failed", "job", name, "error", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		slog.Warn("scheduler/mem: non-success response", "job", name, "status", resp.StatusCode)
+		log.Warn("scheduled job returned non-success status", "job", name, "status", resp.StatusCode)
+		return
 	}
+	log.Trace("scheduled job completed", "job", name, "status", resp.StatusCode)
 }

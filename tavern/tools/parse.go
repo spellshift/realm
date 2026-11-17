@@ -7,7 +7,10 @@ import (
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/logging"
 )
+
+var log = logging.For("storage.tools")
 
 // UploadTools traverses the provided filesystem and creates assets using the provided graph.
 // It skips directories and imports files as assets to be downloaded via the CDN.
@@ -16,6 +19,9 @@ func UploadTools(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
+
+	createdCount := 0
+	updatedCount := 0
 
 	if err := fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -54,6 +60,8 @@ func UploadTools(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			if err != nil {
 				return rollback(tx, fmt.Errorf("failed to update tool asset %q: %w", path, err))
 			}
+			updatedCount++
+			log.TraceContext(ctx, "updated tool asset", "asset_name", path, "size", len(content))
 		} else {
 			// Create new
 			_, err = tx.Asset.Create().
@@ -63,6 +71,8 @@ func UploadTools(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			if err != nil {
 				return rollback(tx, fmt.Errorf("failed to upload tool asset %q: %w", path, err))
 			}
+			createdCount++
+			log.TraceContext(ctx, "created tool asset", "asset_name", path, "size", len(content))
 		}
 
 		return nil
@@ -72,6 +82,12 @@ func UploadTools(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	if createdCount > 0 {
+		log.InfoContext(ctx, "uploaded embedded tools", "created", createdCount, "updated", updatedCount)
+	} else {
+		log.DebugContext(ctx, "refreshed embedded tools", "updated", updatedCount)
 	}
 
 	return nil

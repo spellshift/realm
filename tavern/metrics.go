@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"os"
 	"time"
 
 	gcppubsub "cloud.google.com/go/pubsub/v2"
@@ -10,7 +10,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opencensus.io/stats/view"
 	"google.golang.org/grpc"
+	"realm.pub/tavern/internal/logging"
 )
+
+var metricsLog = logging.For("app.metrics")
 
 var (
 	metricGRPCRequests = prometheus.NewCounterVec(
@@ -59,7 +62,8 @@ func init() {
 			Aggregation: view.Distribution(0, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
 		},
 	); err != nil {
-		log.Fatalf("Failed to register OpenCensus views: %v", err)
+		metricsLog.Error("failed to register OpenCensus views", "error", err)
+		os.Exit(1)
 	}
 
 	// Create and register OpenCensus Prometheus exporter
@@ -67,7 +71,8 @@ func init() {
 		Registry: prometheus.DefaultRegisterer.(*prometheus.Registry),
 	})
 	if err != nil {
-		log.Fatalf("Failed to create OpenCensus Prometheus exporter: %v", err)
+		metricsLog.Error("failed to create OpenCensus Prometheus exporter", "error", err)
+		os.Exit(1)
 	}
 	view.RegisterExporter(pe)
 }

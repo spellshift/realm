@@ -2,11 +2,12 @@ package http1
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 	"time"
 
 	"google.golang.org/grpc"
+	"realm.pub/tavern/internal/logging"
+	"realm.pub/tavern/internal/redirectors"
 )
 
 const (
@@ -53,7 +54,7 @@ func init() {
 }
 
 // getOrCreate returns an existing session or creates a new one.
-func (m *streamSessionManager) getOrCreate(sessionID string, conn *grpc.ClientConn, cfg streamConfig) (*streamSession, error) {
+func (m *streamSessionManager) getOrCreate(reqCtx context.Context, sessionID string, clientIP string, conn *grpc.ClientConn, cfg streamConfig) (*streamSession, error) {
 	m.mu.Lock()
 	sess, ok := m.sessions[sessionID]
 	if ok && !sess.closed {
@@ -65,8 +66,11 @@ func (m *streamSessionManager) getOrCreate(sessionID string, conn *grpc.ClientCo
 	}
 	m.mu.Unlock()
 
-	// Create new persistent stream with a long-lived context.
-	ctx, cancel := context.WithCancel(context.Background())
+	// Create new persistent stream with a long-lived context carrying trace and client IP metadata.
+	ctx, cancel := context.WithCancel(logging.DetachContext(reqCtx))
+	ctx = redirectors.SetRedirectedForHeader(ctx, clientIP)
+	ctx, _, _ = logging.InjectOutgoingGRPCTrace(ctx)
+
 	stream, err := conn.NewStream(
 		ctx,
 		&cfg.Desc,
@@ -87,13 +91,13 @@ func (m *streamSessionManager) getOrCreate(sessionID string, conn *grpc.ClientCo
 	}
 
 	// Start background receiver goroutine.
-	go sess.recvLoop()
+	go sess.recvLoop(ctx)
 
 	m.mu.Lock()
 	m.sessions[sessionID] = sess
 	m.mu.Unlock()
 
-	slog.Info("http1 redirector: created persistent stream session", "session_id", sessionID, "method", cfg.MethodPath)
+	log.DebugContext(ctx, "created persistent stream session", "session_id", sessionID, "method", cfg.MethodPath)
 	return sess, nil
 }
 
@@ -107,7 +111,7 @@ func (m *streamSessionManager) remove(sessionID string) {
 	m.mu.Unlock()
 	if ok {
 		sess.close()
-		slog.Info("http1 redirector: removed stream session", "session_id", sessionID)
+		log.Debug("removed stream session", "session_id", sessionID)
 	}
 }
 
@@ -137,7 +141,7 @@ func (m *streamSessionManager) reapLoop() {
 		m.mu.Unlock()
 
 		for _, id := range toRemove {
-			slog.Info("http1 redirector: reaped idle stream session", "session_id", id)
+			log.Debug("reaped idle stream session", "session_id", id)
 		}
 	}
 }
@@ -165,13 +169,13 @@ func (s *streamSession) drain() [][]byte {
 		select {
 		case msg, ok := <-s.recvBuf:
 			if !ok {
-				slog.Debug("http1 redirector: drained session buffer (closed)", "count", len(msgs))
+				log.Trace("drained session buffer (closed)", "count", len(msgs))
 				return msgs
 			}
 			msgs = append(msgs, msg)
 		default:
 			if len(msgs) > 0 {
-				slog.Debug("http1 redirector: drained session buffer", "count", len(msgs))
+				log.Trace("drained session buffer", "count", len(msgs))
 			}
 			return msgs
 		}
@@ -180,7 +184,7 @@ func (s *streamSession) drain() [][]byte {
 
 // recvLoop runs in a goroutine, continuously receiving server messages and
 // buffering them for the next poll.
-func (s *streamSession) recvLoop() {
+func (s *streamSession) recvLoop(ctx context.Context) {
 	for {
 		var msg []byte
 		err := s.stream.RecvMsg(&msg)
@@ -189,14 +193,14 @@ func (s *streamSession) recvLoop() {
 			s.closed = true
 			s.mu.Unlock()
 			close(s.recvBuf)
-			slog.Debug("http1 redirector: stream session recv ended", "method", s.cfg.MethodPath, "error", err)
+			log.DebugContext(ctx, "stream session recv ended", "method", s.cfg.MethodPath, "error", err)
 			return
 		}
-		slog.Debug("http1 redirector: received message from upstream gRPC", "method", s.cfg.MethodPath, "size", len(msg))
+		log.TraceContext(ctx, "received message from upstream gRPC", "method", s.cfg.MethodPath, "size", len(msg))
 		select {
 		case s.recvBuf <- msg:
 		default:
-			slog.Warn("http1 redirector: stream session recv buffer full, dropping message", "method", s.cfg.MethodPath)
+			log.WarnContext(ctx, "stream session recv buffer full, dropping message", "method", s.cfg.MethodPath)
 		}
 	}
 }

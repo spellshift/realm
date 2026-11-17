@@ -8,12 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/interop/grpc_testing"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
@@ -239,4 +241,104 @@ func TestRedirector_UpstreamFailure(t *testing.T) {
 	s, ok := status.FromError(err)
 	require.True(t, ok, "error should be a gRPC status error")
 	require.Equal(t, codes.Unavailable, s.Code(), "error code should be Unavailable")
+}
+
+func TestRedirector_TracePropagation(t *testing.T) {
+	capturedMD := make(chan metadata.MD, 2)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	upstreamSrv := grpc.NewServer(
+		grpc.ForceServerCodec(encoding.GetCodec("raw")),
+		grpc.UnknownServiceHandler(func(srv any, stream grpc.ServerStream) error {
+			md, _ := metadata.FromIncomingContext(stream.Context())
+			capturedMD <- md.Copy()
+			var reqBytes []byte
+			if err := stream.RecvMsg(&reqBytes); err != nil && err != io.EOF {
+				return err
+			}
+			respBytes, err := proto.Marshal(&grpc_testing.StreamingOutputCallResponse{
+				Payload: &grpc_testing.Payload{Body: []byte("ok")},
+			})
+			if err != nil {
+				return err
+			}
+			return stream.SendMsg(respBytes)
+		}),
+	)
+	go func() {
+		_ = upstreamSrv.Serve(lis)
+	}()
+	defer upstreamSrv.Stop()
+
+	redirector := &grpcRedirector.Redirector{}
+	redirectorLis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	addr := redirectorLis.Addr().String()
+	redirectorLis.Close()
+
+	upstreamConn, err := grpc.Dial(lis.Addr().String(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.CallContentSubtype("raw")),
+	)
+	require.NoError(t, err)
+	defer upstreamConn.Close()
+
+	ctx, cancelRedirector := context.WithCancel(context.Background())
+	defer cancelRedirector()
+	go func() {
+		_ = redirector.Redirect(ctx, addr, upstreamConn, nil)
+	}()
+
+	conn := dialWithRetry(t, addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.CallContentSubtype("raw")),
+	)
+	defer conn.Close()
+
+	sendOnePing := func(callCtx context.Context) metadata.MD {
+		stream, err := conn.NewStream(callCtx, &grpc.StreamDesc{
+			ServerStreams: true,
+			ClientStreams: true,
+		}, "/grpc.testing.TestService/FullDuplexCall")
+		require.NoError(t, err)
+		reqBytes, err := proto.Marshal(&grpc_testing.StreamingOutputCallRequest{
+			Payload: &grpc_testing.Payload{Body: []byte("ping")},
+		})
+		require.NoError(t, err)
+		require.NoError(t, stream.SendMsg(reqBytes))
+		require.NoError(t, stream.CloseSend())
+		var respBytes []byte
+		require.NoError(t, stream.RecvMsg(&respBytes))
+		select {
+		case md := <-capturedMD:
+			return md
+		case <-time.After(2 * time.Second):
+			t.Fatal("timed out waiting for upstream metadata")
+			return nil
+		}
+	}
+
+	// Case 1: Caller supplies no trace headers -> redirector mints traceparent, x-trace-id, x-request-id, and x-redirected-for.
+	mdGenerated := sendOnePing(context.Background())
+	require.NotEmpty(t, mdGenerated.Get("traceparent"))
+	require.NotEmpty(t, mdGenerated.Get("x-trace-id"))
+	assert.Len(t, mdGenerated.Get("x-trace-id")[0], 32)
+	assert.Contains(t, mdGenerated.Get("traceparent")[0], mdGenerated.Get("x-trace-id")[0])
+	require.NotEmpty(t, mdGenerated.Get("x-request-id"))
+	assert.Equal(t, []string{"127.0.0.1"}, mdGenerated.Get("x-redirected-for"))
+
+	// Case 2: Caller supplies W3C traceparent and x-request-id -> redirector preserves trace_id and request_id upstream.
+	const incomingTraceID = "4bf92f3577b34da6a3ce929d0e0e4736"
+	inCtx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+		"traceparent", "00-"+incomingTraceID+"-00f067aa0ba902b7-01",
+		"x-request-id", "req-from-edge-42",
+		"x-forwarded-for", "203.0.113.55",
+	))
+	mdForwarded := sendOnePing(inCtx)
+	require.Equal(t, []string{incomingTraceID}, mdForwarded.Get("x-trace-id"))
+	require.NotEmpty(t, mdForwarded.Get("traceparent"))
+	assert.Contains(t, mdForwarded.Get("traceparent")[0], incomingTraceID)
+	assert.Equal(t, []string{"req-from-edge-42"}, mdForwarded.Get("x-request-id"))
+	assert.Equal(t, []string{"203.0.113.55"}, mdForwarded.Get("x-redirected-for"))
 }

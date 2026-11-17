@@ -3,7 +3,6 @@ package mux
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"realm.pub/tavern/internal/portals/pubsub"
@@ -12,6 +11,8 @@ import (
 
 // Publish sends a message to the specified topic.
 func (m *Mux) Publish(ctx context.Context, topicID string, mote *portalpb.Mote) error {
+	log.TraceContext(ctx, "publishing mote via mux", "topic", topicID, "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
+
 	// 1. Fast Path (Local)
 	m.dispatch(topicID, mote)
 
@@ -55,7 +56,7 @@ func WithHistoryReplay() SubOption {
 
 // Subscribe creates a local subscription to the topic.
 func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mote, func()) {
-	slog.Info("New subscription", "topic", topicID)
+	log.Debug("new local topic subscription", "topic", topicID)
 	options := subOptions{
 		replayHistory: false,
 	}
@@ -74,11 +75,12 @@ func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mot
 		m.history.RLock()
 		if buf, ok := m.history.buffers[topicID]; ok {
 			msgs := buf.Get()
+			log.Trace("replaying topic history to subscriber", "topic", topicID, "count", len(msgs))
 			for _, msg := range msgs {
 				select {
 				case ch <- msg:
 				default:
-					slog.Warn("Subscriber channel full during history replay", "topic", topicID)
+					log.Warn("subscriber channel full during history replay", "topic", topicID)
 				}
 			}
 		}
@@ -86,7 +88,7 @@ func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mot
 	}
 
 	cancel := func() {
-		slog.Info("Subscription canceled", "topic", topicID)
+		log.Debug("local topic subscription canceled", "topic", topicID)
 		m.subs.Lock()
 		defer m.subs.Unlock()
 
@@ -115,7 +117,7 @@ func (m *Mux) dispatch(topicID string, mote *portalpb.Mote) {
 		case ch <- mote:
 		case <-time.After(100 * time.Millisecond):
 			// Drop message if subscriber is slow
-			slog.Warn("Dropping message for slow subscriber", "topic", topicID, "queue_len", len(ch), "queue_cap", cap(ch))
+			log.Warn("dropping message for slow subscriber", "topic", topicID, "queue_len", len(ch), "queue_cap", cap(ch))
 			msgsDropped.WithLabelValues(topicID).Inc()
 		}
 	}
@@ -135,11 +137,12 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 }
 
 func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub pubsub.Subscriber) {
-	slog.InfoContext(ctx, "Starting receive loop", "topic", topicID)
-	defer slog.InfoContext(ctx, "Receive loop exited", "topic", topicID)
+	log.DebugContext(ctx, "starting mux pubsub receive loop", "topic", topicID)
+	defer log.DebugContext(ctx, "mux pubsub receive loop exited", "topic", topicID)
 
 	err := sub.Receive(ctx, func(ctx context.Context, mote *portalpb.Mote) {
 		msgsReceived.WithLabelValues(topicID).Inc()
+		log.TraceContext(ctx, "mux received mote from pubsub", "topic", topicID, "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 
 		// Dispatch locally
 		m.dispatch(topicID, mote)
@@ -152,7 +155,7 @@ func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub pubsub.Subscr
 		if ctx.Err() != nil {
 			return
 		}
-		slog.Error("Receive loop exited with error", "topic", topicID, "error", err)
+		log.ErrorContext(ctx, "mux pubsub receive loop exited with error", "topic", topicID, "error", err)
 	}
 }
 

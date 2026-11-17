@@ -2,9 +2,12 @@ package portals
 
 import (
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
+
+var log = logging.For("portals.grpc")
 
 type Server struct {
 	graph *ent.Client

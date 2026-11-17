@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,11 +22,14 @@ import (
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
 )
 
 var (
+	claimLog = logging.For("c2.claim")
+
 	metricHostCallbacksTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "tavern_host_callbacks_total",
@@ -66,7 +69,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		All(ctx)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to query candidate scheduled tasks for automation", "err", err)
+		claimLog.ErrorContext(ctx, "failed to query candidate scheduled tasks for automation", "error", err)
 		metricTomeAutomationErrors.Inc()
 		return
 	}
@@ -140,28 +143,44 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		}
 		q, err := questCreate.Save(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to create automated quest", "err", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
+			claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
 			metricTomeAutomationErrors.Inc()
 			continue
 		}
 
 		// Link quest to scheduled task
-		srv.graph.ScheduledTask.UpdateOneID(st.ID).AddQuests(q).Save(ctx)
+		if _, err := srv.graph.ScheduledTask.UpdateOneID(st.ID).AddQuests(q).Save(ctx); err != nil {
+			claimLog.ErrorContext(ctx, "failed to link automated quest to scheduled task", "error", err, "scheduled_task_id", st.ID, "quest_id", q.ID)
+		}
 
 		_, err = srv.graph.Task.Create().
 			SetQuest(q).
 			SetBeaconID(beaconID).
 			Save(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to create automated task", "err", err, "quest_id", q.ID)
+			claimLog.ErrorContext(ctx, "failed to create automated task", "error", err, "quest_id", q.ID)
 			metricTomeAutomationErrors.Inc()
+			continue
 		}
+
+		schedCtx := logging.WithActor(ctx, logging.Actor{
+			Kind:       logging.ActorScheduler,
+			ID:         strconv.Itoa(st.ID),
+			Name:       st.Name,
+			AuthMethod: "scheduled_task",
+		})
+		questAuditAttrs := make([]any, 0, 12)
+		questAuditAttrs = append(questAuditAttrs, "scheduled_task_id", st.ID)
+		questAuditAttrs = append(questAuditAttrs, logging.QuestAttrs(q.ID, q.Name, st.Parameters)...)
+		questAuditAttrs = append(questAuditAttrs, logging.TomeAttrs(tome.ID, tome.Name, string(tome.Tactic))...)
+		questAuditAttrs = append(questAuditAttrs, "beacon_id", beaconID, "host_id", hostID)
+		logging.Audit(schedCtx, "quest", "quest.created", "scheduled task created quest", questAuditAttrs...)
 	}
 }
 
 func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) (*c2pb.ClaimTasksResponse, error) {
 	now := time.Now()
-	clientIP := GetClientIP(ctx)
+	ctx, clientIP := enrichC2Context(ctx)
 
 	// Validate input
 	if req.Beacon == nil {
@@ -251,7 +270,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			Select(tag.FieldName, tag.FieldKind).
 			Scan(ctx, &tagNames)
 		if err != nil {
-			slog.ErrorContext(ctx, "metrics failed to query host tags", "err", err, "host_id", hostID)
+			claimLog.ErrorContext(ctx, "metrics failed to query host tags", "error", err, "host_id", hostID)
 		}
 		for _, t := range tagNames {
 			if t.Kind == string(tag.KindGroup) {
@@ -333,6 +352,46 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.Internal, "failed to upsert beacon entity: %v", err)
 	}
 
+	var beaconName string
+	if beaconNameAddr != nil {
+		beaconName = *beaconNameAddr
+	} else if existingBeacon != nil {
+		beaconName = existingBeacon.Name
+	}
+
+	ctx = logging.WithActor(ctx, logging.Actor{
+		Kind:       logging.ActorBeacon,
+		ID:         strconv.Itoa(beaconID),
+		Name:       beaconName,
+		AuthMethod: "c2",
+	})
+
+	if isNewHost {
+		externalIP := ""
+		if clientIP != redirectors.ExternalIPNoop && clientIP != "unknown" {
+			externalIP = clientIP
+		}
+		hostAuditAttrs := make([]any, 0, 10)
+		hostAuditAttrs = append(hostAuditAttrs, logging.HostAttrs(hostID, req.Beacon.Host.Name, req.Beacon.Host.Identifier)...)
+		hostAuditAttrs = append(hostAuditAttrs,
+			"platform", req.Beacon.Host.Platform.String(),
+			"primary_ip", req.Beacon.Host.PrimaryIp,
+			"external_ip", externalIP,
+		)
+		logging.Audit(ctx, "c2", "c2.host_registered", "new target host registered", hostAuditAttrs...)
+	}
+
+	if isNewBeacon {
+		beaconAuditAttrs := make([]any, 0, 12)
+		beaconAuditAttrs = append(beaconAuditAttrs, logging.BeaconAttrs(beaconID, beaconName, req.Beacon.Identifier)...)
+		beaconAuditAttrs = append(beaconAuditAttrs, logging.HostAttrs(hostID, req.Beacon.Host.Name, req.Beacon.Host.Identifier)...)
+		beaconAuditAttrs = append(beaconAuditAttrs,
+			"principal", req.Beacon.Principal,
+			"transport", activeTransport.Type.String(),
+		)
+		logging.Audit(ctx, "c2", "c2.beacon_registered", "new beacon registered", beaconAuditAttrs...)
+	}
+
 	// Create BeaconHistory record
 	var latency int64
 	if !isNewBeacon && !existingBeacon.NextSeenAt.IsZero() {
@@ -344,7 +403,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetLatency(latency).
 		Save(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create beacon history record", "err", err, "beacon_id", beaconID)
+		claimLog.ErrorContext(ctx, "failed to create beacon history record", "error", err, "beacon_id", beaconID)
 	}
 
 	// Run Tome Automation (non-blocking, best effort)
@@ -492,6 +551,20 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			StreamId:   claimedShellTask.StreamID,
 			Jwt:        shellJwtToken,
 		})
+	}
+
+	if len(taskIDs) > 0 || len(shellTaskIDs) > 0 {
+		logging.Audit(ctx, "c2", "c2.tasks_claimed", "beacon claimed tasks",
+			"beacon_id", beaconID,
+			"host_id", hostID,
+			"task_ids", taskIDs,
+			"shell_task_ids", shellTaskIDs,
+		)
+	} else {
+		claimLog.DebugContext(ctx, "beacon polled with no pending tasks",
+			"beacon_id", beaconID,
+			"host_id", hostID,
+		)
 	}
 
 	// Return claimed tasks

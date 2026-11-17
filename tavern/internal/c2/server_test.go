@@ -1,6 +1,7 @@
 package c2
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/logging"
 )
 
 func TestGetClientIP(t *testing.T) {
@@ -219,6 +222,118 @@ func TestJWTValidate(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = srv.ValidateJWT(badStr)
 		assert.Error(t, err, "expected rejection for beacon_id claim %s", bad)
+	}
+}
+
+type syncTestBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *syncTestBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *syncTestBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
+type testAuditSink struct {
+	mu      sync.Mutex
+	entries []logging.AuditEntry
+}
+
+func (s *testAuditSink) Enqueue(e logging.AuditEntry) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.entries = append(s.entries, e)
+}
+
+func (s *testAuditSink) Entries() []logging.AuditEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]logging.AuditEntry, len(s.entries))
+	copy(out, s.entries)
+	return out
+}
+
+func TestJWTValidateAuditAndRedaction(t *testing.T) {
+	logBuf := &syncTestBuffer{}
+	audits := &testAuditSink{}
+	require.NoError(t, logging.Configure(logging.Options{
+		Spec:      "trace",
+		Format:    logging.FormatJSON,
+		Output:    logBuf,
+		Persister: audits,
+	}))
+	t.Cleanup(func() {
+		logging.SetAuditPersister(nil)
+		_ = logging.Configure(logging.Options{Spec: "dev"})
+	})
+
+	pubkey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	srv := Server{
+		jwtPrivateKey: privKey,
+		jwtPublicKey:  pubkey,
+	}
+
+	validToken, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		ClaimBeaconID: 4242,
+		"iat":         time.Now().Unix(),
+		"exp":         time.Now().Add(time.Hour).Unix(),
+	}).SignedString(privKey)
+	require.NoError(t, err)
+
+	ctxOut, beaconID, err := srv.ValidateJWTContext(context.Background(), validToken)
+	require.NoError(t, err)
+	assert.Equal(t, 4242, beaconID)
+
+	actor := logging.ActorFromContext(ctxOut)
+	assert.Equal(t, logging.ActorBeacon, actor.Kind)
+	assert.Equal(t, "4242", actor.ID)
+	assert.Equal(t, "task_jwt", actor.AuthMethod)
+	assert.Empty(t, audits.Entries())
+	assert.Contains(t, logBuf.String(), "verified task JWT")
+	assert.NotContains(t, logBuf.String(), validToken, "cleartext JWT must never be logged even at TRACE")
+
+	expiredToken, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		ClaimBeaconID: 4242,
+		"iat":         time.Now().Add(-2 * time.Hour).Unix(),
+		"exp":         time.Now().Add(-1 * time.Hour).Unix(),
+	}).SignedString(privKey)
+	require.NoError(t, err)
+
+	unboundToken, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(time.Hour).Unix(),
+	}).SignedString(privKey)
+	require.NoError(t, err)
+
+	tamperedToken := "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.badpayload.badsig"
+
+	for _, bad := range []string{expiredToken, unboundToken, tamperedToken} {
+		_, _, err := srv.ValidateJWTContext(context.Background(), bad)
+		require.Error(t, err)
+	}
+
+	recorded := audits.Entries()
+	require.Len(t, recorded, 3)
+	for _, entry := range recorded {
+		assert.Equal(t, "audit.c2", entry.Subsystem)
+		assert.Equal(t, "c2.jwt_denied", entry.Action)
+		assert.Equal(t, logging.OutcomeDenied, entry.Outcome)
+	}
+
+	auditBytes, err := json.Marshal(recorded)
+	require.NoError(t, err)
+	for _, secretToken := range []string{validToken, expiredToken, unboundToken, tamperedToken} {
+		assert.NotContains(t, logBuf.String(), secretToken)
+		assert.NotContains(t, string(auditBytes), secretToken)
 	}
 }
 

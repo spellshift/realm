@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/x509"
-	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,7 +15,10 @@ import (
 
 	"realm.pub/tavern/internal/ent"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/logging"
 )
+
+var authLog = logging.For("builder.auth")
 
 const (
 	// Metadata keys for mTLS authentication.
@@ -39,11 +42,24 @@ func BuilderFromContext(ctx context.Context) (*ent.Builder, bool) {
 	return b, ok
 }
 
+func denyBuilderMTLS(ctx context.Context, reason string, extra ...any) {
+	args := make([]any, 0, 2+len(extra))
+	args = append(args, "reason", reason)
+	args = append(args, extra...)
+	logging.AuditDenied(ctx, "auth", "builder.mtls_denied", "builder mTLS authentication denied", args...)
+}
+
 // authenticateBuilder extracts and validates mTLS credentials from gRPC metadata,
 // returning a context enriched with the authenticated builder entity.
 func authenticateBuilder(ctx context.Context, caCert *x509.Certificate, graph *ent.Client) (context.Context, error) {
+	ctx, _, _ = logging.ExtractGRPCTrace(ctx)
+	if logging.EntrypointFromContext(ctx) == "" {
+		ctx = logging.WithEntrypoint(ctx, "grpc")
+	}
+
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
+		denyBuilderMTLS(ctx, "missing_metadata")
 		return nil, status.Error(codes.Unauthenticated, "missing metadata")
 	}
 
@@ -54,47 +70,56 @@ func authenticateBuilder(ctx context.Context, caCert *x509.Certificate, graph *e
 	timestamp := getMetadataValue(md, mdKeyBuilderTimestamp)
 
 	if certDER == "" || signature == "" || timestamp == "" {
+		denyBuilderMTLS(ctx, "missing_credentials")
 		return nil, status.Error(codes.Unauthenticated, "missing builder credentials")
 	}
 
 	// Parse the certificate
 	cert, err := x509.ParseCertificate([]byte(certDER))
 	if err != nil {
+		denyBuilderMTLS(ctx, "invalid_certificate")
 		return nil, status.Error(codes.Unauthenticated, "invalid certificate")
 	}
 
 	// Verify certificate was signed by our CA
 	if err := cert.CheckSignatureFrom(caCert); err != nil {
+		denyBuilderMTLS(ctx, "untrusted_ca")
 		return nil, status.Error(codes.Unauthenticated, "certificate not signed by trusted CA")
 	}
 
 	// Verify certificate validity period
 	now := time.Now()
 	if now.Before(cert.NotBefore) || now.After(cert.NotAfter) {
+		denyBuilderMTLS(ctx, "certificate_expired_or_not_yet_valid")
 		return nil, status.Error(codes.Unauthenticated, "certificate expired or not yet valid")
 	}
 
 	// Verify timestamp freshness
 	ts, err := time.Parse(time.RFC3339Nano, timestamp)
 	if err != nil {
+		denyBuilderMTLS(ctx, "invalid_timestamp")
 		return nil, status.Error(codes.Unauthenticated, "invalid timestamp format")
 	}
 	if now.Sub(ts).Abs() > maxTimestampAge {
+		denyBuilderMTLS(ctx, "stale_timestamp")
 		return nil, status.Error(codes.Unauthenticated, "timestamp too old or too far in the future")
 	}
 
 	// Verify signature (proof of private key possession)
 	pubKey, ok := cert.PublicKey.(ed25519.PublicKey)
 	if !ok {
+		denyBuilderMTLS(ctx, "unsupported_public_key")
 		return nil, status.Error(codes.Unauthenticated, "certificate does not contain ED25519 public key")
 	}
 	if !ed25519.Verify(pubKey, []byte(timestamp), []byte(signature)) {
+		denyBuilderMTLS(ctx, "invalid_signature")
 		return nil, status.Error(codes.Unauthenticated, "invalid signature")
 	}
 
 	// Extract builder identifier from CN
 	cn := cert.Subject.CommonName
 	if !strings.HasPrefix(cn, builderCNPrefix) {
+		denyBuilderMTLS(ctx, "invalid_cn_format")
 		return nil, status.Error(codes.Unauthenticated, "invalid certificate CN format")
 	}
 	identifier := strings.TrimPrefix(cn, builderCNPrefix)
@@ -102,11 +127,18 @@ func authenticateBuilder(ctx context.Context, caCert *x509.Certificate, graph *e
 	// Look up builder in database
 	b, err := graph.Builder.Query().Where(entbuilder.IdentifierEQ(identifier)).Only(ctx)
 	if err != nil {
-		slog.WarnContext(ctx, "builder authentication failed: builder not found", "identifier", identifier, "error", err)
+		authLog.WarnContext(ctx, "builder authentication failed: builder not found", "identifier", identifier, "error", err)
+		denyBuilderMTLS(ctx, "builder_not_found", "builder_identifier", identifier)
 		return nil, status.Error(codes.Unauthenticated, "builder not found")
 	}
 
-	slog.InfoContext(ctx, "builder authenticated", "builder_id", b.ID, "identifier", identifier)
+	ctx = logging.WithActor(ctx, logging.Actor{
+		Kind:       logging.ActorBuilder,
+		ID:         strconv.Itoa(b.ID),
+		Name:       b.Identifier,
+		AuthMethod: "mtls",
+	})
+	authLog.DebugContext(ctx, "builder authenticated", "builder_id", b.ID, "identifier", identifier)
 
 	// Store builder in context for downstream handlers
 	return context.WithValue(ctx, builderContextKey{}, b), nil
