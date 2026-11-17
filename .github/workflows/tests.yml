@@ -145,6 +145,8 @@ jobs:
         cd ./implants/
         cargo fmt --check
         cargo llvm-cov nextest --profile ci --lcov --output-path lcov.info
+        # eldritch-wasm needs fake_bindings, which must not be enabled for the main workspace run
+        cargo nextest run --profile ci -p eldritch-wasm --features fake_bindings
         cd ./lib/eldritch/stdlib/tests
         cargo llvm-cov nextest --config-file "$NEXTEST_CONFIG" --profile ci --lcov --output-path lcov.info
     - name: 🔄 Convert to CTRF

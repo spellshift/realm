@@ -10,6 +10,7 @@ members = [
     "lib/eldritch/eldritch-core",
     "lib/eldritch/eldritch-macros",
     "lib/eldritch/eldritch-repl",
+    "lib/eldritch/eldritch-wasm",
     "lib/eldritch/eldritch-agent",
     "lib/eldritch/stdlib/eldritch-libaes",
     "lib/eldritch/stdlib/eldritch-libagent",
@@ -45,7 +46,6 @@ members = [
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
-    "lib/eldritch/eldritch-wasm",  # Excluded to prevent fake_bindings from polluting workspace builds
 ]
 resolver = "2"
 
