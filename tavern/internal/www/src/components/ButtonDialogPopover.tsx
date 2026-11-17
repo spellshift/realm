@@ -8,11 +8,27 @@ type Position = {
     left: number
 }
 
-export const ButtonDialogPopover = ({ children, label, leftIcon }: {
-    children: ReactElement,
-    label: string,
-    leftIcon: ReactElement
-}) => {
+export interface ButtonDialogPopoverProps {
+    children: ReactElement;
+    label: string;
+    leftIcon: ReactElement;
+    theme?: "dark" | "light";
+    buttonClassName?: string;
+    buttonTestId?: string;
+    panelTestId?: string;
+    panelWidthPx?: number;
+}
+
+export const ButtonDialogPopover = ({
+    children,
+    label,
+    leftIcon,
+    theme = "light",
+    buttonClassName,
+    buttonTestId,
+    panelTestId,
+    panelWidthPx = 384,
+}: ButtonDialogPopoverProps) => {
     const [isOpen, setIsOpen] = useState(false)
     const [position, setPosition] = useState<Position>({ top: 0, left: 0 })
     const [isMobile, setIsMobile] = useState(false)
@@ -32,7 +48,6 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
 
     const openDialog = (): void => {
         if (!isMobile) {
-            const dialogWidth = 384;
             const spacing = 8;
 
             const button = buttonRef.current
@@ -40,9 +55,9 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                 const rect = button.getBoundingClientRect()
                 const viewportWidth = window.innerWidth
 
-                const calculatedLeft = Math.min(
-                    rect.left,
-                    viewportWidth - dialogWidth - 16
+                const calculatedLeft = Math.max(
+                    16,
+                    Math.min(rect.left, viewportWidth - panelWidthPx - 16)
                 )
 
                 setPosition({
@@ -75,13 +90,27 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [isOpen, isMobile])
 
+    const isDark = theme === "dark";
+    const mobilePanelClass = isDark ? "min-h-full bg-gray-900 text-gray-200" : "min-h-full bg-white";
+    const mobileHeaderClass = isDark
+        ? "sticky top-0 z-10 bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between"
+        : "sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between";
+    const mobileTitleClass = isDark
+        ? "text-lg font-medium text-gray-100"
+        : "text-lg font-medium text-gray-900";
+    const desktopPanelClass = isDark
+        ? "fixed bg-gray-900 border border-gray-700 text-gray-200 rounded-lg shadow-xl p-4 flex flex-col gap-3"
+        : "fixed bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-4";
+
     return (
         <div className='flex justify-end'>
             <Button
                 ref={buttonRef}
+                data-testid={buttonTestId}
                 leftIcon={leftIcon}
                 buttonVariant='ghost'
                 buttonStyle={{ color: "gray", size: "md" }}
+                className={buttonClassName}
                 onClick={openDialog}
             >
                 {label}
@@ -114,10 +143,10 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                                 leaveFrom="opacity-100 scale-100"
                                 leaveTo="opacity-0 scale-95"
                             >
-                                <Dialog.Panel className="min-h-full bg-white">
+                                <Dialog.Panel data-testid={panelTestId} className={mobilePanelClass}>
                                     {/* Header with close button */}
-                                    <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                                        <Dialog.Title className="text-lg font-medium text-gray-900">
+                                    <div className={mobileHeaderClass}>
+                                        <Dialog.Title className={mobileTitleClass}>
                                             {label}
                                         </Dialog.Title>
                                         <button
@@ -149,10 +178,12 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                             >
                                 <div
                                     ref={panelRef}
-                                    className="fixed bg-white border rounded-lg shadow-lg w-96 p-4 flex flex-col gap-4"
+                                    data-testid={panelTestId}
+                                    className={desktopPanelClass}
                                     style={{
                                         top: position.top,
                                         left: position.left,
+                                        width: panelWidthPx,
                                     }}
                                 >
                                     {children}

@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useState } from "react";
+import React, { Fragment, useContext, useEffect, useMemo, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { BookOpenIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useMutation } from "@apollo/client";
@@ -11,6 +11,7 @@ import {
     Plus,
     Trash2,
 } from "lucide-react";
+import { AuthorizationContext } from "../../../context/AuthorizationContext";
 import { StepStatus, TomeTactic } from "../../../utils/enums";
 import { CREATE_TOME_MUTATION, GET_SHELL_TOMES } from "../graphql";
 import { ShellTomeItem } from "../hooks/useShellData";
@@ -659,16 +660,22 @@ const SaveTomeModal: React.FC<SaveTomeModalProps> = ({
     onClose,
     composerCode,
     existingTomes = [],
-    defaultAuthor = "operator",
+    defaultAuthor,
     onTomeCreated,
 }) => {
+    const authContext = useContext(AuthorizationContext);
+    const resolvedDefaultAuthor =
+        (defaultAuthor && defaultAuthor.trim()) ||
+        authContext?.data?.me?.name?.trim() ||
+        "operator";
+
     const [createTome] = useMutation(CREATE_TOME_MUTATION);
 
     const [step, setStep] = useState<number>(0);
     const [name, setName] = useState<string>("");
     const [description, setDescription] = useState<string>("");
     const [tactic, setTactic] = useState<string>("UNSPECIFIED");
-    const [author, setAuthor] = useState<string>(defaultAuthor || "operator");
+    const [author, setAuthor] = useState<string>(resolvedDefaultAuthor);
     const [params, setParams] = useState<TomeParamDefInput[]>([]);
     const [eldritch, setEldritch] = useState<string>("");
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -681,13 +688,13 @@ const SaveTomeModal: React.FC<SaveTomeModalProps> = ({
             setName(draft.suggestedName);
             setDescription(draft.suggestedDescription);
             setTactic(draft.suggestedTactic || "UNSPECIFIED");
-            setAuthor(defaultAuthor || "operator");
+            setAuthor(resolvedDefaultAuthor);
             setParams(draft.detectedParams);
             setEldritch(draft.cleanedEldritch);
             setIsSubmitting(false);
             setSubmitError(null);
         }
-    }, [isOpen, composerCode, existingTomes, defaultAuthor]);
+    }, [isOpen, composerCode, existingTomes, resolvedDefaultAuthor]);
 
     const isDuplicateName = useMemo(() => {
         const trimmed = name.trim().toLowerCase();

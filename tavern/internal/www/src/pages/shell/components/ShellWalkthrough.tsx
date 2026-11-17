@@ -7,9 +7,8 @@ import {
   Clock,
   Code2,
   Compass,
-  Database,
   History,
-  Loader2,
+  Network,
   NotebookPen,
   Settings,
   Shell,
@@ -83,15 +82,6 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <Clock size={16} className="text-blue-400" />,
   },
   {
-    id: "queue-status",
-    selector: '[data-tour="shell-queue-indicator"]',
-    fallbackSelector: '[data-tour="shell-status-bar"]',
-    title: "Queued & Executing Tasks",
-    description:
-      "When tasks are queued or executing on the agent, hover or click this indicator to see what's currently in the queue.",
-    icon: <Loader2 size={16} className="text-amber-400" />,
-  },
-  {
     id: "non-interactive",
     selector: '[data-tour="shell-non-interactive"]',
     title: "Async Mode",
@@ -100,13 +90,13 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     icon: <Clock size={16} className="text-yellow-400" />,
   },
   {
-    id: "context",
-    selector: '[data-tour="shell-knowledge"]',
-    title: "Context",
+    id: "access",
+    selector: '[data-tour="shell-access"]',
+    title: "Access",
     description:
-      "Explore Realm's knowledge graph with a view tailored for your operation. Your pivoting sessions, PTYs, and other operational info are stored here.",
+      "Navigate hosts, shells, pivots, and PTYs, add target hosts or credentials, and jump straight into SSH pivots from one unified Access drawer.",
     tip: "Items reported via the Eldritch report module and successful pivots appear here automatically.",
-    icon: <Database size={16} className="text-emerald-400" />,
+    icon: <Network size={16} className="text-emerald-400" />,
   },
   {
     id: "portal",
@@ -114,7 +104,7 @@ export const WALKTHROUGH_STEPS: WalkthroughStep[] = [
     fallbackSelector: '[data-tour="shell-non-interactive"]',
     title: "Going Interactive",
     description:
-      'For real-time interaction with the agent, you can open a "Portal" from the Context drawer or the bottom status bar. This creates an established connection for low-latency operations and interactive PTY or SSH pivots.',
+      'For real-time interaction with the agent, you can open a "Portal" from the bottom status bar. This creates an established connection for low-latency operations and interactive PTY or SSH pivots.',
     tip: "You can always close a portal when you're finished and open one later. Doing so will terminate your active pivots.",
     icon: <Shell size={16} className="text-emerald-400" />,
   },
@@ -156,8 +146,8 @@ interface ShellWalkthroughProps {
   onCloseScratchpad?: () => void;
   onOpenSessionSettings?: () => void;
   onCloseSessionSettings?: () => void;
-  onOpenContextDrawer?: () => void;
-  onCloseContextDrawer?: () => void;
+  onOpenAccessDrawer?: () => void;
+  onCloseAccessDrawer?: () => void;
   onPortalStepChange?: (isActive: boolean) => void;
   onQueueStepChange?: (isActive: boolean) => void;
 }
@@ -179,8 +169,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
   onCloseScratchpad,
   onOpenSessionSettings,
   onCloseSessionSettings,
-  onOpenContextDrawer,
-  onCloseContextDrawer,
+  onOpenAccessDrawer,
+  onCloseAccessDrawer,
   onPortalStepChange,
   onQueueStepChange,
 }) => {
@@ -194,8 +184,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     onCloseScratchpad,
     onOpenSessionSettings,
     onCloseSessionSettings,
-    onOpenContextDrawer,
-    onCloseContextDrawer,
+    onOpenAccessDrawer,
+    onCloseAccessDrawer,
     onPortalStepChange,
     onQueueStepChange,
   });
@@ -206,8 +196,8 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     onCloseScratchpad,
     onOpenSessionSettings,
     onCloseSessionSettings,
-    onOpenContextDrawer,
-    onCloseContextDrawer,
+    onOpenAccessDrawer,
+    onCloseAccessDrawer,
     onPortalStepChange,
     onQueueStepChange,
   };
@@ -286,9 +276,9 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
     }
 
     if (currentStep.id === "portal") {
-      cb.onOpenContextDrawer?.();
-    } else if (currentStep.id === "context" || currentStep.id === "history") {
-      cb.onCloseContextDrawer?.();
+      cb.onOpenAccessDrawer?.();
+    } else if (currentStep.id === "access" || currentStep.id === "history") {
+      cb.onCloseAccessDrawer?.();
     }
 
     const handleTargetClick = (e: MouseEvent) => {
@@ -420,7 +410,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
 
   const handleDismiss = () => {
     if (currentStep.id === "portal") {
-      onCloseContextDrawer?.();
+      onCloseAccessDrawer?.();
     }
     if (currentStep.id === "composer") {
       onCloseComposer?.();
@@ -456,7 +446,7 @@ const ShellWalkthrough: React.FC<ShellWalkthroughProps> = ({
       };
     }
 
-    // If highlighting an element inside the right-aligned actions menu or Context drawer, position popover to the left
+    // If highlighting an element inside the right-aligned actions menu or Access drawer, position popover to the left
     if (
       (currentStep.id === "portal" ||
         currentStep.id === "guide" ||

@@ -3,8 +3,8 @@ import {
     AlertTriangle,
     Flame,
     Loader2,
-    PlusCircle,
     RefreshCw,
+    Terminal,
 } from "lucide-react";
 import { ConnectionStatus } from "../../../lib/browser-adapter";
 import { stripInternalMacro } from "../hooks/shellUtils";
@@ -29,6 +29,16 @@ const truncateCmd = (cmd: string, max = 56): string => {
     const firstLine = cleaned.trim().split("\n")[0] || "";
     if (firstLine.length <= max) return firstLine;
     return `${firstLine.slice(0, max)}...`;
+};
+
+const formatStuckTimer = (elapsedSeconds: number): string => {
+    const safeSec = Math.max(0, Math.floor(elapsedSeconds));
+    if (safeSec < 60) {
+        return `${safeSec}s`;
+    }
+    const mins = Math.floor(safeSec / 60);
+    const secs = safeSec % 60;
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 };
 
 const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
@@ -64,7 +74,7 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
                     {isSpawningShell ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                        <PlusCircle className="w-3.5 h-3.5" />
+                        <Terminal className="w-3.5 h-3.5" />
                     )}
                     New Interpreter
                 </button>
@@ -111,14 +121,11 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
                 <div className="flex items-start sm:items-center gap-2 min-w-0">
                     <Flame className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
                     <div className="min-w-0">
-                        <span className="font-semibold text-amber-300">
-                            Interpreter Busy or Potentially Stuck ({stuckTask.elapsedSeconds}s):
-                        </span>{" "}
                         <code className="px-1.5 py-0.5 rounded bg-black/40 text-amber-200 font-mono">
                             {truncateCmd(stuckTask.task.input)}
                         </code>{" "}
-                        <span className="text-amber-200/80">
-                            is still running. Subsequent commands in this shell are queued behind it.
+                        <span>
+                            is taking longer than expected. ({formatStuckTimer(stuckTask.elapsedSeconds)})
                         </span>
                     </div>
                 </div>
@@ -127,12 +134,12 @@ const InterpreterStatusBanner: React.FC<InterpreterStatusBannerProps> = ({
                         type="button"
                         disabled={isSpawningShell}
                         onClick={onSpawnFreshShell}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold transition-colors shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold transition-colors shadow-sm"
                     >
                         {isSpawningShell ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
-                            <PlusCircle className="w-3.5 h-3.5" />
+                            <Terminal className="w-3.5 h-3.5" />
                         )}
                         New Interpreter
                     </button>

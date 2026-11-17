@@ -1,10 +1,12 @@
 import {
+    KnowledgeBeaconItem,
     KnowledgeCredentialItem,
     KnowledgeFileItem,
     KnowledgeHostItem,
     KnowledgeShellItem,
     ShellPivotItem,
 } from "../hooks/useShellData";
+import { selectBestBeaconId } from "../../../components/create-shell-button/CreateShellButton";
 
 export const getIpv4SubnetPrefix = (ipOrCidr?: string | null): string | null => {
     if (!ipOrCidr) {
@@ -52,6 +54,42 @@ export const extractPivotTargetHost = (destination?: string | null): string => {
     return afterAt;
 };
 
+export const isMatchingPivotTarget = (
+    type: string,
+    pendingTarget?: string,
+    incomingTarget?: string
+): boolean => {
+    if (!pendingTarget || !incomingTarget) {
+        return true;
+    }
+    if (type.toLowerCase() === "pty") {
+        return true;
+    }
+    if (pendingTarget === incomingTarget) {
+        return true;
+    }
+
+    const stripUser = (s: string) => (s.includes("@") ? s.split("@").pop() || s : s).trim();
+    const cleanPending = stripUser(pendingTarget);
+    const cleanIncoming = stripUser(incomingTarget);
+    if (cleanPending === cleanIncoming) {
+        return true;
+    }
+
+    const stripPort22 = (s: string) => s.replace(/:22$/, "");
+    if (stripPort22(cleanPending) === stripPort22(cleanIncoming)) {
+        return true;
+    }
+
+    const hostPending = extractPivotTargetHost(pendingTarget);
+    const hostIncoming = extractPivotTargetHost(incomingTarget);
+    if (hostPending && hostIncoming && hostPending.toLowerCase() === hostIncoming.toLowerCase()) {
+        return true;
+    }
+
+    return false;
+};
+
 export function formatPivotTabLabel(tab: {
     type: string;
     target: string;
@@ -67,12 +105,117 @@ export function formatPivotTabLabel(tab: {
         const hostOnly = afterAt.replace(/:\d+$/, "");
         return hostOnly || afterAt || raw;
     }
-    const cleaned = (tab.target || "PTY").replace(/^PTY\s*#\d+$/i, "PTY").trim();
-    if (!cleaned || cleaned.toLowerCase() === "exit" || cleaned.toLowerCase() === "pty") {
-        return "PTY";
-    }
-    return cleaned.length > 24 ? `${cleaned.slice(0, 24)}...` : cleaned;
+    return "PTY";
 }
+
+const ESC_CHAR = String.fromCharCode(27);
+const ANSI_ESCAPE_REGEX = new RegExp(`${ESC_CHAR}\\[[0-9;?]*[ -/]*[@-~]`, "g");
+
+export const stripAnsi = (value?: string | null): string =>
+    String(value || "").replace(ANSI_ESCAPE_REGEX, "");
+
+export const hasPivotActivity = (
+    pivot?: {
+        closedAt?: string | null;
+        data?: string | null;
+    } | null
+): boolean => {
+    if (!pivot) {
+        return false;
+    }
+    if (!pivot.closedAt) {
+        return true;
+    }
+    if (pivot.data === undefined) {
+        return true;
+    }
+    const cleaned = stripAnsi(pivot.data).trim();
+    if (!cleaned) {
+        return false;
+    }
+    const nonEmptyLines = cleaned
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    if (nonEmptyLines.length === 0) {
+        return false;
+    }
+    if (nonEmptyLines.every((line) => line.startsWith("[-]"))) {
+        return false;
+    }
+    return true;
+};
+
+export const isBeaconOnline = (beacon: any, nowMs: number = Date.now()): boolean => {
+    if (!beacon) {
+        return false;
+    }
+    const intervalSec = Number(beacon.interval);
+    const intervalMs =
+        Number.isFinite(intervalSec) && intervalSec > 0 ? intervalSec * 1000 : 60_000;
+    if (beacon.nextSeenAt) {
+        const nextMs = new Date(beacon.nextSeenAt).getTime();
+        if (!Number.isFinite(nextMs)) {
+            return false;
+        }
+        const graceMs = Math.max(intervalMs, 30_000);
+        return nowMs - nextMs <= graceMs;
+    }
+    if (beacon.lastSeenAt) {
+        const lastMs = new Date(beacon.lastSeenAt).getTime();
+        if (!Number.isFinite(lastMs)) {
+            return false;
+        }
+        const maxStaleMs = Math.max(intervalMs * 3, 120_000);
+        return nowMs - lastMs <= maxStaleMs;
+    }
+    if ("lastSeenAt" in beacon || "nextSeenAt" in beacon) {
+        return false;
+    }
+    return true;
+};
+
+export const extractBeaconsFromHost = (host: any): KnowledgeBeaconItem[] => {
+    const hId = host?.id ? String(host.id) : undefined;
+    const hName = host?.name || host?.primaryIP || hId;
+    return (host?.beacons?.edges || [])
+        .map((e: any) => e?.node)
+        .filter((b: any) => Boolean(b?.id))
+        .map((b: any) => ({
+            id: String(b.id),
+            name: b.name || `Beacon #${b.id}`,
+            principal: b.principal,
+            transport: b.transport,
+            interval: b.interval,
+            lastSeenAt: b.lastSeenAt,
+            nextSeenAt: b.nextSeenAt,
+            isOnline: isBeaconOnline(b),
+            hostId: hId,
+            hostName: hName,
+        }));
+};
+
+export const selectPrimaryBeaconId = (host: any): string | undefined => {
+    const beacons = extractBeaconsFromHost(host);
+    if (beacons.length === 0) {
+        return undefined;
+    }
+    const onlineBeacons = beacons.filter((b) => b.isOnline);
+    if (onlineBeacons.length === 0) {
+        return undefined;
+    }
+    const bestId = selectBestBeaconId(
+        onlineBeacons.map((b) => ({
+            id: b.id,
+            principal: b.principal || "",
+            interval: Number(b.interval) || Number.MAX_SAFE_INTEGER,
+            lastSeenAt: b.lastSeenAt || new Date(0).toISOString(),
+            nextSeenAt: b.nextSeenAt,
+            transport: b.transport,
+        }))
+    );
+    return bestId ? String(bestId) : undefined;
+};
 
 export const formatFileSize = (bytes?: number | null): string => {
     if (bytes === undefined || bytes === null || Number.isNaN(bytes)) {
@@ -136,11 +279,13 @@ export interface UnifiedGraphDataResult {
     hostFiles: KnowledgeFileItem[];
     hostShells: KnowledgeShellItem[];
     nearbyPivots: ShellPivotItem[];
+    currentHostBeacons: KnowledgeBeaconItem[];
 }
 
 export const buildUnifiedGraphData = ({
     currentHostNode,
     hostId,
+    currentShellId,
     currentHostTags,
     currentShellPivots,
     knowledgeData,
@@ -176,6 +321,9 @@ export const buildUnifiedGraphData = ({
     }
 
     for (const p of currentShellPivots) {
+        if (!hasPivotActivity(p)) {
+            continue;
+        }
         if (String(p.kind || "").toLowerCase() === "pty") {
             continue;
         }
@@ -216,34 +364,50 @@ export const buildUnifiedGraphData = ({
         }
     }
 
-    // 3. Map Host entities by ID, IP, and Name so NetworkHost records can merge cleanly
+    // 3. Map Host entities by ID, IP (primary & external), and normalized Name so NetworkHost records merge cleanly
+    const normalizeHostNameKey = (rawName?: string | null): string =>
+        String(rawName || "").trim().toLowerCase();
+    const shortHostNameKey = (rawName?: string | null): string => {
+        const normalized = normalizeHostNameKey(rawName);
+        if (!normalized) return "";
+        return normalized.split(".")[0];
+    };
+
     const hostById = new Map<string, any>();
     const hostByIp = new Map<string, any>();
     const hostByName = new Map<string, any>();
 
-    if (currentHostNode?.id) {
-        hostById.set(String(currentHostNode.id), currentHostNode);
-        if (currentHostNode.primaryIP) {
-            hostByIp.set(currentHostNode.primaryIP, currentHostNode);
+    const registerHostLookup = (h: any) => {
+        if (!h) return;
+        if (h.id) {
+            hostById.set(String(h.id), h);
         }
-        if (currentHostNode.name) {
-            hostByName.set(String(currentHostNode.name).toLowerCase(), currentHostNode);
-        }
-    }
-
-    for (const h of rawHosts) {
-        const hId = String(h.id);
-        hostById.set(hId, h);
         if (h.primaryIP) {
-            hostByIp.set(h.primaryIP, h);
+            hostByIp.set(String(h.primaryIP).trim(), h);
         }
-        if (h.name) {
-            hostByName.set(String(h.name).toLowerCase(), h);
+        if (h.externalIP) {
+            hostByIp.set(String(h.externalIP).trim(), h);
         }
+        const fullName = normalizeHostNameKey(h.name);
+        if (fullName) {
+            hostByName.set(fullName, h);
+            const shortName = shortHostNameKey(h.name);
+            if (shortName && !hostByName.has(shortName)) {
+                hostByName.set(shortName, h);
+            }
+        }
+    };
+
+    registerHostLookup(currentHostNode);
+    for (const h of rawHosts) {
+        registerHostLookup(h);
     }
 
     const mergedHostIds = new Set<string>();
+    const mergedIps = new Set<string>();
+    const mergedNames = new Set<string>();
     const unifiedHosts: KnowledgeHostItem[] = [];
+    const unifiedHostIndexByKey = new Map<string, number>();
 
     const extractCredsFromHost = (h: any, isCurr: boolean): KnowledgeCredentialItem[] => {
         if (!h) {
@@ -305,21 +469,171 @@ export const buildUnifiedGraphData = ({
         return Array.from(byId.values());
     };
 
+    const getCanonicalKeysForEntry = (entry: {
+        hostId?: string;
+        ip?: string;
+        externalIp?: string;
+        name?: string;
+        hostname?: string;
+    }): string[] => {
+        const keys: string[] = [];
+        if (entry.hostId) {
+            keys.push(`id:${entry.hostId}`);
+        }
+        if (entry.ip) {
+            keys.push(`ip:${entry.ip.trim()}`);
+        }
+        if (entry.externalIp) {
+            keys.push(`ip:${entry.externalIp.trim()}`);
+        }
+        const n1 = normalizeHostNameKey(entry.name);
+        if (n1) {
+            keys.push(`name:${n1}`);
+        }
+        const n2 = normalizeHostNameKey(entry.hostname);
+        if (n2) {
+            keys.push(`name:${n2}`);
+        }
+        return keys;
+    };
+
+    const upsertUnifiedHost = (candidate: KnowledgeHostItem) => {
+        const keys = getCanonicalKeysForEntry({
+            hostId: candidate.hostId,
+            ip: candidate.ipAddress || candidate.primaryIP,
+            externalIp: candidate.externalIP,
+            name: candidate.name,
+            hostname: candidate.hostname,
+        });
+
+        let existingIdx: number | undefined;
+        for (const key of keys) {
+            const found = unifiedHostIndexByKey.get(key);
+            if (found !== undefined) {
+                existingIdx = found;
+                break;
+            }
+        }
+
+        if (candidate.hostId) mergedHostIds.add(candidate.hostId);
+        if (candidate.primaryIP) mergedIps.add(candidate.primaryIP.trim());
+        if (candidate.ipAddress) mergedIps.add(candidate.ipAddress.trim());
+        if (candidate.externalIP) mergedIps.add(candidate.externalIP.trim());
+        if (normalizeHostNameKey(candidate.name)) mergedNames.add(normalizeHostNameKey(candidate.name));
+        if (normalizeHostNameKey(candidate.hostname)) {
+            mergedNames.add(normalizeHostNameKey(candidate.hostname));
+        }
+
+        if (existingIdx === undefined) {
+            const newIndex = unifiedHosts.length;
+            unifiedHosts.push(candidate);
+            for (const key of keys) {
+                unifiedHostIndexByKey.set(key, newIndex);
+            }
+            return;
+        }
+
+        const existing = unifiedHosts[existingIdx];
+        const credById = new Map<string, KnowledgeCredentialItem>();
+        for (const c of existing.credentials || []) {
+            credById.set(c.id, c);
+        }
+        for (const c of candidate.credentials || []) {
+            credById.set(c.id, c);
+        }
+        const mergedCreds = Array.from(credById.values());
+
+        const portSet = new Set<number>([...(existing.openPorts || []), ...(candidate.openPorts || [])]);
+        const mergedPorts = Array.from(portSet).sort((a, b) => a - b);
+
+        const netById = new Map<string, { id: string; name: string; subnet: string; description?: string }>();
+        for (const n of existing.networks || []) {
+            netById.set(n.id, n);
+        }
+        for (const n of candidate.networks || []) {
+            netById.set(n.id, n);
+        }
+
+        const tagById = new Map<string, { id: string; name: string; kind: string }>();
+        for (const t of existing.tags || []) {
+            tagById.set(t.id, t);
+        }
+        for (const t of candidate.tags || []) {
+            tagById.set(t.id, t);
+        }
+
+        const sharedTagSet = new Set<string>([
+            ...(existing.sharedTags || []),
+            ...(candidate.sharedTags || []),
+        ]);
+
+        const beaconById = new Map<string, KnowledgeBeaconItem>();
+        for (const b of existing.beacons || []) {
+            beaconById.set(b.id, b);
+        }
+        for (const b of candidate.beacons || []) {
+            beaconById.set(b.id, b);
+        }
+        const mergedBeacons = Array.from(beaconById.values());
+
+        const mergedItem: KnowledgeHostItem = {
+            ...existing,
+            id: existing.hostId || candidate.hostId || existing.id,
+            hostId: existing.hostId || candidate.hostId,
+            networkHostId: existing.networkHostId || candidate.networkHostId,
+            name:
+                existing.name && existing.name !== existing.primaryIP
+                    ? existing.name
+                    : candidate.name || existing.name,
+            hostname: existing.hostname || candidate.hostname,
+            primaryIP: existing.primaryIP || candidate.primaryIP,
+            ipAddress: existing.ipAddress || candidate.ipAddress,
+            subnet: existing.subnet || candidate.subnet,
+            externalIP: existing.externalIP || candidate.externalIP,
+            platform: existing.platform || candidate.platform,
+            lastSeenAt: existing.lastSeenAt || candidate.lastSeenAt,
+            openPorts: mergedPorts,
+            networks: Array.from(netById.values()),
+            tags: Array.from(tagById.values()),
+            sharedTags: Array.from(sharedTagSet),
+            beaconCount: Math.max(
+                existing.beaconCount || 0,
+                candidate.beaconCount || 0,
+                mergedBeacons.length
+            ),
+            beacons: mergedBeacons,
+            primaryBeaconId: existing.primaryBeaconId || candidate.primaryBeaconId,
+            hasOnlineBeacon: Boolean(existing.hasOnlineBeacon || candidate.hasOnlineBeacon),
+            credentials: mergedCreds,
+            credentialCount: Math.max(
+                existing.credentialCount || 0,
+                candidate.credentialCount || 0,
+                mergedCreds.length
+            ),
+            isCurrentHost: existing.isCurrentHost || candidate.isCurrentHost,
+            sameSubnet: existing.sameSubnet || candidate.sameSubnet,
+            isReachable: existing.isReachable || candidate.isReachable,
+        };
+        unifiedHosts[existingIdx] = mergedItem;
+        for (const key of keys) {
+            unifiedHostIndexByKey.set(key, existingIdx);
+        }
+    };
+
     // 4. Process NetworkHost records first and link to matching Host if present
     for (const nh of rawNetworkHosts) {
+        const ipCandidate = String(nh.ipAddress || nh.host?.primaryIP || "").trim();
         const linkedHost =
             (nh.host?.id && hostById.get(String(nh.host.id))) ||
             nh.host ||
-            (nh.ipAddress && hostByIp.get(nh.ipAddress)) ||
-            (nh.hostname && hostByName.get(String(nh.hostname).toLowerCase())) ||
-            (nh.name && hostByName.get(String(nh.name).toLowerCase())) ||
+            (ipCandidate && hostByIp.get(ipCandidate)) ||
+            (nh.hostname && hostByName.get(normalizeHostNameKey(nh.hostname))) ||
+            (nh.name && hostByName.get(normalizeHostNameKey(nh.name))) ||
+            (nh.hostname && hostByName.get(shortHostNameKey(nh.hostname))) ||
+            (nh.name && hostByName.get(shortHostNameKey(nh.name))) ||
             null;
 
         const linkedHostId = linkedHost?.id ? String(linkedHost.id) : undefined;
-        if (linkedHostId) {
-            mergedHostIds.add(linkedHostId);
-        }
-
         const ipAddr = nh.ipAddress || linkedHost?.primaryIP || "";
         const subnet = nh.subnet || formatSubnetCidr(ipAddr);
         const prefix = getIpv4SubnetPrefix(subnet || ipAddr);
@@ -357,8 +671,10 @@ export const buildUnifiedGraphData = ({
         const openPorts = Array.isArray(nh.openPorts)
             ? nh.openPorts.map((p: any) => Number(p)).filter((p: number) => !Number.isNaN(p) && p > 0)
             : [];
+        const beacons = extractBeaconsFromHost(linkedHost);
+        const primaryBeaconId = selectPrimaryBeaconId(linkedHost);
 
-        unifiedHosts.push({
+        upsertUnifiedHost({
             id: linkedHostId || `nh-${nh.id}`,
             hostId: linkedHostId,
             networkHostId: String(nh.id),
@@ -373,7 +689,10 @@ export const buildUnifiedGraphData = ({
             platform: linkedHost?.platform,
             lastSeenAt: linkedHost?.lastSeenAt,
             tags,
-            beaconCount: linkedHost?.beacons?.totalCount ?? 0,
+            beaconCount: linkedHost?.beacons?.totalCount ?? beacons.length,
+            beacons,
+            primaryBeaconId,
+            hasOnlineBeacon: Boolean(primaryBeaconId),
             credentialCount: Math.max(linkedHost?.credentials?.totalCount ?? 0, creds.length),
             credentials: creds,
             isCurrentHost,
@@ -393,11 +712,18 @@ export const buildUnifiedGraphData = ({
     // 5. Add remaining Host records not already represented by a NetworkHost
     for (const h of rawHosts) {
         const hId = String(h.id);
-        if (mergedHostIds.has(hId)) {
+        const ipAddr = String(h.primaryIP || "").trim();
+        const extIp = String(h.externalIP || "").trim();
+        const normName = normalizeHostNameKey(h.name);
+        if (
+            mergedHostIds.has(hId) ||
+            (ipAddr && mergedIps.has(ipAddr)) ||
+            (extIp && mergedIps.has(extIp)) ||
+            (normName && mergedNames.has(normName))
+        ) {
             continue;
         }
         const isCurrentHost = hId === currentIdStr;
-        const ipAddr = h.primaryIP || "";
         const subnet = formatSubnetCidr(ipAddr);
         const prefix = getIpv4SubnetPrefix(ipAddr);
         const sameSubnet = Boolean(currentSubnetPrefix && prefix && currentSubnetPrefix === prefix);
@@ -411,8 +737,10 @@ export const buildUnifiedGraphData = ({
             .map((t: any) => t.name)
             .filter((name: string) => currentHostTags.includes(name));
         const creds = extractCredsFromHost(h, isCurrentHost);
+        const beacons = extractBeaconsFromHost(h);
+        const primaryBeaconId = selectPrimaryBeaconId(h);
 
-        unifiedHosts.push({
+        upsertUnifiedHost({
             id: hId,
             hostId: hId,
             name: h.name || ipAddr || hId,
@@ -426,7 +754,10 @@ export const buildUnifiedGraphData = ({
             platform: h.platform,
             lastSeenAt: h.lastSeenAt,
             tags,
-            beaconCount: h.beacons?.totalCount ?? (h.beacons?.edges?.length || 0),
+            beaconCount: h.beacons?.totalCount ?? beacons.length,
+            beacons,
+            primaryBeaconId,
+            hasOnlineBeacon: Boolean(primaryBeaconId),
             credentialCount: h.credentials?.totalCount ?? creds.length,
             credentials: creds,
             isCurrentHost,
@@ -556,7 +887,7 @@ export const buildUnifiedGraphData = ({
     const nearbyPivots: ShellPivotItem[] = [];
 
     for (const p of currentShellPivots) {
-        if (!p?.id) {
+        if (!p?.id || !hasPivotActivity(p)) {
             continue;
         }
         const pId = String(p.id);
@@ -564,6 +895,7 @@ export const buildUnifiedGraphData = ({
         nearbyPivots.push({
             ...p,
             id: pId,
+            shellId: p.shellId || currentShellId,
             hostId: currentIdStr,
             hostName: currentHostName,
             isCurrentHost: true,
@@ -581,14 +913,32 @@ export const buildUnifiedGraphData = ({
             if (!b) {
                 continue;
             }
+            const beaconOnline = isBeaconOnline(b);
             for (const se of b.shells?.edges || []) {
                 const s = se?.node;
                 if (!s?.id) {
                     continue;
                 }
                 const sId = String(s.id);
+                const shellActiveUsers = (s.activeUsers?.edges || [])
+                    .map((ue: any) => ue?.node)
+                    .filter(Boolean)
+                    .map((u: any) => ({
+                        id: String(u.id),
+                        name: u.name || "Operator",
+                        photoURL: u.photoURL,
+                    }));
                 if (!seenShellIds.has(sId)) {
                     seenShellIds.add(sId);
+                    const tasks = (s.shellTasks?.edges || [])
+                        .map((te: any) => te?.node)
+                        .filter(Boolean)
+                        .map((t: any) => ({
+                            id: t.id ? String(t.id) : undefined,
+                            input: t.input,
+                            output: t.output,
+                            error: t.error,
+                        }));
                     hostShells.push({
                         id: sId,
                         createdAt: s.createdAt,
@@ -596,15 +946,23 @@ export const buildUnifiedGraphData = ({
                         beaconId: String(b.id),
                         beaconName: b.name,
                         beaconPrincipal: b.principal,
+                        beaconLastSeenAt: b.lastSeenAt,
+                        beaconNextSeenAt: b.nextSeenAt,
+                        beaconInterval: b.interval,
+                        beaconOnline,
+                        isLive: !s.closedAt && beaconOnline,
+                        activeUsers: shellActiveUsers,
+                        ownerId: s.owner?.id ? String(s.owner.id) : undefined,
                         ownerName: s.owner?.name,
                         hostId: hId,
                         hostName: hName,
                         isCurrentHost: isCurr,
+                        tasks,
                     });
                 }
                 for (const pe of s.pivots?.edges || []) {
                     const p = pe?.node;
-                    if (!p?.id) {
+                    if (!p?.id || !hasPivotActivity(p)) {
                         continue;
                     }
                     const pId = String(p.id);
@@ -617,6 +975,7 @@ export const buildUnifiedGraphData = ({
                             destination: p.destination,
                             port: p.port,
                             closedAt: p.closedAt,
+                            data: p.data,
                             shellId: sId,
                             hostId: hId,
                             hostName: hName,
@@ -637,6 +996,11 @@ export const buildUnifiedGraphData = ({
     }
 
     hostShells.sort((a, b) => {
+        const aLive = a.isLive ?? (!a.closedAt && (a.beaconOnline ?? true));
+        const bLive = b.isLive ?? (!b.closedAt && (b.beaconOnline ?? true));
+        if (aLive !== bLive) {
+            return aLive ? -1 : 1;
+        }
         const aOpen = !a.closedAt;
         const bOpen = !b.closedAt;
         if (aOpen !== bOpen) {
@@ -664,6 +1028,7 @@ export const buildUnifiedGraphData = ({
         hostFiles,
         hostShells,
         nearbyPivots,
+        currentHostBeacons: extractBeaconsFromHost(currentHostNode),
     };
 };
 

@@ -22,6 +22,8 @@ interface ShellActionsMenuProps {
     onCloseSshModalExternal?: () => void;
     credentials?: KnowledgeCredentialItem[];
     hosts?: KnowledgeHostItem[];
+    currentHostId?: string;
+    onCredentialCreated?: (cred: KnowledgeCredentialItem, targetHostId?: string) => void;
     onLoadIntoComposer?: (code: string) => void;
     buttonClassName?: string;
     forceOpen?: boolean;
@@ -40,6 +42,8 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     onCloseSshModalExternal,
     credentials,
     hosts,
+    currentHostId,
+    onCredentialCreated,
     onLoadIntoComposer,
     buttonClassName,
     forceOpen = false,
@@ -234,6 +238,8 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                 initialCredentialId={sshModalInitialCredentialId}
                 credentials={credentials}
                 hosts={hosts}
+                currentHostId={currentHostId}
+                onCredentialCreated={onCredentialCreated}
                 onLoadIntoComposer={onLoadIntoComposer}
             />
         </>

@@ -7,6 +7,7 @@ import {
   Home,
   LogIn,
   LogOut,
+  Network,
   Terminal,
   User,
 } from "lucide-react";
@@ -57,12 +58,11 @@ interface ShellHeaderProps {
   historyOpen?: boolean;
   historyCount?: number;
   activeQueueCount?: number;
+  onToggleHosts?: () => void;
+  hostsOpen?: boolean;
   onTogglePivots?: () => void;
   pivotsOpen?: boolean;
   pivotCount?: number;
-  onToggleKnowledge?: () => void;
-  knowledgeOpen?: boolean;
-  credentialCount?: number;
   onToggleNux?: () => void;
   nuxOpen?: boolean;
   onToggleComposer?: () => void;
@@ -73,6 +73,7 @@ interface ShellHeaderProps {
   onCloseSshModalExternal?: () => void;
   credentials?: KnowledgeCredentialItem[];
   hosts?: KnowledgeHostItem[];
+  onCredentialCreated?: (cred: KnowledgeCredentialItem, targetHostId?: string) => void;
   onLoadIntoComposer?: (code: string) => void;
   actionsMenuTourOpen?: boolean;
 }
@@ -95,22 +96,18 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
   onToggleHistory,
   historyOpen = false,
   activeQueueCount = 0,
+  onToggleHosts,
+  hostsOpen = false,
   onTogglePivots,
   pivotsOpen = false,
   pivotCount = 0,
-  onToggleKnowledge,
-  knowledgeOpen = false,
-  credentialCount = 0,
-  onToggleNux,
-  nuxOpen = false,
-  onToggleComposer,
-  composerOpen = false,
   sshModalOpenExternal,
   sshModalInitialTarget,
   sshModalInitialCredentialId,
   onCloseSshModalExternal,
   credentials,
   hosts,
+  onCredentialCreated,
   onLoadIntoComposer,
   actionsMenuTourOpen = false,
 }) => {
@@ -232,7 +229,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
               {activeUsers.map((user: any) => (
                 <Tooltip key={user.id} label={user.name} hasArrow>
                   <img
-                    className="inline-block h-6 w-6 rounded-full ring-2 ring-gray-900"
+                    className="inline-block h-6 w-6 rounded-full ring-2 ring-gray-900 bg-gray-200 object-cover"
                     src={user.photoURL || PlaceholderUser}
                     alt={user.name}
                     onError={(e) => {
@@ -254,10 +251,10 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
           data-testid="shell-header-toolbar"
           className="flex items-center gap-1"
         >
-          {/* Context Drawer Toggle */}
-          {onToggleKnowledge && (
+          {/* Access Drawer Toggle */}
+          {onToggleHosts && (
             <Tooltip
-              label="Context"
+              label="Access"
               bg="#111827"
               color="white"
               borderRadius="md"
@@ -266,19 +263,15 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             >
               <button
                 type="button"
-                data-tour="shell-knowledge"
-                onClick={onToggleKnowledge}
-                aria-label="Toggle knowledge graph"
+                data-tour="shell-access"
+                onClick={onToggleHosts}
+                aria-label="Toggle access"
+                aria-pressed={hostsOpen}
                 className={`${TOOLBAR_BUTTON_BASE} ${
-                  knowledgeOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
+                  hostsOpen ? TOOLBAR_BUTTON_ACTIVE : TOOLBAR_BUTTON_INACTIVE
                 }`}
               >
-                <GraphStar className="w-4 h-4" />
-                {(pivotCount > 0 || credentialCount > 0) && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                    {pivotCount > 0 && !onTogglePivots ? pivotCount : credentialCount}
-                  </span>
-                )}
+                <Network className="w-4 h-4" />
               </button>
             </Tooltip>
           )}
@@ -359,6 +352,8 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({
             onCloseSshModalExternal={onCloseSshModalExternal}
             credentials={credentials}
             hosts={hosts}
+            currentHostId={shellData?.node?.beacon?.host?.id}
+            onCredentialCreated={onCredentialCreated}
             onLoadIntoComposer={onLoadIntoComposer}
             buttonClassName={`${TOOLBAR_BUTTON_BASE} ${TOOLBAR_BUTTON_INACTIVE}`}
             forceOpen={actionsMenuTourOpen}

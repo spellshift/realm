@@ -168,6 +168,18 @@ func (ps *PivotSession) Close(ctx context.Context, graph *ent.Client) {
 	ps.mu.Unlock()
 }
 
+// ClosePivotSession closes and removes an active cached PTY session by pivot ID.
+func ClosePivotSession(ctx context.Context, graph *ent.Client, pivotID int) bool {
+	cacheMu.Lock()
+	sess, ok := sessionCache[pivotID]
+	cacheMu.Unlock()
+	if !ok {
+		return false
+	}
+	sess.Close(ctx, graph)
+	return true
+}
+
 // Handler handles websocket connections that tunnel PTY sessions over portal network.
 type Handler struct {
 	graph *ent.Client
