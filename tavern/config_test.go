@@ -186,27 +186,14 @@ func TestConfigurePubSubFromEnv(t *testing.T) {
 	})
 }
 
-func TestFormatResourceName(t *testing.T) {
+func TestResourcePrefixFromEnv(t *testing.T) {
 	t.Run("DefaultPrefix", func(t *testing.T) {
 		t.Setenv(EnvResourcePrefix.Key, "")
 		assert.Equal(t, "tavern", EnvResourcePrefix.String())
-		assert.Equal(t, "tavern-tavern", FormatResourceName("tavern"))
-		assert.Equal(t, "tavern-db", FormatResourceName("tavern-db"))
-		assert.Equal(t, "tavern-secrets", FormatResourceName("tavern-secrets"))
-		assert.Equal(t, "tavern-host-lost-poll", FormatResourceName("host-lost-poll"))
-		assert.Equal(t, "tavern-shell_input", FormatResourceName("shell_input"))
-		assert.Equal(t, "tavern-shell_input", FormatResourceName("tavern-shell_input"))
 	})
 
 	t.Run("CustomSixCharPrefix", func(t *testing.T) {
 		t.Setenv(EnvResourcePrefix.Key, "abcxyz")
 		assert.Equal(t, "abcxyz", EnvResourcePrefix.String())
-		assert.Equal(t, "abcxyz-tavern", FormatResourceName("tavern"))
-		assert.Equal(t, "abcxyz-db", FormatResourceName("tavern-db"))
-		assert.Equal(t, "abcxyz-secrets", FormatResourceName("tavern-secrets"))
-		assert.Equal(t, "abcxyz-host-lost-poll", FormatResourceName("host-lost-poll"))
-		assert.Equal(t, "abcxyz-shell_input", FormatResourceName("shell_input"))
-		assert.Equal(t, "abcxyz-shell_input", FormatResourceName("abcxyz-shell_input"))
-		assert.Equal(t, "abcxyz-tavernish", FormatResourceName("tavernish"))
 	})
 }

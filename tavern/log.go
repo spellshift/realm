@@ -65,7 +65,7 @@ func configureLogging(cliSpec, cliFormat string) error {
 		Spec:               spec,
 		Format:             format,
 		AuditFilePath:      EnvAuditFile.String(),
-		InstanceID:         FormatResourceName(GlobalInstanceID),
+		InstanceID:         GlobalInstanceID,
 		IncludeInstanceID:  includeInstanceID,
 		LogGraphQLRawQuery: logGraphQLRawQuery,
 		GCPProjectID:       EnvGCPProjectID.String(),

@@ -510,7 +510,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// GCP Cloud Scheduler: fires every minute (minimum supported granularity).
 	// If the job is already scheduled (e.g. from a previous startup), the
 	// scheduler will return an error which we log and ignore.
-	hostLostJobName := FormatResourceName("host-lost-poll")
+	hostLostJobName := fmt.Sprintf("%s-host-lost-poll", EnvResourcePrefix.String())
 	startupLog.InfoContext(ctx, "scheduling host-lost-poll job", "job_name", hostLostJobName, "schedule", hostCheckSchedule)
 	if err := sched.Schedule(ctx, scheduler.Job{
 		Name:     hostLostJobName,
@@ -803,7 +803,7 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 func newSecretsManager() (secrets.SecretsManager, error) {
 	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
-		defaultPath := fmt.Sprintf("/tmp/%s", FormatResourceName("tavern-secrets"))
+		defaultPath := fmt.Sprintf("/tmp/%s-secrets", EnvResourcePrefix.String())
 		startupLog.Warn("no configuration provided for secret manager path, using a potentially insecure default", "path", defaultPath)
 		return secrets.NewDebugFileSecrets(defaultPath)
 	}

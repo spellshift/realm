@@ -3,7 +3,6 @@ package mux
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -167,9 +166,6 @@ func (m *Mux) TopicOut(portalID int) string {
 
 // SubName returns the subscription name for a given topic and this server.
 func (m *Mux) SubName(topicID string) string {
-	if !strings.HasPrefix(topicID, m.resourcePrefix+"-") {
-		topicID = fmt.Sprintf("%s-%s", m.resourcePrefix, topicID)
-	}
 	return fmt.Sprintf("%s_SUB_%s", topicID, m.serverID)
 }
 

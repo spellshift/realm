@@ -32,27 +32,8 @@ var configLog = logging.For("app.config")
 // EnvResourcePrefix sets the prefix for GCP resource names to support multi-tenant deployments.
 var EnvResourcePrefix = EnvString{"TAVERN_RESOURCE_PREFIX", "tavern"}
 
-// FormatResourceName prepends the configured resource prefix to a resource name,
-// or replaces a leading "tavern" with the prefix if the name already starts with "tavern".
-func FormatResourceName(name string) string {
-	return formatResourceNameWithPrefix(EnvResourcePrefix.String(), name)
-}
-
-func formatResourceNameWithPrefix(prefix, name string) string {
-	if prefix == "" {
-		prefix = "tavern"
-	}
-	if strings.HasPrefix(name, prefix+"-") || strings.HasPrefix(name, prefix+"_") {
-		return name
-	}
-	if strings.HasPrefix(name, "tavern-") || strings.HasPrefix(name, "tavern_") {
-		return prefix + strings.TrimPrefix(name, "tavern")
-	}
-	return fmt.Sprintf("%s-%s", prefix, name)
-}
-
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
-var GlobalInstanceID = FormatResourceName(fmt.Sprintf("tavern-%s", namegen.New()))
+var GlobalInstanceID = fmt.Sprintf("%s-%s", EnvResourcePrefix.String(), namegen.New())
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
@@ -277,7 +258,7 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 		}
 		client = xpubsub.NewClient(
 			xpubsub.WithGCPDriver(
-				FormatResourceName(GlobalInstanceID),
+				GlobalInstanceID,
 				gcpClient,
 				xpubsub.WithPublishSettings(pubSettings),
 				xpubsub.WithReceiveSettings(recvSettings),
@@ -323,10 +304,7 @@ func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMu
 		defer client.Close()
 
 		createGCPSubscription := func(ctx context.Context, topicID string) string {
-			if idx := strings.LastIndex(topicID, "/"); idx != -1 {
-				topicID = topicID[idx+1:]
-			}
-			name := fmt.Sprintf("%s-sub_%s", FormatResourceName(topicID), FormatResourceName(GlobalInstanceID))
+			name := fmt.Sprintf("%s-sub_%s", topicID, GlobalInstanceID)
 			fullTopicName := fmt.Sprintf("projects/%s/topics/%s", projectID, topicID)
 			fullSubName := fmt.Sprintf("projects/%s/subscriptions/%s", projectID, name)
 
