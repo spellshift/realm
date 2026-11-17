@@ -3,6 +3,7 @@ package tomes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -77,20 +78,17 @@ func (meta MetadataDefinition) Validate() error {
 // UploadTomes traverses the provided filesystem and creates tomes using the provided graph.
 // Each directory at the root of the filesystem is a tome, and must contain the required
 // "metadata.yml" and "main.eldritch" files. You may use the tomes.FileSystem to include the
-// default tomes specified here.
+// default tomes specified here. A tome that fails to load is rolled back and reported in the
+// returned error, but does not prevent the remaining tomes from being loaded.
 func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS) error {
 	entries, err := fileSystem.ReadDir(".")
 	if err != nil {
 		return fmt.Errorf("failed to read filesystem: %w", err)
 	}
 
-	tx, err := graph.Tx(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
 	uploadedCount := 0
 	skippedCount := 0
+	var tomeErrs []error
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
@@ -101,7 +99,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			Where(tome.Name(entry.Name())).
 			Exist(ctx)
 		if err != nil {
-			return rollback(tx, fmt.Errorf("failed to check if tome already exists: %w", err))
+			return fmt.Errorf("failed to check if tome already exists: %w", err)
 		}
 		if exists {
 			skippedCount++
@@ -109,80 +107,12 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			continue
 		}
 
-		var metadata MetadataDefinition
-		var eldritch string
-		var tomeAssets []*ent.Asset
-		if err := fs.WalkDir(fileSystem, entry.Name(), func(path string, d fs.DirEntry, err error) error {
-			// Skip directories
-			if d.IsDir() {
-				return nil
-			}
-
-			// Parse Asset
-			if err != nil {
-				return rollback(tx, fmt.Errorf("failed to parse tome: %w", err))
-			}
-			content, err := fs.ReadFile(fileSystem, path)
-			if err != nil {
-				return rollback(tx, fmt.Errorf("failed to parse tome asset %q: %w", path, err))
-			}
-
-			// Parse metadata.yml
-			if filepath.Base(path) == "metadata.yml" {
-				if err := yaml.Unmarshal(content, &metadata); err != nil {
-					return rollback(tx, fmt.Errorf("failed to parse %q: %w", path, err))
-				}
-				// Validate Metadata
-				if err := metadata.Validate(); err != nil {
-					return rollback(tx, fmt.Errorf("invalid tome metadata %q: %w", entry.Name(), err))
-				}
-				return nil
-			}
-
-			// Parse main.eldritch
-			if filepath.Base(path) == "main.eldritch" {
-				eldritch = string(content)
-				return nil
-			}
-
-			// Upload other assets
-			a, err := graph.Asset.Create().
-				SetName(path).
-				SetContent(content).
-				Save(ctx)
-			if err != nil {
-				return rollback(tx, fmt.Errorf("failed to upload tome asset %q: %w", path, err))
-			}
-			log.TraceContext(ctx, "uploaded tome asset", "asset_name", path, "size", len(content))
-			tomeAssets = append(tomeAssets, a)
-
-			return nil
-		}); err != nil {
-			return rollback(tx, fmt.Errorf("failed to parse and upload tome %q: %w", entry.Name(), err))
+		if err := uploadTome(ctx, graph, fileSystem, entry.Name()); err != nil {
+			// Skip this tome (already rolled back) but keep uploading the rest.
+			tomeErrs = append(tomeErrs, err)
+			continue
 		}
-
-		// Marshal Params
-		paramdefs, err := json.Marshal(metadata.ParamDefs)
-		if err != nil {
-			return rollback(tx, fmt.Errorf("failed to parse param defs for %q: %w", metadata.Name, err))
-		}
-
-		// Create the tome
-		if _, err := graph.Tome.Create().
-			SetName(metadata.Name).
-			SetDescription(metadata.Description).
-			SetAuthor(metadata.Author).
-			SetParamDefs(string(paramdefs)).
-			SetSupportModel(tome.SupportModel(metadata.SupportModel)).
-			SetTactic(tome.Tactic(metadata.Tactic)).
-			SetEldritch(eldritch).
-			AddAssets(tomeAssets...).
-			Save(ctx); err != nil {
-			return rollback(tx, fmt.Errorf("failed to create tome %q: %w", metadata.Name, err))
-		}
-
 		uploadedCount++
-		log.DebugContext(ctx, "uploaded embedded tome", "tome_name", metadata.Name, "assets", len(tomeAssets))
 	}
 
 	if uploadedCount > 0 {
@@ -190,6 +120,99 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 	} else {
 		log.DebugContext(ctx, "embedded tomes up to date", "skipped", skippedCount)
 	}
+	return errors.Join(tomeErrs...)
+}
+
+// uploadTome loads a single tome directory within its own transaction. On any failure the
+// transaction is rolled back so that no partial rows (such as assets) are left behind.
+func uploadTome(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS, dirName string) (err error) {
+	tx, err := graph.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			err = rollback(tx, err)
+		}
+	}()
+
+	var metadata MetadataDefinition
+	var eldritch string
+	var tomeAssets []*ent.Asset
+	if err = fs.WalkDir(fileSystem, dirName, func(path string, d fs.DirEntry, err error) error {
+		// Skip directories
+		if d.IsDir() {
+			return nil
+		}
+
+		// Parse Asset
+		if err != nil {
+			return fmt.Errorf("failed to parse tome: %w", err)
+		}
+		content, err := fs.ReadFile(fileSystem, path)
+		if err != nil {
+			return fmt.Errorf("failed to parse tome asset %q: %w", path, err)
+		}
+
+		// Parse metadata.yml
+		if filepath.Base(path) == "metadata.yml" {
+			if err := yaml.Unmarshal(content, &metadata); err != nil {
+				return fmt.Errorf("failed to parse %q: %w", path, err)
+			}
+			// Validate Metadata
+			if err := metadata.Validate(); err != nil {
+				return fmt.Errorf("invalid tome metadata %q: %w", dirName, err)
+			}
+			return nil
+		}
+
+		// Parse main.eldritch
+		if filepath.Base(path) == "main.eldritch" {
+			eldritch = string(content)
+			return nil
+		}
+
+		// Upload other assets
+		a, err := tx.Asset.Create().
+			SetName(path).
+			SetContent(content).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to upload tome asset %q: %w", path, err)
+		}
+		log.TraceContext(ctx, "uploaded tome asset", "asset_name", path, "size", len(content))
+		tomeAssets = append(tomeAssets, a)
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to parse and upload tome %q: %w", dirName, err)
+	}
+
+	// Marshal Params
+	paramdefs, err := json.Marshal(metadata.ParamDefs)
+	if err != nil {
+		return fmt.Errorf("failed to parse param defs for %q: %w", metadata.Name, err)
+	}
+
+	// Create the tome
+	if _, err = tx.Tome.Create().
+		SetName(metadata.Name).
+		SetDescription(metadata.Description).
+		SetAuthor(metadata.Author).
+		SetParamDefs(string(paramdefs)).
+		SetSupportModel(tome.SupportModel(metadata.SupportModel)).
+		SetTactic(tome.Tactic(metadata.Tactic)).
+		SetEldritch(eldritch).
+		AddAssets(tomeAssets...).
+		Save(ctx); err != nil {
+		return fmt.Errorf("failed to create tome %q: %w", metadata.Name, err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit tome %q: %w", metadata.Name, err)
+	}
+
+	log.DebugContext(ctx, "uploaded embedded tome", "tome_name", metadata.Name, "assets", len(tomeAssets))
 	return nil
 }
 

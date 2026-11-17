@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,4 +43,26 @@ func TestUploadTomes(t *testing.T) {
 	require.NotNil(t, rcTome)
 	assert.Equal(t, tome.TacticSHELL_RC, rcTome.Tactic)
 	assert.Contains(t, rcTome.Eldritch, "def ls(")
+}
+
+func TestUploadTomes_InvalidTomeDoesNotSkipOthers(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	// "a_bad" sorts before "b_good"; its invalid support_model makes creation fail.
+	fsys := fstest.MapFS{
+		"a_bad/metadata.yml":   &fstest.MapFile{Data: []byte("name: Bad Tome\nauthor: test\ndescription: bad\ntactic: UNSPECIFIED\nsupport_model: BOGUS\n")},
+		"a_bad/main.eldritch":  &fstest.MapFile{Data: []byte("print('bad')")},
+		"b_good/metadata.yml":  &fstest.MapFile{Data: []byte("name: Good Tome\nauthor: test\ndescription: good\ntactic: UNSPECIFIED\nsupport_model: FIRST_PARTY\n")},
+		"b_good/main.eldritch": &fstest.MapFile{Data: []byte("print('good')")},
+	}
+
+	// The invalid tome should be reported as an error.
+	assert.Error(t, tomes.UploadTomes(ctx, graph, fsys))
+
+	// The valid tome must still be loaded despite the earlier invalid one.
+	loaded, err := graph.Tome.Query().Where(tome.Name("Good Tome")).Exist(ctx)
+	require.NoError(t, err)
+	assert.True(t, loaded, "good tome was not loaded after a bad tome")
 }
