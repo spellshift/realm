@@ -48,8 +48,6 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 		return
 	}
 
-	setGRPCResponseHeaders(w)
-
 	flusher, ok := getFlusher(w)
 	if !ok {
 		return
@@ -57,16 +55,35 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 
 	chunkCount := 0
 	totalBytes := 0
+	started := false
 
 	for {
 		var responseChunk []byte
 		err := stream.RecvMsg(&responseChunk)
 		if err == io.EOF {
+			if !started {
+				setGRPCResponseHeaders(w)
+			} else {
+				w.Header().Set("Grpc-Status", "0")
+			}
 			break
 		}
 		if err != nil {
 			log.ErrorContext(ctx, "upstream request failed, error receiving stream message", "method", "/c2.C2/FetchAsset", "error", err)
+			if !started {
+				handleStreamError(w, "Failed to receive gRPC response", err)
+			} else {
+				w.Header().Set("Grpc-Status", "13")
+				w.Header().Set("Grpc-Message", err.Error())
+			}
 			return
+		}
+
+		if !started {
+			w.Header().Add("Trailer", "Grpc-Status")
+			w.Header().Add("Trailer", "Grpc-Message")
+			setGRPCResponseHeaders(w)
+			started = true
 		}
 
 		chunkCount++
