@@ -20,6 +20,33 @@ resource "random_password" "defaultmysql" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+resource "random_string" "resource_prefix" {
+  length  = 6
+  special = false
+  upper   = false
+  numeric = false
+}
+
+variable "resource_prefix" {
+  type        = string
+  description = "Six-character prefix for GCP resource names to support multiple Tavern instances in the same project. Defaults to a random 6-character code."
+  default     = ""
+
+  validation {
+    condition     = var.resource_prefix == "" || (can(regex("^[a-z][a-z0-9]{5}$", var.resource_prefix)) && !startswith(var.resource_prefix, "goog"))
+    error_message = "resource_prefix must be a 6-character string starting with a lowercase letter, containing only lowercase letters and digits, and not starting with 'goog'."
+  }
+}
+
+locals {
+  resource_prefix = var.resource_prefix != "" ? var.resource_prefix : random_string.resource_prefix.result
+}
+
+output "resource_prefix" {
+  description = "Prefix used for GCP resource names in this deployment."
+  value       = local.resource_prefix
+}
+
 resource "random_password" "builder_enrollment" {
   length  = 43
   special = false
@@ -326,7 +353,7 @@ resource "google_project_service" "cloud_scheduler_api" {
 }
 
 resource "google_sql_database_instance" "tavern-sql-instance" {
-  name             = "tavern-db"
+  name             = "${local.resource_prefix}-db"
   database_version = "MYSQL_8_0"
   region           = var.gcp_region
   deletion_protection = false
@@ -363,12 +390,12 @@ locals {
 }
 
 resource "google_service_account" "svctavern" {
-  account_id = "svctavern"
+  account_id = "${local.resource_prefix}-svctavern"
   description = "The service account Realm's Tavern uses to connect to GCP based services. Managed by Terraform."
 }
 
 resource "google_secret_manager_secret" "tavern-grpc-priv-key" {
-  secret_id = "REALM_tavern_ed25519_private_key"
+  secret_id = "${local.resource_prefix}-REALM_tavern_ed25519_private_key"
 
   replication {
     auto {
@@ -419,8 +446,8 @@ resource "google_project_iam_member" "tavern-pubsub-binding" {
 }
 
 resource "google_project_iam_custom_role" "tavern-cloud-scheduler" {
-  role_id     = "tavernCloudScheduler"
-  title       = "Tavern Cloud Scheduler"
+  role_id     = "${replace(local.resource_prefix, "-", "_")}CloudScheduler"
+  title       = "${local.resource_prefix} Cloud Scheduler"
   description = "Least-privilege role for Tavern to create and list Cloud Scheduler jobs."
   permissions = [
     "cloudscheduler.jobs.create",
@@ -436,25 +463,25 @@ resource "google_project_iam_member" "tavern-cloud-scheduler-binding" {
 
 resource "google_pubsub_topic" "shell_input" {
   count = var.disable_gcp_pubsub ? 0 : 1
-  name = var.gcp_pubsub_topic_shell_input
+  name  = format("%s-%s", local.resource_prefix, var.gcp_pubsub_topic_shell_input)
 }
 resource "google_pubsub_subscription" "shell_input-sub" {
   count = var.disable_gcp_pubsub ? 0 : 1
-  name  = format("%s-sub", var.gcp_pubsub_topic_shell_input)
+  name  = format("%s-%s-sub", local.resource_prefix, var.gcp_pubsub_topic_shell_input)
   topic = google_pubsub_topic.shell_input[0].id
 }
 resource "google_pubsub_topic" "shell_output" {
   count = var.disable_gcp_pubsub ? 0 : 1
-  name = var.gcp_pubsub_topic_shell_output
+  name  = format("%s-%s", local.resource_prefix, var.gcp_pubsub_topic_shell_output)
 }
 resource "google_pubsub_subscription" "shell_output-sub" {
   count = var.disable_gcp_pubsub ? 0 : 1
-  name  = format("%s-sub", var.gcp_pubsub_topic_shell_output)
+  name  = format("%s-%s-sub", local.resource_prefix, var.gcp_pubsub_topic_shell_output)
   topic = google_pubsub_topic.shell_output[0].id
 }
 
 resource "google_cloud_run_service" "tavern" {
-  name     = "tavern"
+  name     = local.resource_prefix
   location = var.gcp_region
 
   traffic {
@@ -474,6 +501,10 @@ resource "google_cloud_run_service" "tavern" {
 
         ports {
           container_port = 8000
+        }
+        env {
+          name  = "TAVERN_RESOURCE_PREFIX"
+          value = local.resource_prefix
         }
         env {
           name = "MYSQL_NET"
@@ -619,7 +650,7 @@ resource "google_cloud_run_service_iam_binding" "no-auth-required" {
 # === Redirectors ===
 # Setup redirectors svc account
 resource "google_service_account" "svctavern_redirector" {
-  account_id = "svctavern-redirector"
+  account_id = "${local.resource_prefix}-svctavern-redirector"
   description = "The service account Realm's Tavern Redirector uses to connect to GCP based services. Managed by Terraform."
 }
 
@@ -637,7 +668,7 @@ resource "google_project_iam_member" "redirector-logwriter-binding" {
 
 # Setup builder svc account
 resource "google_service_account" "svcbuiltavern_builder" {
-  account_id = "svcbuiltavern-builder"
+  account_id = "${local.resource_prefix}-svcbuiltavern-builder"
   description = "The service account Realm's Tavern Builder VM uses to connect to GCP based services. Managed by Terraform."
 }
 
@@ -719,7 +750,10 @@ locals {
       containers = [{
         image   = var.tavern_container_image
         command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", local.redirector_upstream]
-        env     = [{ name = "TAVERN_LOG", value = "prod" }]
+        env = [
+          { name = "TAVERN_LOG", value = "prod" },
+          { name = "TAVERN_RESOURCE_PREFIX", value = local.resource_prefix },
+        ]
         ports   = [
           {
             containerPort = 443
@@ -768,7 +802,7 @@ resource "google_dns_record_set" "redir_dns_record" {
 
 resource "google_cloud_run_service" "redirector" {
   count    = length(local.http_redirectors)
-  name     = "tavern-redirector-${local.http_redirectors[count.index].transport}${count.index}"
+  name     = "${local.resource_prefix}-redirector-${local.http_redirectors[count.index].transport}${count.index}"
   location = var.gcp_region
 
   traffic {
@@ -789,6 +823,10 @@ resource "google_cloud_run_service" "redirector" {
         env {
           name = "TAVERN_LOG"
           value = "prod"
+        }
+        env {
+          name  = "TAVERN_RESOURCE_PREFIX"
+          value = local.resource_prefix
         }
         ports {
           container_port = 8080
@@ -888,6 +926,10 @@ locals {
           {
             name  = "TAVERN_LOG"
             value = "prod"
+          },
+          {
+            name  = "TAVERN_RESOURCE_PREFIX"
+            value = local.resource_prefix
           }
         ]
         ports   = [
@@ -927,7 +969,7 @@ EOT
 
 resource "google_compute_firewall" "dns_redirector_allow_dns" {
   count   = length(local.dns_redirectors) > 0 ? 1 : 0
-  name    = "allow-dns-to-redirector"
+  name    = "${local.resource_prefix}-allow-dns-to-redirector"
   network = "default"
 
   allow {
@@ -952,7 +994,7 @@ resource "terraform_data" "dns_redirector_metadata_hash" {
 
 resource "google_compute_instance" "dns_redirector" {
   count        = length(local.dns_redirectors) > 0 ? 1 : 0
-  name         = "tavern-redirector-dns${count.index}"
+  name         = "${local.resource_prefix}-redirector-dns${count.index}"
   machine_type = var.redirector_machine_type
   zone         = "${var.gcp_region}-b"
 
@@ -1000,7 +1042,10 @@ locals {
       containers = [{
         image   = var.tavern_container_image
         command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", local.redirector_upstream]
-        env     = [{ name = "TAVERN_LOG", value = "prod" }]
+        env = [
+          { name = "TAVERN_LOG", value = "prod" },
+          { name = "TAVERN_RESOURCE_PREFIX", value = local.resource_prefix },
+        ]
       }]
       restartPolicy = "Always"
     }
@@ -1020,7 +1065,7 @@ EOT
 
 resource "google_compute_firewall" "icmp_redirector_allow_icmp" {
   count   = length(local.icmp_redirectors) > 0 ? 1 : 0
-  name    = "allow-icmp-to-redirector"
+  name    = "${local.resource_prefix}-allow-icmp-to-redirector"
   network = "default"
 
   allow {
@@ -1038,7 +1083,7 @@ resource "terraform_data" "icmp_redirector_metadata_hash" {
 
 resource "google_compute_instance" "icmp_redirector" {
   count        = length(local.icmp_redirectors)
-  name         = "tavern-redirector-icmp${count.index}"
+  name         = "${local.resource_prefix}-redirector-icmp${count.index}"
   machine_type = var.redirector_machine_type
   zone         = "${var.gcp_region}-b"
 
@@ -1097,7 +1142,7 @@ resource "google_dns_record_set" "redir_icmp_record_a" {
 # Setup QUIC redirectors (one VM per redirector for unique IPs)
 resource "google_compute_firewall" "quic_redirector_allow_quic" {
   count   = length(local.quic_redirectors) > 0 ? 1 : 0
-  name    = "allow-quic-to-redirector"
+  name    = "${local.resource_prefix}-allow-quic-to-redirector"
   network = "default"
 
   allow {
@@ -1116,7 +1161,7 @@ resource "terraform_data" "quic_redirector_metadata_hash" {
 
 resource "google_compute_instance" "quic_redirector" {
   count        = length(local.quic_redirectors)
-  name         = "tavern-redirector-quic${count.index}"
+  name         = "${local.resource_prefix}-redirector-quic${count.index}"
   machine_type = var.redirector_machine_type
   zone         = "${var.gcp_region}-b"
 
@@ -1241,6 +1286,7 @@ locals {
           { name = "REALM_BUILDER_ENROLLMENT_TOKEN", value = local.builder_enrollment_token },
           { name = "DOCKER_HOST", value = "unix:///var/run/docker.sock" },
           { name = "TAVERN_LOG", value = "prod" },
+          { name = "TAVERN_RESOURCE_PREFIX", value = local.resource_prefix },
         ]
         volumeMounts = [
           { name = "dockersock", mountPath = "/var/run/docker.sock" },
@@ -1269,7 +1315,7 @@ resource "terraform_data" "builder_metadata_hash" {
 # be a directory on the boot disk).
 resource "google_compute_disk" "builder_cache" {
   count = var.builder_enabled ? 1 : 0
-  name  = "tavern-builder-cache"
+  name  = "${local.resource_prefix}-builder-cache"
   type  = "pd-balanced"
   zone  = "${var.gcp_region}-b"
   size  = var.builder_cache_disk_size
@@ -1277,7 +1323,7 @@ resource "google_compute_disk" "builder_cache" {
 
 resource "google_compute_instance" "builder" {
   count        = var.builder_enabled ? 1 : 0
-  name         = "tavern-builder"
+  name         = "${local.resource_prefix}-builder"
   machine_type = var.builder_machine_type
   zone         = "${var.gcp_region}-b"
 

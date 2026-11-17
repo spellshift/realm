@@ -3,6 +3,7 @@ package mux
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -74,8 +75,9 @@ type HistoryManager struct {
 
 // Mux is the central router between the global PubSub mesh and local gRPC streams.
 type Mux struct {
-	serverID string
-	pubsub   *pubsub.Client
+	serverID       string
+	resourcePrefix string
+	pubsub         *pubsub.Client
 
 	subs    *SubscriberRegistry
 	subMgr  *SubscriptionManager
@@ -85,6 +87,15 @@ type Mux struct {
 
 // Option defines a functional option for Mux configuration.
 type Option func(*Mux)
+
+// WithResourcePrefix sets the resource prefix used when naming portal PubSub topics and subscriptions.
+func WithResourcePrefix(prefix string) Option {
+	return func(m *Mux) {
+		if prefix != "" {
+			m.resourcePrefix = prefix
+		}
+	}
+}
 
 // WithHistorySize sets the size of the history buffer for each topic.
 func WithHistorySize(size int) Option {
@@ -110,7 +121,8 @@ func WithPubSubClient(client *pubsub.Client) Option {
 // New creates a new Mux with the given options.
 func New(opts ...Option) *Mux {
 	m := &Mux{
-		serverID: uuid.New().String(),
+		serverID:       uuid.New().String(),
+		resourcePrefix: "tavern",
 		subs: &SubscriberRegistry{
 			subs:       make(map[string][]chan *portalpb.Mote),
 			bufferSize: 15625, // Default
@@ -145,16 +157,19 @@ func New(opts ...Option) *Mux {
 
 // TopicIn returns the topic name for incoming messages to the portal.
 func (m *Mux) TopicIn(portalID int) string {
-	return fmt.Sprintf("PORTAL_IN_%d", portalID)
+	return fmt.Sprintf("%s-PORTAL_IN_%d", m.resourcePrefix, portalID)
 }
 
 // TopicOut returns the topic name for outgoing messages from the portal.
 func (m *Mux) TopicOut(portalID int) string {
-	return fmt.Sprintf("PORTAL_OUT_%d", portalID)
+	return fmt.Sprintf("%s-PORTAL_OUT_%d", m.resourcePrefix, portalID)
 }
 
 // SubName returns the subscription name for a given topic and this server.
 func (m *Mux) SubName(topicID string) string {
+	if !strings.HasPrefix(topicID, m.resourcePrefix+"-") {
+		topicID = fmt.Sprintf("%s-%s", m.resourcePrefix, topicID)
+	}
 	return fmt.Sprintf("%s_SUB_%s", topicID, m.serverID)
 }
 

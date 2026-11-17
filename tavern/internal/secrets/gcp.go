@@ -107,7 +107,15 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	return old_value, nil
 }
 
-func NewGcp(projectID string) (SecretsManager, error) {
+func FormatSecretPrefix(resourcePrefix ...string) string {
+	rp := "tavern"
+	if len(resourcePrefix) > 0 && resourcePrefix[0] != "" {
+		rp = resourcePrefix[0]
+	}
+	return fmt.Sprintf("%s-REALM", rp)
+}
+
+func NewGcp(projectID string, resourcePrefix ...string) (SecretsManager, error) {
 	ctx := context.Background()
 
 	// If unset try to figure out the current GCP
@@ -132,7 +140,7 @@ func NewGcp(projectID string) (SecretsManager, error) {
 	return Gcp{
 		Name:      "Gcp",
 		projectID: projectID,
-		prefix:    "REALM",
+		prefix:    FormatSecretPrefix(resourcePrefix...),
 		client:    client,
 		clientctx: ctx,
 	}, nil
