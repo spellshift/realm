@@ -4,7 +4,9 @@ version = "0.4.1"
 edition = "2024"
 
 [features]
-default = ["fake_bindings"]
+# fake_bindings is NOT a default feature so it cannot pollute workspace builds;
+# build-wasm.sh enables it explicitly.
+default = []
 stdlib = ["eldritch/stdlib", "eldritch/std"]
 fake_bindings = ["eldritch/fake_bindings"]
 
