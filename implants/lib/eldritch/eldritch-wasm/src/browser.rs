@@ -389,6 +389,8 @@ mod tests {
         assert!(res.contains("pass"));
     }
 
+    // Requires the fake stdlib libraries (file, sys, ...) to be registered.
+    #[cfg(feature = "fake_bindings")]
     #[test]
     fn test_browser_repl_complete() {
         let repl = BrowserRepl::new();
