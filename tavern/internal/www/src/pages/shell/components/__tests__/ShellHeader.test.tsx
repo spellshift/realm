@@ -112,7 +112,7 @@ describe("ShellHeader", () => {
                     {...defaultProps}
                     onExport={onExport}
                     onToggleComposer={vi.fn()}
-                    onToggleKnowledge={vi.fn()}
+                    onToggleHosts={vi.fn()}
                     onTogglePivots={vi.fn()}
                     onToggleNux={vi.fn()}
                 />
@@ -177,7 +177,6 @@ describe("ShellHeader", () => {
 
     it("renders unified toolbar background, active button highlight, and badges only for active pivots and active queue", () => {
         const onToggleComposer = vi.fn();
-        const onToggleKnowledge = vi.fn();
         const onTogglePivots = vi.fn();
         const onToggleHistory = vi.fn();
 
@@ -188,8 +187,6 @@ describe("ShellHeader", () => {
                     activeUsers={[{ id: "u1", name: "operator1" }]}
                     composerOpen={true}
                     onToggleComposer={onToggleComposer}
-                    onToggleKnowledge={onToggleKnowledge}
-                    credentialCount={3}
                     onTogglePivots={onTogglePivots}
                     pivotCount={2}
                     onToggleHistory={onToggleHistory}
@@ -208,11 +205,7 @@ describe("ShellHeader", () => {
         expect(sidebarToggleBtn.compareDocumentPosition(homeLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(homeLink).not.toHaveClass("border");
 
-        const knowledgeBtn = screen.getByLabelText("Toggle knowledge graph");
-        expect(knowledgeBtn).toHaveClass("bg-transparent");
-        fireEvent.click(knowledgeBtn);
-        expect(onToggleKnowledge).toHaveBeenCalled();
-        expect(screen.getByText("3")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Toggle knowledge graph")).not.toBeInTheDocument();
 
         const pivotsBtn = screen.getByLabelText("Toggle pivots");
         fireEvent.click(pivotsBtn);
@@ -228,16 +221,24 @@ describe("ShellHeader", () => {
         expect(screen.queryByLabelText("Toggle multi-line composer")).not.toBeInTheDocument();
 
         // When activeQueueCount > 0, History button displays the active queue badge
+        const onToggleHosts = vi.fn();
         rerender(
             <BrowserRouter>
                 <ShellHeader
                     {...defaultProps}
                     onToggleHistory={onToggleHistory}
+                    onToggleHosts={onToggleHosts}
+                    hostsOpen={true}
                     historyCount={12}
                     activeQueueCount={4}
                 />
             </BrowserRouter>
         );
         expect(screen.getByText("4")).toBeInTheDocument();
+
+        const accessBtn = screen.getByLabelText("Toggle access");
+        expect(accessBtn).toHaveClass("bg-purple-600", "text-white");
+        fireEvent.click(accessBtn);
+        expect(onToggleHosts).toHaveBeenCalledTimes(1);
     });
 });

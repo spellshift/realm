@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import moment from "moment";
 
 export interface BeaconHistoryNode {
     id?: string;
@@ -11,8 +10,10 @@ export interface CallbackStats {
     intervalSeconds: number | null;
     formattedInterval: string;
     sampleCount: number;
+    expectedCount: number;
     onTimeCount: number;
     lateCount: number;
+    missedCount: number;
     onTimePercentage: number;
     avgLatencyMs: number | null;
     lastSeenAt: string | null;
@@ -20,6 +21,7 @@ export interface CallbackStats {
 }
 
 export const ON_TIME_MIN_TOLERANCE_MS = 2000;
+const OVERDUE_MISSED_GRACE_MS = 1000;
 
 export const formatCallbackInterval = (intervalSeconds: number | null | undefined): string => {
     const sec = Number(intervalSeconds);
@@ -39,9 +41,24 @@ export const formatCallbackInterval = (intervalSeconds: number | null | undefine
     return `${parts.join(" ")} (${sec}s)`;
 };
 
+export const formatCountdownDuration = (totalSeconds: number): string => {
+    const abs = Math.max(0, Math.round(Math.abs(totalSeconds)));
+    if (abs < 60) {
+        return `${abs}s`;
+    }
+    if (abs < 3600) {
+        return `${Math.floor(abs / 60)}min`;
+    }
+    if (abs < 86400) {
+        return `${Math.floor(abs / 3600)}hr`;
+    }
+    return `${Math.floor(abs / 86400)}d`;
+};
+
 export const computeCallbackStats = (
     beaconNode: any,
-    fallbackIntervalSeconds?: number | null
+    fallbackIntervalSeconds?: number | null,
+    nowMs: number = Date.now()
 ): CallbackStats => {
     const rawInterval = beaconNode?.interval ?? fallbackIntervalSeconds;
     const parsedInterval =
@@ -63,8 +80,47 @@ export const computeCallbackStats = (
     const sampleCount = nodes.length;
     const onTimeCount = nodes.filter((n) => n.latency <= onTimeThresholdMs).length;
     const lateCount = sampleCount - onTimeCount;
+
+    let missedCount = 0;
+
+    if (parsedInterval !== null) {
+        const intervalMs = parsedInterval * 1000;
+        const gapGraceMs = Math.max(onTimeThresholdMs, intervalMs * 0.5);
+
+        const timestamps = nodes
+            .map((n) => (n.createdAt ? new Date(n.createdAt).getTime() : NaN))
+            .filter((t) => Number.isFinite(t))
+            .sort((a, b) => a - b);
+
+        for (let i = 1; i < timestamps.length; i += 1) {
+            const deltaMs = timestamps[i] - timestamps[i - 1];
+            if (deltaMs > intervalMs + gapGraceMs) {
+                missedCount += Math.floor((deltaMs - gapGraceMs) / intervalMs);
+            }
+        }
+
+        const nextSeenStr = beaconNode?.nextSeenAt;
+        const lastSeenStr = beaconNode?.lastSeenAt;
+        const nextMs = nextSeenStr ? new Date(nextSeenStr).getTime() : NaN;
+        const expectedNextMs = Number.isFinite(nextMs)
+            ? nextMs
+            : lastSeenStr && Number.isFinite(new Date(lastSeenStr).getTime())
+            ? new Date(lastSeenStr).getTime() + intervalMs
+            : NaN;
+
+        if (Number.isFinite(expectedNextMs) && nowMs - expectedNextMs > OVERDUE_MISSED_GRACE_MS) {
+            missedCount += 1 + Math.floor((nowMs - expectedNextMs) / intervalMs);
+        }
+    } else if (beaconNode?.nextSeenAt) {
+        const nextMs = new Date(beaconNode.nextSeenAt).getTime();
+        if (Number.isFinite(nextMs) && nowMs - nextMs > OVERDUE_MISSED_GRACE_MS) {
+            missedCount += 1;
+        }
+    }
+
+    const expectedCount = sampleCount + missedCount;
     const onTimePercentage =
-        sampleCount > 0 ? Math.round((onTimeCount / sampleCount) * 100) : 100;
+        expectedCount > 0 ? Math.round((onTimeCount / expectedCount) * 100) : 100;
 
     const avgLatencyMs =
         sampleCount > 0
@@ -75,8 +131,10 @@ export const computeCallbackStats = (
         intervalSeconds: parsedInterval,
         formattedInterval: formatCallbackInterval(parsedInterval),
         sampleCount,
+        expectedCount,
         onTimeCount,
         lateCount,
+        missedCount,
         onTimePercentage,
         avgLatencyMs,
         lastSeenAt: beaconNode?.lastSeenAt ?? null,
@@ -88,46 +146,44 @@ export const useCallbackTimer = (beaconData: any, fallbackIntervalSeconds?: numb
     const [timeUntilCallback, setTimeUntilCallback] = useState<string>("");
     const [isMissedCallback, setIsMissedCallback] = useState(false);
     const [isLateCheckin, setIsLateCheckin] = useState(false);
+    const [nowMs, setNowMs] = useState<number>(() => Date.now());
 
     const nextSeenAt = beaconData?.node?.nextSeenAt;
 
     useEffect(() => {
         if (!nextSeenAt) return;
         const updateTimer = () => {
-            const next = moment(nextSeenAt);
-            const now = moment();
-            const diff = next.diff(now, 'seconds');
+            const nextMs = new Date(nextSeenAt).getTime();
+            if (!Number.isFinite(nextMs)) {
+                return;
+            }
+            const currentNow = Date.now();
+            setNowMs(currentNow);
+            const diffSeconds = Math.round((nextMs - currentNow) / 1000);
 
-            if (diff > 1 || diff < -1) {
-                if (diff > 1) {
-                    setTimeUntilCallback(next.fromNow());
-                    setIsMissedCallback(false);
-                    setIsLateCheckin(false);
-                } else {
-                    setTimeUntilCallback(`expected ${next.fromNow()}`);
-                    setIsMissedCallback(true);
-
-                    if (diff < -300) {
-                        setIsLateCheckin(true);
-                    } else {
-                        setIsLateCheckin(false);
-                    }
-                }
+            if (diffSeconds > 1) {
+                setTimeUntilCallback(`Next ${formatCountdownDuration(diffSeconds)}`);
+                setIsMissedCallback(false);
+                setIsLateCheckin(false);
+            } else if (diffSeconds < -1) {
+                setTimeUntilCallback(`Missing ${formatCountdownDuration(Math.abs(diffSeconds))} ago`);
+                setIsMissedCallback(true);
+                setIsLateCheckin(diffSeconds < -300);
             } else {
-                setTimeUntilCallback("now");
+                setTimeUntilCallback("Next now");
                 setIsMissedCallback(false);
                 setIsLateCheckin(false);
             }
         };
 
-        updateTimer(); // Initial call
+        updateTimer();
         const intervalId = setInterval(updateTimer, 1000);
         return () => clearInterval(intervalId);
     }, [nextSeenAt]);
 
     const callbackStats = useMemo(
-        () => computeCallbackStats(beaconData?.node, fallbackIntervalSeconds),
-        [beaconData, fallbackIntervalSeconds]
+        () => computeCallbackStats(beaconData?.node, fallbackIntervalSeconds, nowMs),
+        [beaconData, fallbackIntervalSeconds, nowMs]
     );
 
     return { timeUntilCallback, isMissedCallback, isLateCheckin, callbackStats };

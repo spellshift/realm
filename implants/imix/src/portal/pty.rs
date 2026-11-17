@@ -26,7 +26,7 @@ fn parse_resize_message(data: &[u8]) -> Option<(u16, u16)> {
 }
 
 #[cfg(not(target_os = "solaris"))]
-use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
+use portable_pty::{ChildKiller, CommandBuilder, MasterPty, PtySize, native_pty_system};
 
 #[cfg(all(not(target_os = "windows"), not(target_os = "solaris")))]
 use std::path::Path;
@@ -38,6 +38,8 @@ struct PtySession {
     // Dropping it closes the PTY fd, which would kill the shell process.
     #[cfg(not(target_os = "solaris"))]
     master: Box<dyn MasterPty + Send>,
+    #[cfg(not(target_os = "solaris"))]
+    child_killer: Box<dyn ChildKiller + Send + Sync>,
     #[cfg(target_os = "solaris")]
     master_fd: std::os::unix::io::RawFd,
     #[cfg(target_os = "solaris")]
@@ -72,11 +74,19 @@ impl PtySession {
     }
 }
 
+#[cfg(not(target_os = "solaris"))]
+impl Drop for PtySession {
+    fn drop(&mut self) {
+        let _ = self.child_killer.kill();
+    }
+}
+
 #[cfg(target_os = "solaris")]
 impl Drop for PtySession {
     fn drop(&mut self) {
         unsafe {
             libc::kill(self._child_pid, libc::SIGHUP);
+            libc::kill(self._child_pid, libc::SIGKILL);
             let mut status = 0;
             libc::waitpid(self._child_pid, &mut status, libc::WNOHANG);
         }
@@ -157,6 +167,26 @@ impl PtyManager {
 
         Ok(())
     }
+
+    /// Terminate an active PTY session for the given stream_id and send a close mote.
+    /// Returns true if a matching PTY session existed.
+    pub async fn handle_close(&mut self, stream_id: &str, out_tx: mpsc::Sender<Mote>) -> bool {
+        let Some(session) = self.sessions.remove(stream_id) else {
+            return false;
+        };
+        drop(session);
+
+        let close_mote = Mote {
+            stream_id: stream_id.to_string(),
+            seq_id: 0,
+            payload: Some(Payload::Bytes(BytesPayload {
+                data: b"PTY session closed by operator".to_vec(),
+                kind: BytesPayloadKind::Close as i32,
+            })),
+        };
+        let _ = out_tx.send(close_mote).await;
+        true
+    }
 }
 
 /// Spawn a new PTY process using portable-pty (Linux, macOS, Windows).
@@ -194,6 +224,7 @@ fn spawn_pty_session(
     cmd_builder.env("TERM", "xterm-256color");
 
     let child = pair.slave.spawn_command(cmd_builder)?;
+    let child_killer = child.clone_killer();
 
     let reader = pair.master.try_clone_reader()?;
     let writer = pair.master.take_writer()?;
@@ -259,6 +290,7 @@ fn spawn_pty_session(
     Ok(PtySession {
         writer,
         master: pair.master,
+        child_killer,
         _cancel_tx: cancel_tx,
     })
 }
@@ -457,5 +489,38 @@ mod tests {
             parse_resize_message(br#"{"kind":"resize","rows":0,"cols":80}"#),
             None
         );
+    }
+
+    #[tokio::test]
+    async fn test_handle_close_terminates_session() {
+        let mut manager = PtyManager::new();
+        let (out_tx, mut out_rx) = mpsc::channel::<Mote>(16);
+
+        assert!(!manager.handle_close("missing-stream", out_tx.clone()).await);
+
+        manager
+            .handle_mote("pty-stream-1".to_string(), Vec::new(), out_tx.clone())
+            .await
+            .expect("should spawn PTY session");
+        assert!(manager.sessions.contains_key("pty-stream-1"));
+
+        let closed = manager.handle_close("pty-stream-1", out_tx.clone()).await;
+        assert!(closed);
+        assert!(!manager.sessions.contains_key("pty-stream-1"));
+        assert!(!manager.handle_close("pty-stream-1", out_tx).await);
+
+        let mut saw_close = false;
+        while let Ok(Some(mote)) =
+            tokio::time::timeout(std::time::Duration::from_secs(2), out_rx.recv()).await
+        {
+            if let Some(Payload::Bytes(bytes)) = mote.payload
+                && bytes.kind == BytesPayloadKind::Close as i32
+                && mote.stream_id == "pty-stream-1"
+            {
+                saw_close = true;
+                break;
+            }
+        }
+        assert!(saw_close, "expected close mote after handle_close");
     }
 }

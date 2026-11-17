@@ -53,6 +53,7 @@ export interface ShellPivotItem {
     customTitle?: string;
     port?: number;
     closedAt?: string | null;
+    data?: string | null;
     shellId?: string;
     hostId?: string;
     hostName?: string;
@@ -100,10 +101,40 @@ export interface KnowledgeShellItem {
     beaconId: string;
     beaconName: string;
     beaconPrincipal?: string;
+    beaconLastSeenAt?: string;
+    beaconNextSeenAt?: string;
+    beaconInterval?: number | null;
+    beaconOnline?: boolean;
+    isLive?: boolean;
+    activeUsers?: {
+        id: string;
+        name: string;
+        photoURL?: string;
+    }[];
+    ownerId?: string;
     ownerName?: string;
     hostId?: string;
     hostName?: string;
     isCurrentHost?: boolean;
+    tasks?: {
+        id?: string;
+        input?: string | null;
+        output?: string | null;
+        error?: string | null;
+    }[];
+}
+
+export interface KnowledgeBeaconItem {
+    id: string;
+    name: string;
+    principal?: string;
+    transport?: string;
+    interval?: number | null;
+    lastSeenAt?: string;
+    nextSeenAt?: string;
+    isOnline: boolean;
+    hostId?: string;
+    hostName?: string;
 }
 
 export interface KnowledgeHostItem {
@@ -122,6 +153,9 @@ export interface KnowledgeHostItem {
     lastSeenAt?: string;
     tags: { id: string; name: string; kind: string }[];
     beaconCount: number;
+    beacons?: KnowledgeBeaconItem[];
+    primaryBeaconId?: string;
+    hasOnlineBeacon?: boolean;
     credentialCount: number;
     credentials: KnowledgeCredentialItem[];
     isCurrentHost: boolean;
@@ -136,7 +170,7 @@ export const MAX_SHELL_LOAD_RETRIES = 5;
 
 export interface UseShellDataOptions {
     historyOpen?: boolean;
-    knowledgeOpen?: boolean;
+    hostsOpen?: boolean;
 }
 
 export const useShellData = (
@@ -144,7 +178,7 @@ export const useShellData = (
     options?: UseShellDataOptions
 ) => {
     const historyOpen = Boolean(options?.historyOpen);
-    const knowledgeOpen = Boolean(options?.knowledgeOpen);
+    const hostsOpen = Boolean(options?.hostsOpen);
     const [portalId, setPortalId] = useState<number | null>(null);
     const [nowTick, setNowTick] = useState<number>(() => Date.now());
     const [shellRetryCount, setShellRetryCount] = useState<number>(0);
@@ -193,31 +227,31 @@ export const useShellData = (
         pollInterval: 3000,
     });
 
-    // Fetch cross-session shell history (fetched once on load, polled only while History drawer is open)
+    // Fetch cross-session shell history (fetched once on load, polled while History or Hosts drawer is open)
     const { data: crossSessionHistoryData, refetch: refetchCrossSessionHistory } = useQuery(
         GET_SHELL_CROSS_SESSION_HISTORY,
         {
             skip: !shellId,
             fetchPolicy: "cache-and-network",
-            pollInterval: historyOpen ? 5000 : 0,
+            pollInterval: historyOpen || hostsOpen ? 5000 : 0,
         }
     );
 
     const refetchHistory = useMemo(
         () => () => {
             refetchCurrentHistory();
-            if (historyOpen) {
+            if (historyOpen || hostsOpen) {
                 refetchCrossSessionHistory();
             }
         },
-        [refetchCurrentHistory, refetchCrossSessionHistory, historyOpen]
+        [refetchCurrentHistory, refetchCrossSessionHistory, historyOpen, hostsOpen]
     );
 
     useEffect(() => {
-        if (historyOpen && shellId) {
+        if ((historyOpen || hostsOpen) && shellId) {
             refetchCrossSessionHistory();
         }
-    }, [historyOpen, shellId, refetchCrossSessionHistory]);
+    }, [historyOpen, hostsOpen, shellId, refetchCrossSessionHistory]);
 
     // Fetch beacon status
     const beaconId = shellData?.node?.beacon?.id;
@@ -244,10 +278,10 @@ export const useShellData = (
     }, [knowledgeData]);
 
     useEffect(() => {
-        if (knowledgeOpen && hostId) {
+        if (hostsOpen && hostId) {
             refetchKnowledgeGraph();
         }
-    }, [knowledgeOpen, hostId, refetchKnowledgeGraph]);
+    }, [hostsOpen, hostId, refetchKnowledgeGraph]);
 
     // Fetch portal status
     const { data: portalData } = useQuery(GET_PORTAL_STATUS, {
@@ -469,8 +503,47 @@ export const useShellData = (
     const allCredentials = unifiedGraph.allCredentials;
     const networkHosts = unifiedGraph.networkHosts;
     const hostFiles = unifiedGraph.hostFiles;
-    const hostShells = unifiedGraph.hostShells;
+    const hostShells = useMemo(() => {
+        if (allShellTasks.length === 0) {
+            return unifiedGraph.hostShells;
+        }
+        const tasksByShell = new Map<string, typeof allShellTasks>();
+        for (const task of allShellTasks) {
+            if (!task.shellId) continue;
+            const sId = String(task.shellId);
+            const list = tasksByShell.get(sId) || [];
+            list.push(task);
+            tasksByShell.set(sId, list);
+        }
+        return unifiedGraph.hostShells.map((shell) => {
+            const extra = tasksByShell.get(String(shell.id));
+            if (!extra || extra.length === 0) {
+                return shell;
+            }
+            const byTaskId = new Map<string, { id?: string; input?: string | null; output?: string | null; error?: string | null }>();
+            for (const t of shell.tasks || []) {
+                const key = t.id ? String(t.id) : `${t.input || ""}::${t.output || ""}`;
+                byTaskId.set(key, t);
+            }
+            for (const t of extra) {
+                const key = t.id ? String(t.id) : `${t.input || ""}::${t.output || ""}`;
+                if (!byTaskId.has(key)) {
+                    byTaskId.set(key, {
+                        id: t.id ? String(t.id) : undefined,
+                        input: t.input,
+                        output: t.output,
+                        error: t.error,
+                    });
+                }
+            }
+            return {
+                ...shell,
+                tasks: Array.from(byTaskId.values()),
+            };
+        });
+    }, [unifiedGraph.hostShells, allShellTasks]);
     const hostProcessCount: number = currentHostNode?.processes?.totalCount ?? 0;
+    const currentHostBeacons = unifiedGraph.currentHostBeacons;
 
     return {
         loading,
@@ -498,6 +571,7 @@ export const useShellData = (
         hostFiles,
         hostProcessCount,
         hostShells,
+        currentHostBeacons,
         lastKnowledgeSyncAt,
         refetchKnowledgeGraph,
         refetchShell,

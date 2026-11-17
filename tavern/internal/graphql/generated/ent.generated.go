@@ -55577,6 +55577,20 @@ func (ec *executionContext) marshalNShellOrderField2ᚖrealmᚗpubᚋtavernᚋin
 	return v
 }
 
+func (ec *executionContext) marshalNShellPivot2realmᚗpubᚋtavernᚋinternalᚋentᚐShellPivot(ctx context.Context, sel ast.SelectionSet, v ent.ShellPivot) graphql.Marshaler {
+	return ec._ShellPivot(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNShellPivot2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellPivot(ctx context.Context, sel ast.SelectionSet, v *ent.ShellPivot) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ShellPivot(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNShellPivotConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellPivotConnection(ctx context.Context, sel ast.SelectionSet, v *ent.ShellPivotConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {

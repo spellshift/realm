@@ -3,6 +3,7 @@ import {
     useCallbackTimer,
     computeCallbackStats,
     formatCallbackInterval,
+    formatCountdownDuration,
 } from "./useCallbackTimer";
 import moment from "moment";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -10,10 +11,19 @@ import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 describe("useCallbackTimer", () => {
     beforeEach(() => {
         vi.useFakeTimers();
+        vi.setSystemTime(new Date("2025-01-01T12:00:00Z"));
     });
 
     afterEach(() => {
         vi.useRealTimers();
+    });
+
+    it("formats countdown durations simply as s / min / hr strings", () => {
+        expect(formatCountdownDuration(5)).toBe("5s");
+        expect(formatCountdownDuration(600)).toBe("10min");
+        expect(formatCountdownDuration(3600)).toBe("1hr");
+        expect(formatCountdownDuration(-3600)).toBe("1hr");
+        expect(formatCountdownDuration(-45)).toBe("45s");
     });
 
     it("should return false for isMissedCallback and isLateCheckin when checkin is in the future", () => {
@@ -23,6 +33,7 @@ describe("useCallbackTimer", () => {
         const { result } = renderHook(() => useCallbackTimer(beaconData));
 
         expect(result.current.isMissedCallback).toBe(false);
+        expect(result.current.timeUntilCallback).toBe("Next 10min");
         // @ts-ignore
         expect(result.current.isLateCheckin).toBe(false);
     });
@@ -34,6 +45,7 @@ describe("useCallbackTimer", () => {
         const { result } = renderHook(() => useCallbackTimer(beaconData));
 
         expect(result.current.isMissedCallback).toBe(true);
+        expect(result.current.timeUntilCallback).toBe("Missing 1min ago");
         // @ts-ignore
         expect(result.current.isLateCheckin).toBe(false);
     });
@@ -45,6 +57,7 @@ describe("useCallbackTimer", () => {
         const { result } = renderHook(() => useCallbackTimer(beaconData));
 
         expect(result.current.isMissedCallback).toBe(true);
+        expect(result.current.timeUntilCallback).toBe("Missing 5min ago");
         // @ts-ignore
         expect(result.current.isLateCheckin).toBe(true);
     });
@@ -57,9 +70,10 @@ describe("useCallbackTimer", () => {
         expect(result.current.callbackStats.formattedInterval).toBe("Unknown");
         expect(result.current.callbackStats.onTimeCount).toBe(0);
         expect(result.current.callbackStats.sampleCount).toBe(0);
+        expect(result.current.callbackStats.missedCount).toBe(0);
     });
 
-    it("computes callback interval and on-time count across the past 100 callbacks", () => {
+    it("computes callback interval, on-time count, and mathematically infers missed callbacks when silent", () => {
         expect(formatCallbackInterval(5)).toBe("5s");
         expect(formatCallbackInterval(60)).toBe("1m (60s)");
         expect(formatCallbackInterval(90)).toBe("1m 30s (90s)");
@@ -74,6 +88,7 @@ describe("useCallbackTimer", () => {
 
         const stats = computeCallbackStats({
             interval: 5,
+            lastSeenAt: new Date(Date.now() - 26_000).toISOString(),
             history: { totalCount: 120, edges },
         });
 
@@ -82,6 +97,9 @@ describe("useCallbackTimer", () => {
         expect(stats.sampleCount).toBe(100);
         expect(stats.onTimeCount).toBe(96);
         expect(stats.lateCount).toBe(4);
-        expect(stats.onTimePercentage).toBe(96);
+        // Silent for 26s with 5s interval -> floor(26/5) = 5 missed intervals
+        expect(stats.missedCount).toBe(5);
+        expect(stats.expectedCount).toBe(105);
+        expect(stats.onTimePercentage).toBe(91);
     });
 });

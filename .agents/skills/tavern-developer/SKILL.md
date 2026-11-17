@@ -13,6 +13,7 @@ description: Developer skills for working on the Tavern backend and the react fr
 - Reuse components where possible.
 - When designing, please break features out into reuseable components so that they can be reused elsewhere in the UI.
 - Be consistent with the existing UI's color scheme, padding, and other style design decisions.
+- Button order should be preserved across components when using similar buttons or icons, so that when a user switches context it’s visually consistent where each action is.
 
 
 # GraphQL API

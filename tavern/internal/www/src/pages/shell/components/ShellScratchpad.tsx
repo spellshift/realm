@@ -459,6 +459,11 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
         }
     };
 
+    const gutterRef = useRef<HTMLDivElement>(null);
+    const lineHeightPx = fontSize !== undefined ? Math.max(10, Math.round(fontSize * 1.5)) : 20;
+    const lines = content.split("\n");
+    const lineCount = Math.max(1, lines.length);
+
     if (!isOpen) {
         return null;
     }
@@ -484,7 +489,7 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
             <div className="flex items-center justify-between gap-2 px-3 py-1 bg-gray-900 border-b border-gray-800 text-xs text-gray-400 select-none">
                 <div className="flex items-center gap-1.5">
                     <span
-                        className="inline-flex items-center justify-center p-1 text-purple-400"
+                        className="inline-flex items-center justify-center p-1 text-gray-400"
                         title="Scratchpad"
                     >
                         <NotebookPen className="w-4 h-4" />
@@ -527,25 +532,60 @@ const ShellScratchpad: React.FC<ShellScratchpadProps> = ({
                 </div>
             </div>
 
-            <textarea
-                ref={textareaRef}
-                data-testid="scratchpad-textarea"
-                aria-label="Scratchpad notes"
-                value={content}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="Write notes here..."
-                style={{
-                    height: `${editorHeight}px`,
-                    ...(fontSize !== undefined
-                        ? {
-                            fontSize: `${fontSize}px`,
-                            lineHeight: `${Math.max(10, Math.round(fontSize * 1.5))}px`,
+            <div
+                className="relative flex bg-[#0f1118] font-mono text-xs overflow-hidden"
+                style={{ height: `${editorHeight}px` }}
+            >
+                <div
+                    ref={gutterRef}
+                    data-testid="scratchpad-line-numbers"
+                    aria-hidden="true"
+                    className="select-none py-2 px-2 bg-gray-900 border-r border-gray-800 text-right text-gray-500 leading-5 min-w-[2.5rem] overflow-hidden"
+                    style={
+                        fontSize !== undefined
+                            ? { fontSize: `${fontSize}px`, lineHeight: `${lineHeightPx}px` }
+                            : undefined
+                    }
+                >
+                    {Array.from({ length: lineCount }).map((_, idx) => (
+                        <div
+                            key={idx}
+                            className="flex items-center justify-end h-5"
+                            style={
+                                fontSize !== undefined
+                                    ? { height: `${lineHeightPx}px` }
+                                    : undefined
+                            }
+                        >
+                            <span>{idx + 1}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <textarea
+                    ref={textareaRef}
+                    data-testid="scratchpad-textarea"
+                    aria-label="Scratchpad notes"
+                    value={content}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onScroll={(e) => {
+                        if (gutterRef.current) {
+                            gutterRef.current.scrollTop = e.currentTarget.scrollTop;
                         }
-                        : {}),
-                }}
-                className="w-full bg-[#0f1118] text-gray-100 placeholder-gray-500 font-mono text-xs px-3 py-2 focus:outline-none resize-none overflow-y-auto shell-scrollbar"
-            />
+                    }}
+                    placeholder="Write notes here..."
+                    style={
+                        fontSize !== undefined
+                            ? {
+                                  fontSize: `${fontSize}px`,
+                                  lineHeight: `${lineHeightPx}px`,
+                              }
+                            : undefined
+                    }
+                    className="flex-1 h-full bg-[#0f1118] text-gray-100 placeholder-gray-500 font-mono text-xs leading-5 px-3 py-2 focus:outline-none resize-none overflow-y-auto shell-scrollbar"
+                />
+            </div>
         </div>
     );
 };

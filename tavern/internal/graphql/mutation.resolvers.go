@@ -31,6 +31,7 @@ import (
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
@@ -503,6 +504,43 @@ func (r *mutationResolver) ClosePortal(ctx context.Context, portalID int) (*ent.
 	}
 
 	return p, nil
+}
+
+// ClosePivot is the resolver for the closePivot field.
+func (r *mutationResolver) ClosePivot(ctx context.Context, pivotID int) (*ent.ShellPivot, error) {
+	pivot, err := r.client.ShellPivot.Query().
+		Where(shellpivot.ID(pivotID)).
+		WithPortal().
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch shell pivot: %w", err)
+	}
+
+	if !pivot.ClosedAt.IsZero() {
+		r.closeCachedPivotSession(ctx, pivot)
+		return pivot, nil
+	}
+
+	slog.InfoContext(ctx, "pivot close requested",
+		"pivot_id", pivotID,
+		"kind", pivot.Kind,
+		"stream_id", pivot.StreamID,
+	)
+
+	r.publishPivotCloseMote(ctx, pivot)
+	r.closeCachedPivotSession(ctx, pivot)
+
+	updated, err := r.client.ShellPivot.Get(ctx, pivotID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reload shell pivot: %w", err)
+	}
+	if !updated.ClosedAt.IsZero() {
+		return updated, nil
+	}
+
+	return r.client.ShellPivot.UpdateOneID(pivotID).
+		SetClosedAt(time.Now()).
+		Save(ctx)
 }
 
 // CreateLink is the resolver for the createLink field.
