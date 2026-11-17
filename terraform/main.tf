@@ -33,8 +33,13 @@ output "builder_enrollment_token" {
 
 variable "redirector_upstream" {
   type = string
-  description = "Upstream that redirectors should point to."
+  description = "Upstream that redirectors should point to. Defaults to oauth_domain when unset."
   default = ""
+}
+
+locals {
+  # Fall back to the oauth_domain when no explicit redirector_upstream is given.
+  redirector_upstream = var.redirector_upstream != "" ? var.redirector_upstream : var.oauth_domain
 }
 
 variable "redirector_dns_ns_prefix" {
@@ -725,7 +730,7 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", var.redirector_upstream]
+        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", local.redirector_upstream]
         env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
         ports   = [
           {
@@ -792,7 +797,7 @@ resource "google_cloud_run_service" "redirector" {
       containers {
         name = local.tavern_container_name
         image = var.tavern_container_image
-        command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, var.redirector_upstream]
+        command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, local.redirector_upstream]
         env {
           name = "ENABLE_DEBUG_LOGGING"
           value = "true"
@@ -890,7 +895,7 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", var.redirector_upstream]
+        command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", local.redirector_upstream]
         env = [
           {
             name  = "ENABLE_DEBUG_LOGGING"
@@ -1006,7 +1011,7 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", var.redirector_upstream]
+        command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", local.redirector_upstream]
         env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
       }]
       restartPolicy = "Always"
