@@ -108,9 +108,6 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 }
 
 func FormatSecretPrefix(resourcePrefix string) string {
-	if resourcePrefix == "" {
-		return "REALM"
-	}
 	return fmt.Sprintf("%s-REALM", resourcePrefix)
 }
 

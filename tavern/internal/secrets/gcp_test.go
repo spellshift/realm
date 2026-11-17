@@ -8,7 +8,7 @@ import (
 )
 
 func TestFormatSecretPrefix(t *testing.T) {
-	assert.Equal(t, "REALM", secrets.FormatSecretPrefix(""))
+	assert.Equal(t, "tavern-REALM", secrets.FormatSecretPrefix("tavern"))
 	assert.Equal(t, "abcxyz-REALM", secrets.FormatSecretPrefix("abcxyz"))
 }
 
