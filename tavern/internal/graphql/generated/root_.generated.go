@@ -6237,7 +6237,7 @@ type Asset implements Node {
   """
   size: Int!
   """
-  A SHA3-256 digest of the content field
+  A SHA1 digest of the content field
   """
   hash: String!
   tomes(
@@ -9296,7 +9296,7 @@ type HostFile implements Node {
   """
   size: Uint64!
   """
-  A SHA3-256 digest of the content field
+  A SHA1 digest of the content field
   """
   hash: String
   """
@@ -12262,7 +12262,7 @@ type Screenshot implements Node {
   """
   size: Uint64!
   """
-  A SHA3-256 digest of the content field
+  A SHA1 digest of the content field
   """
   hash: String
   """

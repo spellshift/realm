@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"crypto/sha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
 	"realm.pub/tavern/internal/cdn"
 	"realm.pub/tavern/internal/ent/enttest"
 )
@@ -97,7 +97,7 @@ func TestDownloadLink(t *testing.T) {
 
 			if tc.wantStatus == http.StatusOK {
 				assert.Equal(t, tc.wantBody, body)
-				hash := fmt.Sprintf("%x", sha3.Sum256(body))
+				hash := fmt.Sprintf("%x", sha1.Sum(body))
 				assert.Equal(t, hash, result.Header.Get(cdn.HeaderEtag))
 			} else {
 				assert.Equal(t, tc.wantBody, body)

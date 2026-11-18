@@ -44,7 +44,7 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 
 	// Set Header Metadata
 	stream.SetHeader(metadata.Pairs(
-		"sha3-256-checksum", a.Hash,
+		"sha1-checksum", a.Hash,
 		"file-size", fmt.Sprintf("%d", a.Size),
 	))
 
