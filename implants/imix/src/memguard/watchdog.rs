@@ -148,6 +148,34 @@ pub fn min_encrypt_interval_secs() -> f64 {
     })
 }
 
+/// QA debug knob: if `IMIX_MEMGUARD_DEBUG_MIDWAKE_SECS` is a positive finite
+/// number, the watchdog shortens the encrypted sleep window to that many seconds
+/// instead of the full beacon interval. Unset / invalid / <= 0 -> None. Parsed once.
+#[cfg(any(test, feature = "print_debug"))]
+fn debug_midwake_secs() -> Option<f64> {
+    static CACHED: OnceLock<Option<f64>> = OnceLock::new();
+    *CACHED.get_or_init(|| {
+        std::env::var("IMIX_MEMGUARD_DEBUG_MIDWAKE_SECS")
+            .ok()
+            .and_then(|s| s.parse::<f64>().ok())
+            .filter(|v| v.is_finite() && *v > 0.0)
+    })
+}
+
+/// QA debug knob: if `IMIX_MEMGUARD_DEBUG_PARTIAL_DECRYPT` is a usize K, the wake
+/// path decrypts only the first K recorded pages and leaves the rest encrypted
+/// (K=0 leaves ALL encrypted) so the resumed runtime exercises the VEH lazy-
+/// decrypt path live. Unset / invalid -> None (full decrypt). Parsed once.
+#[cfg(any(test, feature = "print_debug"))]
+fn debug_partial_decrypt_k() -> Option<usize> {
+    static CACHED: OnceLock<Option<usize>> = OnceLock::new();
+    *CACHED.get_or_init(|| {
+        std::env::var("IMIX_MEMGUARD_DEBUG_PARTIAL_DECRYPT")
+            .ok()
+            .and_then(|s| s.parse::<usize>().ok())
+    })
+}
+
 /// Engage the watchdog for one sleep cycle. Returns `true` once the cycle (which
 /// may have been an unencrypted fail-safe) has completed and the agent has been
 /// woken, `false` only when the watchdog could not be started (so the caller
@@ -1138,15 +1166,60 @@ fn run_cycle(
     let dormant = slots.slots[..n].iter().filter(|s| s.suspended).count();
     emit_engage(dormant, pages, interval_secs);
 
-    plain_sleep(interval_secs);
+    // --- QA debug knobs (gated to test / print_debug builds) -------------------
+    // MIDWAKE: shorten the encrypted sleep window to S seconds (S < interval).
+    #[cfg(any(test, feature = "print_debug"))]
+    let mid = debug_midwake_secs().filter(|&s| s > 0.0 && s < interval_secs);
+    #[cfg(not(any(test, feature = "print_debug")))]
+    let mid: Option<f64> = None;
 
-    // Decrypt must fully succeed before any thread is resumed or the agent
-    // woken. A failed decrypt terminates the process.
-    ensure_decrypted(guard);
+    let encrypted_sleep = match mid {
+        Some(s) => {
+            // Still encrypted here: emit via the non-allocating writer.
+            emit_midwake(s);
+            s
+        }
+        None => interval_secs,
+    };
+    plain_sleep(encrypted_sleep);
+
+    // PARTIAL_DECRYPT: at wake, skip the full decrypt and leave (N - K) pages
+    // encrypted so the resumed runtime exercises the VEH lazy-decrypt path live.
+    // K=0 leaves ALL pages encrypted. QA fault-injection only; the self-heal path
+    // is the NEXT cycle's encrypt() refusing (count != 0 -> "encrypt failed"
+    // skip) followed by ensure_decrypted completing the recovery.
+    #[cfg(any(test, feature = "print_debug"))]
+    let partial = debug_partial_decrypt_k();
+    #[cfg(not(any(test, feature = "print_debug")))]
+    let partial: Option<usize> = None;
+
+    match partial {
+        Some(k) => {
+            #[cfg(any(test, feature = "print_debug"))]
+            crate::memguard::debug_simulate_crash_partial_decrypt(k);
+            // Pages still encrypted here: non-allocating writer.
+            emit_partial(k);
+        }
+        None => {
+            // Decrypt must fully succeed before any thread is resumed or the agent
+            // woken. A failed decrypt terminates the process.
+            ensure_decrypted(guard);
+        }
+    }
 
     let resumed = slots.slots[..n].iter().filter(|s| s.suspended).count();
     emit_wake(pages, resumed);
-    // `slots` drops here: resumes any still-suspended threads and closes handles.
+    // Resume threads now (SlotsGuard Drop) so the remaining unencrypted sleep
+    // below, if any, runs with the runtime live.
+    drop(slots);
+    // MIDWAKE remaining unencrypted sleep preserves beacon timing; the agent is
+    // woken after the full interval by the caller.
+    if let Some(s) = mid {
+        let remaining = interval_secs - s;
+        if remaining > 0.0 {
+            plain_sleep(remaining);
+        }
+    }
     CycleOutcome {
         pages,
         skipped: false,
@@ -1269,6 +1342,35 @@ fn emit_skip(_reason: &str) {}
 
 #[cfg(not(feature = "print_debug"))]
 fn emit_wake(_pages: usize, _resumed: usize) {}
+
+#[cfg(feature = "print_debug")]
+fn emit_midwake(secs: f64) {
+    let mut b = StackBuf {
+        buf: [0u8; 160],
+        len: 0,
+    };
+    let _ = core::fmt::write(&mut b, format_args!("memguard debug: midwake after "));
+    fmt_secs(&mut b, secs);
+    let _ = core::fmt::write(&mut b, format_args!("s\n"));
+    dbg_print(&b);
+}
+#[cfg(not(feature = "print_debug"))]
+fn emit_midwake(_secs: f64) {}
+
+#[cfg(feature = "print_debug")]
+fn emit_partial(k: usize) {
+    let mut b = StackBuf {
+        buf: [0u8; 160],
+        len: 0,
+    };
+    let _ = core::fmt::write(
+        &mut b,
+        format_args!("memguard debug: partial decrypt k={k}\n"),
+    );
+    dbg_print(&b);
+}
+#[cfg(not(feature = "print_debug"))]
+fn emit_partial(_k: usize) {}
 
 // ---------------------------------------------------------------------------
 // Windows-gated integration test: one full dormancy + encrypt + decrypt +
