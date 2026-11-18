@@ -1,6 +1,9 @@
 package executor
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"os"
 	"path/filepath"
 	"testing"
@@ -117,4 +120,44 @@ func TestPrepareBuildCache(t *testing.T) {
 	require.Nil(t, hostConfig)
 	require.Empty(t, env)
 	require.Equal(t, spec, cached)
+}
+
+func prepareTome(t *testing.T, mainSrc, params string) string {
+	t.Helper()
+
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gw)
+	require.NoError(t, tw.WriteHeader(&tar.Header{Name: "main.eldritch", Typeflag: tar.TypeReg, Mode: 0o644, Size: int64(len(mainSrc))}))
+	_, err := tw.Write([]byte(mainSrc))
+	require.NoError(t, err)
+	require.NoError(t, tw.Close())
+	require.NoError(t, gw.Close())
+
+	dir, err := prepareMountDir(BuildSpec{Tomes: []TomeData{{ID: 7, Contents: buf.Bytes(), Params: params}}})
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	require.NoError(t, err)
+
+	out, err := os.ReadFile(filepath.Join(dir, "tomes", "7", "main.eldritch"))
+	require.NoError(t, err)
+	return string(out)
+}
+
+func TestPrepareMountDir_PrependsInputParams(t *testing.T) {
+	params := `{"b":"say \"hi\" \\ back","a":"line1\nline2\ttab\r","u":"héllo 世界 😀 <&>","c":"\u0001\u007f"}`
+	got := prepareTome(t, "print(input_params)", params)
+
+	want := "input_params = {" +
+		`"a": "line1\nline2\ttab\r", ` +
+		`"b": "say \"hi\" \\ back", ` +
+		`"c": "\x01\x7f", ` +
+		`"u": "héllo 世界 😀 <&>"}` + "\nprint(input_params)"
+	require.Equal(t, want, got)
+}
+
+func TestPrepareMountDir_EmptyParamsLeaveMainUntouched(t *testing.T) {
+	src := "print('x')\n"
+	for _, params := range []string{"", "{}", "not json"} {
+		require.Equal(t, src, prepareTome(t, src, params), "params=%q", params)
+	}
 }
