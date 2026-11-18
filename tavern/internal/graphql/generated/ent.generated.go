@@ -7447,6 +7447,8 @@ func (ec *executionContext) fieldContext_Event_quest(_ context.Context, field gr
 				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
 			case "eldritchAtCreation":
 				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+			case "scheduledOccurrenceAt":
+				return ec.fieldContext_Quest_scheduledOccurrenceAt(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -15753,6 +15755,35 @@ func (ec *executionContext) fieldContext_Quest_eldritchAtCreation(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Quest_scheduledOccurrenceAt(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_scheduledOccurrenceAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduledOccurrenceAt, nil
+		},
+		nil,
+		ec.marshalOTime2timeᚐTime,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Quest_scheduledOccurrenceAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Quest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Quest_tome(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -16154,6 +16185,8 @@ func (ec *executionContext) fieldContext_Quest_previousQuest(_ context.Context, 
 				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
 			case "eldritchAtCreation":
 				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+			case "scheduledOccurrenceAt":
+				return ec.fieldContext_Quest_scheduledOccurrenceAt(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -16422,6 +16455,8 @@ func (ec *executionContext) fieldContext_QuestEdge_node(_ context.Context, field
 				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
 			case "eldritchAtCreation":
 				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+			case "scheduledOccurrenceAt":
+				return ec.fieldContext_Quest_scheduledOccurrenceAt(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -20923,6 +20958,8 @@ func (ec *executionContext) fieldContext_Task_quest(_ context.Context, field gra
 				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
 			case "eldritchAtCreation":
 				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+			case "scheduledOccurrenceAt":
+				return ec.fieldContext_Quest_scheduledOccurrenceAt(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":
@@ -36414,7 +36451,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationIsNil", "eldritchAtCreationNotNil", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith", "hasScheduledTask", "hasScheduledTaskWith", "hasAdventure", "hasAdventureWith", "hasRelatedQuests", "hasRelatedQuestsWith", "hasPreviousQuest", "hasPreviousQuestWith", "hasEvents", "hasEventsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationIsNil", "eldritchAtCreationNotNil", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "scheduledOccurrenceAt", "scheduledOccurrenceAtNEQ", "scheduledOccurrenceAtIn", "scheduledOccurrenceAtNotIn", "scheduledOccurrenceAtGT", "scheduledOccurrenceAtGTE", "scheduledOccurrenceAtLT", "scheduledOccurrenceAtLTE", "scheduledOccurrenceAtIsNil", "scheduledOccurrenceAtNotNil", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith", "hasScheduledTask", "hasScheduledTaskWith", "hasAdventure", "hasAdventureWith", "hasRelatedQuests", "hasRelatedQuestsWith", "hasPreviousQuest", "hasPreviousQuestWith", "hasEvents", "hasEventsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -37016,6 +37053,76 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.EldritchAtCreationContainsFold = data
+		case "scheduledOccurrenceAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAt = data
+		case "scheduledOccurrenceAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtNEQ = data
+		case "scheduledOccurrenceAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtIn = data
+		case "scheduledOccurrenceAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtNotIn = data
+		case "scheduledOccurrenceAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtGT = data
+		case "scheduledOccurrenceAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtGTE = data
+		case "scheduledOccurrenceAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtLT = data
+		case "scheduledOccurrenceAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtLTE = data
+		case "scheduledOccurrenceAtIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtIsNil = data
+		case "scheduledOccurrenceAtNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduledOccurrenceAtNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ScheduledOccurrenceAtNotNil = data
 		case "hasTome":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTome"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -50556,6 +50663,8 @@ func (ec *executionContext) _Quest(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Quest_paramDefsAtCreation(ctx, field, obj)
 		case "eldritchAtCreation":
 			out.Values[i] = ec._Quest_eldritchAtCreation(ctx, field, obj)
+		case "scheduledOccurrenceAt":
+			out.Values[i] = ec._Quest_scheduledOccurrenceAt(ctx, field, obj)
 		case "tome":
 			field := field
 

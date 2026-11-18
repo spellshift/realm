@@ -50,6 +50,7 @@ export const GET_QUEST_DETAIL_QUERY = gql`
                 node {
                     id
                     name
+                    scheduledOccurrenceAt
                     parameters
                     lastUpdatedTask: tasks(first: $firstTask, orderBy: $orderByTask) {
                         edges {

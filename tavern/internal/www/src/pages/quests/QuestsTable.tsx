@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatDistance } from "date-fns";
+import { format, formatDistance } from "date-fns";
 import UserImageAndName from "../../components/UserImageAndName";
 import Badge from "../../components/tavern-base-ui/badge/Badge";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
@@ -67,6 +67,11 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
                     <div className="text-sm flex flex-row gap-1 items-center text-gray-500 truncate" title={quest.tome?.name ?? 'N/A'}>
                         {quest.tome?.name ?? 'N/A'}
                     </div>
+                    {quest.scheduledOccurrenceAt && (
+                        <div className="text-sm text-gray-500 truncate" title={quest.scheduledOccurrenceAt}>
+                            Scheduled for {format(new Date(quest.scheduledOccurrenceAt), 'PPp')}
+                        </div>
+                    )}
                 </div>
             ),
             renderSkeleton: () => (
@@ -191,6 +196,7 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
             hasMore={hasMore}
             onLoadMore={onLoadMore}
             estimateRowSize={73}
+            dynamicRowHeight
             overscan={5}
         />
     );

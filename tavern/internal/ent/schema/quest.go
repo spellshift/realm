@@ -54,7 +54,7 @@ func (Quest) Fields() []ent.Field {
 			).
 			Comment("Eldritch script that was evaluated at the time of this quest creation."),
 		field.Time("scheduled_occurrence_at").Optional().Immutable().
-			Annotations(entgql.Skip()).
+			Annotations(entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput)).
 			Comment("Cron occurrence represented by this scheduled quest, if any."),
 		field.String("scheduled_occurrence_key").Optional().Immutable().Unique().
 			Annotations(entgql.Skip()).

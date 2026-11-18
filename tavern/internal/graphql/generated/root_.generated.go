@@ -649,23 +649,24 @@ type ComplexityRoot struct {
 	}
 
 	Quest struct {
-		Adventure           func(childComplexity int) int
-		Bundle              func(childComplexity int) int
-		CreatedAt           func(childComplexity int) int
-		Creator             func(childComplexity int) int
-		Diffs               func(childComplexity int, where *ent.TaskWhereInput) int
-		EldritchAtCreation  func(childComplexity int) int
-		Events              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
-		ID                  func(childComplexity int) int
-		LastModifiedAt      func(childComplexity int) int
-		Name                func(childComplexity int) int
-		ParamDefsAtCreation func(childComplexity int) int
-		Parameters          func(childComplexity int) int
-		PreviousQuest       func(childComplexity int) int
-		RelatedQuests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
-		ScheduledTask       func(childComplexity int) int
-		Tasks               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tome                func(childComplexity int) int
+		Adventure             func(childComplexity int) int
+		Bundle                func(childComplexity int) int
+		CreatedAt             func(childComplexity int) int
+		Creator               func(childComplexity int) int
+		Diffs                 func(childComplexity int, where *ent.TaskWhereInput) int
+		EldritchAtCreation    func(childComplexity int) int
+		Events                func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
+		ID                    func(childComplexity int) int
+		LastModifiedAt        func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		ParamDefsAtCreation   func(childComplexity int) int
+		Parameters            func(childComplexity int) int
+		PreviousQuest         func(childComplexity int) int
+		RelatedQuests         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		ScheduledOccurrenceAt func(childComplexity int) int
+		ScheduledTask         func(childComplexity int) int
+		Tasks                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tome                  func(childComplexity int) int
 	}
 
 	QuestConnection struct {
@@ -4399,6 +4400,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Quest.RelatedQuests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
+
+	case "Quest.scheduledOccurrenceAt":
+		if e.ComplexityRoot.Quest.ScheduledOccurrenceAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Quest.ScheduledOccurrenceAt(childComplexity), true
 
 	case "Quest.scheduledTask":
 		if e.ComplexityRoot.Quest.ScheduledTask == nil {
@@ -11418,6 +11426,10 @@ type Quest implements Node {
   """
   eldritchAtCreation: String
   """
+  Cron occurrence represented by this scheduled quest, if any.
+  """
+  scheduledOccurrenceAt: Time
+  """
   Tome that this quest will be executing
   """
   tome: Tome!
@@ -11697,6 +11709,19 @@ input QuestWhereInput {
   eldritchAtCreationNotNil: Boolean
   eldritchAtCreationEqualFold: String
   eldritchAtCreationContainsFold: String
+  """
+  scheduled_occurrence_at field predicates
+  """
+  scheduledOccurrenceAt: Time
+  scheduledOccurrenceAtNEQ: Time
+  scheduledOccurrenceAtIn: [Time!]
+  scheduledOccurrenceAtNotIn: [Time!]
+  scheduledOccurrenceAtGT: Time
+  scheduledOccurrenceAtGTE: Time
+  scheduledOccurrenceAtLT: Time
+  scheduledOccurrenceAtLTE: Time
+  scheduledOccurrenceAtIsNil: Boolean
+  scheduledOccurrenceAtNotNil: Boolean
   """
   tome edge predicates
   """
