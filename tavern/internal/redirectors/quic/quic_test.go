@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"realm.pub/tavern/internal/redirectors"
 	quicRedirector "realm.pub/tavern/internal/redirectors/quic"
 )
 
@@ -113,7 +114,7 @@ func TestRedirector_QUIC_UnaryAndStreaming(t *testing.T) {
 
 	// 2. Setup the QUIC redirector
 	redirecter := &quicRedirector.Redirector{}
-	
+
 	// Create UDP listener to find a free port
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
 	require.NoError(t, err)
@@ -124,7 +125,8 @@ func TestRedirector_QUIC_UnaryAndStreaming(t *testing.T) {
 	require.NoError(t, err)
 	defer upstreamConn.Close()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	gate := redirectors.NewGate()
+	ctx, cancel := context.WithCancel(redirectors.WithGate(context.Background(), gate))
 	defer cancel()
 
 	go func() {
@@ -238,5 +240,41 @@ func TestRedirector_QUIC_UnaryAndStreaming(t *testing.T) {
 
 		err = stream.Close()
 		require.NoError(t, err)
+	})
+
+	t.Run("Disabled stream and re-enable", func(t *testing.T) {
+		request, err := proto.Marshal(&grpc_testing.SimpleRequest{Payload: &grpc_testing.Payload{Body: []byte("resumed")}})
+		require.NoError(t, err)
+		send := func() ([]byte, error) {
+			stream, err := quicConn.OpenStreamSync(ctx)
+			if err != nil {
+				return nil, err
+			}
+			defer stream.Close()
+			stream.SetReadDeadline(time.Now().Add(time.Second))
+			method := "/c2.C2/ClaimTasks"
+			if err := binary.Write(stream, binary.BigEndian, uint16(len(method))); err != nil {
+				return nil, err
+			}
+			if _, err := stream.Write([]byte(method)); err != nil {
+				return nil, err
+			}
+			if _, err := stream.Write(request); err != nil {
+				return nil, err
+			}
+			if err := stream.Close(); err != nil {
+				return nil, err
+			}
+			return io.ReadAll(stream)
+		}
+		gate.SetEnabled(false)
+		_, err = send()
+		require.Error(t, err)
+		gate.SetEnabled(true)
+		responseBytes, err := send()
+		require.NoError(t, err)
+		var response grpc_testing.SimpleResponse
+		require.NoError(t, proto.Unmarshal(responseBytes, &response))
+		require.Equal(t, []byte("resumed"), response.Payload.Body)
 	})
 }

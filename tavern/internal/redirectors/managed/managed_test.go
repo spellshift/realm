@@ -19,7 +19,34 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/redirectors"
 )
+
+func TestInitialCheckinWaitsForSuccess(t *testing.T) {
+	gate := redirectors.NewGate()
+	gate.SetEnabled(false)
+	attempts := 0
+	err := waitForInitialCheckin(context.Background(), time.Millisecond, func() error {
+		attempts++
+		if attempts == 1 {
+			return fmt.Errorf("Tavern unavailable")
+		}
+		gate.SetEnabled(true)
+		return nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, attempts)
+	require.True(t, gate.Enabled())
+
+	gate.SetEnabled(false)
+	ctx, cancel := context.WithCancel(context.Background())
+	err = waitForInitialCheckin(ctx, time.Hour, func() error {
+		cancel()
+		return fmt.Errorf("Tavern unavailable")
+	})
+	require.ErrorIs(t, err, context.Canceled)
+	require.False(t, gate.Enabled())
+}
 
 func TestFileStoreDoesNotOverwriteIdentity(t *testing.T) {
 	ctx := context.Background()

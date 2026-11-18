@@ -347,6 +347,32 @@ func CheckinEnabled(ctx context.Context, upstream string, identity *Identity) (b
 	return *state.Enabled, nil
 }
 
+// WaitForInitialCheckin prevents a restarted managed redirector from serving
+// traffic before it has learned Tavern's persisted enabled state.
+func WaitForInitialCheckin(ctx context.Context, upstream string, identity *Identity, gate *redirectors.Gate) error {
+	return waitForInitialCheckin(ctx, 5*time.Second, func() error {
+		return RefreshGate(ctx, upstream, identity, gate)
+	})
+}
+
+func waitForInitialCheckin(ctx context.Context, retry time.Duration, check func() error) error {
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := check(); err == nil {
+			return nil
+		} else {
+			log.WarnContext(ctx, "initial redirector check-in failed; waiting before opening ingress", "error", err)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(retry):
+		}
+	}
+}
+
 func RunCheckins(ctx context.Context, upstream string, identity *Identity, gate *redirectors.Gate) {
 	check := func() {
 		if err := RefreshGate(ctx, upstream, identity, gate); err != nil {

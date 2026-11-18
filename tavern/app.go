@@ -201,8 +201,9 @@ func newApp(ctx context.Context) (app *cli.App) {
 						return err
 					}
 					gate := redirectors.NewGate()
-					if err := managed.RefreshGate(ctx, managementURL, identity, gate); err != nil {
-						startupLog.WarnContext(ctx, "initial redirector check-in failed; using default enabled state until check-in succeeds", "error", err)
+					gate.SetEnabled(false)
+					if err := managed.WaitForInitialCheckin(ctx, managementURL, identity, gate); err != nil {
+						return fmt.Errorf("initial redirector check-in: %w", err)
 					}
 					ctx = redirectors.WithGate(ctx, gate)
 					go managed.RunCheckins(ctx, managementURL, identity, gate)

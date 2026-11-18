@@ -51,17 +51,20 @@ func NewRedirectorCheckinHandler(client *ent.Client, ca *x509.Certificate) http.
 			return
 		}
 		id := strings.TrimPrefix(cert.Subject.CommonName, "redirector-")
-		row, err := client.Redirector.Query().Where(redirector.Identifier(id)).Only(r.Context())
-		if ent.IsNotFound(err) {
-			http.Error(w, "invalid credentials", http.StatusUnauthorized)
-			return
-		}
+		updated, err := client.Redirector.Update().Where(redirector.Identifier(id)).SetLastSeenAt(now).Save(r.Context())
 		if err != nil {
 			redirectorAuthLog.ErrorContext(r.Context(), "redirector check-in failed", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		if err := client.Redirector.UpdateOneID(row.ID).SetLastSeenAt(now).Exec(r.Context()); err != nil {
+		if updated != 1 {
+			http.Error(w, "invalid credentials", http.StatusUnauthorized)
+			return
+		}
+		// Read enabled after the heartbeat write so an admin toggle committed
+		// during that write is reflected in this response.
+		row, err := client.Redirector.Query().Where(redirector.Identifier(id)).Only(r.Context())
+		if err != nil {
 			redirectorAuthLog.ErrorContext(r.Context(), "redirector check-in failed", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return

@@ -11,11 +11,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	tavernhttp "realm.pub/tavern/internal/http"
 	"realm.pub/tavern/internal/redirectors"
@@ -82,6 +84,31 @@ func TestManagedRedirectorEnrollmentAndCheckins(t *testing.T) {
 	enabled, err = managed.CheckinEnabled(ctx, server.URL, restarted)
 	require.NoError(t, err)
 	require.False(t, enabled)
+	restartGate := redirectors.NewGate()
+	restartGate.SetEnabled(false)
+	require.NoError(t, managed.WaitForInitialCheckin(ctx, server.URL, restarted, restartGate))
+	require.False(t, restartGate.Enabled(), "restart must retain Tavern's disabled state")
+	// Toggle after the heartbeat update has completed. The response must read
+	// enabled after this point, rather than reuse a pre-update snapshot.
+	var toggled atomic.Bool
+	graph.Redirector.Use(func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, mutation ent.Mutation) (ent.Value, error) {
+			value, err := next.Mutate(ctx, mutation)
+			if err != nil {
+				return value, err
+			}
+			if _, heartbeat := mutation.Field("last_seen_at"); heartbeat && toggled.CompareAndSwap(false, true) {
+				if err := graph.Redirector.UpdateOneID(records[0].ID).SetEnabled(true).Exec(ctx); err != nil {
+					return nil, err
+				}
+			}
+			return value, nil
+		})
+	})
+	enabled, err = managed.CheckinEnabled(ctx, server.URL, first)
+	require.NoError(t, err)
+	require.True(t, toggled.Load())
+	require.True(t, enabled)
 	require.NoError(t, graph.Redirector.UpdateOneID(records[0].ID).SetEnabled(true).Exec(ctx))
 	enabled, err = managed.CheckinEnabled(ctx, server.URL, second)
 	require.NoError(t, err)
@@ -93,6 +120,11 @@ func TestManagedRedirectorEnrollmentAndCheckins(t *testing.T) {
 	server.Close()
 	require.Error(t, managed.RefreshGate(ctx, server.URL, first, gate))
 	require.False(t, gate.Enabled(), "failed check-in must preserve last known state")
+	startupCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+	defer cancel()
+	err = managed.WaitForInitialCheckin(startupCtx, server.URL, first, gate)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.False(t, gate.Enabled(), "restart during outage must not open ingress")
 	// Signed but stale timestamps and malformed proofs are rejected.
 	req := httptest.NewRequest(http.MethodPost, "/auth/redirector/checkin", nil)
 	certBlock, _ := pem.Decode([]byte(first.Certificate))

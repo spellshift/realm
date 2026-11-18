@@ -1,7 +1,9 @@
 package dns
 
 import (
+	"context"
 	"encoding/base32"
+	"encoding/binary"
 	"hash/crc32"
 	"net"
 	"testing"
@@ -11,7 +13,59 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/internal/c2/convpb"
+	"realm.pub/tavern/internal/redirectors"
 )
+
+func TestManagedIngressGate(t *testing.T) {
+	probe, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1")})
+	require.NoError(t, err)
+	listenAddr := probe.LocalAddr().String()
+	require.NoError(t, probe.Close())
+	gate := redirectors.NewGate()
+	ctx, cancel := context.WithCancel(redirectors.WithGate(context.Background(), gate))
+	defer cancel()
+	go func() { _ = (&Redirector{}).Redirect(ctx, listenAddr+"?domain=example.com", nil, nil) }()
+
+	client, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1")})
+	require.NoError(t, err)
+	defer client.Close()
+	destination, err := net.ResolveUDPAddr("udp", listenAddr)
+	require.NoError(t, err)
+	query := make([]byte, dnsHeaderSize)
+	query[5] = 1 // one question
+	for _, label := range []string{"outside", "test"} {
+		query = append(query, byte(len(label)))
+		query = append(query, label...)
+	}
+	query = append(query, 0, 0, txtRecordType, 0, dnsClassIN)
+	response := make([]byte, 512)
+	send := func(id uint16) bool {
+		binary.BigEndian.PutUint16(query[:2], id)
+		_, err := client.WriteToUDP(query, destination)
+		require.NoError(t, err)
+		deadline := time.Now().Add(75 * time.Millisecond)
+		for {
+			require.NoError(t, client.SetReadDeadline(deadline))
+			n, _, err := client.ReadFromUDP(response)
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				return false
+			}
+			require.NoError(t, err)
+			if n >= dnsHeaderSize && binary.BigEndian.Uint16(response[:2]) == id {
+				return true
+			}
+		}
+	}
+	ready := false
+	for start := time.Now(); time.Since(start) < time.Second && !ready; {
+		ready = send(0x1001)
+	}
+	require.True(t, ready, "DNS redirector did not start")
+	gate.SetEnabled(false)
+	require.False(t, send(0x1002), "disabled DNS redirector answered new query")
+	gate.SetEnabled(true)
+	require.True(t, send(0x1003), "re-enabled DNS redirector did not answer")
+}
 
 func newTestRedirector() *Redirector {
 	return &Redirector{}
