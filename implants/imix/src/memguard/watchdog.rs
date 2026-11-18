@@ -114,7 +114,7 @@ struct ThreadSlot {
 // Trace-file FFI constants (print_debug staging). Only used by the trace helpers,
 // which are no-ops without `print_debug`.
 #[cfg(feature = "print_debug")]
-const TRACE_FILE_APPEND: u32 = 0x4; // FILE_APPEND_DATA
+const TRACE_FILE_APPEND: u32 = 0x2 | 0x4; // FILE_WRITE_DATA | FILE_APPEND_DATA (can create + append)
 #[cfg(feature = "print_debug")]
 const TRACE_FILE_OPEN_ALWAYS: u32 = 3; // OPEN_ALWAYS
 #[cfg(feature = "print_debug")]
@@ -782,6 +782,15 @@ fn add_thread_state_exclusions(guard: &mut MemGuard, slots: &[ThreadSlot]) -> bo
                 if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
                     return false;
                 }
+                // UNSAFE INVARIANT: exclude RTL_USER_PROCESS_PARAMETERS (PEB+0x20)
+                // for the same reason as the watchdog exclusion above.
+                let pp = *(peb.add(0x20) as *const *mut c_void);
+                if !pp.is_null() {
+                    let pp_size = region_size_of(pp);
+                    if pp_size > 0 && !guard.add_exclusion(pp as *const u8, pp_size) {
+                        return false;
+                    }
+                }
             }
             let tls = *(s.teb.add(0x58) as *const *mut c_void);
             if !tls.is_null() {
@@ -834,6 +843,17 @@ fn add_watchdog_exclusions(guard: &mut MemGuard, ntqit: NtQueryInformationThread
             let peb_size = region_size_of(peb);
             if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
                 return false;
+            }
+            // UNSAFE INVARIANT: the CRT/std handle table (stdin/stdout/stderr
+            // HANDLEs) lives in RTL_USER_PROCESS_PARAMETERS at PEB+0x20. Once the
+            // heap is encrypted, writes touching ProcessParameters must not depend
+            // on VEH recovery of that region, so it is excluded from encryption.
+            let pp = *(peb.add(0x20) as *const *mut c_void);
+            if !pp.is_null() {
+                let pp_size = region_size_of(pp);
+                if pp_size > 0 && !guard.add_exclusion(pp as *const u8, pp_size) {
+                    return false;
+                }
             }
         }
         let tls = *(teb.add(0x58) as *const *mut c_void);
@@ -1222,6 +1242,7 @@ fn run_cycle(
     if !encrypt_ok {
         emit_skip("encrypt failed");
         ensure_decrypted(guard);
+        set_stdout_safe(true);
         trace_line(
             "cycle-return",
             format_args!("skipped=true reason=encrypt-failed"),
@@ -1232,6 +1253,10 @@ fn run_cycle(
             skipped: true,
         };
     }
+    // Heap is now encrypted: from here on, never emit to stdout (it can block on
+    // a wedged inherited handle). The trace file is always safe; the stdout
+    // fallback (trace unavailable) drops lines while encrypted.
+    set_stdout_safe(false);
     trace_line(
         "encrypt-done",
         format_args!(
@@ -1292,6 +1317,7 @@ fn run_cycle(
             // Decrypt must fully succeed before any thread is resumed or the agent
             // woken. A failed decrypt terminates the process.
             ensure_decrypted(guard);
+            set_stdout_safe(true);
         }
     }
 
@@ -1334,6 +1360,20 @@ static TRACE_HANDLE: core::sync::atomic::AtomicPtr<c_void> =
 #[cfg(feature = "print_debug")]
 static TRACE_T0: OnceLock<u64> = OnceLock::new();
 
+// Tracks whether it is safe to write to stdout (i.e. nothing is encrypted). Set
+// false the moment encryption succeeds, true again only after a full decrypt.
+// Used so the stdout fallback (only when the trace file could not be opened)
+// never blocks on a wedged inherited handle while memory is encrypted.
+#[cfg(feature = "print_debug")]
+static STDOUT_SAFE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(true);
+
+#[cfg(feature = "print_debug")]
+fn set_stdout_safe(v: bool) {
+    STDOUT_SAFE.store(v, core::sync::atomic::Ordering::Release);
+}
+#[cfg(not(feature = "print_debug"))]
+fn set_stdout_safe(_v: bool) {}
+
 // Non-allocating `print_debug` output. During the encrypted window the process
 // heap is PAGE_NOACCESS, so a normal `println!`/`log::info!` (which allocate)
 // would fault. These lines are written straight to stdout via WriteFile using a
@@ -1369,6 +1409,28 @@ fn fmt_secs(buf: &mut StackBuf, secs: f64) {
 #[cfg(feature = "print_debug")]
 fn dbg_print(b: &StackBuf) {
     use windows_sys::Win32::System::Console::{GetStdHandle, STD_OUTPUT_HANDLE};
+    // Preferred path: the dedicated trace file never blocks on a reader, so it is
+    // always safe to write even while the heap is encrypted.
+    let th = TRACE_HANDLE.load(core::sync::atomic::Ordering::Acquire);
+    if !th.is_null() {
+        let mut written = 0u32;
+        unsafe {
+            let _ = WriteFile(
+                th,
+                b.buf.as_ptr() as *const c_void,
+                b.len as u32,
+                &mut written,
+                core::ptr::null_mut(),
+            );
+        }
+        return;
+    }
+    // Fallback only when the trace file could not be opened: never block on the
+    // inherited stdout handle while memory is encrypted (a wedged pipe would hang
+    // the cycle). Drop the line silently instead.
+    if !STDOUT_SAFE.load(core::sync::atomic::Ordering::Acquire) {
+        return;
+    }
     let h = unsafe { GetStdHandle(STD_OUTPUT_HANDLE) };
     if (h as usize) == usize::MAX {
         return;
