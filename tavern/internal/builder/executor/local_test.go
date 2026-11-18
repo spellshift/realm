@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -342,42 +341,10 @@ func TestLocalExecutor_Build_ContextCancel(t *testing.T) {
 	assert.Less(t, elapsed, 5*time.Second, "cancellation did not terminate sleep in time")
 }
 
-func TestExtractAgentSource_OverwritesReadOnlySymlinksAndStaleFiles(t *testing.T) {
+func TestExtractAgentSource_WritesEmbeddedTree(t *testing.T) {
 	dstDir := filepath.Join(t.TempDir(), "realm")
 	require.NoError(t, realm.ExtractAgentSource(dstDir))
-
-	roFile := filepath.Join(dstDir, "implants", "Cargo.toml")
-	require.NoError(t, os.Chmod(roFile, 0o444))
-	roDir := filepath.Join(dstDir, "implants", "imix")
-	require.NoError(t, os.Chmod(roDir, 0o555))
-
-	staleFile := filepath.Join(dstDir, "stale.txt")
-	require.NoError(t, os.WriteFile(staleFile, []byte("stale"), 0o644))
-
-	outsideFile := filepath.Join(t.TempDir(), "outside.txt")
-	require.NoError(t, os.WriteFile(outsideFile, []byte("keep"), 0o644))
-	symlinkPath := filepath.Join(dstDir, "implants", "rust-toolchain")
-	require.NoError(t, os.Remove(symlinkPath))
-	require.NoError(t, os.Symlink(outsideFile, symlinkPath))
-
-	require.NoError(t, realm.ExtractAgentSource(dstDir))
-
-	info, err := os.Lstat(roFile)
-	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
-
-	dirInfo, err := os.Lstat(roDir)
-	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0o755), dirInfo.Mode().Perm())
-
-	_, err = os.Lstat(staleFile)
-	assert.True(t, os.IsNotExist(err))
-
-	symInfo, err := os.Lstat(symlinkPath)
-	require.NoError(t, err)
-	assert.Zero(t, symInfo.Mode()&os.ModeSymlink)
-
-	outsideData, err := os.ReadFile(outsideFile)
-	require.NoError(t, err)
-	assert.Equal(t, "keep", string(outsideData))
+	for _, p := range []string{"implants/Cargo.toml", "implants/imix/Cargo.toml", "tavern/internal/c2/proto/c2.proto"} {
+		assert.FileExists(t, filepath.Join(dstDir, filepath.FromSlash(p)))
+	}
 }

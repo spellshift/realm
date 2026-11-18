@@ -34,32 +34,6 @@ func warnOnBuildArtifacts(files []string) {
 }
 
 func ExtractAgentSource(dstDir string) error {
-	if info, err := os.Lstat(dstDir); err == nil {
-		if !info.IsDir() {
-			if err := os.Remove(dstDir); err != nil {
-				return err
-			}
-		} else {
-			_ = filepath.WalkDir(dstDir, func(path string, d fs.DirEntry, walkErr error) error {
-				if walkErr == nil && d.IsDir() {
-					_ = os.Chmod(path, 0o755)
-				}
-				return nil
-			})
-			entries, err := os.ReadDir(dstDir)
-			if err != nil {
-				return err
-			}
-			for _, entry := range entries {
-				if err := os.RemoveAll(filepath.Join(dstDir, entry.Name())); err != nil {
-					return err
-				}
-			}
-		}
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-
 	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return err
 	}
