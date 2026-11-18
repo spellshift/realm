@@ -18,7 +18,7 @@ use windows_sys::Win32::System::Memory::{
     VirtualAlloc, VirtualFree, VirtualProtect, VirtualQuery,
 };
 use windows_sys::Win32::System::Threading::{
-    GetCurrentProcessId, OpenThread, THREAD_QUERY_INFORMATION,
+    GetCurrentProcessId, OpenThread, Sleep, THREAD_QUERY_INFORMATION,
 };
 // Only needed by the non-x64 fallback of `current_thread_key`; on x64 the TEB
 // pointer is read from `gs` directly, so this import is gated to avoid an unused
@@ -42,7 +42,7 @@ const PG_BUSY: u8 = 1; // claimed by exactly one actor, mid-decrypt
 const PG_PLAINTEXT: u8 = 2; // decrypted and usable
 
 // Number of tid-keyed recursion-guard slots in the unencrypted state region.
-const RECURSION_SLOTS: usize = 16;
+const RECURSION_SLOTS: usize = 32;
 
 // VEH return codes (mirrors the windows-sys EXCEPTION_* constants we import).
 const VEH_ACCESS_VIOLATION: i32 = EXCEPTION_ACCESS_VIOLATION;
@@ -625,67 +625,121 @@ unsafe fn encrypt_state(state: *mut State) -> bool {
     !failed
 }
 
+// Own and decrypt a single PG_ENCRYPTED page. Returns true if the page is now
+// PG_PLAINTEXT (it was already, or we decrypted it). Returns false if a
+// concurrent actor claimed it (now PG_BUSY) or it could not be made writable
+// (still PG_ENCRYPTED). Callers re-classify a false result: PG_BUSY -> wait for
+// the VEH owner; PG_ENCRYPTED -> fail-closed.
+unsafe fn decrypt_one_owned(e: *mut PageEntry) -> bool {
+    let cur = (*e).state.load(Ordering::Acquire);
+    if cur == PG_PLAINTEXT {
+        return true; // already decrypted; no-op.
+    }
+    if cur != PG_ENCRYPTED {
+        return false; // PG_BUSY (or unexpected): not ours to claim now.
+    }
+    if (*e)
+        .state
+        .compare_exchange(PG_ENCRYPTED, PG_BUSY, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
+        return false; // lost the race -> caller sees PG_BUSY.
+    }
+    let page = (*e).base;
+    let orig_protect = (*e).orig_protect;
+    let mut old = 0u32;
+    if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_READWRITE, &mut old) == 0 {
+        (*e).state.store(PG_ENCRYPTED, Ordering::Release); // un-claim
+        return false;
+    }
+    let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
+    for b in slice.iter_mut() {
+        *b ^= XOR_KEY;
+    }
+    if orig_protect != PAGE_READWRITE {
+        // Usable plaintext; record it even if the exotic restore fails.
+        let mut old = 0u32;
+        if VirtualProtect(page as *const c_void, PAGE_SIZE, orig_protect, &mut old) == 0 {
+            (*e).state.store(PG_PLAINTEXT, Ordering::Release);
+            return true;
+        }
+    }
+    (*e).state.store(PG_PLAINTEXT, Ordering::Release);
+    true
+}
+
 unsafe fn decrypt_state(state: *mut State) -> bool {
     let entries = (*state).entries;
     let n = (*state).count.load(Ordering::Acquire);
-    // Resume from the cursor so a failed decrypt can be retried without
-    // re-XORing pages that are already plaintext. Each entry carries its own
-    // `state`: PG_ENCRYPTED pages are claimed (CAS PG_ENCRYPTED->PG_BUSY) and
-    // decrypted; PG_PLAINTEXT (already decrypted by the VEH) or PG_BUSY (a VEH
-    // claim in flight) entries are skipped. This guarantees no double-XOR under
-    // any interleaving with the VEH.
+    // Main pass: resume from the cursor and decrypt every PG_ENCRYPTED page,
+    // advancing the cursor past already-plaintext / VEH-busy pages so a failed
+    // pass can be retried without re-XORing plaintext.
     let mut i = (*state).decrypt_cursor.load(Ordering::Acquire);
     while i < n {
         let e = entries.add(i);
         let cur = (*e).state.load(Ordering::Acquire);
         if cur != PG_ENCRYPTED {
-            // Already plaintext (VEH-decrypted) or busy-claimed by the VEH: skip
-            // and advance the cursor so it is never re-processed.
+            // PG_PLAINTEXT (done) or PG_BUSY (VEH owner): skip, advance cursor.
             (*state).decrypt_cursor.store(i + 1, Ordering::Release);
             i += 1;
             continue;
         }
-        // Claim this encrypted page; if the VEH won the race, skip it.
-        if (*e)
-            .state
-            .compare_exchange(PG_ENCRYPTED, PG_BUSY, Ordering::AcqRel, Ordering::Acquire)
-            .is_err()
-        {
-            (*state).decrypt_cursor.store(i + 1, Ordering::Release);
-            i += 1;
-            continue;
-        }
-        let page = (*e).base;
-        let orig_protect = (*e).orig_protect;
-        let mut old = 0u32;
-        if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_READWRITE, &mut old) == 0 {
-            // Could not make the page writable: un-claim (back to encrypted) and
-            // abort; a later retry resumes from here.
-            (*e).state.store(PG_ENCRYPTED, Ordering::Release);
-            (*state).decrypt_cursor.store(i, Ordering::Release);
-            return false;
-        }
-        let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
-        for b in slice.iter_mut() {
-            *b ^= XOR_KEY;
-        }
-        if orig_protect != PAGE_READWRITE {
-            // Exotic original protection (never occurs in practice: encrypt only
-            // targets PAGE_READWRITE pages). If the restore fails, the page is
-            // still usable plaintext, so record PG_PLAINTEXT and continue rather
-            // than aborting — a usable plaintext page is the goal.
-            let mut old = 0u32;
-            if VirtualProtect(page as *const c_void, PAGE_SIZE, orig_protect, &mut old) == 0 {
-                (*e).state.store(PG_PLAINTEXT, Ordering::Release);
-                (*state).decrypt_cursor.store(i + 1, Ordering::Release);
-                i += 1;
-                continue;
+        if !decrypt_one_owned(e) {
+            // decrypt_one_owned failed. If a concurrent VEH claimed this page
+            // (now PG_BUSY) we skip and let the strict completion loop wait for
+            // it; if it is still PG_ENCRYPTED and unwritable we fail-closed.
+            if (*e).state.load(Ordering::Acquire) == PG_ENCRYPTED {
+                (*state).decrypt_cursor.store(i, Ordering::Release);
+                return false;
             }
+            (*state).decrypt_cursor.store(i + 1, Ordering::Release);
+            i += 1;
+            continue;
         }
-        (*e).state.store(PG_PLAINTEXT, Ordering::Release);
         (*state).decrypt_cursor.store(i + 1, Ordering::Release);
         i += 1;
     }
+
+    // Strict completion (QA fix #1): certify ONLY when every entry in [0..count)
+    // is PG_PLAINTEXT. Any PG_ENCRYPTED page (e.g. a VEH claimant that failed its
+    // VirtualProtect and restored to PG_ENCRYPTED after the main pass) is
+    // decrypted here so it is never orphaned with no bookkeeping. Any PG_BUSY
+    // entry is a VEH owner still mid-recovery; we give it a bounded window
+    // (~1s total) to finish before failing closed.
+    const MAX_BUSY_WAIT_MS: u64 = 1000;
+    const BUSY_BACKOFF_MS: u64 = 5;
+    let mut waited_ms = 0u64;
+    loop {
+        let mut busy = false;
+        for j in 0..n {
+            let e = entries.add(j);
+            match (*e).state.load(Ordering::Acquire) {
+                PG_PLAINTEXT => {}
+                PG_BUSY => busy = true,
+                PG_ENCRYPTED => {
+                    // Recover the orphaned / late page.
+                    if !decrypt_one_owned(e) {
+                        if (*e).state.load(Ordering::Acquire) == PG_ENCRYPTED {
+                            return false; // unwritable -> fail-closed
+                        }
+                        busy = true; // became PG_BUSY under us -> wait
+                    }
+                }
+                // Any other (unexpected) value: wait defensively.
+                _ => busy = true,
+            }
+        }
+        if !busy {
+            break; // all entries PG_PLAINTEXT (any PG_ENCRYPTED were processed)
+        }
+        if waited_ms >= MAX_BUSY_WAIT_MS {
+            return false; // stuck VEH owner -> never certify (fail-closed)
+        }
+        let backoff = BUSY_BACKOFF_MS.min(MAX_BUSY_WAIT_MS - waited_ms);
+        Sleep(backoff as u32);
+        waited_ms += backoff;
+    }
+
     (*state).decrypt_cursor.store(0, Ordering::Release);
     (*state).count.store(0, Ordering::Release);
     true
@@ -732,6 +786,14 @@ const RECURSION_UNTRACKED: i32 = -2;
 // admitting concurrent faults on DIFFERENT threads (each gets its own slot, so
 // two threads faulting on two different encrypted pages both recover). The thread
 // key is the faulting thread's TEB pointer, which is unique per live thread.
+//
+// UNSAFE INVARIANT - slot-exhaustion (proceed-untracked) is safe: if all slots
+// are full we still admit the fault untracked (returning RECURSION_UNTRACKED). A
+// nested re-entry on the SAME page self-protects via the per-page CAS - the entry
+// is already PG_BUSY so the second claim misses and the handler returns
+// CONTINUE_SEARCH (no corruption; the first/outer claim finishes it). A nested
+// fault on a DIFFERENT page is recovered normally (fresh CAS claim). Recursion is
+// bounded by the number of distinct encrypted pages, so it cannot spin unboundedly.
 unsafe fn recursion_admit(state: *mut State, key: usize) -> i32 {
     for i in 0..RECURSION_SLOTS {
         let active = AtomicBool::from_ptr(core::ptr::addr_of_mut!((*state).recursion_active[i]));
@@ -753,7 +815,7 @@ unsafe fn recursion_admit(state: *mut State, key: usize) -> i32 {
             }
         }
     }
-    RECURSION_UNTRACKED
+    RECURSION_UNTRACKED // all slots full: admit untracked (see UNSAFE INVARIANT above)
 }
 
 unsafe fn recursion_release(state: *mut State, slot: i32) {
