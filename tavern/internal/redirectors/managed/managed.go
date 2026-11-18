@@ -28,6 +28,8 @@ import (
 
 var log = logging.For("redirectors.managed")
 
+const redirectorIdentityWaitTimeout = 2 * time.Minute
+
 type Config struct {
 	Upstream, Transport, Token, IdentityFile, IdentitySecret string
 	Domains                                                  []string
@@ -230,7 +232,7 @@ func EnsureIdentity(ctx context.Context, cfg Config, store Store) (*Identity, er
 		// the shared identity before this instance starts serving traffic.
 		if resp.StatusCode == http.StatusUnauthorized {
 			log.WarnContext(ctx, "redirector enrollment token rejected; waiting for shared identity")
-			return waitForIdentity(ctx, store)
+			return waitForIdentity(ctx, store, redirectorIdentityWaitTimeout)
 		}
 		return nil, fmt.Errorf("redirector enrollment failed with HTTP %d", resp.StatusCode)
 	}
@@ -265,12 +267,17 @@ func identityAbsent(err error) bool {
 	return errors.Is(err, os.ErrNotExist) || status.Code(err) == codes.NotFound || status.Code(err) == codes.FailedPrecondition
 }
 
-func waitForIdentity(ctx context.Context, store Store) (*Identity, error) {
+func waitForIdentity(ctx context.Context, store Store, timeout time.Duration) (*Identity, error) {
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	attempts := 0
 	for {
-		identity, err := store.Load(ctx)
+		identity, err := store.Load(waitCtx)
+		if waitCtx.Err() != nil {
+			return nil, identityWaitError(ctx, timeout)
+		}
 		if err == nil {
 			_, _, err = validate(identity)
 			if err != nil {
@@ -286,11 +293,18 @@ func waitForIdentity(ctx context.Context, store Store) (*Identity, error) {
 			log.WarnContext(ctx, "waiting for redirector identity after enrollment token was rejected; verify the token and shared store if this persists")
 		}
 		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
+		case <-waitCtx.Done():
+			return nil, identityWaitError(ctx, timeout)
 		case <-ticker.C:
 		}
 	}
+}
+
+func identityWaitError(ctx context.Context, timeout time.Duration) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return fmt.Errorf("redirector enrollment rejected and shared identity did not appear within %s; verify the enrollment token and identity store: %w", timeout, context.DeadlineExceeded)
 }
 
 func Checkin(ctx context.Context, upstream string, identity *Identity) error {

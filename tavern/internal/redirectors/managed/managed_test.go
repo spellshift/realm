@@ -187,3 +187,13 @@ func TestRejectedTokenWaitsForReplicaIdentityWithoutRetryingToken(t *testing.T) 
 	require.Equal(t, winner.ID, (<-result).ID)
 	require.EqualValues(t, 1, requests.Load())
 }
+
+func TestRejectedTokenWithoutPublishedIdentityTimesOut(t *testing.T) {
+	store := &publishedStore{}
+	start := time.Now()
+	identity, err := waitForIdentity(context.Background(), store, 20*time.Millisecond)
+	require.Nil(t, identity)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.ErrorContains(t, err, "shared identity did not appear")
+	require.Less(t, time.Since(start), time.Second)
+}
