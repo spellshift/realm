@@ -56,6 +56,9 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 		}
 		if isScheduled {
 			bundle, err := q.QueryBundle().Only(ctx)
+			if q.HasScheduledSnapshot && ent.IsNotFound(err) {
+				return status.Errorf(codes.FailedPrecondition, "scheduled quest %d snapshot bundle is missing", q.ID)
+			}
 			if err != nil && !ent.IsNotFound(err) {
 				return status.Errorf(codes.Internal, "failed to load quest bundle: %v", err)
 			}

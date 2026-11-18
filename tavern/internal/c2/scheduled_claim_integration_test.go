@@ -114,3 +114,66 @@ func TestConcurrentClaimTasksDispatchesScheduledTaskOnce(t *testing.T) {
 	}
 	require.Equal(t, 1, len(responses[0].Tasks)+len(responses[1].Tasks))
 }
+
+func TestScheduledClaimPreservesEmptyScriptSnapshot(t *testing.T) {
+	ctx := context.Background()
+	client, graph, closeFn, _ := c2test.New(t)
+	defer closeFn()
+	_, err := client.ClaimTasks(ctx, newClaimTasksReq("empty-script-beacon", "empty-script-host", "host"))
+	require.NoError(t, err)
+	b := graph.Beacon.Query().Where(beacon.Identifier("empty-script-beacon")).OnlyX(ctx)
+	tome := graph.Tome.Create().SetName("empty-script-tome").SetDescription("test").
+		SetAuthor("test").SetEldritch("print('live')").SaveX(ctx)
+	st := graph.ScheduledTask.Create().SetName("empty-script-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
+	bundle, err := tomebundle.Create(ctx, graph, nil)
+	require.NoError(t, err)
+	q := graph.Quest.Create().SetName("empty script quest").SetTome(tome).SetScheduledTask(st).
+		SetEldritchAtCreation("").SetHasScheduledSnapshot(true).SetBundle(bundle).SaveX(ctx)
+	graph.Task.Create().SetQuest(q).SetBeacon(b).SaveX(ctx)
+
+	response, err := client.ClaimTasks(ctx, newClaimTasksReq("empty-script-beacon", "empty-script-host", "host"))
+	require.NoError(t, err)
+	require.Len(t, response.Tasks, 1)
+	require.Empty(t, response.Tasks[0].Tome.Eldritch)
+
+	// A Quest created before the marker migration still has a snapshot if it has a bundle.
+	preMarker := graph.Quest.Create().SetName("pre-marker empty script quest").SetTome(tome).
+		SetScheduledTask(st).SetEldritchAtCreation("").SetBundle(bundle).SaveX(ctx)
+	graph.Task.Create().SetQuest(preMarker).SetBeacon(b).SaveX(ctx)
+	response, err = client.ClaimTasks(ctx, newClaimTasksReq("empty-script-beacon", "empty-script-host", "host"))
+	require.NoError(t, err)
+	require.Len(t, response.Tasks, 1)
+	require.Empty(t, response.Tasks[0].Tome.Eldritch)
+}
+
+func TestScheduledSnapshotMissingBundleFailsClosed(t *testing.T) {
+	ctx := context.Background()
+	client, graph, closeFn, mintJWT := c2test.New(t)
+	defer closeFn()
+	_, err := client.ClaimTasks(ctx, newClaimTasksReq("missing-bundle-beacon", "missing-bundle-host", "host"))
+	require.NoError(t, err)
+	b := graph.Beacon.Query().Where(beacon.Identifier("missing-bundle-beacon")).OnlyX(ctx)
+	source := graph.Asset.Create().SetName("missing-bundle.txt").SetContent([]byte("live bytes")).SaveX(ctx)
+	tome := graph.Tome.Create().SetName("missing-bundle-tome").SetDescription("test").
+		SetAuthor("test").SetEldritch("print('live')").AddAssets(source).SaveX(ctx)
+	st := graph.ScheduledTask.Create().SetName("missing-bundle-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
+	bundle, err := tomebundle.Create(ctx, graph, []*ent.Asset{source})
+	require.NoError(t, err)
+	q := graph.Quest.Create().SetName("missing bundle quest").SetTome(tome).SetScheduledTask(st).
+		SetEldritchAtCreation(tome.Eldritch).SetHasScheduledSnapshot(true).SetBundle(bundle).SaveX(ctx)
+	task := graph.Task.Create().SetQuest(q).SetBeacon(b).SaveX(ctx)
+	graph.Asset.DeleteOne(bundle).ExecX(ctx) // Simulate a bundle removed outside deleteAsset.
+
+	response, err := client.ClaimTasks(ctx, newClaimTasksReq("missing-bundle-beacon", "missing-bundle-host", "host"))
+	require.Nil(t, response)
+	require.Equal(t, codes.FailedPrecondition, status.Code(err))
+
+	stream, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
+		Name: "missing-bundle.txt", Context: &c2pb.FetchAssetRequest_TaskContext{
+			TaskContext: &c2pb.TaskContext{TaskId: int64(task.ID), Jwt: mintJWT(b.ID)},
+		},
+	})
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	require.Equal(t, codes.FailedPrecondition, status.Code(err))
+}

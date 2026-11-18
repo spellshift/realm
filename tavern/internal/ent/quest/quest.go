@@ -30,6 +30,8 @@ const (
 	FieldScheduledOccurrenceAt = "scheduled_occurrence_at"
 	// FieldScheduledOccurrenceKey holds the string denoting the scheduled_occurrence_key field in the database.
 	FieldScheduledOccurrenceKey = "scheduled_occurrence_key"
+	// FieldHasScheduledSnapshot holds the string denoting the has_scheduled_snapshot field in the database.
+	FieldHasScheduledSnapshot = "has_scheduled_snapshot"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
 	EdgeTome = "tome"
 	// EdgeBundle holds the string denoting the bundle edge name in mutations.
@@ -120,6 +122,7 @@ var Columns = []string{
 	FieldEldritchAtCreation,
 	FieldScheduledOccurrenceAt,
 	FieldScheduledOccurrenceKey,
+	FieldHasScheduledSnapshot,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "quests"
@@ -161,6 +164,8 @@ var (
 	ParametersValidator func(string) error
 	// ParamDefsAtCreationValidator is a validator for the "param_defs_at_creation" field. It is called by the builders before save.
 	ParamDefsAtCreationValidator func(string) error
+	// DefaultHasScheduledSnapshot holds the default value on creation for the "has_scheduled_snapshot" field.
+	DefaultHasScheduledSnapshot bool
 )
 
 // OrderOption defines the ordering options for the Quest queries.
@@ -209,6 +214,11 @@ func ByScheduledOccurrenceAt(opts ...sql.OrderTermOption) OrderOption {
 // ByScheduledOccurrenceKey orders the results by the scheduled_occurrence_key field.
 func ByScheduledOccurrenceKey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldScheduledOccurrenceKey, opts...).ToFunc()
+}
+
+// ByHasScheduledSnapshot orders the results by the has_scheduled_snapshot field.
+func ByHasScheduledSnapshot(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHasScheduledSnapshot, opts...).ToFunc()
 }
 
 // ByTomeField orders the results by tome field.

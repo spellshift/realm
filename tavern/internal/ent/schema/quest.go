@@ -59,6 +59,9 @@ func (Quest) Fields() []ent.Field {
 		field.String("scheduled_occurrence_key").Optional().Immutable().Unique().
 			Annotations(entgql.Skip()).
 			Comment("Unique scheduled task and cron occurrence identity."),
+		field.Bool("has_scheduled_snapshot").Default(false).Immutable().
+			Annotations(entgql.Skip()).
+			Comment("Whether this scheduled quest has a complete creation-time snapshot."),
 	}
 }
 

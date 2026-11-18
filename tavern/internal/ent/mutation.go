@@ -18609,6 +18609,7 @@ type QuestMutation struct {
 	eldritch_at_creation     *string
 	scheduled_occurrence_at  *time.Time
 	scheduled_occurrence_key *string
+	has_scheduled_snapshot   *bool
 	clearedFields            map[string]struct{}
 	tome                     *int
 	clearedtome              bool
@@ -19087,6 +19088,42 @@ func (m *QuestMutation) ResetScheduledOccurrenceKey() {
 	delete(m.clearedFields, quest.FieldScheduledOccurrenceKey)
 }
 
+// SetHasScheduledSnapshot sets the "has_scheduled_snapshot" field.
+func (m *QuestMutation) SetHasScheduledSnapshot(b bool) {
+	m.has_scheduled_snapshot = &b
+}
+
+// HasScheduledSnapshot returns the value of the "has_scheduled_snapshot" field in the mutation.
+func (m *QuestMutation) HasScheduledSnapshot() (r bool, exists bool) {
+	v := m.has_scheduled_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHasScheduledSnapshot returns the old "has_scheduled_snapshot" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuestMutation) OldHasScheduledSnapshot(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHasScheduledSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHasScheduledSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHasScheduledSnapshot: %w", err)
+	}
+	return oldValue.HasScheduledSnapshot, nil
+}
+
+// ResetHasScheduledSnapshot resets all changes to the "has_scheduled_snapshot" field.
+func (m *QuestMutation) ResetHasScheduledSnapshot() {
+	m.has_scheduled_snapshot = nil
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by id.
 func (m *QuestMutation) SetTomeID(id int) {
 	m.tome = &id
@@ -19517,7 +19554,7 @@ func (m *QuestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QuestMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, quest.FieldCreatedAt)
 	}
@@ -19541,6 +19578,9 @@ func (m *QuestMutation) Fields() []string {
 	}
 	if m.scheduled_occurrence_key != nil {
 		fields = append(fields, quest.FieldScheduledOccurrenceKey)
+	}
+	if m.has_scheduled_snapshot != nil {
+		fields = append(fields, quest.FieldHasScheduledSnapshot)
 	}
 	return fields
 }
@@ -19566,6 +19606,8 @@ func (m *QuestMutation) Field(name string) (ent.Value, bool) {
 		return m.ScheduledOccurrenceAt()
 	case quest.FieldScheduledOccurrenceKey:
 		return m.ScheduledOccurrenceKey()
+	case quest.FieldHasScheduledSnapshot:
+		return m.HasScheduledSnapshot()
 	}
 	return nil, false
 }
@@ -19591,6 +19633,8 @@ func (m *QuestMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldScheduledOccurrenceAt(ctx)
 	case quest.FieldScheduledOccurrenceKey:
 		return m.OldScheduledOccurrenceKey(ctx)
+	case quest.FieldHasScheduledSnapshot:
+		return m.OldHasScheduledSnapshot(ctx)
 	}
 	return nil, fmt.Errorf("unknown Quest field %s", name)
 }
@@ -19655,6 +19699,13 @@ func (m *QuestMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetScheduledOccurrenceKey(v)
+		return nil
+	case quest.FieldHasScheduledSnapshot:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHasScheduledSnapshot(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)
@@ -19761,6 +19812,9 @@ func (m *QuestMutation) ResetField(name string) error {
 		return nil
 	case quest.FieldScheduledOccurrenceKey:
 		m.ResetScheduledOccurrenceKey()
+		return nil
+	case quest.FieldHasScheduledSnapshot:
+		m.ResetHasScheduledSnapshot()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)

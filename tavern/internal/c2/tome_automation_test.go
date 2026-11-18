@@ -361,6 +361,7 @@ func TestHandleTomeAutomation_SharedOccurrenceAndSnapshot(t *testing.T) {
 	assert.Equal(t, now.Add(4*time.Second), q.ScheduledOccurrenceAt)
 	assert.Equal(t, `{"version":"first"}`, q.Parameters)
 	assert.Equal(t, "print('first')", q.EldritchAtCreation)
+	assert.True(t, q.HasScheduledSnapshot)
 	bundle := q.QueryBundle().OnlyX(ctx)
 	names, err := tomebundle.Names(bundle.Content)
 	require.NoError(t, err)

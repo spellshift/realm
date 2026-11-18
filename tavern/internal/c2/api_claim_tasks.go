@@ -177,7 +177,8 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 		}
 		create := client.Quest.Create().SetName(fmt.Sprintf("Automated: %s", st.Name)).
 			SetTome(tome).SetScheduledTask(st).SetParameters(st.Parameters).
-			SetParamDefsAtCreation(tome.ParamDefs).SetEldritchAtCreation(tome.Eldritch)
+			SetParamDefsAtCreation(tome.ParamDefs).SetEldritchAtCreation(tome.Eldritch).
+			SetHasScheduledSnapshot(true)
 		bundle, err := tomebundle.Create(ctx, client, assets)
 		if err != nil {
 			return err
@@ -561,6 +562,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			return nil, fmt.Errorf("failed to identify scheduled quest for task %d: %w", taskID, err)
 		}
 		bundle, err := claimedQuest.QueryBundle().Only(ctx)
+		if isScheduled && claimedQuest.HasScheduledSnapshot && ent.IsNotFound(err) {
+			return nil, status.Errorf(codes.FailedPrecondition, "scheduled quest %d snapshot bundle is missing", claimedQuest.ID)
+		}
 		if isScheduled && err == nil {
 			claimedAssetNames, err = tomebundle.Names(bundle.Content)
 			if err != nil {
@@ -579,7 +583,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			return nil, fmt.Errorf("failed to load quest bundle for task %d: %w", taskID, err)
 		}
 		eldritch := claimedQuest.EldritchAtCreation
-		if eldritch == "" {
+		if eldritch == "" && !claimedQuest.HasScheduledSnapshot && !(isScheduled && bundle != nil) {
 			eldritch = claimedTome.Eldritch // Legacy quests may not have a snapshot.
 		}
 
