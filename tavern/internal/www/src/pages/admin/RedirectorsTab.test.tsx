@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { ChakraProvider } from "@chakra-ui/react";
+import { useState } from "react";
 import { RedirectorsTab } from "./RedirectorsTab";
 
 const query = vi.fn();
@@ -50,10 +51,23 @@ describe("RedirectorsTab", () => {
         expect(screen.getByRole("checkbox", { name: /Enable redirector/ })).toBeChecked();
     });
 
-    it("shows a mutation error without changing the displayed server state", () => {
-        mutation.mockReturnValue([save, { loading: false, error: new Error("update failed") }]);
+    it("keeps server state and shows an error when the toggle request fails", async () => {
+        save.mockRejectedValue(new Error("update failed"));
+        mutation.mockImplementation(() => {
+            const [error, setError] = useState<Error | undefined>();
+            return [async (options: unknown) => {
+                try {
+                    return await save(options);
+                } catch (cause) {
+                    setError(cause as Error);
+                    throw cause;
+                }
+            }, { loading: false, error }];
+        });
         renderTab();
-        expect(screen.getByText("update failed")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("checkbox", { name: /Enable redirector/ }));
+        await waitFor(() => expect(screen.getByText("update failed")).toBeInTheDocument());
         expect(screen.getByRole("checkbox", { name: /Enable redirector/ })).toBeChecked();
+        expect(refetch).not.toHaveBeenCalled();
     });
 });
