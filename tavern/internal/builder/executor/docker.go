@@ -20,6 +20,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
+	"realm.pub"
 	"realm.pub/tavern/internal/logging"
 )
 
@@ -78,6 +79,10 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	defer os.RemoveAll(tmpDir)
 
+	if err := realm.ExtractAgentSource(filepath.Join(tmpDir, "realm")); err != nil {
+		return nil, fmt.Errorf("failed to extract agent source: %w", err)
+	}
+
 	uncachedSpec := spec
 	hostConfig, cacheEnv, cachedSpec, cacheErr := prepareBuildCache(spec)
 	if cacheErr != nil {
@@ -92,6 +97,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	// The container entrypoint runs all scripts in /mnt/scripts in order.
 	entrypoint := strings.Join([]string{
 		"set -e",
+		"rm -rf /tmp/realm-build/realm && mkdir -p /tmp/realm-build && cp -r /mnt/realm /tmp/realm-build/realm",
 		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; . \"$s\"; done",
 	}, " && ")
 

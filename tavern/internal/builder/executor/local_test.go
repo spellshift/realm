@@ -5,13 +5,17 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"io/fs"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"realm.pub"
 	"realm.pub/tavern/internal/builder/executor"
 )
 
@@ -335,4 +339,63 @@ func TestLocalExecutor_Build_ContextCancel(t *testing.T) {
 	assert.Error(t, err)
 	assert.NotNil(t, result)
 	assert.Less(t, elapsed, 5*time.Second, "cancellation did not terminate sleep in time")
+}
+
+func TestLocalExecutor_Build_ExtractsEmbeddedAgentSource(t *testing.T) {
+	err := fs.WalkDir(realm.AgentSourceFS, ".", func(path string, d fs.DirEntry, err error) error {
+		require.NoError(t, err)
+		for _, part := range strings.Split(path, "/") {
+			require.NotEqual(t, "target", part)
+		}
+		return nil
+	})
+	require.NoError(t, err)
+
+	setupChecks := strings.Join([]string{
+		"test -f /tmp/realm-build/realm/implants/.cargo/config.toml",
+		"test -f /tmp/realm-build/realm/implants/imix/Cargo.toml",
+		"test -f /tmp/realm-build/realm/bin/reflective_loader/Cargo.toml",
+		"test -f /tmp/realm-build/realm/tavern/internal/c2/proto/c2.proto",
+		"test -f \"$REALM_WORKSPACE_DIR/realm/implants/.cargo/config.toml\"",
+		"test -f \"$REALM_WORKSPACE_DIR/realm/implants/imix/Cargo.toml\"",
+		"test -f \"$REALM_WORKSPACE_DIR/realm/bin/reflective_loader/Cargo.toml\"",
+		"test -f \"$REALM_WORKSPACE_DIR/realm/tavern/internal/c2/proto/c2.proto\"",
+	}, " && ")
+
+	buildScript := "echo extracted_ok"
+	if _, lookErr := exec.LookPath("cargo"); lookErr == nil {
+		buildScript = "cargo metadata --no-deps --manifest-path /tmp/realm-build/realm/implants/imix/Cargo.toml >/dev/null && echo extracted_ok"
+	}
+
+	spec := executor.BuildSpec{
+		TaskID:      10,
+		TargetOS:    "linux",
+		SetupScript: setupChecks,
+		BuildScript: buildScript,
+	}
+
+	outputCh := make(chan string, 100)
+	errorCh := make(chan string, 100)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	result, err := executor.NewLocalExecutor().Build(ctx, spec, outputCh, errorCh)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.Equal(t, int64(0), result.ExitCode)
+
+	var output []string
+	for line := range outputCh {
+		output = append(output, line)
+	}
+	assert.Contains(t, output, "extracted_ok")
+
+	if _, lookErr := exec.LookPath("cargo"); lookErr == nil {
+		extractedDir := t.TempDir()
+		require.NoError(t, realm.ExtractAgentSource(extractedDir))
+		cmd := exec.CommandContext(ctx, "cargo", "metadata", "--no-deps", "--manifest-path", filepath.Join(extractedDir, "implants", "imix", "Cargo.toml"))
+		out, cmdErr := cmd.CombinedOutput()
+		require.NoError(t, cmdErr, string(out))
+	}
 }

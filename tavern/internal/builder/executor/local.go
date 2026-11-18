@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"realm.pub"
 	"realm.pub/tavern/internal/logging"
 )
 
@@ -78,6 +79,13 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 	}
 	defer os.RemoveAll(tmpDir)
 
+	if err := realm.ExtractAgentSource(filepath.Join(tmpDir, "realm")); err != nil {
+		return nil, fmt.Errorf("failed to extract agent source: %w", err)
+	}
+	if err := os.Symlink(filepath.Join(tmpDir, "realm"), filepath.Join(buildDir, "realm")); err != nil {
+		return nil, fmt.Errorf("failed to link agent source: %w", err)
+	}
+
 	localLog.InfoContext(ctx, "starting local build", "task_id", spec.TaskID, "workspace", tmpDir)
 
 	// Execute all scripts in scripts/ in alphabetical order, mirroring Docker's entrypoint.
@@ -109,6 +117,9 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 	}
 
 	if err := cmd.Start(); err != nil {
+		if ctx.Err() != nil {
+			return &BuildResult{ExitCode: -1}, fmt.Errorf("failed to start build command: %w", err)
+		}
 		return nil, fmt.Errorf("failed to start build command: %w", err)
 	}
 
