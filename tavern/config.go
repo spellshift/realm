@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -29,8 +30,20 @@ import (
 
 var configLog = logging.For("app.config")
 
+// EnvResourcePrefix sets the prefix for GCP resource names to support multi-tenant deployments.
+var EnvResourcePrefix = EnvString{"TAVERN_RESOURCE_PREFIX", "tavern"}
+
+var resourcePrefixPattern = regexp.MustCompile(`^[a-zA-Z0-9]{6}$`)
+
+func validateResourcePrefix(prefix string) error {
+	if !resourcePrefixPattern.MatchString(prefix) {
+		return fmt.Errorf("%s must be 6 alphanumeric characters", EnvResourcePrefix.Key)
+	}
+	return nil
+}
+
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
-var GlobalInstanceID = fmt.Sprintf("tavern-%s", namegen.New())
+var GlobalInstanceID = fmt.Sprintf("%s-%s", EnvResourcePrefix.String(), namegen.New())
 
 var (
 	// EnvEnableTestData if set will populate the database with test data.
@@ -265,7 +278,11 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 		)
 	}
 
-	return mux.New(mux.WithPubSubClient(client), mux.WithSubscriberBufferSize(subBufferSize))
+	return mux.New(
+		mux.WithResourcePrefix(EnvResourcePrefix.String()),
+		mux.WithPubSubClient(client),
+		mux.WithSubscriberBufferSize(subBufferSize),
+	)
 }
 
 // NewShellMuxes configures two stream.Mux instances for shell i/o.
