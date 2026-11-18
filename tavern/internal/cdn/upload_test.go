@@ -15,10 +15,10 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 
+	"crypto/sha1"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
 )
 
 // TestUpload asserts that the upload handler exhibits expected behavior.
@@ -42,7 +42,7 @@ func TestUpload(t *testing.T) {
 			assert.Equal(t, id, a.ID)
 			assert.Equal(t, "NewUploadTestAsset", a.Name)
 			assert.Equal(t, len(expectedContent), a.Size)
-			assert.Equal(t, fmt.Sprintf("%x", sha3.Sum256(expectedContent)), a.Hash)
+			assert.Equal(t, fmt.Sprintf("%x", sha1.Sum(expectedContent)), a.Hash)
 			assert.Equal(t, expectedContent, a.Content)
 		},
 	))
@@ -58,7 +58,7 @@ func TestUpload(t *testing.T) {
 			assert.Equal(t, existingAsset.ID, a.ID)
 			assert.Equal(t, existingAsset.Name, a.Name)
 			assert.Equal(t, len(newExpectedContent), a.Size)
-			assert.Equal(t, fmt.Sprintf("%x", sha3.Sum256(newExpectedContent)), a.Hash)
+			assert.Equal(t, fmt.Sprintf("%x", sha1.Sum(newExpectedContent)), a.Hash)
 			assert.Equal(t, newExpectedContent, a.Content)
 		},
 	))

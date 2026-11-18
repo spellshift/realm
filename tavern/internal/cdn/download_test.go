@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"crypto/sha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/crypto/sha3"
 	"realm.pub/tavern/internal/cdn"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
@@ -86,7 +86,7 @@ func TestDownload(t *testing.T) {
 		assert.Equal(t, http.StatusOK, result.StatusCode)
 		assert.Equal(t, largeContent, body)
 
-		hash := fmt.Sprintf("%x", sha3.Sum256(body))
+		hash := fmt.Sprintf("%x", sha1.Sum(body))
 		assert.Equal(t, hash, result.Header.Get(cdn.HeaderEtag))
 	})
 }
@@ -110,7 +110,7 @@ func newDownloadTest(graph *ent.Client, req *http.Request, checks ...func(t *tes
 		// If successful, ensure Etag was properly set and run checks on the file
 		if result.StatusCode == http.StatusOK {
 			// Ensure the ETag was properly set by the server on successful requests
-			hash := fmt.Sprintf("%x", sha3.Sum256(body))
+			hash := fmt.Sprintf("%x", sha1.Sum(body))
 			assert.Equal(t, hash, result.Header.Get(cdn.HeaderEtag))
 
 			// Run Checks

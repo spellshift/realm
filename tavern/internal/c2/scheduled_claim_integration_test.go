@@ -60,6 +60,7 @@ func TestScheduledFetchAssetUsesQuestSnapshot(t *testing.T) {
 	headers, err := stream.Header()
 	require.NoError(t, err)
 	require.Equal(t, []string{"14"}, headers.Get("file-size"))
+	require.Equal(t, []string{source.Hash}, headers.Get("sha1-checksum"))
 
 	missing, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
 		Name: "unrelated.txt", Context: &c2pb.FetchAssetRequest_TaskContext{

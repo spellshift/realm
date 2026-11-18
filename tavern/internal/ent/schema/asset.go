@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/crypto/sha3"
+	"crypto/sha1"
 	"realm.pub/tavern/internal/ent/hook"
 
 	"entgo.io/contrib/entgql"
@@ -42,7 +42,7 @@ func (Asset) Fields() []ent.Field {
 			Comment("The size of the asset in bytes"),
 		field.String("hash").
 			MaxLen(100).
-			Comment("A SHA3-256 digest of the content field"),
+			Comment("A SHA1 digest of the content field"),
 		field.Bytes("content").
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGBLOB", // Override MySQL, improve length maximum
@@ -130,7 +130,7 @@ func HookDeriveAssetInfo() ent.Hook {
 			f.SetSize(len(content))
 
 			// Set the new hash
-			f.SetHash(fmt.Sprintf("%x", sha3.Sum256(content)))
+			f.SetHash(fmt.Sprintf("%x", sha1.Sum(content)))
 
 			return next.Mutate(ctx, m)
 		})

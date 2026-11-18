@@ -34,7 +34,7 @@ type HostFile struct {
 	Permissions string `json:"permissions,omitempty"`
 	// The size of the file in bytes
 	Size uint64 `json:"size,omitempty"`
-	// A SHA3-256 digest of the content field
+	// A SHA1 digest of the content field
 	Hash string `json:"hash,omitempty"`
 	// The content of the file
 	Content []byte `json:"content,omitempty"`

@@ -35,7 +35,7 @@ type Tome struct {
 	Tactic tome.Tactic `json:"tactic,omitempty"`
 	// JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
 	ParamDefs string `json:"param_defs,omitempty"`
-	// A SHA3 digest of the eldritch field
+	// A SHA1 digest of the eldritch field
 	Hash string `json:"hash,omitempty"`
 	// Eldritch script that will be executed when the tome is run
 	Eldritch string `json:"eldritch,omitempty"`

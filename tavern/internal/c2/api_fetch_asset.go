@@ -2,10 +2,10 @@ package c2
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 
-	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -71,7 +71,7 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 					return status.Errorf(codes.Internal, "failed to read quest bundle: %v", err)
 				}
 				bundleID = bundle.ID
-				checksum = fmt.Sprintf("%x", sha3.Sum256(content))
+				checksum = fmt.Sprintf("%x", sha1.Sum(content))
 			}
 		}
 	}
@@ -90,7 +90,7 @@ func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchA
 
 	// Set Header Metadata
 	stream.SetHeader(metadata.Pairs(
-		"sha3-256-checksum", checksum,
+		"sha1-checksum", checksum,
 		"file-size", fmt.Sprintf("%d", len(content)),
 	))
 
