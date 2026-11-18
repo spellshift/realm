@@ -2,6 +2,7 @@ package mux
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -201,6 +202,18 @@ func TestWithSubscriberBufferSize(t *testing.T) {
 	expected := 12345
 	m := New(WithSubscriberBufferSize(expected))
 	assert.Equal(t, expected, m.subs.bufferSize)
+}
+
+func TestWithResourcePrefix(t *testing.T) {
+	mUnset := New()
+	assert.Equal(t, "PORTAL_IN_42", mUnset.TopicIn(42))
+	assert.Equal(t, "PORTAL_OUT_42", mUnset.TopicOut(42))
+	assert.True(t, strings.HasPrefix(mUnset.SubName(mUnset.TopicIn(42)), "PORTAL_IN_42_SUB_"))
+
+	mCustom := New(WithResourcePrefix("abcxyz"))
+	assert.Equal(t, "abcxyz-PORTAL_IN_42", mCustom.TopicIn(42))
+	assert.Equal(t, "abcxyz-PORTAL_OUT_42", mCustom.TopicOut(42))
+	assert.True(t, strings.HasPrefix(mCustom.SubName(mCustom.TopicIn(42)), "abcxyz-PORTAL_IN_42_SUB_"))
 }
 
 func TestMux_CreatePortal_ShellTask(t *testing.T) {

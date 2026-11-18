@@ -354,6 +354,9 @@ func (srv *Server) Close() error {
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
 func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
+	if err := validateResourcePrefix(EnvResourcePrefix.String()); err != nil {
+		return nil, err
+	}
 	tokens, err := parseBuilderEnrollmentTokens(EnvBuilderEnrollmentTokens.String())
 	if err != nil {
 		return nil, err
@@ -510,9 +513,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// GCP Cloud Scheduler: fires every minute (minimum supported granularity).
 	// If the job is already scheduled (e.g. from a previous startup), the
 	// scheduler will return an error which we log and ignore.
-	startupLog.InfoContext(ctx, "scheduling host-lost-poll job", "schedule", hostCheckSchedule)
+	hostLostJobName := fmt.Sprintf("%s-host-lost-poll", EnvResourcePrefix.String())
+	startupLog.InfoContext(ctx, "scheduling host-lost-poll job", "job_name", hostLostJobName, "schedule", hostCheckSchedule)
 	if err := sched.Schedule(ctx, scheduler.Job{
-		Name:     "host-lost-poll",
+		Name:     hostLostJobName,
 		Schedule: hostCheckSchedule,
 		HTTPTarget: scheduler.HTTPTarget{
 			URL:     hostCheckURL,
@@ -521,14 +525,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 	}); err != nil {
 		if errors.Is(err, scheduler.ErrJobExists) {
-			startupLog.InfoContext(ctx, "host-lost-poll job already scheduled, skipping")
+			startupLog.InfoContext(ctx, "host-lost-poll job already scheduled, skipping", "job_name", hostLostJobName)
 		} else {
 			client.Close()
 			sched.Close()
 			return nil, fmt.Errorf("failed to schedule host-lost check (schedule=%q): %w", hostCheckSchedule, err)
 		}
 	} else {
-		startupLog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "schedule", hostCheckSchedule)
+		startupLog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "job_name", hostLostJobName, "schedule", hostCheckSchedule)
 	}
 
 	// GraphQL Handler (shared with MCP)
@@ -802,11 +806,12 @@ func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, op
 
 func newSecretsManager() (secrets.SecretsManager, error) {
 	if EnvGCPProjectID.String() == "" && EnvSecretsManagerPath.String() == "" {
-		startupLog.Warn("no configuration provided for secret manager path, using a potentially insecure default", "path", "/tmp/tavern-secrets")
-		return secrets.NewDebugFileSecrets("/tmp/tavern-secrets")
+		defaultPath := fmt.Sprintf("/tmp/%s-secrets", EnvResourcePrefix.String())
+		startupLog.Warn("no configuration provided for secret manager path, using a potentially insecure default", "path", defaultPath)
+		return secrets.NewDebugFileSecrets(defaultPath)
 	}
 	if EnvSecretsManagerPath.String() == "" {
-		return secrets.NewGcp(EnvGCPProjectID.String())
+		return secrets.NewGcp(EnvGCPProjectID.String(), EnvResourcePrefix.String())
 	}
 
 	return secrets.NewDebugFileSecrets(EnvSecretsManagerPath.String())
