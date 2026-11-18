@@ -27,12 +27,16 @@ func TestLocalExecutor_ImplementsInterface(t *testing.T) {
 
 func TestLocalExecutor_RewritesRecipePathIntoPrivateWorkspace(t *testing.T) {
 	spec := executor.BuildSpec{
-		SetupScript:     "mkdir -p /tmp/realm-build/realm",
-		PreBuildScript:  "test -d /tmp/realm-build/realm",
+		SetupScript:     "mkdir -p /tmp/realm-build/realm && test \"/tmp/realm-build-custom/foo\" = '/tmp/realm-build-custom/foo' && test \"/mnt/tomes-extra/bar\" = '/mnt/tomes-extra/bar'",
+		PreBuildScript:  "test -d /tmp/realm-build/realm && test -d /mnt/tomes",
 		BuildScript:     "printf 'binary' > /tmp/realm-build/realm/imix",
-		PostBuildScript: "test \"$ARTIFACT_PATH\" = /tmp/realm-build/realm/imix && test -s \"$ARTIFACT_PATH\"",
+		PostBuildScript: "test \"$ARTIFACT_PATH\" = /tmp/realm-build/realm/imix && test -s \"$ARTIFACT_PATH\" && test \"$CUSTOM_BUILD_DIR\" = /tmp/realm-build-custom && test \"$CUSTOM_TOMES_DIR\" = /mnt/tomes-extra",
 		ArtifactPath:    "/tmp/realm-build/realm/imix",
-		Env:             []string{"ARTIFACT_PATH=/tmp/realm-build/realm/imix"},
+		Env: []string{
+			"ARTIFACT_PATH=/tmp/realm-build/realm/imix",
+			"CUSTOM_BUILD_DIR=/tmp/realm-build-custom",
+			"CUSTOM_TOMES_DIR=/mnt/tomes-extra",
+		},
 	}
 	outputCh := make(chan string, 10)
 	errorCh := make(chan string, 10)

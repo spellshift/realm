@@ -63,8 +63,8 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 	)
 	localTomesDir := filepath.Join(buildDir, "tomes")
 	replace := func(s string) string {
-		s = strings.ReplaceAll(s, recipeBuildDir, buildDir)
-		return strings.ReplaceAll(s, recipeTomesDir, localTomesDir)
+		s = replacePathPrefix(s, recipeBuildDir, buildDir)
+		return replacePathPrefix(s, recipeTomesDir, localTomesDir)
 	}
 	spec.SetupScript = replace(spec.SetupScript)
 	spec.PreBuildScript = replace(spec.PreBuildScript)
@@ -227,4 +227,33 @@ func extractLocalArtifact(workspaceDir, artifactPath string) ([]byte, string, er
 	}
 
 	return data, filepath.Base(resolvedPath), nil
+}
+
+func isPathBoundary(b byte) bool {
+	switch b {
+	case '/', ' ', '\t', '\n', '\r', '\'', '"', '`', ';', '&', '|', ':', ')':
+		return true
+	default:
+		return false
+	}
+}
+
+func replacePathPrefix(s, oldPath, newPath string) string {
+	var b strings.Builder
+	for {
+		idx := strings.Index(s, oldPath)
+		if idx < 0 {
+			b.WriteString(s)
+			return b.String()
+		}
+		after := idx + len(oldPath)
+		if after == len(s) || isPathBoundary(s[after]) {
+			b.WriteString(s[:idx])
+			b.WriteString(newPath)
+			s = s[after:]
+		} else {
+			b.WriteString(s[:after])
+			s = s[after:]
+		}
+	}
 }
