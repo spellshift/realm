@@ -43,6 +43,15 @@ use windows_sys::Win32::System::Threading::{
 use crate::memguard::MemGuard;
 
 pub const MIN_ENCRYPT_INTERVAL_SECS: f64 = 10.0;
+// Hot stack window kept plaintext around each suspended thread's captured Rsp.
+// UNSAFE INVARIANT: when an access violation fires, the kernel dispatches it to
+// KiUserExceptionDispatcher on the *faulting* thread, which builds its exception
+// frame on that thread's own stack and walks the VEH chain. If the pages at/near
+// Rsp (or the VEH's own working set) were encrypted/NOACCESS, the dispatcher
+// itself would fault and the process would die before our handler runs. The
+// 16-page window (+-64 KB) covers the dispatcher frame plus the first handler
+// frames so the VEH can execute at all. Final numeric validation of the window
+// size is deferred to Phase 4 on the Windows host.
 const RSP_HOT_WINDOW_PAGES: usize = 16;
 const DORMANCY_MAX_ATTEMPTS: usize = 5;
 const DORMANCY_BACKOFF_MS: u64 = 5;
@@ -1271,6 +1280,9 @@ fn emit_wake(_pages: usize, _resumed: usize) {}
 mod tests {
     use super::*;
     use std::time::Duration;
+    use windows_sys::Win32::System::Memory::{
+        MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE, VirtualAlloc, VirtualFree,
+    };
 
     #[test]
     fn windows_dormancy_cycle() {
@@ -1305,5 +1317,80 @@ mod tests {
         );
 
         parked.join().expect("parked thread joined");
+    }
+
+    // VEH decrypt-on-fault recovery: simulate a watchdog crash mid-bulk-decrypt
+    // (leaving pages NOACCESS+encrypted), then touch an encrypted page from this
+    // thread. The access violation must be handled by the VEH, which lazily
+    // decrypts the page so execution continues. The remaining encrypted pages
+    // must then still be recoverable via a normal bulk decrypt, and subsequent
+    // encrypt/decrypt cycles must keep working.
+    #[test]
+    fn windows_veh_fault_recovery() {
+        // Serialize with the other memguard tests which also own the singleton.
+        let _g = crate::memguard::TEST_LOCK.lock().unwrap();
+
+        let mut guard = MemGuard::new().expect("memguard init");
+
+        // Allocate a private RW page we can later encrypt and fault on.
+        let buf = unsafe {
+            VirtualAlloc(
+                core::ptr::null(),
+                PAGE_SIZE,
+                MEM_COMMIT | MEM_RESERVE,
+                PAGE_READWRITE,
+            ) as *mut u8
+        };
+        assert!(!buf.is_null(), "VirtualAlloc failed");
+
+        let mut pattern = [0u8; PAGE_SIZE];
+        for (i, b) in pattern.iter_mut().enumerate() {
+            *b = (i as u8).wrapping_add(1);
+        }
+        unsafe {
+            core::ptr::copy_nonoverlapping(pattern.as_ptr(), buf, PAGE_SIZE);
+        }
+
+        // Encrypt the whole process (this page included).
+        assert!(guard.encrypt(), "encrypt failed");
+        assert!(
+            guard.encrypted_count() > 0,
+            "encrypt should have produced encrypted pages"
+        );
+
+        // Simulate a watchdog crash mid-bulk-decrypt: decrypt nothing, leaving
+        // every page (including `buf`) NOACCESS + encrypted. The VEH is the only
+        // thing that can recover `buf` now.
+        crate::memguard::debug_simulate_crash_partial_decrypt(0);
+
+        // Touch the encrypted page. The access violation is handled by the VEH,
+        // which lazily decrypts the page so the read re-executes on plaintext.
+        // Without the VEH this would trip the unhandled-exception filter.
+        let read = unsafe { core::ptr::read_volatile(buf) };
+        assert_eq!(read, pattern[0], "VEH should have decrypted the page");
+
+        // The rest of the encrypted pages must still be recoverable via a normal
+        // bulk decrypt. The VEH-decrypted page is claimed and skipped, so it is
+        // never double-XOR'd back into ciphertext.
+        assert!(guard.decrypt(), "decrypt after VEH recovery failed");
+        assert_eq!(
+            guard.encrypted_count(),
+            0,
+            "all pages should be plaintext after decrypt"
+        );
+
+        // Subsequent normal cycles must still work end to end.
+        assert!(guard.encrypt(), "second encrypt failed");
+        assert!(guard.decrypt(), "second decrypt failed");
+        assert_eq!(guard.encrypted_count(), 0, "cycle should end decrypted");
+
+        unsafe {
+            let mut dec = [0u8; PAGE_SIZE];
+            core::ptr::copy_nonoverlapping(buf, dec.as_mut_ptr(), PAGE_SIZE);
+            for i in 0..PAGE_SIZE {
+                assert_eq!(dec[i], pattern[i], "page not restored (idx {i})");
+            }
+            VirtualFree(buf as *mut c_void, 0, MEM_RELEASE);
+        }
     }
 }

@@ -72,6 +72,7 @@ windows-sys = { workspace = true, features = [
     "Win32_System_Diagnostics_Debug",
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_Foundation",
+    "Win32_System_Kernel",
 ] }
 
 [build-dependencies]

@@ -11,6 +11,18 @@ mod engine;
 #[cfg(all(windows, feature = "mem-obfuscation"))]
 pub use engine::MemGuard;
 
+// QA / Phase-4 test hook: simulate a watchdog crash mid-decrypt so the VEH path
+// can be exercised deliberately. Only present in test/print_debug builds.
+// `allow(unused_imports)` is intentional: in a non-test print_debug build this
+// export is deliberately available for Phase-4 QA but not referenced by imix.
+#[cfg(all(
+    windows,
+    feature = "mem-obfuscation",
+    any(test, feature = "print_debug")
+))]
+#[allow(unused_imports)]
+pub use engine::debug_simulate_crash_partial_decrypt;
+
 // The watchdog drives the encrypt/decrypt dormancy cycle from a dedicated
 // `std::thread`. It is only built on Windows with the feature enabled; every
 // other target gets inert fallbacks so `sleep_until_next_cycle` compiles and

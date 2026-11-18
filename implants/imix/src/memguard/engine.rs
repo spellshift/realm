@@ -1,9 +1,15 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use core::ffi::c_void;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 
-use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
+use windows_sys::Win32::Foundation::{
+    CloseHandle, EXCEPTION_ACCESS_VIOLATION, INVALID_HANDLE_VALUE,
+};
+use windows_sys::Win32::System::Diagnostics::Debug::{
+    AddVectoredExceptionHandler, EXCEPTION_CONTINUE_EXECUTION, EXCEPTION_CONTINUE_SEARCH,
+    EXCEPTION_POINTERS, RemoveVectoredExceptionHandler,
+};
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, TH32CS_SNAPTHREAD, THREADENTRY32, Thread32First, Thread32Next,
 };
@@ -26,6 +32,22 @@ const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
 // Process-wide singleton guard: only one MemGuard may own an encrypted state
 // region at a time, so instances never cross-encrypt each other's bookkeeping.
 static LIVE: AtomicBool = AtomicBool::new(false);
+
+// Process-wide pointer to the live engine state region. The VEH handler loads
+// this atomically; it is null whenever no state region exists (no MemGuard is
+// alive, or the region was freed on a clean fully-decrypted drop), in which case
+// the handler returns CONTINUE_SEARCH immediately. This is how the handler
+// reaches the encrypted-page list and the re-entrancy flag without touching TLS
+// or the heap.
+static STATE: AtomicPtr<State> = AtomicPtr::new(core::ptr::null_mut());
+
+// VEH handle returned by AddVectoredExceptionHandler, retained for best-effort
+// removal on a clean drop.
+static VEH_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+
+// Ensures AddVectoredExceptionHandler is invoked at most once per process (the
+// watchdog and the engine may each attempt registration).
+static VEH_REGISTERED: AtomicBool = AtomicBool::new(false);
 
 type NtQuerySystemInformationFn = extern "system" fn(u32, *mut c_void, u32, *mut u32) -> i32;
 type NtQueryInformationThreadFn =
@@ -50,6 +72,11 @@ struct SkipRange {
 struct PageEntry {
     base: *mut u8,
     orig_protect: u32,
+    // Set by the VEH when it lazily decrypts this page on a fault. The watchdog
+    // bulk-decrypt must skip claimed entries so a VEH-decrypted page is never
+    // double-XOR'd back into ciphertext. Kept as a separate marker (not a base
+    // null-out) so the sorted-by-base list stays binary-searchable.
+    claimed: u8,
 }
 
 #[repr(C)]
@@ -73,6 +100,12 @@ struct State {
     skip_count: usize,
     skip_failed: bool,
     decrypt_cursor: usize,
+    // Re-entrancy guard for the VEH handler. Lives in the unencrypted state
+    // region so the handler can take it without touching TLS/heap. Only one VEH
+    // claim may be in flight process-wide: a nested fault during the handler, or
+    // a concurrent fault on another thread, sees this set and returns
+    // CONTINUE_SEARCH rather than recursing.
+    reentrancy: core::sync::atomic::AtomicBool,
     entries: *mut PageEntry,
     #[allow(dead_code)]
     nt_query_system_information: NtQuerySystemInformationFn,
@@ -183,6 +216,7 @@ impl MemGuard {
                     skip_count: skip_static_count,
                     skip_failed: false,
                     decrypt_cursor: 0,
+                    reentrancy: core::sync::atomic::AtomicBool::new(false),
                     entries,
                     nt_query_system_information,
                     nt_query_information_thread,
@@ -198,9 +232,26 @@ impl MemGuard {
             s.skip_static_count = s.skip_count;
         }
 
-        Some(MemGuard {
-            state: region_base as *mut State,
-        })
+        // Publish the state region and register the VEH safety net exactly once
+        // per process. STATE is set before registration so a fault that occurs
+        // during a later phase of init can already be serviced.
+        let state_ptr = region_base as *mut State;
+        unsafe {
+            STATE.store(state_ptr, Ordering::Release);
+            if !register_veh() {
+                // VEH registration failed: release the live guard and free the
+                // region so we do not leave a dangling STATE pointer behind.
+                let s = &mut *state_ptr;
+                if s.count == 0 {
+                    VirtualFree(s.region_base as *mut c_void, 0, MEM_RELEASE);
+                }
+                STATE.store(core::ptr::null_mut(), Ordering::Release);
+            } else {
+                return Some(MemGuard { state: state_ptr });
+            }
+        }
+        LIVE.store(false, Ordering::Release);
+        None
     }
 
     pub fn encrypt(&mut self) -> bool {
@@ -265,6 +316,11 @@ impl Drop for MemGuard {
                 decrypt_state(self.state);
             }
             if s.count == 0 {
+                // Fully decrypted: this region is no longer needed as a VEH
+                // consultation target. Clear the global pointer and best-effort
+                // unregister the VEH so a later re-init can re-register cleanly.
+                STATE.store(core::ptr::null_mut(), Ordering::Release);
+                remove_veh();
                 VirtualFree(s.region_base as *mut c_void, 0, MEM_RELEASE);
                 LIVE.store(false, Ordering::Release);
             }
@@ -518,6 +574,7 @@ unsafe fn encrypt_state(state: *mut State) -> bool {
                     let e = &mut *entries.add(idx);
                     e.base = page;
                     e.orig_protect = protect;
+                    e.claimed = 0;
                     s.count += 1;
                 } else {
                     // Protection failed: revert to plaintext and leave the page RW
@@ -547,6 +604,14 @@ unsafe fn decrypt_state(state: *mut State) -> bool {
     while i < n {
         let e = &*entries.add(i);
         let page = e.base;
+        // The VEH may have already lazily decrypted this page on a fault
+        // (claimed). Never double-XOR a plaintext page back into ciphertext:
+        // skip it and advance the cursor past it.
+        if e.claimed != 0 {
+            s.decrypt_cursor = i + 1;
+            i += 1;
+            continue;
+        }
         // The page is PAGE_NOACCESS; make it writable before mutating it.
         let mut old = 0u32;
         if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_READWRITE, &mut old) == 0 {
@@ -569,6 +634,223 @@ unsafe fn decrypt_state(state: *mut State) -> bool {
     s.decrypt_cursor = 0;
     s.count = 0;
     true
+}
+
+// ---------------------------------------------------------------------------
+// VEH decrypt-on-fault safety net.
+//
+// Registered once per process via AddVectoredExceptionHandler(1, handler) at the
+// first successful MemGuard::new(). It is the tail-risk recovery path: if the
+// watchdog dies mid-encrypt/decrypt (or foreign/injected code touches an
+// encrypted page during the sleep window), the next fault on an encrypted page
+// is lazily decrypted here so the process survives instead of tripping the
+// unhandled-exception filter.
+//
+// HARD handler constraints (no allocation, no locks, no TLS, no panics,
+// no loader/format/log): the handler works only over the unencrypted state
+// region reached through the module-level `STATE` atomic pointer.
+// ---------------------------------------------------------------------------
+
+const VEH_ACCESS_VIOLATION: i32 = EXCEPTION_ACCESS_VIOLATION;
+const VEH_CONTINUE_EXECUTION: i32 = EXCEPTION_CONTINUE_EXECUTION;
+const VEH_CONTINUE_SEARCH: i32 = EXCEPTION_CONTINUE_SEARCH;
+
+unsafe extern "system" fn veh_handler(exception_info: *mut EXCEPTION_POINTERS) -> i32 {
+    // Everything below is raw pointer work over the unencrypted state region;
+    // no std/heap/TLS/locking is touched.
+    if exception_info.is_null() {
+        return VEH_CONTINUE_SEARCH;
+    }
+    let record = (*exception_info).ExceptionRecord;
+    if record.is_null() {
+        return VEH_CONTINUE_SEARCH;
+    }
+    // Only access violations are ours to consider.
+    if (*record).ExceptionCode != VEH_ACCESS_VIOLATION {
+        return VEH_CONTINUE_SEARCH;
+    }
+    // ExceptionInformation[1] is the faulting virtual address for an AV.
+    let info = (*record).ExceptionInformation.as_ptr();
+    let addr = *info.add(1);
+    let state = STATE.load(Ordering::Acquire);
+    if state.is_null() {
+        return VEH_CONTINUE_SEARCH;
+    }
+    if decrypt_page_for_fault(state, addr as *const u8) {
+        VEH_CONTINUE_EXECUTION
+    } else {
+        VEH_CONTINUE_SEARCH
+    }
+}
+
+// Re-entrancy-guarded decrypt of a single faulting page. Returns true iff the
+// page was ours and has been decrypted (caller should CONTINUE_EXECUTION).
+unsafe fn decrypt_page_for_fault(state: *mut State, addr: *const u8) -> bool {
+    // Re-entrancy guard lives in the unencrypted state region. A nested fault
+    // during this handler (e.g. the decrypt touching a still-protected page) or
+    // a concurrent fault on another thread sees the flag already set and bails
+    // so we never recurse into the VEH.
+    if (*state).reentrancy.swap(true, Ordering::AcqRel) {
+        return false;
+    }
+    let res = decrypt_page_for_fault_inner(state, addr);
+    (*state).reentrancy.store(false, Ordering::Release);
+    res
+}
+
+unsafe fn decrypt_page_for_fault_inner(state: *mut State, addr: *const u8) -> bool {
+    // UNSAFE INVARIANT — VEH/engine concurrency:
+    // The watchdog suspends all other threads during its bulk encrypt/decrypt
+    // pass, so the only time a faulting (i.e. *running*) thread can invoke this
+    // handler is when the watchdog is *not* mid-pass on that thread's pages —
+    // either the watchdog is asleep (between cycles), or it has crashed. The
+    // watchdog is therefore never a concurrent writer of `count`,
+    // `decrypt_cursor`, or `entries` while a faulting thread reads them. The
+    // only writer of those fields is the (suspended-relative) watchdog thread;
+    // the only readers are faulting threads, which by definition are not
+    // suspended. Plain `usize` reads of `count`/`decrypt_cursor` are hence safe
+    // without locks. The re-entrancy flag additionally serializes multiple
+    // concurrent faulting threads so the find+claim below is effectively atomic.
+    let cursor = (*state).decrypt_cursor;
+    let count = (*state).count;
+    if cursor >= count {
+        return false;
+    }
+    let page = (addr as usize & !(PAGE_SIZE - 1)) as *mut u8;
+    let entries = (*state).entries;
+    // Binary search the sorted-by-base encrypted tail [cursor..count). Entries
+    // before the cursor are already plaintext (not ours). The base is never
+    // nulled (kept sorted) so the search stays correct; claims are tracked
+    // separately via `claimed`.
+    let mut lo = cursor;
+    let mut hi = count;
+    let mut found = usize::MAX;
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        let e = entries.add(mid);
+        let b = (*e).base;
+        if b < page {
+            lo = mid + 1;
+        } else if b > page {
+            hi = mid;
+        } else {
+            found = mid;
+            break;
+        }
+    }
+    if found == usize::MAX {
+        return false; // not one of our encrypted pages
+    }
+    let e = entries.add(found);
+    if (*e).claimed != 0 {
+        return false; // already lazily decrypted by an earlier fault
+    }
+    // Claim in place (do NOT swap-remove; base stays so the list remains
+    // sorted). The watchdog bulk-decrypt skips claimed entries.
+    (*e).claimed = 1u8;
+    let orig_protect = (*e).orig_protect;
+    let mut old = 0u32;
+    if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_READWRITE, &mut old) == 0 {
+        // Could not make the page writable: un-claim and miss so the caller
+        // returns CONTINUE_SEARCH and the OS proceeds to the next handler.
+        (*e).claimed = 0;
+        return false;
+    }
+    // XOR back to plaintext (the key is its own inverse).
+    let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
+    for b in slice.iter_mut() {
+        *b ^= XOR_KEY;
+    }
+    // Restore the recorded original protection. A failure here still leaves the
+    // page as writable plaintext; the bulk decrypt will re-protect it on its
+    // next pass (it skips claimed entries), so success is returned — the
+    // faulting instruction can safely re-execute on plaintext.
+    if orig_protect != PAGE_READWRITE {
+        let mut old = 0u32;
+        VirtualProtect(page as *const c_void, PAGE_SIZE, orig_protect, &mut old);
+    }
+    true
+}
+
+unsafe fn register_veh() -> bool {
+    // Idempotent: only the first caller actually registers.
+    if VEH_REGISTERED.swap(true, Ordering::AcqRel) {
+        return true;
+    }
+    let handle = AddVectoredExceptionHandler(1, Some(veh_handler));
+    if handle.is_null() {
+        VEH_REGISTERED.store(false, Ordering::Release);
+        return false;
+    }
+    VEH_HANDLE.store(handle, Ordering::Release);
+    true
+}
+
+unsafe fn remove_veh() {
+    let handle = VEH_HANDLE.swap(core::ptr::null_mut(), Ordering::AcqRel);
+    if !handle.is_null() {
+        RemoveVectoredExceptionHandler(handle);
+    }
+    VEH_REGISTERED.store(false, Ordering::Release);
+}
+
+// ---------------------------------------------------------------------------
+// QA / Phase-4 test hook.
+//
+// `debug_simulate_crash_partial_decrypt(keep)` simulates a watchdog death in the
+// middle of the bulk decrypt: it decrypts only the first `keep` encrypted pages
+// (advancing `decrypt_cursor`) and deliberately leaves the remainder
+// NOACCESS+encrypted, exactly as a mid-decrypt watchdog crash would. Phase-4 QA
+// triggers this, then touches a still-encrypted page from a thread and asserts
+// the VEH lazily decrypts it and execution continues.
+// ---------------------------------------------------------------------------
+#[cfg(any(test, feature = "print_debug"))]
+#[allow(dead_code)]
+pub fn debug_simulate_crash_partial_decrypt(keep: usize) {
+    unsafe {
+        let state = STATE.load(Ordering::Acquire);
+        if state.is_null() {
+            return;
+        }
+        partial_decrypt_cursor(state, keep);
+    }
+}
+
+#[cfg(any(test, feature = "print_debug"))]
+#[allow(dead_code)]
+unsafe fn partial_decrypt_cursor(state: *mut State, keep: usize) {
+    let n = (*state).count;
+    let start = (*state).decrypt_cursor;
+    if start >= n {
+        return;
+    }
+    let limit = start + keep.min(n - start);
+    let entries = (*state).entries;
+    let mut i = start;
+    while i < limit {
+        let e = entries.add(i);
+        let page = (*e).base;
+        let orig = (*e).orig_protect;
+        let mut old = 0u32;
+        if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_READWRITE, &mut old) == 0 {
+            (*state).decrypt_cursor = i;
+            return;
+        }
+        let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
+        for b in slice.iter_mut() {
+            *b ^= XOR_KEY;
+        }
+        if orig != PAGE_READWRITE {
+            let mut old = 0u32;
+            if VirtualProtect(page as *const c_void, PAGE_SIZE, orig, &mut old) == 0 {
+                (*state).decrypt_cursor = i;
+                return;
+            }
+        }
+        i += 1;
+    }
+    // Leave [i..n) encrypted + NOACCESS, simulating the crash mid-pass.
+    (*state).decrypt_cursor = i;
 }
 
 #[cfg(all(windows, feature = "mem-obfuscation", test))]
