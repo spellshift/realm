@@ -26,6 +26,10 @@ import (
 
 var dockerLog = logging.For("builder.docker")
 
+// containerBuildDir is where recipes expect the build workspace; it matches
+// builder.DockerBuildDir, which this package cannot import.
+const containerBuildDir = "/tmp/realm-build"
+
 // DockerExecutor runs build tasks inside Docker containers.
 // It pulls the specified image, creates a container using the build script
 // as the entrypoint, and streams stdout/stderr over the provided channels.
@@ -79,7 +83,17 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	defer os.RemoveAll(tmpDir)
 
-	if err := realm.ExtractAgentSource(filepath.Join(tmpDir, "realm")); err != nil {
+	// Stage the agent source as <srcRoot>/realm-build/realm so it can be copied
+	// straight to /tmp/realm-build/realm in the container.
+	srcRoot, err := os.MkdirTemp("", "realm-src-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create agent source dir: %w", err)
+	}
+	defer os.RemoveAll(srcRoot)
+	if err := os.Chmod(srcRoot, 0o755); err != nil {
+		return nil, fmt.Errorf("failed to set agent source dir permissions: %w", err)
+	}
+	if err := realm.ExtractAgentSource(filepath.Join(srcRoot, path.Base(containerBuildDir), "realm")); err != nil {
 		return nil, fmt.Errorf("failed to extract agent source: %w", err)
 	}
 
@@ -97,7 +111,6 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	// The container entrypoint runs all scripts in /mnt/scripts in order.
 	entrypoint := strings.Join([]string{
 		"set -e",
-		"rm -rf /tmp/realm-build/realm && mkdir -p /tmp/realm-build && cp -r /mnt/realm /tmp/realm-build/realm",
 		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; . \"$s\"; done",
 	}, " && ")
 
@@ -134,6 +147,9 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	// Copy the prepared tmp dir contents into /mnt inside the container.
 	if err := d.copyDirToContainer(ctx, containerID, tmpDir, "/mnt"); err != nil {
 		return nil, fmt.Errorf("failed to copy build dir to container: %w", err)
+	}
+	if err := d.copyDirToContainer(ctx, containerID, srcRoot, path.Dir(containerBuildDir)); err != nil {
+		return nil, fmt.Errorf("failed to copy agent source to container: %w", err)
 	}
 
 	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
