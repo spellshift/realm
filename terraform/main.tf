@@ -26,8 +26,8 @@ variable "resource_prefix" {
   default     = "tavern"
 
   validation {
-    condition     = can(regex("^[a-z][a-z0-9]{5}$", var.resource_prefix)) && !startswith(var.resource_prefix, "goog")
-    error_message = "resource_prefix must be a 6-character string starting with a lowercase letter, containing only lowercase letters and digits, and not starting with 'goog'."
+    condition     = can(regex("^[a-zA-Z0-9]{6}$", var.resource_prefix))
+    error_message = "resource_prefix must be 6 alphanumeric characters."
   }
 }
 
