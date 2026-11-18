@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"realm.pub/tavern/internal/redirectors"
 	grpcRedirector "realm.pub/tavern/internal/redirectors/grpc"
 )
 
@@ -124,8 +125,11 @@ func TestRedirector_FullDuplexCall(t *testing.T) {
 	require.NoError(t, err)
 	defer upstreamConn.Close()
 
+	gate := redirectors.NewGate()
+	serverCtx, stop := context.WithCancel(redirectors.WithGate(context.Background(), gate))
+	defer stop()
 	go func() {
-		redirector.Redirect(context.Background(), addr, upstreamConn, nil)
+		redirector.Redirect(serverCtx, addr, upstreamConn, nil)
 	}()
 
 	// 3. Connect a client to the redirector, also using the raw codec.
@@ -157,6 +161,35 @@ func TestRedirector_FullDuplexCall(t *testing.T) {
 		require.NoError(t, proto.Unmarshal(respBytes, &resp))
 		require.Equal(t, body, resp.Payload.Body)
 	}
+	gate.SetEnabled(false)
+	// An already accepted stream remains usable after the toggle.
+	message, err := proto.Marshal(&grpc_testing.StreamingOutputCallRequest{Payload: &grpc_testing.Payload{Body: []byte("in-flight")}})
+	require.NoError(t, err)
+	require.NoError(t, stream.SendMsg(message))
+	var inFlight []byte
+	require.NoError(t, stream.RecvMsg(&inFlight))
+	var inFlightResponse grpc_testing.StreamingOutputCallResponse
+	require.NoError(t, proto.Unmarshal(inFlight, &inFlightResponse))
+	require.Equal(t, []byte("in-flight"), inFlightResponse.Payload.Body)
+
+	newStream, err := conn.NewStream(ctx, &grpc.StreamDesc{ServerStreams: true, ClientStreams: true}, "/grpc.testing.TestService/FullDuplexCall")
+	if err == nil {
+		err = newStream.SendMsg(message)
+	}
+	if err == nil {
+		err = newStream.RecvMsg(new([]byte))
+	}
+	require.Equal(t, codes.Unavailable, status.Code(err))
+	gate.SetEnabled(true)
+	resumed, err := conn.NewStream(ctx, &grpc.StreamDesc{ServerStreams: true, ClientStreams: true}, "/grpc.testing.TestService/FullDuplexCall")
+	require.NoError(t, err)
+	require.NoError(t, resumed.SendMsg(message))
+	var resumedBytes []byte
+	require.NoError(t, resumed.RecvMsg(&resumedBytes))
+	var resumedResponse grpc_testing.StreamingOutputCallResponse
+	require.NoError(t, proto.Unmarshal(resumedBytes, &resumedResponse))
+	require.Equal(t, []byte("in-flight"), resumedResponse.Payload.Body)
+	require.NoError(t, resumed.CloseSend())
 
 	require.NoError(t, stream.CloseSend())
 }

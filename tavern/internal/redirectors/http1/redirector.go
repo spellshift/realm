@@ -3,6 +3,7 @@ package http1
 import (
 	"context"
 	"crypto/tls"
+	"net"
 	"net/http"
 
 	"google.golang.org/grpc"
@@ -37,9 +38,10 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	})
 
 	srv := &http.Server{
-		Addr:      listenOn,
-		Handler:   closeConnectionMiddleware(mux),
-		TLSConfig: tlsConfig,
+		Addr:        listenOn,
+		Handler:     closeConnectionMiddleware(ingressGate(ctx, mux)),
+		BaseContext: func(net.Listener) context.Context { return ctx },
+		TLSConfig:   tlsConfig,
 	}
 	srv.SetKeepAlivesEnabled(false)
 
@@ -51,6 +53,16 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 
 	log.InfoContext(ctx, "started HTTP redirector", "listen_on", listenOn)
 	return srv.ListenAndServe()
+}
+
+func ingressGate(ctx context.Context, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !redirectors.Allowed(ctx) {
+			http.Error(w, "redirector disabled", http.StatusServiceUnavailable)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func closeConnectionMiddleware(next http.Handler) http.Handler {

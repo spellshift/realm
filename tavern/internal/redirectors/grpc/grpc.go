@@ -35,7 +35,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 
 	serverOpts := []grpc.ServerOption{
-		grpc.UnknownServiceHandler(r.handler(upstream)),
+		grpc.UnknownServiceHandler(r.handler(upstream, ctx)),
 		grpc.ForceServerCodec(encoding.GetCodec("raw")),
 	}
 	if tlsConfig != nil {
@@ -55,8 +55,11 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	return s.Serve(lis)
 }
 
-func (r *Redirector) handler(upstream *grpc.ClientConn) grpc.StreamHandler {
+func (r *Redirector) handler(upstream *grpc.ClientConn, gateContext ...context.Context) grpc.StreamHandler {
 	return func(srv any, ss grpc.ServerStream) error {
+		if len(gateContext) > 0 && !redirectors.Allowed(gateContext[0]) {
+			return status.Error(codes.Unavailable, "redirector disabled")
+		}
 		ctx, _, _ := logging.ExtractGRPCTrace(ss.Context())
 
 		fullMethodName, ok := grpc.MethodFromServerStream(ss)

@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -50,17 +51,25 @@ func NewRedirectorCheckinHandler(client *ent.Client, ca *x509.Certificate) http.
 			return
 		}
 		id := strings.TrimPrefix(cert.Subject.CommonName, "redirector-")
-		updated, err := client.Redirector.Update().Where(redirector.Identifier(id)).SetLastSeenAt(now).Save(r.Context())
+		row, err := client.Redirector.Query().Where(redirector.Identifier(id)).Only(r.Context())
+		if ent.IsNotFound(err) {
+			http.Error(w, "invalid credentials", http.StatusUnauthorized)
+			return
+		}
 		if err != nil {
 			redirectorAuthLog.ErrorContext(r.Context(), "redirector check-in failed", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		if updated != 1 {
-			http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		if err := client.Redirector.UpdateOneID(row.ID).SetLastSeenAt(now).Exec(r.Context()); err != nil {
+			redirectorAuthLog.ErrorContext(r.Context(), "redirector check-in failed", "error", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(struct {
+			Enabled bool `json:"enabled"`
+		}{row.Enabled})
 	}
 }
 

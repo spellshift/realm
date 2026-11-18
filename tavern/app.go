@@ -200,7 +200,12 @@ func newApp(ctx context.Context) (app *cli.App) {
 					if err != nil {
 						return err
 					}
-					go managed.RunCheckins(ctx, managementURL, identity)
+					gate := redirectors.NewGate()
+					if err := managed.RefreshGate(ctx, managementURL, identity, gate); err != nil {
+						startupLog.WarnContext(ctx, "initial redirector check-in failed; using default enabled state until check-in succeeds", "error", err)
+					}
+					ctx = redirectors.WithGate(ctx, gate)
+					go managed.RunCheckins(ctx, managementURL, identity, gate)
 				}
 
 				var tlsCfg *tls.Config

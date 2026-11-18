@@ -91,6 +91,9 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 		if !ok {
 			continue
 		}
+		if !redirectors.Allowed(ctx) {
+			continue
+		}
 
 		go r.handle(ctx, conn, src, echo, upstream)
 	}

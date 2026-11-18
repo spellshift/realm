@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/logging"
+	"realm.pub/tavern/internal/redirectors"
 )
 
 var log = logging.For("redirectors.managed")
@@ -308,36 +309,50 @@ func identityWaitError(ctx context.Context, timeout time.Duration) error {
 }
 
 func Checkin(ctx context.Context, upstream string, identity *Identity) error {
+	_, err := CheckinEnabled(ctx, upstream, identity)
+	return err
+}
+
+// CheckinEnabled returns the persisted control state after an authenticated check-in.
+func CheckinEnabled(ctx context.Context, upstream string, identity *Identity) (bool, error) {
 	cert, key, err := validate(identity)
 	if err != nil {
-		return err
+		return false, err
 	}
 	timestamp := time.Now().UTC().Format(time.RFC3339Nano)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(upstream, "/")+"/auth/redirector/checkin", nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 	req.Header.Set("X-Realm-Redirector-Cert", base64.StdEncoding.EncodeToString(cert.Raw))
 	req.Header.Set("X-Realm-Redirector-Timestamp", timestamp)
 	req.Header.Set("X-Realm-Redirector-Signature", base64.StdEncoding.EncodeToString(ed25519.Sign(key, []byte(timestamp))))
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("redirector check-in failed with HTTP %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("redirector check-in failed with HTTP %d", resp.StatusCode)
 	}
-	return nil
+	var state struct {
+		Enabled *bool `json:"enabled"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&state); err != nil {
+		return false, fmt.Errorf("redirector check-in state: %w", err)
+	}
+	if state.Enabled == nil {
+		return false, fmt.Errorf("redirector check-in state missing enabled field")
+	}
+	return *state.Enabled, nil
 }
 
-func RunCheckins(ctx context.Context, upstream string, identity *Identity) {
+func RunCheckins(ctx context.Context, upstream string, identity *Identity, gate *redirectors.Gate) {
 	check := func() {
-		if err := Checkin(ctx, upstream, identity); err != nil {
+		if err := RefreshGate(ctx, upstream, identity, gate); err != nil {
 			log.WarnContext(ctx, "redirector check-in failed", "error", err)
 		}
 	}
-	check()
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for {
@@ -348,4 +363,14 @@ func RunCheckins(ctx context.Context, upstream string, identity *Identity) {
 			check()
 		}
 	}
+}
+
+// RefreshGate changes ingress state only after a successful check-in.
+func RefreshGate(ctx context.Context, upstream string, identity *Identity, gate *redirectors.Gate) error {
+	enabled, err := CheckinEnabled(ctx, upstream, identity)
+	if err != nil {
+		return err
+	}
+	gate.SetEnabled(enabled)
+	return nil
 }

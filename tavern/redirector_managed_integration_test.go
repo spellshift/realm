@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/ent/enttest"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/redirectors/managed"
 )
 
@@ -70,6 +71,28 @@ func TestManagedRedirectorEnrollmentAndCheckins(t *testing.T) {
 	require.Len(t, records, 1)
 	require.NotNil(t, records[0].LastSeenAt)
 	require.WithinDuration(t, time.Now(), *records[0].LastSeenAt, 5*time.Second)
+	// The deployment state is persisted in Tavern and returned to every replica,
+	// including one that reloads its identity after a restart.
+	require.NoError(t, graph.Redirector.UpdateOneID(records[0].ID).SetEnabled(false).Exec(ctx))
+	enabled, err := managed.CheckinEnabled(ctx, server.URL, first)
+	require.NoError(t, err)
+	require.False(t, enabled)
+	restarted, err := store.Load(ctx)
+	require.NoError(t, err)
+	enabled, err = managed.CheckinEnabled(ctx, server.URL, restarted)
+	require.NoError(t, err)
+	require.False(t, enabled)
+	require.NoError(t, graph.Redirector.UpdateOneID(records[0].ID).SetEnabled(true).Exec(ctx))
+	enabled, err = managed.CheckinEnabled(ctx, server.URL, second)
+	require.NoError(t, err)
+	require.True(t, enabled)
+	gate := redirectors.NewGate()
+	require.NoError(t, graph.Redirector.UpdateOneID(records[0].ID).SetEnabled(false).Exec(ctx))
+	require.NoError(t, managed.RefreshGate(ctx, server.URL, first, gate))
+	require.False(t, gate.Enabled())
+	server.Close()
+	require.Error(t, managed.RefreshGate(ctx, server.URL, first, gate))
+	require.False(t, gate.Enabled(), "failed check-in must preserve last known state")
 	// Signed but stale timestamps and malformed proofs are rejected.
 	req := httptest.NewRequest(http.MethodPost, "/auth/redirector/checkin", nil)
 	certBlock, _ := pem.Decode([]byte(first.Certificate))

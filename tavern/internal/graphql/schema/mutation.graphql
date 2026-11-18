@@ -83,6 +83,7 @@ type Mutation {
     ###
     createBuilderEnrollmentToken: String! @requireRole(role: ADMIN)
 	createRedirectorEnrollmentToken: String! @requireRole(role: ADMIN)
+	setRedirectorEnabled(redirectorID: ID!, enabled: Boolean!): Boolean! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###

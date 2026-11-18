@@ -489,6 +489,7 @@ type ComplexityRoot struct {
 		MarkNotificationsAsRead         func(childComplexity int, notificationIDs []int) int
 		ResetUserAPIKey                 func(childComplexity int) int
 		RunHostAutogroup                func(childComplexity int, k *int) int
+		SetRedirectorEnabled            func(childComplexity int, redirectorID int, enabled bool) int
 		SubscribeToHost                 func(childComplexity int, hostID int) int
 		UnfavoriteHost                  func(childComplexity int, hostID int) int
 		UnsubscribeFromHost             func(childComplexity int, hostID int) int
@@ -3350,6 +3351,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RunHostAutogroup(childComplexity, args["k"].(*int)), true
+
+	case "Mutation.setRedirectorEnabled":
+		if e.ComplexityRoot.Mutation.SetRedirectorEnabled == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setRedirectorEnabled_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SetRedirectorEnabled(childComplexity, args["redirectorID"].(int), args["enabled"].(bool)), true
 
 	case "Mutation.subscribeToHost":
 		if e.ComplexityRoot.Mutation.SubscribeToHost == nil {
@@ -15542,6 +15555,7 @@ scalar Uint64
     ###
     createBuilderEnrollmentToken: String! @requireRole(role: ADMIN)
 	createRedirectorEnrollmentToken: String! @requireRole(role: ADMIN)
+	setRedirectorEnabled(redirectorID: ID!, enabled: Boolean!): Boolean! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###

@@ -64,6 +64,10 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 				continue
 			}
 		}
+		if !redirectors.Allowed(ctx) {
+			_ = conn.CloseWithError(0, "redirector disabled")
+			continue
+		}
 
 		go r.handleConnection(ctx, conn, upstream)
 	}
@@ -81,6 +85,11 @@ func (r *Redirector) handleConnection(ctx context.Context, conn *quic.Conn, upst
 		if err != nil {
 			// Connection closed or context cancelled
 			return
+		}
+		if !redirectors.Allowed(ctx) {
+			stream.CancelRead(0)
+			stream.CancelWrite(0)
+			continue
 		}
 
 		go func(stream *quic.Stream) {

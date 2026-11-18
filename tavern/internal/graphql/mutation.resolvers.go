@@ -792,6 +792,16 @@ func (r *mutationResolver) CreateRedirectorEnrollmentToken(ctx context.Context) 
 	return token, nil
 }
 
+// SetRedirectorEnabled is the resolver for the setRedirectorEnabled field.
+func (r *mutationResolver) SetRedirectorEnabled(ctx context.Context, redirectorID int, enabled bool) (bool, error) {
+	row, err := r.client.Redirector.UpdateOneID(redirectorID).SetEnabled(enabled).Save(ctx)
+	if err != nil {
+		return false, err
+	}
+	logging.Audit(auditCtx(ctx), "admin", "redirector.enabled_changed", "redirector enabled state changed", append(logging.TargetIntAttrs("redirector", row.ID, row.Identifier), "enabled", enabled)...)
+	return row.Enabled, nil
+}
+
 // DeleteBuilder is the resolver for the deleteBuilder field.
 func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (int, error) {
 	existing, _ := r.client.Builder.Get(ctx, builderID)
