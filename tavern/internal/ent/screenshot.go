@@ -28,7 +28,7 @@ type Screenshot struct {
 	Name string `json:"name,omitempty"`
 	// The size of the screenshot in bytes
 	Size uint64 `json:"size,omitempty"`
-	// A SHA3-256 digest of the content field
+	// A SHA1 digest of the content field
 	Hash string `json:"hash,omitempty"`
 	// The content of the screenshot
 	Content []byte `json:"content,omitempty"`

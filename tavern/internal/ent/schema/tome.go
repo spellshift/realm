@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"crypto/sha1"
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -11,7 +12,6 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"golang.org/x/crypto/sha3"
 	"realm.pub/tavern/internal/ent/hook"
 	"realm.pub/tavern/internal/ent/schema/validators"
 )
@@ -75,7 +75,7 @@ func (Tome) Fields() []ent.Field {
 			Annotations(
 				entgql.Skip(entgql.SkipAll),
 			).
-			Comment("A SHA3 digest of the eldritch field"),
+			Comment("A SHA1 digest of the eldritch field"),
 		field.String("eldritch").
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
@@ -156,7 +156,7 @@ func HookDeriveTomeInfo() ent.Hook {
 
 			// Set the new hash
 			eldritch, _ := t.Eldritch()
-			t.SetHash(fmt.Sprintf("%x", sha3.Sum256([]byte(eldritch))))
+			t.SetHash(fmt.Sprintf("%x", sha1.Sum([]byte(eldritch))))
 
 			return next.Mutate(ctx, m)
 		})

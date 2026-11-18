@@ -573,7 +573,7 @@ pub mod c2_client {
         /// The maximum size of these chunks is determined by the server.
         /// The server should reply with two headers:
         ///
-        /// * "sha3-256-checksum": A SHA3-256 digest of the entire file contents.
+        /// * "sha1-checksum": A SHA1 digest of the entire file contents.
         /// * "file-size": The number of bytes contained by the file.
         ///
         /// If no associated file can be found, a NotFound status error is returned.
