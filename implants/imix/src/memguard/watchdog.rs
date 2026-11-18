@@ -1284,6 +1284,16 @@ mod tests {
         MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE, VirtualAlloc, VirtualFree,
     };
 
+    // Allocate a private RW page (page-aligned) for fault-recovery tests.
+    unsafe fn alloc_page() -> *mut u8 {
+        VirtualAlloc(
+            core::ptr::null(),
+            PAGE_SIZE,
+            MEM_COMMIT | MEM_RESERVE,
+            PAGE_READWRITE,
+        ) as *mut u8
+    }
+
     #[test]
     fn windows_dormancy_cycle() {
         // Serialize with the engine's round-trip test which also creates the
@@ -1319,11 +1329,14 @@ mod tests {
         parked.join().expect("parked thread joined");
     }
 
-    // VEH decrypt-on-fault recovery: simulate a watchdog crash mid-bulk-decrypt
-    // (leaving pages NOACCESS+encrypted), then touch an encrypted page from this
-    // thread. The access violation must be handled by the VEH, which lazily
-    // decrypts the page so execution continues. The remaining encrypted pages
-    // must then still be recoverable via a normal bulk decrypt, and subsequent
+    // VEH decrypt-on-fault recovery. Simulate a watchdog crash mid-bulk-decrypt
+    // (leaving pages NOACCESS+encrypted), then spawn TWO dedicated threads that
+    // each touch a distinct encrypted page. Each access violation must be
+    // handled by the VEH, which lazily decrypts the page so the thread survives
+    // and reads plaintext. The two threads fault concurrently, proving (review
+    // fix #4) that different-thread faults are both admitted and recover — not
+    // serialized behind a global flag. The remaining encrypted pages must then
+    // still be recoverable via a normal bulk decrypt, and subsequent
     // encrypt/decrypt cycles must keep working.
     #[test]
     fn windows_veh_fault_recovery() {
@@ -1332,26 +1345,23 @@ mod tests {
 
         let mut guard = MemGuard::new().expect("memguard init");
 
-        // Allocate a private RW page we can later encrypt and fault on.
-        let buf = unsafe {
-            VirtualAlloc(
-                core::ptr::null(),
-                PAGE_SIZE,
-                MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
-            ) as *mut u8
-        };
-        assert!(!buf.is_null(), "VirtualAlloc failed");
+        // Two private RW pages to fault on (two distinct encrypted pages).
+        let buf_a = unsafe { alloc_page() };
+        let buf_b = unsafe { alloc_page() };
+        assert!(!buf_a.is_null() && !buf_b.is_null(), "VirtualAlloc failed");
 
-        let mut pattern = [0u8; PAGE_SIZE];
-        for (i, b) in pattern.iter_mut().enumerate() {
-            *b = (i as u8).wrapping_add(1);
+        let mut pattern_a = [0u8; PAGE_SIZE];
+        let mut pattern_b = [0u8; PAGE_SIZE];
+        for (i, (a, b)) in pattern_a.iter_mut().zip(pattern_b.iter_mut()).enumerate() {
+            *a = (i as u8).wrapping_add(1);
+            *b = (i as u8).wrapping_add(2);
         }
         unsafe {
-            core::ptr::copy_nonoverlapping(pattern.as_ptr(), buf, PAGE_SIZE);
+            core::ptr::copy_nonoverlapping(pattern_a.as_ptr(), buf_a, PAGE_SIZE);
+            core::ptr::copy_nonoverlapping(pattern_b.as_ptr(), buf_b, PAGE_SIZE);
         }
 
-        // Encrypt the whole process (this page included).
+        // Encrypt the whole process (these pages included).
         assert!(guard.encrypt(), "encrypt failed");
         assert!(
             guard.encrypted_count() > 0,
@@ -1359,19 +1369,35 @@ mod tests {
         );
 
         // Simulate a watchdog crash mid-bulk-decrypt: decrypt nothing, leaving
-        // every page (including `buf`) NOACCESS + encrypted. The VEH is the only
-        // thing that can recover `buf` now.
+        // every page (including buf_a/buf_b) NOACCESS + encrypted. The VEH is the
+        // only thing that can recover them now.
         crate::memguard::debug_simulate_crash_partial_decrypt(0);
 
-        // Touch the encrypted page. The access violation is handled by the VEH,
-        // which lazily decrypts the page so the read re-executes on plaintext.
-        // Without the VEH this would trip the unhandled-exception filter.
-        let read = unsafe { core::ptr::read_volatile(buf) };
-        assert_eq!(read, pattern[0], "VEH should have decrypted the page");
+        // Spawn two dedicated threads, each touching a distinct encrypted page.
+        // Raw pointers are not Send, so pass the page address as a usize and the
+        // expected byte by copy; the fault is lazily decrypted by the VEH and each
+        // thread must recover concurrently (different-thread faults are admitted
+        // by the tid-keyed recursion guard, not serialized behind a global flag).
+        let expected_a = pattern_a[0];
+        let expected_b = pattern_b[0];
+        let pa = buf_a as usize;
+        let pb = buf_b as usize;
+        let ta = std::thread::spawn(move || -> bool {
+            let r = unsafe { core::ptr::read_volatile(pa as *const u8) };
+            r == expected_a
+        });
+        let tb = std::thread::spawn(move || -> bool {
+            let r = unsafe { core::ptr::read_volatile(pb as *const u8) };
+            r == expected_b
+        });
+        let ra = ta.join().expect("thread a joined");
+        let rb = tb.join().expect("thread b joined");
+        assert!(ra, "VEH should have decrypted page A (thread a survived)");
+        assert!(rb, "VEH should have decrypted page B (thread b survived)");
 
         // The rest of the encrypted pages must still be recoverable via a normal
-        // bulk decrypt. The VEH-decrypted page is claimed and skipped, so it is
-        // never double-XOR'd back into ciphertext.
+        // bulk decrypt. The VEH-decrypted pages are recorded PG_PLAINTEXT and
+        // skipped, so they are never double-XOR'd back into ciphertext.
         assert!(guard.decrypt(), "decrypt after VEH recovery failed");
         assert_eq!(
             guard.encrypted_count(),
@@ -1385,12 +1411,16 @@ mod tests {
         assert_eq!(guard.encrypted_count(), 0, "cycle should end decrypted");
 
         unsafe {
-            let mut dec = [0u8; PAGE_SIZE];
-            core::ptr::copy_nonoverlapping(buf, dec.as_mut_ptr(), PAGE_SIZE);
+            let mut dec_a = [0u8; PAGE_SIZE];
+            let mut dec_b = [0u8; PAGE_SIZE];
+            core::ptr::copy_nonoverlapping(buf_a, dec_a.as_mut_ptr(), PAGE_SIZE);
+            core::ptr::copy_nonoverlapping(buf_b, dec_b.as_mut_ptr(), PAGE_SIZE);
             for i in 0..PAGE_SIZE {
-                assert_eq!(dec[i], pattern[i], "page not restored (idx {i})");
+                assert_eq!(dec_a[i], pattern_a[i], "page A not restored (idx {i})");
+                assert_eq!(dec_b[i], pattern_b[i], "page B not restored (idx {i})");
             }
-            VirtualFree(buf as *mut c_void, 0, MEM_RELEASE);
+            VirtualFree(buf_a as *mut c_void, 0, MEM_RELEASE);
+            VirtualFree(buf_b as *mut c_void, 0, MEM_RELEASE);
         }
     }
 }
