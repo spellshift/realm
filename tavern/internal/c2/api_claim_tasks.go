@@ -101,10 +101,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 				occurrence = minute
 			}
 		} else {
-			occurrence = sched.Next(now.Add(-time.Nanosecond))
-			if occurrence.Before(now) {
-				occurrence = sched.Next(now)
-			}
+			occurrence = sched.Next(now.Add(-time.Second))
 			if occurrence.After(cutoff) {
 				occurrence = time.Time{}
 			}
@@ -144,11 +141,21 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 	}
 	defer tx.Rollback()
 	client := tx.Client()
-	st, err := client.ScheduledTask.Query().Where(scheduledtask.ID(scheduledTaskID)).WithTome().Only(ctx)
+	st, err := client.ScheduledTask.Query().Where(
+		scheduledtask.ID(scheduledTaskID),
+		scheduledtask.Disabled(false),
+		scheduledtask.Or(
+			scheduledtask.Not(scheduledtask.HasScheduledHosts()),
+			scheduledtask.HasScheduledHostsWith(host.ID(hostID)),
+		),
+	).WithTome().Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	if st.Disabled || st.Edges.Tome == nil {
+	if st.Edges.Tome == nil {
 		return nil
 	}
 
@@ -494,25 +501,31 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	// ** Note: If one fails to update, we roll back the transaction and return the error
 	taskIDs := make([]int, 0, len(tasks))
 	for _, t := range tasks {
-		_, err := client.Task.UpdateOne(t).
+		updated, err := client.Task.Update().
+			Where(task.ID(t.ID), task.ClaimedAtIsNil()).
 			SetClaimedAt(now).
 			Save(ctx)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to update task %d: %w", t.ID, err))
 		}
-		taskIDs = append(taskIDs, t.ID)
+		if updated == 1 {
+			taskIDs = append(taskIDs, t.ID)
+		}
 	}
 
 	// Update all ClaimedAt timestamps to claim shell tasks
 	shellTaskIDs := make([]int, 0, len(shellTasks))
 	for _, t := range shellTasks {
-		_, err := client.ShellTask.UpdateOne(t).
+		updated, err := client.ShellTask.Update().
+			Where(shelltask.ID(t.ID), shelltask.ClaimedAtIsNil()).
 			SetClaimedAt(now).
 			Save(ctx)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to update shell task %d: %w", t.ID, err))
 		}
-		shellTaskIDs = append(shellTaskIDs, t.ID)
+		if updated == 1 {
+			shellTaskIDs = append(shellTaskIDs, t.ID)
+		}
 	}
 
 	// Commit the transaction

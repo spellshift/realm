@@ -401,3 +401,44 @@ func TestHandleTomeAutomation_ConcurrentCallbacks(t *testing.T) {
 	assert.Equal(t, 1, client.Quest.Query().CountX(ctx))
 	assert.Equal(t, len(beacons), client.Task.Query().CountX(ctx))
 }
+
+func TestScheduledCreationRechecksDisabledAndHostRestriction(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	allowedHost := client.Host.Create().SetIdentifier("allowed-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	otherHost := client.Host.Create().SetIdentifier("other-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetIdentifier("restricted-beacon").SetHost(otherHost).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	tome := client.Tome.Create().SetName("restricted-tome").SetDescription("test").
+		SetAuthor("test").SetEldritch("print('restricted')").SaveX(ctx)
+	st := client.ScheduledTask.Create().SetName("restricted-schedule").SetDescription("test").
+		SetTome(tome).AddScheduledHosts(allowedHost).SetRunOnSchedule("* * * * *").SaveX(ctx)
+	occurrence := time.Date(2023, 10, 27, 10, 1, 0, 0, time.UTC)
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, otherHost.ID, &occurrence))
+	require.Zero(t, client.Quest.Query().CountX(ctx))
+	client.ScheduledTask.UpdateOne(st).ClearScheduledHosts().SetDisabled(true).ExecX(ctx)
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, otherHost.ID, &occurrence))
+	require.Zero(t, client.Quest.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomationPreservesCronLookback(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("lookback-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetIdentifier("lookback-beacon").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	tome := client.Tome.Create().SetName("lookback-tome").SetDescription("test").
+		SetAuthor("test").SetEldritch("print('lookback')").SaveX(ctx)
+	client.ScheduledTask.Create().SetName("lookback-schedule").SetDescription("test").
+		SetTome(tome).SetRunOnSchedule("* * * * *").SaveX(ctx)
+	now := time.Date(2023, 10, 27, 10, 0, 0, 500_000_000, time.UTC)
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 0)
+	require.Equal(t, 1, client.Task.Query().CountX(ctx))
+	require.Equal(t, now.Truncate(time.Minute), client.Quest.Query().OnlyX(ctx).ScheduledOccurrenceAt)
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now.Add(2*time.Second), 0)
+	require.Equal(t, 1, client.Task.Query().CountX(ctx))
+}

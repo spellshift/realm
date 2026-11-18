@@ -5,15 +5,18 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
-	"strings"
 
 	"golang.org/x/crypto/sha3"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 )
+
+var ErrFileNotFound = errors.New("bundle file not found")
 
 func Create(ctx context.Context, client *ent.Client, bundleAssets []*ent.Asset) (*ent.Asset, error) {
 	// Calculate Bundle Hash
@@ -75,14 +78,39 @@ func encodeBundle(assets ...*ent.Asset) ([]byte, error) {
 }
 
 func newBundleHashDigest(assets ...*ent.Asset) string {
-	hashes := make([]string, 0, len(assets))
+	hash := sha3.New256()
 	for _, a := range assets {
-		hashes = append(hashes, a.Hash)
+		// Lengths make the sequence unambiguous, and hashing content rather
+		// than the stored digest catches edits even if that digest is stale.
+		_ = binary.Write(hash, binary.BigEndian, uint64(len(a.Name)))
+		_, _ = hash.Write([]byte(a.Name))
+		_ = binary.Write(hash, binary.BigEndian, uint64(len(a.Content)))
+		_, _ = hash.Write(a.Content)
 	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
 
-	data := []byte(strings.Join(hashes, ""))
-	hash := sha3.Sum256(data)
-	return hex.EncodeToString(hash[:])
+// Read returns a named file from the frozen bundle.
+func Read(content []byte, name string) ([]byte, error) {
+	gr, err := gzip.NewReader(bytes.NewReader(content))
+	if err != nil {
+		return nil, err
+	}
+	defer gr.Close()
+	tr := tar.NewReader(gr)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			return nil, ErrFileNotFound
+		}
+		if err != nil {
+			return nil, err
+		}
+		if hdr.Name != name {
+			continue
+		}
+		return io.ReadAll(tr)
+	}
 }
 
 // Names returns the file names frozen in a quest bundle.
