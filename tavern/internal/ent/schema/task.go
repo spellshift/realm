@@ -59,6 +59,9 @@ func (Task) Fields() []ent.Field {
 				dialect.MySQL: "LONGTEXT", // Override MySQL, improve length maximum
 			}).
 			Comment("Error, if any, produced while executing the Task"),
+		field.String("scheduled_dedup_key").Optional().Immutable().Unique().
+			Annotations(entgql.Skip()).
+			Comment("Unique quest and beacon identity for automated cron tasks."),
 	}
 }
 

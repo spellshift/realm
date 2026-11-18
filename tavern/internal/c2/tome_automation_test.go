@@ -2,14 +2,17 @@ package c2
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/tomebundle"
 )
 
 func TestHandleTomeAutomation(t *testing.T) {
@@ -189,7 +192,7 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 	defer client.Close()
 
 	srv := &Server{graph: client}
-	now := time.Now()
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
 
 	h := client.Host.Create().
 		SetIdentifier("test").
@@ -220,9 +223,10 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 	// Trigger all conditions
 	srv.handleTomeAutomation(ctx, b.ID, h.ID, true, true, now, 0)
 
-	// Should only have 1 task
+	// Both event triggers share one quest, while the cron trigger has its own.
 	count := client.Task.Query().CountX(ctx)
-	assert.Equal(t, 1, count, "Should only create one task despite multiple triggers matching")
+	assert.Equal(t, 2, count)
+	assert.Equal(t, 2, client.Quest.Query().CountX(ctx))
 }
 
 func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
@@ -322,4 +326,78 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, early, 1*time.Hour)
 	count = client.Task.Query().CountX(ctx)
 	assert.Equal(t, 0, count, "Range tome should NOT run at 05:55:00 even with lookahead")
+}
+
+func TestHandleTomeAutomation_SharedOccurrenceAndSnapshot(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("shared-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	beacons := make([]*ent.Beacon, 2)
+	for i, id := range []string{"shared-a", "shared-b"} {
+		beacons[i] = client.Beacon.Create().SetIdentifier(id).SetHost(h).
+			SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	}
+	tome := client.Tome.Create().SetName("snapshot-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('first')").SaveX(ctx)
+	firstAsset := client.Asset.Create().SetName("first.txt").SetContent([]byte("first")).SaveX(ctx)
+	client.Tome.UpdateOne(tome).AddAssets(firstAsset).ExecX(ctx)
+	st := client.ScheduledTask.Create().SetName("shared-schedule").SetDescription("Test").
+		SetTome(tome).SetParameters(`{"version":"first"}`).SetRunOnSchedule("* * * * *").SaveX(ctx)
+	now := time.Date(2023, 10, 27, 10, 0, 56, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, h.ID, false, false, now, 10*time.Second)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, h.ID, false, false, now, 10*time.Second)
+	require.Equal(t, 1, client.Task.Query().CountX(ctx))
+	require.Equal(t, 1, client.Quest.Query().CountX(ctx))
+
+	client.ScheduledTask.UpdateOne(st).SetParameters(`{"version":"second"}`).ExecX(ctx)
+	client.Tome.UpdateOne(tome).SetEldritch("print('second')").ExecX(ctx)
+	secondAsset := client.Asset.Create().SetName("second.txt").SetContent([]byte("second")).SaveX(ctx)
+	client.Tome.UpdateOne(tome).AddAssets(secondAsset).ExecX(ctx)
+	srv.handleTomeAutomation(ctx, beacons[1].ID, h.ID, false, false, now.Add(time.Second), 10*time.Second)
+	require.Equal(t, 2, client.Task.Query().CountX(ctx))
+	q := client.Quest.Query().OnlyX(ctx)
+	assert.Equal(t, now.Add(4*time.Second), q.ScheduledOccurrenceAt)
+	assert.Equal(t, `{"version":"first"}`, q.Parameters)
+	assert.Equal(t, "print('first')", q.EldritchAtCreation)
+	bundle := q.QueryBundle().OnlyX(ctx)
+	names, err := tomebundle.Names(bundle.Content)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"first.txt"}, names)
+
+	srv.handleTomeAutomation(ctx, beacons[0].ID, h.ID, false, false, now.Add(60*time.Second), 10*time.Second)
+	require.Equal(t, 2, client.Quest.Query().CountX(ctx))
+	client.ScheduledTask.UpdateOne(st).SetDisabled(true).ExecX(ctx)
+	srv.handleTomeAutomation(ctx, beacons[1].ID, h.ID, false, false, now.Add(61*time.Second), 10*time.Second)
+	assert.Equal(t, 3, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_ConcurrentCallbacks(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("parallel-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	tome := client.Tome.Create().SetName("parallel-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('parallel')").SaveX(ctx)
+	client.ScheduledTask.Create().SetName("parallel-schedule").SetDescription("Test").
+		SetTome(tome).SetRunOnSchedule("* * * * *").SaveX(ctx)
+	beacons := make([]*ent.Beacon, 4)
+	for i, id := range []string{"parallel-a", "parallel-b", "parallel-c", "parallel-d"} {
+		beacons[i] = client.Beacon.Create().SetIdentifier(id).SetHost(h).
+			SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	}
+	now := time.Date(2023, 10, 27, 10, 0, 56, 0, time.UTC)
+	var wg sync.WaitGroup
+	for _, b := range beacons {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			srv.handleTomeAutomation(ctx, id, h.ID, false, false, now, 10*time.Second)
+		}(b.ID)
+	}
+	wg.Wait()
+	assert.Equal(t, 1, client.Quest.Query().CountX(ctx))
+	assert.Equal(t, len(beacons), client.Task.Query().CountX(ctx))
 }

@@ -490,6 +490,9 @@ func (tu *TaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if tu.mutation.ErrorCleared() {
 		_spec.ClearField(task.FieldError, field.TypeString)
 	}
+	if tu.mutation.ScheduledDedupKeyCleared() {
+		_spec.ClearField(task.FieldScheduledDedupKey, field.TypeString)
+	}
 	if tu.mutation.QuestCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1277,6 +1280,9 @@ func (tuo *TaskUpdateOne) sqlSave(ctx context.Context) (_node *Task, err error) 
 	}
 	if tuo.mutation.ErrorCleared() {
 		_spec.ClearField(task.FieldError, field.TypeString)
+	}
+	if tuo.mutation.ScheduledDedupKeyCleared() {
+		_spec.ClearField(task.FieldScheduledDedupKey, field.TypeString)
 	}
 	if tuo.mutation.QuestCleared() {
 		edge := &sqlgraph.EdgeSpec{

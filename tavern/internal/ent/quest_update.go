@@ -414,6 +414,12 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if qu.mutation.EldritchAtCreationCleared() {
 		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
 	}
+	if qu.mutation.ScheduledOccurrenceAtCleared() {
+		_spec.ClearField(quest.FieldScheduledOccurrenceAt, field.TypeTime)
+	}
+	if qu.mutation.ScheduledOccurrenceKeyCleared() {
+		_spec.ClearField(quest.FieldScheduledOccurrenceKey, field.TypeString)
+	}
 	if qu.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1151,6 +1157,12 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 	}
 	if quo.mutation.EldritchAtCreationCleared() {
 		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
+	}
+	if quo.mutation.ScheduledOccurrenceAtCleared() {
+		_spec.ClearField(quest.FieldScheduledOccurrenceAt, field.TypeTime)
+	}
+	if quo.mutation.ScheduledOccurrenceKeyCleared() {
+		_spec.ClearField(quest.FieldScheduledOccurrenceKey, field.TypeString)
 	}
 	if quo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{

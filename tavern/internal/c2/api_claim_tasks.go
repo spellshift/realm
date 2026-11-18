@@ -15,8 +15,10 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -25,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/tomebundle"
 )
 
 var (
@@ -74,108 +77,148 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		return
 	}
 
-	selectedTasks := make(map[int]*ent.ScheduledTask)
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	cutoff := now.Add(interval)
 
-	for _, t := range candidateTasks {
-		shouldRun := false
-
-		// Check RunOnNewBeaconCallback
-		if isNewBeacon && t.RunOnNewBeaconCallback {
-			shouldRun = true
+	for _, st := range candidateTasks {
+		if st.Edges.Tome == nil {
+			continue
 		}
-
-		// Check RunOnFirstHostCallback
-		if !shouldRun && isNewHost && t.RunOnFirstHostCallback {
-			shouldRun = true
+		if (isNewBeacon && st.RunOnNewBeaconCallback) || (isNewHost && st.RunOnFirstHostCallback) {
+			srv.createAutomatedTask(ctx, st.ID, beaconID, hostID, nil)
 		}
-
-		// Check RunOnSchedule
-		if !shouldRun && t.RunOnSchedule != "" {
-			sched, err := parser.Parse(t.RunOnSchedule)
-			if err == nil {
-				isMatch := false
-				// If schedule contains a range (hyphen), checking for strict current match
-				// without factoring in callback interval.
-				if strings.Contains(t.RunOnSchedule, "-") {
-					currentMinute := now.Truncate(time.Minute)
-					// Verify if 'currentMinute' is a valid trigger time.
-					// We check if the next trigger after (currentMinute - 1s) is exactly currentMinute.
-					next := sched.Next(currentMinute.Add(-1 * time.Second))
-					if next.Equal(currentMinute) {
-						isMatch = true
-					}
-				} else {
-					// Check if any point between now and the next expected check-in matches the run schedule
-					// Next(now-1sec) <= now + interval?
-					next := sched.Next(now.Add(-1 * time.Second))
-					if !next.After(cutoff) {
-						isMatch = true
-					}
-				}
-
-				if isMatch {
-					shouldRun = true
-				}
-			} else {
-				// Don't log cron parse errors for now, as it might be spammy if stored in DB
-				// metricTomeAutomationErrors.Inc()
+		if st.RunOnSchedule == "" {
+			continue
+		}
+		sched, err := parser.Parse(st.RunOnSchedule)
+		if err != nil {
+			continue
+		}
+		var occurrence time.Time
+		if strings.Contains(st.RunOnSchedule, "-") {
+			minute := now.Truncate(time.Minute)
+			if sched.Next(minute.Add(-time.Second)).Equal(minute) {
+				occurrence = minute
+			}
+		} else {
+			occurrence = sched.Next(now.Add(-time.Nanosecond))
+			if occurrence.Before(now) {
+				occurrence = sched.Next(now)
+			}
+			if occurrence.After(cutoff) {
+				occurrence = time.Time{}
 			}
 		}
-
-		if shouldRun && t.Edges.Tome != nil {
-			selectedTasks[t.ID] = t
+		if !occurrence.IsZero() {
+			srv.createAutomatedTask(ctx, st.ID, beaconID, hostID, &occurrence)
 		}
 	}
+}
 
-	// Create Quest and Task for each selected ScheduledTask
-	for _, st := range selectedTasks {
+// createAutomatedTask retries concurrent unique-key conflicts from a fresh transaction.
+func (srv *Server) createAutomatedTask(ctx context.Context, scheduledTaskID, beaconID, hostID int, occurrence *time.Time) {
+	for attempt := 0; attempt < 8; attempt++ {
+		if ctx.Err() != nil {
+			return
+		}
+		err := srv.createAutomatedTaskOnce(ctx, scheduledTaskID, beaconID, hostID, occurrence)
+		if err == nil {
+			return
+		}
+		if ent.IsConstraintError(err) || strings.Contains(err.Error(), "database is locked") {
+			time.Sleep(time.Duration(attempt+1) * 10 * time.Millisecond)
+			continue
+		}
+		claimLog.ErrorContext(ctx, "failed to create automated task", "error", err, "scheduled_task_id", scheduledTaskID, "beacon_id", beaconID)
+		metricTomeAutomationErrors.Inc()
+		return
+	}
+	claimLog.ErrorContext(ctx, "failed to create automated task after retries", "scheduled_task_id", scheduledTaskID, "beacon_id", beaconID)
+	metricTomeAutomationErrors.Inc()
+}
+
+func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID, beaconID, hostID int, occurrence *time.Time) error {
+	tx, err := srv.graph.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	client := tx.Client()
+	st, err := client.ScheduledTask.Query().Where(scheduledtask.ID(scheduledTaskID)).WithTome().Only(ctx)
+	if err != nil {
+		return err
+	}
+	if st.Disabled || st.Edges.Tome == nil {
+		return nil
+	}
+
+	var q *ent.Quest
+	createdQuest := false
+	var key string
+	if occurrence != nil {
+		key = fmt.Sprintf("%d:%d", st.ID, occurrence.UTC().Unix())
+		q, err = client.Quest.Query().Where(quest.ScheduledOccurrenceKey(key)).Only(ctx)
+		if err != nil && !ent.IsNotFound(err) {
+			return err
+		}
+	}
+	if q == nil {
 		tome := st.Edges.Tome
-		questCreate := srv.graph.Quest.Create().
-			SetName(fmt.Sprintf("Automated: %s", st.Name)).
-			SetTome(tome).
-			SetParameters(st.Parameters).
-			SetParamDefsAtCreation(tome.ParamDefs).
-			SetEldritchAtCreation(tome.Eldritch)
-		if st.Parameters != "" {
-			questCreate.SetParameters(st.Parameters)
-		}
-		q, err := questCreate.Save(ctx)
+		assets, err := tome.QueryAssets().Order(ent.Asc(asset.FieldID)).All(ctx)
 		if err != nil {
-			claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
-			metricTomeAutomationErrors.Inc()
-			continue
+			return err
 		}
-
-		// Link quest to scheduled task
-		if _, err := srv.graph.ScheduledTask.UpdateOneID(st.ID).AddQuests(q).Save(ctx); err != nil {
-			claimLog.ErrorContext(ctx, "failed to link automated quest to scheduled task", "error", err, "scheduled_task_id", st.ID, "quest_id", q.ID)
-		}
-
-		_, err = srv.graph.Task.Create().
-			SetQuest(q).
-			SetBeaconID(beaconID).
-			Save(ctx)
+		create := client.Quest.Create().SetName(fmt.Sprintf("Automated: %s", st.Name)).
+			SetTome(tome).SetScheduledTask(st).SetParameters(st.Parameters).
+			SetParamDefsAtCreation(tome.ParamDefs).SetEldritchAtCreation(tome.Eldritch)
+		bundle, err := tomebundle.Create(ctx, client, assets)
 		if err != nil {
-			claimLog.ErrorContext(ctx, "failed to create automated task", "error", err, "quest_id", q.ID)
-			metricTomeAutomationErrors.Inc()
-			continue
+			return err
 		}
-
-		schedCtx := logging.WithActor(ctx, logging.Actor{
-			Kind:       logging.ActorScheduler,
-			ID:         strconv.Itoa(st.ID),
-			Name:       st.Name,
-			AuthMethod: "scheduled_task",
-		})
-		questAuditAttrs := make([]any, 0, 12)
-		questAuditAttrs = append(questAuditAttrs, "scheduled_task_id", st.ID)
-		questAuditAttrs = append(questAuditAttrs, logging.QuestAttrs(q.ID, q.Name, st.Parameters)...)
-		questAuditAttrs = append(questAuditAttrs, logging.TomeAttrs(tome.ID, tome.Name, string(tome.Tactic))...)
-		questAuditAttrs = append(questAuditAttrs, "beacon_id", beaconID, "host_id", hostID)
-		logging.Audit(schedCtx, "quest", "quest.created", "scheduled task created quest", questAuditAttrs...)
+		create.SetBundle(bundle)
+		if occurrence != nil {
+			create.SetScheduledOccurrenceAt(*occurrence).SetScheduledOccurrenceKey(key)
+		}
+		q, err = create.Save(ctx)
+		if err != nil {
+			return err
+		}
+		createdQuest = true
 	}
+
+	createTask := client.Task.Create().SetQuest(q).SetBeaconID(beaconID)
+	if occurrence != nil {
+		taskKey := fmt.Sprintf("%d:%d", q.ID, beaconID)
+		exists, err := client.Task.Query().Where(task.ScheduledDedupKey(taskKey)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return nil
+		}
+		createTask.SetScheduledDedupKey(taskKey)
+	}
+	t, err := createTask.Save(ctx)
+	if err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	schedCtx := logging.WithActor(ctx, logging.Actor{
+		Kind: logging.ActorScheduler, ID: strconv.Itoa(st.ID), Name: st.Name, AuthMethod: "scheduled_task",
+	})
+	if createdQuest {
+		attrs := []any{"scheduled_task_id", st.ID}
+		attrs = append(attrs, logging.QuestAttrs(q.ID, q.Name, q.Parameters)...)
+		attrs = append(attrs, logging.TomeAttrs(st.Edges.Tome.ID, st.Edges.Tome.Name, string(st.Edges.Tome.Tactic))...)
+		attrs = append(attrs, "beacon_id", beaconID, "host_id", hostID)
+		logging.Audit(schedCtx, "quest", "quest.created", "scheduled task created quest", attrs...)
+	}
+	logging.Audit(schedCtx, "task", "task.created", "scheduled task created task",
+		"task_id", t.ID, "quest_id", q.ID, "beacon_id", beaconID, "host_id", hostID, "scheduled_task_id", st.ID)
+	return nil
 }
 
 func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) (*c2pb.ClaimTasksResponse, error) {
@@ -499,13 +542,32 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				return nil, rollback(tx, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
 			}
 		}
-		claimedAssets, err := claimedTome.QueryAssets().All(ctx)
+		var claimedAssetNames []string
+		isScheduled, err := claimedQuest.QueryScheduledTask().Exist(ctx)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to load tome assets (id=%d,tomeID=%d)", taskID, claimedTome.ID))
+			return nil, fmt.Errorf("failed to identify scheduled quest for task %d: %w", taskID, err)
 		}
-		claimedAssetNames := make([]string, 0, len(claimedAssets))
-		for _, a := range claimedAssets {
-			claimedAssetNames = append(claimedAssetNames, a.Name)
+		bundle, err := claimedQuest.QueryBundle().Only(ctx)
+		if isScheduled && err == nil {
+			claimedAssetNames, err = tomebundle.Names(bundle.Content)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read quest bundle for task %d: %w", taskID, err)
+			}
+		} else if !isScheduled || ent.IsNotFound(err) {
+			// Older quests may have been created without a bundle.
+			claimedAssets, err := claimedTome.QueryAssets().All(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load tome assets for task %d: %w", taskID, err)
+			}
+			for _, a := range claimedAssets {
+				claimedAssetNames = append(claimedAssetNames, a.Name)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to load quest bundle for task %d: %w", taskID, err)
+		}
+		eldritch := claimedQuest.EldritchAtCreation
+		if eldritch == "" {
+			eldritch = claimedTome.Eldritch // Legacy quests may not have a snapshot.
 		}
 
 		// Generate JWT with beacon ID
@@ -518,7 +580,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			Id:        int64(claimedTask.ID),
 			QuestName: claimedQuest.Name,
 			Tome: &epb.Tome{
-				Eldritch:   claimedTome.Eldritch,
+				Eldritch:   eldritch,
 				Parameters: params,
 				FileNames:  claimedAssetNames,
 			},

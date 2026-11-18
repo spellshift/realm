@@ -105,6 +105,34 @@ func (qc *QuestCreate) SetNillableEldritchAtCreation(s *string) *QuestCreate {
 	return qc
 }
 
+// SetScheduledOccurrenceAt sets the "scheduled_occurrence_at" field.
+func (qc *QuestCreate) SetScheduledOccurrenceAt(t time.Time) *QuestCreate {
+	qc.mutation.SetScheduledOccurrenceAt(t)
+	return qc
+}
+
+// SetNillableScheduledOccurrenceAt sets the "scheduled_occurrence_at" field if the given value is not nil.
+func (qc *QuestCreate) SetNillableScheduledOccurrenceAt(t *time.Time) *QuestCreate {
+	if t != nil {
+		qc.SetScheduledOccurrenceAt(*t)
+	}
+	return qc
+}
+
+// SetScheduledOccurrenceKey sets the "scheduled_occurrence_key" field.
+func (qc *QuestCreate) SetScheduledOccurrenceKey(s string) *QuestCreate {
+	qc.mutation.SetScheduledOccurrenceKey(s)
+	return qc
+}
+
+// SetNillableScheduledOccurrenceKey sets the "scheduled_occurrence_key" field if the given value is not nil.
+func (qc *QuestCreate) SetNillableScheduledOccurrenceKey(s *string) *QuestCreate {
+	if s != nil {
+		qc.SetScheduledOccurrenceKey(*s)
+	}
+	return qc
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (qc *QuestCreate) SetTomeID(id int) *QuestCreate {
 	qc.mutation.SetTomeID(id)
@@ -381,6 +409,14 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 		_spec.SetField(quest.FieldEldritchAtCreation, field.TypeString, value)
 		_node.EldritchAtCreation = value
 	}
+	if value, ok := qc.mutation.ScheduledOccurrenceAt(); ok {
+		_spec.SetField(quest.FieldScheduledOccurrenceAt, field.TypeTime, value)
+		_node.ScheduledOccurrenceAt = value
+	}
+	if value, ok := qc.mutation.ScheduledOccurrenceKey(); ok {
+		_spec.SetField(quest.FieldScheduledOccurrenceKey, field.TypeString, value)
+		_node.ScheduledOccurrenceKey = value
+	}
 	if nodes := qc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -644,6 +680,12 @@ func (u *QuestUpsertOne) UpdateNewValues() *QuestUpsertOne {
 		}
 		if _, exists := u.create.mutation.EldritchAtCreation(); exists {
 			s.SetIgnore(quest.FieldEldritchAtCreation)
+		}
+		if _, exists := u.create.mutation.ScheduledOccurrenceAt(); exists {
+			s.SetIgnore(quest.FieldScheduledOccurrenceAt)
+		}
+		if _, exists := u.create.mutation.ScheduledOccurrenceKey(); exists {
+			s.SetIgnore(quest.FieldScheduledOccurrenceKey)
 		}
 	}))
 	return u
@@ -909,6 +951,12 @@ func (u *QuestUpsertBulk) UpdateNewValues() *QuestUpsertBulk {
 			}
 			if _, exists := b.mutation.EldritchAtCreation(); exists {
 				s.SetIgnore(quest.FieldEldritchAtCreation)
+			}
+			if _, exists := b.mutation.ScheduledOccurrenceAt(); exists {
+				s.SetIgnore(quest.FieldScheduledOccurrenceAt)
+			}
+			if _, exists := b.mutation.ScheduledOccurrenceKey(); exists {
+				s.SetIgnore(quest.FieldScheduledOccurrenceKey)
 			}
 		}
 	}))

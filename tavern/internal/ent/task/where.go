@@ -95,6 +95,11 @@ func Error(v string) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldError, v))
 }
 
+// ScheduledDedupKey applies equality check predicate on the "scheduled_dedup_key" field. It's identical to ScheduledDedupKeyEQ.
+func ScheduledDedupKey(v string) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldScheduledDedupKey, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Task {
 	return predicate.Task(sql.FieldEQ(FieldCreatedAt, v))
@@ -513,6 +518,81 @@ func ErrorEqualFold(v string) predicate.Task {
 // ErrorContainsFold applies the ContainsFold predicate on the "error" field.
 func ErrorContainsFold(v string) predicate.Task {
 	return predicate.Task(sql.FieldContainsFold(FieldError, v))
+}
+
+// ScheduledDedupKeyEQ applies the EQ predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyEQ(v string) predicate.Task {
+	return predicate.Task(sql.FieldEQ(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyNEQ applies the NEQ predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyNEQ(v string) predicate.Task {
+	return predicate.Task(sql.FieldNEQ(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyIn applies the In predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyIn(vs ...string) predicate.Task {
+	return predicate.Task(sql.FieldIn(FieldScheduledDedupKey, vs...))
+}
+
+// ScheduledDedupKeyNotIn applies the NotIn predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyNotIn(vs ...string) predicate.Task {
+	return predicate.Task(sql.FieldNotIn(FieldScheduledDedupKey, vs...))
+}
+
+// ScheduledDedupKeyGT applies the GT predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyGT(v string) predicate.Task {
+	return predicate.Task(sql.FieldGT(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyGTE applies the GTE predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyGTE(v string) predicate.Task {
+	return predicate.Task(sql.FieldGTE(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyLT applies the LT predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyLT(v string) predicate.Task {
+	return predicate.Task(sql.FieldLT(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyLTE applies the LTE predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyLTE(v string) predicate.Task {
+	return predicate.Task(sql.FieldLTE(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyContains applies the Contains predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyContains(v string) predicate.Task {
+	return predicate.Task(sql.FieldContains(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyHasPrefix applies the HasPrefix predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyHasPrefix(v string) predicate.Task {
+	return predicate.Task(sql.FieldHasPrefix(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyHasSuffix applies the HasSuffix predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyHasSuffix(v string) predicate.Task {
+	return predicate.Task(sql.FieldHasSuffix(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyIsNil applies the IsNil predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyIsNil() predicate.Task {
+	return predicate.Task(sql.FieldIsNull(FieldScheduledDedupKey))
+}
+
+// ScheduledDedupKeyNotNil applies the NotNil predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyNotNil() predicate.Task {
+	return predicate.Task(sql.FieldNotNull(FieldScheduledDedupKey))
+}
+
+// ScheduledDedupKeyEqualFold applies the EqualFold predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyEqualFold(v string) predicate.Task {
+	return predicate.Task(sql.FieldEqualFold(FieldScheduledDedupKey, v))
+}
+
+// ScheduledDedupKeyContainsFold applies the ContainsFold predicate on the "scheduled_dedup_key" field.
+func ScheduledDedupKeyContainsFold(v string) predicate.Task {
+	return predicate.Task(sql.FieldContainsFold(FieldScheduledDedupKey, v))
 }
 
 // HasQuest applies the HasEdge predicate on the "quest" edge.
