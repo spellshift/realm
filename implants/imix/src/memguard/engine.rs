@@ -284,7 +284,18 @@ impl MemGuard {
     }
 
     pub fn encrypt(&mut self) -> bool {
-        unsafe { encrypt_state(self.state) }
+        unsafe { encrypt_state(self.state, None) }
+    }
+
+    /// Encrypt and report progress through `progress` (invoked roughly every
+    /// 10k pages). For callers that do not need progress, use `encrypt`.
+    pub fn encrypt_with_progress(&mut self, progress: &mut dyn FnMut(usize)) -> bool {
+        unsafe { encrypt_state(self.state, Some(progress)) }
+    }
+
+    /// Number of excluded (never-encrypted) pages in the current skip set.
+    pub fn skip_count(&self) -> usize {
+        unsafe { (*self.state).skip_count }
     }
 
     pub fn decrypt(&mut self) -> bool {
@@ -562,7 +573,7 @@ unsafe fn add_thread_skip(
     ok
 }
 
-unsafe fn encrypt_state(state: *mut State) -> bool {
+unsafe fn encrypt_state(state: *mut State, mut progress: Option<&mut dyn FnMut(usize)>) -> bool {
     if (*state).count.load(Ordering::Acquire) != 0 || (*state).skip_failed {
         return false;
     }
@@ -608,7 +619,12 @@ unsafe fn encrypt_state(state: *mut State) -> bool {
                     e.base = page;
                     e.orig_protect = protect;
                     e.state = AtomicU8::new(PG_ENCRYPTED);
-                    s.count.fetch_add(1, Ordering::Relaxed);
+                    let c = s.count.fetch_add(1, Ordering::Relaxed) + 1;
+                    if c % 10000 == 0 {
+                        if let Some(p) = &mut progress {
+                            p(c);
+                        }
+                    }
                 } else {
                     // Protection failed: revert to plaintext and leave the page RW
                     // so it is never left holding ciphertext.
