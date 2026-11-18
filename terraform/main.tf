@@ -51,6 +51,38 @@ output "builder_enrollment_token" {
   sensitive   = true
 }
 
+variable "redirector_enrollment_tokens" {
+  type        = list(string)
+  description = "One one-time token per logical redirector deployment, in HTTP, DNS, ICMP, QUIC order. Empty generates one per deployment."
+  default     = []
+  sensitive   = true
+}
+
+resource "random_password" "redirector_enrollment" {
+  count   = nonsensitive(length(var.redirector_enrollment_tokens)) == 0 ? local.redirector_deployment_count : 0
+  length  = 43
+  special = false
+}
+
+locals {
+  redirector_deployment_count = length(local.http_redirectors) + (length(local.dns_redirectors) > 0 ? 1 : 0) + length(local.icmp_redirectors) + length(local.quic_redirectors)
+  redirector_tokens           = length(var.redirector_enrollment_tokens) > 0 ? var.redirector_enrollment_tokens : random_password.redirector_enrollment[*].result
+  redirector_dns_index        = length(local.http_redirectors)
+  redirector_icmp_offset      = local.redirector_dns_index + (length(local.dns_redirectors) > 0 ? 1 : 0)
+  redirector_quic_offset      = local.redirector_icmp_offset + length(local.icmp_redirectors)
+  redirector_management_url   = var.oauth_domain != "" ? "https://${var.oauth_domain}" : google_cloud_run_service.tavern.status[0].url
+}
+
+resource "terraform_data" "redirector_token_count" {
+  input = local.redirector_deployment_count
+  lifecycle {
+    precondition {
+      condition     = length(local.redirector_tokens) == local.redirector_deployment_count && length(distinct(local.redirector_tokens)) == length(local.redirector_tokens)
+      error_message = "redirector_enrollment_tokens must contain one unique token per logical redirector deployment"
+    }
+  }
+}
+
 variable "redirector_upstream" {
   type = string
   description = "Upstream that redirectors should point to. Defaults to oauth_domain when unset."
@@ -539,6 +571,10 @@ resource "google_cloud_run_service" "tavern" {
           name  = "REALM_BUILDER_ENROLLMENT_TOKENS"
           value = local.builder_enrollment_token
         }
+        env {
+          name  = "REALM_REDIRECTOR_ENROLLMENT_TOKENS"
+          value = join(",", local.redirector_tokens)
+        }
 
         // Only configure GCP pubsub if it is not disabled
         dynamic "env" {
@@ -647,6 +683,29 @@ resource "google_service_account" "svctavern_redirector" {
   description = "The service account Realm's Tavern Redirector uses to connect to GCP based services. Managed by Terraform."
 }
 
+resource "google_secret_manager_secret" "redirector_identity" {
+  count     = local.redirector_deployment_count
+  secret_id = "realm-redirector-identity-${count.index}"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.secret_manager]
+}
+
+resource "google_secret_manager_secret_iam_member" "redirector_identity_read" {
+  count     = local.redirector_deployment_count
+  secret_id = google_secret_manager_secret.redirector_identity[count.index].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "redirector_identity_write" {
+  count     = local.redirector_deployment_count
+  secret_id = google_secret_manager_secret.redirector_identity[count.index].id
+  role      = "roles/secretmanager.secretVersionAdder"
+  member    = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+}
+
 resource "google_project_iam_member" "redirector-metricwriter-binding" {
   project = var.gcp_project
   role    = "roles/monitoring.metricWriter"
@@ -738,14 +797,15 @@ locals {
     }
     if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != ""
   ]
-  quic_gce_defs = [for redir in local.quic_redirectors : yamlencode({
+  quic_gce_defs = [for idx, redir in local.quic_redirectors : yamlencode({
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", local.redirector_upstream]
+        command = ["./tavern", "redirector", "--managed", "--transport", "quic", "--domain", redir.domain, "--identity-secret", google_secret_manager_secret.redirector_identity[local.redirector_quic_offset + idx].id, "--management-url", local.redirector_management_url, "--listen", "0.0.0.0:443", local.redirector_upstream]
         env = [
           { name = "TAVERN_LOG", value = "prod" },
           { name = "TAVERN_RESOURCE_PREFIX", value = local.resource_prefix },
+          { name = "REALM_REDIRECTOR_ENROLLMENT_TOKEN", value = local.redirector_tokens[local.redirector_quic_offset + idx] },
         ]
         ports   = [
           {
@@ -812,10 +872,14 @@ resource "google_cloud_run_service" "redirector" {
       containers {
         name = local.tavern_container_name
         image = var.tavern_container_image
-        command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, local.redirector_upstream]
+        command = ["/app/tavern", "redirector", "--managed", "--transport", local.http_redirectors[count.index].transport, "--domain", local.http_redirectors[count.index].domain, "--identity-secret", google_secret_manager_secret.redirector_identity[count.index].id, "--management-url", local.redirector_management_url, local.redirector_upstream]
         env {
           name = "TAVERN_LOG"
           value = "prod"
+        }
+        env {
+          name  = "REALM_REDIRECTOR_ENROLLMENT_TOKEN"
+          value = local.redirector_tokens[count.index]
         }
         env {
           name  = "TAVERN_RESOURCE_PREFIX"
@@ -843,6 +907,9 @@ resource "google_cloud_run_service" "redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
     google_project_service.cloud_run_api
   ]
 }
@@ -914,7 +981,7 @@ locals {
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", local.redirector_upstream]
+        command = concat(["./tavern", "redirector", "--managed", "--transport", "dns", "--identity-secret", google_secret_manager_secret.redirector_identity[local.redirector_dns_index].id, "--management-url", local.redirector_management_url], flatten([for redir in local.dns_redirectors : ["--domain", redir.domain]]), ["--listen", "0.0.0.0:53?${local.dns_domain_dsn}", local.redirector_upstream])
         env = [
           {
             name  = "TAVERN_LOG"
@@ -923,7 +990,11 @@ locals {
           {
             name  = "TAVERN_RESOURCE_PREFIX"
             value = local.resource_prefix
-          }
+          },
+          {
+            name  = "REALM_REDIRECTOR_ENROLLMENT_TOKEN"
+            value = local.redirector_tokens[local.redirector_dns_index]
+          },
         ]
         ports   = [
           {
@@ -1024,20 +1095,24 @@ resource "google_compute_instance" "dns_redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
     google_project_service.compute_api
   ]
 }
 
 # Setup ICMP redirectors (one VM per redirector for unique IPs)
 locals {
-  icmp_gce_defs = [for redir in local.icmp_redirectors : yamlencode({
+  icmp_gce_defs = [for idx, redir in local.icmp_redirectors : yamlencode({
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", local.redirector_upstream]
+        command = ["./tavern", "redirector", "--managed", "--transport", "icmp", "--domain", redir.domain, "--identity-secret", google_secret_manager_secret.redirector_identity[local.redirector_icmp_offset + idx].id, "--management-url", local.redirector_management_url, "--listen", "0.0.0.0", local.redirector_upstream]
         env = [
           { name = "TAVERN_LOG", value = "prod" },
           { name = "TAVERN_RESOURCE_PREFIX", value = local.resource_prefix },
+          { name = "REALM_REDIRECTOR_ENROLLMENT_TOKEN", value = local.redirector_tokens[local.redirector_icmp_offset + idx] },
         ]
       }]
       restartPolicy = "Always"
@@ -1113,6 +1188,9 @@ resource "google_compute_instance" "icmp_redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
     google_project_service.compute_api
   ]
 }
@@ -1191,6 +1269,9 @@ resource "google_compute_instance" "quic_redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
     google_project_service.compute_api
   ]
 }

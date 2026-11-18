@@ -179,6 +179,16 @@ Tavern accepts one-time redirector enrollment tokens from the `REALM_REDIRECTOR_
 
 Tavern commits the new identity and consumes the token before sending the HTTP response. If the response is lost before the certificate is saved, that token cannot recover the certificate or enroll again. Issue a fresh token and repeat enrollment; the original redirector record remains offline. Keep token use single-use even when the client cannot confirm whether enrollment succeeded.
 
+Built-in redirectors remain unmanaged unless started with `--managed`. For a standalone deployment, set `REALM_REDIRECTOR_ENROLLMENT_TOKEN` and pass each served domain, a Tavern URL, and a persistent identity file:
+
+```sh
+REALM_REDIRECTOR_ENROLLMENT_TOKEN='<token>' tavern redirector --managed --transport http1 --domain c2.example.com --management-url https://tavern.example.com --identity-file /var/lib/realm/redirector.json tavern.example.com
+```
+
+The token is exchanged only when the identity is absent. The redirector then signs a fresh timestamp with its certificate key and checks in every minute; Tavern records `last_seen_at`. An existing identity can start without the token. For replicas, pass `--identity-secret projects/PROJECT/secrets/SECRET` instead of `--identity-file` and grant the deployment service account Secret Manager access and version-add rights. All replicas using that secret share one redirector record. The redirector needs the token only for initial enrollment, though Terraform continues to provide it to restarted replicas until it is rotated.
+
+Terraform enables managed mode for its built-in redirectors. It creates one identity secret and one generated enrollment token per logical deployment. Supply `redirector_enrollment_tokens` as a list if you manage tokens externally; its order is HTTP/gRPC services, the combined DNS VM (if present), ICMP VMs, then QUIC VMs. Tokens must be unique, and the list length must match the deployment count. Terraform marks token values sensitive but retains them in its state; Tavern stores only token hashes in its database.
+
 ### Available Redirectors
 
 Realm includes five built-in redirector implementations:
