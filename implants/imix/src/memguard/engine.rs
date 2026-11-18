@@ -159,6 +159,11 @@ struct State {
     // register in `current_thread_key`), which is unique per live thread.
     recursion_tid: [usize; RECURSION_SLOTS],
     recursion_active: [bool; RECURSION_SLOTS],
+    // Plain recovery counter for VEH diagnostics (print_debug). Lives in the
+    // unencrypted State region so the handler can increment it without touching
+    // the (possibly encrypted) heap. Every successful lazy decrypt logs a
+    // `veh-recover` trace line with this counter (bounded by page count).
+    veh_recover_count: AtomicUsize,
 }
 
 pub struct MemGuard {
@@ -270,6 +275,7 @@ impl MemGuard {
                     skip: static_skip,
                     recursion_tid: [0usize; RECURSION_SLOTS],
                     recursion_active: [false; RECURSION_SLOTS],
+                    veh_recover_count: AtomicUsize::new(0),
                 },
             );
             let s = &mut *state;
@@ -910,8 +916,20 @@ unsafe extern "system" fn veh_handler(exception_info: *mut EXCEPTION_POINTERS) -
     if record.is_null() {
         return VEH_CONTINUE_SEARCH;
     }
-    // Only access violations are ours to consider.
+    // Only access violations are ours to consider. Anything else (breakpoint,
+    // integer divide, guard-page, etc.) is a fault the VEH cannot recover and
+    // must be surfaced so the diagnosis trace can catch faults whose context
+    // prevents the handler from running at all.
     if (*record).ExceptionCode != VEH_ACCESS_VIOLATION {
+        #[cfg(feature = "print_debug")]
+        {
+            let info = (*record).ExceptionInformation.as_ptr();
+            let addr = *info.add(1);
+            crate::memguard::watchdog::trace_veh_miss(
+                addr as usize,
+                (*record).ExceptionCode as usize,
+            );
+        }
         return VEH_CONTINUE_SEARCH;
     }
     // ExceptionInformation[1] is the faulting virtual address for an AV.
@@ -919,6 +937,8 @@ unsafe extern "system" fn veh_handler(exception_info: *mut EXCEPTION_POINTERS) -
     let addr = *info.add(1);
     let state = STATE.load(Ordering::Acquire);
     if state.is_null() {
+        #[cfg(feature = "print_debug")]
+        crate::memguard::watchdog::trace_veh_miss(addr as usize, VEH_ACCESS_VIOLATION as usize);
         return VEH_CONTINUE_SEARCH;
     }
     // Per-thread recursion guard: nested re-entry on the same thread returns
@@ -926,13 +946,30 @@ unsafe extern "system" fn veh_handler(exception_info: *mut EXCEPTION_POINTERS) -
     let key = current_thread_key();
     let slot = recursion_admit(state, key);
     if slot == RECURSION_NESTED {
+        #[cfg(feature = "print_debug")]
+        crate::memguard::watchdog::trace_veh_miss(addr as usize, VEH_ACCESS_VIOLATION as usize);
         return VEH_CONTINUE_SEARCH;
     }
     let ok = decrypt_page_for_fault(state, addr as *const u8);
     recursion_release(state, slot);
     if ok {
+        // Successful lazy decrypt: log a compact `veh-recover` line with the
+        // running counter held in the unencrypted State region. Bounded by page
+        // count. The trace write itself is non-allocating (StackBuf on the
+        // faulting thread's stack + unencrypted trace handle).
+        #[cfg(feature = "print_debug")]
+        {
+            let n = (*state).veh_recover_count.fetch_add(1, Ordering::AcqRel) + 1;
+            crate::memguard::watchdog::trace_veh_recover(addr as usize, n);
+        }
         VEH_CONTINUE_EXECUTION
     } else {
+        // Miss: fault not on one of our pages (or page busy/already-plain) ->
+        // CONTINUE_SEARCH. Log it so the diagnosis trace can reveal faults the
+        // VEH cannot recover (non-entry pages, guard pages, or fault contexts
+        // where the handler itself cannot run).
+        #[cfg(feature = "print_debug")]
+        crate::memguard::watchdog::trace_veh_miss(addr as usize, VEH_ACCESS_VIOLATION as usize);
         VEH_CONTINUE_SEARCH
     }
 }
@@ -1120,37 +1157,28 @@ unsafe fn partial_decrypt_cursor(state: *mut State, keep: usize) {
     (*state).decrypt_cursor.store(i, Ordering::Release);
 }
 
-/// Test/QA helper: exclude the *current* thread's own live state (TEB/PEB/TLS and
-/// whole stack) from encryption, exactly as `add_watchdog_exclusions` does for the
-/// watchdog thread. Standalone integration tests call `MemGuard::encrypt()` from
-/// the test thread itself, so without this the test thread's own stack would be
-/// encrypted + NOACCESS and the next stack touch (including VEH dispatch, which
-/// builds its frame below RSP) would fault -> APPCRASH. Gated to the same cfg as
-/// the rest of the engine.
+/// Exclude a thread's TEB/PEB/TLS block and its *entire* stack from
+/// encryption, given the thread's TEB pointer and captured stack bounds
+/// (StackBase at TEB+0x08, StackLimit at TEB+0x10). This is the shared body for
+/// `exclude_current_thread` and for integration tests that need to exclude a
+/// *spawned* touching thread: the spawned thread reads its own TEB (gs:[0x30])
+/// and stack bounds and reports them to the test thread, which excludes them
+/// before `encrypt()`. The spawned thread's TEB/stack MUST stay unencrypted or
+/// `KiUserExceptionDispatcher` faults building its frame on the encrypted stack
+/// / reading the encrypted TEB -> APPCRASH (DEFECT 1).
 #[cfg(all(windows, feature = "mem-obfuscation"))]
-pub(crate) fn exclude_current_thread(guard: &mut MemGuard) -> bool {
-    let cur = unsafe { GetCurrentThread() };
-    let ntqit = unsafe { (*guard.state).nt_query_information_thread };
-    let mut tbi = core::mem::MaybeUninit::<ThreadBasicInformation>::uninit();
-    let status = unsafe {
-        ntqit(
-            cur,
-            THREAD_BASIC_INFORMATION_CLASS,
-            tbi.as_mut_ptr() as *mut c_void,
-            core::mem::size_of::<ThreadBasicInformation>() as u32,
-            core::ptr::null_mut(),
-        )
-    };
-    if status < 0 {
-        return false;
-    }
-    let teb = unsafe { tbi.assume_init().teb_base };
+pub(crate) fn exclude_thread_state_and_stack(
+    guard: &mut MemGuard,
+    teb: *const u8,
+    stack_base: *const u8,
+    stack_limit: *const u8,
+) -> bool {
     if teb.is_null() {
         return false;
     }
     unsafe {
-        let teb_size = region_size_of(teb);
-        if teb_size > 0 && !guard.add_exclusion(teb as *const u8, teb_size) {
+        let teb_size = region_size_of(teb as *mut c_void);
+        if teb_size > 0 && !guard.add_exclusion(teb, teb_size) {
             return false;
         }
         // PEB (TEB+0x60), then the narrow ProcessParameters struct (PEB+0x20).
@@ -1187,21 +1215,50 @@ pub(crate) fn exclude_current_thread(guard: &mut MemGuard) -> bool {
             }
         }
         // Whole stack (StackBase/StackLimit at TEB+0x08/0x10).
-        let stack_base = *(teb.add(0x08) as *const *mut c_void);
-        let stack_limit = *(teb.add(0x10) as *const *mut c_void);
         if !stack_base.is_null()
             && !stack_limit.is_null()
             && stack_base as usize > stack_limit as usize
         {
-            if !guard.add_exclusion(
-                stack_limit as *const u8,
-                stack_base as usize - stack_limit as usize,
-            ) {
+            if !guard.add_exclusion(stack_limit, stack_base as usize - stack_limit as usize) {
                 return false;
             }
         }
         true
     }
+}
+
+/// Test/QA helper: exclude the *current* thread's own live state (TEB/PEB/TLS and
+/// whole stack) from encryption, exactly as `add_watchdog_exclusions` does for the
+/// watchdog thread. Standalone integration tests call `MemGuard::encrypt()` from
+/// the test thread itself, so without this the test thread's own stack would be
+/// encrypted + NOACCESS and the next stack touch (including VEH dispatch, which
+/// builds its frame below RSP) would fault -> APPCRASH. Gated to the same cfg as
+/// the rest of the engine.
+#[cfg(all(windows, feature = "mem-obfuscation"))]
+pub(crate) fn exclude_current_thread(guard: &mut MemGuard) -> bool {
+    let cur = unsafe { GetCurrentThread() };
+    let ntqit = unsafe { (*guard.state).nt_query_information_thread };
+    let mut tbi = core::mem::MaybeUninit::<ThreadBasicInformation>::uninit();
+    let status = unsafe {
+        ntqit(
+            cur,
+            THREAD_BASIC_INFORMATION_CLASS,
+            tbi.as_mut_ptr() as *mut c_void,
+            core::mem::size_of::<ThreadBasicInformation>() as u32,
+            core::ptr::null_mut(),
+        )
+    };
+    if status < 0 {
+        return false;
+    }
+    let teb = unsafe { tbi.assume_init().teb_base } as *const u8;
+    if teb.is_null() {
+        return false;
+    }
+    // Whole stack (StackBase/StackLimit at TEB+0x08/0x10).
+    let stack_base = unsafe { *(teb.add(0x08) as *const *mut c_void) } as *const u8;
+    let stack_limit = unsafe { *(teb.add(0x10) as *const *mut c_void) } as *const u8;
+    exclude_thread_state_and_stack(guard, teb, stack_base, stack_limit)
 }
 
 #[cfg(all(windows, feature = "mem-obfuscation", test))]

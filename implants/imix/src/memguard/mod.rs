@@ -12,6 +12,8 @@ mod engine;
 pub use engine::MemGuard;
 #[cfg(all(windows, feature = "mem-obfuscation"))]
 pub(crate) use engine::exclude_current_thread;
+#[cfg(all(windows, feature = "mem-obfuscation"))]
+pub(crate) use engine::exclude_thread_state_and_stack;
 
 // QA / Phase-4 test hook: simulate a watchdog crash mid-decrypt so the VEH path
 // can be exercised deliberately. Only present in test/print_debug builds.

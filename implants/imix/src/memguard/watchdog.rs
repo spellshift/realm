@@ -204,9 +204,19 @@ fn resolve_debug_knobs() -> DebugKnobs {
 /// woken, `false` only when the watchdog could not be started (so the caller
 /// should fall back to `tokio::time::sleep`).
 pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
+    // Handshake trace (print_debug-gated, non-allocating). Diagnoses the
+    // production partial-resume self-heal wedge: it shows whether the agent
+    // reaches the park, submits it, sends the cmd, and (critically) receives the
+    // wake. The park path runs BEFORE the watchdog encrypts; the wake-received
+    // path runs after full-or-partial decrypt. Both may touch encrypted state,
+    // so keep this strictly non-allocating raw writes (trace_line uses StackBuf).
+    trace_line("agent-entry", format_args!("interval={interval_secs}"));
     let tx = match ensure_watchdog() {
         Some(tx) => tx,
-        None => return false,
+        None => {
+            trace_line("agent-fallback", format_args!("reason=no-watchdog"));
+            return false;
+        }
     };
     let (wake_tx, wake_rx) = channel::<()>();
     if tx
@@ -217,11 +227,21 @@ pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
         .is_err()
     {
         // Watchdog channel is gone; fall back to the normal sleep path.
+        trace_line("agent-fallback", format_args!("reason=send-failed"));
         return false;
     }
+    trace_line("agent-cmd-sent", format_args!("interval={interval_secs}"));
     // Park the async worker on a blocking-pool thread so the runtime stays free
     // while the watchdog owns the encrypt/sleep/decrypt window.
-    let _ = tokio::task::spawn_blocking(move || wake_rx.recv()).await;
+    trace_line(
+        "agent-before-park",
+        format_args!("interval={interval_secs}"),
+    );
+    let recv = tokio::task::spawn_blocking(move || wake_rx.recv()).await;
+    // wake-received: the blocking closure (recv) returned, i.e. the watchdog woke
+    // the agent. Also the point "after the spawned blocking closure returns".
+    trace_line("agent-wake-received", format_args!("ok={}", recv.is_ok()));
+    let _ = recv;
     true
 }
 
@@ -1714,6 +1734,36 @@ fn trace_line(stage: &str, extra: core::fmt::Arguments<'_>) {
 fn trace_line(_stage: &str, _extra: core::fmt::Arguments<'_>) {}
 
 // ---------------------------------------------------------------------------
+// VEH recovery / miss trace (print_debug only). Called from the engine's VEH
+// handler (engine.rs) so the diagnosis trace can localize the production partial-
+// resume self-heal wedge. Both lines are written through the same non-allocating
+// `dbg_print` machinery (trace file when open, else the safe stdout fallback),
+// matching the `veh-recover` / `veh-miss` formats consumed by the VM round.
+// ---------------------------------------------------------------------------
+#[cfg(feature = "print_debug")]
+pub(crate) fn trace_veh_recover(addr: usize, n: usize) {
+    let mut b = StackBuf {
+        buf: [0u8; 256],
+        len: 0,
+    };
+    let _ = core::fmt::write(&mut b, format_args!("veh-recover page=0x{addr:x} n={n}\n"));
+    dbg_print(&b);
+}
+
+#[cfg(feature = "print_debug")]
+pub(crate) fn trace_veh_miss(addr: usize, code: usize) {
+    let mut b = StackBuf {
+        buf: [0u8; 256],
+        len: 0,
+    };
+    let _ = core::fmt::write(
+        &mut b,
+        format_args!("veh-miss addr=0x{addr:x} code=0x{code:x}\n"),
+    );
+    dbg_print(&b);
+}
+
+// ---------------------------------------------------------------------------
 // Windows-gated integration test: one full dormancy + encrypt + decrypt +
 // resume cycle against real memory, with a parked thread that must wake.
 // Runs on Windows CI / the Phase 4 host.
@@ -1814,15 +1864,93 @@ mod tests {
             core::ptr::copy_nonoverlapping(pattern_b.as_ptr(), buf_b, PAGE_SIZE);
         }
 
-        // Exclude the test thread's own stack/TEB/PEB/TLS before encrypting, or the
-        // test thread's live stack would be encrypted + NOACCESS and the next stack
-        // touch (incl. VEH dispatch) would fault -> APPCRASH. The watchdog path does
-        // this via run_dormancy; this direct-encrypt test must do it explicitly.
+        // --- DEFECT 1 fix: the spawned touching threads must report their own
+        // TEB + stack bounds and have them excluded BEFORE encrypt(). Otherwise
+        // the VEH (KiUserExceptionDispatcher) builds its frame on the faulting
+        // spawned thread's own encrypted stack and reads its encrypted TEB ->
+        // deterministic 0xC0000005 APPCRASH (the 683f0fd6 fix only excluded the
+        // test thread's stack via exclude_current_thread). Each spawned thread
+        // reads its own TEB via gs:[0x30] and StackBase/StackLimit at TEB+0x08/
+        // 0x10, then signals ready through a 3-party barrier so the test thread
+        // can exclude every spawned thread's whole stack + TEB/PEB/TLS (plus its
+        // own) before encrypt(); the spawned threads only touch the encrypted
+        // page after the barrier releases, i.e. after encrypt().
+        let (bounds_tx, bounds_rx) = std::sync::mpsc::channel::<(usize, usize, usize)>();
+        // (teb, stack_base, stack_limit)
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(3));
+
+        let expected_a = pattern_a[0];
+        let expected_b = pattern_b[0];
+        let pa = buf_a as usize;
+        let pb = buf_b as usize;
+
+        let bt_a = std::sync::Arc::clone(&barrier);
+        let tx_a = bounds_tx.clone();
+        let ta = std::thread::spawn(move || -> bool {
+            // Report this thread's own TEB + stack bounds before any encryption.
+            let teb: usize = unsafe {
+                let t: usize;
+                core::arch::asm!("mov {0}, gs:[0x30]", out(reg) t, options(nostack));
+                t
+            };
+            let stack_base = unsafe { *(teb as *const u8).add(0x08) as *const *mut c_void };
+            let stack_limit = unsafe { *(teb as *const u8).add(0x10) as *const *mut c_void };
+            let _ = tx_a.send((teb, stack_base as usize, stack_limit as usize));
+            // Wait for the test thread to finish encrypt() before touching the
+            // encrypted page (the fault must occur after encryption).
+            bt_a.wait();
+            let r = unsafe { core::ptr::read_volatile(pa as *const u8) };
+            r == expected_a
+        });
+
+        let bt_b = std::sync::Arc::clone(&barrier);
+        let tx_b = bounds_tx.clone();
+        let tb = std::thread::spawn(move || -> bool {
+            let teb: usize = unsafe {
+                let t: usize;
+                core::arch::asm!("mov {0}, gs:[0x30]", out(reg) t, options(nostack));
+                t
+            };
+            let stack_base = unsafe { *(teb as *const u8).add(0x08) as *const *mut c_void };
+            let stack_limit = unsafe { *(teb as *const u8).add(0x10) as *const *mut c_void };
+            let _ = tx_b.send((teb, stack_base as usize, stack_limit as usize));
+            bt_b.wait();
+            let r = unsafe { core::ptr::read_volatile(pb as *const u8) };
+            r == expected_b
+        });
+
+        // Collect both spawned threads' bounds, exclude their whole stacks +
+        // TEB/PEB/TLS (so KiUserExceptionDispatcher can run on the faulting
+        // thread), then the test thread's own, then encrypt.
+        let (teb_a, sb_a, sl_a) = bounds_rx.recv().expect("thread A bounds");
+        let (teb_b, sb_b, sl_b) = bounds_rx.recv().expect("thread B bounds");
+        assert!(
+            crate::memguard::exclude_thread_state_and_stack(
+                &mut guard,
+                teb_a as *const u8,
+                sb_a as *const u8,
+                sl_a as *const u8,
+            ),
+            "exclude spawned thread A failed"
+        );
+        assert!(
+            crate::memguard::exclude_thread_state_and_stack(
+                &mut guard,
+                teb_b as *const u8,
+                sb_b as *const u8,
+                sl_b as *const u8,
+            ),
+            "exclude spawned thread B failed"
+        );
+        // Exclude the test thread's own stack/TEB/PEB/TLS before encrypting, or
+        // the test thread's live stack would be encrypted + NOACCESS and the next
+        // stack touch (incl. VEH dispatch) would fault -> APPCRASH.
         assert!(
             crate::memguard::exclude_current_thread(&mut guard),
             "exclude_current_thread failed"
         );
-        // Encrypt the whole process (these pages included).
+        // Encrypt the whole process (buf_a/buf_b included; spawned stacks/TEBs
+        // excepted).
         assert!(guard.encrypt(), "encrypt failed");
         assert!(
             guard.encrypted_count() > 0,
@@ -1834,23 +1962,11 @@ mod tests {
         // only thing that can recover them now.
         crate::memguard::debug_simulate_crash_partial_decrypt(0);
 
-        // Spawn two dedicated threads, each touching a distinct encrypted page.
-        // Raw pointers are not Send, so pass the page address as a usize and the
-        // expected byte by copy; the fault is lazily decrypted by the VEH and each
-        // thread must recover concurrently (different-thread faults are admitted
-        // by the tid-keyed recursion guard, not serialized behind a global flag).
-        let expected_a = pattern_a[0];
-        let expected_b = pattern_b[0];
-        let pa = buf_a as usize;
-        let pb = buf_b as usize;
-        let ta = std::thread::spawn(move || -> bool {
-            let r = unsafe { core::ptr::read_volatile(pa as *const u8) };
-            r == expected_a
-        });
-        let tb = std::thread::spawn(move || -> bool {
-            let r = unsafe { core::ptr::read_volatile(pb as *const u8) };
-            r == expected_b
-        });
+        // Release the spawned threads; each now touches its distinct encrypted
+        // page and is lazily decrypted by the VEH. They must recover
+        // concurrently (different-thread faults are admitted by the tid-keyed
+        // recursion guard, not serialized behind a global flag).
+        barrier.wait();
         let ra = ta.join().expect("thread a joined");
         let rb = tb.join().expect("thread b joined");
         assert!(ra, "VEH should have decrypted page A (thread a survived)");
