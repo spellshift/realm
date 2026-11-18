@@ -37,9 +37,27 @@ const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
 // Per-entry page state (stored as `AtomicU8` in `PageEntry`). Ownership is taken
 // by CAS so the VEH and the watchdog bulk-decrypt can never both operate on the
 // same page, eliminating the double-XOR under any interleaving.
-const PG_ENCRYPTED: u8 = 0; // ciphertext + PAGE_NOACCESS (the only state a fault can claim)
-const PG_BUSY: u8 = 1; // claimed by exactly one actor, mid-decrypt
-const PG_PLAINTEXT: u8 = 2; // decrypted and usable
+// Page-entry states. Deliberately NON-ZERO: the entries array is VirtualAlloc-
+// zeroed, so a value of 0 is unambiguously "uninitialized" (PG_UNINIT) and can
+// never be mistaken for a real state. This removes the zero-init/PG_ENCRYPTED
+// collision that let the bulk decrypt certify (or skip) pages it never actually
+// touched.
+const PG_UNINIT: u8 = 0; // zero-init sentinel (entries array is VirtualAlloc-zeroed)
+const PG_ENCRYPTED: u8 = 1; // ciphertext + PAGE_NOACCESS (the only state a fault can claim)
+const PG_BUSY: u8 = 2; // claimed by exactly one actor, mid-decrypt
+const PG_PLAINTEXT: u8 = 3; // decrypted and usable
+
+/// Decrypt diagnostics (print_debug/test). Filled by `decrypt_state` so the trace
+/// can show how many pages were actually XOR'd back to plaintext versus how many
+/// were already `PG_PLAINTEXT` (e.g. lazily decrypted by the VEH during the
+/// encrypted window).
+#[derive(Default)]
+pub struct DecryptDiag {
+    pub enc: usize,
+    pub busy: usize,
+    pub plain: usize,
+    pub xored: usize,
+}
 
 // Number of tid-keyed recursion-guard slots in the unencrypted state region.
 const RECURSION_SLOTS: usize = 32;
@@ -299,7 +317,34 @@ impl MemGuard {
     }
 
     pub fn decrypt(&mut self) -> bool {
-        unsafe { decrypt_state(self.state) }
+        unsafe { decrypt_state(self.state, None) }
+    }
+
+    #[cfg(any(test, feature = "print_debug"))]
+    pub fn decrypt_with_diag(&mut self, diag: &mut DecryptDiag) -> bool {
+        unsafe { decrypt_state(self.state, Some(diag)) }
+    }
+
+    /// Page-state distribution over [0..count) without decrypting. Used by the
+    /// trace to show the pre-decrypt state (how many pages are still encrypted).
+    pub fn decrypt_histogram(&self) -> (usize, usize, usize) {
+        unsafe {
+            let s = &*self.state;
+            let entries = s.entries;
+            let n = s.count.load(Ordering::Acquire);
+            let mut enc = 0;
+            let mut busy = 0;
+            let mut plain = 0;
+            for j in 0..n {
+                match (*entries.add(j)).state.load(Ordering::Acquire) {
+                    PG_ENCRYPTED => enc += 1,
+                    PG_BUSY => busy += 1,
+                    PG_PLAINTEXT => plain += 1,
+                    _ => {}
+                }
+            }
+            (enc, busy, plain)
+        }
     }
 
     pub fn add_exclusion(&mut self, base: *const u8, len: usize) -> bool {
@@ -353,7 +398,7 @@ impl Drop for MemGuard {
         unsafe {
             let s = &mut *self.state;
             if s.count.load(Ordering::Acquire) != 0 {
-                decrypt_state(self.state);
+                decrypt_state(self.state, None);
             }
             if s.count.load(Ordering::Acquire) == 0 {
                 // Fully decrypted. UNSAFE INVARIANT — process-lifetime region
@@ -684,19 +729,29 @@ unsafe fn decrypt_one_owned(e: *mut PageEntry) -> bool {
     true
 }
 
-unsafe fn decrypt_state(state: *mut State) -> bool {
+unsafe fn decrypt_state(state: *mut State, mut diag: Option<&mut DecryptDiag>) -> bool {
     let entries = (*state).entries;
     let n = (*state).count.load(Ordering::Acquire);
-    // Main pass: resume from the cursor and decrypt every PG_ENCRYPTED page,
-    // advancing the cursor past already-plaintext / VEH-busy pages so a failed
-    // pass can be retried without re-XORing plaintext.
-    let mut i = (*state).decrypt_cursor.load(Ordering::Acquire);
+    // Snapshot the page-state distribution BEFORE the bulk pass (for tracing).
+    if let Some(d) = diag.as_mut() {
+        for j in 0..n {
+            match (*entries.add(j)).state.load(Ordering::Acquire) {
+                PG_ENCRYPTED => d.enc += 1,
+                PG_BUSY => d.busy += 1,
+                PG_PLAINTEXT => d.plain += 1,
+                _ => {}
+            }
+        }
+    }
+    // Main pass: decrypt EVERY entry in [0..count). We deliberately iterate the
+    // full range (NOT a cached `decrypt_cursor`) so the pass can never silently
+    // skip an entry; a PG_PLAINTEXT entry is simply left as-is (no double-XOR),
+    // and an entry that is still PG_ENCRYPTED is XOR'd back to plaintext.
+    let mut i = 0usize;
     while i < n {
         let e = entries.add(i);
         let cur = (*e).state.load(Ordering::Acquire);
         if cur != PG_ENCRYPTED {
-            // PG_PLAINTEXT (done) or PG_BUSY (VEH owner): skip, advance cursor.
-            (*state).decrypt_cursor.store(i + 1, Ordering::Release);
             i += 1;
             continue;
         }
@@ -708,11 +763,12 @@ unsafe fn decrypt_state(state: *mut State) -> bool {
                 (*state).decrypt_cursor.store(i, Ordering::Release);
                 return false;
             }
-            (*state).decrypt_cursor.store(i + 1, Ordering::Release);
             i += 1;
             continue;
         }
-        (*state).decrypt_cursor.store(i + 1, Ordering::Release);
+        if let Some(d) = diag.as_mut() {
+            d.xored += 1;
+        }
         i += 1;
     }
 

