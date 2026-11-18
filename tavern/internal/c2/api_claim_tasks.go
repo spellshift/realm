@@ -3,11 +3,14 @@ package c2
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
+	"github.com/mattn/go-sqlite3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron/v3"
 	"google.golang.org/grpc/codes"
@@ -114,6 +117,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 
 // createAutomatedTask retries concurrent unique-key conflicts from a fresh transaction.
 func (srv *Server) createAutomatedTask(ctx context.Context, scheduledTaskID, beaconID, hostID int, occurrence *time.Time) {
+	var lastErr error
 	for attempt := 0; attempt < 8; attempt++ {
 		if ctx.Err() != nil {
 			return
@@ -122,7 +126,8 @@ func (srv *Server) createAutomatedTask(ctx context.Context, scheduledTaskID, bea
 		if err == nil {
 			return
 		}
-		if ent.IsConstraintError(err) || strings.Contains(err.Error(), "database is locked") {
+		if isRetryableAutomatedTaskError(err) {
+			lastErr = err
 			time.Sleep(time.Duration(attempt+1) * 10 * time.Millisecond)
 			continue
 		}
@@ -130,8 +135,29 @@ func (srv *Server) createAutomatedTask(ctx context.Context, scheduledTaskID, bea
 		metricTomeAutomationErrors.Inc()
 		return
 	}
-	claimLog.ErrorContext(ctx, "failed to create automated task after retries", "scheduled_task_id", scheduledTaskID, "beacon_id", beaconID)
+	claimLog.ErrorContext(ctx, "failed to create automated task after retries", "error", lastErr, "scheduled_task_id", scheduledTaskID, "beacon_id", beaconID)
 	metricTomeAutomationErrors.Inc()
+}
+
+func isRetryableAutomatedTaskError(err error) bool {
+	var sqliteErr sqlite3.Error
+	if errors.As(err, &sqliteErr) {
+		if sqliteErr.Code == sqlite3.ErrBusy || sqliteErr.Code == sqlite3.ErrLocked {
+			return true
+		}
+		return sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique && isScheduledKeyError(err.Error())
+	}
+
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) {
+		return mysqlErr.Number == 1062 && isScheduledKeyError(mysqlErr.Message)
+	}
+	return false
+}
+
+func isScheduledKeyError(message string) bool {
+	return strings.Contains(message, quest.FieldScheduledOccurrenceKey) ||
+		strings.Contains(message, task.FieldScheduledDedupKey)
 }
 
 func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID, beaconID, hostID int, occurrence *time.Time) error {
