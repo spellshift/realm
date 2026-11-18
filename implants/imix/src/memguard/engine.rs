@@ -18,7 +18,7 @@ use windows_sys::Win32::System::Memory::{
     VirtualAlloc, VirtualFree, VirtualProtect, VirtualQuery,
 };
 use windows_sys::Win32::System::Threading::{
-    GetCurrentProcessId, OpenThread, Sleep, THREAD_QUERY_INFORMATION,
+    GetCurrentProcessId, GetCurrentThread, OpenThread, Sleep, THREAD_QUERY_INFORMATION,
 };
 // Only needed by the non-x64 fallback of `current_thread_key`; on x64 the TEB
 // pointer is read from `gs` directly, so this import is gated to avoid an unused
@@ -1120,6 +1120,90 @@ unsafe fn partial_decrypt_cursor(state: *mut State, keep: usize) {
     (*state).decrypt_cursor.store(i, Ordering::Release);
 }
 
+/// Test/QA helper: exclude the *current* thread's own live state (TEB/PEB/TLS and
+/// whole stack) from encryption, exactly as `add_watchdog_exclusions` does for the
+/// watchdog thread. Standalone integration tests call `MemGuard::encrypt()` from
+/// the test thread itself, so without this the test thread's own stack would be
+/// encrypted + NOACCESS and the next stack touch (including VEH dispatch, which
+/// builds its frame below RSP) would fault -> APPCRASH. Gated to the same cfg as
+/// the rest of the engine.
+#[cfg(all(windows, feature = "mem-obfuscation"))]
+pub(crate) fn exclude_current_thread(guard: &mut MemGuard) -> bool {
+    let cur = unsafe { GetCurrentThread() };
+    let ntqit = unsafe { (*guard.state).nt_query_information_thread };
+    let mut tbi = core::mem::MaybeUninit::<ThreadBasicInformation>::uninit();
+    let status = unsafe {
+        ntqit(
+            cur,
+            THREAD_BASIC_INFORMATION_CLASS,
+            tbi.as_mut_ptr() as *mut c_void,
+            core::mem::size_of::<ThreadBasicInformation>() as u32,
+            core::ptr::null_mut(),
+        )
+    };
+    if status < 0 {
+        return false;
+    }
+    let teb = unsafe { tbi.assume_init().teb_base };
+    if teb.is_null() {
+        return false;
+    }
+    unsafe {
+        let teb_size = region_size_of(teb);
+        if teb_size > 0 && !guard.add_exclusion(teb as *const u8, teb_size) {
+            return false;
+        }
+        // PEB (TEB+0x60), then the narrow ProcessParameters struct (PEB+0x20).
+        let peb = *(teb.add(0x60) as *const *mut c_void);
+        if !peb.is_null() {
+            let peb_size = region_size_of(peb);
+            if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
+                return false;
+            }
+            let pp = *(peb.add(0x20) as *const *mut c_void);
+            if !pp.is_null() {
+                let pp_base = (pp as usize) & !(PAGE_SIZE - 1);
+                let pp_end = (pp as usize) + 0x490;
+                let pp_pages_end = (pp_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+                let pp_len = pp_pages_end - pp_base;
+                if pp_len > 0 && !guard.add_exclusion(pp_base as *const u8, pp_len) {
+                    return false;
+                }
+            }
+        }
+        // TLS + TLS expansion.
+        let tls = *(teb.add(0x58) as *const *mut c_void);
+        if !tls.is_null() {
+            let page = (tls as usize & !(PAGE_SIZE - 1)) as *const u8;
+            if !guard.add_exclusion(page, PAGE_SIZE) {
+                return false;
+            }
+        }
+        let tls_exp = *(teb.add(TLS_EXPANSION_SLOTS_OFFSET) as *const *mut c_void);
+        if !tls_exp.is_null() {
+            let tls_exp_size = region_size_of(tls_exp);
+            if tls_exp_size > 0 && !guard.add_exclusion(tls_exp as *const u8, tls_exp_size) {
+                return false;
+            }
+        }
+        // Whole stack (StackBase/StackLimit at TEB+0x08/0x10).
+        let stack_base = *(teb.add(0x08) as *const *mut c_void);
+        let stack_limit = *(teb.add(0x10) as *const *mut c_void);
+        if !stack_base.is_null()
+            && !stack_limit.is_null()
+            && stack_base as usize > stack_limit as usize
+        {
+            if !guard.add_exclusion(
+                stack_limit as *const u8,
+                stack_base as usize - stack_limit as usize,
+            ) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 #[cfg(all(windows, feature = "mem-obfuscation", test))]
 mod tests {
     use super::*;
@@ -1157,6 +1241,13 @@ mod tests {
                 "second MemGuard::new() must return None while one is alive"
             );
 
+            // Exclude the test thread's own stack/TEB/PEB/TLS before encrypting,
+            // or the test thread's live stack would be encrypted + NOACCESS and the
+            // next stack touch (incl. VEH dispatch) would fault -> APPCRASH.
+            assert!(
+                exclude_current_thread(&mut guard),
+                "exclude_current_thread failed"
+            );
             for cycle in 0..2 {
                 assert!(guard.encrypt(), "encrypt failed (cycle {cycle})");
 

@@ -1814,6 +1814,14 @@ mod tests {
             core::ptr::copy_nonoverlapping(pattern_b.as_ptr(), buf_b, PAGE_SIZE);
         }
 
+        // Exclude the test thread's own stack/TEB/PEB/TLS before encrypting, or the
+        // test thread's live stack would be encrypted + NOACCESS and the next stack
+        // touch (incl. VEH dispatch) would fault -> APPCRASH. The watchdog path does
+        // this via run_dormancy; this direct-encrypt test must do it explicitly.
+        assert!(
+            crate::memguard::exclude_current_thread(&mut guard),
+            "exclude_current_thread failed"
+        );
         // Encrypt the whole process (these pages included).
         assert!(guard.encrypt(), "encrypt failed");
         assert!(
