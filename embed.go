@@ -132,6 +132,32 @@ import (
 var AgentSourceFS embed.FS
 
 func ExtractAgentSource(dstDir string) error {
+	if info, err := os.Lstat(dstDir); err == nil {
+		if !info.IsDir() {
+			if err := os.Remove(dstDir); err != nil {
+				return err
+			}
+		} else {
+			_ = filepath.WalkDir(dstDir, func(path string, d fs.DirEntry, walkErr error) error {
+				if walkErr == nil && d.IsDir() {
+					_ = os.Chmod(path, 0o755)
+				}
+				return nil
+			})
+			entries, err := os.ReadDir(dstDir)
+			if err != nil {
+				return err
+			}
+			for _, entry := range entries {
+				if err := os.RemoveAll(filepath.Join(dstDir, entry.Name())); err != nil {
+					return err
+				}
+			}
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
 	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return err
 	}
@@ -183,8 +209,20 @@ func ExtractAgentSource(dstDir string) error {
 					return
 				}
 				targetPath := filepath.Join(dstDir, filepath.FromSlash(path))
-				if writeErr := os.WriteFile(targetPath, data, 0o644); writeErr != nil {
+				_ = os.Remove(targetPath)
+				f, openErr := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+				if openErr != nil {
+					errOnce.Do(func() { firstErr = openErr })
+					return
+				}
+				_, writeErr := f.Write(data)
+				closeErr := f.Close()
+				if writeErr != nil {
 					errOnce.Do(func() { firstErr = writeErr })
+					return
+				}
+				if closeErr != nil {
+					errOnce.Do(func() { firstErr = closeErr })
 					return
 				}
 				if chmodErr := os.Chmod(targetPath, 0o644); chmodErr != nil {
