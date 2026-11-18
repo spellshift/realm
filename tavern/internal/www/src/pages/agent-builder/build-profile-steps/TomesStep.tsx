@@ -47,6 +47,7 @@ export const TomesStep = ({ catalog, tomes, setTomes, hasPersistenceTome, onErro
     };
 
     const selectTome = (tome: TomeNode) => {
+        if (tomeToAdd?.id === tome.id) return;
         const selected: Tome = { id: tome.id, name: tome.name, description: tome.description ?? "", tactic: tome.tactic as TomeTacticKey, paramDefs: tome.paramDefs };
         setTomeToAdd(selected);
         loadFields(selected);
@@ -133,8 +134,9 @@ export const TomesStep = ({ catalog, tomes, setTomes, hasPersistenceTome, onErro
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
-                                    className="rounded p-1 text-gray-400 hover:text-gray-600"
+                                    className="rounded p-1 text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label={`Edit ${t.tomeName} tome`}
+                                    disabled={panelOpen}
                                     onClick={() => openEdit(t)}
                                 >
                                     <Pencil className="w-4 h-4" />
