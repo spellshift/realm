@@ -57,8 +57,15 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 		return nil, fmt.Errorf("creating local build dir: %w", err)
 	}
 	defer os.RemoveAll(buildDir)
-	const recipeBuildDir = "/tmp/realm-build"
-	replace := func(s string) string { return strings.ReplaceAll(s, recipeBuildDir, buildDir) }
+	const (
+		recipeBuildDir = "/tmp/realm-build"
+		recipeTomesDir = "/mnt/tomes"
+	)
+	localTomesDir := filepath.Join(buildDir, "tomes")
+	replace := func(s string) string {
+		s = strings.ReplaceAll(s, recipeBuildDir, buildDir)
+		return strings.ReplaceAll(s, recipeTomesDir, localTomesDir)
+	}
 	spec.SetupScript = replace(spec.SetupScript)
 	spec.PreBuildScript = replace(spec.PreBuildScript)
 	spec.BuildScript = replace(spec.BuildScript)
@@ -84,6 +91,9 @@ func (l *LocalExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan
 	}
 	if err := os.Symlink(filepath.Join(tmpDir, "realm"), filepath.Join(buildDir, "realm")); err != nil {
 		return nil, fmt.Errorf("failed to link agent source: %w", err)
+	}
+	if err := os.Symlink(filepath.Join(tmpDir, "tomes"), localTomesDir); err != nil {
+		return nil, fmt.Errorf("failed to link tomes dir: %w", err)
 	}
 
 	localLog.InfoContext(ctx, "starting local build", "task_id", spec.TaskID, "workspace", tmpDir)
