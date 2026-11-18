@@ -18,9 +18,21 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/redirectorenrollmenttoken"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/internal/logging"
 )
 
+type redirectorAuditRecorder struct {
+	entries []logging.AuditEntry
+}
+
+func (r *redirectorAuditRecorder) Enqueue(entry logging.AuditEntry) {
+	r.entries = append(r.entries, entry)
+}
+
 func TestRedirectorEnrollmentTokenExchangeAndReplay(t *testing.T) {
+	audits := &redirectorAuditRecorder{}
+	logging.SetAuditPersister(audits)
+	t.Cleanup(func() { logging.SetAuditPersister(nil) })
 	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 	ctx := context.Background()
@@ -49,6 +61,10 @@ func TestRedirectorEnrollmentTokenExchangeAndReplay(t *testing.T) {
 		return recorder
 	}
 	valid := tavernhttp.RedirectorEnrollRequest{Token: "first", CSR: csr, Transport: "http1", Domains: []string{" A.Example.com ", "b.example.com", "a.example.com"}}
+	invalidToken := valid
+	invalidToken.Token = "unknown"
+	invalidToken.CSR = "bad"
+	require.Equal(t, http.StatusUnauthorized, exchange(invalidToken).Code, "token preflight must precede CSR signing")
 	malformed := valid
 	malformed.CSR = "bad"
 	require.Equal(t, http.StatusBadRequest, exchange(malformed).Code)
@@ -80,6 +96,25 @@ func TestRedirectorEnrollmentTokenExchangeAndReplay(t *testing.T) {
 	count, err = graph.Redirector.Query().Count(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
+	var enrolledAudit, deniedAudit *logging.AuditEntry
+	for i := range audits.entries {
+		event := &audits.entries[i]
+		switch event.Action {
+		case "redirector.enrolled":
+			enrolledAudit = event
+		case "redirector.enroll_denied":
+			if event.Details["reason"] == "invalid_or_used_token" {
+				deniedAudit = event
+			}
+		}
+	}
+	require.NotNil(t, enrolledAudit)
+	require.Equal(t, logging.OutcomeSuccess, enrolledAudit.Outcome)
+	require.Equal(t, logging.ActorRedirector, enrolledAudit.Actor.Kind)
+	require.Equal(t, enrolled.RedirectorID, enrolledAudit.Actor.Name)
+	require.Equal(t, "redirector", enrolledAudit.TargetType)
+	require.NotNil(t, deniedAudit)
+	require.Equal(t, logging.OutcomeDenied, deniedAudit.Outcome)
 }
 
 func TestParseRedirectorEnrollmentTokens(t *testing.T) {

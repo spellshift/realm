@@ -91,6 +91,23 @@ func TestSignBuilderCertificate(t *testing.T) {
 	require.ErrorIs(t, err, builder.ErrInvalidBuilderCSR)
 }
 
+func TestSignRedirectorCertificateErrorsUseRedirectorIdentity(t *testing.T) {
+	_, key, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	csrDER, err := x509.CreateCertificateRequest(rand.Reader, &x509.CertificateRequest{}, key)
+	require.NoError(t, err)
+	csr := string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDER}))
+
+	_, err = builder.SignRedirectorCertificate(nil, nil, "example", csr)
+	require.ErrorContains(t, err, "redirector CA is not configured")
+	require.NotContains(t, err.Error(), "builder")
+
+	_, err = builder.SignRedirectorCertificate(nil, nil, "example", "bad")
+	require.ErrorIs(t, err, builder.ErrInvalidRedirectorCSR)
+	require.ErrorContains(t, err, "invalid redirector CSR")
+	require.NotContains(t, err.Error(), "builder")
+}
+
 func TestLoadSaveIdentity(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "builder.identity")

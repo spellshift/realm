@@ -13,13 +13,14 @@ type metaCtxKey struct{}
 type ActorKind string
 
 const (
-	ActorUnknown   ActorKind = ""
-	ActorUser      ActorKind = "user"
-	ActorBeacon    ActorKind = "beacon"
-	ActorBuilder   ActorKind = "builder"
-	ActorScheduler ActorKind = "scheduler"
-	ActorAnonymous ActorKind = "anonymous"
-	ActorSystem    ActorKind = "system"
+	ActorUnknown    ActorKind = ""
+	ActorUser       ActorKind = "user"
+	ActorBeacon     ActorKind = "beacon"
+	ActorBuilder    ActorKind = "builder"
+	ActorRedirector ActorKind = "redirector"
+	ActorScheduler  ActorKind = "scheduler"
+	ActorAnonymous  ActorKind = "anonymous"
+	ActorSystem     ActorKind = "system"
 )
 
 // Actor describes the authenticated (or anonymous/system) principal associated with a context.
