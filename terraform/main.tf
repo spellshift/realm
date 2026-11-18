@@ -694,14 +694,16 @@ resource "google_secret_manager_secret" "redirector_identity" {
 
 resource "google_secret_manager_secret_iam_member" "redirector_identity_read" {
   count     = local.redirector_deployment_count
-  secret_id = google_secret_manager_secret.redirector_identity[count.index].id
+  project   = var.gcp_project
+  secret_id = google_secret_manager_secret.redirector_identity[count.index].secret_id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.svctavern_redirector.email}"
 }
 
 resource "google_secret_manager_secret_iam_member" "redirector_identity_write" {
   count     = local.redirector_deployment_count
-  secret_id = google_secret_manager_secret.redirector_identity[count.index].id
+  project   = var.gcp_project
+  secret_id = google_secret_manager_secret.redirector_identity[count.index].secret_id
   role      = "roles/secretmanager.secretVersionAdder"
   member    = "serviceAccount:${google_service_account.svctavern_redirector.email}"
 }
@@ -977,7 +979,7 @@ resource "google_dns_record_set" "redir_dns_record_dns_ns" {
 }
 
 locals {
-  gce_def = yamlencode({
+  gce_def = length(local.dns_redirectors) > 0 ? yamlencode({
     spec = {
       containers = [{
         image   = var.tavern_container_image
@@ -1011,7 +1013,7 @@ locals {
       }]
       restartPolicy = "Always"
     }
-  })
+  }) : ""
   user_data_def = <<EOT
 #cloud-config
 

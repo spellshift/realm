@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -171,13 +172,28 @@ func validate(identity *Identity) (*x509.Certificate, ed25519.PrivateKey, error)
 
 var httpClient = &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 
+// ManagementURL accepts an explicit Tavern URL or an HTTP(S) upstream URL.
+// The traffic upstream may instead be a bare gRPC host:port, which cannot be
+// used to construct enrollment and check-in HTTP requests.
+func ManagementURL(explicit, upstream string) (string, error) {
+	raw := explicit
+	if raw == "" {
+		raw = upstream
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Hostname() == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || (parsed.Path != "" && parsed.Path != "/") {
+		return "", fmt.Errorf("managed redirector requires --management-url with a Tavern http:// or https:// URL when upstream is not an HTTP URL")
+	}
+	return strings.TrimRight(parsed.String(), "/"), nil
+}
+
 func EnsureIdentity(ctx context.Context, cfg Config, store Store) (*Identity, error) {
 	identity, err := store.Load(ctx)
 	if err == nil {
 		_, _, err = validate(identity)
 		return identity, err
 	}
-	if !errors.Is(err, os.ErrNotExist) && status.Code(err) != codes.NotFound && status.Code(err) != codes.FailedPrecondition {
+	if !identityAbsent(err) {
 		return nil, fmt.Errorf("load redirector identity: %w", err)
 	}
 	if cfg.Token == "" {
@@ -213,18 +229,8 @@ func EnsureIdentity(ctx context.Context, cfg Config, store Store) (*Identity, er
 		// Another replica may have redeemed the deployment token. It must publish
 		// the shared identity before this instance starts serving traffic.
 		if resp.StatusCode == http.StatusUnauthorized {
-			for attempt := 0; attempt < 30; attempt++ {
-				select {
-				case <-ctx.Done():
-					return nil, ctx.Err()
-				case <-time.After(time.Second):
-				}
-				identity, err := store.Load(ctx)
-				if err == nil {
-					_, _, err = validate(identity)
-					return identity, err
-				}
-			}
+			log.WarnContext(ctx, "redirector enrollment token rejected; waiting for shared identity")
+			return waitForIdentity(ctx, store)
 		}
 		return nil, fmt.Errorf("redirector enrollment failed with HTTP %d", resp.StatusCode)
 	}
@@ -240,9 +246,51 @@ func EnsureIdentity(ctx context.Context, cfg Config, store Store) (*Identity, er
 		return nil, err
 	}
 	if err := store.Save(ctx, identity); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			winner, loadErr := store.Load(ctx)
+			if loadErr == nil {
+				_, _, loadErr = validate(winner)
+			}
+			if loadErr != nil {
+				return nil, fmt.Errorf("redirector identity was published concurrently but cannot be loaded: %w", loadErr)
+			}
+			return winner, nil
+		}
 		return nil, fmt.Errorf("enrollment succeeded but identity could not be saved: %w", err)
 	}
 	return identity, nil
+}
+
+func identityAbsent(err error) bool {
+	return errors.Is(err, os.ErrNotExist) || status.Code(err) == codes.NotFound || status.Code(err) == codes.FailedPrecondition
+}
+
+func waitForIdentity(ctx context.Context, store Store) (*Identity, error) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	attempts := 0
+	for {
+		identity, err := store.Load(ctx)
+		if err == nil {
+			_, _, err = validate(identity)
+			if err != nil {
+				return nil, fmt.Errorf("published redirector identity is invalid: %w", err)
+			}
+			return identity, nil
+		}
+		if !identityAbsent(err) {
+			return nil, fmt.Errorf("load shared redirector identity: %w", err)
+		}
+		attempts++
+		if attempts%60 == 0 {
+			log.WarnContext(ctx, "waiting for redirector identity after enrollment token was rejected; verify the token and shared store if this persists")
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+		}
+	}
 }
 
 func Checkin(ctx context.Context, upstream string, identity *Identity) error {

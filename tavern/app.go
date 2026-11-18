@@ -183,9 +183,9 @@ func newApp(ctx context.Context) (app *cli.App) {
 					transport = "grpc"
 				}
 				if c.Bool("managed") {
-					managementURL := c.String("management-url")
-					if managementURL == "" {
-						managementURL = upstream
+					managementURL, err := managed.ManagementURL(c.String("management-url"), upstream)
+					if err != nil {
+						return err
 					}
 					cfg := managed.Config{Upstream: managementURL, Transport: transport, Domains: c.StringSlice("domain"), Token: os.Getenv("REALM_REDIRECTOR_ENROLLMENT_TOKEN"), IdentityFile: c.String("identity-file"), IdentitySecret: c.String("identity-secret")}
 					if len(cfg.Domains) == 0 {
