@@ -181,6 +181,6 @@ export type BuildTaskRow = {
 };
 
 
-export const DEFAULT_SETUP_SCRIPT = "cd {{.BuildDir}}/realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true";
+export const DEFAULT_SETUP_SCRIPT = "cd {{.BuildDir}}/realm/implants/imix && rm -rf install_scripts/* && cp -r $REALM_TOMES_DIR/* install_scripts/ 2>/dev/null || true";
 
 export type Tome = { id: string; name: string; description: string; tactic: TomeTacticKey; paramDefs?: string | null };

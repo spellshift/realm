@@ -22,7 +22,7 @@ func TestResolveBuildRecipe_BuildDir(t *testing.T) {
 		BuildScript:  "cd {{.BuildDir}}/realm/implants/imix && {{.BuildCommand}}",
 		ArtifactPath: "{{.ArtifactPath}}",
 	}
-	setupScript := "cd {{.BuildDir}}/realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"
+	setupScript := "cd {{.BuildDir}}/realm/implants/imix && rm -rf install_scripts/* && cp -r $REALM_TOMES_DIR/* install_scripts/ 2>/dev/null || true"
 
 	resolvedSetup, resolvedBuild, resolvedArtifact, err := builder.ResolveBuildRecipe(
 		profile, setupScript, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN,
@@ -80,7 +80,7 @@ func TestDefaultSetupScript_StagesTomesIntoExtractedAgentSource(t *testing.T) {
 		SetTomes(tomeRefs).
 		SaveX(ctx)
 
-	expectedDefaultSetup := "cd {{.BuildDir}}/realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"
+	expectedDefaultSetup := "cd {{.BuildDir}}/realm/implants/imix && rm -rf install_scripts/* && cp -r $REALM_TOMES_DIR/* install_scripts/ 2>/dev/null || true"
 	require.Equal(t, expectedDefaultSetup, profile.Setupscript)
 	require.NotContains(t, profile.Setupscript, "git clone")
 
@@ -89,7 +89,7 @@ func TestDefaultSetupScript_StagesTomesIntoExtractedAgentSource(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotContains(t, resolvedSetup, "git clone")
-	require.Equal(t, "cd /tmp/realm-build/realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true", resolvedSetup)
+	require.Equal(t, "cd /tmp/realm-build/realm/implants/imix && rm -rf install_scripts/* && cp -r $REALM_TOMES_DIR/* install_scripts/ 2>/dev/null || true", resolvedSetup)
 
 	snapshot := builder.NewProfileSnapshot(profile)
 	bundle, err := builder.SnapshotProfile(ctx, graph, snapshot, profile.Tomes)
