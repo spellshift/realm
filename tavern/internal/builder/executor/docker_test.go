@@ -236,3 +236,40 @@ func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
 		assert.True(t, strings.HasPrefix(line, "line_"), "unexpected line %d: %s", i+1, line)
 	}
 }
+
+func TestDockerExecutor_Build_ExtractsEmbeddedAgentSource(t *testing.T) {
+	cli := skipIfNoDocker(t)
+	exec := executor.NewDockerExecutor(cli)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	setupChecks := strings.Join([]string{
+		"test -f /tmp/realm-build/realm/implants/.cargo/config.toml",
+		"test -f /tmp/realm-build/realm/implants/imix/Cargo.toml",
+		"test -f /tmp/realm-build/realm/bin/reflective_loader/Cargo.toml",
+		"test -f /tmp/realm-build/realm/tavern/internal/c2/proto/c2.proto",
+	}, " && ")
+
+	spec := executor.BuildSpec{
+		TaskID:      7,
+		TargetOS:    "linux",
+		BuildImage:  "alpine:latest",
+		SetupScript: setupChecks,
+		BuildScript: "echo docker_extracted_ok",
+	}
+
+	outputCh := make(chan string, 100)
+	errorCh := make(chan string, 100)
+
+	result, err := exec.Build(ctx, spec, outputCh, errorCh)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	assert.Equal(t, int64(0), result.ExitCode)
+
+	var output []string
+	for line := range outputCh {
+		output = append(output, line)
+	}
+	assert.Contains(t, output, "docker_extracted_ok")
+}

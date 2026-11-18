@@ -135,6 +135,9 @@ func ExtractAgentSource(dstDir string) error {
 	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return err
 	}
+	if err := os.Chmod(dstDir, 0o755); err != nil {
+		return err
+	}
 	var files []string
 	err := fs.WalkDir(AgentSourceFS, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -145,7 +148,10 @@ func ExtractAgentSource(dstDir string) error {
 		}
 		targetPath := filepath.Join(dstDir, filepath.FromSlash(path))
 		if d.IsDir() {
-			return os.MkdirAll(targetPath, 0o755)
+			if err := os.MkdirAll(targetPath, 0o755); err != nil {
+				return err
+			}
+			return os.Chmod(targetPath, 0o755)
 		}
 		files = append(files, path)
 		return nil
@@ -179,6 +185,10 @@ func ExtractAgentSource(dstDir string) error {
 				targetPath := filepath.Join(dstDir, filepath.FromSlash(path))
 				if writeErr := os.WriteFile(targetPath, data, 0o644); writeErr != nil {
 					errOnce.Do(func() { firstErr = writeErr })
+					return
+				}
+				if chmodErr := os.Chmod(targetPath, 0o644); chmodErr != nil {
+					errOnce.Do(func() { firstErr = chmodErr })
 					return
 				}
 			}

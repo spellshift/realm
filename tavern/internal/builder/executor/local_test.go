@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -351,6 +352,20 @@ func TestLocalExecutor_Build_ExtractsEmbeddedAgentSource(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	workspaceCargo, err := fs.ReadFile(realm.AgentSourceFS, "implants/Cargo.toml")
+	require.NoError(t, err)
+	membersBlock, _, ok := strings.Cut(string(workspaceCargo), "exclude =")
+	require.True(t, ok)
+	_, membersBlock, ok = strings.Cut(membersBlock, "members = [")
+	require.True(t, ok)
+	matches := regexp.MustCompile(`"([^"]+)"`).FindAllStringSubmatch(membersBlock, -1)
+	require.NotEmpty(t, matches)
+	for _, m := range matches {
+		memberCargoPath := "implants/" + m[1] + "/Cargo.toml"
+		_, statErr := fs.Stat(realm.AgentSourceFS, memberCargoPath)
+		require.NoError(t, statErr, "missing workspace member %s", memberCargoPath)
+	}
+
 	setupChecks := strings.Join([]string{
 		"test -f /tmp/realm-build/realm/implants/.cargo/config.toml",
 		"test -f /tmp/realm-build/realm/implants/imix/Cargo.toml",
@@ -362,10 +377,9 @@ func TestLocalExecutor_Build_ExtractsEmbeddedAgentSource(t *testing.T) {
 		"test -f \"$REALM_WORKSPACE_DIR/realm/tavern/internal/c2/proto/c2.proto\"",
 	}, " && ")
 
-	buildScript := "echo extracted_ok"
-	if _, lookErr := exec.LookPath("cargo"); lookErr == nil {
-		buildScript = "cargo metadata --no-deps --manifest-path /tmp/realm-build/realm/implants/imix/Cargo.toml >/dev/null && echo extracted_ok"
-	}
+	_, lookErr := exec.LookPath("cargo")
+	require.NoError(t, lookErr, "cargo must be installed in test environment")
+	buildScript := "cargo metadata --no-deps --manifest-path /tmp/realm-build/realm/implants/imix/Cargo.toml >/dev/null && echo extracted_ok"
 
 	spec := executor.BuildSpec{
 		TaskID:      10,
@@ -390,12 +404,4 @@ func TestLocalExecutor_Build_ExtractsEmbeddedAgentSource(t *testing.T) {
 		output = append(output, line)
 	}
 	assert.Contains(t, output, "extracted_ok")
-
-	if _, lookErr := exec.LookPath("cargo"); lookErr == nil {
-		extractedDir := t.TempDir()
-		require.NoError(t, realm.ExtractAgentSource(extractedDir))
-		cmd := exec.CommandContext(ctx, "cargo", "metadata", "--no-deps", "--manifest-path", filepath.Join(extractedDir, "implants", "imix", "Cargo.toml"))
-		out, cmdErr := cmd.CombinedOutput()
-		require.NoError(t, cmdErr, string(out))
-	}
 }
