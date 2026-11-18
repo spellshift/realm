@@ -614,6 +614,54 @@ func (f QuestMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation)
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.QuestMutation", m)
 }
 
+// The RedirectorQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type RedirectorQueryRuleFunc func(context.Context, *ent.RedirectorQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f RedirectorQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.RedirectorQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.RedirectorQuery", q)
+}
+
+// The RedirectorMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type RedirectorMutationRuleFunc func(context.Context, *ent.RedirectorMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f RedirectorMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.RedirectorMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RedirectorMutation", m)
+}
+
+// The RedirectorEnrollmentTokenQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type RedirectorEnrollmentTokenQueryRuleFunc func(context.Context, *ent.RedirectorEnrollmentTokenQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f RedirectorEnrollmentTokenQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.RedirectorEnrollmentTokenQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.RedirectorEnrollmentTokenQuery", q)
+}
+
+// The RedirectorEnrollmentTokenMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type RedirectorEnrollmentTokenMutationRuleFunc func(context.Context, *ent.RedirectorEnrollmentTokenMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f RedirectorEnrollmentTokenMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.RedirectorEnrollmentTokenMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RedirectorEnrollmentTokenMutation", m)
+}
+
 // The RepositoryQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type RepositoryQueryRuleFunc func(context.Context, *ent.RepositoryQuery) error

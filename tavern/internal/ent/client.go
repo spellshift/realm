@@ -36,6 +36,8 @@ import (
 	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/redirector"
+	"realm.pub/tavern/internal/ent/redirectorenrollmenttoken"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
@@ -95,6 +97,10 @@ type Client struct {
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
+	// Redirector is the client for interacting with the Redirector builders.
+	Redirector *RedirectorClient
+	// RedirectorEnrollmentToken is the client for interacting with the RedirectorEnrollmentToken builders.
+	RedirectorEnrollmentToken *RedirectorEnrollmentTokenClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
 	// ScheduledTask is the client for interacting with the ScheduledTask builders.
@@ -149,6 +155,8 @@ func (c *Client) init() {
 	c.OperatorNote = NewOperatorNoteClient(c.config)
 	c.Portal = NewPortalClient(c.config)
 	c.Quest = NewQuestClient(c.config)
+	c.Redirector = NewRedirectorClient(c.config)
+	c.RedirectorEnrollmentToken = NewRedirectorEnrollmentTokenClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
 	c.ScheduledTask = NewScheduledTaskClient(c.config)
 	c.Screenshot = NewScreenshotClient(c.config)
@@ -249,39 +257,41 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                    ctx,
-		config:                 cfg,
-		Adventure:              NewAdventureClient(cfg),
-		Asset:                  NewAssetClient(cfg),
-		Beacon:                 NewBeaconClient(cfg),
-		BeaconHistory:          NewBeaconHistoryClient(cfg),
-		BuildProfile:           NewBuildProfileClient(cfg),
-		BuildTask:              NewBuildTaskClient(cfg),
-		Builder:                NewBuilderClient(cfg),
-		BuilderEnrollmentToken: NewBuilderEnrollmentTokenClient(cfg),
-		DeviceAuth:             NewDeviceAuthClient(cfg),
-		Event:                  NewEventClient(cfg),
-		Host:                   NewHostClient(cfg),
-		HostCredential:         NewHostCredentialClient(cfg),
-		HostFile:               NewHostFileClient(cfg),
-		HostProcess:            NewHostProcessClient(cfg),
-		Link:                   NewLinkClient(cfg),
-		Network:                NewNetworkClient(cfg),
-		NetworkHost:            NewNetworkHostClient(cfg),
-		Notification:           NewNotificationClient(cfg),
-		OperatorNote:           NewOperatorNoteClient(cfg),
-		Portal:                 NewPortalClient(cfg),
-		Quest:                  NewQuestClient(cfg),
-		Repository:             NewRepositoryClient(cfg),
-		ScheduledTask:          NewScheduledTaskClient(cfg),
-		Screenshot:             NewScreenshotClient(cfg),
-		Shell:                  NewShellClient(cfg),
-		ShellPivot:             NewShellPivotClient(cfg),
-		ShellTask:              NewShellTaskClient(cfg),
-		Tag:                    NewTagClient(cfg),
-		Task:                   NewTaskClient(cfg),
-		Tome:                   NewTomeClient(cfg),
-		User:                   NewUserClient(cfg),
+		ctx:                       ctx,
+		config:                    cfg,
+		Adventure:                 NewAdventureClient(cfg),
+		Asset:                     NewAssetClient(cfg),
+		Beacon:                    NewBeaconClient(cfg),
+		BeaconHistory:             NewBeaconHistoryClient(cfg),
+		BuildProfile:              NewBuildProfileClient(cfg),
+		BuildTask:                 NewBuildTaskClient(cfg),
+		Builder:                   NewBuilderClient(cfg),
+		BuilderEnrollmentToken:    NewBuilderEnrollmentTokenClient(cfg),
+		DeviceAuth:                NewDeviceAuthClient(cfg),
+		Event:                     NewEventClient(cfg),
+		Host:                      NewHostClient(cfg),
+		HostCredential:            NewHostCredentialClient(cfg),
+		HostFile:                  NewHostFileClient(cfg),
+		HostProcess:               NewHostProcessClient(cfg),
+		Link:                      NewLinkClient(cfg),
+		Network:                   NewNetworkClient(cfg),
+		NetworkHost:               NewNetworkHostClient(cfg),
+		Notification:              NewNotificationClient(cfg),
+		OperatorNote:              NewOperatorNoteClient(cfg),
+		Portal:                    NewPortalClient(cfg),
+		Quest:                     NewQuestClient(cfg),
+		Redirector:                NewRedirectorClient(cfg),
+		RedirectorEnrollmentToken: NewRedirectorEnrollmentTokenClient(cfg),
+		Repository:                NewRepositoryClient(cfg),
+		ScheduledTask:             NewScheduledTaskClient(cfg),
+		Screenshot:                NewScreenshotClient(cfg),
+		Shell:                     NewShellClient(cfg),
+		ShellPivot:                NewShellPivotClient(cfg),
+		ShellTask:                 NewShellTaskClient(cfg),
+		Tag:                       NewTagClient(cfg),
+		Task:                      NewTaskClient(cfg),
+		Tome:                      NewTomeClient(cfg),
+		User:                      NewUserClient(cfg),
 	}, nil
 }
 
@@ -299,39 +309,41 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                    ctx,
-		config:                 cfg,
-		Adventure:              NewAdventureClient(cfg),
-		Asset:                  NewAssetClient(cfg),
-		Beacon:                 NewBeaconClient(cfg),
-		BeaconHistory:          NewBeaconHistoryClient(cfg),
-		BuildProfile:           NewBuildProfileClient(cfg),
-		BuildTask:              NewBuildTaskClient(cfg),
-		Builder:                NewBuilderClient(cfg),
-		BuilderEnrollmentToken: NewBuilderEnrollmentTokenClient(cfg),
-		DeviceAuth:             NewDeviceAuthClient(cfg),
-		Event:                  NewEventClient(cfg),
-		Host:                   NewHostClient(cfg),
-		HostCredential:         NewHostCredentialClient(cfg),
-		HostFile:               NewHostFileClient(cfg),
-		HostProcess:            NewHostProcessClient(cfg),
-		Link:                   NewLinkClient(cfg),
-		Network:                NewNetworkClient(cfg),
-		NetworkHost:            NewNetworkHostClient(cfg),
-		Notification:           NewNotificationClient(cfg),
-		OperatorNote:           NewOperatorNoteClient(cfg),
-		Portal:                 NewPortalClient(cfg),
-		Quest:                  NewQuestClient(cfg),
-		Repository:             NewRepositoryClient(cfg),
-		ScheduledTask:          NewScheduledTaskClient(cfg),
-		Screenshot:             NewScreenshotClient(cfg),
-		Shell:                  NewShellClient(cfg),
-		ShellPivot:             NewShellPivotClient(cfg),
-		ShellTask:              NewShellTaskClient(cfg),
-		Tag:                    NewTagClient(cfg),
-		Task:                   NewTaskClient(cfg),
-		Tome:                   NewTomeClient(cfg),
-		User:                   NewUserClient(cfg),
+		ctx:                       ctx,
+		config:                    cfg,
+		Adventure:                 NewAdventureClient(cfg),
+		Asset:                     NewAssetClient(cfg),
+		Beacon:                    NewBeaconClient(cfg),
+		BeaconHistory:             NewBeaconHistoryClient(cfg),
+		BuildProfile:              NewBuildProfileClient(cfg),
+		BuildTask:                 NewBuildTaskClient(cfg),
+		Builder:                   NewBuilderClient(cfg),
+		BuilderEnrollmentToken:    NewBuilderEnrollmentTokenClient(cfg),
+		DeviceAuth:                NewDeviceAuthClient(cfg),
+		Event:                     NewEventClient(cfg),
+		Host:                      NewHostClient(cfg),
+		HostCredential:            NewHostCredentialClient(cfg),
+		HostFile:                  NewHostFileClient(cfg),
+		HostProcess:               NewHostProcessClient(cfg),
+		Link:                      NewLinkClient(cfg),
+		Network:                   NewNetworkClient(cfg),
+		NetworkHost:               NewNetworkHostClient(cfg),
+		Notification:              NewNotificationClient(cfg),
+		OperatorNote:              NewOperatorNoteClient(cfg),
+		Portal:                    NewPortalClient(cfg),
+		Quest:                     NewQuestClient(cfg),
+		Redirector:                NewRedirectorClient(cfg),
+		RedirectorEnrollmentToken: NewRedirectorEnrollmentTokenClient(cfg),
+		Repository:                NewRepositoryClient(cfg),
+		ScheduledTask:             NewScheduledTaskClient(cfg),
+		Screenshot:                NewScreenshotClient(cfg),
+		Shell:                     NewShellClient(cfg),
+		ShellPivot:                NewShellPivotClient(cfg),
+		ShellTask:                 NewShellTaskClient(cfg),
+		Tag:                       NewTagClient(cfg),
+		Task:                      NewTaskClient(cfg),
+		Tome:                      NewTomeClient(cfg),
+		User:                      NewUserClient(cfg),
 	}, nil
 }
 
@@ -364,9 +376,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
 		c.Builder, c.BuilderEnrollmentToken, c.DeviceAuth, c.Event, c.Host,
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Network, c.NetworkHost,
-		c.Notification, c.OperatorNote, c.Portal, c.Quest, c.Repository,
-		c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot, c.ShellTask, c.Tag,
-		c.Task, c.Tome, c.User,
+		c.Notification, c.OperatorNote, c.Portal, c.Quest, c.Redirector,
+		c.RedirectorEnrollmentToken, c.Repository, c.ScheduledTask, c.Screenshot,
+		c.Shell, c.ShellPivot, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -379,9 +391,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
 		c.Builder, c.BuilderEnrollmentToken, c.DeviceAuth, c.Event, c.Host,
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Network, c.NetworkHost,
-		c.Notification, c.OperatorNote, c.Portal, c.Quest, c.Repository,
-		c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot, c.ShellTask, c.Tag,
-		c.Task, c.Tome, c.User,
+		c.Notification, c.OperatorNote, c.Portal, c.Quest, c.Redirector,
+		c.RedirectorEnrollmentToken, c.Repository, c.ScheduledTask, c.Screenshot,
+		c.Shell, c.ShellPivot, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -432,6 +444,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Portal.mutate(ctx, m)
 	case *QuestMutation:
 		return c.Quest.mutate(ctx, m)
+	case *RedirectorMutation:
+		return c.Redirector.mutate(ctx, m)
+	case *RedirectorEnrollmentTokenMutation:
+		return c.RedirectorEnrollmentToken.mutate(ctx, m)
 	case *RepositoryMutation:
 		return c.Repository.mutate(ctx, m)
 	case *ScheduledTaskMutation:
@@ -4310,6 +4326,272 @@ func (c *QuestClient) mutate(ctx context.Context, m *QuestMutation) (Value, erro
 	}
 }
 
+// RedirectorClient is a client for the Redirector schema.
+type RedirectorClient struct {
+	config
+}
+
+// NewRedirectorClient returns a client for the Redirector from the given config.
+func NewRedirectorClient(c config) *RedirectorClient {
+	return &RedirectorClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `redirector.Hooks(f(g(h())))`.
+func (c *RedirectorClient) Use(hooks ...Hook) {
+	c.hooks.Redirector = append(c.hooks.Redirector, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `redirector.Intercept(f(g(h())))`.
+func (c *RedirectorClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Redirector = append(c.inters.Redirector, interceptors...)
+}
+
+// Create returns a builder for creating a Redirector entity.
+func (c *RedirectorClient) Create() *RedirectorCreate {
+	mutation := newRedirectorMutation(c.config, OpCreate)
+	return &RedirectorCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Redirector entities.
+func (c *RedirectorClient) CreateBulk(builders ...*RedirectorCreate) *RedirectorCreateBulk {
+	return &RedirectorCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RedirectorClient) MapCreateBulk(slice any, setFunc func(*RedirectorCreate, int)) *RedirectorCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RedirectorCreateBulk{err: fmt.Errorf("calling to RedirectorClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RedirectorCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RedirectorCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Redirector.
+func (c *RedirectorClient) Update() *RedirectorUpdate {
+	mutation := newRedirectorMutation(c.config, OpUpdate)
+	return &RedirectorUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RedirectorClient) UpdateOne(r *Redirector) *RedirectorUpdateOne {
+	mutation := newRedirectorMutation(c.config, OpUpdateOne, withRedirector(r))
+	return &RedirectorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RedirectorClient) UpdateOneID(id int) *RedirectorUpdateOne {
+	mutation := newRedirectorMutation(c.config, OpUpdateOne, withRedirectorID(id))
+	return &RedirectorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Redirector.
+func (c *RedirectorClient) Delete() *RedirectorDelete {
+	mutation := newRedirectorMutation(c.config, OpDelete)
+	return &RedirectorDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RedirectorClient) DeleteOne(r *Redirector) *RedirectorDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RedirectorClient) DeleteOneID(id int) *RedirectorDeleteOne {
+	builder := c.Delete().Where(redirector.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RedirectorDeleteOne{builder}
+}
+
+// Query returns a query builder for Redirector.
+func (c *RedirectorClient) Query() *RedirectorQuery {
+	return &RedirectorQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRedirector},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Redirector entity by its id.
+func (c *RedirectorClient) Get(ctx context.Context, id int) (*Redirector, error) {
+	return c.Query().Where(redirector.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RedirectorClient) GetX(ctx context.Context, id int) *Redirector {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RedirectorClient) Hooks() []Hook {
+	return c.hooks.Redirector
+}
+
+// Interceptors returns the client interceptors.
+func (c *RedirectorClient) Interceptors() []Interceptor {
+	return c.inters.Redirector
+}
+
+func (c *RedirectorClient) mutate(ctx context.Context, m *RedirectorMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RedirectorCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RedirectorUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RedirectorUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RedirectorDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Redirector mutation op: %q", m.Op())
+	}
+}
+
+// RedirectorEnrollmentTokenClient is a client for the RedirectorEnrollmentToken schema.
+type RedirectorEnrollmentTokenClient struct {
+	config
+}
+
+// NewRedirectorEnrollmentTokenClient returns a client for the RedirectorEnrollmentToken from the given config.
+func NewRedirectorEnrollmentTokenClient(c config) *RedirectorEnrollmentTokenClient {
+	return &RedirectorEnrollmentTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `redirectorenrollmenttoken.Hooks(f(g(h())))`.
+func (c *RedirectorEnrollmentTokenClient) Use(hooks ...Hook) {
+	c.hooks.RedirectorEnrollmentToken = append(c.hooks.RedirectorEnrollmentToken, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `redirectorenrollmenttoken.Intercept(f(g(h())))`.
+func (c *RedirectorEnrollmentTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RedirectorEnrollmentToken = append(c.inters.RedirectorEnrollmentToken, interceptors...)
+}
+
+// Create returns a builder for creating a RedirectorEnrollmentToken entity.
+func (c *RedirectorEnrollmentTokenClient) Create() *RedirectorEnrollmentTokenCreate {
+	mutation := newRedirectorEnrollmentTokenMutation(c.config, OpCreate)
+	return &RedirectorEnrollmentTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RedirectorEnrollmentToken entities.
+func (c *RedirectorEnrollmentTokenClient) CreateBulk(builders ...*RedirectorEnrollmentTokenCreate) *RedirectorEnrollmentTokenCreateBulk {
+	return &RedirectorEnrollmentTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RedirectorEnrollmentTokenClient) MapCreateBulk(slice any, setFunc func(*RedirectorEnrollmentTokenCreate, int)) *RedirectorEnrollmentTokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RedirectorEnrollmentTokenCreateBulk{err: fmt.Errorf("calling to RedirectorEnrollmentTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RedirectorEnrollmentTokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RedirectorEnrollmentTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RedirectorEnrollmentToken.
+func (c *RedirectorEnrollmentTokenClient) Update() *RedirectorEnrollmentTokenUpdate {
+	mutation := newRedirectorEnrollmentTokenMutation(c.config, OpUpdate)
+	return &RedirectorEnrollmentTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RedirectorEnrollmentTokenClient) UpdateOne(ret *RedirectorEnrollmentToken) *RedirectorEnrollmentTokenUpdateOne {
+	mutation := newRedirectorEnrollmentTokenMutation(c.config, OpUpdateOne, withRedirectorEnrollmentToken(ret))
+	return &RedirectorEnrollmentTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RedirectorEnrollmentTokenClient) UpdateOneID(id int) *RedirectorEnrollmentTokenUpdateOne {
+	mutation := newRedirectorEnrollmentTokenMutation(c.config, OpUpdateOne, withRedirectorEnrollmentTokenID(id))
+	return &RedirectorEnrollmentTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RedirectorEnrollmentToken.
+func (c *RedirectorEnrollmentTokenClient) Delete() *RedirectorEnrollmentTokenDelete {
+	mutation := newRedirectorEnrollmentTokenMutation(c.config, OpDelete)
+	return &RedirectorEnrollmentTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RedirectorEnrollmentTokenClient) DeleteOne(ret *RedirectorEnrollmentToken) *RedirectorEnrollmentTokenDeleteOne {
+	return c.DeleteOneID(ret.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RedirectorEnrollmentTokenClient) DeleteOneID(id int) *RedirectorEnrollmentTokenDeleteOne {
+	builder := c.Delete().Where(redirectorenrollmenttoken.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RedirectorEnrollmentTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for RedirectorEnrollmentToken.
+func (c *RedirectorEnrollmentTokenClient) Query() *RedirectorEnrollmentTokenQuery {
+	return &RedirectorEnrollmentTokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRedirectorEnrollmentToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RedirectorEnrollmentToken entity by its id.
+func (c *RedirectorEnrollmentTokenClient) Get(ctx context.Context, id int) (*RedirectorEnrollmentToken, error) {
+	return c.Query().Where(redirectorenrollmenttoken.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RedirectorEnrollmentTokenClient) GetX(ctx context.Context, id int) *RedirectorEnrollmentToken {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RedirectorEnrollmentTokenClient) Hooks() []Hook {
+	return c.hooks.RedirectorEnrollmentToken
+}
+
+// Interceptors returns the client interceptors.
+func (c *RedirectorEnrollmentTokenClient) Interceptors() []Interceptor {
+	return c.inters.RedirectorEnrollmentToken
+}
+
+func (c *RedirectorEnrollmentTokenClient) mutate(ctx context.Context, m *RedirectorEnrollmentTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RedirectorEnrollmentTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RedirectorEnrollmentTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RedirectorEnrollmentTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RedirectorEnrollmentTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RedirectorEnrollmentToken mutation op: %q", m.Op())
+	}
+}
+
 // RepositoryClient is a client for the Repository schema.
 type RepositoryClient struct {
 	config
@@ -6354,14 +6636,15 @@ type (
 		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
 		BuilderEnrollmentToken, DeviceAuth, Event, Host, HostCredential, HostFile,
 		HostProcess, Link, Network, NetworkHost, Notification, OperatorNote, Portal,
-		Quest, Repository, ScheduledTask, Screenshot, Shell, ShellPivot, ShellTask,
-		Tag, Task, Tome, User []ent.Hook
+		Quest, Redirector, RedirectorEnrollmentToken, Repository, ScheduledTask,
+		Screenshot, Shell, ShellPivot, ShellTask, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
 		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
 		BuilderEnrollmentToken, DeviceAuth, Event, Host, HostCredential, HostFile,
 		HostProcess, Link, Network, NetworkHost, Notification, OperatorNote, Portal,
-		Quest, Repository, ScheduledTask, Screenshot, Shell, ShellPivot, ShellTask,
-		Tag, Task, Tome, User []ent.Interceptor
+		Quest, Redirector, RedirectorEnrollmentToken, Repository, ScheduledTask,
+		Screenshot, Shell, ShellPivot, ShellTask, Tag, Task, Tome,
+		User []ent.Interceptor
 	}
 )

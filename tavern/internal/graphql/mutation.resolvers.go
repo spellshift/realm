@@ -788,6 +788,23 @@ func (r *mutationResolver) CreateBuilderEnrollmentToken(ctx context.Context) (st
 	return token, nil
 }
 
+// CreateRedirectorEnrollmentToken is the resolver for the createRedirectorEnrollmentToken field.
+func (r *mutationResolver) CreateRedirectorEnrollmentToken(ctx context.Context) (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	hash := sha256.Sum256([]byte(token))
+	tok, err := r.client.RedirectorEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	attrs := append(logging.TargetIntAttrs("redirector_enrollment_token", tok.ID, ""), "token_id", tok.ID)
+	logging.Audit(auditCtx(ctx), "admin", "redirector.enrollment_token_created", "redirector enrollment token created", attrs...)
+	return token, nil
+}
+
 // DeleteBuilder is the resolver for the deleteBuilder field.
 func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (int, error) {
 	existing, _ := r.client.Builder.Get(ctx, builderID)

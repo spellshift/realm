@@ -56,6 +56,16 @@ func CreateCA(privKey ed25519.PrivateKey) (*x509.Certificate, error) {
 // SignBuilderCertificate generates a client certificate for a builder, signed by the CA.
 // The certificate CN is set to "builder-{identifier}" for identity attribution.
 func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, builderIdentifier string, csrPEM string) ([]byte, error) {
+	return signIdentityCertificate(ca, caKey, "builder-"+builderIdentifier, csrPEM)
+}
+
+// SignRedirectorCertificate signs a redirector CSR under the shared enrollment CA.
+// Its CN prefix keeps redirector credentials distinct from builder credentials.
+func SignRedirectorCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, identifier, csrPEM string) ([]byte, error) {
+	return signIdentityCertificate(ca, caKey, "redirector-"+identifier, csrPEM)
+}
+
+func signIdentityCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, commonName, csrPEM string) ([]byte, error) {
 	block, rest := pem.Decode([]byte(csrPEM))
 	if block == nil || block.Type != "CERTIFICATE REQUEST" || len(bytes.TrimSpace(rest)) != 0 {
 		return nil, fmt.Errorf("%w PEM", ErrInvalidBuilderCSR)
@@ -83,7 +93,7 @@ func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, buil
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:   fmt.Sprintf("builder-%s", builderIdentifier),
+			CommonName:   commonName,
 			Organization: []string{"Realm"},
 		},
 		NotBefore:             time.Now(),
