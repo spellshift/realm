@@ -1,12 +1,18 @@
 import { Dispatch, SetStateAction, useState } from "react";
+import { useFormik } from "formik";
 import { Heading } from "@chakra-ui/react";
 import { Pencil, Trash2, Plus, TriangleAlert } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import FormTextField from "../../../components/tavern-base-ui/FormTextField";
+import { ConfigureParams } from "../../../components/create-quest-modal/tome-selection/ConfigureParams";
+import { ModalQuestFormValues } from "../../../components/create-quest-modal/types";
+import { modalQuestSchema } from "../../../components/create-quest-modal/validation";
 import { TomeTable } from "../../../components/create-quest-modal/tome-selection/TomeTable";
 import { TomeNode } from "../../../utils/interfacesQuery";
-import { safelyJsonParse } from "../../../utils/utils";
 import { NO_INSTALL_WARNING, Tome, TomeRef, TomeTacticKey } from "../types";
+import { buildParamFields, serializeParams } from "./tomeParams";
+
+const paramsSchema = modalQuestSchema.pick(["params"]);
+const emptyValues: ModalQuestFormValues = { name: "", tomeId: null, params: [], beacons: [] };
 
 type TomesStepProps = {
     catalog: Tome[];
@@ -22,26 +28,39 @@ export const TomesStep = ({ catalog, tomes, setTomes, hasPersistenceTome, onErro
     const [adding, setAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [tomeToAdd, setTomeToAdd] = useState<Tome | null>(null);
-    const [params, setParams] = useState("{}");
+    const [droppedNotice, setDroppedNotice] = useState(false);
     const panelOpen = adding || editingId !== null;
 
+    const formik = useFormik<ModalQuestFormValues>({
+        initialValues: emptyValues,
+        validationSchema: paramsSchema,
+        onSubmit: () => undefined,
+    });
+
+    const loadFields = (tome: Tome, stored?: string) => {
+        const { fields, notice } = buildParamFields(tome.paramDefs, stored);
+        formik.resetForm({ values: { ...emptyValues, tomeId: tome.id, params: fields } });
+        setDroppedNotice(notice);
+    };
+
     const selectTome = (tome: TomeNode) => {
-        setTomeToAdd({ id: tome.id, name: tome.name, description: tome.description ?? "", tactic: tome.tactic as TomeTacticKey, paramDefs: tome.paramDefs });
-        const { params: definitions } = safelyJsonParse(tome.paramDefs || "[]");
-        setParams(JSON.stringify(Object.fromEntries(definitions.map((param: { name: string; value?: string }) => [param.name, param.value || ""])), null, 2));
+        const selected: Tome = { id: tome.id, name: tome.name, description: tome.description ?? "", tactic: tome.tactic as TomeTacticKey, paramDefs: tome.paramDefs };
+        setTomeToAdd(selected);
+        loadFields(selected);
     };
 
     const openAdd = () => {
         setEditingId(null);
         setTomeToAdd(null);
-        setParams("{}");
+        formik.resetForm({ values: emptyValues });
+        setDroppedNotice(false);
         setAdding(true);
     };
 
     const openEdit = (ref: TomeRef) => {
-        const catalogTome = catalog.find((tome) => tome.id === ref.tomeId);
-        setTomeToAdd(catalogTome ?? { id: ref.tomeId, name: ref.tomeName, description: "", tactic: ref.tactic, paramDefs: null });
-        setParams(ref.params);
+        const catalogTome = catalog.find((tome) => tome.id === ref.tomeId) ?? { id: ref.tomeId, name: ref.tomeName, description: "", tactic: ref.tactic, paramDefs: null };
+        setTomeToAdd(catalogTome);
+        loadFields(catalogTome, ref.params);
         setAdding(false);
         setEditingId(ref.id);
     };
@@ -52,16 +71,13 @@ export const TomesStep = ({ catalog, tomes, setTomes, hasPersistenceTome, onErro
         setTomeToAdd(null);
     };
 
-    const confirmSave = () => {
+    const confirmSave = async () => {
         if (!tomeToAdd) return;
-        try {
-            const parsed = JSON.parse(params);
-            if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("Tome parameters must be a JSON object.");
-        } catch (error) {
-            onError(error instanceof Error ? error.message : String(error));
-            return;
-        }
+        formik.setTouched({ params: formik.values.params.map(() => ({ value: true })) as never }, false);
+        const errors = await formik.validateForm();
+        if (errors.params) return;
         onError(null);
+        const params = serializeParams(formik.values.params);
         const paramSummary = params === "{}" ? "No params" : params;
         if (editingId) {
             setTomes((list) => list.map((t) => t.id === editingId
@@ -132,7 +148,10 @@ export const TomesStep = ({ catalog, tomes, setTomes, hasPersistenceTome, onErro
                         {catalog.length === 0
                             ? <p className="text-sm text-gray-500">No tomes available. Import a tome before adding it to this profile.</p>
                             : <TomeTable tomeIds={catalog.map((tome) => tome.id)} selectable selectedTomeId={tomeToAdd?.id} onSelectTome={selectTome} />}
-                        {tomeToAdd && <FormTextField htmlFor="tomeParams" label="Parameters" value={params} onChange={(event) => setParams(event.target.value)} />}
+                        {tomeToAdd && <ConfigureParams formik={formik} />}
+                        {tomeToAdd && droppedNotice && (
+                            <p className="text-xs text-amber-700">Some stored parameters no longer match this tome and were removed.</p>
+                        )}
                         <div className="flex flex-wrap items-center justify-end gap-2">
                             <Button buttonVariant="ghost" onClick={closePanel}>
                                 Cancel
