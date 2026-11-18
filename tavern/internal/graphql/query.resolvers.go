@@ -19,7 +19,25 @@ import (
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/graphql/models"
 )
+
+// Redirectors is the resolver for the redirectors field.
+func (r *queryResolver) Redirectors(ctx context.Context) ([]*models.ManagedRedirector, error) {
+	rows, err := r.client.Redirector.Query().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*models.ManagedRedirector, 0, len(rows))
+	cutoff := time.Now().Add(-3 * time.Minute)
+	for _, row := range rows {
+		result = append(result, &models.ManagedRedirector{
+			ID: row.ID, Domains: row.Domains, Enabled: row.Enabled,
+			Online: row.LastSeenAt != nil && row.LastSeenAt.After(cutoff),
+		})
+	}
+	return result, nil
+}
 
 // Assets is the resolver for the assets field.
 func (r *queryResolver) Assets(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) (*ent.AssetConnection, error) {

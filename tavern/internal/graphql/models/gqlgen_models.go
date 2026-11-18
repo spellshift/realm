@@ -124,6 +124,13 @@ type ImportRepositoryInput struct {
 	IncludeDirs []string `json:"includeDirs,omitempty"`
 }
 
+type ManagedRedirector struct {
+	ID      int      `json:"id"`
+	Domains []string `json:"domains"`
+	Enabled bool     `json:"enabled"`
+	Online  bool     `json:"online"`
+}
+
 type Metrics struct {
 	QuestTimelineChart  []*QuestTimelineBucket  `json:"questTimelineChart"`
 	BeaconTimelineChart []*BeaconTimelineBucket `json:"beaconTimelineChart"`

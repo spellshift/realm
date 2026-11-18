@@ -9445,6 +9445,7 @@ type Mutation {
     deleteOperatorNote(operatorNoteID: ID!): ID! @requireRole(role: USER)
 }
 extend type Query {
+  redirectors: [ManagedRedirector!]! @requireRole(role: ADMIN)
   assets(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -9829,6 +9830,12 @@ extend type Quest {
         """
         where: TaskWhereInput
     ): [TaskDiff!]! @goField(forceResolver: true)
+}
+type ManagedRedirector {
+  id: ID!
+  domains: [String!]!
+  enabled: Boolean!
+  online: Boolean!
 }
 scalar Time
 scalar Uint64

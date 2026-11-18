@@ -1,0 +1,21 @@
+state: |
+  INSERT INTO users (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"admin_oauth","https://photos.com","admin","adminToken","accessToken",true,true);
+  INSERT INTO redirectors (id,identifier,transport,domains,enabled,last_seen_at,created_at,last_modified_at)
+    VALUES (9,"deployment-one","dns",'["one.example","two.example"]',false,datetime('now'),datetime('now'),datetime('now'));
+  INSERT INTO redirectors (id,identifier,transport,domains,enabled,created_at,last_modified_at)
+    VALUES (10,"deployment-two","http1",'["offline.example"]',true,datetime('now'),datetime('now'));
+requestor:
+  session_token: adminToken
+query: |
+  query { redirectors { id domains enabled online } }
+expected:
+  redirectors:
+    - id: "9"
+      domains: [one.example, two.example]
+      enabled: false
+      online: true
+    - id: "10"
+      domains: [offline.example]
+      enabled: true
+      online: false
