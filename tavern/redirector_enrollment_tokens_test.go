@@ -60,7 +60,7 @@ func TestRedirectorEnrollmentTokenExchangeAndReplay(t *testing.T) {
 		handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/auth/redirector/enroll", bytes.NewReader(body)))
 		return recorder
 	}
-	valid := tavernhttp.RedirectorEnrollRequest{Token: "first", CSR: csr, Transport: "http1", Domains: []string{" A.Example.com ", "b.example.com", "a.example.com"}}
+	valid := tavernhttp.RedirectorEnrollRequest{Token: "first", CSR: csr, Transport: "http1", Domains: []string{" A.Example.com ", "b.example.com", "a.example.com", "123.example.com"}}
 	invalidToken := valid
 	invalidToken.Token = "unknown"
 	invalidToken.CSR = "bad"
@@ -71,6 +71,11 @@ func TestRedirectorEnrollmentTokenExchangeAndReplay(t *testing.T) {
 	malformed = valid
 	malformed.Domains = []string{"a.example.com", "bad/domain"}
 	require.Equal(t, http.StatusBadRequest, exchange(malformed).Code)
+	for _, domain := range []string{"127.0.0.1", "1.2.3.999"} {
+		malformed = valid
+		malformed.Domains = []string{domain}
+		require.Equal(t, http.StatusBadRequest, exchange(malformed).Code, domain)
+	}
 	used, err := graph.RedirectorEnrollmentToken.Query().Where(redirectorenrollmenttoken.TokenHash(tokenHash("first"))).Only(ctx)
 	require.NoError(t, err)
 	require.False(t, used.Used)
@@ -88,7 +93,7 @@ func TestRedirectorEnrollmentTokenExchangeAndReplay(t *testing.T) {
 	saved, err := graph.Redirector.Query().Only(ctx)
 	require.NoError(t, err)
 	require.Equal(t, enrolled.RedirectorID, saved.Identifier)
-	require.Equal(t, []string{"a.example.com", "b.example.com"}, saved.Domains)
+	require.Equal(t, []string{"a.example.com", "b.example.com", "123.example.com"}, saved.Domains)
 	require.True(t, saved.Enabled)
 	require.Equal(t, http.StatusUnauthorized, exchange(valid).Code)
 	require.NoError(t, seedRedirectorEnrollmentTokens(ctx, graph, tokens))

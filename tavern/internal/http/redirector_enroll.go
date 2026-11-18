@@ -175,6 +175,7 @@ func validDomain(domain string) bool {
 	if len(domain) == 0 || len(domain) > 253 || !strings.Contains(domain, ".") {
 		return false
 	}
+	hasLetter := false
 	for _, label := range strings.Split(domain, ".") {
 		if len(label) == 0 || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
 			return false
@@ -183,7 +184,8 @@ func validDomain(domain string) bool {
 			if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-') {
 				return false
 			}
+			hasLetter = hasLetter || c >= 'a' && c <= 'z'
 		}
 	}
-	return true
+	return hasLetter
 }
