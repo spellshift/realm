@@ -5,11 +5,17 @@
 //!
 //! Design (see `/tmp/memguard/phase-2.md` and `design-facts.md`):
 //! - A single `std::thread` watchdog is spawned lazily on the first eligible
-//!   sleep and lives for the process lifetime, parking on a command channel
-//!   between cycles.
-//! - The agent task never blocks a tokio worker synchronously: it hands the
-//!   watchdog a `std::sync::mpsc` wake channel and parks via
-//!   `tokio::task::spawn_blocking(rx.recv())`, then `.await`s the JoinHandle.
+//!   sleep and lives for the process lifetime, parked on a kernel Event between
+//!   cycles.
+//! - The agent<->watchdog handshake uses kernel Events plus plain `.data`
+//!   statics (never-encrypted, since `.data` is a `MEM_IMAGE` page). The agent
+//!   stores the interval (as `f64` bits) in `INTERVAL_BITS`, pulses `CMD_EVENT`,
+//!   then parks via `tokio::task::spawn_blocking(WaitForSingleObject(WAKE_EVENT))
+//!   and `.await`s the JoinHandle. No `std` synchronization (mpsc/Barrier/condvar)
+//!   is used across the encrypted window: those structures keep their wait
+//!   bookkeeping on the user-mode heap, which is encrypted during the dormancy
+//!   window, so a wait that resolves (or faults) there lands in ntdll dispatch
+//!   code touching ciphertext and cannot be VEH-recovered.
 //! - Each cycle the watchdog (1) re-enumerates the live thread set, (2) runs the
 //!   bounded dormancy protocol (ThreadState==Waiting pre-check, suspend, Rip-in-
 //!   ntdll re-verify), (3) encrypts, (4) sleeps the interval, (5) decrypts,
@@ -26,7 +32,7 @@
 
 use core::ffi::c_void;
 use std::sync::OnceLock;
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::atomic::{AtomicPtr, AtomicU64, Ordering};
 use std::thread;
 
 use windows_sys::Win32::Foundation::CloseHandle;
@@ -88,6 +94,14 @@ unsafe extern "system" {
         system_information_length: u32,
         return_length: *mut u32,
     ) -> i32;
+    fn CreateEventW(
+        lpEventAttributes: *const c_void,
+        bManualReset: i32,
+        bInitialState: i32,
+        lpName: *const u16,
+    ) -> *mut c_void;
+    fn WaitForSingleObject(hHandle: *mut c_void, dwMilliseconds: u32) -> u32;
+    fn SetEvent(hEvent: *mut c_void) -> i32;
     fn CreateFileW(
         lpFileName: *const u16,
         dwDesiredAccess: u32,
@@ -145,17 +159,33 @@ impl<'a> Drop for SlotsGuard<'a> {
     }
 }
 
-struct WatchdogCommand {
-    wake_tx: Sender<()>,
-    interval_secs: f64,
-}
-
 struct CycleOutcome {
     pages: usize,
     skipped: bool,
 }
 
-static WATCHDOG_CMD: OnceLock<Option<Sender<WatchdogCommand>>> = OnceLock::new();
+// ---------------------------------------------------------------------------
+// Kernel-event handshake state (plain module statics -> `.data`, a `MEM_IMAGE`
+// page that the encrypt walk never touches). The agent and the watchdog signal
+// each other exclusively through these auto-reset Events plus `INTERVAL_BITS`, so
+// NO user-mode std synchronization (whose wait bookkeeping lives on the encrypted
+// heap) is used across the dormancy window. See the module docs above.
+//
+// UNSAFE INVARIANT — auto-reset semantics: both Events are created auto-reset
+// (bManualReset=FALSE) and initially unsignaled. `SetEvent` pulses exactly one
+// waiter and atomically re-arms to unsignaled, so the cmd/wake handshake is a
+// clean one-shot in both directions with no `ResetEvent` needed and no risk of a
+// stale signal leaking into the next cycle. If the agent pulses `CMD_EVENT` before
+// the watchdog has reached its wait, the Event latches the pulse (stays signaled)
+// until the watchdog's `WaitForSingleObject` consumes it, so no command is lost.
+const INFINITE: u32 = 0xFFFFFFFF;
+static WAKE_EVENT: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+static CMD_EVENT: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+static INTERVAL_BITS: AtomicU64 = AtomicU64::new(0);
+// Liveness of the watchdog thread: `true` once it has been spawned (events
+// created + thread launched), `false` if init failed. `engage_memguard_sleep`
+// falls back to plain `tokio::time::sleep` when this is `false`.
+static WATCHDOG_SPAWNED: OnceLock<bool> = OnceLock::new();
 
 /// Minimum effective sleep (seconds) required before the watchdog encrypt path
 /// engages. Overridable at watchdog init via `IMIX_MEMGUARD_MIN_SECS`.
@@ -211,61 +241,76 @@ pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
     // path runs after full-or-partial decrypt. Both may touch encrypted state,
     // so keep this strictly non-allocating raw writes (trace_line uses StackBuf).
     trace_line("agent-entry", format_args!("interval={interval_secs}"));
-    let tx = match ensure_watchdog() {
-        Some(tx) => tx,
-        None => {
-            trace_line("agent-fallback", format_args!("reason=no-watchdog"));
-            return false;
-        }
-    };
-    let (wake_tx, wake_rx) = channel::<()>();
-    if tx
-        .send(WatchdogCommand {
-            wake_tx,
-            interval_secs,
-        })
-        .is_err()
-    {
-        // Watchdog channel is gone; fall back to the normal sleep path.
-        trace_line("agent-fallback", format_args!("reason=send-failed"));
+    // Start (or reuse) the watchdog. `ensure_watchdog` is idempotent and returns
+    // `Some(())` only once the kernel handshake Events exist and the thread is
+    // running; any failure falls back to plain `tokio::time::sleep`.
+    if ensure_watchdog().is_none() {
+        trace_line("agent-fallback", format_args!("reason=no-watchdog"));
         return false;
     }
+    let cmd = CMD_EVENT.load(Ordering::Acquire);
+    let wake = WAKE_EVENT.load(Ordering::Acquire);
+    if cmd.is_null() || wake.is_null() {
+        trace_line("agent-fallback", format_args!("reason=no-events"));
+        return false;
+    }
+    // Publish the interval (as f64 bits) and pulse the command Event. This is the
+    // "send": the watchdog is parked on CMD_EVENT and wakes to read INTERVAL_BITS.
+    INTERVAL_BITS.store(interval_secs.to_bits(), Ordering::Release);
     trace_line("agent-cmd-sent", format_args!("interval={interval_secs}"));
-    // Park the async worker on a blocking-pool thread so the runtime stays free
-    // while the watchdog owns the encrypt/sleep/decrypt window.
+    unsafe {
+        let _ = SetEvent(cmd);
+    }
+    // Park the async worker on a blocking-pool thread; the wait is a kernel Event
+    // wait (WaitForSingleObject) which never touches the (encrypted) user heap, so
+    // it is safe to issue before the watchdog encrypts and to resolve after a
+    // full-or-partial decrypt. The closure captures nothing (it reads the wake
+    // Event handle from the `.data` static) so it stays `Send`.
     trace_line(
         "agent-before-park",
         format_args!("interval={interval_secs}"),
     );
-    let recv = tokio::task::spawn_blocking(move || wake_rx.recv()).await;
-    // wake-received: the blocking closure (recv) returned, i.e. the watchdog woke
-    // the agent. Also the point "after the spawned blocking closure returns".
+    let recv = tokio::task::spawn_blocking(|| unsafe {
+        WaitForSingleObject(WAKE_EVENT.load(Ordering::Acquire), INFINITE)
+    })
+    .await;
+    // wake-received: the kernel wait returned (watchdog pulsed WAKE_EVENT). Also
+    // the point "after the spawned blocking closure returns".
     trace_line("agent-wake-received", format_args!("ok={}", recv.is_ok()));
     let _ = recv;
     true
 }
 
-fn ensure_watchdog() -> Option<&'static Sender<WatchdogCommand>> {
-    let slot = WATCHDOG_CMD.get_or_init(|| {
-        let (cmd_tx, cmd_rx) = channel::<WatchdogCommand>();
+fn ensure_watchdog() -> Option<()> {
+    let started = WATCHDOG_SPAWNED.get_or_init(|| {
+        // Create the handshake Events once, pre-encryption (allocation/object
+        // creation is fine here; the handles live in kernel space and the pointer
+        // values live in `.data`). Auto-reset, initially unsignaled.
+        let cmd = unsafe { CreateEventW(core::ptr::null(), 0, 0, core::ptr::null()) };
+        let wake = unsafe { CreateEventW(core::ptr::null(), 0, 0, core::ptr::null()) };
+        if cmd.is_null() || wake.is_null() {
+            return false;
+        }
+        CMD_EVENT.store(cmd, Ordering::Release);
+        WAKE_EVENT.store(wake, Ordering::Release);
         let ntdll = resolve_ntdll();
         let ntdll = match ntdll {
             Some(n) => n,
-            None => return None,
+            None => return false,
         };
         match thread::Builder::new()
             .name("imix-memguard".into())
             .stack_size(8 * 1024 * 1024)
-            .spawn(move || watchdog_main(cmd_rx, ntdll))
+            .spawn(move || watchdog_main(ntdll))
         {
-            Ok(_handle) => Some(cmd_tx),
-            Err(_) => None,
+            Ok(_handle) => true,
+            Err(_) => false,
         }
     });
-    slot.as_ref()
+    if *started { Some(()) } else { None }
 }
 
-fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
+fn watchdog_main(ntdll: (usize, usize)) {
     trace_init();
     let knobs = resolve_debug_knobs();
     let ntqit = resolve_ntquery();
@@ -273,28 +318,54 @@ fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
     let mut guard: Option<MemGuard> = MemGuard::new();
     let mut calib: Option<SpiLayout> = None;
 
-    while let Ok(cmd) = cmd_rx.recv() {
+    // Park on the command Event between cycles. The agent pulses CMD_EVENT after
+    // publishing the interval in INTERVAL_BITS; we then run the cycle and pulse
+    // WAKE_EVENT to release the agent's kernel wait. No mpsc anywhere.
+    let cmd = CMD_EVENT.load(Ordering::Acquire);
+    loop {
+        if cmd.is_null() {
+            return;
+        }
+        unsafe {
+            let _ = WaitForSingleObject(cmd, INFINITE);
+        }
+        let interval_secs = f64::from_bits(INTERVAL_BITS.load(Ordering::Acquire));
         let ntqit = match ntqit {
             Some(f) => f,
             None => {
-                plain_sleep(cmd.interval_secs);
-                let _ = cmd.wake_tx.send(());
+                plain_sleep(interval_secs);
+                let wake = WAKE_EVENT.load(Ordering::Acquire);
+                if !wake.is_null() {
+                    unsafe {
+                        let _ = SetEvent(wake);
+                    }
+                }
                 continue;
             }
         };
         let ntqsi = match ntqsi {
             Some(f) => f,
             None => {
-                plain_sleep(cmd.interval_secs);
-                let _ = cmd.wake_tx.send(());
+                plain_sleep(interval_secs);
+                let wake = WAKE_EVENT.load(Ordering::Acquire);
+                if !wake.is_null() {
+                    unsafe {
+                        let _ = SetEvent(wake);
+                    }
+                }
                 continue;
             }
         };
         let g = match guard.as_mut() {
             Some(g) => g,
             None => {
-                plain_sleep(cmd.interval_secs);
-                let _ = cmd.wake_tx.send(());
+                plain_sleep(interval_secs);
+                let wake = WAKE_EVENT.load(Ordering::Acquire);
+                if !wake.is_null() {
+                    unsafe {
+                        let _ = SetEvent(wake);
+                    }
+                }
                 continue;
             }
         };
@@ -305,12 +376,17 @@ fn watchdog_main(cmd_rx: Receiver<WatchdogCommand>, ntdll: (usize, usize)) {
             &mut calib,
             ntdll.0,
             ntdll.1,
-            cmd.interval_secs,
+            interval_secs,
             &knobs,
         );
         // The cycle only returns after a full decrypt (resume+wake) or a clean
         // skip; a failed decrypt terminates the process in `ensure_decrypted`.
-        let _ = cmd.wake_tx.send(());
+        let wake = WAKE_EVENT.load(Ordering::Acquire);
+        if !wake.is_null() {
+            unsafe {
+                let _ = SetEvent(wake);
+            }
+        }
     }
 }
 
@@ -1772,10 +1848,40 @@ pub(crate) fn trace_veh_miss(addr: usize, code: usize) {
 #[cfg(all(windows, feature = "mem-obfuscation", test))]
 mod tests {
     use super::*;
+    use core::ffi::c_void;
+    use core::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
     use std::time::Duration;
     use windows_sys::Win32::System::Memory::{
         MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE, VirtualAlloc, VirtualFree,
     };
+
+    // Kernel-event handshake for windows_veh_fault_recovery. Module-level `.data`
+    // statics (never encrypted by the memguard walk). The spawned touching
+    // threads wait on the go Event and signal the per-thread done Event + write a
+    // result atomic; the test thread sets go after encrypt and waits on the done
+    // Events. Serialized with the other memguard tests via TEST_LOCK, so reuse
+    // across runs is safe (stale handles are overwritten, not read).
+    static VEH_TEST_GO: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+    static VEH_TEST_DONE_A: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+    static VEH_TEST_DONE_B: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+    static VEH_TEST_RES_A: AtomicBool = AtomicBool::new(false);
+    static VEH_TEST_RES_B: AtomicBool = AtomicBool::new(false);
+
+    // Minimal FFI for the kernel events used by the recovery test: no std
+    // synchronization (Barrier/mpsc/condvar) is used across the encrypted window
+    // because those keep their wait bookkeeping on the encrypted user heap.
+    unsafe extern "system" {
+        fn CreateEventW(
+            lpEventAttributes: *const c_void,
+            bManualReset: i32,
+            bInitialState: i32,
+            lpName: *const u16,
+        ) -> *mut c_void;
+        fn WaitForSingleObject(hHandle: *mut c_void, dwMilliseconds: u32) -> u32;
+        fn SetEvent(hEvent: *mut c_void) -> i32;
+        fn ResetEvent(hEvent: *mut c_void) -> i32;
+    }
+    const INFINITE: u32 = 0xFFFFFFFF;
 
     // Allocate a private RW page (page-aligned) for fault-recovery tests.
     unsafe fn alloc_page() -> *mut u8 {
@@ -1868,25 +1974,40 @@ mod tests {
         // TEB + stack bounds and have them excluded BEFORE encrypt(). Otherwise
         // the VEH (KiUserExceptionDispatcher) builds its frame on the faulting
         // spawned thread's own encrypted stack and reads its encrypted TEB ->
-        // deterministic 0xC0000005 APPCRASH (the 683f0fd6 fix only excluded the
-        // test thread's stack via exclude_current_thread). Each spawned thread
-        // reads its own TEB via gs:[0x30] and StackBase/StackLimit at TEB+0x08/
-        // 0x10, then signals ready through a 3-party barrier so the test thread
-        // can exclude every spawned thread's whole stack + TEB/PEB/TLS (plus its
-        // own) before encrypt(); the spawned threads only touch the encrypted
-        // page after the barrier releases, i.e. after encrypt().
+        // deterministic 0xC0000005 APPCRASH. Each spawned thread reads its own
+        // TEB via gs:[0x30] and StackBase/StackLimit at TEB+0x08/0x10, reports
+        // the bounds over a plaintext mpsc channel, then BLOCKS on a kernel go
+        // Event (WaitForSingleObject) until the test thread releases it AFTER
+        // encrypt(). The go Event + result statics live in `.data` (never
+        // encrypted) and the kernel wait never touches the encrypted user heap,
+        // so the release cannot land in ntdll wait-dispatch on ciphertext. The
+        // pre-encrypt TEB reporting stays mpsc (plaintext); everything that runs
+        // during the encrypted window is kernel-event based.
         let (bounds_tx, bounds_rx) = std::sync::mpsc::channel::<(usize, usize, usize)>();
         // (teb, stack_base, stack_limit)
-        let barrier = std::sync::Arc::new(std::sync::Barrier::new(3));
+
+        // Create the kernel events now (pre-encryption, allocation OK) and publish
+        // their handles in the module statics the spawned threads read.
+        let go = unsafe { CreateEventW(core::ptr::null(), 1, 0, core::ptr::null()) };
+        let done_a = unsafe { CreateEventW(core::ptr::null(), 0, 0, core::ptr::null()) };
+        let done_b = unsafe { CreateEventW(core::ptr::null(), 0, 0, core::ptr::null()) };
+        assert!(
+            !go.is_null() && !done_a.is_null() && !done_b.is_null(),
+            "CreateEventW failed"
+        );
+        VEH_TEST_GO.store(go, Ordering::Release);
+        VEH_TEST_DONE_A.store(done_a, Ordering::Release);
+        VEH_TEST_DONE_B.store(done_b, Ordering::Release);
+        VEH_TEST_RES_A.store(false, Ordering::Release);
+        VEH_TEST_RES_B.store(false, Ordering::Release);
 
         let expected_a = pattern_a[0];
         let expected_b = pattern_b[0];
         let pa = buf_a as usize;
         let pb = buf_b as usize;
 
-        let bt_a = std::sync::Arc::clone(&barrier);
         let tx_a = bounds_tx.clone();
-        let ta = std::thread::spawn(move || -> bool {
+        let _ = std::thread::spawn(move || {
             // Report this thread's own TEB + stack bounds before any encryption.
             let teb: usize = unsafe {
                 let t: usize;
@@ -1896,16 +2017,20 @@ mod tests {
             let stack_base = unsafe { *(teb as *const u8).add(0x08) as *const *mut c_void };
             let stack_limit = unsafe { *(teb as *const u8).add(0x10) as *const *mut c_void };
             let _ = tx_a.send((teb, stack_base as usize, stack_limit as usize));
-            // Wait for the test thread to finish encrypt() before touching the
-            // encrypted page (the fault must occur after encryption).
-            bt_a.wait();
+            // Block on the kernel go Event until the test thread releases it AFTER
+            // encrypt(). A kernel wait never touches the (encrypted) user heap.
+            unsafe {
+                let _ = WaitForSingleObject(VEH_TEST_GO.load(Ordering::Acquire), INFINITE);
+            }
             let r = unsafe { core::ptr::read_volatile(pa as *const u8) };
-            r == expected_a
+            VEH_TEST_RES_A.store(r == expected_a, Ordering::Release);
+            unsafe {
+                let _ = SetEvent(VEH_TEST_DONE_A.load(Ordering::Acquire));
+            }
         });
 
-        let bt_b = std::sync::Arc::clone(&barrier);
         let tx_b = bounds_tx.clone();
-        let tb = std::thread::spawn(move || -> bool {
+        let _ = std::thread::spawn(move || {
             let teb: usize = unsafe {
                 let t: usize;
                 core::arch::asm!("mov {0}, gs:[0x30]", out(reg) t, options(nostack));
@@ -1914,9 +2039,14 @@ mod tests {
             let stack_base = unsafe { *(teb as *const u8).add(0x08) as *const *mut c_void };
             let stack_limit = unsafe { *(teb as *const u8).add(0x10) as *const *mut c_void };
             let _ = tx_b.send((teb, stack_base as usize, stack_limit as usize));
-            bt_b.wait();
+            unsafe {
+                let _ = WaitForSingleObject(VEH_TEST_GO.load(Ordering::Acquire), INFINITE);
+            }
             let r = unsafe { core::ptr::read_volatile(pb as *const u8) };
-            r == expected_b
+            VEH_TEST_RES_B.store(r == expected_b, Ordering::Release);
+            unsafe {
+                let _ = SetEvent(VEH_TEST_DONE_B.load(Ordering::Acquire));
+            }
         });
 
         // Collect both spawned threads' bounds, exclude their whole stacks +
@@ -1962,13 +2092,24 @@ mod tests {
         // only thing that can recover them now.
         crate::memguard::debug_simulate_crash_partial_decrypt(0);
 
-        // Release the spawned threads; each now touches its distinct encrypted
-        // page and is lazily decrypted by the VEH. They must recover
-        // concurrently (different-thread faults are admitted by the tid-keyed
-        // recursion guard, not serialized behind a global flag).
-        barrier.wait();
-        let ra = ta.join().expect("thread a joined");
-        let rb = tb.join().expect("thread b joined");
+        // Release the spawned threads via the kernel go Event (manual-reset, so
+        // both waiters wake at once) and reset it for cleanliness. Each thread
+        // now touches its distinct encrypted page and is lazily decrypted by the
+        // VEH; the wait it was blocked on is a kernel Event, so the release never
+        // touches the encrypted user heap.
+        unsafe {
+            let _ = SetEvent(VEH_TEST_GO.load(Ordering::Acquire));
+            let _ = ResetEvent(VEH_TEST_GO.load(Ordering::Acquire));
+        }
+        // Wait for both threads to finish (kernel waits on the per-thread done
+        // Events), then read their results from the statics. The result atomic is
+        // written before the done Event is signaled, so the read is sequenced.
+        unsafe {
+            let _ = WaitForSingleObject(VEH_TEST_DONE_A.load(Ordering::Acquire), INFINITE);
+            let _ = WaitForSingleObject(VEH_TEST_DONE_B.load(Ordering::Acquire), INFINITE);
+        }
+        let ra = VEH_TEST_RES_A.load(Ordering::Acquire);
+        let rb = VEH_TEST_RES_B.load(Ordering::Acquire);
         assert!(ra, "VEH should have decrypted page A (thread a survived)");
         assert!(rb, "VEH should have decrypted page B (thread b survived)");
 
