@@ -354,6 +354,9 @@ func (srv *Server) Close() error {
 
 // NewServer initializes a Tavern HTTP server with the provided configuration.
 func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
+	if err := validateResourcePrefix(EnvResourcePrefix.String()); err != nil {
+		return nil, err
+	}
 	tokens, err := parseBuilderEnrollmentTokens(EnvBuilderEnrollmentTokens.String())
 	if err != nil {
 		return nil, err

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -31,6 +32,15 @@ var configLog = logging.For("app.config")
 
 // EnvResourcePrefix sets the prefix for GCP resource names to support multi-tenant deployments.
 var EnvResourcePrefix = EnvString{"TAVERN_RESOURCE_PREFIX", "tavern"}
+
+var resourcePrefixPattern = regexp.MustCompile(`^[a-z][a-z0-9]{5}$`)
+
+func validateResourcePrefix(prefix string) error {
+	if !resourcePrefixPattern.MatchString(prefix) || strings.HasPrefix(prefix, "goog") {
+		return fmt.Errorf("%s must be a 6-character string starting with a lowercase letter, containing only lowercase letters and digits, and not starting with 'goog'", EnvResourcePrefix.Key)
+	}
+	return nil
+}
 
 // GlobalInstanceID uniquely identifies this instance for logging and naming purposes.
 var GlobalInstanceID = fmt.Sprintf("%s-%s", EnvResourcePrefix.String(), namegen.New())

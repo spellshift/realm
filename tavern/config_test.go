@@ -190,10 +190,25 @@ func TestResourcePrefixFromEnv(t *testing.T) {
 	t.Run("DefaultPrefix", func(t *testing.T) {
 		t.Setenv(EnvResourcePrefix.Key, "")
 		assert.Equal(t, "tavern", EnvResourcePrefix.String())
+		require.NoError(t, validateResourcePrefix(EnvResourcePrefix.String()))
 	})
 
 	t.Run("CustomSixCharPrefix", func(t *testing.T) {
-		t.Setenv(EnvResourcePrefix.Key, "abcxyz")
-		assert.Equal(t, "abcxyz", EnvResourcePrefix.String())
+		for _, valid := range []string{"abcxyz", "a12345", "tavern"} {
+			t.Setenv(EnvResourcePrefix.Key, valid)
+			assert.Equal(t, valid, EnvResourcePrefix.String())
+			require.NoError(t, validateResourcePrefix(EnvResourcePrefix.String()), "prefix=%q", valid)
+		}
+	})
+
+	t.Run("InvalidPrefixes", func(t *testing.T) {
+		for _, invalid := range []string{"short", "toolong7", "1abcde", "Abcdef", "abc-de", "abc_de", "google", "goog12"} {
+			t.Setenv(EnvResourcePrefix.Key, invalid)
+			require.ErrorContains(t, validateResourcePrefix(EnvResourcePrefix.String()), EnvResourcePrefix.Key, "prefix=%q", invalid)
+
+			srv, err := NewServer(context.Background())
+			require.Nil(t, srv)
+			require.ErrorContains(t, err, EnvResourcePrefix.Key, "prefix=%q", invalid)
+		}
 	})
 }
