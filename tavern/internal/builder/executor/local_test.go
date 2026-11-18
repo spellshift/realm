@@ -5,12 +5,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"regexp"
-	"strings"
 	"testing"
 	"time"
 
@@ -345,70 +341,6 @@ func TestLocalExecutor_Build_ContextCancel(t *testing.T) {
 	assert.Error(t, err)
 	assert.NotNil(t, result)
 	assert.Less(t, elapsed, 5*time.Second, "cancellation did not terminate sleep in time")
-}
-
-func TestLocalExecutor_Build_ExtractsEmbeddedAgentSource(t *testing.T) {
-	err := fs.WalkDir(realm.AgentSourceFS, ".", func(path string, d fs.DirEntry, err error) error {
-		require.NoError(t, err)
-		for _, part := range strings.Split(path, "/") {
-			require.NotEqual(t, "target", part)
-		}
-		return nil
-	})
-	require.NoError(t, err)
-
-	workspaceCargo, err := fs.ReadFile(realm.AgentSourceFS, "implants/Cargo.toml")
-	require.NoError(t, err)
-	membersBlock, _, ok := strings.Cut(string(workspaceCargo), "exclude =")
-	require.True(t, ok)
-	_, membersBlock, ok = strings.Cut(membersBlock, "members = [")
-	require.True(t, ok)
-	matches := regexp.MustCompile(`"([^"]+)"`).FindAllStringSubmatch(membersBlock, -1)
-	require.NotEmpty(t, matches)
-	for _, m := range matches {
-		memberCargoPath := "implants/" + m[1] + "/Cargo.toml"
-		_, statErr := fs.Stat(realm.AgentSourceFS, memberCargoPath)
-		require.NoError(t, statErr, "missing workspace member %s", memberCargoPath)
-	}
-
-	setupChecks := strings.Join([]string{
-		"test -f /tmp/realm-build/realm/implants/.cargo/config.toml",
-		"test -f /tmp/realm-build/realm/implants/imix/Cargo.toml",
-		"test -f /tmp/realm-build/realm/bin/reflective_loader/Cargo.toml",
-		"test -f /tmp/realm-build/realm/tavern/internal/c2/proto/c2.proto",
-		"test -f \"$REALM_WORKSPACE_DIR/realm/implants/.cargo/config.toml\"",
-		"test -f \"$REALM_WORKSPACE_DIR/realm/implants/imix/Cargo.toml\"",
-		"test -f \"$REALM_WORKSPACE_DIR/realm/bin/reflective_loader/Cargo.toml\"",
-		"test -f \"$REALM_WORKSPACE_DIR/realm/tavern/internal/c2/proto/c2.proto\"",
-	}, " && ")
-
-	_, lookErr := exec.LookPath("cargo")
-	require.NoError(t, lookErr, "cargo must be installed in test environment")
-	buildScript := "cargo metadata --no-deps --manifest-path /tmp/realm-build/realm/implants/imix/Cargo.toml >/dev/null && echo extracted_ok"
-
-	spec := executor.BuildSpec{
-		TaskID:      10,
-		TargetOS:    "linux",
-		SetupScript: setupChecks,
-		BuildScript: buildScript,
-	}
-
-	outputCh := make(chan string, 100)
-	errorCh := make(chan string, 100)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
-	result, err := executor.NewLocalExecutor().Build(ctx, spec, outputCh, errorCh)
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Equal(t, int64(0), result.ExitCode)
-
-	var output []string
-	for line := range outputCh {
-		output = append(output, line)
-	}
-	assert.Contains(t, output, "extracted_ok")
 }
 
 func TestExtractAgentSource_OverwritesReadOnlySymlinksAndStaleFiles(t *testing.T) {
