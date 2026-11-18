@@ -98,6 +98,7 @@ unsafe extern "system" {
         hTemplateFile: *mut c_void,
     ) -> *mut c_void;
     fn GetTickCount64() -> u64;
+    fn GetLastError() -> u32;
 }
 
 #[derive(Clone, Copy, Default)]
@@ -116,7 +117,7 @@ struct ThreadSlot {
 #[cfg(feature = "print_debug")]
 const TRACE_FILE_APPEND: u32 = 0x2 | 0x4; // FILE_WRITE_DATA | FILE_APPEND_DATA (can create + append)
 #[cfg(feature = "print_debug")]
-const TRACE_FILE_OPEN_ALWAYS: u32 = 3; // OPEN_ALWAYS
+const TRACE_FILE_OPEN_ALWAYS: u32 = 4; // OPEN_ALWAYS (3 would be OPEN_EXISTING)
 #[cfg(feature = "print_debug")]
 const TRACE_FILE_SHARE: u32 = 0x1 | 0x2; // FILE_SHARE_READ | FILE_SHARE_WRITE
 #[cfg(feature = "print_debug")]
@@ -782,15 +783,6 @@ fn add_thread_state_exclusions(guard: &mut MemGuard, slots: &[ThreadSlot]) -> bo
                 if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
                     return false;
                 }
-                // UNSAFE INVARIANT: exclude RTL_USER_PROCESS_PARAMETERS (PEB+0x20)
-                // for the same reason as the watchdog exclusion above.
-                let pp = *(peb.add(0x20) as *const *mut c_void);
-                if !pp.is_null() {
-                    let pp_size = region_size_of(pp);
-                    if pp_size > 0 && !guard.add_exclusion(pp as *const u8, pp_size) {
-                        return false;
-                    }
-                }
             }
             let tls = *(s.teb.add(0x58) as *const *mut c_void);
             if !tls.is_null() {
@@ -843,17 +835,6 @@ fn add_watchdog_exclusions(guard: &mut MemGuard, ntqit: NtQueryInformationThread
             let peb_size = region_size_of(peb);
             if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
                 return false;
-            }
-            // UNSAFE INVARIANT: the CRT/std handle table (stdin/stdout/stderr
-            // HANDLEs) lives in RTL_USER_PROCESS_PARAMETERS at PEB+0x20. Once the
-            // heap is encrypted, writes touching ProcessParameters must not depend
-            // on VEH recovery of that region, so it is excluded from encryption.
-            let pp = *(peb.add(0x20) as *const *mut c_void);
-            if !pp.is_null() {
-                let pp_size = region_size_of(pp);
-                if pp_size > 0 && !guard.add_exclusion(pp as *const u8, pp_size) {
-                    return false;
-                }
             }
         }
         let tls = *(teb.add(0x58) as *const *mut c_void);
@@ -1566,9 +1547,38 @@ fn trace_init() {
         )
     };
     if (h as usize) == usize::MAX || h.is_null() {
+        let gle = unsafe { GetLastError() };
+        emit_trace_init_failed(gle);
         TRACE_HANDLE.store(core::ptr::null_mut(), core::sync::atomic::Ordering::Release);
     } else {
         TRACE_HANDLE.store(h, core::sync::atomic::Ordering::Release);
+    }
+}
+
+#[cfg(feature = "print_debug")]
+fn emit_trace_init_failed(gle: u32) {
+    // Pre-encryption, so writing to stdout is safe (STDOUT_SAFE is still true).
+    use windows_sys::Win32::System::Console::{GetStdHandle, STD_OUTPUT_HANDLE};
+    let mut b = StackBuf {
+        buf: [0u8; 256],
+        len: 0,
+    };
+    let _ = core::fmt::write(
+        &mut b,
+        format_args!("memguard trace-init failed gle={gle}\n"),
+    );
+    let h = unsafe { GetStdHandle(STD_OUTPUT_HANDLE) };
+    if (h as usize) != usize::MAX {
+        let mut written = 0u32;
+        unsafe {
+            let _ = WriteFile(
+                h,
+                b.buf.as_ptr() as *const c_void,
+                b.len as u32,
+                &mut written,
+                core::ptr::null_mut(),
+            );
+        }
     }
 }
 #[cfg(not(feature = "print_debug"))]
