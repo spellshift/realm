@@ -54,7 +54,7 @@ describe('QuestsTable scheduled occurrences', () => {
         render(<QuestsTable questIds={['quest-1']} />);
 
         expect(screen.getAllByTestId('quest-row')).toHaveLength(1);
-        expect(screen.getByText('Scheduled for Nov 18, 2026, 3:00 PM')).toBeInTheDocument();
+        expect(screen.getByText(/^Scheduled for /)).toHaveAttribute('title', '2026-11-18T15:00:00Z');
         expect(screen.getByText('0/2')).toBeInTheDocument();
         fireEvent.click(screen.getByTestId('quest-row'));
         expect(mockNavigate).toHaveBeenCalledWith('/tasks/quest-1');
