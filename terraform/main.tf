@@ -439,7 +439,7 @@ resource "google_project_iam_member" "tavern-pubsub-binding" {
 }
 
 resource "google_project_iam_custom_role" "tavern-cloud-scheduler" {
-  role_id     = "${replace(local.resource_prefix, "-", "_")}CloudScheduler"
+  role_id     = "${local.resource_prefix}CloudScheduler"
   title       = "${local.resource_prefix} Cloud Scheduler"
   description = "Least-privilege role for Tavern to create and list Cloud Scheduler jobs."
   permissions = [
