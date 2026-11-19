@@ -32,9 +32,9 @@ variable "resource_prefix" {
 }
 
 locals {
-  resource_prefix = var.resource_prefix
+  resource_prefix      = var.resource_prefix
   default_oauth_domain = "${local.resource_prefix}-tavern-${data.google_project.project.number}.${var.gcp_region}.run.app"
-  oauth_domain = var.oauth_domain != "" ? var.oauth_domain : local.default_oauth_domain
+  oauth_domain         = var.oauth_domain != "" ? var.oauth_domain : local.default_oauth_domain
 }
 
 output "resource_prefix" {
