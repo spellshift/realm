@@ -433,7 +433,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Configure Authentication
 	var withAuthentication tavernhttp.Option
-	if cfg.oauth.ClientID != "" {
+	if cfg.oauth.ClientID != "" || cfg.oauthProxyEnabled() {
 		withAuthentication = tavernhttp.WithAuthentication(client)
 	} else {
 		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
@@ -538,6 +538,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// GraphQL Handler (shared with MCP)
 	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
 
+	// Login via the oauth proxy when configured, otherwise directly against the identity provider
+	oauthLoginHandler := auth.NewOAuthLoginHandler(cfg.oauth, privKey)
+	if cfg.oauthProxyEnabled() {
+		oauthLoginHandler = auth.NewProxyLoginHandler(cfg.oauthProxyURL, cfg.oauthProxyReturnTo)
+	}
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -571,7 +577,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			LoginRedirectURI: "/oauth/login",
 		},
 		"/oauth/login": tavernhttp.Endpoint{
-			Handler:              auth.NewOAuthLoginHandler(cfg.oauth, privKey),
+			Handler:              oauthLoginHandler,
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -656,6 +662,17 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler:          playground.Handler("Realm - Red Team Engagement Platform", "/graphql"),
 			LoginRedirectURI: "/oauth/login",
 		},
+	}
+
+	// When OAuth is configured via a centralized oauthproxy (OAUTH_PROXY_URL), register the
+	// endpoint that verifies the proxy's signed identity assertion and completes login. This is
+	// only meaningful in proxy mode: cfg.oauthProxyKeySource is nil otherwise.
+	if cfg.oauthProxyEnabled() {
+		routes["/oauth/complete"] = tavernhttp.Endpoint{
+			Handler:              auth.NewProxyAssertionHandler(cfg.oauthProxyKeySource, client, cfg.oauthProxyReturnTo),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		}
 	}
 
 	// Setup Profiling

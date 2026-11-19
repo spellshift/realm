@@ -10,6 +10,7 @@ on:
       - 'tavern/**'
       - 'bin/**'
       - 'docker/tavern.Dockerfile'
+      - 'docker/oauthproxy.Dockerfile'
       - 'go.mod'
       - 'go.sum'
       - '.github/workflows/docker-dev.yml'
@@ -19,6 +20,7 @@ env:
   GHCR_REGISTRY: ghcr.io
   GHCR_IMAGE_NAME: ${{ github.repository }}/tavern
   GHCR_IMAGE_NAME_DEV: ${{ github.repository }}/devcontainer
+  GHCR_IMAGE_NAME_OAUTHPROXY: ${{ github.repository }}/oauthproxy
 
 jobs:
   changes:
@@ -39,6 +41,7 @@ jobs:
               - 'tavern/**'
               - 'bin/**'
               - 'docker/tavern.Dockerfile'
+              - 'docker/oauthproxy.Dockerfile'
               - 'go.mod'
               - 'go.sum'
               - '.github/workflows/docker-dev.yml'
@@ -179,6 +182,49 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           file: ./docker/tavern.Dockerfile
+          context: .
+          push: true
+          target: production
+          tags: ${{ steps.meta_ghcr.outputs.tags }}
+          labels: ${{ steps.meta_ghcr.outputs.labels }}
+
+  oauthproxy-docker:
+    needs: [changes]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.tavern == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          lfs: 'true'
+      - name: Replace lfs references with files
+        run: git lfs pull
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta_ghcr
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME_OAUTHPROXY }}
+          tags: |
+            type=ref,event=branch
+            type=edge,branch=main
+            type=sha,format=long
+
+      - name: Build and push GHCR image
+        uses: docker/build-push-action@v6
+        with:
+          file: ./docker/oauthproxy.Dockerfile
           context: .
           push: true
           target: production
