@@ -106,7 +106,7 @@ func loadConfig() (*Config, error) {
 	}, nil
 }
 
-// newSecretsManager mirrors tavern/app.go's newSecretsManager: GCS Secret Manager when
+// newSecretsManager mirrors tavern/app.go's newSecretsManager: GCP Secret Manager when
 // GCP_PROJECT_ID is set, an explicit debug file when SECRETS_FILE_PATH is set, otherwise an
 // insecure local file default (fine for local development, never for production).
 func newSecretsManager() (secrets.SecretsManager, error) {
