@@ -299,7 +299,7 @@ variable "oauth_domain" {
 }
 variable "oauth_proxy_url" {
   type        = string
-  description = "URL of a centralized oauthproxy deployment (see terraform/oauth-proxy) used to configure Tavern OAuth instead of talking to the identity provider directly. When set, oauth_client_id/oauth_client_secret are not required: the proxy owns the one shared Google OAuth client, so this tenant's domain never needs to be registered as a redirect URI with Google. oauth_domain is still required."
+  description = "URL of a shared oauthproxy deployment (dev only). When set, Tavern authenticates through the proxy and oauth_client_id/oauth_client_secret are not required; oauth_domain is still required."
   default     = ""
 }
 variable "min_scale" {
@@ -539,9 +539,7 @@ resource "google_cloud_run_service" "tavern" {
           name = "OAUTH_DOMAIN"
           value = format("https://%s", local.oauth_domain)
         }
-        // Only configure OAUTH_PROXY_URL when a centralized oauthproxy is in use (see
-        // terraform/oauth-proxy). Tavern falls back to talking to the identity provider
-        // directly via OAUTH_CLIENT_ID/OAUTH_CLIENT_SECRET when this is unset.
+        // Only set OAUTH_PROXY_URL when an oauthproxy is in use.
         dynamic "env" {
           for_each = var.oauth_proxy_url == "" ? [] : [
             {

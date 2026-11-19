@@ -538,6 +538,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// GraphQL Handler (shared with MCP)
 	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
 
+	// Login via the oauth proxy when configured, otherwise directly against the identity provider
+	oauthLoginHandler := auth.NewOAuthLoginHandler(cfg.oauth, privKey)
+	if cfg.oauthProxyEnabled() {
+		oauthLoginHandler = auth.NewProxyLoginHandler(cfg.oauthProxyURL, cfg.oauthProxyReturnTo)
+	}
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -571,7 +577,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			LoginRedirectURI: "/oauth/login",
 		},
 		"/oauth/login": tavernhttp.Endpoint{
-			Handler:              newOAuthLoginHandler(cfg, privKey),
+			Handler:              oauthLoginHandler,
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -730,16 +736,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	return tSrv, nil
-}
-
-// newOAuthLoginHandler starts the login flow: directly against the identity provider, or via a
-// centralized oauthproxy when Tavern is configured with OAUTH_PROXY_URL (see
-// ConfigureOAuthFromEnv in tavern/config.go).
-func newOAuthLoginHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
-	if cfg.oauthProxyEnabled() {
-		return auth.NewProxyLoginHandler(cfg.oauthProxyURL, cfg.oauthProxyReturnTo)
-	}
-	return auth.NewOAuthLoginHandler(cfg.oauth, privKey)
 }
 
 func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, options ...func(*graphql.Resolver)) http.Handler {

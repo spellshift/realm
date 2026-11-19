@@ -54,38 +54,23 @@ Next, configure a CNAME record for the domain you'd like to host Tavern at (e.g.
 
 And that's it! In the below sections on deployment, please ensure you properly configure your OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, and OAUTH_DOMAIN to ensure Tavern is properly configured.
 
-#### Multi-tenant deployments: the OAuth proxy
+#### Multi-tenant deployments: the OAuth proxy (dev only)
 
-The steps above register one domain's redirect URI on the Google OAuth client. Google's OAuth
-client configuration can't be managed via an API/Terraform and doesn't support wildcards, so if
-you're standing up many Tavern deployments (one per engagement, one per team, etc.), adding a new
-redirect URI by hand for every single one doesn't scale.
+**This is an internal development tool, not a supported production setup.**
 
-Instead, deploy the `oauthproxy` service once (`terraform/oauth-proxy`, container image
-`spellshift/oauthproxy`). It's a small Cloud Run app that owns a single, shared Google OAuth
-client with exactly one Authorized redirect URI — its own `/oauth/callback` — and relays a
-verified identity back to whichever tenant Tavern instance started the login. From then on, every
-new tenant only needs `terraform apply` with `oauth_proxy_url` set to the proxy's URL; no further
-Console visits are required, ever.
+Google OAuth clients can't have redirect URIs managed via an API/Terraform and don't support wildcards, so registering every Tavern deployment's domain by hand doesn't scale. The `oauthproxy` service (image `ghcr.io/spellshift/realm/oauthproxy`) is a small Cloud Run app that owns one shared Google OAuth client with a single redirect URI (its own `/oauth/callback`) and relays the verified identity back to whichever Tavern started the login.
+
+Deploy the proxy once:
 
 ```sh
-cd terraform/oauth-proxy
-terraform init
-terraform apply -var="gcp_project=<PROXY_PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>"
+gcloud run deploy oauthproxy \
+  --project=<PROXY_PROJECT_ID> --region=<REGION> \
+  --image=ghcr.io/spellshift/realm/oauthproxy:edge \
+  --allow-unauthenticated \
+  --set-env-vars=OAUTH_CLIENT_ID=<OAUTH_CLIENT_ID>,OAUTH_CLIENT_SECRET=<OAUTH_CLIENT_SECRET>,OAUTH_PROXY_DOMAIN=<PROXY_DOMAIN>,GCP_PROJECT_ID=<PROXY_PROJECT_ID>
 ```
 
-Take the resulting `proxy_domain` output, register `https://<proxy_domain>/oauth/callback` as the
-one Authorized redirect URI on that Google OAuth client, then deploy each tenant with:
-
-```sh
-terraform apply -var="gcp_project=<TENANT_PROJECT_ID>" -var="oauth_domain=<TENANT_DOMAIN>" -var="oauth_proxy_url=<PROXY_URL_OUTPUT>" -var="tavern_container_image=spellshift/tavern:$(git tag | tail -1)"
-```
-
-Note `oauth_client_id`/`oauth_client_secret` are omitted for tenants in this mode — the proxy owns
-the real Google client. By default the proxy will relay back to any `*.run.app` destination (so
-every tenant's default Cloud Run URL works out of the box); set `allowed_suffixes` on the proxy
-stack to add your own custom tenant domains, or to narrow this further for your threat model — see
-`terraform/oauth-proxy/variables.tf` for details on this tradeoff.
+Register `https://<PROXY_DOMAIN>/oauth/callback` as the Authorized redirect URI on the Google OAuth client, then deploy each Tavern with `oauth_proxy_url=https://<PROXY_DOMAIN>` and `oauth_domain` set (`oauth_client_id`/`oauth_client_secret` are not needed). By default the proxy only redirects back to `*.run.app` hosts; set `OAUTH_PROXY_ALLOWED_SUFFIXES` (comma separated) to change that.
 
 ### 3. Google Cloud CLI
 
@@ -182,7 +167,7 @@ To disable the builder VM (for example when running builders elsewhere), set `bu
 |oauth_client_id|Only if OAuth is configured directly (not via oauth_proxy_url)|The OAuth ClientID Tavern will use to connect to the IDP (Google).|
 |oauth_client_secret|Only if OAuth is configured directly (not via oauth_proxy_url)|The OAuth Client Secret Tavern will use to connect to the IDP (Google).|
 |oauth_domain|Only if OAuth is configured|The OAuth Domain that the IDP should redirect to e.g. tavern.mydomain.com (should be the domain you set a CNAME record for while configuring OAuth).|
-|oauth_proxy_url|No|URL of a shared [oauthproxy](#multi-tenant-deployments-the-oauth-proxy) deployment, used instead of oauth_client_id/oauth_client_secret for multi-tenant setups.|
+|oauth_proxy_url|No|URL of a shared [oauthproxy](#multi-tenant-deployments-the-oauth-proxy-dev-only) deployment, used instead of oauth_client_id/oauth_client_secret (dev only).|
 |min_scale|No|The minimum number of containers to run, if set to 0 you may see cold boot latency.|
 |max_scale|No|The maximum number of containers to run.|
 |tavern_container_image|No|Override the default tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.|
@@ -438,7 +423,7 @@ The following environment variables are required for OAuth Configuration:
 | OAUTH_CLIENT_SECRET | The [OAuth client_secret](https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/) Tavern will use to authenticate to an identity provider (Google) |
 | OAUTH_DOMAIN | The domain Tavern is being hosted at, that the identity provider (Google) should redirect users to after completing the consent flow |
 
-For multi-tenant deployments, set `OAUTH_PROXY_URL` instead of `OAUTH_CLIENT_ID`/`OAUTH_CLIENT_SECRET` to route OAuth through a centralized [oauthproxy](#multi-tenant-deployments-the-oauth-proxy) deployment — `OAUTH_DOMAIN` is still required in this mode.
+For dev deployments, set `OAUTH_PROXY_URL` instead of `OAUTH_CLIENT_ID`/`OAUTH_CLIENT_SECRET` to route OAuth through a centralized [oauthproxy](#multi-tenant-deployments-the-oauth-proxy-dev-only) deployment — `OAUTH_DOMAIN` is still required in this mode.
 
 Here is an example of running Tavern locally with OAuth configured:
 

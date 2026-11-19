@@ -80,12 +80,8 @@ var (
 	EnvOAuthClientSecret = EnvString{"OAUTH_CLIENT_SECRET", ""}
 	EnvOAuthDomain       = EnvString{"OAUTH_DOMAIN", ""}
 
-	// EnvOAuthProxyURL, when set, routes OAuth through a centralized oauthproxy (./oauthproxy)
-	// instead of talking to the identity provider directly. This is how multi-tenant deployments
-	// avoid ever registering a per-tenant redirect URI with Google: see ConfigureOAuthFromEnv and
-	// docs/_docs/admin-guide/tavern.md. EnvOAuthClientID/EnvOAuthClientSecret are not used in this
-	// mode (the proxy owns the one shared Google OAuth client); EnvOAuthDomain is still required,
-	// as the tenant's own domain users are redirected back to.
+	// EnvOAuthProxyURL routes OAuth through a shared oauthproxy (dev only) instead of the identity provider directly.
+	// EnvOAuthClientID/EnvOAuthClientSecret are unused in this mode, but EnvOAuthDomain is still required.
 	EnvOAuthProxyURL = EnvString{"OAUTH_PROXY_URL", ""}
 
 	// EnvMySQLAddr defines the MySQL address to connect to, if unset SQLLite is used.
