@@ -15,7 +15,6 @@ export function VirtualizedTable<TData, TResponse = unknown>({
     hasMore = false,
     onLoadMore,
     expandable,
-    dynamicRowHeight = false,
     minWidth = "800px",
     estimateRowSize = 73,
     overscan = 5,
@@ -25,7 +24,7 @@ export function VirtualizedTable<TData, TResponse = unknown>({
     growWithContent = false
 }: VirtualizedTableProps<TData, TResponse>) {
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-    const useDynamicSizing = expandable !== undefined || dynamicRowHeight;
+    const useDynamicSizing = expandable !== undefined;
     const parentRef = useRef<HTMLDivElement>(null);
     const [visibleItemIds, setVisibleItemIds] = useState<Set<string>>(new Set());
 

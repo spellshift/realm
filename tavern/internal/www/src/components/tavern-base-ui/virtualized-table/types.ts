@@ -91,9 +91,6 @@ export interface VirtualizedTableProps<TData, TResponse = unknown> {
     /** Configuration for expandable rows */
     expandable?: ExpandableConfig<TData>;
 
-    /** Measure rendered row heights when rows have varying content */
-    dynamicRowHeight?: boolean;
-
     /** Minimum width for horizontal scrolling (default: '800px') */
     minWidth?: string;
 

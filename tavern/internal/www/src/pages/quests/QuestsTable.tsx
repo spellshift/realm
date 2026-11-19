@@ -61,19 +61,19 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
             key: 'quest-details',
             label: 'Quest details',
             width: 'minmax(200px,2fr)',
-            render: (quest) => (
-                <div className="flex flex-col min-w-0">
-                    <div className="truncate" title={quest.name ?? 'N/A'}>{quest.name ?? 'N/A'}</div>
-                    <div className="text-sm flex flex-row gap-1 items-center text-gray-500 truncate" title={quest.tome?.name ?? 'N/A'}>
-                        {quest.tome?.name ?? 'N/A'}
+            render: (quest) => {
+                const tomeName = quest.tome?.name ?? 'N/A';
+                const scheduledLabel = quest.scheduledOccurrenceAt
+                    ? `Scheduled for ${format(new Date(quest.scheduledOccurrenceAt), 'PPp')}`
+                    : null;
+                const detail = scheduledLabel ? `${scheduledLabel} · ${tomeName}` : tomeName;
+                return (
+                    <div className="flex flex-col min-w-0">
+                        <div className="truncate" title={quest.name ?? 'N/A'}>{quest.name ?? 'N/A'}</div>
+                        <div className="text-sm text-gray-500 truncate" title={detail}>{detail}</div>
                     </div>
-                    {quest.scheduledOccurrenceAt && (
-                        <div className="text-sm text-gray-500 truncate" title={quest.scheduledOccurrenceAt}>
-                            Scheduled for {format(new Date(quest.scheduledOccurrenceAt), 'PPp')}
-                        </div>
-                    )}
-                </div>
-            ),
+                );
+            },
             renderSkeleton: () => (
                 <div className="flex flex-col min-w-0 space-y-2">
                     <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
@@ -196,7 +196,6 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
             hasMore={hasMore}
             onLoadMore={onLoadMore}
             estimateRowSize={73}
-            dynamicRowHeight
             overscan={5}
         />
     );
