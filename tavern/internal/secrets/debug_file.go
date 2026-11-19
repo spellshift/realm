@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"errors"
+	"io"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -135,10 +136,12 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 
 	data := make([]byte, MAX_FILE_SIZE)
 	n, err := file.Read(data)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		log.Error("failed to read secrets file", "path", path, "error", err)
 		return Secrets{}, err
 	}
+	// An empty (e.g. freshly created or `touch`-ed) secrets file reads as (0, io.EOF), not an
+	// error: treat it the same as a file with no secrets in it yet.
 
 	data = data[0:n]
 

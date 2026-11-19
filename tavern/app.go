@@ -433,7 +433,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Configure Authentication
 	var withAuthentication tavernhttp.Option
-	if cfg.oauth.ClientID != "" {
+	if cfg.oauth.ClientID != "" || cfg.oauthProxyEnabled() {
 		withAuthentication = tavernhttp.WithAuthentication(client)
 	} else {
 		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
@@ -571,7 +571,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			LoginRedirectURI: "/oauth/login",
 		},
 		"/oauth/login": tavernhttp.Endpoint{
-			Handler:              auth.NewOAuthLoginHandler(cfg.oauth, privKey),
+			Handler:              newOAuthLoginHandler(cfg, privKey),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -658,6 +658,17 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 	}
 
+	// When OAuth is configured via a centralized oauthproxy (OAUTH_PROXY_URL), register the
+	// endpoint that verifies the proxy's signed identity assertion and completes login. This is
+	// only meaningful in proxy mode: cfg.oauthProxyKeySource is nil otherwise.
+	if cfg.oauthProxyEnabled() {
+		routes["/oauth/complete"] = tavernhttp.Endpoint{
+			Handler:              auth.NewProxyAssertionHandler(cfg.oauthProxyKeySource, client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		}
+	}
+
 	// Setup Profiling
 	if cfg.IsPProfEnabled() {
 		startupLog.WarnContext(ctx, "performance profiling is enabled, do not use in production as this may leak sensitive information")
@@ -719,6 +730,16 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	return tSrv, nil
+}
+
+// newOAuthLoginHandler starts the login flow: directly against the identity provider, or via a
+// centralized oauthproxy when Tavern is configured with OAUTH_PROXY_URL (see
+// ConfigureOAuthFromEnv in tavern/config.go).
+func newOAuthLoginHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
+	if cfg.oauthProxyEnabled() {
+		return auth.NewProxyLoginHandler(cfg.oauthProxyURL, cfg.oauthProxyReturnTo)
+	}
+	return auth.NewOAuthLoginHandler(cfg.oauth, privKey)
 }
 
 func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, options ...func(*graphql.Resolver)) http.Handler {

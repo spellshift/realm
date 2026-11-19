@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/namegen"
+	"realm.pub/tavern/internal/oauthproxy"
 	"realm.pub/tavern/internal/portals/mux"
 	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/tomes"
@@ -78,6 +79,14 @@ var (
 	EnvOAuthClientID     = EnvString{"OAUTH_CLIENT_ID", ""}
 	EnvOAuthClientSecret = EnvString{"OAUTH_CLIENT_SECRET", ""}
 	EnvOAuthDomain       = EnvString{"OAUTH_DOMAIN", ""}
+
+	// EnvOAuthProxyURL, when set, routes OAuth through a centralized oauthproxy (./oauthproxy)
+	// instead of talking to the identity provider directly. This is how multi-tenant deployments
+	// avoid ever registering a per-tenant redirect URI with Google: see ConfigureOAuthFromEnv and
+	// docs/_docs/admin-guide/tavern.md. EnvOAuthClientID/EnvOAuthClientSecret are not used in this
+	// mode (the proxy owns the one shared Google OAuth client); EnvOAuthDomain is still required,
+	// as the tenant's own domain users are redirected back to.
+	EnvOAuthProxyURL = EnvString{"OAUTH_PROXY_URL", ""}
 
 	// EnvMySQLAddr defines the MySQL address to connect to, if unset SQLLite is used.
 	// EnvMySQLNet defines the network used to connect to MySQL (e.g. unix).
@@ -159,6 +168,18 @@ type Config struct {
 	client       *ent.Client
 	oauth        oauth2.Config
 	userProfiles string
+
+	// oauthProxyURL, oauthProxyReturnTo, and oauthProxyKeySource are set instead of oauth/
+	// userProfiles when OAUTH_PROXY_URL is configured (proxy mode). See ConfigureOAuthFromEnv.
+	oauthProxyURL       string
+	oauthProxyReturnTo  string
+	oauthProxyKeySource *oauthproxy.KeySource
+}
+
+// oauthProxyEnabled reports whether OAuth should be routed through a centralized oauthproxy
+// instead of talking to the identity provider directly.
+func (cfg *Config) oauthProxyEnabled() bool {
+	return cfg != nil && cfg.oauthProxyURL != ""
 }
 
 // Connect to the database using configured drivers and uri
@@ -441,14 +462,38 @@ func ConfigureHTTPServerFromEnv(options ...func(*http.Server)) func(*Config) {
 	}
 }
 
-// ConfigureOAuthFromEnv sets OAuth config values from the environment
+// ConfigureOAuthFromEnv sets OAuth config values from the environment. redirectPath is the path
+// Tavern's own identity-provider callback is served at (used only in direct mode; proxy mode
+// always completes at "/oauth/complete", see ConfigureOAuthFromEnv's proxy branch below).
 func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 	return func(cfg *Config) {
 		var (
 			clientID     = EnvOAuthClientID.String()
 			clientSecret = EnvOAuthClientSecret.String()
 			domain       = EnvOAuthDomain.String()
+			proxyURL     = EnvOAuthProxyURL.String()
 		)
+
+		// Proxy mode: route through a centralized oauthproxy instead of talking to Google
+		// directly, so this tenant's domain never needs to be registered as a redirect URI.
+		if proxyURL != "" {
+			if domain == "" {
+				log.Fatalf("[FATAL] failed to configure oauth proxy, must provide value for environment var 'OAUTH_DOMAIN'")
+			}
+			if !strings.HasPrefix(domain, "http") {
+				configLog.Warn("domain not prefixed with scheme (http:// or https://), defaulting to https://", "oauth_domain", domain)
+				domain = fmt.Sprintf("https://%s", domain)
+			}
+			proxyURL = strings.TrimSuffix(proxyURL, "/")
+
+			cfg.oauthProxyURL = proxyURL
+			cfg.oauthProxyReturnTo = domain + "/oauth/complete"
+			cfg.oauthProxyKeySource = &oauthproxy.KeySource{
+				JWKSURL: proxyURL + "/.well-known/jwks.json",
+			}
+			configLog.Info("oauth configured via centralized oauth proxy", "proxy_url", proxyURL, "return_to", cfg.oauthProxyReturnTo)
+			return
+		}
 
 		// If none are set, default to auth disabled
 		if clientID == "" && clientSecret == "" && domain == "" {

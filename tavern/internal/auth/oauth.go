@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
@@ -8,7 +9,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -16,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/logging"
+	"realm.pub/tavern/internal/oauthproxy"
 )
 
 var oauthLog = logging.For("auth.oauth")
@@ -130,13 +134,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 		defer resp.Body.Close()
 
 		// Parse Profile Info
-		var profile struct {
-			OAuthID    string `json:"sub"`
-			PhotoURL   string `json:"picture"`
-			Email      string `json:"email"`
-			Name       string `json:"name"`
-			IsVerified bool   `json:"email_verified"`
-		}
+		var profile oauthProfile
 		decoder := json.NewDecoder(resp.Body)
 		if err := decoder.Decode(&profile); err != nil {
 			oauthLog.ErrorContext(ctx, "oauth failed to parse profile info", "error", err)
@@ -151,61 +149,30 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			return
 		}
 
-		// Lookup the user
-		usr, err := graph.User.Query().
-			Where(user.OauthID(profile.OAuthID)).
-			Only(ctx)
-		if err == nil {
-			http.SetCookie(w, &http.Cookie{
-				Name:     SessionCookieName,
-				Value:    usr.SessionToken,
-				Path:     "/",
-				HttpOnly: true,
-				Expires:  time.Now().AddDate(0, 1, 0),
-			})
-			authCtx := logging.WithActor(ctx, logging.Actor{
-				Kind:       logging.ActorUser,
-				ID:         strconv.Itoa(usr.ID),
-				Name:       usr.Name,
-				IsAdmin:    usr.IsAdmin,
-				AuthMethod: "oauth",
-			})
-			oauthLog.InfoContext(authCtx, "oauth user logged in",
-				"user_id", usr.ID,
-				"user_name", usr.Name,
-				"is_admin", usr.IsAdmin,
-				"is_activated", usr.IsActivated,
-			)
-			logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth user logged in",
-				"new_user", false,
-				"is_admin", usr.IsAdmin,
-				"is_activated", usr.IsActivated,
-				"user_id", usr.ID,
-				"user_name", usr.Name,
-			)
-			http.Redirect(w, req, "/", http.StatusFound)
-			return
-		}
+		completeOAuthLogin(ctx, w, req, graph, profile)
+	})
+}
 
-		// If we encountered a DB error, fail
-		if !ent.IsNotFound(err) {
-			oauthLog.ErrorContext(ctx, "oauth failed to lookup user profile", "error", err)
-			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth user lookup failed", "reason", "user_lookup_failed")
-			http.Error(w, ErrOAuthFailedUserLookup.Error(), http.StatusInternalServerError)
-			return
-		}
+// oauthProfile is the verified identity information used to look up or create a Tavern user,
+// regardless of whether it was obtained directly from the identity provider
+// (NewOAuthAuthorizationHandler) or relayed via a signed assertion from a centralized OAuth proxy
+// (NewProxyAssertionHandler).
+type oauthProfile struct {
+	OAuthID    string `json:"sub"`
+	PhotoURL   string `json:"picture"`
+	Email      string `json:"email"`
+	Name       string `json:"name"`
+	IsVerified bool   `json:"email_verified"`
+}
 
-		// If the user is not yet registered, create the user
-		// Tavern uses a TOFU model, if this is the first user they are the admin
-		isTOFU := graph.User.Query().CountX(ctx) == 0
-		usr = graph.User.Create().
-			SetName(profile.Name).
-			SetOauthID(profile.OAuthID).
-			SetPhotoURL(profile.PhotoURL).
-			SetIsAdmin(isTOFU).
-			SetIsActivated(isTOFU).
-			SaveX(ctx)
-
+// completeOAuthLogin looks up (or, on first login, creates) the Tavern user matching profile,
+// sets their session cookie, and redirects to the app. Tavern uses a TOFU model: if this is the
+// very first user, they become the admin.
+func completeOAuthLogin(ctx context.Context, w http.ResponseWriter, req *http.Request, graph *ent.Client, profile oauthProfile) {
+	usr, err := graph.User.Query().
+		Where(user.OauthID(profile.OAuthID)).
+		Only(ctx)
+	if err == nil {
 		http.SetCookie(w, &http.Cookie{
 			Name:     SessionCookieName,
 			Value:    usr.SessionToken,
@@ -220,20 +187,123 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			IsAdmin:    usr.IsAdmin,
 			AuthMethod: "oauth",
 		})
-		oauthLog.InfoContext(authCtx, "oauth registered new user",
+		oauthLog.InfoContext(authCtx, "oauth user logged in",
 			"user_id", usr.ID,
 			"user_name", usr.Name,
 			"is_admin", usr.IsAdmin,
 			"is_activated", usr.IsActivated,
 		)
-		logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth registered new user",
-			"new_user", true,
+		logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth user logged in",
+			"new_user", false,
 			"is_admin", usr.IsAdmin,
 			"is_activated", usr.IsActivated,
 			"user_id", usr.ID,
 			"user_name", usr.Name,
 		)
 		http.Redirect(w, req, "/", http.StatusFound)
+		return
+	}
+
+	// If we encountered a DB error, fail
+	if !ent.IsNotFound(err) {
+		oauthLog.ErrorContext(ctx, "oauth failed to lookup user profile", "error", err)
+		logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth user lookup failed", "reason", "user_lookup_failed")
+		http.Error(w, ErrOAuthFailedUserLookup.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// If the user is not yet registered, create the user
+	// Tavern uses a TOFU model, if this is the first user they are the admin
+	isTOFU := graph.User.Query().CountX(ctx) == 0
+	usr = graph.User.Create().
+		SetName(profile.Name).
+		SetOauthID(profile.OAuthID).
+		SetPhotoURL(profile.PhotoURL).
+		SetIsAdmin(isTOFU).
+		SetIsActivated(isTOFU).
+		SaveX(ctx)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    usr.SessionToken,
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Now().AddDate(0, 1, 0),
+	})
+	authCtx := logging.WithActor(ctx, logging.Actor{
+		Kind:       logging.ActorUser,
+		ID:         strconv.Itoa(usr.ID),
+		Name:       usr.Name,
+		IsAdmin:    usr.IsAdmin,
+		AuthMethod: "oauth",
+	})
+	oauthLog.InfoContext(authCtx, "oauth registered new user",
+		"user_id", usr.ID,
+		"user_name", usr.Name,
+		"is_admin", usr.IsAdmin,
+		"is_activated", usr.IsActivated,
+	)
+	logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth registered new user",
+		"new_user", true,
+		"is_admin", usr.IsAdmin,
+		"is_activated", usr.IsActivated,
+		"user_id", usr.ID,
+		"user_name", usr.Name,
+	)
+	http.Redirect(w, req, "/", http.StatusFound)
+}
+
+// NewProxyLoginHandler returns an http endpoint that redirects the user to the centralized OAuth
+// proxy's consent flow, passing this Tavern instance's own /oauth/complete endpoint as the
+// return_to destination. Used instead of NewOAuthLoginHandler when Tavern is configured with
+// OAUTH_PROXY_URL (see ConfigureOAuthFromEnv in tavern/config.go) so that this tenant's domain
+// never needs to be registered as a redirect URI with Google directly.
+func NewProxyLoginHandler(proxyURL, returnTo string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		startURL := fmt.Sprintf("%s/oauth/start?return_to=%s", strings.TrimSuffix(proxyURL, "/"), url.QueryEscape(returnTo))
+		http.Redirect(w, req, startURL, http.StatusFound)
+		oauthLog.InfoContext(req.Context(), "oauth proxy login flow started", "proxy_url", proxyURL)
+	})
+}
+
+// NewProxyAssertionHandler returns an http endpoint that verifies a signed identity assertion
+// relayed from the centralized OAuth proxy (after it completed the actual Google consent flow
+// and code exchange on this tenant's behalf), and then completes login exactly as
+// NewOAuthAuthorizationHandler does for a direct OAuth flow.
+func NewProxyAssertionHandler(keySource *oauthproxy.KeySource, graph *ent.Client) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		assertion := req.FormValue("assertion")
+		if assertion == "" {
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth proxy callback missing assertion", "reason", "missing_assertion")
+			http.Error(w, "missing assertion parameter", http.StatusBadRequest)
+			return
+		}
+
+		pubKey, err := keySource.PublicKey(ctx)
+		if err != nil {
+			oauthLog.ErrorContext(ctx, "oauth proxy failed to obtain jwks public key", "error", err)
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth proxy jwks fetch failed", "reason", "jwks_fetch_failed")
+			http.Error(w, "failed to verify oauth proxy assertion", http.StatusInternalServerError)
+			return
+		}
+
+		claims, err := oauthproxy.VerifyAssertion(pubKey, assertion)
+		if err != nil {
+			oauthLog.WarnContext(ctx, "oauth proxy presented invalid assertion", "error", err)
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth proxy assertion invalid", "reason", "invalid_assertion")
+			http.Error(w, "invalid oauth proxy assertion", http.StatusUnauthorized)
+			return
+		}
+
+		completeOAuthLogin(ctx, w, req, graph, oauthProfile{
+			OAuthID:    claims.OAuthID,
+			PhotoURL:   claims.PhotoURL,
+			Email:      claims.Email,
+			Name:       claims.Name,
+			IsVerified: claims.EmailVerified,
+		})
 	})
 }
 
