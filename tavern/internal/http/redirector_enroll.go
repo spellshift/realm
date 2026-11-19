@@ -3,9 +3,7 @@ package http
 import (
 	"context"
 	"crypto/ed25519"
-	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -15,9 +13,9 @@ import (
 
 	"github.com/google/uuid"
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/enrollment"
 	"realm.pub/tavern/internal/ent"
 	entredirector "realm.pub/tavern/internal/ent/redirector"
-	"realm.pub/tavern/internal/ent/redirectorenrollmenttoken"
 	"realm.pub/tavern/internal/logging"
 )
 
@@ -74,9 +72,7 @@ func NewRedirectorEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey 
 			rejectRedirectorEnrollment(w, ctx, http.StatusBadRequest, "invalid domains", "invalid_domains")
 			return
 		}
-		hash := sha256.Sum256([]byte(req.Token))
-		tokenHash := hex.EncodeToString(hash[:])
-		valid, err := client.RedirectorEnrollmentToken.Query().Where(redirectorenrollmenttoken.TokenHash(tokenHash), redirectorenrollmenttoken.Used(false)).Exist(ctx)
+		valid, err := enrollment.Available(ctx, client, enrollment.Redirector, req.Token)
 		if err != nil {
 			redirectorAuthLog.ErrorContext(ctx, "failed to verify redirector enrollment token", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -104,13 +100,13 @@ func NewRedirectorEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey 
 			return
 		}
 		defer tx.Rollback()
-		n, err := tx.RedirectorEnrollmentToken.Update().Where(redirectorenrollmenttoken.TokenHash(tokenHash), redirectorenrollmenttoken.Used(false)).SetUsed(true).Save(ctx)
+		consumed, err := enrollment.Consume(ctx, tx, enrollment.Redirector, req.Token)
 		if err != nil {
 			redirectorAuthLog.ErrorContext(ctx, "failed to mark redirector enrollment token used", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		if n != 1 {
+		if !consumed {
 			rejectRedirectorEnrollment(w, ctx, http.StatusUnauthorized, "invalid or used redirector enrollment token", "invalid_or_used_token")
 			return
 		}

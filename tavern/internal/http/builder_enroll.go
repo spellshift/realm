@@ -2,9 +2,7 @@ package http
 
 import (
 	"crypto/ed25519"
-	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -14,9 +12,9 @@ import (
 	"github.com/google/uuid"
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/enrollment"
 	"realm.pub/tavern/internal/ent"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/builderenrollmenttoken"
 	"realm.pub/tavern/internal/logging"
 )
 
@@ -72,9 +70,7 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
-		hash := sha256.Sum256([]byte(req.Token))
-		tokenHash := hex.EncodeToString(hash[:])
-		valid, err := client.BuilderEnrollmentToken.Query().Where(builderenrollmenttoken.TokenHash(tokenHash), builderenrollmenttoken.Used(false)).Exist(ctx)
+		valid, err := enrollment.Available(ctx, client, enrollment.Builder, req.Token)
 		if err != nil {
 			builderAuthLog.ErrorContext(ctx, "failed to verify builder enrollment token", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -130,13 +126,13 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 			return
 		}
 		defer tx.Rollback()
-		n, err := tx.BuilderEnrollmentToken.Update().Where(builderenrollmenttoken.TokenHash(tokenHash), builderenrollmenttoken.Used(false)).SetUsed(true).Save(ctx)
+		consumed, err := enrollment.Consume(ctx, tx, enrollment.Builder, req.Token)
 		if err != nil {
 			builderAuthLog.ErrorContext(ctx, "failed to mark builder enrollment token used", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		if n != 1 {
+		if !consumed {
 			builderAuthLog.WarnContext(ctx, "builder enrollment rejected: enrollment token concurrently consumed")
 			logging.AuditDenied(ctx, "auth", "builder.enroll_denied", "invalid or used builder enrollment token", "reason", "invalid_or_used_token")
 			http.Error(w, "invalid or used builder enrollment token", http.StatusUnauthorized)
