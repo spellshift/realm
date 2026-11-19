@@ -76,24 +76,51 @@ type KeySource struct {
 	cachedAt time.Time
 }
 
+// defaultHTTPClient is used when KeySource.HTTPClient is nil. Unlike http.DefaultClient it has a
+// timeout, so an unresponsive proxy can't hang logins indefinitely.
+var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
+
+// maxJWKSBytes bounds how much of a JWKS response is read.
+const maxJWKSBytes = 64 << 10
+
 // PublicKey returns the proxy's current public key, refreshing from the JWKS endpoint once the
 // cached value has expired. A transient fetch failure after a key has already been cached once
-// serves the stale key rather than breaking login entirely.
+// serves the stale key rather than breaking login entirely. The network fetch happens without
+// holding the lock, so a slow proxy never blocks callers that can be served from the cache.
 func (ks *KeySource) PublicKey(ctx context.Context) (ed25519.PublicKey, error) {
-	ks.mu.Lock()
-	defer ks.mu.Unlock()
-
 	ttl := ks.CacheTTL
 	if ttl <= 0 {
 		ttl = 5 * time.Minute
 	}
-	if ks.cached != nil && time.Since(ks.cachedAt) < ttl {
-		return ks.cached, nil
+
+	ks.mu.Lock()
+	stale := ks.cached
+	if stale != nil && time.Since(ks.cachedAt) < ttl {
+		ks.mu.Unlock()
+		return stale, nil
+	}
+	ks.mu.Unlock()
+
+	pubKey, err := ks.fetch(ctx)
+	if err != nil {
+		if stale != nil {
+			return stale, nil
+		}
+		return nil, err
 	}
 
+	ks.mu.Lock()
+	ks.cached = pubKey
+	ks.cachedAt = time.Now()
+	ks.mu.Unlock()
+	return pubKey, nil
+}
+
+// fetch retrieves and decodes the proxy's public key from its JWKS endpoint.
+func (ks *KeySource) fetch(ctx context.Context) (ed25519.PublicKey, error) {
 	client := ks.HTTPClient
 	if client == nil {
-		client = http.DefaultClient
+		client = defaultHTTPClient
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ks.JWKSURL, nil)
@@ -103,34 +130,18 @@ func (ks *KeySource) PublicKey(ctx context.Context) (ed25519.PublicKey, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		if ks.cached != nil {
-			return ks.cached, nil
-		}
 		return nil, fmt.Errorf("oauthproxy: failed to fetch jwks: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		if ks.cached != nil {
-			return ks.cached, nil
-		}
 		return nil, fmt.Errorf("oauthproxy: jwks endpoint returned status %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxJWKSBytes))
 	if err != nil {
 		return nil, fmt.Errorf("oauthproxy: failed to read jwks response: %w", err)
 	}
 
-	pubKey, err := decodeJWKS(body)
-	if err != nil {
-		if ks.cached != nil {
-			return ks.cached, nil
-		}
-		return nil, err
-	}
-
-	ks.cached = pubKey
-	ks.cachedAt = time.Now()
-	return ks.cached, nil
+	return decodeJWKS(body)
 }

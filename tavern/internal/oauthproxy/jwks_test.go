@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -99,4 +100,51 @@ func TestKeySourcePublicKeyServesStaleOnFetchError(t *testing.T) {
 	if !got.Equal(pub) {
 		t.Error("expected stale public key to be returned on fetch failure")
 	}
+}
+
+func TestKeySourceDoesNotBlockCachedReadsDuringRefresh(t *testing.T) {
+	pub, _ := mustKeyPair(t)
+	data, err := EncodeJWKS(pub)
+	if err != nil {
+		t.Fatalf("EncodeJWKS: %v", err)
+	}
+
+	release := make(chan struct{})
+	var slow atomic.Bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if slow.Load() {
+			<-release
+		}
+		w.Write(data)
+	}))
+	defer srv.Close()
+
+	ks := &KeySource{JWKSURL: srv.URL, CacheTTL: time.Nanosecond}
+	if _, err := ks.PublicKey(context.Background()); err != nil {
+		t.Fatalf("initial fetch: %v", err)
+	}
+
+	// Start a refresh that hangs on the server...
+	slow.Store(true)
+	done := make(chan struct{})
+	go func() {
+		ks.PublicKey(context.Background())
+		close(done)
+	}()
+	time.Sleep(50 * time.Millisecond)
+
+	// ...and make sure the lock isn't held while it waits.
+	locked := make(chan struct{})
+	go func() {
+		ks.mu.Lock()
+		ks.mu.Unlock()
+		close(locked)
+	}()
+	select {
+	case <-locked:
+	case <-time.After(time.Second):
+		t.Fatal("KeySource mutex held during network fetch")
+	}
+	close(release)
+	<-done
 }
