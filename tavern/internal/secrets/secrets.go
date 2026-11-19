@@ -8,8 +8,8 @@ import (
 
 var log = logging.For("storage.secrets")
 
-// ErrSecretNotFound is returned by GetValue when the secrets store is readable
-// but does not contain the requested key.
+// ErrSecretNotFound is returned (possibly wrapped) by GetValue when the requested
+// key does not exist in the secrets store. Check it with errors.Is.
 var ErrSecretNotFound = errors.New("secret not found")
 
 type SecretsManager interface {

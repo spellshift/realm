@@ -117,4 +117,25 @@ func TestGetSecretsEmptyFile(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorIs(t, err, secrets.ErrSecretNotFound)
 	assert.Equal(t, []byte{}, res)
+
+	old, err := secretsManager.SetValue("super_secret_test_data", []byte("hello world!"))
+	require.NoError(t, err)
+	assert.Equal(t, []byte{}, old)
+
+	res, err = secretsManager.GetValue("super_secret_test_data")
+	require.NoError(t, err)
+	assert.Equal(t, []byte("hello world!"), res)
+}
+
+func TestGetSecretsNoFile(t *testing.T) {
+	path := path.Join(t.TempDir(), "secrets.yaml")
+
+	secretsManager, err := secrets.NewDebugFileSecrets(path)
+	require.NoError(t, err)
+
+	res, err := secretsManager.GetValue("super_secret_test_data")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, secrets.ErrSecretNotFound)
+	assert.ErrorIs(t, err, os.ErrNotExist)
+	assert.Equal(t, []byte{}, res)
 }

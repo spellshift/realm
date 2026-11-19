@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -86,9 +87,9 @@ func (s DebugFileSecrets) GetValue(key string) ([]byte, error) {
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Debug("secrets YAML file does not exist yet", "path", path, "key", key)
-		} else {
-			log.Error("failed to load secrets YAML file", "path", path, "key", key, "error", err)
+			return []byte{}, fmt.Errorf("%w: %w", ErrSecretNotFound, err)
 		}
+		log.Error("failed to load secrets YAML file", "path", path, "key", key, "error", err)
 		return []byte{}, err
 	}
 
