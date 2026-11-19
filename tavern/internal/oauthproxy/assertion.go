@@ -1,5 +1,5 @@
 // Package oauthproxy contains logic shared between the standalone oauthproxy Cloud Run service
-// (./oauthproxy) and Tavern's consumption of it (tavern/internal/auth). It implements the
+// (./tavern/oauthproxy) and Tavern's consumption of it (tavern/internal/auth). It implements the
 // signed "state" and "assertion" tokens that let a single, centrally-registered OAuth proxy
 // front Google OAuth for many independently-deployed Tavern tenants, each with its own domain,
 // without any of those domains ever being registered as a Google OAuth redirect URI.
