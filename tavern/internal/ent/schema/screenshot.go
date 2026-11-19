@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/crypto/sha3"
+	"crypto/sha1"
 	"realm.pub/tavern/internal/ent/hook"
 
 	"entgo.io/contrib/entgql"
@@ -41,7 +41,7 @@ func (Screenshot) Fields() []ent.Field {
 		field.String("hash").
 			Optional().
 			MaxLen(100).
-			Comment("A SHA3-256 digest of the content field"),
+			Comment("A SHA1 digest of the content field"),
 		field.Bytes("content").
 			Optional().
 			SchemaType(map[string]string{
@@ -136,7 +136,7 @@ func HookDeriveScreenshotInfo() ent.Hook {
 
 			// Set the new hash (if content exists)
 			if len(content) > 0 {
-				s.SetHash(fmt.Sprintf("%x", sha3.Sum256(content)))
+				s.SetHash(fmt.Sprintf("%x", sha1.Sum(content)))
 			}
 
 			return next.Mutate(ctx, m)

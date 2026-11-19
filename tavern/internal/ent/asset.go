@@ -28,7 +28,7 @@ type Asset struct {
 	Name string `json:"name,omitempty"`
 	// The size of the asset in bytes
 	Size int `json:"size,omitempty"`
-	// A SHA3-256 digest of the content field
+	// A SHA1 digest of the content field
 	Hash string `json:"hash,omitempty"`
 	// The content of the asset
 	Content []byte `json:"content,omitempty"`

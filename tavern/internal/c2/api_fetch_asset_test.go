@@ -138,8 +138,8 @@ func TestFetchAsset(t *testing.T) {
 			// Assert Headers
 			metadata, err := stream.Header()
 			require.NoError(t, err)
-			require.Len(t, metadata.Get("sha3-256-checksum"), 1)
-			assert.Equal(t, a.Hash, metadata.Get("sha3-256-checksum")[0])
+			require.Len(t, metadata.Get("sha1-checksum"), 1)
+			assert.Equal(t, a.Hash, metadata.Get("sha1-checksum")[0])
 			require.Len(t, metadata.Get("file-size"), 1)
 			assert.Equal(t, fmt.Sprintf("%d", a.Size), metadata.Get("file-size")[0])
 		}

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/crypto/sha3"
+	"crypto/sha1"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 )
@@ -80,6 +80,6 @@ func newBundleHashDigest(assets ...*ent.Asset) string {
 	}
 
 	data := []byte(strings.Join(hashes, ""))
-	hash := sha3.Sum256(data)
+	hash := sha1.Sum(data)
 	return hex.EncodeToString(hash[:])
 }
