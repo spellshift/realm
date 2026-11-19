@@ -170,7 +170,18 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			return
 		}
 
-		redirectURL := fmt.Sprintf("%s?assertion=%s", returnTo, url.QueryEscape(assertion))
+		// returnTo has no query or fragment (enforced by IsAllowedReturnTo), but build the URL
+		// structurally rather than by string concatenation anyway.
+		dest, err := url.Parse(returnTo)
+		if err != nil {
+			proxyLog.ErrorContext(ctx, "failed to parse return_to", "error", err)
+			http.Error(w, "failed to complete oauth flow", http.StatusInternalServerError)
+			return
+		}
+		q := dest.Query()
+		q.Set("assertion", assertion)
+		dest.RawQuery = q.Encode()
+		redirectURL := dest.String()
 		proxyLog.InfoContext(ctx, "oauth proxy flow completed", "return_to", returnTo)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	})

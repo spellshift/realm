@@ -19,6 +19,13 @@ func TestIsAllowedReturnTo(t *testing.T) {
 		{"subdomain of custom domain not allowed unless suffix is dot-prefixed", "https://sub.tavern.example.com/oauth/complete", false},
 		{"malformed url", "https://[::not-valid", false},
 		{"empty", "", false},
+		{"wrong path", "https://abc123.us-central1.run.app/other", false},
+		{"root path", "https://abc123.us-central1.run.app/", false},
+		{"path prefix trick", "https://abc123.us-central1.run.app/oauth/complete/../x", false},
+		{"query string", "https://abc123.us-central1.run.app/oauth/complete?a=b", false},
+		{"fragment", "https://abc123.us-central1.run.app/oauth/complete#frag", false},
+		{"userinfo", "https://tavern.example.com@evil.example.net/oauth/complete", false},
+		{"userinfo on allowed host", "https://user@abc123.us-central1.run.app/oauth/complete", false},
 	}
 
 	for _, tc := range tests {
