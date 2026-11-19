@@ -31,3 +31,23 @@ func TestNormalizeBaseURL(t *testing.T) {
 		}
 	}
 }
+
+func TestRequireSecureURL(t *testing.T) {
+	tests := []struct {
+		in      string
+		wantErr bool
+	}{
+		{in: "https://proxy.run.app"},
+		{in: "http://localhost:8080"},
+		{in: "http://127.0.0.1:8080"},
+		{in: "http://[::1]:8080"},
+		{in: "http://proxy.run.app", wantErr: true},
+		{in: "http://localhost.evil.com", wantErr: true},
+		{in: "ftp://proxy.run.app", wantErr: true},
+	}
+	for _, tt := range tests {
+		if err := RequireSecureURL(tt.in); (err != nil) != tt.wantErr {
+			t.Errorf("RequireSecureURL(%q) error = %v, wantErr %v", tt.in, err, tt.wantErr)
+		}
+	}
+}

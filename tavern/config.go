@@ -483,6 +483,11 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			if proxyURL, err = oauthproxy.NormalizeBaseURL(proxyURL); err != nil {
 				log.Fatalf("[FATAL] failed to configure oauth proxy, invalid 'OAUTH_PROXY_URL': %v", err)
 			}
+			// The proxy's JWKS is fetched from this URL and verifies login assertions, so it must
+			// not travel over plaintext HTTP.
+			if err = oauthproxy.RequireSecureURL(proxyURL); err != nil {
+				log.Fatalf("[FATAL] failed to configure oauth proxy, invalid 'OAUTH_PROXY_URL': %v", err)
+			}
 
 			cfg.oauthProxyURL = proxyURL
 			cfg.oauthProxyReturnTo = domain + "/oauth/complete"
