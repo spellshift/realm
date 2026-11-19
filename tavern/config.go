@@ -476,11 +476,13 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 			if domain == "" {
 				log.Fatalf("[FATAL] failed to configure oauth proxy, must provide value for environment var 'OAUTH_DOMAIN'")
 			}
-			if !strings.HasPrefix(domain, "http") {
-				configLog.Warn("domain not prefixed with scheme (http:// or https://), defaulting to https://", "oauth_domain", domain)
-				domain = fmt.Sprintf("https://%s", domain)
+			var err error
+			if domain, err = oauthproxy.NormalizeBaseURL(domain); err != nil {
+				log.Fatalf("[FATAL] failed to configure oauth proxy, invalid 'OAUTH_DOMAIN': %v", err)
 			}
-			proxyURL = strings.TrimSuffix(proxyURL, "/")
+			if proxyURL, err = oauthproxy.NormalizeBaseURL(proxyURL); err != nil {
+				log.Fatalf("[FATAL] failed to configure oauth proxy, invalid 'OAUTH_PROXY_URL': %v", err)
+			}
 
 			cfg.oauthProxyURL = proxyURL
 			cfg.oauthProxyReturnTo = domain + "/oauth/complete"

@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"realm.pub/tavern/internal/oauthproxy"
 	"realm.pub/tavern/internal/secrets"
 )
 
@@ -73,10 +74,10 @@ func loadConfig() (*Config, error) {
 	if domain == "" {
 		return nil, fmt.Errorf("must provide value for environment var 'OAUTH_PROXY_DOMAIN'")
 	}
-	if !strings.HasPrefix(domain, "http") {
-		domain = "https://" + domain
+	domain, err := oauthproxy.NormalizeBaseURL(domain)
+	if err != nil {
+		return nil, fmt.Errorf("invalid 'OAUTH_PROXY_DOMAIN': %w", err)
 	}
-	domain = strings.TrimSuffix(domain, "/")
 
 	var suffixes []string
 	for _, s := range strings.Split(EnvAllowedSuffixes.String(), ",") {
