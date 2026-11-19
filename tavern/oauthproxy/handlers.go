@@ -21,6 +21,9 @@ var proxyLog = logging.For("oauthproxy")
 // this browser (defense in depth alongside the state token's own signature/expiry).
 const stateCookieName = "oauth-proxy-state"
 
+// maxClientNonceLen bounds the tenant-supplied nonce echoed into the state and assertion tokens.
+const maxClientNonceLen = 128
+
 // newStartHandler begins a login: validates the tenant's requested return_to against the
 // allow-list, then redirects to Google's consent screen using the proxy's single, shared OAuth
 // client and its one fixed redirect_uri.
@@ -39,6 +42,15 @@ func newStartHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			return
 		}
 
+		// The tenant's own login nonce (set as a cookie on the browser at the tenant); it is
+		// carried through state into the assertion so the tenant can tie the assertion to the
+		// browser that started the login.
+		clientNonce := r.URL.Query().Get("nonce")
+		if clientNonce == "" || len(clientNonce) > maxClientNonceLen {
+			http.Error(w, "missing or invalid nonce parameter", http.StatusBadRequest)
+			return
+		}
+
 		nonce, err := newNonce()
 		if err != nil {
 			proxyLog.ErrorContext(ctx, "failed to generate nonce", "error", err)
@@ -46,7 +58,7 @@ func newStartHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			return
 		}
 
-		state, err := oauthproxy.SignState(privKey, returnTo, nonce, stateTTL)
+		state, err := oauthproxy.SignState(privKey, returnTo, clientNonce, nonce, stateTTL)
 		if err != nil {
 			proxyLog.ErrorContext(ctx, "failed to sign state", "error", err)
 			http.Error(w, "failed to start oauth flow", http.StatusInternalServerError)
@@ -90,7 +102,7 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 		}
 		clearStateCookie(w)
 
-		returnTo, err := oauthproxy.VerifyState(privKey.Public().(ed25519.PublicKey), state, cookie.Value)
+		returnTo, clientNonce, err := oauthproxy.VerifyState(privKey.Public().(ed25519.PublicKey), state, cookie.Value)
 		if err != nil {
 			proxyLog.WarnContext(ctx, "rejected invalid oauth state", "error", err)
 			http.Error(w, "invalid oauth state", http.StatusBadRequest)
@@ -151,7 +163,7 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			Name:          profile.Name,
 			PhotoURL:      profile.PhotoURL,
 			EmailVerified: profile.EmailVerified,
-		}, assertionTTL)
+		}, returnTo, clientNonce, assertionTTL)
 		if err != nil {
 			proxyLog.ErrorContext(ctx, "failed to sign assertion", "error", err)
 			http.Error(w, "failed to complete oauth flow", http.StatusInternalServerError)

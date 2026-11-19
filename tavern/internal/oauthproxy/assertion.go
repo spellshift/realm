@@ -15,7 +15,11 @@ import (
 
 // assertionIssuer identifies tokens minted by the oauth proxy after completing the Google consent
 // flow on a tenant's behalf.
-const assertionIssuer = "realm-oauth-proxy"
+const assertionIssuer = "realm-oauth-proxy/assertion"
+
+// assertionTyp is the JWT "typ" header on assertions. It is checked on verification so a token
+// of another kind signed by the same proxy key (e.g. a state token) is never accepted as one.
+const assertionTyp = "realm-oauth-proxy-assertion"
 
 // Profile is the verified identity information the proxy obtained from the upstream IDP (Google)
 // on behalf of a tenant Tavern instance.
@@ -32,6 +36,9 @@ type Profile struct {
 // short-lived (see SignAssertion) since it is only meant to survive a single browser redirect.
 type ProfileAssertionClaims struct {
 	jwt.RegisteredClaims
+	// Nonce echoes the tenant-chosen nonce from /oauth/start; the tenant checks it against the
+	// cookie it set on the browser that began the login (login CSRF protection).
+	Nonce         string `json:"nonce"`
 	OAuthID       string `json:"oauth_id"`
 	Email         string `json:"email"`
 	Name          string `json:"name"`
@@ -40,10 +47,19 @@ type ProfileAssertionClaims struct {
 }
 
 // SignAssertion signs a short-lived assertion of profile using the proxy's private key, for a
-// tenant to verify and consume at its /oauth/complete endpoint.
-func SignAssertion(privKey ed25519.PrivateKey, profile Profile, ttl time.Duration) (string, error) {
+// tenant to verify and consume at its /oauth/complete endpoint. audience must be the exact
+// return_to the tenant asked for; VerifyAssertion rejects the assertion at any other tenant.
+// nonce is the tenant-chosen login nonce, echoed back so the tenant can bind the assertion to
+// the browser that started the login.
+func SignAssertion(privKey ed25519.PrivateKey, profile Profile, audience, nonce string, ttl time.Duration) (string, error) {
 	if profile.OAuthID == "" {
 		return "", fmt.Errorf("oauthproxy: cannot sign assertion for profile with empty OAuthID")
+	}
+	if audience == "" {
+		return "", fmt.Errorf("oauthproxy: cannot sign assertion with empty audience")
+	}
+	if nonce == "" {
+		return "", fmt.Errorf("oauthproxy: cannot sign assertion with empty nonce")
 	}
 
 	now := time.Now()
@@ -51,9 +67,11 @@ func SignAssertion(privKey ed25519.PrivateKey, profile Profile, ttl time.Duratio
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    assertionIssuer,
 			Subject:   profile.OAuthID,
+			Audience:  jwt.ClaimStrings{audience},
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
 		},
+		Nonce:         nonce,
 		OAuthID:       profile.OAuthID,
 		Email:         profile.Email,
 		Name:          profile.Name,
@@ -62,6 +80,7 @@ func SignAssertion(privKey ed25519.PrivateKey, profile Profile, ttl time.Duratio
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	token.Header["typ"] = assertionTyp
 	signed, err := token.SignedString(privKey)
 	if err != nil {
 		return "", fmt.Errorf("oauthproxy: failed to sign assertion: %w", err)
@@ -69,17 +88,25 @@ func SignAssertion(privKey ed25519.PrivateKey, profile Profile, ttl time.Duratio
 	return signed, nil
 }
 
-// VerifyAssertion verifies the signature and expiry of an assertion token minted by SignAssertion,
-// returning the embedded profile. Callers (tenants) must have obtained pubKey from a trusted
-// source, such as the proxy's JWKS endpoint (see KeySource).
-func VerifyAssertion(pubKey ed25519.PublicKey, tokenStr string) (*ProfileAssertionClaims, error) {
+// VerifyAssertion verifies the signature, issuer, type, expiry and audience of an assertion token
+// minted by SignAssertion, returning the embedded profile. audience must be this tenant's own
+// return_to URL. Callers (tenants) must have obtained pubKey from a trusted source, such as the
+// proxy's JWKS endpoint (see KeySource), and must separately check claims.Nonce.
+func VerifyAssertion(pubKey ed25519.PublicKey, tokenStr, audience string) (*ProfileAssertionClaims, error) {
 	var claims ProfileAssertionClaims
 	token, err := jwt.ParseWithClaims(tokenStr, &claims, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodEd25519); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
+		if typ, _ := t.Header["typ"].(string); typ != assertionTyp {
+			return nil, fmt.Errorf("unexpected token type: %v", t.Header["typ"])
+		}
 		return pubKey, nil
-	})
+	},
+		jwt.WithIssuer(assertionIssuer),
+		jwt.WithAudience(audience),
+		jwt.WithExpirationRequired(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("oauthproxy: invalid assertion: %w", err)
 	}
@@ -88,6 +115,9 @@ func VerifyAssertion(pubKey ed25519.PublicKey, tokenStr string) (*ProfileAsserti
 	}
 	if claims.OAuthID == "" {
 		return nil, fmt.Errorf("oauthproxy: assertion missing oauth_id")
+	}
+	if claims.Nonce == "" {
+		return nil, fmt.Errorf("oauthproxy: assertion missing nonce")
 	}
 
 	return &claims, nil

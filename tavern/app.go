@@ -669,7 +669,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// only meaningful in proxy mode: cfg.oauthProxyKeySource is nil otherwise.
 	if cfg.oauthProxyEnabled() {
 		routes["/oauth/complete"] = tavernhttp.Endpoint{
-			Handler:              auth.NewProxyAssertionHandler(cfg.oauthProxyKeySource, client),
+			Handler:              auth.NewProxyAssertionHandler(cfg.oauthProxyKeySource, client, cfg.oauthProxyReturnTo),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		}

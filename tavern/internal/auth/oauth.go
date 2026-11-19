@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -27,6 +28,12 @@ var oauthLog = logging.For("auth.oauth")
 const (
 	OAuthCookieName   = "oauth-state"
 	SessionCookieName = "auth-session"
+
+	// OAuthProxyNonceCookieName binds a login started via the oauth proxy to the browser that
+	// started it (see NewProxyLoginHandler / NewProxyAssertionHandler).
+	OAuthProxyNonceCookieName = "oauth-proxy-nonce"
+
+	oauthProxyNonceTTL = 10 * time.Minute
 )
 
 var (
@@ -260,7 +267,26 @@ func completeOAuthLogin(ctx context.Context, w http.ResponseWriter, req *http.Re
 // never needs to be registered as a redirect URI with Google directly.
 func NewProxyLoginHandler(proxyURL, returnTo string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		startURL := fmt.Sprintf("%s/oauth/start?return_to=%s", strings.TrimSuffix(proxyURL, "/"), url.QueryEscape(returnTo))
+		// Bind this login to this browser: the nonce is set as a cookie here, round-tripped
+		// through the proxy inside the signed assertion, and checked in NewProxyAssertionHandler.
+		nonceBytes := make([]byte, 32)
+		if _, err := rand.Read(nonceBytes); err != nil {
+			oauthLog.ErrorContext(req.Context(), "oauth proxy failed to generate login nonce", "error", err)
+			http.Error(w, "failed to start oauth login", http.StatusInternalServerError)
+			return
+		}
+		nonce := base64.RawURLEncoding.EncodeToString(nonceBytes)
+		http.SetCookie(w, &http.Cookie{
+			Name:     OAuthProxyNonceCookieName,
+			Value:    nonce,
+			Path:     "/",
+			Secure:   strings.HasPrefix(returnTo, "https://"),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode, // sent on the top-level redirect back from the proxy
+			MaxAge:   int(oauthProxyNonceTTL.Seconds()),
+		})
+
+		startURL := fmt.Sprintf("%s/oauth/start?return_to=%s&nonce=%s", strings.TrimSuffix(proxyURL, "/"), url.QueryEscape(returnTo), url.QueryEscape(nonce))
 		http.Redirect(w, req, startURL, http.StatusFound)
 		oauthLog.InfoContext(req.Context(), "oauth proxy login flow started", "proxy_url", proxyURL)
 	})
@@ -270,9 +296,21 @@ func NewProxyLoginHandler(proxyURL, returnTo string) http.Handler {
 // relayed from the centralized OAuth proxy (after it completed the actual Google consent flow
 // and code exchange on this tenant's behalf), and then completes login exactly as
 // NewOAuthAuthorizationHandler does for a direct OAuth flow.
-func NewProxyAssertionHandler(keySource *oauthproxy.KeySource, graph *ent.Client) http.Handler {
+//
+// returnTo is this Tavern's own /oauth/complete URL; assertions are only accepted if the proxy
+// issued them for exactly that audience, and only for the browser that started the login.
+func NewProxyAssertionHandler(keySource *oauthproxy.KeySource, graph *ent.Client, returnTo string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
+
+		nonceCookie, err := req.Cookie(OAuthProxyNonceCookieName)
+		if err != nil || nonceCookie.Value == "" {
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth proxy callback missing login nonce cookie", "reason", "missing_nonce_cookie")
+			http.Error(w, "missing oauth login cookie", http.StatusBadRequest)
+			return
+		}
+		// Single use: clear it regardless of the outcome below.
+		http.SetCookie(w, &http.Cookie{Name: OAuthProxyNonceCookieName, Value: "", Path: "/", MaxAge: -1})
 
 		assertion := req.FormValue("assertion")
 		if assertion == "" {
@@ -289,10 +327,17 @@ func NewProxyAssertionHandler(keySource *oauthproxy.KeySource, graph *ent.Client
 			return
 		}
 
-		claims, err := oauthproxy.VerifyAssertion(pubKey, assertion)
+		claims, err := oauthproxy.VerifyAssertion(pubKey, assertion, returnTo)
 		if err != nil {
 			oauthLog.WarnContext(ctx, "oauth proxy presented invalid assertion", "error", err)
 			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth proxy assertion invalid", "reason", "invalid_assertion")
+			http.Error(w, "invalid oauth proxy assertion", http.StatusUnauthorized)
+			return
+		}
+
+		if subtle.ConstantTimeCompare([]byte(claims.Nonce), []byte(nonceCookie.Value)) != 1 {
+			oauthLog.WarnContext(ctx, "oauth proxy assertion nonce did not match login cookie")
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth proxy assertion nonce mismatch", "reason", "nonce_mismatch")
 			http.Error(w, "invalid oauth proxy assertion", http.StatusUnauthorized)
 			return
 		}
