@@ -7,12 +7,32 @@ import { ConfigureParams } from "../../../components/create-quest-modal/tome-sel
 import { ModalQuestFormValues } from "../../../components/create-quest-modal/types";
 import { modalQuestSchema } from "../../../components/create-quest-modal/validation";
 import { TomeTableWrapper } from "../../../components/create-quest-modal/tome-selection/TomeTableWrapper";
+import { useTomeIds } from "../../../components/create-quest-modal/tome-selection/useTomeIds";
 import { TomeNode } from "../../../utils/interfacesQuery";
 import { NO_INSTALL_WARNING, Tome, TomeRef, TomeTacticKey } from "../types";
 import { buildParamFields, ParamNotice, serializeParams } from "./tomeParams";
 
 const paramsSchema = modalQuestSchema.pick(["params"]);
 const emptyValues: ModalQuestFormValues = { name: "", tomeId: null, params: [], beacons: [] };
+
+const noFilters = { tomeMultiSearch: "", tomeFields: [] };
+
+type TomePickerProps = { selectedTomeId?: string | null; onSelectTome: (tome: TomeNode) => void };
+
+// TomeTableWrapper ignores useTomeIds' error, so a failed fetch would read as "No tomes available".
+// Probe the unfiltered list (same variables as the wrapper's initial query, so Apollo dedupes it) and show a retry instead.
+const TomePicker = ({ selectedTomeId, onSelectTome }: TomePickerProps) => {
+    const { tomeIds, error, refetch } = useTomeIds([], "");
+    if (error && tomeIds.length === 0) {
+        return (
+            <div role="alert" className="flex items-center justify-between gap-2 rounded border border-red-200 bg-red-50 p-3">
+                <p className="text-sm text-red-700">Failed to load tomes. Check your connection and try again.</p>
+                <Button buttonVariant="ghost" onClick={() => refetch()}>Retry</Button>
+            </div>
+        );
+    }
+    return <TomeTableWrapper selectable selectedTomeId={selectedTomeId} onSelectTome={onSelectTome} showFilters initialFilters={noFilters} />;
+};
 
 type TomesStepProps = {
     catalog: Tome[];
@@ -162,13 +182,7 @@ export const TomesStep = ({ catalog, tomes, setTomes, hasPersistenceTome, onErro
                         <h3 className="text-base font-semibold text-gray-900">{editingId ? "Edit tome" : "Add tome"}</h3>
                         {catalog.length === 0
                             ? <p className="text-sm text-gray-500">No tomes available. Import a tome before adding it to this profile.</p>
-                            : <TomeTableWrapper
-                                selectable
-                                selectedTomeId={tomeToAdd?.id}
-                                onSelectTome={selectTome}
-                                showFilters
-                                initialFilters={{ tomeMultiSearch: "", tomeFields: [] }}
-                            />}
+                            : <TomePicker selectedTomeId={tomeToAdd?.id} onSelectTome={selectTome} />}
                         {tomeToAdd && keepStored === null && <ConfigureParams formik={formik} />}
                         {tomeToAdd && keepStored !== null && (
                             <p className="text-xs text-amber-700">This tome's parameter definitions are unavailable, so its stored parameters will be kept unchanged. Select a tome above to replace them.</p>
