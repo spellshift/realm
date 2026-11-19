@@ -6,7 +6,7 @@ import Button from "../../../components/tavern-base-ui/button/Button";
 import { ConfigureParams } from "../../../components/create-quest-modal/tome-selection/ConfigureParams";
 import { ModalQuestFormValues } from "../../../components/create-quest-modal/types";
 import { modalQuestSchema } from "../../../components/create-quest-modal/validation";
-import { TomeTable } from "../../../components/create-quest-modal/tome-selection/TomeTable";
+import { TomeTableWrapper } from "../../../components/create-quest-modal/tome-selection/TomeTableWrapper";
 import { TomeNode } from "../../../utils/interfacesQuery";
 import { NO_INSTALL_WARNING, Tome, TomeRef, TomeTacticKey } from "../types";
 import { buildParamFields, ParamNotice, serializeParams } from "./tomeParams";
@@ -162,7 +162,13 @@ export const TomesStep = ({ catalog, tomes, setTomes, hasPersistenceTome, onErro
                         <h3 className="text-base font-semibold text-gray-900">{editingId ? "Edit tome" : "Add tome"}</h3>
                         {catalog.length === 0
                             ? <p className="text-sm text-gray-500">No tomes available. Import a tome before adding it to this profile.</p>
-                            : <TomeTable tomeIds={catalog.map((tome) => tome.id)} selectable selectedTomeId={tomeToAdd?.id} onSelectTome={selectTome} />}
+                            : <TomeTableWrapper
+                                selectable
+                                selectedTomeId={tomeToAdd?.id}
+                                onSelectTome={selectTome}
+                                showFilters
+                                initialFilters={{ tomeMultiSearch: "", tomeFields: [] }}
+                            />}
                         {tomeToAdd && keepStored === null && <ConfigureParams formik={formik} />}
                         {tomeToAdd && keepStored !== null && (
                             <p className="text-xs text-amber-700">This tome's parameter definitions are unavailable, so its stored parameters will be kept unchanged. Select a tome above to replace them.</p>
