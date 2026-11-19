@@ -32,7 +32,7 @@
 
 use core::ffi::c_void;
 use std::sync::OnceLock;
-use std::sync::atomic::{AtomicPtr, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicU64, Ordering};
 use std::thread;
 
 use windows_sys::Win32::Foundation::CloseHandle;
@@ -186,6 +186,9 @@ static INTERVAL_BITS: AtomicU64 = AtomicU64::new(0);
 // created + thread launched), `false` if init failed. `engage_memguard_sleep`
 // falls back to plain `tokio::time::sleep` when this is `false`.
 static WATCHDOG_SPAWNED: OnceLock<bool> = OnceLock::new();
+// One-time guard so the low-interval coverage warning fires exactly once per
+// process (visibility only; it never changes behavior).
+static WARNED_LOW_INTERVAL: AtomicBool = AtomicBool::new(false);
 
 /// Minimum effective sleep (seconds) required before the watchdog encrypt path
 /// engages. Overridable at watchdog init via `IMIX_MEMGUARD_MIN_SECS`.
@@ -354,6 +357,20 @@ fn watchdog_main(ntdll: (usize, usize)) {
             let _ = WaitForSingleObject(cmd, INFINITE);
         }
         let interval_secs = f64::from_bits(INTERVAL_BITS.load(Ordering::Acquire));
+        // Visibility only: if the configured callback interval is at/below the
+        // effective engage threshold (MIN plus per-cycle callback duration) memory
+        // encryption will rarely or never engage, and the only prior signal was a
+        // print_debug-gated trace line — an operator would get zero coverage
+        // invisibly. Warn exactly once.
+        if interval_secs < MIN_ENCRYPT_INTERVAL_SECS + 3.0
+            && !WARNED_LOW_INTERVAL.swap(true, Ordering::AcqRel)
+        {
+            log::warn!(
+                "memguard: callback interval {:.1}s is at/below the effective encryption threshold (min {:.1}s plus per-cycle callback duration); memory encryption will rarely or never engage - increase the callback interval",
+                interval_secs,
+                MIN_ENCRYPT_INTERVAL_SECS
+            );
+        }
         let ntqit = match ntqit {
             Some(f) => f,
             None => {
@@ -436,11 +453,18 @@ fn watchdog_main(ntdll: (usize, usize)) {
 }
 
 fn plain_sleep(secs: f64) {
-    if secs > 0.0 {
-        let ms = (secs * 1000.0) as u64;
-        if ms <= u32::MAX as u64 {
-            unsafe { Sleep(ms as u32) };
-        }
+    if secs <= 0.0 {
+        return;
+    }
+    // Slice-saturate: a single Sleep() is capped at u32::MAX ms (~49.7 days). For
+    // very large intervals cast the total to u64 and Sleep in u32::MAX chunks so
+    // the configured duration is honored instead of silently no-op'ing (which would
+    // otherwise collapse to a back-to-back encrypt/decrypt loop).
+    let mut remaining = (secs * 1000.0) as u64;
+    while remaining > 0 {
+        let chunk = remaining.min(u32::MAX as u64);
+        unsafe { Sleep(chunk as u32) };
+        remaining -= chunk;
     }
 }
 
