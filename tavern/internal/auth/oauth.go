@@ -287,8 +287,8 @@ func NewProxyLoginHandler(proxyURL, returnTo string) http.Handler {
 		})
 
 		startURL := fmt.Sprintf("%s/oauth/start?return_to=%s&nonce=%s", strings.TrimSuffix(proxyURL, "/"), url.QueryEscape(returnTo), url.QueryEscape(nonce))
-		http.Redirect(w, req, startURL, http.StatusFound)
 		oauthLog.InfoContext(req.Context(), "oauth proxy login flow started", "proxy_url", proxyURL)
+		http.Redirect(w, req, startURL, http.StatusFound)
 	})
 }
 
