@@ -112,6 +112,15 @@ fn prepare_tar_dst(dst_path: &Path) -> AnyhowResult<()> {
     Ok(())
 }
 
+fn decompress_raw_file(src_path: &Path, dst_path: &Path) -> AnyhowResult<()> {
+    let f_src = BufReader::new(File::open(src_path)?);
+    let mut decoder = MultiGzDecoder::new(f_src);
+    let mut writer = BufWriter::new(File::create(dst_path)?);
+    io::copy(&mut decoder, &mut writer)?;
+    writer.flush()?;
+    Ok(())
+}
+
 fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
     let src_path = Path::new(&src);
     let dst_path = Path::new(&dst);
@@ -126,16 +135,7 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
 
     if !is_tar {
         let dst_existed = dst_path.symlink_metadata().is_ok();
-        let copy_res = (|| -> AnyhowResult<()> {
-            let f_src = BufReader::new(File::open(src_path)?);
-            let mut decoder = MultiGzDecoder::new(f_src);
-            let mut writer = BufWriter::new(File::create(dst_path)?);
-            io::copy(&mut decoder, &mut writer)?;
-            writer.flush()?;
-            Ok(())
-        })();
-
-        if let Err(err) = copy_res {
+        if let Err(err) = decompress_raw_file(src_path, dst_path) {
             if !dst_existed {
                 let _ = fs::remove_file(dst_path);
             }
