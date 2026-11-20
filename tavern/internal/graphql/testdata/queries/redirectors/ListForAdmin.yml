@@ -5,6 +5,8 @@ state: |
     VALUES (9,"deployment-one","dns",'["one.example","two.example"]',false,datetime('now'),datetime('now'),datetime('now'));
   INSERT INTO redirectors (id,identifier,transport,domains,enabled,created_at,last_modified_at)
     VALUES (10,"deployment-two","http1",'["offline.example"]',true,datetime('now'),datetime('now'));
+  INSERT INTO redirectors (id,identifier,transport,domains,enabled,last_seen_at,created_at,last_modified_at)
+    VALUES (11,"deployment-three","grpc",'["stale.example"]',true,datetime('now', '-10 minutes'),datetime('now'),datetime('now'));
 requestor:
   session_token: adminToken
 query: |
@@ -17,5 +19,9 @@ expected:
       online: true
     - id: "10"
       domains: [offline.example]
+      enabled: true
+      online: false
+    - id: "11"
+      domains: [stale.example]
       enabled: true
       online: false

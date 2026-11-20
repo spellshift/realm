@@ -25,12 +25,26 @@ export const RedirectorsTab = () => {
     const { data, loading, error, refetch } = useQuery<{ redirectors: Redirector[] }>(GET_REDIRECTORS, {
         pollInterval: 30000,
     });
-    const [setEnabled, { loading: saving, error: mutationError }] = useMutation(SET_REDIRECTOR_ENABLED);
+    const [setEnabled, { loading: saving, error: mutationError }] = useMutation<{ setRedirectorEnabled: boolean }>(SET_REDIRECTOR_ENABLED);
     const redirectors = data?.redirectors ?? [];
 
     const toggle = async (redirector: Redirector) => {
         try {
-            await setEnabled({ variables: { redirectorID: redirector.id, enabled: !redirector.enabled } });
+            await setEnabled({
+                variables: { redirectorID: redirector.id, enabled: !redirector.enabled },
+                update: (cache, result) => {
+                    const enabled = result.data?.setRedirectorEnabled;
+                    if (enabled === undefined) return;
+                    cache.updateQuery<{ redirectors: Redirector[] }>({ query: GET_REDIRECTORS }, (current) => {
+                        if (!current) return current;
+                        return {
+                            redirectors: current.redirectors.map((item) =>
+                                item.id === redirector.id ? { ...item, enabled } : item
+                            ),
+                        };
+                    });
+                },
+            });
             await refetch();
         } catch {
             // The mutation error is rendered below; keep the switch at server state.
