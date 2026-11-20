@@ -4,10 +4,12 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -103,10 +105,74 @@ func prepareMountDir(spec BuildSpec) (string, error) {
 			if err := os.WriteFile(filepath.Join(tomeDir, "params.json"), []byte(t.Params), 0o644); err != nil {
 				return tmpDir, fmt.Errorf("writing params for tome %d: %w", t.ID, err)
 			}
+			if err := prependInputParams(filepath.Join(tomeDir, "main.eldritch"), t.Params); err != nil {
+				return tmpDir, fmt.Errorf("injecting params for tome %d: %w", t.ID, err)
+			}
 		}
 	}
 
 	return tmpDir, nil
+}
+
+func prependInputParams(mainPath, params string) error {
+	var values map[string]string
+	if err := json.Unmarshal([]byte(params), &values); err != nil || len(values) == 0 {
+		return nil
+	}
+
+	src, err := os.ReadFile(mainPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var b strings.Builder
+	b.WriteString("input_params = {")
+	for i, k := range keys {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(quoteEldritchString(k))
+		b.WriteString(": ")
+		b.WriteString(quoteEldritchString(values[k]))
+	}
+	b.WriteString("}\n")
+	b.Write(src)
+
+	return os.WriteFile(mainPath, []byte(b.String()), 0o644)
+}
+
+func quoteEldritchString(s string) string {
+	var b strings.Builder
+	b.WriteByte('"')
+	for _, r := range s {
+		switch {
+		case r == '\\':
+			b.WriteString(`\\`)
+		case r == '"':
+			b.WriteString(`\"`)
+		case r == '\n':
+			b.WriteString(`\n`)
+		case r == '\r':
+			b.WriteString(`\r`)
+		case r == '\t':
+			b.WriteString(`\t`)
+		case r < 0x20 || r == 0x7f:
+			fmt.Fprintf(&b, `\x%02x`, r)
+		default:
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
 }
 
 // extractTomeArchive decompresses a tar.gz archive and extracts all regular
