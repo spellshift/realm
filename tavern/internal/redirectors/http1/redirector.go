@@ -58,7 +58,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 func ingressGate(ctx context.Context, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !redirectors.Allowed(ctx) {
-			http.Error(w, "redirector disabled", http.StatusServiceUnavailable)
+			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 			return
 		}
 		next.ServeHTTP(w, r)

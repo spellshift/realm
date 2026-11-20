@@ -66,8 +66,12 @@ func TestManagedRedirectorEnrollmentAndCheckins(t *testing.T) {
 	second, err := managed.EnsureIdentity(ctx, cfg, store)
 	require.NoError(t, err)
 	require.Equal(t, first.ID, second.ID)
-	require.NoError(t, managed.Checkin(ctx, server.URL, first))
-	require.NoError(t, managed.Checkin(ctx, server.URL, second))
+	enabled, err := managed.CheckinEnabled(ctx, server.URL, first)
+	require.NoError(t, err)
+	require.True(t, enabled)
+	enabled, err = managed.CheckinEnabled(ctx, server.URL, second)
+	require.NoError(t, err)
+	require.True(t, enabled)
 	records, err := graph.Redirector.Query().All(ctx)
 	require.NoError(t, err)
 	require.Len(t, records, 1)
@@ -76,7 +80,7 @@ func TestManagedRedirectorEnrollmentAndCheckins(t *testing.T) {
 	// The deployment state is persisted in Tavern and returned to every replica,
 	// including one that reloads its identity after a restart.
 	require.NoError(t, graph.Redirector.UpdateOneID(records[0].ID).SetEnabled(false).Exec(ctx))
-	enabled, err := managed.CheckinEnabled(ctx, server.URL, first)
+	enabled, err = managed.CheckinEnabled(ctx, server.URL, first)
 	require.NoError(t, err)
 	require.False(t, enabled)
 	restarted, err := store.Load(ctx)

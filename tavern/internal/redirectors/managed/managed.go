@@ -308,11 +308,6 @@ func identityWaitError(ctx context.Context, timeout time.Duration) error {
 	return fmt.Errorf("redirector enrollment rejected and shared identity did not appear within %s; verify the enrollment token and identity store: %w", timeout, context.DeadlineExceeded)
 }
 
-func Checkin(ctx context.Context, upstream string, identity *Identity) error {
-	_, err := CheckinEnabled(ctx, upstream, identity)
-	return err
-}
-
 // CheckinEnabled returns the persisted control state after an authenticated check-in.
 func CheckinEnabled(ctx context.Context, upstream string, identity *Identity) (bool, error) {
 	cert, key, err := validate(identity)

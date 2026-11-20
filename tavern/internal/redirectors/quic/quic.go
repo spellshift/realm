@@ -65,7 +65,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 			}
 		}
 		if !redirectors.Allowed(ctx) {
-			_ = conn.CloseWithError(0, "redirector disabled")
+			_ = conn.CloseWithError(0, "service unavailable")
 			continue
 		}
 

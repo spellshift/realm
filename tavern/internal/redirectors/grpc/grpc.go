@@ -58,7 +58,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 func (r *Redirector) handler(upstream *grpc.ClientConn, gateContext ...context.Context) grpc.StreamHandler {
 	return func(srv any, ss grpc.ServerStream) error {
 		if len(gateContext) > 0 && !redirectors.Allowed(gateContext[0]) {
-			return status.Error(codes.Unavailable, "redirector disabled")
+			return status.Error(codes.Unavailable, "service unavailable")
 		}
 		ctx, _, _ := logging.ExtractGRPCTrace(ss.Context())
 
