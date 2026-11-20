@@ -21,7 +21,7 @@ func createTestSecrets(t *testing.T) string {
 - key: super_secret_test_data
   value: hello world!
 `)
-	err := os.WriteFile(secretsPath, data, 0644)
+	err := os.WriteFile(secretsPath, data, 0600)
 	if err != nil {
 		log.Fatalf("Failed to write test file %s: %v", secretsPath, err)
 	}
@@ -108,7 +108,7 @@ func TestGetSecretsMissingKey(t *testing.T) {
 func TestGetSecretsEmptyFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := path.Join(tmpDir, "secrets.yaml")
-	require.NoError(t, os.WriteFile(path, []byte{}, 0644))
+	require.NoError(t, os.WriteFile(path, []byte{}, 0600))
 
 	secretsManager, err := secrets.NewDebugFileSecrets(path)
 	require.NoError(t, err)
