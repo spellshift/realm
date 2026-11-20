@@ -202,6 +202,17 @@ async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()>
 
     #[cfg(all(windows, feature = "mem-obfuscation"))]
     {
+        if (sleep_secs as f64) < crate::memguard::min_encrypt_interval_secs() + 3.0 {
+            static WARNED_LOW_INTERVAL: AtomicBool = AtomicBool::new(false);
+            if !WARNED_LOW_INTERVAL.swap(true, Ordering::AcqRel) {
+                #[cfg(feature = "print_debug")]
+                log::warn!(
+                    "memguard: callback interval {:.1}s is at/below the effective encryption threshold (min {:.1}s plus per-cycle callback duration); memory encryption will rarely or never engage - increase the callback interval",
+                    sleep_secs,
+                    crate::memguard::min_encrypt_interval_secs()
+                );
+            }
+        }
         if (sleep_secs as f64) >= crate::memguard::min_encrypt_interval_secs() {
             // Engage the watchdog dormancy/encrypt cycle. The agent worker stays
             // free (parked on the blocking pool) while the watchdog owns the

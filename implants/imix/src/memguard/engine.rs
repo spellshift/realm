@@ -31,6 +31,15 @@ const XOR_KEY: u8 = 0x69;
 const WALK_START: usize = 0x1_0000;
 const MAX_SKIP: usize = 1024;
 const CAPACITY_MARGIN: usize = 256;
+const ENTRY_SIZE: usize = core::mem::size_of::<PageEntry>();
+const ENTRIES_PER_PAGE: usize = PAGE_SIZE / ENTRY_SIZE;
+// Reserve a large entries region up front (MEM_RESERVE, no commit cost) and commit
+// it incrementally before each encrypt (see commit_entries). 4M entries is ~64 MiB
+// of address space reserved but not committed until needed, which removes the
+// fixed `page_count + 256` capacity that permanently failed after large heap
+// growth.
+const RESERVE_CAPACITY_ENTRIES: usize = (64 * 1024 * 1024) / ENTRY_SIZE;
+const RESERVE_ENTRIES_BYTES: usize = RESERVE_CAPACITY_ENTRIES * ENTRY_SIZE;
 const THREAD_BASIC_INFORMATION_CLASS: u32 = 0;
 const TLS_EXPANSION_SLOTS_OFFSET: usize = 0x1780;
 
@@ -152,13 +161,11 @@ struct State {
     nt_query_system_information: NtQuerySystemInformationFn,
     nt_query_information_thread: NtQueryInformationThreadFn,
     skip: [SkipRange; MAX_SKIP],
-    // Tid-keyed recursion guard: fixed array of (thread-key, active) pairs used
-    // to detect SAME-thread nested re-entry into the VEH without blocking
-    // concurrent faults on *different* threads (which must each recover). The
-    // thread key is the faulting thread's TEB pointer (read from the segment
-    // register in `current_thread_key`), which is unique per live thread.
-    recursion_tid: [usize; RECURSION_SLOTS],
-    recursion_active: [bool; RECURSION_SLOTS],
+    // Tid-keyed recursion guard: each slot holds 0 (free) or the faulting
+    // thread's TEB key (active). Collapsing the old (tid, active) pair into one
+    // atomic removes the split-state race where a nested fault on the same thread
+    // between the tid-CAS and the active-store could miss the guard.
+    recursion: [AtomicUsize; RECURSION_SLOTS],
     // Plain recovery counter for VEH diagnostics (print_debug). Lives in the
     // unencrypted State region so the handler can increment it without touching
     // the (possibly encrypted) heap. Every successful lazy decrypt logs a
@@ -211,8 +218,6 @@ impl MemGuard {
             return None;
         }
 
-        let page_count = unsafe { count_candidates(&static_skip, static_skip_count) };
-        let capacity = page_count + CAPACITY_MARGIN;
         let header_offset = match unsafe {
             round_up(
                 core::mem::size_of::<State>(),
@@ -225,14 +230,20 @@ impl MemGuard {
                 return None;
             }
         };
-        let region_bytes = match capacity.checked_mul(core::mem::size_of::<PageEntry>()) {
+        // The entries region is page-aligned and starts after the header. The
+        // whole region is reserved up front (MEM_RESERVE, no commit cost); the
+        // header is committed now and the entries are committed incrementally by
+        // commit_entries() before each encrypt. This keeps the VEH (which reads
+        // entries via the State pointer with Acquire) from ever observing
+        // partially-committed memory.
+        let entries_offset = match unsafe { round_up(header_offset, PAGE_SIZE) } {
             Some(v) => v,
             None => {
                 LIVE.store(false, Ordering::Release);
                 return None;
             }
         };
-        let region_size = match header_offset.checked_add(region_bytes) {
+        let reserve_size = match entries_offset.checked_add(RESERVE_ENTRIES_BYTES) {
             Some(v) => v,
             None => {
                 LIVE.store(false, Ordering::Release);
@@ -240,20 +251,40 @@ impl MemGuard {
             }
         };
 
+        // Reserve the full region (header + 4M entries) without committing it.
         let region_base = unsafe {
-            VirtualAlloc(
-                core::ptr::null(),
-                region_size,
-                MEM_COMMIT | MEM_RESERVE,
-                PAGE_READWRITE,
-            ) as *mut u8
+            VirtualAlloc(core::ptr::null(), reserve_size, MEM_RESERVE, PAGE_READWRITE) as *mut u8
         };
         if region_base.is_null() {
             LIVE.store(false, Ordering::Release);
             return None;
         }
+        // Commit only the header (State + skip array); it is process-lifetime and
+        // read by the VEH. The entries region stays reserved but uncommitted.
+        let header_commit = match unsafe { round_up(entries_offset, PAGE_SIZE) } {
+            Some(v) => v,
+            None => {
+                unsafe { VirtualFree(region_base as *mut c_void, 0, MEM_RELEASE) };
+                LIVE.store(false, Ordering::Release);
+                return None;
+            }
+        };
+        if unsafe {
+            VirtualAlloc(
+                region_base as *mut c_void,
+                header_commit,
+                MEM_COMMIT,
+                PAGE_READWRITE,
+            )
+        }
+        .is_null()
+        {
+            unsafe { VirtualFree(region_base as *mut c_void, 0, MEM_RELEASE) };
+            LIVE.store(false, Ordering::Release);
+            return None;
+        }
 
-        let entries = unsafe { region_base.add(header_offset) as *mut PageEntry };
+        let entries = unsafe { region_base.add(entries_offset) as *mut PageEntry };
         let skip_static_count = static_skip_count;
 
         unsafe {
@@ -262,8 +293,8 @@ impl MemGuard {
                 state,
                 State {
                     region_base,
-                    region_size,
-                    capacity,
+                    region_size: reserve_size,
+                    capacity: 0,
                     count: AtomicUsize::new(0),
                     skip_static_count,
                     skip_count: skip_static_count,
@@ -273,18 +304,21 @@ impl MemGuard {
                     nt_query_system_information,
                     nt_query_information_thread,
                     skip: static_skip,
-                    recursion_tid: [0usize; RECURSION_SLOTS],
-                    recursion_active: [false; RECURSION_SLOTS],
+                    recursion: core::array::from_fn(|_| AtomicUsize::new(0)),
                     veh_recover_count: AtomicUsize::new(0),
                 },
             );
-            let s = &mut *state;
-            if !add_skip_region(&mut s.skip, &mut s.skip_count, region_base, region_size) {
+            if !add_skip_region(
+                &mut (*state).skip,
+                &mut (*state).skip_count,
+                region_base,
+                reserve_size,
+            ) {
                 VirtualFree(region_base as *mut c_void, 0, MEM_RELEASE);
                 LIVE.store(false, Ordering::Release);
                 return None;
             }
-            s.skip_static_count = s.skip_count;
+            (*state).skip_static_count = (*state).skip_count;
         }
 
         // Publish the state region and register the VEH safety net exactly once
@@ -335,9 +369,8 @@ impl MemGuard {
     /// trace to show the pre-decrypt state (how many pages are still encrypted).
     pub fn decrypt_histogram(&self) -> (usize, usize, usize) {
         unsafe {
-            let s = &*self.state;
-            let entries = s.entries;
-            let n = s.count.load(Ordering::Acquire);
+            let entries = (*self.state).entries;
+            let n = (*self.state).count.load(Ordering::Acquire);
             let mut enc = 0;
             let mut busy = 0;
             let mut plain = 0;
@@ -355,10 +388,14 @@ impl MemGuard {
 
     pub fn add_exclusion(&mut self, base: *const u8, len: usize) -> bool {
         unsafe {
-            let s = &mut *self.state;
-            let ok = add_skip_region(&mut s.skip, &mut s.skip_count, base as *mut u8, len);
+            let ok = add_skip_region(
+                &mut (*self.state).skip,
+                &mut (*self.state).skip_count,
+                base as *mut u8,
+                len,
+            );
             if !ok {
-                s.skip_failed = true;
+                (*self.state).skip_failed = true;
             }
             ok
         }
@@ -366,19 +403,17 @@ impl MemGuard {
 
     pub fn clear_dynamic_exclusions(&mut self) {
         unsafe {
-            let s = &mut *self.state;
-            s.skip_count = s.skip_static_count;
-            s.skip_failed = false;
+            (*self.state).skip_count = (*self.state).skip_static_count;
+            (*self.state).skip_failed = false;
         }
     }
 
     pub fn find_encrypted_page(&self, addr: *const u8) -> Option<usize> {
         unsafe {
-            let s = &*self.state;
-            let entries = s.entries;
+            let entries = (*self.state).entries;
             let page = (addr as usize & !(PAGE_SIZE - 1)) as *mut u8;
             let mut lo = 0usize;
-            let mut hi = s.count.load(Ordering::Acquire);
+            let mut hi = (*self.state).count.load(Ordering::Acquire);
             while lo < hi {
                 let mid = lo + (hi - lo) / 2;
                 let e = &*entries.add(mid);
@@ -402,11 +437,10 @@ impl MemGuard {
 impl Drop for MemGuard {
     fn drop(&mut self) {
         unsafe {
-            let s = &mut *self.state;
-            if s.count.load(Ordering::Acquire) != 0 {
+            if (*self.state).count.load(Ordering::Acquire) != 0 {
                 decrypt_state(self.state, None);
             }
-            if s.count.load(Ordering::Acquire) == 0 {
+            if (*self.state).count.load(Ordering::Acquire) == 0 {
                 // Fully decrypted. UNSAFE INVARIANT — process-lifetime region
                 // retention (review fix #2): we deliberately NEVER VirtualFree
                 // the state region and NEVER remove the VEH once registered. The
@@ -624,12 +658,55 @@ unsafe fn add_thread_skip(
     ok
 }
 
+// Commit enough entries pages for `needed` entries, growing the committed portion
+// of the reserved entries region up to `needed` (rounded up to whole pages). Only
+// ever called pre-encryption while `count == 0`, so the VEH (which reads entries
+// via the State pointer with Acquire) never observes half-committed memory.
+// Returns false (fail-closed) if the reservation is exhausted or MEM_COMMIT fails.
+unsafe fn commit_entries(state: *mut State, needed: usize) -> bool {
+    if (*state).count.load(Ordering::Acquire) != 0 {
+        return false;
+    }
+    if needed > RESERVE_CAPACITY_ENTRIES {
+        return false;
+    }
+    let cur_cap = (*state).capacity;
+    if needed <= cur_cap {
+        return true;
+    }
+    let entries = (*state).entries;
+    let cur_pages = cur_cap / ENTRIES_PER_PAGE;
+    let need_pages = (needed + ENTRIES_PER_PAGE - 1) / ENTRIES_PER_PAGE;
+    let max_pages = RESERVE_CAPACITY_ENTRIES / ENTRIES_PER_PAGE;
+    if need_pages > max_pages {
+        return false;
+    }
+    let commit_from = entries.add(cur_pages * ENTRIES_PER_PAGE * ENTRY_SIZE) as *mut c_void;
+    let commit_size = (need_pages - cur_pages) * ENTRIES_PER_PAGE * ENTRY_SIZE;
+    if VirtualAlloc(commit_from, commit_size, MEM_COMMIT, PAGE_READWRITE).is_null() {
+        return false;
+    }
+    (*state).capacity = need_pages * ENTRIES_PER_PAGE;
+    true
+}
+
 unsafe fn encrypt_state(state: *mut State, mut progress: Option<&mut dyn FnMut(usize)>) -> bool {
     if (*state).count.load(Ordering::Acquire) != 0 || (*state).skip_failed {
         return false;
     }
     // A fresh cycle always starts from a clean decrypt cursor.
     (*state).decrypt_cursor.store(0, Ordering::Release);
+    // Recount candidates with the current skip set and commit fresh entries for
+    // this cycle. The entries region is reserved once at init (MEM_RESERVE) and
+    // committed incrementally here, strictly pre-encryption and while count == 0,
+    // so the VEH (which reads entries via the State pointer with Acquire) never
+    // sees partially-committed memory.
+    let skip_count = (*state).skip_count;
+    let skip = core::slice::from_raw_parts((*state).skip.as_ptr(), skip_count);
+    let page_count = count_candidates(skip, skip_count);
+    if !commit_entries(state, page_count + CAPACITY_MARGIN) {
+        return false;
+    }
     let capacity = (*state).capacity;
     let entries = (*state).entries;
     let mut failed = false;
@@ -645,15 +722,13 @@ unsafe fn encrypt_state(state: *mut State, mut progress: Option<&mut dyn FnMut(u
         {
             let mut p = base as usize;
             let end = p + size;
-            while p + PAGE_SIZE <= end {
+            while p + PAGE_SIZE <= end && !stop {
                 let page = p as *mut u8;
-                let s = &*state;
-                if is_excluded(&s.skip, s.skip_count, page) {
+                if is_excluded(skip, skip_count, page) {
                     p += PAGE_SIZE;
                     continue;
                 }
-                let s = &mut *state;
-                if s.count.load(Ordering::Relaxed) >= capacity {
+                if (*state).count.load(Ordering::Relaxed) >= capacity {
                     failed = true;
                     stop = true;
                     break;
@@ -665,12 +740,12 @@ unsafe fn encrypt_state(state: *mut State, mut progress: Option<&mut dyn FnMut(u
                 }
                 let mut old = 0u32;
                 if VirtualProtect(page as *const c_void, PAGE_SIZE, PAGE_NOACCESS, &mut old) != 0 {
-                    let idx = s.count.load(Ordering::Relaxed);
+                    let idx = (*state).count.load(Ordering::Relaxed);
                     let e = &mut *entries.add(idx);
                     e.base = page;
                     e.orig_protect = protect;
                     e.state = AtomicU8::new(PG_ENCRYPTED);
-                    let c = s.count.fetch_add(1, Ordering::Relaxed) + 1;
+                    let c = (*state).count.fetch_add(1, Ordering::Release) + 1;
                     if c % 10000 == 0 {
                         if let Some(p) = &mut progress {
                             p(c);
@@ -678,12 +753,14 @@ unsafe fn encrypt_state(state: *mut State, mut progress: Option<&mut dyn FnMut(u
                     }
                 } else {
                     // Protection failed: revert to plaintext and leave the page RW
-                    // so it is never left holding ciphertext.
+                    // so it is never left holding ciphertext; stop encrypting the
+                    // remaining pages since the cycle will roll back anyway.
                     let slice = core::slice::from_raw_parts_mut(page, PAGE_SIZE);
                     for b in slice.iter_mut() {
                         *b ^= XOR_KEY;
                     }
                     failed = true;
+                    stop = true;
                 }
                 p += PAGE_SIZE;
             }
@@ -865,32 +942,30 @@ const RECURSION_UNTRACKED: i32 = -2;
 // two threads faulting on two different encrypted pages both recover). The thread
 // key is the faulting thread's TEB pointer, which is unique per live thread.
 //
-// UNSAFE INVARIANT - slot-exhaustion (proceed-untracked) is safe: if all slots
-// are full we still admit the fault untracked (returning RECURSION_UNTRACKED). A
-// nested re-entry on the SAME page self-protects via the per-page CAS - the entry
-// is already PG_BUSY so the second claim misses and the handler returns
-// CONTINUE_SEARCH (no corruption; the first/outer claim finishes it). A nested
-// fault on a DIFFERENT page is recovered normally (fresh CAS claim). Recursion is
-// bounded by the number of distinct encrypted pages, so it cannot spin unboundedly.
+// UNSAFE INVARIANT - single array (0 = free, non-zero TEB-key = active): the old
+// design held a (tid, active) pair and CAS'd tid then stored active in two steps,
+// leaving a window where a nested fault on the same thread between the tid-CAS and
+// the active-store could miss the guard. Collapsing to one atomic slot removes
+// that split-state race. slot-exhaustion (proceed-untracked) is still safe: a
+// nested re-entry on the SAME page self-protects via the per-page CAS, and a
+// nested fault on a DIFFERENT page is recovered normally. Recursion is bounded by
+// the number of distinct encrypted pages, so it cannot spin unboundedly.
 unsafe fn recursion_admit(state: *mut State, key: usize) -> i32 {
     for i in 0..RECURSION_SLOTS {
-        let active = AtomicBool::from_ptr(core::ptr::addr_of_mut!((*state).recursion_active[i]));
-        let tid = AtomicUsize::from_ptr(core::ptr::addr_of_mut!((*state).recursion_tid[i]));
-        if active.load(Ordering::Acquire) && tid.load(Ordering::Acquire) == key {
+        let slot =
+            AtomicUsize::from_ptr(core::ptr::addr_of_mut!((*state).recursion[i]) as *mut usize);
+        if slot.load(Ordering::Acquire) == key {
             return RECURSION_NESTED;
         }
     }
     for i in 0..RECURSION_SLOTS {
-        let active = AtomicBool::from_ptr(core::ptr::addr_of_mut!((*state).recursion_active[i]));
-        let tid = AtomicUsize::from_ptr(core::ptr::addr_of_mut!((*state).recursion_tid[i]));
-        if !active.load(Ordering::Acquire) && tid.load(Ordering::Acquire) == 0 {
-            if tid
-                .compare_exchange(0, key, Ordering::AcqRel, Ordering::Acquire)
-                .is_ok()
-            {
-                active.store(true, Ordering::Release);
-                return i as i32;
-            }
+        let slot =
+            AtomicUsize::from_ptr(core::ptr::addr_of_mut!((*state).recursion[i]) as *mut usize);
+        if slot
+            .compare_exchange(0, key, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+        {
+            return i as i32;
         }
     }
     RECURSION_UNTRACKED // all slots full: admit untracked (see UNSAFE INVARIANT above)
@@ -899,10 +974,9 @@ unsafe fn recursion_admit(state: *mut State, key: usize) -> i32 {
 unsafe fn recursion_release(state: *mut State, slot: i32) {
     if slot >= 0 {
         let i = slot as usize;
-        let active = AtomicBool::from_ptr(core::ptr::addr_of_mut!((*state).recursion_active[i]));
-        let tid = AtomicUsize::from_ptr(core::ptr::addr_of_mut!((*state).recursion_tid[i]));
-        active.store(false, Ordering::Release);
-        tid.store(0, Ordering::Release);
+        let slot_atomic =
+            AtomicUsize::from_ptr(core::ptr::addr_of_mut!((*state).recursion[i]) as *mut usize);
+        slot_atomic.store(0, Ordering::Release);
     }
 }
 
@@ -923,8 +997,11 @@ unsafe extern "system" fn veh_handler(exception_info: *mut EXCEPTION_POINTERS) -
     if (*record).ExceptionCode != VEH_ACCESS_VIOLATION {
         #[cfg(feature = "print_debug")]
         {
-            let info = (*record).ExceptionInformation.as_ptr();
-            let addr = *info.add(1);
+            let addr = if (*record).NumberParameters >= 2 {
+                *(*record).ExceptionInformation.as_ptr().add(1)
+            } else {
+                0
+            };
             crate::memguard::watchdog::trace_veh_miss(
                 addr as usize,
                 (*record).ExceptionCode as usize,
@@ -932,7 +1009,11 @@ unsafe extern "system" fn veh_handler(exception_info: *mut EXCEPTION_POINTERS) -
         }
         return VEH_CONTINUE_SEARCH;
     }
-    // ExceptionInformation[1] is the faulting virtual address for an AV.
+    // ExceptionInformation[1] is the faulting virtual address for an AV, but some
+    // records carry fewer than 2 parameters; guard the read before relying on it.
+    if (*record).NumberParameters < 2 {
+        return VEH_CONTINUE_SEARCH;
+    }
     let info = (*record).ExceptionInformation.as_ptr();
     let addr = *info.add(1);
     let state = STATE.load(Ordering::Acquire);
@@ -1020,14 +1101,34 @@ unsafe fn decrypt_page_for_fault(state: *mut State, addr: *const u8) -> bool {
         return false; // not one of our encrypted pages
     }
     let e = entries.add(found);
-    let cur = (*e).state.load(Ordering::Acquire);
+    let mut cur = (*e).state.load(Ordering::Acquire);
     if cur == PG_PLAINTEXT {
         // Already decrypted (e.g. by an earlier fault): the page is usable, so
         // report success and let the faulting instruction re-execute.
         return true;
     }
+    // A concurrent actor (nested VEH on this page, or the bulk-decrypt) owns the
+    // page (PG_BUSY). Spin-wait a bounded number of iterations for it to finish:
+    // it transitions the page to PG_PLAINTEXT (recovered -> return success) or
+    // back to PG_ENCRYPTED (reverted -> retry the CAS claim below).
+    // UNSAFE INVARIANT (bounded PG_BUSY spin): the cap (~10M spins ≈ tens of ms)
+    // is far longer than any legitimate decrypt, so reaching it means the claimant
+    // aborted mid-CAS and will never transition. We then CONTINUE_SEARCH rather
+    // than spin forever: an unbounded spin on a dead claimant would hang the
+    // faulting thread, whereas CONTINUE_SEARCH lets the fault re-raise and the
+    // unhandled-exception filter apply.
+    const PG_BUSY_SPIN_LIMIT: usize = 10_000_000;
+    let mut spins = 0usize;
+    while cur == PG_BUSY && spins < PG_BUSY_SPIN_LIMIT {
+        core::hint::spin_loop();
+        cur = (*e).state.load(Ordering::Acquire);
+        spins += 1;
+    }
+    if cur == PG_PLAINTEXT {
+        return true;
+    }
     if cur != PG_ENCRYPTED {
-        return false; // PG_BUSY: claimed by a concurrent VEH; let it finish.
+        return false; // still busy after the cap (or unexpected) -> CONTINUE_SEARCH
     }
     // Claim this page (lock-free). If a concurrent actor won the race, miss.
     if (*e)
