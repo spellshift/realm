@@ -9,6 +9,8 @@ on:
       - '.devcontainer/**'
       - 'tavern/**'
       - 'bin/**'
+      - 'implants/**'
+      - 'embed.go'
       - 'docker/tavern.Dockerfile'
       - 'go.mod'
       - 'go.sum'
@@ -38,6 +40,8 @@ jobs:
             tavern:
               - 'tavern/**'
               - 'bin/**'
+              - 'implants/**'
+              - 'embed.go'
               - 'docker/tavern.Dockerfile'
               - 'go.mod'
               - 'go.sum'

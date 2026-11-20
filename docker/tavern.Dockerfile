@@ -8,6 +8,8 @@ RUN go mod download
 
 # Build Cache
 FROM base as build-cache
+COPY ./embed.go /app/embed.go
+COPY ./implants /app/implants
 COPY ./tavern /app/tavern
 COPY ./bin /app/bin
 
