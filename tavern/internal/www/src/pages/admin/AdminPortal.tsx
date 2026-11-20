@@ -13,6 +13,7 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import UserTable from "./UserTable";
 import { useUserIds } from "./hooks/useUserIds";
 import AdminTabs from "./components/AdminTabs";
+import { RedirectorsTab } from "./RedirectorsTab";
 import { ProfilesTab } from "../agent-builder/profiles-tab";
 import { BuildersTab } from "../agent-builder/builders-tab";
 import NewBuildProfileModal from "../agent-builder/components/NewBuildProfileModal";
@@ -20,7 +21,7 @@ import EnrollBuilderModal from "../agent-builder/components/EnrollBuilderModal";
 import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, useBuilders, useBuildProfiles } from "../agent-builder/queries";
 import { BuildProfile } from "../agent-builder/types";
 
-const TAB_NAMES = ["users", "profiles", "builders"] as const;
+const TAB_NAMES = ["users", "profiles", "builders", "redirectors"] as const;
 
 export const AdminPortal = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -139,6 +140,9 @@ export const AdminPortal = () => {
                                 error={buildersError}
                                 onEnroll={() => setEnrollModalOpen(true)}
                             />
+                        </TabPanel>
+                        <TabPanel>
+                            <RedirectorsTab />
                         </TabPanel>
                     </TabPanels>
                 </TabGroup>

@@ -37,6 +37,7 @@ type HostFileResolver interface {
 type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
+	Redirectors(ctx context.Context) ([]*models.ManagedRedirector, error)
 	Assets(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) (*ent.AssetConnection, error)
 	Quests(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) (*ent.QuestConnection, error)
 	Adventures(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AdventureOrder, where *ent.AdventureWhereInput) (*ent.AdventureConnection, error)
@@ -14005,6 +14006,63 @@ func (ec *executionContext) fieldContext_Query_nodes(ctx context.Context, field 
 	if fc.Args, err = ec.field_Query_nodes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_redirectors(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_redirectors,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Redirectors(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal []*models.ManagedRedirector
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal []*models.ManagedRedirector
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNManagedRedirector2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐManagedRedirectorᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_redirectors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ManagedRedirector_id(ctx, field)
+			case "domains":
+				return ec.fieldContext_ManagedRedirector_domains(ctx, field)
+			case "enabled":
+				return ec.fieldContext_ManagedRedirector_enabled(ctx, field)
+			case "online":
+				return ec.fieldContext_ManagedRedirector_online(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ManagedRedirector", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -50563,6 +50621,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_nodes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "redirectors":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_redirectors(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

@@ -1,5 +1,5 @@
 import { Tab, TabList } from "@headlessui/react";
-import { Hammer, Settings2, Users } from "lucide-react";
+import { Hammer, Network, Settings2, Users } from "lucide-react";
 
 const tabClass = ({ selected }: { selected: boolean }) =>
     `p-3 sm:p-4 flex flex-row gap-1 items-center flex-shrink-0 whitespace-nowrap border-t-2 border-l-2 border-r-2 rounded-t-lg ${
@@ -34,6 +34,10 @@ export const AdminTabs = ({
             <Hammer className="w-4 h-4" />
             <div>Builders</div>
             {builderCount !== undefined && <div>({builderCount})</div>}
+        </Tab>
+        <Tab className={tabClass}>
+            <Network className="w-4 h-4" />
+            <div>Redirectors</div>
         </Tab>
     </TabList>
 );

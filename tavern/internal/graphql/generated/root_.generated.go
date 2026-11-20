@@ -447,6 +447,13 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	ManagedRedirector struct {
+		Domains func(childComplexity int) int
+		Enabled func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Online  func(childComplexity int) int
+	}
+
 	Metrics struct {
 		BeaconTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconWhereInput) int
 		QuestTimelineChart  func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
@@ -641,6 +648,7 @@ type ComplexityRoot struct {
 		OperatorNotes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.OperatorNoteOrder, where *ent.OperatorNoteWhereInput) int
 		Portals                func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
 		Quests                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		Redirectors            func(childComplexity int) int
 		Repositories           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
 		ScheduledTasks         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) int
 		Shells                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
@@ -2931,6 +2939,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LinkEdge.Node(childComplexity), true
 
+	case "ManagedRedirector.domains":
+		if e.ComplexityRoot.ManagedRedirector.Domains == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ManagedRedirector.Domains(childComplexity), true
+
+	case "ManagedRedirector.enabled":
+		if e.ComplexityRoot.ManagedRedirector.Enabled == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ManagedRedirector.Enabled(childComplexity), true
+
+	case "ManagedRedirector.id":
+		if e.ComplexityRoot.ManagedRedirector.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ManagedRedirector.ID(childComplexity), true
+
+	case "ManagedRedirector.online":
+		if e.ComplexityRoot.ManagedRedirector.Online == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ManagedRedirector.Online(childComplexity), true
+
 	case "Metrics.beaconTimelineChart":
 		if e.ComplexityRoot.Metrics.BeaconTimelineChart == nil {
 			break
@@ -4223,6 +4259,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Quests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
+
+	case "Query.redirectors":
+		if e.ComplexityRoot.Query.Redirectors == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Redirectors(childComplexity), true
 
 	case "Query.repositories":
 		if e.ComplexityRoot.Query.Repositories == nil {
@@ -15104,6 +15147,7 @@ input UserWhereInput {
 scalar Uint64
 `, BuiltIn: false},
 	{Name: "../schema/query.graphql", Input: `extend type Query {
+  redirectors: [ManagedRedirector!]! @requireRole(role: ADMIN)
   assets(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -15914,6 +15958,13 @@ extend type Quest {
         """
         where: TaskWhereInput
     ): [TaskDiff!]! @goField(forceResolver: true)
+}
+`, BuiltIn: false},
+	{Name: "../schema/redirector.graphql", Input: `type ManagedRedirector {
+  id: ID!
+  domains: [String!]!
+  enabled: Boolean!
+  online: Boolean!
 }
 `, BuiltIn: false},
 }

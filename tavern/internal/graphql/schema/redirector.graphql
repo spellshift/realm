@@ -1,0 +1,6 @@
+type ManagedRedirector {
+  id: ID!
+  domains: [String!]!
+  enabled: Boolean!
+  online: Boolean!
+}
