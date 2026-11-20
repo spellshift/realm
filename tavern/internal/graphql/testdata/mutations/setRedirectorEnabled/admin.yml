@@ -1,0 +1,11 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"admin","https://photos.com","admin","adminToken","accessToken",true,true);
+  INSERT INTO `redirectors` (id,identifier,transport,domains,enabled,created_at,last_modified_at)
+    VALUES (9,"deployment-one","http1",'["one.example","two.example"]',true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+requestor:
+  session_token: adminToken
+query: |
+  mutation { setRedirectorEnabled(redirectorID: 9, enabled: false) }
+expected:
+  setRedirectorEnabled: false

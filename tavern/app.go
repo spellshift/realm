@@ -200,7 +200,13 @@ func newApp(ctx context.Context) (app *cli.App) {
 					if err != nil {
 						return err
 					}
-					go managed.RunCheckins(ctx, managementURL, identity)
+					gate := redirectors.NewGate()
+					gate.SetEnabled(false)
+					if err := managed.WaitForInitialCheckin(ctx, managementURL, identity, gate); err != nil {
+						return fmt.Errorf("initial redirector check-in: %w", err)
+					}
+					ctx = redirectors.WithGate(ctx, gate)
+					go managed.RunCheckins(ctx, managementURL, identity, gate)
 				}
 
 				var tlsCfg *tls.Config

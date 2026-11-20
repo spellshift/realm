@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -60,7 +61,18 @@ func NewRedirectorCheckinHandler(client *ent.Client, ca *x509.Certificate) http.
 			http.Error(w, "invalid credentials", http.StatusUnauthorized)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		// Read enabled after the heartbeat write so an admin toggle committed
+		// during that write is reflected in this response.
+		row, err := client.Redirector.Query().Where(redirector.Identifier(id)).Only(r.Context())
+		if err != nil {
+			redirectorAuthLog.ErrorContext(r.Context(), "redirector check-in failed", "error", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(struct {
+			Enabled bool `json:"enabled"`
+		}{row.Enabled})
 	}
 }
 

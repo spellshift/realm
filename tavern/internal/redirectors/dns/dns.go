@@ -113,6 +113,9 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 
 			queryCopy := make([]byte, n)
 			copy(queryCopy, buf[:n])
+			if !redirectors.Allowed(ctx) {
+				continue
+			}
 
 			go r.handleDNSQuery(ctx, conn, addr, queryCopy, upstream)
 		}
