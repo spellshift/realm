@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { CreateQuestModal } from '../../components/create-quest-modal';
-import { CreateScheduledQuestModal } from '../../components/create-quest-modal/CreateScheduledQuestModal';
+import { CreateQuestModal, CreateScheduledQuestModal } from '../../components/create-quest-modal';
 import {
     CreateQuestModalContextType,
     OpenCreateQuestModalOptions,
