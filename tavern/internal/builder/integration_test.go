@@ -206,6 +206,7 @@ func TestBuilderE2E(t *testing.T) {
 				URI:      "https://callback.example.com",
 				Interval: 10,
 				Type:     c2pb.Transport_TRANSPORT_GRPC,
+				Jitter:   0.25,
 			}}).
 			SaveX(ctx)
 
@@ -234,6 +235,7 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Contains(t, resp.Tasks[0].Env[0], "URI: https://callback.example.com")
 		assert.Contains(t, resp.Tasks[0].Env[0], "interval: 10")
 		assert.Contains(t, resp.Tasks[0].Env[0], "type: grpc")
+		assert.Contains(t, resp.Tasks[0].Env[0], "jitter: 0.25")
 		assert.Contains(t, resp.Tasks[0].Env[1], "ARTIFACT_PATH=")
 
 		// Verify claimed_at is set

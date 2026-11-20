@@ -7,7 +7,7 @@ import { Builder, BuilderHealthy, BuildProfile, BuildTaskRow, Tome, TransportCon
 export const PROFILE_FIELDS = gql`
     fragment BuildProfileFields on BuildProfile {
         id name description buildImage buildScript artifactPath prebuildscript setupscript postbuildscript unique
-        transports { uri interval type extra }
+        transports { uri interval type extra jitter }
         tomes { tomeID params }
     }
 `;
@@ -104,7 +104,7 @@ export function profileInput(profile: BuildProfile) {
         buildScript: profile.buildScript, artifactPath: profile.artifactPath,
         prebuildscript: profile.prebuildscript, setupscript: profile.setupscript, postbuildscript: profile.postbuildscript,
         unique: profile.unique || undefined,
-        transports: profile.transports.map(({ type, uri, interval, extra }) => ({ type, uri, interval, extra })),
+        transports: profile.transports.map(({ type, uri, interval, extra, jitter }) => ({ type, uri, interval, extra, jitter })),
         tomes: profile.tomes.map(({ tomeId, params }) => ({ tomeID: tomeId, params })),
     };
 }

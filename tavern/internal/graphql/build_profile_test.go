@@ -148,6 +148,33 @@ func TestBuildProfileMutations(t *testing.T) {
 		require.Error(t, err)
 	})
 
+	t.Run("TransportsRoundTripJitter", func(t *testing.T) {
+		profile := graph.BuildProfile.Create().
+			SetName("jitter-profile").
+			SetDescription("profile with jitter transport").
+			SaveX(ctx)
+
+		input := baseInput("jitter-profile")
+		input["transports"] = []map[string]any{{
+			"uri":      "https://callback.example.com",
+			"interval": 10,
+			"type":     "TRANSPORT_GRPC",
+			"jitter":   0.35,
+		}}
+
+		var resp struct {
+			UpdateBuildProfile struct {
+				ID, Name, Description, BuildImage string
+			}
+		}
+		err := gqlClient.Post(updateMut, &resp, client.Var("profileID", strconv.Itoa(profile.ID)), client.Var("input", input))
+		require.NoError(t, err)
+
+		reloaded := graph.BuildProfile.GetX(ctx, profile.ID)
+		require.Len(t, reloaded.Transports, 1)
+		assert.Equal(t, 0.35, reloaded.Transports[0].Jitter)
+	})
+
 	t.Run("DeleteBuildProfile_DefaultBlocked", func(t *testing.T) {
 		var resp struct {
 			DeleteBuildProfile string
