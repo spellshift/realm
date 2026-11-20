@@ -1,0 +1,96 @@
+package main
+
+import (
+	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
+	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/ent/enttest"
+	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/internal/redirectors/managed"
+)
+
+type sharedRedirectorIdentity struct {
+	mu       sync.Mutex
+	identity *managed.Identity
+}
+
+func (s *sharedRedirectorIdentity) Load(context.Context) (*managed.Identity, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.identity == nil {
+		return nil, os.ErrNotExist
+	}
+	return s.identity, nil
+}
+
+func (s *sharedRedirectorIdentity) Save(_ context.Context, identity *managed.Identity) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.identity = identity
+	return nil
+}
+
+func TestManagedRedirectorEnrollmentAndCheckins(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	require.NoError(t, seedRedirectorEnrollmentTokens(ctx, graph, []string{"one-use-token"}))
+	_, caKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	ca, err := builder.CreateCA(caKey)
+	require.NoError(t, err)
+	mux := http.NewServeMux()
+	mux.Handle("/auth/redirector/enroll", tavernhttp.NewRedirectorEnrollHandler(graph, ca, caKey))
+	mux.Handle("/auth/redirector/checkin", tavernhttp.NewRedirectorCheckinHandler(graph, ca))
+	server := httptest.NewServer(mux)
+	defer server.Close()
+	store := &sharedRedirectorIdentity{}
+	cfg := managed.Config{Upstream: server.URL, Transport: "http1", Domains: []string{"example.com"}, Token: "one-use-token"}
+	first, err := managed.EnsureIdentity(ctx, cfg, store)
+	require.NoError(t, err)
+	second, err := managed.EnsureIdentity(ctx, cfg, store)
+	require.NoError(t, err)
+	require.Equal(t, first.ID, second.ID)
+	require.NoError(t, managed.Checkin(ctx, server.URL, first))
+	require.NoError(t, managed.Checkin(ctx, server.URL, second))
+	records, err := graph.Redirector.Query().All(ctx)
+	require.NoError(t, err)
+	require.Len(t, records, 1)
+	require.NotNil(t, records[0].LastSeenAt)
+	require.WithinDuration(t, time.Now(), *records[0].LastSeenAt, 5*time.Second)
+	// Signed but stale timestamps and malformed proofs are rejected.
+	req := httptest.NewRequest(http.MethodPost, "/auth/redirector/checkin", nil)
+	certBlock, _ := pem.Decode([]byte(first.Certificate))
+	require.NotNil(t, certBlock)
+	req.Header.Set("X-Realm-Redirector-Cert", base64.StdEncoding.EncodeToString(certBlock.Bytes))
+	req.Header.Set("X-Realm-Redirector-Timestamp", time.Now().UTC().Format(time.RFC3339Nano))
+	req.Header.Set("X-Realm-Redirector-Signature", base64.StdEncoding.EncodeToString([]byte("invalid")))
+	recorder := httptest.NewRecorder()
+	mux.ServeHTTP(recorder, req)
+	require.Equal(t, http.StatusUnauthorized, recorder.Code)
+	keyBlock, _ := pem.Decode([]byte(first.PrivateKey))
+	require.NotNil(t, keyBlock)
+	keyAny, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+	require.NoError(t, err)
+	stale := time.Now().Add(-10 * time.Minute).UTC().Format(time.RFC3339Nano)
+	req.Header.Set("X-Realm-Redirector-Timestamp", stale)
+	req.Header.Set("X-Realm-Redirector-Signature", base64.StdEncoding.EncodeToString(ed25519.Sign(keyAny.(ed25519.PrivateKey), []byte(stale))))
+	recorder = httptest.NewRecorder()
+	mux.ServeHTTP(recorder, req)
+	require.Equal(t, http.StatusUnauthorized, recorder.Code)
+	recordCount, err := graph.Redirector.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, recordCount)
+}

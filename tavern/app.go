@@ -51,6 +51,7 @@ import (
 	"realm.pub/tavern/internal/portals/pty"
 	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/redirectors/managed"
 	"realm.pub/tavern/internal/scheduler"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
@@ -156,6 +157,11 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Name:  "tls-hostname",
 					Usage: "Enable TLS and use this hostname for certificate provisioning via ACME (e.g. redirector.example.com); falls back to self-signed if ACME fails",
 				},
+				cli.BoolFlag{Name: "managed", Usage: "Enroll this redirector deployment and send authenticated check-ins"},
+				cli.StringSliceFlag{Name: "domain", Usage: "Domain served by this deployment (repeatable)"},
+				cli.StringFlag{Name: "identity-file", Usage: "Persistent identity file for a managed deployment"},
+				cli.StringFlag{Name: "identity-secret", Usage: "Google Secret Manager resource name for a shared deployment identity"},
+				cli.StringFlag{Name: "management-url", Usage: "Tavern HTTPS URL used for enrollment and check-ins"},
 			}, logFlags()...),
 			Action: func(c *cli.Context) error {
 				if err := applySubcommandLogFlags(c); err != nil {
@@ -175,6 +181,26 @@ func newApp(ctx context.Context) (app *cli.App) {
 				}
 				if transport == "" {
 					transport = "grpc"
+				}
+				if c.Bool("managed") {
+					managementURL, err := managed.ManagementURL(c.String("management-url"), upstream)
+					if err != nil {
+						return err
+					}
+					cfg := managed.Config{Upstream: managementURL, Transport: transport, Domains: c.StringSlice("domain"), Token: os.Getenv("REALM_REDIRECTOR_ENROLLMENT_TOKEN"), IdentityFile: c.String("identity-file"), IdentitySecret: c.String("identity-secret")}
+					if len(cfg.Domains) == 0 {
+						return fmt.Errorf("managed redirector requires at least one --domain")
+					}
+					store, closeStore, err := managed.OpenStore(ctx, cfg)
+					if err != nil {
+						return err
+					}
+					defer closeStore()
+					identity, err := managed.EnsureIdentity(ctx, cfg, store)
+					if err != nil {
+						return err
+					}
+					go managed.RunCheckins(ctx, managementURL, identity)
 				}
 
 				var tlsCfg *tls.Config
@@ -601,6 +627,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/auth/redirector/enroll": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewRedirectorEnrollHandler(client, builderCACert, builderCAKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/redirector/checkin": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRedirectorCheckinHandler(client, builderCACert),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
