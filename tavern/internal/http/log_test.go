@@ -482,3 +482,75 @@ func TestBuilderEnrollAuditing(t *testing.T) {
 	assert.NotContains(t, logBuf.String(), rawToken)
 	assert.NotContains(t, logBuf.String(), "BEGIN CERTIFICATE REQUEST")
 }
+
+func TestBuilderEnrollRejectionAudits(t *testing.T) {
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+	var logBuf bytes.Buffer
+	require.NoError(t, logging.Configure(logging.Options{
+		Spec: "builder=debug,audit=info", Format: logging.FormatJSON, Output: &logBuf,
+	}))
+	persister := &capturePersister{}
+	logging.SetAuditPersister(persister)
+	t.Cleanup(func() {
+		logging.SetAuditPersister(nil)
+		_ = logging.Configure(logging.Options{Spec: "dev"})
+	})
+	_, caKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	caCert, err := builder.CreateCA(caKey)
+	require.NoError(t, err)
+	_, builderKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	csrDER, err := x509.CreateCertificateRequest(rand.Reader, &x509.CertificateRequest{}, builderKey)
+	require.NoError(t, err)
+	csr := string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csrDER}))
+	validToken := "valid-builder-token"
+	hash := sha256.Sum256([]byte(validToken))
+	graph.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).SaveX(t.Context())
+	handler := tavernhttp.NewBuilderEnrollHandler(graph, caCert, caKey)
+	valid := tavernhttp.BuilderEnrollRequest{
+		Token: validToken, CSR: csr, SupportedTargets: []string{"linux"},
+		Upstream: "https://tavern.example.com", Executor: "docker",
+	}
+	encode := func(req tavernhttp.BuilderEnrollRequest) string {
+		body, err := json.Marshal(req)
+		require.NoError(t, err)
+		return string(body)
+	}
+	with := func(change func(*tavernhttp.BuilderEnrollRequest)) string {
+		req := valid
+		change(&req)
+		return encode(req)
+	}
+	cases := []struct {
+		name, method, body, reason string
+		status                     int
+	}{
+		{"method", http.MethodGet, encode(valid), "method_not_allowed", http.StatusMethodNotAllowed},
+		{"malformed JSON", http.MethodPost, "{", "invalid_body", http.StatusBadRequest},
+		{"trailing JSON", http.MethodPost, encode(valid) + "{}", "invalid_body", http.StatusBadRequest},
+		{"missing token", http.MethodPost, with(func(r *tavernhttp.BuilderEnrollRequest) { r.Token = "" }), "missing_token", http.StatusBadRequest},
+		{"long token", http.MethodPost, with(func(r *tavernhttp.BuilderEnrollRequest) { r.Token = strings.Repeat("x", 4097) }), "token_too_long", http.StatusBadRequest},
+		{"missing CSR", http.MethodPost, with(func(r *tavernhttp.BuilderEnrollRequest) { r.CSR = "" }), "missing_csr", http.StatusBadRequest},
+		{"invalid token", http.MethodPost, with(func(r *tavernhttp.BuilderEnrollRequest) { r.Token = "wrong-token" }), "invalid_or_used_token", http.StatusUnauthorized},
+		{"invalid target", http.MethodPost, with(func(r *tavernhttp.BuilderEnrollRequest) { r.SupportedTargets = []string{"unsupported"} }), "invalid_target", http.StatusBadRequest},
+		{"invalid config", http.MethodPost, with(func(r *tavernhttp.BuilderEnrollRequest) { r.Upstream = "" }), "invalid_config", http.StatusBadRequest},
+		{"invalid CSR", http.MethodPost, with(func(r *tavernhttp.BuilderEnrollRequest) { r.CSR = "invalid" }), "invalid_csr", http.StatusBadRequest},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			before := len(persister.Snapshot())
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, httptest.NewRequest(tc.method, "/auth/builder/enroll", strings.NewReader(tc.body)))
+			require.Equal(t, tc.status, response.Code)
+			entries := persister.Snapshot()
+			require.Len(t, entries, before+1)
+			require.Equal(t, "builder.enroll_denied", entries[before].Action)
+			require.Equal(t, logging.OutcomeDenied, entries[before].Outcome)
+			require.Equal(t, tc.reason, entries[before].Details["reason"])
+		})
+	}
+	require.NotContains(t, logBuf.String(), validToken)
+	require.NotContains(t, logBuf.String(), "BEGIN CERTIFICATE REQUEST")
+}

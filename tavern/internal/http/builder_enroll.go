@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/x509"
 	"encoding/json"
@@ -41,7 +42,7 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 		ctx := r.Context()
 
 		if r.Method != http.MethodPost {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			rejectBuilderEnrollment(w, ctx, http.StatusMethodNotAllowed, "method not allowed", "method_not_allowed")
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxBuilderEnrollBody)
@@ -49,25 +50,23 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 		decoder.DisallowUnknownFields()
 		var req BuilderEnrollRequest
 		if err := decoder.Decode(&req); err != nil {
-			builderAuthLog.DebugContext(ctx, "invalid builder enrollment json payload", "error", err)
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid request body", "invalid_body")
 			return
 		}
 		if err := decoder.Decode(new(any)); !errors.Is(err, io.EOF) {
-			builderAuthLog.DebugContext(ctx, "trailing data in builder enrollment payload")
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid request body", "invalid_body")
 			return
 		}
 		if req.Token == "" {
-			builderAuthLog.WarnContext(ctx, "builder enrollment rejected: missing token")
-			logging.AuditDenied(ctx, "auth", "builder.enroll_denied", "builder enrollment missing token", "reason", "missing_token")
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid request body", "missing_token")
+			return
+		}
+		if len(req.Token) > 4096 {
+			rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid request body", "token_too_long")
 			return
 		}
 		if req.CSR == "" {
-			builderAuthLog.WarnContext(ctx, "builder enrollment rejected: missing csr")
-			logging.AuditDenied(ctx, "auth", "builder.enroll_denied", "builder enrollment missing csr", "reason", "missing_csr")
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid request body", "missing_csr")
 			return
 		}
 		valid, err := enrollment.Available(ctx, client, enrollment.Builder, req.Token)
@@ -77,9 +76,7 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 			return
 		}
 		if !valid {
-			builderAuthLog.WarnContext(ctx, "builder enrollment rejected: invalid or used enrollment token")
-			logging.AuditDenied(ctx, "auth", "builder.enroll_denied", "invalid or used builder enrollment token", "reason", "invalid_or_used_token")
-			http.Error(w, "invalid or used builder enrollment token", http.StatusUnauthorized)
+			rejectBuilderEnrollment(w, ctx, http.StatusUnauthorized, "invalid or used builder enrollment token", "invalid_or_used_token")
 			return
 		}
 		targets := make([]c2pb.Host_Platform, len(req.SupportedTargets))
@@ -92,8 +89,7 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 			case "windows":
 				targets[i] = c2pb.Host_PLATFORM_WINDOWS
 			default:
-				builderAuthLog.WarnContext(ctx, "builder enrollment rejected: unsupported target platform", "target", target)
-				http.Error(w, "invalid builder settings", http.StatusBadRequest)
+				rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid builder settings", "invalid_target")
 				return
 			}
 		}
@@ -103,16 +99,14 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 		}
 		cfg := builder.Config{SupportedTargets: req.SupportedTargets, Upstream: req.Upstream, PollInterval: pollInterval, Executor: req.Executor, IdentityFile: "builder.identity"}
 		if err := cfg.Validate(); err != nil {
-			builderAuthLog.WarnContext(ctx, "builder enrollment rejected: invalid builder config", "error", err)
-			http.Error(w, "invalid builder settings", http.StatusBadRequest)
+			rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid builder settings", "invalid_config")
 			return
 		}
 		identifier := uuid.NewString()
 		cert, err := builder.SignBuilderCertificate(ca, caKey, identifier, req.CSR)
 		if err != nil {
 			if errors.Is(err, builder.ErrInvalidBuilderCSR) {
-				builderAuthLog.WarnContext(ctx, "builder enrollment rejected: invalid csr")
-				http.Error(w, "invalid builder CSR", http.StatusBadRequest)
+				rejectBuilderEnrollment(w, ctx, http.StatusBadRequest, "invalid builder CSR", "invalid_csr")
 				return
 			}
 			builderAuthLog.ErrorContext(ctx, "failed to sign builder certificate", "error", err)
@@ -133,9 +127,7 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 			return
 		}
 		if !consumed {
-			builderAuthLog.WarnContext(ctx, "builder enrollment rejected: enrollment token concurrently consumed")
-			logging.AuditDenied(ctx, "auth", "builder.enroll_denied", "invalid or used builder enrollment token", "reason", "invalid_or_used_token")
-			http.Error(w, "invalid or used builder enrollment token", http.StatusUnauthorized)
+			rejectBuilderEnrollment(w, ctx, http.StatusUnauthorized, "invalid or used builder enrollment token", "invalid_or_used_token")
 			return
 		}
 		createdBuilder, err := tx.Builder.Create().SetIdentifier(identifier).SetSupportedTargets(targets).SetUpstream(req.Upstream).SetPollInterval(pollInterval).SetExecutor(entbuilder.Executor(cfg.Executor)).Save(ctx)
@@ -172,4 +164,10 @@ func NewBuilderEnrollHandler(client *ent.Client, ca *x509.Certificate, caKey ed2
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(BuilderEnrollResponse{BuilderID: identifier, MTLSCert: string(cert)})
 	}
+}
+
+func rejectBuilderEnrollment(w http.ResponseWriter, ctx context.Context, status int, message, reason string) {
+	builderAuthLog.WarnContext(ctx, "builder enrollment rejected", "reason", reason)
+	logging.AuditDenied(ctx, "auth", "builder.enroll_denied", "builder enrollment rejected", "reason", reason)
+	http.Error(w, message, status)
 }
