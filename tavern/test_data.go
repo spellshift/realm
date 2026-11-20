@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/namegen"
+	"realm.pub/tavern/internal/tomebundle"
 )
 
 // createTestData populates the DB with some test data :)
@@ -443,6 +444,50 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		SetOutput(loremIpsum).
 		SetQuest(printQuest).
 		SaveX(ctx)
+
+	// One Quest per hourly occurrence, with a Task for each participating Beacon.
+	scheduled := client.ScheduledTask.Create().
+		SetName("Hourly Hello World").
+		SetDescription("Example hourly scheduled quest with tasks on multiple beacons").
+		SetRunOnSchedule("0 * * * *").
+		SetParameters(`{"msg":"Hello from the hourly schedule!"}`).
+		SetTome(printMsgTome).
+		SaveX(ctx)
+	bundle, err := tomebundle.Create(ctx, client, nil)
+	if err != nil {
+		panic(fmt.Errorf("create scheduled test bundle: %w", err))
+	}
+	latestOccurrence := time.Now().UTC().Truncate(time.Hour)
+	for hoursAgo := 3; hoursAgo >= 1; hoursAgo-- {
+		occurrence := latestOccurrence.Add(-time.Duration(hoursAgo) * time.Hour)
+		q := client.Quest.Create().
+			SetName("Automated: " + scheduled.Name).
+			SetTome(printMsgTome).
+			SetScheduledTask(scheduled).
+			SetBundle(bundle).
+			SetParameters(scheduled.Parameters).
+			SetParamDefsAtCreation(printMsgTome.ParamDefs).
+			SetEldritchAtCreation(printMsgTome.Eldritch).
+			SetHasScheduledSnapshot(true).
+			SetScheduledOccurrenceAt(occurrence).
+			SetScheduledOccurrenceKey(fmt.Sprintf("%d:%d", scheduled.ID, occurrence.Unix())).
+			SetCreatedAt(occurrence).
+			SetLastModifiedAt(occurrence).
+			SaveX(ctx)
+		for _, b := range testBeacons[:4] {
+			client.Task.Create().
+				SetQuest(q).
+				SetBeacon(b).
+				SetScheduledDedupKey(fmt.Sprintf("%d:%d", q.ID, b.ID)).
+				SetCreatedAt(occurrence).
+				SetClaimedAt(occurrence.Add(time.Minute)).
+				SetExecStartedAt(occurrence.Add(time.Minute)).
+				SetExecFinishedAt(occurrence.Add(2 * time.Minute)).
+				SetLastModifiedAt(occurrence.Add(2 * time.Minute)).
+				SetOutput("Hello from the hourly schedule!").
+				SaveX(ctx)
+		}
+	}
 
 	for i := 0; i < 5; i++ {
 		createQuest(ctx, client, testBeacons...)
