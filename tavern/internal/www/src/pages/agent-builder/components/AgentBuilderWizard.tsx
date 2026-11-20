@@ -429,7 +429,9 @@ export const AgentBuilderWizard = ({
                                                                     <span className="font-semibold text-gray-900">{typeLabel}</span>
                                                                     <span className="text-gray-500 font-mono break-all">{transport.uri}</span>
                                                                 </div>
-                                                                <span className="text-gray-500 flex-shrink-0 ml-2">{transport.interval}s interval</span>
+                                                                <span className="text-gray-500 flex-shrink-0 ml-2">
+                                                                    {transport.interval}s interval{transport.jitter ? ` (±${Math.round(transport.jitter * 100)}% jitter)` : ""}
+                                                                </span>
                                                             </div>
                                                             {transport.extra && <div className="flex gap-2 text-gray-500">
                                                                 <span className="flex-shrink-0">Extra:</span>

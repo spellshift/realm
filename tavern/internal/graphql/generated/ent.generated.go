@@ -4755,6 +4755,8 @@ func (ec *executionContext) fieldContext_BuildProfile_transports(_ context.Conte
 				return ec.fieldContext_BuildProfileTransport_type(ctx, field)
 			case "extra":
 				return ec.fieldContext_BuildProfileTransport_extra(ctx, field)
+			case "jitter":
+				return ec.fieldContext_BuildProfileTransport_jitter(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuildProfileTransport", field.Name)
 		},
