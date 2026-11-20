@@ -7,7 +7,7 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
-default = ["install", "grpc", "http1", "dns", "doh", "icmp", "tcp-bind", "quic"]
+default = ["install", "grpc", "http1", "dns", "doh", "icmp", "tcp-bind", "quic", "mem-obfuscation"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
@@ -16,6 +16,7 @@ icmp = ["transport/icmp"]
 tcp-bind = ["transport/tcp-bind"]
 quic = ["transport/quic"]
 win_service = []
+mem-obfuscation = []
 install = []
 print_debug_tome = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
@@ -65,6 +66,15 @@ libc = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
+windows-sys = { workspace = true, features = [
+    "Win32_System_Memory",
+    "Win32_System_Threading",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_Foundation",
+    "Win32_System_Kernel",
+    "Win32_System_Console",
+] }
 
 [build-dependencies]
 static_vcruntime = { workspace = true }
