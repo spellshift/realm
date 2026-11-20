@@ -361,6 +361,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	redirectorTokens, err := parseRedirectorEnrollmentTokens(EnvRedirectorEnrollmentTokens.String())
+	if err != nil {
+		return nil, err
+	}
 	// Get server key pair from secrets manager (for OAuth)
 	pubKey, privKey, err := getKeyPairEd25519()
 	if err != nil {
@@ -389,6 +393,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	if err := seedBuilderEnrollmentTokens(ctx, client, tokens); err != nil {
 		client.Close()
 		return nil, fmt.Errorf("failed to seed builder enrollment tokens: %w", err)
+	}
+	if err := seedRedirectorEnrollmentTokens(ctx, client, redirectorTokens); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to seed redirector enrollment tokens: %w", err)
 	}
 
 	// Load Default Tomes
@@ -588,6 +596,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler, AllowUnactivated: true},
 		"/auth/builder/enroll": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewBuilderEnrollHandler(client, builderCACert, builderCAKey),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/redirector/enroll": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRedirectorEnrollHandler(client, builderCACert, builderCAKey),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},

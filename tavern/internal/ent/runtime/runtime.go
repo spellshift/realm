@@ -27,6 +27,8 @@ import (
 	"realm.pub/tavern/internal/ent/operatornote"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/redirector"
+	"realm.pub/tavern/internal/ent/redirectorenrollmenttoken"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/schema"
@@ -603,6 +605,37 @@ func init() {
 	questDescParamDefsAtCreation := questFields[2].Descriptor()
 	// quest.ParamDefsAtCreationValidator is a validator for the "param_defs_at_creation" field. It is called by the builders before save.
 	quest.ParamDefsAtCreationValidator = questDescParamDefsAtCreation.Validators[0].(func(string) error)
+	redirectorMixin := schema.Redirector{}.Mixin()
+	redirectorMixinFields0 := redirectorMixin[0].Fields()
+	_ = redirectorMixinFields0
+	redirectorFields := schema.Redirector{}.Fields()
+	_ = redirectorFields
+	// redirectorDescCreatedAt is the schema descriptor for created_at field.
+	redirectorDescCreatedAt := redirectorMixinFields0[0].Descriptor()
+	// redirector.DefaultCreatedAt holds the default value on creation for the created_at field.
+	redirector.DefaultCreatedAt = redirectorDescCreatedAt.Default.(func() time.Time)
+	// redirectorDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	redirectorDescLastModifiedAt := redirectorMixinFields0[1].Descriptor()
+	// redirector.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	redirector.DefaultLastModifiedAt = redirectorDescLastModifiedAt.Default.(func() time.Time)
+	// redirector.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	redirector.UpdateDefaultLastModifiedAt = redirectorDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// redirectorDescIdentifier is the schema descriptor for identifier field.
+	redirectorDescIdentifier := redirectorFields[0].Descriptor()
+	// redirector.DefaultIdentifier holds the default value on creation for the identifier field.
+	redirector.DefaultIdentifier = redirectorDescIdentifier.Default.(func() string)
+	// redirector.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
+	redirector.IdentifierValidator = redirectorDescIdentifier.Validators[0].(func(string) error)
+	// redirectorDescEnabled is the schema descriptor for enabled field.
+	redirectorDescEnabled := redirectorFields[3].Descriptor()
+	// redirector.DefaultEnabled holds the default value on creation for the enabled field.
+	redirector.DefaultEnabled = redirectorDescEnabled.Default.(bool)
+	redirectorenrollmenttokenFields := schema.RedirectorEnrollmentToken{}.Fields()
+	_ = redirectorenrollmenttokenFields
+	// redirectorenrollmenttokenDescUsed is the schema descriptor for used field.
+	redirectorenrollmenttokenDescUsed := redirectorenrollmenttokenFields[1].Descriptor()
+	// redirectorenrollmenttoken.DefaultUsed holds the default value on creation for the used field.
+	redirectorenrollmenttoken.DefaultUsed = redirectorenrollmenttokenDescUsed.Default.(bool)
 	repositoryMixin := schema.Repository{}.Mixin()
 	repositoryHooks := schema.Repository{}.Hooks()
 	repository.Hooks[0] = repositoryHooks[0]
