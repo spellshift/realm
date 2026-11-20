@@ -66,7 +66,7 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
                 const scheduledLabel = quest.scheduledOccurrenceAt
                     ? `Scheduled for ${format(new Date(quest.scheduledOccurrenceAt), 'PPp')}`
                     : null;
-                const detail = scheduledLabel ? `${scheduledLabel} · ${tomeName}` : tomeName;
+                const detail = scheduledLabel ? `${tomeName} · ${scheduledLabel}` : tomeName;
                 return (
                     <div className="flex flex-col min-w-0">
                         <div className="truncate" title={quest.name ?? 'N/A'}>{quest.name ?? 'N/A'}</div>
