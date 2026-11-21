@@ -133,4 +133,4 @@ RUN set -eux; \
     rustup component add rustfmt clippy; \
     rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu; \
     cargo install cargo-zigbuild; \
-    cargo +1.89.0 install cargo-xwin --locked
+    cargo +1.89.0 install cargo-xwin --version 0.23.1 --locked
