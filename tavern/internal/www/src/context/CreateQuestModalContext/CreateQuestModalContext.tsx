@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { CreateQuestModal } from '../../components/create-quest-modal';
+import { CreateQuestModal, CreateScheduledQuestModal } from '../../components/create-quest-modal';
 import {
     CreateQuestModalContextType,
     OpenCreateQuestModalOptions,
@@ -52,7 +52,10 @@ export function CreateQuestModalProvider({ children }: { children: React.ReactNo
     return (
         <CreateQuestModalContext.Provider value={{ isOpen, openModal, closeModal }}>
             {children}
-            {isOpen && (
+            {isOpen && optionsRef.current?.mode === "scheduled" && (
+                <CreateScheduledQuestModal isOpen={isOpen} setOpen={handleSetOpen} />
+            )}
+            {isOpen && optionsRef.current?.mode !== "scheduled" && (
                 <CreateQuestModal
                     isOpen={isOpen}
                     setOpen={handleSetOpen}

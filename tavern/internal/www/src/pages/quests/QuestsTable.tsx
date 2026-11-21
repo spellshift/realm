@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatDistance } from "date-fns";
+import { format, formatDistance } from "date-fns";
 import UserImageAndName from "../../components/UserImageAndName";
 import Badge from "../../components/tavern-base-ui/badge/Badge";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
@@ -61,14 +61,19 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
             key: 'quest-details',
             label: 'Quest details',
             width: 'minmax(200px,2fr)',
-            render: (quest) => (
-                <div className="flex flex-col min-w-0">
-                    <div className="truncate" title={quest.name ?? 'N/A'}>{quest.name ?? 'N/A'}</div>
-                    <div className="text-sm flex flex-row gap-1 items-center text-gray-500 truncate" title={quest.tome?.name ?? 'N/A'}>
-                        {quest.tome?.name ?? 'N/A'}
+            render: (quest) => {
+                const tomeName = quest.tome?.name ?? 'N/A';
+                const scheduledLabel = quest.scheduledOccurrenceAt
+                    ? `Scheduled for ${format(new Date(quest.scheduledOccurrenceAt), 'PPp')}`
+                    : null;
+                const detail = scheduledLabel ? `${tomeName} · ${scheduledLabel}` : tomeName;
+                return (
+                    <div className="flex flex-col min-w-0">
+                        <div className="truncate" title={quest.name ?? 'N/A'}>{quest.name ?? 'N/A'}</div>
+                        <div className="text-sm text-gray-500 truncate" title={detail}>{detail}</div>
                     </div>
-                </div>
-            ),
+                );
+            },
             renderSkeleton: () => (
                 <div className="flex flex-col min-w-0 space-y-2">
                     <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>

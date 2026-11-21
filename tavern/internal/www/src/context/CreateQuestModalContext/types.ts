@@ -16,6 +16,7 @@ export interface CreateQuestInitialData {
 export type RefetchQuery = DocumentNode | string;
 
 export interface OpenCreateQuestModalOptions {
+    mode?: "quest" | "scheduled";
     initialFormData?: CreateQuestInitialData;
     onComplete?: (questId: string) => void;
     navigateToQuest?: boolean;

@@ -71,4 +71,30 @@ func TestCreateTestData(t *testing.T) {
 		secondHost := graph.Host.Query().Where(host.Name("Group 1 - Service-2")).OnlyX(ctx)
 		require.Equal(t, 3, secondHost.QueryScreenshots().CountX(ctx))
 	})
+
+	t.Run("ScheduledQuestsTest", func(t *testing.T) {
+		scheduled := graph.ScheduledTask.Query().OnlyX(ctx)
+		require.Equal(t, "0 * * * *", scheduled.RunOnSchedule)
+		scheduledTome := scheduled.QueryTome().OnlyX(ctx)
+		quests := scheduled.QueryQuests().AllX(ctx)
+		require.Len(t, quests, 3)
+		occurrences := make(map[int64]struct{}, len(quests))
+		for _, q := range quests {
+			require.False(t, q.QueryBundle().ExistX(ctx))
+			require.Equal(t, scheduledTome.Eldritch, q.EldritchAtCreation)
+			require.Equal(t, scheduledTome.ParamDefs, q.ParamDefsAtCreation)
+			require.False(t, q.ScheduledOccurrenceAt.IsZero())
+			require.Equal(t, scheduled.ID, q.QueryScheduledTask().OnlyIDX(ctx))
+			occurrences[q.ScheduledOccurrenceAt.Unix()] = struct{}{}
+			tasks := q.QueryTasks().AllX(ctx)
+			require.Len(t, tasks, 4)
+			beacons := make(map[int]struct{}, len(tasks))
+			for _, task := range tasks {
+				beaconID := task.QueryBeacon().OnlyIDX(ctx)
+				beacons[beaconID] = struct{}{}
+			}
+			require.Len(t, beacons, 4)
+		}
+		require.Len(t, occurrences, 3)
+	})
 }

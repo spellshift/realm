@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { SupportedTransports } from "../../../utils/enums";
 import { TRANSPORT_TYPES, TransportConfig, TransportTypeValue } from "../types";
-import { SegmentedControl } from "./SegmentedControl";
+import { SegmentedControl } from "../../../components/tavern-base-ui/SegmentedControl";
 import { TransportList, transportLabel } from "./TransportList";
 import {
     DohProvider, RecordType, TransportFieldErrors, TransportForm, newTransportForm, normalizeTransportUri, switchTransportType,

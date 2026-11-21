@@ -444,6 +444,42 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		SetQuest(printQuest).
 		SaveX(ctx)
 
+	// One Quest per hourly occurrence, with a Task for each participating Beacon.
+	scheduled := client.ScheduledTask.Create().
+		SetName("Hourly Hello World").
+		SetDescription("Example hourly scheduled quest with tasks on multiple beacons").
+		SetRunOnSchedule("0 * * * *").
+		SetParameters(`{"msg":"Hello from the hourly schedule!"}`).
+		SetTome(printMsgTome).
+		SaveX(ctx)
+	latestOccurrence := time.Now().UTC().Truncate(time.Hour)
+	for hoursAgo := 3; hoursAgo >= 1; hoursAgo-- {
+		occurrence := latestOccurrence.Add(-time.Duration(hoursAgo) * time.Hour)
+		q := client.Quest.Create().
+			SetName("Automated: " + scheduled.Name).
+			SetTome(printMsgTome).
+			SetScheduledTask(scheduled).
+			SetParameters(scheduled.Parameters).
+			SetParamDefsAtCreation(printMsgTome.ParamDefs).
+			SetEldritchAtCreation(printMsgTome.Eldritch).
+			SetScheduledOccurrenceAt(occurrence).
+			SetCreatedAt(occurrence).
+			SetLastModifiedAt(occurrence).
+			SaveX(ctx)
+		for _, b := range testBeacons[:4] {
+			client.Task.Create().
+				SetQuest(q).
+				SetBeacon(b).
+				SetCreatedAt(occurrence).
+				SetClaimedAt(occurrence.Add(time.Minute)).
+				SetExecStartedAt(occurrence.Add(time.Minute)).
+				SetExecFinishedAt(occurrence.Add(2 * time.Minute)).
+				SetLastModifiedAt(occurrence.Add(2 * time.Minute)).
+				SetOutput("Hello from the hourly schedule!").
+				SaveX(ctx)
+		}
+	}
+
 	for i := 0; i < 5; i++ {
 		createQuest(ctx, client, testBeacons...)
 	}

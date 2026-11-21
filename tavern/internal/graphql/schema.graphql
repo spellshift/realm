@@ -5369,6 +5369,10 @@ type Quest implements Node {
   """
   eldritchAtCreation: String
   """
+  Cron occurrence represented by this scheduled quest, if any.
+  """
+  scheduledOccurrenceAt: Time
+  """
   Tome that this quest will be executing
   """
   tome: Tome!
@@ -5648,6 +5652,19 @@ input QuestWhereInput {
   eldritchAtCreationNotNil: Boolean
   eldritchAtCreationEqualFold: String
   eldritchAtCreationContainsFold: String
+  """
+  scheduled_occurrence_at field predicates
+  """
+  scheduledOccurrenceAt: Time
+  scheduledOccurrenceAtNEQ: Time
+  scheduledOccurrenceAtIn: [Time!]
+  scheduledOccurrenceAtNotIn: [Time!]
+  scheduledOccurrenceAtGT: Time
+  scheduledOccurrenceAtGTE: Time
+  scheduledOccurrenceAtLT: Time
+  scheduledOccurrenceAtLTE: Time
+  scheduledOccurrenceAtIsNil: Boolean
+  scheduledOccurrenceAtNotNil: Boolean
   """
   tome edge predicates
   """

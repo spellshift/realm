@@ -51,6 +51,7 @@ export interface QuestDetailTaskNode {
 export interface QuestDetailNode {
     id: string;
     name: string;
+    scheduledOccurrenceAt: string | null;
     parameters: string | null;
     tome: QuestDetailTomeNode;
     creator: QuestDetailUserNode;

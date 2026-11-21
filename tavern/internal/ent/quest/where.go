@@ -85,6 +85,11 @@ func EldritchAtCreation(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldEQ(FieldEldritchAtCreation, v))
 }
 
+// ScheduledOccurrenceAt applies equality check predicate on the "scheduled_occurrence_at" field. It's identical to ScheduledOccurrenceAtEQ.
+func ScheduledOccurrenceAt(v time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldEQ(FieldScheduledOccurrenceAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Quest {
 	return predicate.Quest(sql.FieldEQ(FieldCreatedAt, v))
@@ -453,6 +458,56 @@ func EldritchAtCreationEqualFold(v string) predicate.Quest {
 // EldritchAtCreationContainsFold applies the ContainsFold predicate on the "eldritch_at_creation" field.
 func EldritchAtCreationContainsFold(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldContainsFold(FieldEldritchAtCreation, v))
+}
+
+// ScheduledOccurrenceAtEQ applies the EQ predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtEQ(v time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldEQ(FieldScheduledOccurrenceAt, v))
+}
+
+// ScheduledOccurrenceAtNEQ applies the NEQ predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtNEQ(v time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldNEQ(FieldScheduledOccurrenceAt, v))
+}
+
+// ScheduledOccurrenceAtIn applies the In predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtIn(vs ...time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldIn(FieldScheduledOccurrenceAt, vs...))
+}
+
+// ScheduledOccurrenceAtNotIn applies the NotIn predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtNotIn(vs ...time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldNotIn(FieldScheduledOccurrenceAt, vs...))
+}
+
+// ScheduledOccurrenceAtGT applies the GT predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtGT(v time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldGT(FieldScheduledOccurrenceAt, v))
+}
+
+// ScheduledOccurrenceAtGTE applies the GTE predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtGTE(v time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldGTE(FieldScheduledOccurrenceAt, v))
+}
+
+// ScheduledOccurrenceAtLT applies the LT predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtLT(v time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldLT(FieldScheduledOccurrenceAt, v))
+}
+
+// ScheduledOccurrenceAtLTE applies the LTE predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtLTE(v time.Time) predicate.Quest {
+	return predicate.Quest(sql.FieldLTE(FieldScheduledOccurrenceAt, v))
+}
+
+// ScheduledOccurrenceAtIsNil applies the IsNil predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtIsNil() predicate.Quest {
+	return predicate.Quest(sql.FieldIsNull(FieldScheduledOccurrenceAt))
+}
+
+// ScheduledOccurrenceAtNotNil applies the NotNil predicate on the "scheduled_occurrence_at" field.
+func ScheduledOccurrenceAtNotNil() predicate.Quest {
+	return predicate.Quest(sql.FieldNotNull(FieldScheduledOccurrenceAt))
 }
 
 // HasTome applies the HasEdge predicate on the "tome" edge.

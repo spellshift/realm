@@ -34,6 +34,8 @@ type Quest struct {
 	ParamDefsAtCreation string `json:"param_defs_at_creation,omitempty"`
 	// Eldritch script that was evaluated at the time of this quest creation.
 	EldritchAtCreation string `json:"eldritch_at_creation,omitempty"`
+	// Cron occurrence represented by this scheduled quest, if any.
+	ScheduledOccurrenceAt time.Time `json:"scheduled_occurrence_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the QuestQuery when eager-loading is set.
 	Edges                 QuestEdges `json:"edges"`
@@ -179,7 +181,7 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case quest.FieldName, quest.FieldParameters, quest.FieldParamDefsAtCreation, quest.FieldEldritchAtCreation:
 			values[i] = new(sql.NullString)
-		case quest.FieldCreatedAt, quest.FieldLastModifiedAt:
+		case quest.FieldCreatedAt, quest.FieldLastModifiedAt, quest.FieldScheduledOccurrenceAt:
 			values[i] = new(sql.NullTime)
 		case quest.ForeignKeys[0]: // adventure_quests
 			values[i] = new(sql.NullInt64)
@@ -249,6 +251,12 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field eldritch_at_creation", values[i])
 			} else if value.Valid {
 				q.EldritchAtCreation = value.String
+			}
+		case quest.FieldScheduledOccurrenceAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field scheduled_occurrence_at", values[i])
+			} else if value.Valid {
+				q.ScheduledOccurrenceAt = value.Time
 			}
 		case quest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -390,6 +398,9 @@ func (q *Quest) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("eldritch_at_creation=")
 	builder.WriteString(q.EldritchAtCreation)
+	builder.WriteString(", ")
+	builder.WriteString("scheduled_occurrence_at=")
+	builder.WriteString(q.ScheduledOccurrenceAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
