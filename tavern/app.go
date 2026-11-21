@@ -182,25 +182,31 @@ func newApp(ctx context.Context) (app *cli.App) {
 				if transport == "" {
 					transport = "grpc"
 				}
+				var (
+					managementURL string
+					store         managed.Store
+					identity      *managed.Identity
+				)
 				if c.Bool("managed") {
-					managementURL, err := managed.ManagementURL(c.String("management-url"), upstream)
+					var err error
+					managementURL, err = managed.ManagementURL(c.String("management-url"), upstream)
 					if err != nil {
 						return err
 					}
-					cfg := managed.Config{Upstream: managementURL, Transport: transport, Domains: c.StringSlice("domain"), Token: os.Getenv("REALM_REDIRECTOR_ENROLLMENT_TOKEN"), IdentityFile: c.String("identity-file"), IdentitySecret: c.String("identity-secret")}
+					cfg := managed.Config{Upstream: managementURL, Transport: transport, Domains: c.StringSlice("domain"), Token: strings.TrimSpace(os.Getenv("REALM_REDIRECTOR_ENROLLMENT_TOKEN")), IdentityFile: c.String("identity-file"), IdentitySecret: c.String("identity-secret")}
 					if len(cfg.Domains) == 0 {
 						return fmt.Errorf("managed redirector requires at least one --domain")
 					}
-					store, closeStore, err := managed.OpenStore(ctx, cfg)
+					var closeStore func() error
+					store, closeStore, err = managed.OpenStore(ctx, cfg)
 					if err != nil {
 						return err
 					}
 					defer closeStore()
-					identity, err := managed.EnsureIdentity(ctx, cfg, store)
+					identity, err = managed.EnsureIdentity(ctx, cfg, store)
 					if err != nil {
 						return err
 					}
-					go managed.RunCheckins(ctx, managementURL, identity)
 				}
 
 				var tlsCfg *tls.Config
@@ -211,6 +217,12 @@ func newApp(ctx context.Context) (app *cli.App) {
 						return fmt.Errorf("failed to configure TLS: %w", err)
 					}
 					startupLog.InfoContext(ctx, "TLS configured for redirector", "hostname", tlsHostname)
+				}
+
+				if identity != nil {
+					checkinCtx, cancelCheckins := context.WithCancel(ctx)
+					defer cancelCheckins()
+					go managed.RunCheckinsWithStore(checkinCtx, managementURL, identity, store)
 				}
 
 				startupLog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn, "tls_hostname", tlsHostname)
@@ -632,6 +644,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/auth/redirector/checkin": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewRedirectorCheckinHandler(client, builderCACert),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/redirector/renew": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRedirectorRenewHandler(client, builderCACert, builderCAKey),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},

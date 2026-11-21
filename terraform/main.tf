@@ -56,6 +56,14 @@ variable "redirector_enrollment_tokens" {
   description = "One one-time token per logical redirector deployment, in HTTP, DNS, ICMP, QUIC order. Empty generates one per deployment."
   default     = []
   sensitive   = true
+
+  validation {
+    condition = alltrue([
+      for t in var.redirector_enrollment_tokens :
+      try(length(t) >= 32 && length(t) <= 4096 && !can(regex("[,\\s]", t)), false)
+    ])
+    error_message = "Each token in redirector_enrollment_tokens must be 32 to 4096 characters long and must not be empty or contain whitespace or commas."
+  }
 }
 
 resource "random_password" "redirector_enrollment" {
@@ -381,9 +389,9 @@ resource "google_project_service" "cloud_scheduler_api" {
 }
 
 resource "google_sql_database_instance" "tavern-sql-instance" {
-  name             = "${local.resource_prefix}-db"
-  database_version = "MYSQL_8_0"
-  region           = var.gcp_region
+  name                = "${local.resource_prefix}-db"
+  database_version    = "MYSQL_8_0"
+  region              = var.gcp_region
   deletion_protection = false
 
   settings {
@@ -418,7 +426,7 @@ locals {
 }
 
 resource "google_service_account" "svctavern" {
-  account_id = "${local.resource_prefix}-svctavern"
+  account_id  = "${local.resource_prefix}-svctavern"
   description = "The service account Realm's Tavern uses to connect to GCP based services. Managed by Terraform."
 }
 
@@ -664,7 +672,8 @@ resource "google_cloud_run_service" "tavern" {
     google_project_service.cloud_sqladmin_api,
     google_project_service.cloud_scheduler_api,
     google_sql_user.tavern-user,
-    google_sql_database.tavern-db
+    google_sql_database.tavern-db,
+    terraform_data.redirector_token_count
   ]
 }
 
@@ -680,15 +689,16 @@ resource "google_cloud_run_service_iam_binding" "no-auth-required" {
 
 
 # === Redirectors ===
-# Setup redirectors svc account
+# Setup redirectors svc accounts (one per logical deployment)
 resource "google_service_account" "svctavern_redirector" {
-  account_id = "${local.resource_prefix}-svctavern-redirector"
+  for_each    = toset(local.redirector_deployment_keys)
+  account_id  = "r-${lower(local.resource_prefix)}-${substr(sha256(each.key), 0, 16)}"
   description = "The service account Realm's Tavern Redirector uses to connect to GCP based services. Managed by Terraform."
 }
 
 resource "google_secret_manager_secret" "redirector_identity" {
   for_each  = toset(local.redirector_deployment_keys)
-  secret_id = "realm-redirector-identity-${substr(sha256(each.key), 0, 24)}"
+  secret_id = "${local.resource_prefix}-redirector-identity-${substr(sha256(each.key), 0, 24)}"
   replication {
     auto {}
   }
@@ -700,7 +710,7 @@ resource "google_secret_manager_secret_iam_member" "redirector_identity_read" {
   project   = var.gcp_project
   secret_id = google_secret_manager_secret.redirector_identity[each.key].secret_id
   role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+  member    = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
 }
 
 resource "google_secret_manager_secret_iam_member" "redirector_identity_write" {
@@ -708,24 +718,26 @@ resource "google_secret_manager_secret_iam_member" "redirector_identity_write" {
   project   = var.gcp_project
   secret_id = google_secret_manager_secret.redirector_identity[each.key].secret_id
   role      = "roles/secretmanager.secretVersionAdder"
-  member    = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+  member    = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
 }
 
 resource "google_project_iam_member" "redirector-metricwriter-binding" {
-  project = var.gcp_project
-  role    = "roles/monitoring.metricWriter"
-  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+  for_each = toset(local.redirector_deployment_keys)
+  project  = var.gcp_project
+  role     = "roles/monitoring.metricWriter"
+  member   = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
 }
 
 resource "google_project_iam_member" "redirector-logwriter-binding" {
-  project = var.gcp_project
-  role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+  for_each = toset(local.redirector_deployment_keys)
+  project  = var.gcp_project
+  role     = "roles/logging.logWriter"
+  member   = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
 }
 
 # Setup builder svc account
 resource "google_service_account" "svcbuiltavern_builder" {
-  account_id = "${local.resource_prefix}-svcbuiltavern-builder"
+  account_id  = "${local.resource_prefix}-svcbuiltavern-builder"
   description = "The service account Realm's Tavern Builder VM uses to connect to GCP based services. Managed by Terraform."
 }
 
@@ -870,7 +882,7 @@ resource "google_cloud_run_service" "redirector" {
 
   template {
     spec {
-      service_account_name = google_service_account.svctavern_redirector.email
+      service_account_name = google_service_account.svctavern_redirector[local.redirector_http_keys[count.index]].email
       // Controls request timeout, must be long-lived to enable reverse shell support
       timeout_seconds = var.tavern_request_timeout_seconds
 
@@ -916,6 +928,7 @@ resource "google_cloud_run_service" "redirector" {
     google_secret_manager_secret_iam_member.redirector_identity_read,
     google_secret_manager_secret_iam_member.redirector_identity_write,
     terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.cloud_run_api
   ]
 }
@@ -1053,7 +1066,7 @@ resource "google_compute_firewall" "dns_redirector_allow_dns" {
   }
 
   source_ranges           = ["0.0.0.0/0"]
-  target_service_accounts = [google_service_account.svctavern_redirector.email]
+  target_service_accounts = [google_service_account.svctavern_redirector[local.redirector_dns_key].email]
 }
 
 # Hash the config content so we can force rebuilds on update
@@ -1088,7 +1101,7 @@ resource "google_compute_instance" "dns_redirector" {
   allow_stopping_for_update = true
 
   service_account {
-    email  = google_service_account.svctavern_redirector.email
+    email  = google_service_account.svctavern_redirector[local.redirector_dns_key].email
     scopes = ["cloud-platform"]
   }
 
@@ -1104,6 +1117,7 @@ resource "google_compute_instance" "dns_redirector" {
     google_secret_manager_secret_iam_member.redirector_identity_read,
     google_secret_manager_secret_iam_member.redirector_identity_write,
     terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.compute_api
   ]
 }
@@ -1147,7 +1161,7 @@ resource "google_compute_firewall" "icmp_redirector_allow_icmp" {
   }
 
   source_ranges           = ["0.0.0.0/0"]
-  target_service_accounts = [google_service_account.svctavern_redirector.email]
+  target_service_accounts = [for key in local.redirector_icmp_keys : google_service_account.svctavern_redirector[key].email]
 }
 
 resource "terraform_data" "icmp_redirector_metadata_hash" {
@@ -1181,7 +1195,7 @@ resource "google_compute_instance" "icmp_redirector" {
   allow_stopping_for_update = true
 
   service_account {
-    email  = google_service_account.svctavern_redirector.email
+    email  = google_service_account.svctavern_redirector[local.redirector_icmp_keys[count.index]].email
     scopes = ["cloud-platform"]
   }
 
@@ -1197,6 +1211,7 @@ resource "google_compute_instance" "icmp_redirector" {
     google_secret_manager_secret_iam_member.redirector_identity_read,
     google_secret_manager_secret_iam_member.redirector_identity_write,
     terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.compute_api
   ]
 }
@@ -1228,7 +1243,7 @@ resource "google_compute_firewall" "quic_redirector_allow_quic" {
   }
 
   source_ranges           = ["0.0.0.0/0"]
-  target_service_accounts = [google_service_account.svctavern_redirector.email]
+  target_service_accounts = [for key in local.redirector_quic_keys : google_service_account.svctavern_redirector[key].email]
 }
 
 resource "terraform_data" "quic_redirector_metadata_hash" {
@@ -1262,7 +1277,7 @@ resource "google_compute_instance" "quic_redirector" {
   allow_stopping_for_update = true
 
   service_account {
-    email  = google_service_account.svctavern_redirector.email
+    email  = google_service_account.svctavern_redirector[local.redirector_quic_keys[count.index]].email
     scopes = ["cloud-platform"]
   }
 
@@ -1278,6 +1293,7 @@ resource "google_compute_instance" "quic_redirector" {
     google_secret_manager_secret_iam_member.redirector_identity_read,
     google_secret_manager_secret_iam_member.redirector_identity_write,
     terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.compute_api
   ]
 }
