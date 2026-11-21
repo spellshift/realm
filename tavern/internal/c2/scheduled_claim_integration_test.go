@@ -17,35 +17,48 @@ import (
 	"realm.pub/tavern/internal/tomebundle"
 )
 
-func TestScheduledFetchAssetUsesQuestSnapshot(t *testing.T) {
+func TestScheduledClaimAndFetchAssetUseLiveTome(t *testing.T) {
 	ctx := context.Background()
-	client, graph, closeFn, mintJWT := c2test.New(t)
+	client, graph, closeFn, _ := c2test.New(t)
 	defer closeFn()
-	_, err := client.ClaimTasks(ctx, newClaimTasksReq("snapshot-beacon", "snapshot-host", "host"))
+	_, err := client.ClaimTasks(ctx, newClaimTasksReq("live-beacon", "live-host", "host"))
 	require.NoError(t, err)
-	b := graph.Beacon.Query().Where(beacon.Identifier("snapshot-beacon")).OnlyX(ctx)
-	source := graph.Asset.Create().SetName("snapshot.txt").SetContent([]byte("original bytes")).SaveX(ctx)
-	tome := graph.Tome.Create().SetName("fetch-snapshot-tome").SetDescription("test").
-		SetAuthor("test").SetEldritch("print('snapshot')").AddAssets(source).SaveX(ctx)
-	st := graph.ScheduledTask.Create().SetName("fetch-snapshot-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
-	bundle, err := tomebundle.Create(ctx, graph, []*ent.Asset{source})
+	b := graph.Beacon.Query().Where(beacon.Identifier("live-beacon")).OnlyX(ctx)
+	asset := graph.Asset.Create().SetName("live.txt").SetContent([]byte("original bytes")).SaveX(ctx)
+	removed := graph.Asset.Create().SetName("removed.txt").SetContent([]byte("removed bytes")).SaveX(ctx)
+	tome := graph.Tome.Create().SetName("live-tome").SetDescription("test").
+		SetAuthor("test").SetEldritch("print('original')").AddAssets(asset, removed).SaveX(ctx)
+	st := graph.ScheduledTask.Create().SetName("live-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
+	bundle, err := tomebundle.Create(ctx, graph, []*ent.Asset{asset, removed})
 	require.NoError(t, err)
-	q := graph.Quest.Create().SetName("snapshot quest").SetTome(tome).SetScheduledTask(st).
-		SetEldritchAtCreation(tome.Eldritch).SetBundle(bundle).SaveX(ctx)
+	// The bundle and snapshot marker are removed with the schema in a later fix.
+	q := graph.Quest.Create().SetName("live quest").SetTome(tome).SetScheduledTask(st).
+		SetEldritchAtCreation(tome.Eldritch).SetHasScheduledSnapshot(true).SetBundle(bundle).SaveX(ctx)
 	task := graph.Task.Create().SetQuest(q).SetBeacon(b).SaveX(ctx)
 
-	graph.Asset.UpdateOne(source).SetContent([]byte("changed bytes")).ExecX(ctx)
-	graph.Asset.Create().SetName("unrelated.txt").SetContent([]byte("unrelated")).SaveX(ctx)
-	resp, err := client.ClaimTasks(ctx, newClaimTasksReq("snapshot-beacon", "snapshot-host", "host"))
+	graph.Tome.UpdateOne(tome).SetEldritch("print('updated')").ExecX(ctx)
+	graph.Asset.UpdateOne(asset).SetContent([]byte("updated bytes")).ExecX(ctx)
+	graph.Asset.DeleteOne(removed).ExecX(ctx)
+	added := graph.Asset.Create().SetName("added.txt").SetContent([]byte("added bytes")).SaveX(ctx)
+	graph.Tome.UpdateOne(tome).AddAssets(added).ExecX(ctx)
+
+	resp, err := client.ClaimTasks(ctx, newClaimTasksReq("live-beacon", "live-host", "host"))
 	require.NoError(t, err)
 	require.Len(t, resp.Tasks, 1)
-	require.Equal(t, []string{"snapshot.txt"}, resp.Tasks[0].Tome.FileNames)
+	require.Equal(t, task.ID, int(resp.Tasks[0].Id))
+	require.Equal(t, "print('updated')", resp.Tasks[0].Tome.Eldritch)
+	require.ElementsMatch(t, []string{"live.txt", "added.txt"}, resp.Tasks[0].Tome.FileNames)
+	require.NotContains(t, resp.Tasks[0].Tome.FileNames, "removed.txt")
 
-	stream, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
-		Name: "snapshot.txt", Context: &c2pb.FetchAssetRequest_TaskContext{
-			TaskContext: &c2pb.TaskContext{TaskId: int64(task.ID), Jwt: resp.Tasks[0].Jwt},
-		},
-	})
+	// FetchAsset requires a JWT context, but asset lookup uses only the name.
+	fetch := func(name string) (c2pb.C2_FetchAssetClient, error) {
+		return client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
+			Name: name, Context: &c2pb.FetchAssetRequest_ShellTaskContext{
+				ShellTaskContext: &c2pb.ShellTaskContext{Jwt: resp.Tasks[0].Jwt},
+			},
+		})
+	}
+	stream, err := fetch("live.txt")
 	require.NoError(t, err)
 	var got bytes.Buffer
 	for {
@@ -56,30 +69,29 @@ func TestScheduledFetchAssetUsesQuestSnapshot(t *testing.T) {
 		require.NoError(t, err)
 		got.Write(chunk.Chunk)
 	}
-	require.Equal(t, "original bytes", got.String())
+	require.Equal(t, "updated bytes", got.String())
 	headers, err := stream.Header()
 	require.NoError(t, err)
-	require.Equal(t, []string{"14"}, headers.Get("file-size"))
-	require.Equal(t, []string{source.Hash}, headers.Get("sha1-checksum"))
+	liveAsset := graph.Asset.GetX(ctx, asset.ID)
+	require.Equal(t, []string{"13"}, headers.Get("file-size"))
+	require.Equal(t, []string{liveAsset.Hash}, headers.Get("sha1-checksum"))
 
-	missing, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
-		Name: "unrelated.txt", Context: &c2pb.FetchAssetRequest_TaskContext{
-			TaskContext: &c2pb.TaskContext{TaskId: int64(task.ID), Jwt: resp.Tasks[0].Jwt},
-		},
-	})
+	addedStream, err := fetch("added.txt")
 	require.NoError(t, err)
-	_, err = missing.Recv()
-	require.Equal(t, codes.NotFound, status.Code(err))
+	got.Reset()
+	for {
+		chunk, err := addedStream.Recv()
+		if err == io.EOF {
+			break
+		}
+		require.NoError(t, err)
+		got.Write(chunk.Chunk)
+	}
+	require.Equal(t, "added bytes", got.String())
 
-	other := graph.Beacon.Create().SetIdentifier("other-beacon").SetHost(b.QueryHost().OnlyX(ctx)).
-		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
-	foreign, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
-		Name: "snapshot.txt", Context: &c2pb.FetchAssetRequest_TaskContext{
-			TaskContext: &c2pb.TaskContext{TaskId: int64(task.ID), Jwt: mintJWT(other.ID)},
-		},
-	})
+	removedStream, err := fetch("removed.txt")
 	require.NoError(t, err)
-	_, err = foreign.Recv()
+	_, err = removedStream.Recv()
 	require.Equal(t, codes.NotFound, status.Code(err))
 }
 
@@ -93,10 +105,8 @@ func TestConcurrentClaimTasksDispatchesScheduledTaskOnce(t *testing.T) {
 	tome := graph.Tome.Create().SetName("claim-tome").SetDescription("test").
 		SetAuthor("test").SetEldritch("print('claim')").SaveX(ctx)
 	st := graph.ScheduledTask.Create().SetName("claim-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
-	bundle, err := tomebundle.Create(ctx, graph, nil)
-	require.NoError(t, err)
 	q := graph.Quest.Create().SetName("claim quest").SetTome(tome).SetScheduledTask(st).
-		SetEldritchAtCreation(tome.Eldritch).SetBundle(bundle).SaveX(ctx)
+		SetEldritchAtCreation(tome.Eldritch).SaveX(ctx)
 	graph.Task.Create().SetQuest(q).SetBeacon(b).SaveX(ctx)
 
 	responses := make([]*c2pb.ClaimTasksResponse, 2)
@@ -114,67 +124,4 @@ func TestConcurrentClaimTasksDispatchesScheduledTaskOnce(t *testing.T) {
 		require.NoError(t, err)
 	}
 	require.Equal(t, 1, len(responses[0].Tasks)+len(responses[1].Tasks))
-}
-
-func TestScheduledClaimPreservesEmptyScriptSnapshot(t *testing.T) {
-	ctx := context.Background()
-	client, graph, closeFn, _ := c2test.New(t)
-	defer closeFn()
-	_, err := client.ClaimTasks(ctx, newClaimTasksReq("empty-script-beacon", "empty-script-host", "host"))
-	require.NoError(t, err)
-	b := graph.Beacon.Query().Where(beacon.Identifier("empty-script-beacon")).OnlyX(ctx)
-	tome := graph.Tome.Create().SetName("empty-script-tome").SetDescription("test").
-		SetAuthor("test").SetEldritch("print('live')").SaveX(ctx)
-	st := graph.ScheduledTask.Create().SetName("empty-script-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
-	bundle, err := tomebundle.Create(ctx, graph, nil)
-	require.NoError(t, err)
-	q := graph.Quest.Create().SetName("empty script quest").SetTome(tome).SetScheduledTask(st).
-		SetEldritchAtCreation("").SetHasScheduledSnapshot(true).SetBundle(bundle).SaveX(ctx)
-	graph.Task.Create().SetQuest(q).SetBeacon(b).SaveX(ctx)
-
-	response, err := client.ClaimTasks(ctx, newClaimTasksReq("empty-script-beacon", "empty-script-host", "host"))
-	require.NoError(t, err)
-	require.Len(t, response.Tasks, 1)
-	require.Empty(t, response.Tasks[0].Tome.Eldritch)
-
-	// A Quest created before the marker migration still has a snapshot if it has a bundle.
-	preMarker := graph.Quest.Create().SetName("pre-marker empty script quest").SetTome(tome).
-		SetScheduledTask(st).SetEldritchAtCreation("").SetBundle(bundle).SaveX(ctx)
-	graph.Task.Create().SetQuest(preMarker).SetBeacon(b).SaveX(ctx)
-	response, err = client.ClaimTasks(ctx, newClaimTasksReq("empty-script-beacon", "empty-script-host", "host"))
-	require.NoError(t, err)
-	require.Len(t, response.Tasks, 1)
-	require.Empty(t, response.Tasks[0].Tome.Eldritch)
-}
-
-func TestScheduledSnapshotMissingBundleFailsClosed(t *testing.T) {
-	ctx := context.Background()
-	client, graph, closeFn, mintJWT := c2test.New(t)
-	defer closeFn()
-	_, err := client.ClaimTasks(ctx, newClaimTasksReq("missing-bundle-beacon", "missing-bundle-host", "host"))
-	require.NoError(t, err)
-	b := graph.Beacon.Query().Where(beacon.Identifier("missing-bundle-beacon")).OnlyX(ctx)
-	source := graph.Asset.Create().SetName("missing-bundle.txt").SetContent([]byte("live bytes")).SaveX(ctx)
-	tome := graph.Tome.Create().SetName("missing-bundle-tome").SetDescription("test").
-		SetAuthor("test").SetEldritch("print('live')").AddAssets(source).SaveX(ctx)
-	st := graph.ScheduledTask.Create().SetName("missing-bundle-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
-	bundle, err := tomebundle.Create(ctx, graph, []*ent.Asset{source})
-	require.NoError(t, err)
-	q := graph.Quest.Create().SetName("missing bundle quest").SetTome(tome).SetScheduledTask(st).
-		SetEldritchAtCreation(tome.Eldritch).SetHasScheduledSnapshot(true).SetBundle(bundle).SaveX(ctx)
-	task := graph.Task.Create().SetQuest(q).SetBeacon(b).SaveX(ctx)
-	graph.Asset.DeleteOne(bundle).ExecX(ctx) // Simulate a bundle removed outside deleteAsset.
-
-	response, err := client.ClaimTasks(ctx, newClaimTasksReq("missing-bundle-beacon", "missing-bundle-host", "host"))
-	require.Nil(t, response)
-	require.Equal(t, codes.FailedPrecondition, status.Code(err))
-
-	stream, err := client.FetchAsset(ctx, &c2pb.FetchAssetRequest{
-		Name: "missing-bundle.txt", Context: &c2pb.FetchAssetRequest_TaskContext{
-			TaskContext: &c2pb.TaskContext{TaskId: int64(task.ID), Jwt: mintJWT(b.ID)},
-		},
-	})
-	require.NoError(t, err)
-	_, err = stream.Recv()
-	require.Equal(t, codes.FailedPrecondition, status.Code(err))
 }

@@ -582,35 +582,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				return nil, rollback(tx, fmt.Errorf("failed to parse task parameters (id=%d,questID=%d): %w", taskID, claimedQuest.ID, err))
 			}
 		}
-		var claimedAssetNames []string
-		isScheduled, err := claimedQuest.QueryScheduledTask().Exist(ctx)
+		claimedAssets, err := claimedTome.QueryAssets().All(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to identify scheduled quest for task %d: %w", taskID, err)
+			return nil, rollback(tx, fmt.Errorf("failed to load tome assets (id=%d,tomeID=%d)", taskID, claimedTome.ID))
 		}
-		bundle, err := claimedQuest.QueryBundle().Only(ctx)
-		if isScheduled && claimedQuest.HasScheduledSnapshot && ent.IsNotFound(err) {
-			return nil, status.Errorf(codes.FailedPrecondition, "scheduled quest %d snapshot bundle is missing", claimedQuest.ID)
-		}
-		if isScheduled && err == nil {
-			claimedAssetNames, err = tomebundle.Names(bundle.Content)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read quest bundle for task %d: %w", taskID, err)
-			}
-		} else if !isScheduled || ent.IsNotFound(err) {
-			// Older quests may have been created without a bundle.
-			claimedAssets, err := claimedTome.QueryAssets().All(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to load tome assets for task %d: %w", taskID, err)
-			}
-			for _, a := range claimedAssets {
-				claimedAssetNames = append(claimedAssetNames, a.Name)
-			}
-		} else {
-			return nil, fmt.Errorf("failed to load quest bundle for task %d: %w", taskID, err)
-		}
-		eldritch := claimedQuest.EldritchAtCreation
-		if eldritch == "" && !claimedQuest.HasScheduledSnapshot && !(isScheduled && bundle != nil) {
-			eldritch = claimedTome.Eldritch // Legacy quests may not have a snapshot.
+		claimedAssetNames := make([]string, 0, len(claimedAssets))
+		for _, a := range claimedAssets {
+			claimedAssetNames = append(claimedAssetNames, a.Name)
 		}
 
 		// Generate JWT with beacon ID
@@ -623,7 +601,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			Id:        int64(claimedTask.ID),
 			QuestName: claimedQuest.Name,
 			Tome: &epb.Tome{
-				Eldritch:   eldritch,
+				Eldritch:   claimedTome.Eldritch,
 				Parameters: params,
 				FileNames:  claimedAssetNames,
 			},

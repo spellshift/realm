@@ -12,7 +12,6 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
-	"realm.pub/tavern/internal/tomebundle"
 )
 
 func TestHandleTomeAutomation(t *testing.T) {
@@ -328,7 +327,7 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	assert.Equal(t, 0, count, "Range tome should NOT run at 05:55:00 even with lookahead")
 }
 
-func TestHandleTomeAutomation_SharedOccurrenceAndSnapshot(t *testing.T) {
+func TestHandleTomeAutomation_SharedOccurrence(t *testing.T) {
 	ctx := context.Background()
 	client := enttest.OpenTempDB(t)
 	defer client.Close()
@@ -339,10 +338,8 @@ func TestHandleTomeAutomation_SharedOccurrenceAndSnapshot(t *testing.T) {
 		beacons[i] = client.Beacon.Create().SetIdentifier(id).SetHost(h).
 			SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
 	}
-	tome := client.Tome.Create().SetName("snapshot-tome").SetDescription("Test").
+	tome := client.Tome.Create().SetName("shared-tome").SetDescription("Test").
 		SetAuthor("Test").SetEldritch("print('first')").SaveX(ctx)
-	firstAsset := client.Asset.Create().SetName("first.txt").SetContent([]byte("first")).SaveX(ctx)
-	client.Tome.UpdateOne(tome).AddAssets(firstAsset).ExecX(ctx)
 	st := client.ScheduledTask.Create().SetName("shared-schedule").SetDescription("Test").
 		SetTome(tome).SetParameters(`{"version":"first"}`).SetRunOnSchedule("* * * * *").SaveX(ctx)
 	now := time.Date(2023, 10, 27, 10, 0, 56, 0, time.UTC)
@@ -353,19 +350,12 @@ func TestHandleTomeAutomation_SharedOccurrenceAndSnapshot(t *testing.T) {
 
 	client.ScheduledTask.UpdateOne(st).SetParameters(`{"version":"second"}`).ExecX(ctx)
 	client.Tome.UpdateOne(tome).SetEldritch("print('second')").ExecX(ctx)
-	secondAsset := client.Asset.Create().SetName("second.txt").SetContent([]byte("second")).SaveX(ctx)
-	client.Tome.UpdateOne(tome).AddAssets(secondAsset).ExecX(ctx)
 	srv.handleTomeAutomation(ctx, beacons[1].ID, h.ID, false, false, now.Add(time.Second), 10*time.Second)
 	require.Equal(t, 2, client.Task.Query().CountX(ctx))
 	q := client.Quest.Query().OnlyX(ctx)
 	assert.Equal(t, now.Add(4*time.Second), q.ScheduledOccurrenceAt)
 	assert.Equal(t, `{"version":"first"}`, q.Parameters)
 	assert.Equal(t, "print('first')", q.EldritchAtCreation)
-	assert.True(t, q.HasScheduledSnapshot)
-	bundle := q.QueryBundle().OnlyX(ctx)
-	names, err := tomebundle.Names(bundle.Content)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"first.txt"}, names)
 
 	srv.handleTomeAutomation(ctx, beacons[0].ID, h.ID, false, false, now.Add(60*time.Second), 10*time.Second)
 	require.Equal(t, 2, client.Quest.Query().CountX(ctx))
