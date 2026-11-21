@@ -3,14 +3,11 @@ package c2
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
-	"github.com/mattn/go-sqlite3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron/v3"
 	"google.golang.org/grpc/codes"
@@ -113,57 +110,15 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 	}
 }
 
-// createAutomatedTask retries concurrent unique-key conflicts from a fresh transaction.
 func (srv *Server) createAutomatedTask(ctx context.Context, scheduledTaskID, beaconID, hostID int, occurrence *time.Time) {
-	var lastErr error
-	for attempt := 0; attempt < 8; attempt++ {
-		if ctx.Err() != nil {
-			return
-		}
-		err := srv.createAutomatedTaskOnce(ctx, scheduledTaskID, beaconID, hostID, occurrence)
-		if err == nil {
-			return
-		}
-		if isRetryableAutomatedTaskError(err) {
-			lastErr = err
-			time.Sleep(time.Duration(attempt+1) * 10 * time.Millisecond)
-			continue
-		}
+	if err := srv.createAutomatedTaskOnce(ctx, scheduledTaskID, beaconID, hostID, occurrence); err != nil {
 		claimLog.ErrorContext(ctx, "failed to create automated task", "error", err, "scheduled_task_id", scheduledTaskID, "beacon_id", beaconID)
 		metricTomeAutomationErrors.Inc()
-		return
 	}
-	claimLog.ErrorContext(ctx, "failed to create automated task after retries", "error", lastErr, "scheduled_task_id", scheduledTaskID, "beacon_id", beaconID)
-	metricTomeAutomationErrors.Inc()
-}
-
-func isRetryableAutomatedTaskError(err error) bool {
-	var sqliteErr sqlite3.Error
-	if errors.As(err, &sqliteErr) {
-		if sqliteErr.Code == sqlite3.ErrBusy || sqliteErr.Code == sqlite3.ErrLocked {
-			return true
-		}
-		return sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique && isScheduledKeyError(err.Error())
-	}
-
-	var mysqlErr *mysql.MySQLError
-	if errors.As(err, &mysqlErr) {
-		return mysqlErr.Number == 1062 && isScheduledKeyError(mysqlErr.Message)
-	}
-	return false
-}
-
-func isScheduledKeyError(message string) bool {
-	return strings.Contains(message, quest.FieldScheduledOccurrenceKey)
 }
 
 func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID, beaconID, hostID int, occurrence *time.Time) error {
-	tx, err := srv.graph.Tx(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	client := tx.Client()
+	client := srv.graph
 	st, err := client.ScheduledTask.Query().Where(
 		scheduledtask.ID(scheduledTaskID),
 		scheduledtask.Disabled(false),
@@ -181,13 +136,20 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 	if st.Edges.Tome == nil {
 		return nil
 	}
+	schedCtx := logging.WithActor(ctx, logging.Actor{
+		Kind: logging.ActorScheduler, ID: strconv.Itoa(st.ID), Name: st.Name, AuthMethod: "scheduled_task",
+	})
 
 	var q *ent.Quest
-	createdQuest := false
-	var key string
 	if occurrence != nil {
-		key = fmt.Sprintf("%d:%d", st.ID, occurrence.UTC().Unix())
-		q, err = client.Quest.Query().Where(quest.ScheduledOccurrenceKey(key)).Only(ctx)
+		at := occurrence.UTC()
+		// Concurrent check-ins may create duplicate quests: no unique constraint by design.
+		// Since Task dedup checks only the lowest-ID Quest returned here, a duplicate Quest can give
+		// a beacon a second Task (running the tome twice) on another check-in in the same window;
+		// scoping the Exist check to the schedule and occurrence time would close that gap.
+		// If needed, add a composite unique index on (scheduled_occurrence_at,
+		// scheduled_task_quests), then select, create, and select again on ent.IsConstraintError.
+		q, err = st.QueryQuests().Where(quest.ScheduledOccurrenceAt(at)).Order(ent.Asc(quest.FieldID)).First(ctx)
 		if err != nil && !ent.IsNotFound(err) {
 			return err
 		}
@@ -198,13 +160,17 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 			SetTome(tome).SetScheduledTask(st).SetParameters(st.Parameters).
 			SetParamDefsAtCreation(tome.ParamDefs).SetEldritchAtCreation(tome.Eldritch)
 		if occurrence != nil {
-			create.SetScheduledOccurrenceAt(*occurrence).SetScheduledOccurrenceKey(key)
+			create.SetScheduledOccurrenceAt(occurrence.UTC())
 		}
 		q, err = create.Save(ctx)
 		if err != nil {
 			return err
 		}
-		createdQuest = true
+		attrs := []any{"scheduled_task_id", st.ID}
+		attrs = append(attrs, logging.QuestAttrs(q.ID, q.Name, q.Parameters)...)
+		attrs = append(attrs, logging.TomeAttrs(st.Edges.Tome.ID, st.Edges.Tome.Name, string(st.Edges.Tome.Tactic))...)
+		attrs = append(attrs, "beacon_id", beaconID, "host_id", hostID)
+		logging.Audit(schedCtx, "quest", "quest.created", "scheduled task created quest", attrs...)
 	}
 
 	if occurrence != nil {
@@ -222,20 +188,6 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 	t, err := client.Task.Create().SetQuest(q).SetBeaconID(beaconID).Save(ctx)
 	if err != nil {
 		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
-	schedCtx := logging.WithActor(ctx, logging.Actor{
-		Kind: logging.ActorScheduler, ID: strconv.Itoa(st.ID), Name: st.Name, AuthMethod: "scheduled_task",
-	})
-	if createdQuest {
-		attrs := []any{"scheduled_task_id", st.ID}
-		attrs = append(attrs, logging.QuestAttrs(q.ID, q.Name, q.Parameters)...)
-		attrs = append(attrs, logging.TomeAttrs(st.Edges.Tome.ID, st.Edges.Tome.Name, string(st.Edges.Tome.Tactic))...)
-		attrs = append(attrs, "beacon_id", beaconID, "host_id", hostID)
-		logging.Audit(schedCtx, "quest", "quest.created", "scheduled task created quest", attrs...)
 	}
 	logging.Audit(schedCtx, "task", "task.created", "scheduled task created task",
 		"task_id", t.ID, "quest_id", q.ID, "beacon_id", beaconID, "host_id", hostID, "scheduled_task_id", st.ID)

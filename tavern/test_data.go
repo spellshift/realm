@@ -463,7 +463,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			SetParamDefsAtCreation(printMsgTome.ParamDefs).
 			SetEldritchAtCreation(printMsgTome.Eldritch).
 			SetScheduledOccurrenceAt(occurrence).
-			SetScheduledOccurrenceKey(fmt.Sprintf("%d:%d", scheduled.ID, occurrence.Unix())).
 			SetCreatedAt(occurrence).
 			SetLastModifiedAt(occurrence).
 			SaveX(ctx)

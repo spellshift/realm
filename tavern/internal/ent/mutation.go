@@ -18598,42 +18598,41 @@ func (m *PortalMutation) ResetEdge(name string) error {
 // QuestMutation represents an operation that mutates the Quest nodes in the graph.
 type QuestMutation struct {
 	config
-	op                       Op
-	typ                      string
-	id                       *int
-	created_at               *time.Time
-	last_modified_at         *time.Time
-	name                     *string
-	parameters               *string
-	param_defs_at_creation   *string
-	eldritch_at_creation     *string
-	scheduled_occurrence_at  *time.Time
-	scheduled_occurrence_key *string
-	clearedFields            map[string]struct{}
-	tome                     *int
-	clearedtome              bool
-	bundle                   *int
-	clearedbundle            bool
-	tasks                    map[int]struct{}
-	removedtasks             map[int]struct{}
-	clearedtasks             bool
-	creator                  *int
-	clearedcreator           bool
-	scheduled_task           *int
-	clearedscheduled_task    bool
-	adventure                *int
-	clearedadventure         bool
-	related_quests           map[int]struct{}
-	removedrelated_quests    map[int]struct{}
-	clearedrelated_quests    bool
-	previous_quest           *int
-	clearedprevious_quest    bool
-	events                   map[int]struct{}
-	removedevents            map[int]struct{}
-	clearedevents            bool
-	done                     bool
-	oldValue                 func(context.Context) (*Quest, error)
-	predicates               []predicate.Quest
+	op                      Op
+	typ                     string
+	id                      *int
+	created_at              *time.Time
+	last_modified_at        *time.Time
+	name                    *string
+	parameters              *string
+	param_defs_at_creation  *string
+	eldritch_at_creation    *string
+	scheduled_occurrence_at *time.Time
+	clearedFields           map[string]struct{}
+	tome                    *int
+	clearedtome             bool
+	bundle                  *int
+	clearedbundle           bool
+	tasks                   map[int]struct{}
+	removedtasks            map[int]struct{}
+	clearedtasks            bool
+	creator                 *int
+	clearedcreator          bool
+	scheduled_task          *int
+	clearedscheduled_task   bool
+	adventure               *int
+	clearedadventure        bool
+	related_quests          map[int]struct{}
+	removedrelated_quests   map[int]struct{}
+	clearedrelated_quests   bool
+	previous_quest          *int
+	clearedprevious_quest   bool
+	events                  map[int]struct{}
+	removedevents           map[int]struct{}
+	clearedevents           bool
+	done                    bool
+	oldValue                func(context.Context) (*Quest, error)
+	predicates              []predicate.Quest
 }
 
 var _ ent.Mutation = (*QuestMutation)(nil)
@@ -19036,55 +19035,6 @@ func (m *QuestMutation) ScheduledOccurrenceAtCleared() bool {
 func (m *QuestMutation) ResetScheduledOccurrenceAt() {
 	m.scheduled_occurrence_at = nil
 	delete(m.clearedFields, quest.FieldScheduledOccurrenceAt)
-}
-
-// SetScheduledOccurrenceKey sets the "scheduled_occurrence_key" field.
-func (m *QuestMutation) SetScheduledOccurrenceKey(s string) {
-	m.scheduled_occurrence_key = &s
-}
-
-// ScheduledOccurrenceKey returns the value of the "scheduled_occurrence_key" field in the mutation.
-func (m *QuestMutation) ScheduledOccurrenceKey() (r string, exists bool) {
-	v := m.scheduled_occurrence_key
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldScheduledOccurrenceKey returns the old "scheduled_occurrence_key" field's value of the Quest entity.
-// If the Quest object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *QuestMutation) OldScheduledOccurrenceKey(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldScheduledOccurrenceKey is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldScheduledOccurrenceKey requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldScheduledOccurrenceKey: %w", err)
-	}
-	return oldValue.ScheduledOccurrenceKey, nil
-}
-
-// ClearScheduledOccurrenceKey clears the value of the "scheduled_occurrence_key" field.
-func (m *QuestMutation) ClearScheduledOccurrenceKey() {
-	m.scheduled_occurrence_key = nil
-	m.clearedFields[quest.FieldScheduledOccurrenceKey] = struct{}{}
-}
-
-// ScheduledOccurrenceKeyCleared returns if the "scheduled_occurrence_key" field was cleared in this mutation.
-func (m *QuestMutation) ScheduledOccurrenceKeyCleared() bool {
-	_, ok := m.clearedFields[quest.FieldScheduledOccurrenceKey]
-	return ok
-}
-
-// ResetScheduledOccurrenceKey resets all changes to the "scheduled_occurrence_key" field.
-func (m *QuestMutation) ResetScheduledOccurrenceKey() {
-	m.scheduled_occurrence_key = nil
-	delete(m.clearedFields, quest.FieldScheduledOccurrenceKey)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by id.
@@ -19517,7 +19467,7 @@ func (m *QuestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QuestMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, quest.FieldCreatedAt)
 	}
@@ -19538,9 +19488,6 @@ func (m *QuestMutation) Fields() []string {
 	}
 	if m.scheduled_occurrence_at != nil {
 		fields = append(fields, quest.FieldScheduledOccurrenceAt)
-	}
-	if m.scheduled_occurrence_key != nil {
-		fields = append(fields, quest.FieldScheduledOccurrenceKey)
 	}
 	return fields
 }
@@ -19564,8 +19511,6 @@ func (m *QuestMutation) Field(name string) (ent.Value, bool) {
 		return m.EldritchAtCreation()
 	case quest.FieldScheduledOccurrenceAt:
 		return m.ScheduledOccurrenceAt()
-	case quest.FieldScheduledOccurrenceKey:
-		return m.ScheduledOccurrenceKey()
 	}
 	return nil, false
 }
@@ -19589,8 +19534,6 @@ func (m *QuestMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldEldritchAtCreation(ctx)
 	case quest.FieldScheduledOccurrenceAt:
 		return m.OldScheduledOccurrenceAt(ctx)
-	case quest.FieldScheduledOccurrenceKey:
-		return m.OldScheduledOccurrenceKey(ctx)
 	}
 	return nil, fmt.Errorf("unknown Quest field %s", name)
 }
@@ -19649,13 +19592,6 @@ func (m *QuestMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetScheduledOccurrenceAt(v)
 		return nil
-	case quest.FieldScheduledOccurrenceKey:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetScheduledOccurrenceKey(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)
 }
@@ -19698,9 +19634,6 @@ func (m *QuestMutation) ClearedFields() []string {
 	if m.FieldCleared(quest.FieldScheduledOccurrenceAt) {
 		fields = append(fields, quest.FieldScheduledOccurrenceAt)
 	}
-	if m.FieldCleared(quest.FieldScheduledOccurrenceKey) {
-		fields = append(fields, quest.FieldScheduledOccurrenceKey)
-	}
 	return fields
 }
 
@@ -19726,9 +19659,6 @@ func (m *QuestMutation) ClearField(name string) error {
 		return nil
 	case quest.FieldScheduledOccurrenceAt:
 		m.ClearScheduledOccurrenceAt()
-		return nil
-	case quest.FieldScheduledOccurrenceKey:
-		m.ClearScheduledOccurrenceKey()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest nullable field %s", name)
@@ -19758,9 +19688,6 @@ func (m *QuestMutation) ResetField(name string) error {
 		return nil
 	case quest.FieldScheduledOccurrenceAt:
 		m.ResetScheduledOccurrenceAt()
-		return nil
-	case quest.FieldScheduledOccurrenceKey:
-		m.ResetScheduledOccurrenceKey()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)

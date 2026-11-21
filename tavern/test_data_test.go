@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"image/png"
 	"testing"
 
@@ -85,7 +84,7 @@ func TestCreateTestData(t *testing.T) {
 			require.Equal(t, scheduledTome.Eldritch, q.EldritchAtCreation)
 			require.Equal(t, scheduledTome.ParamDefs, q.ParamDefsAtCreation)
 			require.False(t, q.ScheduledOccurrenceAt.IsZero())
-			require.Equal(t, fmt.Sprintf("%d:%d", scheduled.ID, q.ScheduledOccurrenceAt.Unix()), q.ScheduledOccurrenceKey)
+			require.Equal(t, scheduled.ID, q.QueryScheduledTask().OnlyIDX(ctx))
 			occurrences[q.ScheduledOccurrenceAt.Unix()] = struct{}{}
 			tasks := q.QueryTasks().AllX(ctx)
 			require.Len(t, tasks, 4)

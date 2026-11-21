@@ -11,8 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/scheduledtask"
+	"realm.pub/tavern/internal/ent/task"
 )
 
 func TestHandleTomeAutomation(t *testing.T) {
@@ -402,6 +405,61 @@ func TestCreateAutomatedTaskOnceCronDeduplicatesByQuestAndBeacon(t *testing.T) {
 	require.Equal(t, map[int]struct{}{first.ID: {}, second.ID: {}}, beaconIDs)
 }
 
+func TestCreateAutomatedTaskOnceCronOccurrenceScope(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("scope-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	first := client.Beacon.Create().SetIdentifier("scope-first").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	second := client.Beacon.Create().SetIdentifier("scope-second").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	tome := client.Tome.Create().SetName("scope-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('scope')").SaveX(ctx)
+	st1 := client.ScheduledTask.Create().SetName("scope-one").SetDescription("Test").SetTome(tome).SaveX(ctx)
+	st2 := client.ScheduledTask.Create().SetName("scope-two").SetDescription("Test").SetTome(tome).SaveX(ctx)
+	at := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	otherZone := time.FixedZone("other", 2*60*60)
+	sameInstant := at.In(otherZone)
+	next := at.Add(time.Minute)
+
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st1.ID, first.ID, h.ID, &at))
+	q1 := st1.QueryQuests().OnlyX(ctx)
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st1.ID, second.ID, h.ID, &sameInstant))
+	require.Equal(t, q1.ID, client.Task.Query().Where(task.HasBeaconWith(beacon.ID(second.ID))).OnlyX(ctx).QueryQuest().OnlyIDX(ctx))
+	require.Equal(t, 1, st1.QueryQuests().CountX(ctx))
+	require.True(t, at.Equal(st1.QueryQuests().OnlyX(ctx).ScheduledOccurrenceAt))
+
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st1.ID, first.ID, h.ID, &next))
+	require.Equal(t, 2, st1.QueryQuests().CountX(ctx))
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st2.ID, first.ID, h.ID, &at))
+	require.Equal(t, 1, st2.QueryQuests().CountX(ctx))
+	require.NotEqual(t, q1.ID, st2.QueryQuests().OnlyIDX(ctx))
+}
+
+func TestCreateAutomatedTaskOnceCronDuplicateQuestsSelectLowestID(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("duplicates-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetIdentifier("duplicates-beacon").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	tome := client.Tome.Create().SetName("duplicates-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('duplicates')").SaveX(ctx)
+	st := client.ScheduledTask.Create().SetName("duplicates-schedule").SetDescription("Test").SetTome(tome).SaveX(ctx)
+	at := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	first := client.Quest.Create().SetName("first").SetTome(tome).SetScheduledTask(st).
+		SetScheduledOccurrenceAt(at).SaveX(ctx)
+	client.Quest.Create().SetName("second").SetTome(tome).SetScheduledTask(st).
+		SetScheduledOccurrenceAt(at).SaveX(ctx)
+
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, h.ID, &at))
+	require.Equal(t, 2, st.QueryQuests().CountX(ctx))
+	require.Equal(t, first.ID, client.Task.Query().OnlyX(ctx).QueryQuest().OnlyIDX(ctx))
+}
+
 func TestCreateAutomatedTaskOnceEventCallbacksCreateSeparateQuests(t *testing.T) {
 	ctx := context.Background()
 	client := enttest.OpenTempDB(t)
@@ -425,15 +483,17 @@ func TestCreateAutomatedTaskOnceEventCallbacksCreateSeparateQuests(t *testing.T)
 	}
 }
 
-func TestHandleTomeAutomation_ConcurrentCallbacks(t *testing.T) {
+func TestCreateAutomatedTaskOnce_ConcurrentCallbacks(t *testing.T) {
 	ctx := context.Background()
-	client := enttest.OpenTempDB(t)
+	client, db := enttest.OpenTempDBWithDB(t)
 	defer client.Close()
+	// Serialize the goroutines' DB access; assert one Task per beacon and no errors.
+	db.SetMaxOpenConns(1)
 	srv := &Server{graph: client}
 	h := client.Host.Create().SetIdentifier("parallel-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
 	tome := client.Tome.Create().SetName("parallel-tome").SetDescription("Test").
 		SetAuthor("Test").SetEldritch("print('parallel')").SaveX(ctx)
-	client.ScheduledTask.Create().SetName("parallel-schedule").SetDescription("Test").
+	st := client.ScheduledTask.Create().SetName("parallel-schedule").SetDescription("Test").
 		SetTome(tome).SetRunOnSchedule("* * * * *").SaveX(ctx)
 	beacons := make([]*ent.Beacon, 4)
 	for i, id := range []string{"parallel-a", "parallel-b", "parallel-c", "parallel-d"} {
@@ -441,17 +501,29 @@ func TestHandleTomeAutomation_ConcurrentCallbacks(t *testing.T) {
 			SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
 	}
 	now := time.Date(2023, 10, 27, 10, 0, 56, 0, time.UTC)
+	occurrence := now.Add(4 * time.Second)
 	var wg sync.WaitGroup
-	for _, b := range beacons {
+	errs := make([]error, len(beacons))
+	for i, b := range beacons {
 		wg.Add(1)
-		go func(id int) {
+		go func(i, id int) {
 			defer wg.Done()
-			srv.handleTomeAutomation(ctx, id, h.ID, false, false, now, 10*time.Second)
-		}(b.ID)
+			errs[i] = srv.createAutomatedTaskOnce(ctx, st.ID, id, h.ID, &occurrence)
+		}(i, b.ID)
 	}
 	wg.Wait()
-	assert.Equal(t, 1, client.Quest.Query().CountX(ctx))
-	assert.Equal(t, len(beacons), client.Task.Query().CountX(ctx))
+	for _, err := range errs {
+		require.NoError(t, err)
+	}
+	quests := st.QueryQuests().AllX(ctx)
+	require.NotEmpty(t, quests)
+	for _, q := range quests {
+		assert.True(t, occurrence.Equal(q.ScheduledOccurrenceAt))
+	}
+	for _, b := range beacons {
+		assert.Equal(t, 1, client.Task.Query().Where(task.HasBeaconWith(beacon.ID(b.ID)),
+			task.HasQuestWith(quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)), quest.ScheduledOccurrenceAt(occurrence))).CountX(ctx))
+	}
 }
 
 func TestScheduledCreationRechecksDisabledAndHostRestriction(t *testing.T) {

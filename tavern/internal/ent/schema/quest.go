@@ -56,9 +56,6 @@ func (Quest) Fields() []ent.Field {
 		field.Time("scheduled_occurrence_at").Optional().Immutable().
 			Annotations(entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput)).
 			Comment("Cron occurrence represented by this scheduled quest, if any."),
-		field.String("scheduled_occurrence_key").Optional().Immutable().Unique().
-			Annotations(entgql.Skip()).
-			Comment("Unique scheduled task and cron occurrence identity."),
 	}
 }
 
