@@ -93,14 +93,15 @@ func signIdentityCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, com
 		return nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
+	now := time.Now()
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			CommonName:   commonName,
 			Organization: []string{"Realm"},
 		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		NotBefore:             now.Add(-2 * time.Minute),
+		NotAfter:              now.Add(365 * 24 * time.Hour),
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,

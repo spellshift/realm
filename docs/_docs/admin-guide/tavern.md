@@ -179,6 +179,20 @@ Tavern accepts one-time redirector enrollment tokens from the `REALM_REDIRECTOR_
 
 Tavern commits the new identity and consumes the token before sending the HTTP response. If the response is lost before the certificate is saved, that token cannot recover the certificate or enroll again. Issue a fresh token and repeat enrollment; the original redirector record remains offline. Keep token use single-use even when the client cannot confirm whether enrollment succeeded.
 
+Built-in redirectors remain unmanaged unless started with `--managed`. For a standalone deployment, set `REALM_REDIRECTOR_ENROLLMENT_TOKEN` and pass each served domain, a Tavern URL, and a persistent identity file:
+
+```sh
+REALM_REDIRECTOR_ENROLLMENT_TOKEN='<token>' tavern redirector --managed --transport http1 --domain c2.example.com --management-url https://tavern.example.com --identity-file /var/lib/realm/redirector.json tavern.example.com
+```
+
+The token is exchanged only when the identity is absent. The redirector then signs a fresh timestamp with its certificate key and checks in every minute; Tavern records `last_seen_at`. An existing identity can start without the token. For replicas, pass `--identity-secret projects/PROJECT/secrets/SECRET` instead of `--identity-file` and grant the deployment service account Secret Manager access and version-add rights. All replicas using that secret share one redirector record. The redirector needs the token only for initial enrollment, though Terraform continues to provide it to restarted replicas until it is rotated.
+
+Managed redirectors require `--management-url` when the forwarding upstream is a bare gRPC `host:port` address. If the forwarding upstream is already an `http://` or `https://` Tavern URL, it also serves as the default management URL. When an enrollment request returns 401, a replica waits up to two minutes for the shared identity and does not submit the token again. If no identity appears, startup fails with an error so the token and shared store can be checked.
+
+Terraform enables managed mode for its built-in redirectors. It creates one dedicated service account, one `resource_prefix`-namespaced identity secret (`${local.resource_prefix}-redirector-identity-...`, accessible only by that deployment's service account), and one generated enrollment token per logical deployment. Supply `redirector_enrollment_tokens` as a list if you manage tokens externally; its order is HTTP/gRPC services, the combined DNS VM (if present), ICMP VMs, then QUIC VMs. Tokens must be unique, 32 to 4096 characters long with no whitespace or commas, and the list length must match the deployment count. Terraform marks token values sensitive but retains them in its state; Tavern stores only token hashes in its database.
+
+Terraform keys generated tokens and identity secrets by transport and domain, so reordering the redirector list does not move an existing identity to another deployment. An already applied index-based PR2 deployment needs a deliberate identity migration: copy each existing secret's identity payload to its new keyed secret before switching redirectors, since the old enrollment token cannot be redeemed again. Cloud Run redirectors allocate CPU between requests for periodic check-ins while an instance is running. The existing `min_scale` setting still controls whether Cloud Run may scale the service to zero.
+
 ### Available Redirectors
 
 Realm includes five built-in redirector implementations:
