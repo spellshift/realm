@@ -31,8 +31,6 @@ const (
 	FieldOutputSize = "output_size"
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
-	// FieldScheduledDedupKey holds the string denoting the scheduled_dedup_key field in the database.
-	FieldScheduledDedupKey = "scheduled_dedup_key"
 	// EdgeQuest holds the string denoting the quest edge name in mutations.
 	EdgeQuest = "quest"
 	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
@@ -111,7 +109,6 @@ var Columns = []string{
 	FieldOutput,
 	FieldOutputSize,
 	FieldError,
-	FieldScheduledDedupKey,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "tasks"
@@ -201,11 +198,6 @@ func ByOutputSize(opts ...sql.OrderTermOption) OrderOption {
 // ByError orders the results by the error field.
 func ByError(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldError, opts...).ToFunc()
-}
-
-// ByScheduledDedupKey orders the results by the scheduled_dedup_key field.
-func ByScheduledDedupKey(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldScheduledDedupKey, opts...).ToFunc()
 }
 
 // ByQuestField orders the results by quest field.

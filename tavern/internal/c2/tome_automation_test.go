@@ -369,6 +369,62 @@ func TestHandleTomeAutomation_SharedOccurrence(t *testing.T) {
 	assert.Equal(t, 3, client.Task.Query().CountX(ctx))
 }
 
+func TestCreateAutomatedTaskOnceCronDeduplicatesByQuestAndBeacon(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("cron-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	first := client.Beacon.Create().SetIdentifier("cron-first").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	second := client.Beacon.Create().SetIdentifier("cron-second").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	tome := client.Tome.Create().SetName("cron-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('cron')").SaveX(ctx)
+	st := client.ScheduledTask.Create().SetName("cron-schedule").SetDescription("Test").
+		SetTome(tome).SaveX(ctx)
+	occurrence := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, first.ID, h.ID, &occurrence))
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, first.ID, h.ID, &occurrence))
+	require.Equal(t, 1, client.Quest.Query().CountX(ctx))
+	require.Equal(t, 1, client.Task.Query().CountX(ctx))
+
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, second.ID, h.ID, &occurrence))
+	require.Equal(t, 1, client.Quest.Query().CountX(ctx))
+	q := client.Quest.Query().OnlyX(ctx)
+	tasks := q.QueryTasks().AllX(ctx)
+	require.Len(t, tasks, 2)
+	beaconIDs := make(map[int]struct{}, len(tasks))
+	for _, task := range tasks {
+		beaconIDs[task.QueryBeacon().OnlyIDX(ctx)] = struct{}{}
+	}
+	require.Equal(t, map[int]struct{}{first.ID: {}, second.ID: {}}, beaconIDs)
+}
+
+func TestCreateAutomatedTaskOnceEventCallbacksCreateSeparateQuests(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("event-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetIdentifier("event-beacon").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	tome := client.Tome.Create().SetName("event-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('event')").SaveX(ctx)
+	st := client.ScheduledTask.Create().SetName("event-schedule").SetDescription("Test").
+		SetTome(tome).SaveX(ctx)
+
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, h.ID, nil))
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, h.ID, nil))
+	quests := client.Quest.Query().AllX(ctx)
+	require.Len(t, quests, 2)
+	require.Equal(t, 2, client.Task.Query().CountX(ctx))
+	for _, q := range quests {
+		require.Equal(t, b.ID, q.QueryTasks().OnlyX(ctx).QueryBeacon().OnlyIDX(ctx))
+	}
+}
+
 func TestHandleTomeAutomation_ConcurrentCallbacks(t *testing.T) {
 	ctx := context.Background()
 	client := enttest.OpenTempDB(t)

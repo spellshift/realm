@@ -35,8 +35,6 @@ type Task struct {
 	OutputSize int `json:"output_size,omitempty"`
 	// Error, if any, produced while executing the Task
 	Error string `json:"error,omitempty"`
-	// Unique quest and beacon identity for automated cron tasks.
-	ScheduledDedupKey string `json:"scheduled_dedup_key,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TaskQuery when eager-loading is set.
 	Edges        TaskEdges `json:"edges"`
@@ -148,7 +146,7 @@ func (*Task) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case task.FieldID, task.FieldOutputSize:
 			values[i] = new(sql.NullInt64)
-		case task.FieldOutput, task.FieldError, task.FieldScheduledDedupKey:
+		case task.FieldOutput, task.FieldError:
 			values[i] = new(sql.NullString)
 		case task.FieldCreatedAt, task.FieldLastModifiedAt, task.FieldClaimedAt, task.FieldExecStartedAt, task.FieldExecFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -224,12 +222,6 @@ func (t *Task) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field error", values[i])
 			} else if value.Valid {
 				t.Error = value.String
-			}
-		case task.FieldScheduledDedupKey:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field scheduled_dedup_key", values[i])
-			} else if value.Valid {
-				t.ScheduledDedupKey = value.String
 			}
 		case task.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -339,9 +331,6 @@ func (t *Task) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("error=")
 	builder.WriteString(t.Error)
-	builder.WriteString(", ")
-	builder.WriteString("scheduled_dedup_key=")
-	builder.WriteString(t.ScheduledDedupKey)
 	builder.WriteByte(')')
 	return builder.String()
 }

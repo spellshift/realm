@@ -471,7 +471,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			client.Task.Create().
 				SetQuest(q).
 				SetBeacon(b).
-				SetScheduledDedupKey(fmt.Sprintf("%d:%d", q.ID, b.ID)).
 				SetCreatedAt(occurrence).
 				SetClaimedAt(occurrence.Add(time.Minute)).
 				SetExecStartedAt(occurrence.Add(time.Minute)).

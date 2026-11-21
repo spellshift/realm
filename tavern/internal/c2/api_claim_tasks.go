@@ -154,8 +154,7 @@ func isRetryableAutomatedTaskError(err error) bool {
 }
 
 func isScheduledKeyError(message string) bool {
-	return strings.Contains(message, quest.FieldScheduledOccurrenceKey) ||
-		strings.Contains(message, task.FieldScheduledDedupKey)
+	return strings.Contains(message, quest.FieldScheduledOccurrenceKey)
 }
 
 func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID, beaconID, hostID int, occurrence *time.Time) error {
@@ -208,19 +207,19 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 		createdQuest = true
 	}
 
-	createTask := client.Task.Create().SetQuest(q).SetBeaconID(beaconID)
 	if occurrence != nil {
-		taskKey := fmt.Sprintf("%d:%d", q.ID, beaconID)
-		exists, err := client.Task.Query().Where(task.ScheduledDedupKey(taskKey)).Exist(ctx)
+		exists, err := client.Task.Query().Where(
+			task.HasQuestWith(quest.ID(q.ID)),
+			task.HasBeaconWith(beacon.ID(beaconID)),
+		).Exist(ctx)
 		if err != nil {
 			return err
 		}
 		if exists {
 			return nil
 		}
-		createTask.SetScheduledDedupKey(taskKey)
 	}
-	t, err := createTask.Save(ctx)
+	t, err := client.Task.Create().SetQuest(q).SetBeaconID(beaconID).Save(ctx)
 	if err != nil {
 		return err
 	}

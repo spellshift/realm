@@ -141,20 +141,6 @@ func (tc *TaskCreate) SetNillableError(s *string) *TaskCreate {
 	return tc
 }
 
-// SetScheduledDedupKey sets the "scheduled_dedup_key" field.
-func (tc *TaskCreate) SetScheduledDedupKey(s string) *TaskCreate {
-	tc.mutation.SetScheduledDedupKey(s)
-	return tc
-}
-
-// SetNillableScheduledDedupKey sets the "scheduled_dedup_key" field if the given value is not nil.
-func (tc *TaskCreate) SetNillableScheduledDedupKey(s *string) *TaskCreate {
-	if s != nil {
-		tc.SetScheduledDedupKey(*s)
-	}
-	return tc
-}
-
 // SetQuestID sets the "quest" edge to the Quest entity by ID.
 func (tc *TaskCreate) SetQuestID(id int) *TaskCreate {
 	tc.mutation.SetQuestID(id)
@@ -390,10 +376,6 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Error(); ok {
 		_spec.SetField(task.FieldError, field.TypeString, value)
 		_node.Error = value
-	}
-	if value, ok := tc.mutation.ScheduledDedupKey(); ok {
-		_spec.SetField(task.FieldScheduledDedupKey, field.TypeString, value)
-		_node.ScheduledDedupKey = value
 	}
 	if nodes := tc.mutation.QuestIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -694,9 +676,6 @@ func (u *TaskUpsertOne) UpdateNewValues() *TaskUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(task.FieldCreatedAt)
-		}
-		if _, exists := u.create.mutation.ScheduledDedupKey(); exists {
-			s.SetIgnore(task.FieldScheduledDedupKey)
 		}
 	}))
 	return u
@@ -1047,9 +1026,6 @@ func (u *TaskUpsertBulk) UpdateNewValues() *TaskUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(task.FieldCreatedAt)
-			}
-			if _, exists := b.mutation.ScheduledDedupKey(); exists {
-				s.SetIgnore(task.FieldScheduledDedupKey)
 			}
 		}
 	}))

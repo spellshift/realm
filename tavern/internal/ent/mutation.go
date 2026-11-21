@@ -26698,7 +26698,6 @@ type TaskMutation struct {
 	output_size                 *int
 	addoutput_size              *int
 	error                       *string
-	scheduled_dedup_key         *string
 	clearedFields               map[string]struct{}
 	quest                       *int
 	clearedquest                bool
@@ -27195,55 +27194,6 @@ func (m *TaskMutation) ResetError() {
 	delete(m.clearedFields, task.FieldError)
 }
 
-// SetScheduledDedupKey sets the "scheduled_dedup_key" field.
-func (m *TaskMutation) SetScheduledDedupKey(s string) {
-	m.scheduled_dedup_key = &s
-}
-
-// ScheduledDedupKey returns the value of the "scheduled_dedup_key" field in the mutation.
-func (m *TaskMutation) ScheduledDedupKey() (r string, exists bool) {
-	v := m.scheduled_dedup_key
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldScheduledDedupKey returns the old "scheduled_dedup_key" field's value of the Task entity.
-// If the Task object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TaskMutation) OldScheduledDedupKey(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldScheduledDedupKey is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldScheduledDedupKey requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldScheduledDedupKey: %w", err)
-	}
-	return oldValue.ScheduledDedupKey, nil
-}
-
-// ClearScheduledDedupKey clears the value of the "scheduled_dedup_key" field.
-func (m *TaskMutation) ClearScheduledDedupKey() {
-	m.scheduled_dedup_key = nil
-	m.clearedFields[task.FieldScheduledDedupKey] = struct{}{}
-}
-
-// ScheduledDedupKeyCleared returns if the "scheduled_dedup_key" field was cleared in this mutation.
-func (m *TaskMutation) ScheduledDedupKeyCleared() bool {
-	_, ok := m.clearedFields[task.FieldScheduledDedupKey]
-	return ok
-}
-
-// ResetScheduledDedupKey resets all changes to the "scheduled_dedup_key" field.
-func (m *TaskMutation) ResetScheduledDedupKey() {
-	m.scheduled_dedup_key = nil
-	delete(m.clearedFields, task.FieldScheduledDedupKey)
-}
-
 // SetQuestID sets the "quest" edge to the Quest entity by id.
 func (m *TaskMutation) SetQuestID(id int) {
 	m.quest = &id
@@ -27626,7 +27576,7 @@ func (m *TaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TaskMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, task.FieldCreatedAt)
 	}
@@ -27650,9 +27600,6 @@ func (m *TaskMutation) Fields() []string {
 	}
 	if m.error != nil {
 		fields = append(fields, task.FieldError)
-	}
-	if m.scheduled_dedup_key != nil {
-		fields = append(fields, task.FieldScheduledDedupKey)
 	}
 	return fields
 }
@@ -27678,8 +27625,6 @@ func (m *TaskMutation) Field(name string) (ent.Value, bool) {
 		return m.OutputSize()
 	case task.FieldError:
 		return m.Error()
-	case task.FieldScheduledDedupKey:
-		return m.ScheduledDedupKey()
 	}
 	return nil, false
 }
@@ -27705,8 +27650,6 @@ func (m *TaskMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldOutputSize(ctx)
 	case task.FieldError:
 		return m.OldError(ctx)
-	case task.FieldScheduledDedupKey:
-		return m.OldScheduledDedupKey(ctx)
 	}
 	return nil, fmt.Errorf("unknown Task field %s", name)
 }
@@ -27772,13 +27715,6 @@ func (m *TaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetError(v)
 		return nil
-	case task.FieldScheduledDedupKey:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetScheduledDedupKey(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Task field %s", name)
 }
@@ -27839,9 +27775,6 @@ func (m *TaskMutation) ClearedFields() []string {
 	if m.FieldCleared(task.FieldError) {
 		fields = append(fields, task.FieldError)
 	}
-	if m.FieldCleared(task.FieldScheduledDedupKey) {
-		fields = append(fields, task.FieldScheduledDedupKey)
-	}
 	return fields
 }
 
@@ -27870,9 +27803,6 @@ func (m *TaskMutation) ClearField(name string) error {
 		return nil
 	case task.FieldError:
 		m.ClearError()
-		return nil
-	case task.FieldScheduledDedupKey:
-		m.ClearScheduledDedupKey()
 		return nil
 	}
 	return fmt.Errorf("unknown Task nullable field %s", name)
@@ -27905,9 +27835,6 @@ func (m *TaskMutation) ResetField(name string) error {
 		return nil
 	case task.FieldError:
 		m.ResetError()
-		return nil
-	case task.FieldScheduledDedupKey:
-		m.ResetScheduledDedupKey()
 		return nil
 	}
 	return fmt.Errorf("unknown Task field %s", name)

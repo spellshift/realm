@@ -93,7 +93,6 @@ func TestCreateTestData(t *testing.T) {
 			for _, task := range tasks {
 				beaconID := task.QueryBeacon().OnlyIDX(ctx)
 				beacons[beaconID] = struct{}{}
-				require.Equal(t, fmt.Sprintf("%d:%d", q.ID, beaconID), task.ScheduledDedupKey)
 			}
 			require.Len(t, beacons, 4)
 		}
