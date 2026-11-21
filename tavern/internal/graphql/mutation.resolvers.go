@@ -29,7 +29,6 @@ import (
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/operatornote"
-	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/user"
@@ -442,13 +441,6 @@ func (r *mutationResolver) DeleteAsset(ctx context.Context, assetID int) (int, e
 	}
 	if tomeCount > 0 {
 		return 0, fmt.Errorf("cannot delete asset: it is associated with %d tome(s)", tomeCount)
-	}
-	questCount, err := r.client.Quest.Query().Where(quest.HasBundleWith(asset.ID(assetID))).Count(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to query associated quests: %w", err)
-	}
-	if questCount > 0 {
-		return 0, fmt.Errorf("cannot delete asset: it is referenced by %d quest(s)", questCount)
 	}
 	if _, err := r.client.Link.Delete().Where(link.HasAssetWith(asset.ID(assetID))).Exec(ctx); err != nil {
 		return 0, fmt.Errorf("failed to delete associated links: %w", err)

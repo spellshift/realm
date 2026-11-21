@@ -133,20 +133,6 @@ func (qc *QuestCreate) SetNillableScheduledOccurrenceKey(s *string) *QuestCreate
 	return qc
 }
 
-// SetHasScheduledSnapshot sets the "has_scheduled_snapshot" field.
-func (qc *QuestCreate) SetHasScheduledSnapshot(b bool) *QuestCreate {
-	qc.mutation.SetHasScheduledSnapshot(b)
-	return qc
-}
-
-// SetNillableHasScheduledSnapshot sets the "has_scheduled_snapshot" field if the given value is not nil.
-func (qc *QuestCreate) SetNillableHasScheduledSnapshot(b *bool) *QuestCreate {
-	if b != nil {
-		qc.SetHasScheduledSnapshot(*b)
-	}
-	return qc
-}
-
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (qc *QuestCreate) SetTomeID(id int) *QuestCreate {
 	qc.mutation.SetTomeID(id)
@@ -341,10 +327,6 @@ func (qc *QuestCreate) defaults() {
 		v := quest.DefaultLastModifiedAt()
 		qc.mutation.SetLastModifiedAt(v)
 	}
-	if _, ok := qc.mutation.HasScheduledSnapshot(); !ok {
-		v := quest.DefaultHasScheduledSnapshot
-		qc.mutation.SetHasScheduledSnapshot(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -372,9 +354,6 @@ func (qc *QuestCreate) check() error {
 		if err := quest.ParamDefsAtCreationValidator(v); err != nil {
 			return &ValidationError{Name: "param_defs_at_creation", err: fmt.Errorf(`ent: validator failed for field "Quest.param_defs_at_creation": %w`, err)}
 		}
-	}
-	if _, ok := qc.mutation.HasScheduledSnapshot(); !ok {
-		return &ValidationError{Name: "has_scheduled_snapshot", err: errors.New(`ent: missing required field "Quest.has_scheduled_snapshot"`)}
 	}
 	if len(qc.mutation.TomeIDs()) == 0 {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "Quest.tome"`)}
@@ -437,10 +416,6 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 	if value, ok := qc.mutation.ScheduledOccurrenceKey(); ok {
 		_spec.SetField(quest.FieldScheduledOccurrenceKey, field.TypeString, value)
 		_node.ScheduledOccurrenceKey = value
-	}
-	if value, ok := qc.mutation.HasScheduledSnapshot(); ok {
-		_spec.SetField(quest.FieldHasScheduledSnapshot, field.TypeBool, value)
-		_node.HasScheduledSnapshot = value
 	}
 	if nodes := qc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -712,9 +687,6 @@ func (u *QuestUpsertOne) UpdateNewValues() *QuestUpsertOne {
 		if _, exists := u.create.mutation.ScheduledOccurrenceKey(); exists {
 			s.SetIgnore(quest.FieldScheduledOccurrenceKey)
 		}
-		if _, exists := u.create.mutation.HasScheduledSnapshot(); exists {
-			s.SetIgnore(quest.FieldHasScheduledSnapshot)
-		}
 	}))
 	return u
 }
@@ -985,9 +957,6 @@ func (u *QuestUpsertBulk) UpdateNewValues() *QuestUpsertBulk {
 			}
 			if _, exists := b.mutation.ScheduledOccurrenceKey(); exists {
 				s.SetIgnore(quest.FieldScheduledOccurrenceKey)
-			}
-			if _, exists := b.mutation.HasScheduledSnapshot(); exists {
-				s.SetIgnore(quest.FieldHasScheduledSnapshot)
 			}
 		}
 	}))

@@ -12,9 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
-	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
-	"realm.pub/tavern/internal/tomebundle"
 )
 
 func TestScheduledClaimAndFetchAssetUseLiveTome(t *testing.T) {
@@ -29,11 +27,8 @@ func TestScheduledClaimAndFetchAssetUseLiveTome(t *testing.T) {
 	tome := graph.Tome.Create().SetName("live-tome").SetDescription("test").
 		SetAuthor("test").SetEldritch("print('original')").AddAssets(asset, removed).SaveX(ctx)
 	st := graph.ScheduledTask.Create().SetName("live-schedule").SetDescription("test").SetTome(tome).SaveX(ctx)
-	bundle, err := tomebundle.Create(ctx, graph, []*ent.Asset{asset, removed})
-	require.NoError(t, err)
-	// The bundle and snapshot marker are removed with the schema in a later fix.
 	q := graph.Quest.Create().SetName("live quest").SetTome(tome).SetScheduledTask(st).
-		SetEldritchAtCreation(tome.Eldritch).SetHasScheduledSnapshot(true).SetBundle(bundle).SaveX(ctx)
+		SetEldritchAtCreation(tome.Eldritch).SaveX(ctx)
 	task := graph.Task.Create().SetQuest(q).SetBeacon(b).SaveX(ctx)
 
 	graph.Tome.UpdateOne(tome).SetEldritch("print('updated')").ExecX(ctx)

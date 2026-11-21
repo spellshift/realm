@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/ent/quest"
 )
 
 func TestHandleTomeAutomation(t *testing.T) {
@@ -226,6 +227,7 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 	count := client.Task.Query().CountX(ctx)
 	assert.Equal(t, 2, count)
 	assert.Equal(t, 2, client.Quest.Query().CountX(ctx))
+	assert.False(t, client.Quest.Query().Where(quest.ScheduledOccurrenceAtIsNil()).OnlyX(ctx).QueryBundle().ExistX(ctx))
 }
 
 func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
@@ -339,7 +341,8 @@ func TestHandleTomeAutomation_SharedOccurrence(t *testing.T) {
 			SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
 	}
 	tome := client.Tome.Create().SetName("shared-tome").SetDescription("Test").
-		SetAuthor("Test").SetEldritch("print('first')").SaveX(ctx)
+		SetAuthor("Test").SetEldritch("print('first')").
+		SetParamDefs(`[{"name":"version","label":"Version","type":"string"}]`).SaveX(ctx)
 	st := client.ScheduledTask.Create().SetName("shared-schedule").SetDescription("Test").
 		SetTome(tome).SetParameters(`{"version":"first"}`).SetRunOnSchedule("* * * * *").SaveX(ctx)
 	now := time.Date(2023, 10, 27, 10, 0, 56, 0, time.UTC)
@@ -356,6 +359,8 @@ func TestHandleTomeAutomation_SharedOccurrence(t *testing.T) {
 	assert.Equal(t, now.Add(4*time.Second), q.ScheduledOccurrenceAt)
 	assert.Equal(t, `{"version":"first"}`, q.Parameters)
 	assert.Equal(t, "print('first')", q.EldritchAtCreation)
+	assert.Equal(t, tome.ParamDefs, q.ParamDefsAtCreation)
+	assert.False(t, q.QueryBundle().ExistX(ctx))
 
 	srv.handleTomeAutomation(ctx, beacons[0].ID, h.ID, false, false, now.Add(60*time.Second), 10*time.Second)
 	require.Equal(t, 2, client.Quest.Query().CountX(ctx))

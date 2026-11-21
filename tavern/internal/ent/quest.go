@@ -38,8 +38,6 @@ type Quest struct {
 	ScheduledOccurrenceAt time.Time `json:"scheduled_occurrence_at,omitempty"`
 	// Unique scheduled task and cron occurrence identity.
 	ScheduledOccurrenceKey string `json:"scheduled_occurrence_key,omitempty"`
-	// Whether this scheduled quest has a complete creation-time snapshot.
-	HasScheduledSnapshot bool `json:"has_scheduled_snapshot,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the QuestQuery when eager-loading is set.
 	Edges                 QuestEdges `json:"edges"`
@@ -181,8 +179,6 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case quest.FieldHasScheduledSnapshot:
-			values[i] = new(sql.NullBool)
 		case quest.FieldID:
 			values[i] = new(sql.NullInt64)
 		case quest.FieldName, quest.FieldParameters, quest.FieldParamDefsAtCreation, quest.FieldEldritchAtCreation, quest.FieldScheduledOccurrenceKey:
@@ -269,12 +265,6 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field scheduled_occurrence_key", values[i])
 			} else if value.Valid {
 				q.ScheduledOccurrenceKey = value.String
-			}
-		case quest.FieldHasScheduledSnapshot:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field has_scheduled_snapshot", values[i])
-			} else if value.Valid {
-				q.HasScheduledSnapshot = value.Bool
 			}
 		case quest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -422,9 +412,6 @@ func (q *Quest) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("scheduled_occurrence_key=")
 	builder.WriteString(q.ScheduledOccurrenceKey)
-	builder.WriteString(", ")
-	builder.WriteString("has_scheduled_snapshot=")
-	builder.WriteString(fmt.Sprintf("%v", q.HasScheduledSnapshot))
 	builder.WriteByte(')')
 	return builder.String()
 }

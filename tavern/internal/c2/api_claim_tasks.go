@@ -18,7 +18,6 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/quest"
@@ -30,7 +29,6 @@ import (
 	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
-	"realm.pub/tavern/internal/tomebundle"
 )
 
 var (
@@ -197,19 +195,9 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 	}
 	if q == nil {
 		tome := st.Edges.Tome
-		assets, err := tome.QueryAssets().Order(ent.Asc(asset.FieldID)).All(ctx)
-		if err != nil {
-			return err
-		}
 		create := client.Quest.Create().SetName(fmt.Sprintf("Automated: %s", st.Name)).
 			SetTome(tome).SetScheduledTask(st).SetParameters(st.Parameters).
-			SetParamDefsAtCreation(tome.ParamDefs).SetEldritchAtCreation(tome.Eldritch).
-			SetHasScheduledSnapshot(true)
-		bundle, err := tomebundle.Create(ctx, client, assets)
-		if err != nil {
-			return err
-		}
-		create.SetBundle(bundle)
+			SetParamDefsAtCreation(tome.ParamDefs).SetEldritchAtCreation(tome.Eldritch)
 		if occurrence != nil {
 			create.SetScheduledOccurrenceAt(*occurrence).SetScheduledOccurrenceKey(key)
 		}

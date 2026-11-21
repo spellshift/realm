@@ -95,11 +95,6 @@ func ScheduledOccurrenceKey(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldEQ(FieldScheduledOccurrenceKey, v))
 }
 
-// HasScheduledSnapshot applies equality check predicate on the "has_scheduled_snapshot" field. It's identical to HasScheduledSnapshotEQ.
-func HasScheduledSnapshot(v bool) predicate.Quest {
-	return predicate.Quest(sql.FieldEQ(FieldHasScheduledSnapshot, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Quest {
 	return predicate.Quest(sql.FieldEQ(FieldCreatedAt, v))
@@ -593,16 +588,6 @@ func ScheduledOccurrenceKeyEqualFold(v string) predicate.Quest {
 // ScheduledOccurrenceKeyContainsFold applies the ContainsFold predicate on the "scheduled_occurrence_key" field.
 func ScheduledOccurrenceKeyContainsFold(v string) predicate.Quest {
 	return predicate.Quest(sql.FieldContainsFold(FieldScheduledOccurrenceKey, v))
-}
-
-// HasScheduledSnapshotEQ applies the EQ predicate on the "has_scheduled_snapshot" field.
-func HasScheduledSnapshotEQ(v bool) predicate.Quest {
-	return predicate.Quest(sql.FieldEQ(FieldHasScheduledSnapshot, v))
-}
-
-// HasScheduledSnapshotNEQ applies the NEQ predicate on the "has_scheduled_snapshot" field.
-func HasScheduledSnapshotNEQ(v bool) predicate.Quest {
-	return predicate.Quest(sql.FieldNEQ(FieldHasScheduledSnapshot, v))
 }
 
 // HasTome applies the HasEdge predicate on the "tome" edge.

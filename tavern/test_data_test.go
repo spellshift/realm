@@ -76,12 +76,14 @@ func TestCreateTestData(t *testing.T) {
 	t.Run("ScheduledQuestsTest", func(t *testing.T) {
 		scheduled := graph.ScheduledTask.Query().OnlyX(ctx)
 		require.Equal(t, "0 * * * *", scheduled.RunOnSchedule)
+		scheduledTome := scheduled.QueryTome().OnlyX(ctx)
 		quests := scheduled.QueryQuests().AllX(ctx)
 		require.Len(t, quests, 3)
 		occurrences := make(map[int64]struct{}, len(quests))
 		for _, q := range quests {
-			require.True(t, q.HasScheduledSnapshot)
-			require.True(t, q.QueryBundle().ExistX(ctx))
+			require.False(t, q.QueryBundle().ExistX(ctx))
+			require.Equal(t, scheduledTome.Eldritch, q.EldritchAtCreation)
+			require.Equal(t, scheduledTome.ParamDefs, q.ParamDefsAtCreation)
 			require.False(t, q.ScheduledOccurrenceAt.IsZero())
 			require.Equal(t, fmt.Sprintf("%d:%d", scheduled.ID, q.ScheduledOccurrenceAt.Unix()), q.ScheduledOccurrenceKey)
 			occurrences[q.ScheduledOccurrenceAt.Unix()] = struct{}{}

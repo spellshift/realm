@@ -22,7 +22,6 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/namegen"
-	"realm.pub/tavern/internal/tomebundle"
 )
 
 // createTestData populates the DB with some test data :)
@@ -453,10 +452,6 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		SetParameters(`{"msg":"Hello from the hourly schedule!"}`).
 		SetTome(printMsgTome).
 		SaveX(ctx)
-	bundle, err := tomebundle.Create(ctx, client, nil)
-	if err != nil {
-		panic(fmt.Errorf("create scheduled test bundle: %w", err))
-	}
 	latestOccurrence := time.Now().UTC().Truncate(time.Hour)
 	for hoursAgo := 3; hoursAgo >= 1; hoursAgo-- {
 		occurrence := latestOccurrence.Add(-time.Duration(hoursAgo) * time.Hour)
@@ -464,11 +459,9 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			SetName("Automated: " + scheduled.Name).
 			SetTome(printMsgTome).
 			SetScheduledTask(scheduled).
-			SetBundle(bundle).
 			SetParameters(scheduled.Parameters).
 			SetParamDefsAtCreation(printMsgTome.ParamDefs).
 			SetEldritchAtCreation(printMsgTome.Eldritch).
-			SetHasScheduledSnapshot(true).
 			SetScheduledOccurrenceAt(occurrence).
 			SetScheduledOccurrenceKey(fmt.Sprintf("%d:%d", scheduled.ID, occurrence.Unix())).
 			SetCreatedAt(occurrence).

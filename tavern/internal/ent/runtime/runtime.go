@@ -603,10 +603,6 @@ func init() {
 	questDescParamDefsAtCreation := questFields[2].Descriptor()
 	// quest.ParamDefsAtCreationValidator is a validator for the "param_defs_at_creation" field. It is called by the builders before save.
 	quest.ParamDefsAtCreationValidator = questDescParamDefsAtCreation.Validators[0].(func(string) error)
-	// questDescHasScheduledSnapshot is the schema descriptor for has_scheduled_snapshot field.
-	questDescHasScheduledSnapshot := questFields[6].Descriptor()
-	// quest.DefaultHasScheduledSnapshot holds the default value on creation for the has_scheduled_snapshot field.
-	quest.DefaultHasScheduledSnapshot = questDescHasScheduledSnapshot.Default.(bool)
 	repositoryMixin := schema.Repository{}.Mixin()
 	repositoryHooks := schema.Repository{}.Hooks()
 	repository.Hooks[0] = repositoryHooks[0]
