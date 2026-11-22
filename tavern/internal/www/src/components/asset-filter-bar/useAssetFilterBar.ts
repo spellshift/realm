@@ -18,10 +18,10 @@ export function useAssetFilterBar(): UseAssetFilterBarResult {
             kind: "user",
         }));
 
-        // Users first, then agent type -- per the combined filter's layout.
+        // Agent type first, then users -- per the combined filter's layout.
         const groups: FilterOptionGroup[] = [
-            { label: "Users", options: users },
             { label: "Type", options: ASSET_TYPE_OPTIONS },
+            { label: "Users", options: users },
         ];
 
         return groups;
