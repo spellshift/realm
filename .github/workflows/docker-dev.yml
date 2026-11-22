@@ -5,14 +5,6 @@ name: Publish Docker Images (on push to main)
 on:
   push:
     branches: ['main']
-    paths:
-      - '.devcontainer/**'
-      - 'tavern/**'
-      - 'bin/**'
-      - 'docker/tavern.Dockerfile'
-      - 'go.mod'
-      - 'go.sum'
-      - '.github/workflows/docker-dev.yml'
   workflow_dispatch: ~
 
 env:
@@ -22,22 +14,26 @@ env:
 
 jobs:
   changes:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       devcontainer: ${{ steps.filter.outputs.devcontainer }}
       tavern: ${{ steps.filter.outputs.tavern }}
     steps:
       - uses: actions/checkout@v5
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         id: filter
         with:
           filters: |
             devcontainer:
-              - '.devcontainer/**'
+              - '.devcontainer/Dockerfile'
+              - '.devcontainer/library-scripts/**'
               - '.github/workflows/docker-dev.yml'
             tavern:
               - 'tavern/**'
-              - 'bin/**'
+              - 'bin/socks5/**'
               - 'docker/tavern.Dockerfile'
               - 'go.mod'
               - 'go.sum'
@@ -45,7 +41,7 @@ jobs:
 
   devcontainer-docker:
     needs: [changes]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.devcontainer == 'true'
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || (needs.changes.result == 'success' && needs.changes.outputs.devcontainer == 'true')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -116,7 +112,7 @@ jobs:
 
   tavern-docker:
     needs: [changes]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.tavern == 'true'
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || (needs.changes.result == 'success' && needs.changes.outputs.tavern == 'true')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
