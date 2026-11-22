@@ -1315,9 +1315,9 @@ type BuildTask implements Node {
   """
   builder: Builder!
   """
-  The profile assigned to this build Task
+  The profile assigned to this build Task. Null if the profile was deleted; see profile_at_creation for the original inputs.
   """
-  profile: BuildProfile!
+  profile: BuildProfile
   """
   The compiled artifact produced by this build task, stored as an Asset.
   """

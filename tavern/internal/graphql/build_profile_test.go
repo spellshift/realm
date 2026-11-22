@@ -150,7 +150,7 @@ func TestBuildProfileMutations(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("DeleteBuildProfile_CascadesBuildTasks", func(t *testing.T) {
+	t.Run("DeleteBuildProfile_PreservesBuildTasks", func(t *testing.T) {
 		profile := graph.BuildProfile.Create().
 			SetName("profile-with-tasks").
 			SetDescription("has build tasks referencing it").
@@ -167,6 +167,7 @@ func TestBuildProfileMutations(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildScript("cargo build --release").
 			SetProfileID(profile.ID).
+			SetProfileAtCreation(&builderpb.BuildProfileSnapshot{Name: profile.Name}).
 			SetBuilderID(dbBuilder.ID).
 			SaveX(ctx)
 
@@ -180,8 +181,12 @@ func TestBuildProfileMutations(t *testing.T) {
 		_, err = graph.BuildProfile.Get(ctx, profile.ID)
 		require.Error(t, err)
 
-		_, err = graph.BuildTask.Get(ctx, task.ID)
-		require.Error(t, err, "build tasks referencing the deleted profile should be cascade deleted")
+		remaining, err := graph.BuildTask.Get(ctx, task.ID)
+		require.NoError(t, err, "build tasks should survive deletion of their profile")
+		_, err = remaining.QueryProfile().Only(ctx)
+		require.Error(t, err, "deleted profile edge should be cleared")
+		require.NotNil(t, remaining.ProfileAtCreation)
+		assert.Equal(t, "profile-with-tasks", remaining.ProfileAtCreation.Name)
 	})
 
 	t.Run("DeleteBuildProfile_DefaultBlocked", func(t *testing.T) {

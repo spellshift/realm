@@ -73,7 +73,7 @@ type BuildTaskEdges struct {
 	Bundle *Asset `json:"bundle,omitempty"`
 	// The builder assigned to execute this build task.
 	Builder *Builder `json:"builder,omitempty"`
-	// The profile assigned to this build Task
+	// The profile assigned to this build Task. Null if the profile was deleted; see profile_at_creation for the original inputs.
 	Profile *BuildProfile `json:"profile,omitempty"`
 	// The compiled artifact produced by this build task, stored as an Asset.
 	Artifact *Asset `json:"artifact,omitempty"`
