@@ -36,6 +36,19 @@ describe("TaskCard screenshot tab", () => {
         expect(screen.getByRole("tab", { name: "Screenshots (2)" })).toBeInTheDocument();
     });
 
+    it("selects Screenshots before Output when the task has screenshots", () => {
+        render(<TaskCard task={task(2)} />);
+
+        expect(screen.getByRole("tab", { name: "Screenshots (2)" })).toHaveAttribute("aria-selected", "true");
+        expect(screen.getByRole("tab", { name: "Output" })).toHaveAttribute("aria-selected", "false");
+    });
+
+    it("selects Output when the task has no error or screenshots", () => {
+        render(<TaskCard task={task(0)} />);
+
+        expect(screen.getByRole("tab", { name: "Output" })).toHaveAttribute("aria-selected", "true");
+    });
+
     it("keeps Error ahead of Screenshots and selected by default", () => {
         render(<TaskCard task={task(1, "failed")} />);
 

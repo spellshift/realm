@@ -24,7 +24,7 @@ const taskTabClassName = ({ selected }: { selected: boolean }) =>
     `flex flex-row gap-1 items-center py-2 px-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-400 ${selected ? 'bg-white rounded border-t-2 border-gray-200' : ''}`;
 
 const TaskCard: FC<TaskCardType> = ({ task }) => {
-    const defaultOpenTabIndex = task?.error ? 3 : 2;
+    const defaultOpenTabIndex = task?.error || task?.screenshots?.totalCount > 0 ? 3 : 2;
 
     return (
         <div className="rounded-lg shadow border-gray-200 border-2 w-full text-gray-800">
