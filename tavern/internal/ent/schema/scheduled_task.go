@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"fmt"
+	"strings"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -43,7 +46,13 @@ func (ScheduledTask) Fields() []ent.Field {
 			Comment("Value of parameters that will be used when creating quests from this scheduled task (as a JSON string)."),
 		field.String("run_on_schedule").
 			Default("").
-			Comment("Cron-like schedule for this tome to be automatically queued."),
+			Validate(func(s string) error {
+				if strings.Contains(s, "-") {
+					return fmt.Errorf("cron ranges (\"-\") are not supported in run_on_schedule; use comma-separated values (e.g. 1,2,3,4,5)")
+				}
+				return nil
+			}).
+			Comment("Cron-like schedule for this tome to be automatically queued. Cron ranges (`a-b`) are not supported in `run_on_schedule`; use comma lists (e.g. `1,2,3,4,5` for weekdays). Range semantics were not designed or tested."),
 		field.Bool("disabled").
 			Default(false).
 			Comment("If true, this scheduled task will not be run."),

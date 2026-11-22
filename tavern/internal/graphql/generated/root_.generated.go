@@ -8186,7 +8186,7 @@ input CreateScheduledTaskInput {
   """
   parameters: String
   """
-  Cron-like schedule for this tome to be automatically queued.
+  Cron-like schedule for this tome to be automatically queued. Cron ranges (` + "`" + `a-b` + "`" + `) are not supported in ` + "`" + `run_on_schedule` + "`" + `; use comma lists (e.g. ` + "`" + `1,2,3,4,5` + "`" + ` for weekdays). Range semantics were not designed or tested.
   """
   runOnSchedule: String
   """
@@ -12005,7 +12005,7 @@ type ScheduledTask implements Node {
   """
   parameters: String
   """
-  Cron-like schedule for this tome to be automatically queued.
+  Cron-like schedule for this tome to be automatically queued. Cron ranges (` + "`" + `a-b` + "`" + `) are not supported in ` + "`" + `run_on_schedule` + "`" + `; use comma lists (e.g. ` + "`" + `1,2,3,4,5` + "`" + ` for weekdays). Range semantics were not designed or tested.
   """
   runOnSchedule: String!
   """
@@ -14428,7 +14428,7 @@ input UpdateScheduledTaskInput {
   parameters: String
   clearParameters: Boolean
   """
-  Cron-like schedule for this tome to be automatically queued.
+  Cron-like schedule for this tome to be automatically queued. Cron ranges (` + "`" + `a-b` + "`" + `) are not supported in ` + "`" + `run_on_schedule` + "`" + `; use comma lists (e.g. ` + "`" + `1,2,3,4,5` + "`" + ` for weekdays). Range semantics were not designed or tested.
   """
   runOnSchedule: String
   """

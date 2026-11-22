@@ -288,48 +288,73 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	assert.Equal(t, 0, count, "Tome should NOT be queued at 3:02:56")
 }
 
-func TestHandleTomeAutomation_CronRange(t *testing.T) {
+func TestHandleTomeAutomation_SlowBeaconLookahead(t *testing.T) {
 	ctx := context.Background()
 	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	srv := &Server{graph: client}
-	// 06:05:00
-	now := time.Date(2023, 10, 27, 6, 5, 0, 0, time.UTC)
+	now := time.Date(2023, 10, 27, 8, 58, 30, 0, time.UTC)
 
 	h := client.Host.Create().SetIdentifier("h").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
 	b := client.Beacon.Create().SetIdentifier("b").SetHost(h).SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
 
-	// Range Schedule: "* 6-12 * * *" (Every minute of hours 6-12)
 	t1 := client.Tome.Create().
-		SetName("Range Tome").
+		SetName("Lookahead Tome").
 		SetDescription("Test").
 		SetAuthor("Test").
-		SetEldritch("print('range')").
+		SetEldritch("print('lookahead')").
 		SaveX(ctx)
 	client.ScheduledTask.Create().
-		SetName("Range ST").
+		SetName("Lookahead ST").
 		SetDescription("Test").
 		SetTome(t1).
-		SetRunOnSchedule("* 6-12 * * *").
+		SetRunOnSchedule("0 9,10,11 * * *").
 		SaveX(ctx)
 
-	// 1. Current time 06:05:00. Matches range. Should run.
-	// Interval irrelevant (using 1h to prove lookahead is ignored if range logic applies)
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 1*time.Hour)
+	// A five-minute check-in interval reaches the 09:00 occurrence.
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, 5*time.Minute)
 	count := client.Task.Query().CountX(ctx)
-	assert.Equal(t, 1, count, "Range tome should run at 06:05:00")
+	assert.Equal(t, 1, count)
+	assert.Equal(t, time.Date(2023, 10, 27, 9, 0, 0, 0, time.UTC), client.Quest.Query().OnlyX(ctx).ScheduledOccurrenceAt)
 
 	client.Task.Delete().ExecX(ctx)
 	client.Quest.Delete().ExecX(ctx)
 
-	// 2. Current time 05:55:00. Does NOT match range.
-	// Lookahead (1h) would see 06:00:00.
-	// But Range logic should IGNORE lookahead.
-	early := now.Add(-10 * time.Minute) // 05:55:00
-	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, early, 1*time.Hour)
+	// The same occurrence falls beyond a shorter check-in interval.
+	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, now, time.Minute)
 	count = client.Task.Query().CountX(ctx)
-	assert.Equal(t, 0, count, "Range tome should NOT run at 05:55:00 even with lookahead")
+	assert.Equal(t, 0, count)
+}
+
+func TestScheduledTaskCronRangeValidation(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	tome := client.Tome.Create().SetName("validated-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('validated')").SaveX(ctx)
+	create := func(name, schedule string) error {
+		return client.ScheduledTask.Create().SetName(name).SetDescription("Test").
+			SetTome(tome).SetRunOnSchedule(schedule).Exec(ctx)
+	}
+	const rejected = `cron ranges ("-") are not supported in run_on_schedule`
+	require.ErrorContains(t, create("range-create", "0 9-11 * * *"), rejected)
+	for _, tc := range []struct{ name, schedule string }{
+		{"empty", ""}, {"commas", "0 9,10,11 * * *"},
+		{"step", "*/5 * * * *"}, {"hourly", "0 * * * *"},
+	} {
+		require.NoError(t, create(tc.name, tc.schedule))
+	}
+	st := client.ScheduledTask.Query().Where(scheduledtask.Name("hourly")).OnlyX(ctx)
+	require.ErrorContains(t, client.ScheduledTask.UpdateOne(st).SetRunOnSchedule("0 1-5 * * *").Exec(ctx), rejected)
+	require.Equal(t, "0 * * * *", client.ScheduledTask.GetX(ctx, st.ID).RunOnSchedule)
+	step := client.ScheduledTask.Query().Where(scheduledtask.Name("step")).OnlyX(ctx)
+	require.ErrorContains(t, client.ScheduledTask.Update().
+		Where(scheduledtask.IDIn(st.ID, step.ID)).
+		SetRunOnSchedule("0 1-5 * * *").Exec(ctx), rejected)
+	require.Equal(t, "0 * * * *", client.ScheduledTask.GetX(ctx, st.ID).RunOnSchedule)
+	require.Equal(t, "*/5 * * * *", client.ScheduledTask.GetX(ctx, step.ID).RunOnSchedule)
+	require.NoError(t, client.ScheduledTask.UpdateOne(st).SetRunOnSchedule("0 1,2,3,4,5 * * *").Exec(ctx))
 }
 
 func TestHandleTomeAutomation_SharedOccurrence(t *testing.T) {
@@ -460,6 +485,42 @@ func TestCreateAutomatedTaskOnceCronDuplicateQuestsSelectLowestID(t *testing.T) 
 	require.Equal(t, first.ID, client.Task.Query().OnlyX(ctx).QueryQuest().OnlyIDX(ctx))
 }
 
+func TestCreateAutomatedTaskOnceCronDeduplicatesAcrossQuests(t *testing.T) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+	srv := &Server{graph: client}
+	h := client.Host.Create().SetIdentifier("cross-quest-host").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetIdentifier("cross-quest-beacon").SetHost(h).
+		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
+	tome := client.Tome.Create().SetName("cross-quest-tome").SetDescription("Test").
+		SetAuthor("Test").SetEldritch("print('cross')").SaveX(ctx)
+	st := client.ScheduledTask.Create().SetName("cross-quest-schedule").SetDescription("Test").SetTome(tome).SaveX(ctx)
+	at := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	first := client.Quest.Create().SetName("lower-id").SetTome(tome).SetScheduledTask(st).
+		SetScheduledOccurrenceAt(at).SaveX(ctx)
+	second := client.Quest.Create().SetName("higher-id").SetTome(tome).SetScheduledTask(st).
+		SetScheduledOccurrenceAt(at).SaveX(ctx)
+	client.Task.Create().SetQuest(second).SetBeacon(b).SaveX(ctx)
+
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, h.ID, &at))
+	require.Equal(t, 1, client.Task.Query().Where(task.HasBeaconWith(beacon.ID(b.ID)),
+		task.HasQuestWith(quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)), quest.ScheduledOccurrenceAt(at))).CountX(ctx))
+	require.Equal(t, 0, first.QueryTasks().CountX(ctx))
+	require.Equal(t, 1, second.QueryTasks().CountX(ctx))
+	require.Equal(t, 2, st.QueryQuests().CountX(ctx))
+
+	otherAt := at.Add(time.Hour)
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, h.ID, &otherAt))
+	require.Equal(t, 1, client.Task.Query().Where(task.HasBeaconWith(beacon.ID(b.ID)),
+		task.HasQuestWith(quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)), quest.ScheduledOccurrenceAt(otherAt))).CountX(ctx))
+
+	otherSchedule := client.ScheduledTask.Create().SetName("other-cross-quest-schedule").SetDescription("Test").SetTome(tome).SaveX(ctx)
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, otherSchedule.ID, b.ID, h.ID, &at))
+	require.Equal(t, 1, client.Task.Query().Where(task.HasBeaconWith(beacon.ID(b.ID)),
+		task.HasQuestWith(quest.HasScheduledTaskWith(scheduledtask.ID(otherSchedule.ID)), quest.ScheduledOccurrenceAt(at))).CountX(ctx))
+}
+
 func TestCreateAutomatedTaskOnceEventCallbacksCreateSeparateQuests(t *testing.T) {
 	ctx := context.Background()
 	client := enttest.OpenTempDB(t)
@@ -481,6 +542,12 @@ func TestCreateAutomatedTaskOnceEventCallbacksCreateSeparateQuests(t *testing.T)
 	for _, q := range quests {
 		require.Equal(t, b.ID, q.QueryTasks().OnlyX(ctx).QueryBeacon().OnlyIDX(ctx))
 	}
+
+	at := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, srv.createAutomatedTaskOnce(ctx, st.ID, b.ID, h.ID, &at))
+	require.Equal(t, 3, client.Task.Query().CountX(ctx))
+	require.Equal(t, 1, client.Task.Query().Where(task.HasBeaconWith(beacon.ID(b.ID)),
+		task.HasQuestWith(quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)), quest.ScheduledOccurrenceAt(at))).CountX(ctx))
 }
 
 func TestCreateAutomatedTaskOnce_ConcurrentCallbacks(t *testing.T) {

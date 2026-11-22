@@ -92,17 +92,9 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		if err != nil {
 			continue
 		}
-		var occurrence time.Time
-		if strings.Contains(st.RunOnSchedule, "-") {
-			minute := now.Truncate(time.Minute)
-			if sched.Next(minute.Add(-time.Second)).Equal(minute) {
-				occurrence = minute
-			}
-		} else {
-			occurrence = sched.Next(now.Add(-time.Second))
-			if occurrence.After(cutoff) {
-				occurrence = time.Time{}
-			}
+		occurrence := sched.Next(now.Add(-time.Second))
+		if occurrence.After(cutoff) {
+			occurrence = time.Time{}
 		}
 		if !occurrence.IsZero() {
 			srv.createAutomatedTask(ctx, st.ID, beaconID, hostID, &occurrence)
@@ -141,14 +133,9 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 	})
 
 	var q *ent.Quest
+	var at time.Time
 	if occurrence != nil {
-		at := occurrence.UTC()
-		// Concurrent check-ins may create duplicate quests: no unique constraint by design.
-		// Since Task dedup checks only the lowest-ID Quest returned here, a duplicate Quest can give
-		// a beacon a second Task (running the tome twice) on another check-in in the same window;
-		// scoping the Exist check to the schedule and occurrence time would close that gap.
-		// If needed, add a composite unique index on (scheduled_occurrence_at,
-		// scheduled_task_quests), then select, create, and select again on ent.IsConstraintError.
+		at = occurrence.UTC()
 		q, err = st.QueryQuests().Where(quest.ScheduledOccurrenceAt(at)).Order(ent.Asc(quest.FieldID)).First(ctx)
 		if err != nil && !ent.IsNotFound(err) {
 			return err
@@ -160,7 +147,7 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 			SetTome(tome).SetScheduledTask(st).SetParameters(st.Parameters).
 			SetParamDefsAtCreation(tome.ParamDefs).SetEldritchAtCreation(tome.Eldritch)
 		if occurrence != nil {
-			create.SetScheduledOccurrenceAt(occurrence.UTC())
+			create.SetScheduledOccurrenceAt(at)
 		}
 		q, err = create.Save(ctx)
 		if err != nil {
@@ -175,8 +162,8 @@ func (srv *Server) createAutomatedTaskOnce(ctx context.Context, scheduledTaskID,
 
 	if occurrence != nil {
 		exists, err := client.Task.Query().Where(
-			task.HasQuestWith(quest.ID(q.ID)),
 			task.HasBeaconWith(beacon.ID(beaconID)),
+			task.HasQuestWith(quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)), quest.ScheduledOccurrenceAt(at)),
 		).Exist(ctx)
 		if err != nil {
 			return err

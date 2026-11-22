@@ -32,7 +32,7 @@ type ScheduledTask struct {
 	RunOnFirstHostCallback bool `json:"run_on_first_host_callback,omitempty"`
 	// Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
 	Parameters string `json:"parameters,omitempty"`
-	// Cron-like schedule for this tome to be automatically queued.
+	// Cron-like schedule for this tome to be automatically queued. Cron ranges (`a-b`) are not supported in `run_on_schedule`; use comma lists (e.g. `1,2,3,4,5` for weekdays). Range semantics were not designed or tested.
 	RunOnSchedule string `json:"run_on_schedule,omitempty"`
 	// If true, this scheduled task will not be run.
 	Disabled bool `json:"disabled,omitempty"`

@@ -270,6 +270,11 @@ func (stc *ScheduledTaskCreate) check() error {
 	if _, ok := stc.mutation.RunOnSchedule(); !ok {
 		return &ValidationError{Name: "run_on_schedule", err: errors.New(`ent: missing required field "ScheduledTask.run_on_schedule"`)}
 	}
+	if v, ok := stc.mutation.RunOnSchedule(); ok {
+		if err := scheduledtask.RunOnScheduleValidator(v); err != nil {
+			return &ValidationError{Name: "run_on_schedule", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.run_on_schedule": %w`, err)}
+		}
+	}
 	if _, ok := stc.mutation.Disabled(); !ok {
 		return &ValidationError{Name: "disabled", err: errors.New(`ent: missing required field "ScheduledTask.disabled"`)}
 	}

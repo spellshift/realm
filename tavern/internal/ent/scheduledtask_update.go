@@ -283,6 +283,11 @@ func (stu *ScheduledTaskUpdate) check() error {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.parameters": %w`, err)}
 		}
 	}
+	if v, ok := stu.mutation.RunOnSchedule(); ok {
+		if err := scheduledtask.RunOnScheduleValidator(v); err != nil {
+			return &ValidationError{Name: "run_on_schedule", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.run_on_schedule": %w`, err)}
+		}
+	}
 	if stu.mutation.TomeCleared() && len(stu.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ScheduledTask.tome"`)
 	}
@@ -730,6 +735,11 @@ func (stuo *ScheduledTaskUpdateOne) check() error {
 	if v, ok := stuo.mutation.Parameters(); ok {
 		if err := scheduledtask.ParametersValidator(v); err != nil {
 			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.parameters": %w`, err)}
+		}
+	}
+	if v, ok := stuo.mutation.RunOnSchedule(); ok {
+		if err := scheduledtask.RunOnScheduleValidator(v); err != nil {
+			return &ValidationError{Name: "run_on_schedule", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.run_on_schedule": %w`, err)}
 		}
 	}
 	if stuo.mutation.TomeCleared() && len(stuo.mutation.TomeIDs()) > 0 {
