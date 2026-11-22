@@ -233,13 +233,17 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 		}
 
 		// TRACE: Server Agent Recv
-		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV); err != nil {
+		if traced, err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV); err != nil {
 			portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Recv)", "error", err)
+		} else {
+			mote = traced
 		}
 
 		// TRACE: Server Agent Pub
-		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_PUB); err != nil {
+		if traced, err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_PUB); err != nil {
 			portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Pub)", "error", err)
+		} else {
+			mote = traced
 		}
 
 		// Publish to portal output topic
@@ -288,13 +292,17 @@ func sendPortalInput(ctx context.Context, portalID int, sendToAgent ssh.AgentSen
 			}
 
 			// TRACE: Server Agent Sub
-			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
+			if traced, err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
 				portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Sub)", "error", err)
+			} else {
+				mote = traced
 			}
 
 			// TRACE: Server Agent Send
-			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SEND); err != nil {
+			if traced, err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SEND); err != nil {
 				portalLog.ErrorContext(ctx, "failed to add trace event (Server Agent Send)", "error", err)
+			} else {
+				mote = traced
 			}
 
 			portalLog.TraceContext(ctx, "queuing portal input mote for agent", "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())

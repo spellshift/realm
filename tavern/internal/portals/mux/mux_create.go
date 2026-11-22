@@ -184,6 +184,9 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 			cancel()
 		}
 
+		m.cleanupTopic(topicIn)
+		m.cleanupTopic(topicOut)
+
 		log.DebugContext(teardownCtx, "tearing down mux portal subscription", "topic", topicIn, "subscription", subName)
 
 		// Update DB to Closed using ID

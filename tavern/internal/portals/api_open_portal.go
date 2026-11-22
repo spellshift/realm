@@ -193,13 +193,17 @@ func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_
 		}
 
 		// TRACE: Server User Recv
-		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_RECV); err != nil {
+		if traced, err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_RECV); err != nil {
 			log.ErrorContext(ctx, "failed to add trace event (Server User Recv)", "error", err)
+		} else {
+			mote = traced
 		}
 
 		// TRACE: Server User Pub
-		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_PUB); err != nil {
+		if traced, err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_PUB); err != nil {
 			log.ErrorContext(ctx, "failed to add trace event (Server User Pub)", "error", err)
+		} else {
+			mote = traced
 		}
 
 		// Publish to portal input topic
@@ -229,13 +233,17 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 			}
 
 			// TRACE: Server User Sub
-			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SUB); err != nil {
+			if traced, err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SUB); err != nil {
 				log.ErrorContext(ctx, "failed to add trace event (Server User Sub)", "error", err)
+			} else {
+				mote = traced
 			}
 
 			// TRACE: Server User Send
-			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SEND); err != nil {
+			if traced, err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SEND); err != nil {
 				log.ErrorContext(ctx, "failed to add trace event (Server User Send)", "error", err)
+			} else {
+				mote = traced
 			}
 
 			log.TraceContext(ctx, "sending portal output mote to operator", "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())

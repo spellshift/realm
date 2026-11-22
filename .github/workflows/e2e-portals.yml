@@ -8,6 +8,9 @@ on:
     branches: [ main ]
   merge_group:
 
+permissions:
+  contents: read
+
 jobs:
   e2e_portals_test:
     runs-on: ubuntu-latest
@@ -113,7 +116,8 @@ jobs:
 
     - name: 🌐 Start Socks5 Proxy
       env:
-        TAVERN_API_TOKEN: ${{ secrets.TEST_TAVERN_API_TOKEN }}
+        # Local Tavern runs with auth bypass enabled; provide a dummy token so socks5_bin skips interactive RDA
+        TAVERN_API_TOKEN: "e2e-bypass-token"
       run: |
         ./socks5_bin -portal $PORTAL_ID -listen 127.0.0.1:1080 -upstream 127.0.0.1:8000 &
         echo "Socks5 Proxy started on port 1080"

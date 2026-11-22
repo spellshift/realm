@@ -11,6 +11,7 @@ import (
 // OpenPortal opens an existing portal for viewing (Client side).
 func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	ctx = logging.WithStreamAttrs(ctx, slog.Int("portal_id", portalID))
+	topicIn := m.TopicIn(portalID)
 	topicOut := m.TopicOut(portalID)
 	subName := m.SubName(topicOut)
 
@@ -18,6 +19,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 		m.subMgr.Lock()
 		m.subMgr.refs[subName]--
 		shouldShutdown := false
+		hasLocalPortal := false
 		var cancel context.CancelFunc
 		if m.subMgr.refs[subName] <= 0 {
 			if _, ok := m.subMgr.active[subName]; ok {
@@ -27,12 +29,19 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 				delete(m.subMgr.cancelFuncs, subName)
 				shouldShutdown = true
 			}
+			_, hasLocalPortal = m.subMgr.active[m.SubName(topicIn)]
 		}
 		m.subMgr.Unlock()
 
-		if shouldShutdown && cancel != nil {
-			log.DebugContext(logging.DetachContext(ctx), "closing mux portal output subscription", "topic", topicOut, "subscription", subName)
-			cancel()
+		if shouldShutdown {
+			if cancel != nil {
+				log.DebugContext(logging.DetachContext(ctx), "closing mux portal output subscription", "topic", topicOut, "subscription", subName)
+				cancel()
+			}
+			if !hasLocalPortal {
+				m.cleanupTopic(topicOut)
+				m.cleanupTopic(topicIn)
+			}
 		}
 	}
 
