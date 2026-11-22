@@ -43,6 +43,13 @@ func TestUploadTomes(t *testing.T) {
 	require.NotNil(t, rcTome)
 	assert.Equal(t, tome.TacticSHELL_RC, rcTome.Tactic)
 	assert.Contains(t, rcTome.Eldritch, "def ls(")
+
+	installTome := graph.Tome.Query().
+		Where(tome.Name("Install Service")).
+		OnlyX(ctx)
+	assert.Equal(t, tome.TacticPERSISTENCE, installTome.Tactic)
+	assert.Contains(t, installTome.Eldritch, "json.decode(input_params['service_configs'])")
+	assert.Contains(t, installTome.ParamDefs, `"name":"service_configs"`)
 }
 
 func TestUploadTomes_InvalidTomeDoesNotSkipOthers(t *testing.T) {
