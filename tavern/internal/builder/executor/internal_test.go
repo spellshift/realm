@@ -1,6 +1,9 @@
 package executor
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"os"
 	"path/filepath"
 	"testing"
@@ -117,4 +120,70 @@ func TestPrepareBuildCache(t *testing.T) {
 	require.Nil(t, hostConfig)
 	require.Empty(t, env)
 	require.Equal(t, spec, cached)
+}
+
+func tomeArchive(t *testing.T, files map[string]string) []byte {
+	t.Helper()
+
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gw)
+	for name, body := range files {
+		require.NoError(t, tw.WriteHeader(&tar.Header{Name: name, Typeflag: tar.TypeReg, Mode: 0o644, Size: int64(len(body))}))
+		_, err := tw.Write([]byte(body))
+		require.NoError(t, err)
+	}
+	require.NoError(t, tw.Close())
+	require.NoError(t, gw.Close())
+	return buf.Bytes()
+}
+
+func prepareTomeDir(t *testing.T, files map[string]string, params string) string {
+	t.Helper()
+
+	dir, err := prepareMountDir(BuildSpec{Tomes: []TomeData{{ID: 7, Contents: tomeArchive(t, files), Params: params}}})
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	require.NoError(t, err)
+	return filepath.Join(dir, "tomes", "7")
+}
+
+func prepareTome(t *testing.T, mainSrc, params string) string {
+	t.Helper()
+
+	out, err := os.ReadFile(filepath.Join(prepareTomeDir(t, map[string]string{"main.eldritch": mainSrc}, params), "main.eldritch"))
+	require.NoError(t, err)
+	return string(out)
+}
+
+func TestPrepareMountDir_PrependsInputParams(t *testing.T) {
+	params := `{"b":"say \"hi\" \\ back","a":"line1\nline2\ttab\r","u":"héllo 世界 😀 <&>","c":"\u0001\u007f","d":"nul\u0000end","e":"trail\\","k\"ey\\\n":"v"}`
+	fixture, err := os.ReadFile(filepath.Join("testdata", "input_params_prelude.eldritch"))
+	require.NoError(t, err)
+
+	tomeDir := prepareTomeDir(t, map[string]string{"main.eldritch": "print(input_params)"}, params)
+
+	got, err := os.ReadFile(filepath.Join(tomeDir, "main.eldritch"))
+	require.NoError(t, err)
+	require.Equal(t, string(fixture)+"print(input_params)", string(got))
+
+	written, err := os.ReadFile(filepath.Join(tomeDir, "params.json"))
+	require.NoError(t, err)
+	require.Equal(t, params, string(written))
+}
+
+func TestPrepareMountDir_MissingMainWithParamsIsNoop(t *testing.T) {
+	tomeDir := prepareTomeDir(t, map[string]string{"other.txt": "x"}, `{"a":"b"}`)
+
+	_, err := os.Stat(filepath.Join(tomeDir, "main.eldritch"))
+	require.True(t, os.IsNotExist(err))
+	written, err := os.ReadFile(filepath.Join(tomeDir, "params.json"))
+	require.NoError(t, err)
+	require.Equal(t, `{"a":"b"}`, string(written))
+}
+
+func TestPrepareMountDir_EmptyParamsLeaveMainUntouched(t *testing.T) {
+	src := "print('x')\n"
+	for _, params := range []string{"", "{}", "not json", `{"a":1}`} {
+		require.Equal(t, src, prepareTome(t, src, params), "params=%q", params)
+	}
 }
