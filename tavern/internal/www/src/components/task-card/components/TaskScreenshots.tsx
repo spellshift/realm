@@ -81,24 +81,26 @@ const TaskScreenshots: FC<TaskScreenshotsProps> = ({ taskId, hostId }) => {
             key: "createdAt",
             label: "Captured",
             width: "minmax(120px,1fr)",
-            render: screenshot => capturedAt(screenshot.createdAt),
+            render: screenshot => <div className="flex h-full items-center">{capturedAt(screenshot.createdAt)}</div>,
         },
         {
             key: "size",
             label: "Size",
             width: "minmax(60px,0.5fr)",
-            render: screenshot => formatBytes(screenshot.size),
+            render: screenshot => <div className="flex h-full items-center">{formatBytes(screenshot.size)}</div>,
         },
         {
             key: "download",
             label: "",
             width: "40px",
             render: screenshot => (
-                <Tooltip label={`Download ${screenshot.name}`}>
-                    <a href={imageURL(screenshot.id)} download={screenshot.name} aria-label={`Download ${screenshot.name}`} className="p-1 rounded text-gray-600 hover:bg-gray-100 hover:text-purple-700">
-                        <ArrowDownToLine className="w-4 h-4" />
-                    </a>
-                </Tooltip>
+                <div className="flex h-full items-center">
+                    <Tooltip label={`Download ${screenshot.name}`}>
+                        <a href={imageURL(screenshot.id)} download={screenshot.name} aria-label={`Download ${screenshot.name}`} className="p-1 rounded text-gray-600 hover:bg-gray-100 hover:text-purple-700">
+                            <ArrowDownToLine className="w-4 h-4" />
+                        </a>
+                    </Tooltip>
+                </div>
             ),
         },
     ], []);
