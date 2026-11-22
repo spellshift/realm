@@ -212,7 +212,7 @@ func (bt *BuildTask) Profile(ctx context.Context) (*BuildProfile, error) {
 	if IsNotLoaded(err) {
 		result, err = bt.QueryProfile().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
 }
 
 func (bt *BuildTask) Artifact(ctx context.Context) (*Asset, error) {

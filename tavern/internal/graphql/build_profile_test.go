@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
@@ -146,6 +148,45 @@ func TestBuildProfileMutations(t *testing.T) {
 
 		_, err = graph.BuildProfile.Get(ctx, profile.ID)
 		require.Error(t, err)
+	})
+
+	t.Run("DeleteBuildProfile_PreservesBuildTasks", func(t *testing.T) {
+		profile := graph.BuildProfile.Create().
+			SetName("profile-with-tasks").
+			SetDescription("has build tasks referencing it").
+			SaveX(ctx)
+
+		dbBuilder := graph.Builder.Create().
+			SetIdentifier("builder-cascade-test").
+			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
+			SetPollInterval(5).
+			SaveX(ctx)
+
+		task := graph.BuildTask.Create().
+			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
+			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
+			SetBuildScript("cargo build --release").
+			SetProfileID(profile.ID).
+			SetProfileAtCreation(&builderpb.BuildProfileSnapshot{Name: profile.Name}).
+			SetBuilderID(dbBuilder.ID).
+			SaveX(ctx)
+
+		var resp struct {
+			DeleteBuildProfile string
+		}
+		err := gqlClient.Post(deleteMut, &resp, client.Var("profileID", strconv.Itoa(profile.ID)))
+		require.NoError(t, err, "deleting a profile with associated build tasks should not fail with a foreign key constraint error")
+		assert.Equal(t, strconv.Itoa(profile.ID), resp.DeleteBuildProfile)
+
+		_, err = graph.BuildProfile.Get(ctx, profile.ID)
+		require.Error(t, err)
+
+		remaining, err := graph.BuildTask.Get(ctx, task.ID)
+		require.NoError(t, err, "build tasks should survive deletion of their profile")
+		_, err = remaining.QueryProfile().Only(ctx)
+		require.Error(t, err, "deleted profile edge should be cleared")
+		require.NotNil(t, remaining.ProfileAtCreation)
+		assert.Equal(t, "profile-with-tasks", remaining.ProfileAtCreation.Name)
 	})
 
 	t.Run("DeleteBuildProfile_DefaultBlocked", func(t *testing.T) {
