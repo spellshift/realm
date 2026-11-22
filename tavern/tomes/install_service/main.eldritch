@@ -398,7 +398,6 @@ def get_executable_paths(name):
             return [f"/usr/bin/{name}", f"/usr/sbin/{name}"]
         else:
             return [f"/bin/{name}", f"/sbin/{name}"]
-        return subdir+name
     elif sys.is_macos():
         return[ "/var/root/"+name]
     elif sys.is_windows():
