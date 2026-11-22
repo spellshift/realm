@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"realm.pub"
 	"realm.pub/tavern/internal/builder/executor"
 )
 
@@ -21,12 +22,15 @@ func TestLocalExecutor_ImplementsInterface(t *testing.T) {
 
 func TestLocalExecutor_RewritesRecipePathIntoPrivateWorkspace(t *testing.T) {
 	spec := executor.BuildSpec{
-		SetupScript:     "mkdir -p /tmp/realm-build/realm",
-		PreBuildScript:  "test -d /tmp/realm-build/realm",
+		SetupScript:     "mkdir -p /tmp/realm-build/realm && test \"/tmp/realm-build-custom/foo\" = '/tmp/realm-build-custom/foo'",
+		PreBuildScript:  "test -d /tmp/realm-build/realm && test -d \"$REALM_TOMES_DIR\"",
 		BuildScript:     "printf 'binary' > /tmp/realm-build/realm/imix",
-		PostBuildScript: "test \"$ARTIFACT_PATH\" = /tmp/realm-build/realm/imix && test -s \"$ARTIFACT_PATH\"",
+		PostBuildScript: "test \"$ARTIFACT_PATH\" = /tmp/realm-build/realm/imix && test -s \"$ARTIFACT_PATH\" && test \"$CUSTOM_BUILD_DIR\" = /tmp/realm-build-custom",
 		ArtifactPath:    "/tmp/realm-build/realm/imix",
-		Env:             []string{"ARTIFACT_PATH=/tmp/realm-build/realm/imix"},
+		Env: []string{
+			"ARTIFACT_PATH=/tmp/realm-build/realm/imix",
+			"CUSTOM_BUILD_DIR=/tmp/realm-build-custom",
+		},
 	}
 	outputCh := make(chan string, 10)
 	errorCh := make(chan string, 10)
@@ -335,4 +339,12 @@ func TestLocalExecutor_Build_ContextCancel(t *testing.T) {
 	assert.Error(t, err)
 	assert.NotNil(t, result)
 	assert.Less(t, elapsed, 5*time.Second, "cancellation did not terminate sleep in time")
+}
+
+func TestExtractAgentSource_WritesEmbeddedTree(t *testing.T) {
+	dstDir := filepath.Join(t.TempDir(), "realm")
+	require.NoError(t, realm.ExtractAgentSource(dstDir))
+	for _, p := range []string{"implants/Cargo.toml", "implants/imix/Cargo.toml", "tavern/internal/c2/proto/c2.proto"} {
+		assert.FileExists(t, filepath.Join(dstDir, filepath.FromSlash(p)))
+	}
 }

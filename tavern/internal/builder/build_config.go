@@ -9,9 +9,6 @@ import (
 )
 
 const (
-	// DefaultRealmRepoURL is the default git repository URL for building realm agents.
-	DefaultRealmRepoURL = "https://github.com/spellshift/realm.git"
-
 	// DefaultBuildImage is the default Docker image for building agents.
 	DefaultBuildImage = "spellshift/devcontainer:main"
 

@@ -20,10 +20,15 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
+	"realm.pub"
 	"realm.pub/tavern/internal/logging"
 )
 
 var dockerLog = logging.For("builder.docker")
+
+// containerBuildDir is where recipes expect the build workspace; it matches
+// builder.DockerBuildDir, which this package cannot import.
+const containerBuildDir = "/tmp/realm-build"
 
 // DockerExecutor runs build tasks inside Docker containers.
 // It pulls the specified image, creates a container using the build script
@@ -78,6 +83,20 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	defer os.RemoveAll(tmpDir)
 
+	// Stage the agent source as <srcRoot>/realm-build/realm so it can be copied
+	// straight to /tmp/realm-build/realm in the container.
+	srcRoot, err := os.MkdirTemp("", "realm-src-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create agent source dir: %w", err)
+	}
+	defer os.RemoveAll(srcRoot)
+	if err := os.Chmod(srcRoot, 0o755); err != nil {
+		return nil, fmt.Errorf("failed to set agent source dir permissions: %w", err)
+	}
+	if err := realm.ExtractAgentSource(filepath.Join(srcRoot, path.Base(containerBuildDir), "realm")); err != nil {
+		return nil, fmt.Errorf("failed to extract agent source: %w", err)
+	}
+
 	uncachedSpec := spec
 	hostConfig, cacheEnv, cachedSpec, cacheErr := prepareBuildCache(spec)
 	if cacheErr != nil {
@@ -128,6 +147,9 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	// Copy the prepared tmp dir contents into /mnt inside the container.
 	if err := d.copyDirToContainer(ctx, containerID, tmpDir, "/mnt"); err != nil {
 		return nil, fmt.Errorf("failed to copy build dir to container: %w", err)
+	}
+	if err := d.copyDirToContainer(ctx, containerID, srcRoot, path.Dir(containerBuildDir)); err != nil {
+		return nil, fmt.Errorf("failed to copy agent source to container: %w", err)
 	}
 
 	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {

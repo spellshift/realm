@@ -2,7 +2,6 @@ package schema
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"text/template"
 
@@ -64,7 +63,7 @@ func (BuildProfile) Fields() []ent.Field {
 			Default("echo 'no prebuild set'").
 			Comment("Bash script to run before build command"),
 		field.String("setupscript").
-			Default(fmt.Sprintf("mkdir -p {{.BuildDir}} && cd {{.BuildDir}} && git clone %s realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true", builder.DefaultRealmRepoURL)).
+			Default("cd {{.BuildDir}}/realm/implants/imix && rm -rf install_scripts/* && cp -r $REALM_TOMES_DIR/* install_scripts/ 2>/dev/null || true").
 			Comment("Bash script to run before prebuild script. Go template, supports the same values as build_script (BuildDir, BuildCommand, ArtifactPath, TargetOS, TargetFormat, TargetTriple)."),
 		field.String("postbuildscript").
 			Default("echo 'no postbuild set'").

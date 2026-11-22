@@ -205,7 +205,7 @@ async function main() {
     await page.waitForTimeout(400);
 
     // Fill Setup script, Build script, and Artifact path
-    const setupScriptArea = page.getByText('mkdir -p {{.BuildDir}}');
+    const setupScriptArea = page.getByText('cd {{.BuildDir}}/realm/implants/imix');
     await setupScriptArea.fill('echo "setup ready"');
 
     const buildScriptArea = page.getByText('{{.BuildCommand}}');
