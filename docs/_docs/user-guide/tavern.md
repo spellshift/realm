@@ -28,7 +28,21 @@ To enable the legacy local browser-based OAuth flow, you can set the `TAVERN_USE
 
 ## MCP (Model Context Protocol) Integration
 
-Tavern supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), allowing AI assistants and LLM-based tools to interact with your Tavern deployment. The MCP server must be enabled by an administrator (see the [Admin Guide](/admin-guide/tavern#ai-mcp-server)).
+Tavern supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/), allowing AI assistants and LLM-based tools to interact with your Tavern deployment. The MCP server is disabled by default and must be enabled by an administrator.
+
+### Enabling the MCP Server
+
+Administrators enable the MCP server by setting the `ENABLE_AI_MCP` environment variable (any value) when starting Tavern:
+
+```sh
+ENABLE_AI_MCP=1 go run ./tavern
+```
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| ENABLE_AI_MCP | Set to any value to enable the MCP server at `/mcp`. | Disabled | No |
+
+The MCP server requires authentication (OAuth session cookie or API access token), and all queries are executed in the context of the authenticated user.
 
 ### Connecting an MCP Client
 
