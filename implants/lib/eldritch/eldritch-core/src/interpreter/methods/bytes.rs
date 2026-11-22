@@ -1,8 +1,12 @@
 use super::ArgCheck;
 use crate::ast::Value;
 use alloc::string::String;
-use alloc::vec::Vec;
 
+/// Decodes UTF-16LE bytes into a UTF-8 `String`.
+///
+/// Per RFC 2781 for explicit-endianness UTF-16LE, a leading BOM (`0xFF 0xFE`)
+/// is preserved as U+FEFF rather than stripped. Returns an error if the input
+/// length is odd or contains an unpaired UTF-16 surrogate.
 pub fn decode_utf16le_bytes(b: &[u8]) -> Result<String, String> {
     if !b.len().is_multiple_of(2) {
         return Err(
@@ -10,12 +14,18 @@ pub fn decode_utf16le_bytes(b: &[u8]) -> Result<String, String> {
         );
     }
 
-    let utf16_units: Vec<u16> = b
+    let units = b
         .chunks_exact(2)
-        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
-        .collect();
+        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]));
 
-    String::from_utf16(&utf16_units).map_err(|e| alloc::format!("UnicodeDecodeError: {}", e))
+    let mut out = String::with_capacity(b.len() / 2);
+    for decoded in core::char::decode_utf16(units) {
+        match decoded {
+            Ok(c) => out.push(c),
+            Err(e) => return Err(alloc::format!("UnicodeDecodeError: {}", e)),
+        }
+    }
+    Ok(out)
 }
 
 pub fn handle_bytes_methods(
@@ -33,7 +43,7 @@ pub fn handle_bytes_methods(
                     Value::String(enc) => enc.to_lowercase().replace(['-', '_'], ""),
                     Value::Bytes(b) => core::str::from_utf8(b)
                         .map_err(|_| {
-                            "TypeError: decode() argument 'encoding' must be str".to_string()
+                            String::from("TypeError: decode() argument 'encoding' must be str")
                         })?
                         .to_lowercase()
                         .replace(['-', '_'], ""),
