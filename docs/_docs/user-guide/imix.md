@@ -300,13 +300,44 @@ At runtime, you may use the `IMIX_LOG` environment variable to control log level
 
 ## Installation
 
-The install subcommand executes embedded tomes similar to golem.
-It will loop through all embedded files looking for main.eldritch.
-Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
+The `install` subcommand runs each embedded `main.eldritch` script in turn. Imix embeds scripts from `implants/imix/install_scripts` when it is built; that directory contains only `.gitkeep` by default.
 
 To bundle an installation script from Tavern, add the **Install Service** tome to a build profile in the builder. Enter a service name, description, and executable name. Executable arguments and a Windows display name are optional. The builder configures one service; the tome copies the agent binary to the selected service path before installing it.
 
-Other bundled tomes can also run during `imix install`. The source directory for build-time installation scripts is `realm/implants/imix/install_scripts`.
+For a manual build, copy the default service install script from Tavern before compiling Imix. Run these commands from the repository root:
+
+```bash
+mkdir -p implants/imix/install_scripts/install_service
+cp tavern/tomes/install_service/main.eldritch implants/imix/install_scripts/install_service/main.eldritch
+```
+
+The copied script's `main()` reads builder supplied `input_params`, so replace its `main()` function and final call with a configuration for the manual build. For example, this configures two possible services:
+
+```python
+def main():
+    configs = [
+        {
+            "name": "imix_svc",
+            "windows_display_name": "Realm Agent",
+            "description": "Realm agent service",
+            "executable_name": "imixd",
+            "executable_args": "",
+        },
+        {
+            "name": "imix_backup",
+            "windows_display_name": "Realm Backup Agent",
+            "description": "Realm backup agent service",
+            "executable_name": "imix_backupd",
+            "executable_args": "--quiet",
+        },
+    ]
+    parse_and_persist(configs)
+    print("Implant copied, you may now delete this binary.")
+
+main()
+```
+
+`parse_and_persist` checks whether any configured service executable is already running. If none is, it randomly chooses **one** configuration to install. Build Imix after editing the script, then run the resulting binary with `install` on the target system. Other scripts placed under `install_scripts` can also run during installation.
 
 This feature is currently under active development, and may change. We'll do our best to keep these docs updates in the meantime.
 
