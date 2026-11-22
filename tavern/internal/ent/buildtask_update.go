@@ -327,6 +327,14 @@ func (btu *BuildTaskUpdate) SetProfileID(id int) *BuildTaskUpdate {
 	return btu
 }
 
+// SetNillableProfileID sets the "profile" edge to the BuildProfile entity by ID if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableProfileID(id *int) *BuildTaskUpdate {
+	if id != nil {
+		btu = btu.SetProfileID(*id)
+	}
+	return btu
+}
+
 // SetProfile sets the "profile" edge to the BuildProfile entity.
 func (btu *BuildTaskUpdate) SetProfile(b *BuildProfile) *BuildTaskUpdate {
 	return btu.SetProfileID(b.ID)
@@ -445,9 +453,6 @@ func (btu *BuildTaskUpdate) check() error {
 	}
 	if btu.mutation.BuilderCleared() && len(btu.mutation.BuilderIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BuildTask.builder"`)
-	}
-	if btu.mutation.ProfileCleared() && len(btu.mutation.ProfileIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "BuildTask.profile"`)
 	}
 	return nil
 }
@@ -949,6 +954,14 @@ func (btuo *BuildTaskUpdateOne) SetProfileID(id int) *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetNillableProfileID sets the "profile" edge to the BuildProfile entity by ID if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableProfileID(id *int) *BuildTaskUpdateOne {
+	if id != nil {
+		btuo = btuo.SetProfileID(*id)
+	}
+	return btuo
+}
+
 // SetProfile sets the "profile" edge to the BuildProfile entity.
 func (btuo *BuildTaskUpdateOne) SetProfile(b *BuildProfile) *BuildTaskUpdateOne {
 	return btuo.SetProfileID(b.ID)
@@ -1080,9 +1093,6 @@ func (btuo *BuildTaskUpdateOne) check() error {
 	}
 	if btuo.mutation.BuilderCleared() && len(btuo.mutation.BuilderIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BuildTask.builder"`)
-	}
-	if btuo.mutation.ProfileCleared() && len(btuo.mutation.ProfileIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "BuildTask.profile"`)
 	}
 	return nil
 }

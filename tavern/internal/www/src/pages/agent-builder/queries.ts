@@ -121,7 +121,7 @@ export function buildTaskRows(tasks: BuildTask[]): BuildTaskRow[] {
         return {
             id: task.id,
             status,
-            profileName: task.profileAtCreation?.name ?? task.profile.name,
+            profileName: task.profileAtCreation?.name ?? task.profile?.name ?? "Deleted profile",
             platform: task.targetOs as Platform,
             format: task.targetFormat as Format,
             error: task.error ?? (status === "Failed" && task.exitCode === 0 ? "The build finished but no artifact was produced." : null),

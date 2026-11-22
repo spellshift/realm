@@ -5922,9 +5922,9 @@ func (ec *executionContext) _BuildTask_profile(ctx context.Context, field graphq
 			return obj.Profile(ctx)
 		},
 		nil,
-		ec.marshalNBuildProfile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildProfile,
+		ec.marshalOBuildProfile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildProfile,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -46258,16 +46258,13 @@ func (ec *executionContext) _BuildTask(ctx context.Context, sel ast.SelectionSet
 		case "profile":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._BuildTask_profile(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
