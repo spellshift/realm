@@ -188,6 +188,22 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 			created = true
 		}
 
+		if !fireTime.IsZero() {
+			// A beacon runs a given cron occurrence at most once, regardless of
+			// how many times it checks in within the look-ahead/range window.
+			exists, err := q.QueryTasks().
+				Where(task.HasBeaconWith(beacon.ID(beaconID))).
+				Exist(ctx)
+			if err != nil {
+				claimLog.ErrorContext(ctx, "failed to check for existing automated task", "error", err, "quest_id", q.ID, "beacon_id", beaconID)
+				metricTomeAutomationErrors.Inc()
+				continue
+			}
+			if exists {
+				continue
+			}
+		}
+
 		_, err = srv.graph.Task.Create().
 			SetQuest(q).
 			SetBeaconID(beaconID).
