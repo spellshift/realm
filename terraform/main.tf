@@ -184,6 +184,17 @@ variable "tavern_request_timeout_seconds" {
   }
 }
 
+variable "tavern_memory_limit" {
+  type        = string
+  description = "Optional Cloud Run memory limit for the Tavern container (e.g. \"1Gi\", \"2Gi\"). When empty, Cloud Run's default (512Mi) is used; increase when raising mysql_max_allowed_packet for large uploads or reported files."
+  default     = ""
+
+  validation {
+    condition     = var.tavern_memory_limit == "" || can(regex("^[1-9][0-9]*(Mi|Gi)$", var.tavern_memory_limit))
+    error_message = "tavern_memory_limit must be empty or a valid Cloud Run memory quantity (e.g. \"512Mi\", \"2Gi\")."
+  }
+}
+
 variable "gcp_project" {
   type = string
   description = "GCP Project ID for deployment"
@@ -278,6 +289,16 @@ variable "mysql_tier" {
   description = "Instance tier to run the SQL database on, see `gcloud sql tiers list` for options"
   default = "db-custom-2-7680"
 }
+variable "mysql_max_allowed_packet" {
+  type        = number
+  description = "Maximum packet size in bytes for the Cloud SQL MySQL instance (1024 to 1073741824, multiple of 1024; Cloud SQL enforces a 16384-byte minimum). Defaults to 67108864 (64 MiB) to align with go-sql-driver/mysql's default and limit per-connection OOM risk."
+  default     = 67108864
+
+  validation {
+    condition     = var.mysql_max_allowed_packet >= 1024 && var.mysql_max_allowed_packet <= 1073741824 && var.mysql_max_allowed_packet % 1024 == 0
+    error_message = "mysql_max_allowed_packet must be between 1024 and 1073741824 bytes (1 GiB) and a multiple of 1024."
+  }
+}
 variable "oauth_client_id" {
   type = string
   description = "OAUTH_CLIENT_ID used to configure Tavern OAuth"
@@ -356,7 +377,7 @@ resource "google_sql_database_instance" "tavern-sql-instance" {
 
     database_flags {
       name  = "max_allowed_packet"
-      value = "1073741824"
+      value = tostring(var.mysql_max_allowed_packet)
     }
   }
 
@@ -489,8 +510,17 @@ resource "google_cloud_run_service" "tavern" {
       timeout_seconds = var.tavern_request_timeout_seconds
 
       containers {
-        name = local.tavern_container_name
+        name  = local.tavern_container_name
         image = var.tavern_container_image
+
+        dynamic "resources" {
+          for_each = var.tavern_memory_limit != "" ? [1] : []
+          content {
+            limits = {
+              memory = var.tavern_memory_limit
+            }
+          }
+        }
 
         ports {
           container_port = 8000
