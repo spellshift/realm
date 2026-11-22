@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -181,13 +182,62 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		return Token(""), fmt.Errorf("failed to obtain credentials: %w", err)
 	case token := <-tokenCh:
 		if options.CachePath != "" {
-			err := os.WriteFile(options.CachePath, []byte(token), 0600)
+			err := writeCacheFile(options.CachePath, []byte(token))
 			if err != nil {
 				slog.Warn("failed to write credential cache", "path", options.CachePath, "error", err)
 			}
 		}
 		return token, nil
 	}
+}
+
+// writeCacheFile atomically writes credentials to path with 0600 permissions,
+// refusing to follow symlinks and replacing any pre-existing file that may have
+// looser permissions.
+func writeCacheFile(path string, data []byte) error {
+	if info, err := os.Lstat(path); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("refusing to write credential cache to symlink %q", path)
+		}
+		if info.IsDir() {
+			return fmt.Errorf("credential cache path %q is a directory", path)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".tavern-auth-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	cleanup := true
+	defer func() {
+		if cleanup {
+			_ = os.Remove(tmpPath)
+		}
+	}()
+
+	if err := tmp.Chmod(0600); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		return err
+	}
+	cleanup = false
+	return nil
 }
 
 // validateToken verifies that the provided token is still accepted by the tavern

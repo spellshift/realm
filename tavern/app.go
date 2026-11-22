@@ -546,7 +546,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/auth/rda/code": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDACodeHandler(client),
+			Handler:              tavernhttp.NewRDACodeHandler(client, EnvOAuthDomain.String()),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
