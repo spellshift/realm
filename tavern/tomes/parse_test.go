@@ -2,6 +2,7 @@ package tomes_test
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -43,6 +44,18 @@ func TestUploadTomes(t *testing.T) {
 	require.NotNil(t, rcTome)
 	assert.Equal(t, tome.TacticSHELL_RC, rcTome.Tactic)
 	assert.Contains(t, rcTome.Eldritch, "def ls(")
+
+	installTome := graph.Tome.Query().
+		Where(tome.Name("Install Service")).
+		OnlyX(ctx)
+	assert.Equal(t, tome.TacticPERSISTENCE, installTome.Tactic)
+	assert.Contains(t, installTome.Eldritch, "parse_and_persist([config])")
+	var installParams []tomes.ParamDefinition
+	require.NoError(t, json.Unmarshal([]byte(installTome.ParamDefs), &installParams))
+	require.Len(t, installParams, 5)
+	assert.Equal(t, []string{"name", "description", "executable_name", "executable_args", "windows_display_name"}, []string{
+		installParams[0].Name, installParams[1].Name, installParams[2].Name, installParams[3].Name, installParams[4].Name,
+	})
 }
 
 func TestUploadTomes_InvalidTomeDoesNotSkipOthers(t *testing.T) {

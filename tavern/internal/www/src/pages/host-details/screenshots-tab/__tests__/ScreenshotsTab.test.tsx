@@ -11,6 +11,17 @@ import { SortsProvider } from "../../../../context/SortContext";
 import { ScreenshotsTab } from "..";
 import { GET_HOST_SCREENSHOTS } from "../queries";
 
+const { openModal, fetchFormData } = vi.hoisted(() => ({
+    openModal: vi.fn(),
+    fetchFormData: vi.fn(),
+}));
+vi.mock("../../../../context/CreateQuestModalContext", () => ({
+    useCreateQuestModal: () => ({ openModal }),
+}));
+vi.mock("../useScreenshotQuestFormData", () => ({
+    useScreenshotQuestFormData: () => ({ fetchFormData, loading: false }),
+}));
+
 // jsdom has no layout, so simulate a fixed-size viewport window instead of a
 // measured one. Importantly this must only render a *window* of items (not
 // every item), otherwise VirtualizedCardList's own "near the bottom" infinite
@@ -90,6 +101,9 @@ const renderTab = (mocks: MockedResponse[]) => render(
 describe("ScreenshotsTab", () => {
     beforeEach(() => {
         sessionStorage.clear();
+        openModal.mockClear();
+        fetchFormData.mockReset();
+        fetchFormData.mockResolvedValue({ tomeId: "report-screenshot" });
     });
 
     it("reviews host screenshots and selects a preview", async () => {
@@ -171,12 +185,35 @@ describe("ScreenshotsTab", () => {
         expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
         expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
 
-        // Download all is the left-most action; sort is right-most.
+        const takeScreenshotButton = screen.getByRole("button", { name: "Take screenshot" });
+        expect(takeScreenshotButton.compareDocumentPosition(downloadAllButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(downloadAllButton.compareDocumentPosition(sortButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
         // The screenshot-count/sort summary line above the thumbnail list is gone.
         expect(screen.queryByText(/sorted by/i)).not.toBeInTheDocument();
     }, 30000);
+
+    it("opens a screenshot quest from the toolbar", async () => {
+        const user = userEvent.setup();
+        renderTab([{ request: request(), result: page([first], 1, false, "cursor") }]);
+
+        await user.click(await screen.findByRole("button", { name: "Take screenshot" }, COLD_START));
+        await waitFor(() => expect(openModal).toHaveBeenCalledWith({
+            initialFormData: { tomeId: "report-screenshot" },
+            refetchQueries: ["GetHostContext", "GetHostScreenshots"],
+        }));
+    });
+
+    it("offers the same screenshot action in the empty state", async () => {
+        const user = userEvent.setup();
+        renderTab([{ request: request(), result: page([], 0, false, "cursor") }]);
+
+        expect(await screen.findByText("No screenshots reported", {}, COLD_START)).toBeInTheDocument();
+        const buttons = screen.getAllByRole("button", { name: "Take screenshot" });
+        expect(buttons).toHaveLength(2);
+        await user.click(buttons[1]);
+        await waitFor(() => expect(openModal).toHaveBeenCalledTimes(1));
+    });
 
     it("loads a previously persisted sort from the shared SortContext on mount", async () => {
         sessionStorage.setItem("realm-sorting-v1.1", JSON.stringify({
