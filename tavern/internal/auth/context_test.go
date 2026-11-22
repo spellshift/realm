@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/logging"
 )
@@ -50,7 +51,7 @@ func TestContextFromSessionToken(t *testing.T) {
 		wantIsActivated     bool
 		wantIsAuthenticated bool
 		wantUserID          int
-		wantError           error
+		wantNotFound        bool
 	}{
 		{
 			name:                "InactiveUser",
@@ -76,13 +77,24 @@ func TestContextFromSessionToken(t *testing.T) {
 			wantIsActivated:     true,
 			wantIsAuthenticated: true,
 		},
+		{
+			name:         "NotFound",
+			sessionToken: "invalid-token",
+			wantNotFound: true,
+		},
 	}
 
 	// Run Tests
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			authCtx, err := auth.ContextFromSessionToken(context.Background(), graph, tc.sessionToken)
-			require.ErrorIs(t, err, tc.wantError)
+			if tc.wantNotFound {
+				require.Error(t, err)
+				assert.True(t, ent.IsNotFound(err), "expected ent.NotFoundError, got: %v", err)
+				assert.Nil(t, authCtx)
+				return
+			}
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.wantIsActivated, auth.IsActivatedContext(authCtx))
 			assert.Equal(t, tc.wantIsAdmin, auth.IsAdminContext(authCtx))
@@ -142,7 +154,7 @@ func TestContextFromAccessToken(t *testing.T) {
 		wantIsActivated     bool
 		wantIsAuthenticated bool
 		wantUserID          int
-		wantError           error
+		wantNotFound        bool
 	}{
 		{
 			name:                "InactiveUser",
@@ -168,12 +180,23 @@ func TestContextFromAccessToken(t *testing.T) {
 			wantIsActivated:     true,
 			wantIsAuthenticated: true,
 		},
+		{
+			name:         "NotFound",
+			accessToken:  "invalid-token",
+			wantNotFound: true,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			authCtx, err := auth.ContextFromAccessToken(context.Background(), graph, tc.accessToken)
-			require.ErrorIs(t, err, tc.wantError)
+			if tc.wantNotFound {
+				require.Error(t, err)
+				assert.True(t, ent.IsNotFound(err), "expected ent.NotFoundError, got: %v", err)
+				assert.Nil(t, authCtx)
+				return
+			}
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.wantIsActivated, auth.IsActivatedContext(authCtx))
 			assert.Equal(t, tc.wantIsAdmin, auth.IsAdminContext(authCtx))
@@ -192,6 +215,16 @@ func TestContextFromAccessToken(t *testing.T) {
 			assert.Equal(t, "access_token", actor.AuthMethod)
 		})
 	}
+}
+
+func TestContextHelpers_EmptyContext(t *testing.T) {
+	ctx := context.Background()
+
+	assert.Nil(t, auth.IdentityFromContext(ctx))
+	assert.Nil(t, auth.UserFromContext(ctx))
+	assert.False(t, auth.IsAuthenticatedContext(ctx))
+	assert.False(t, auth.IsActivatedContext(ctx))
+	assert.False(t, auth.IsAdminContext(ctx))
 }
 
 func TestContextFromUserPreservesAuthMethod(t *testing.T) {

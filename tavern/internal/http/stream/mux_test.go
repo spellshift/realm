@@ -32,7 +32,10 @@ func TestMux(t *testing.T) {
 	defer sub.Shutdown(ctx)
 
 	// Create Mux
-	mux := stream.NewMux(topic, sub)
+	registered := make(chan *stream.Stream, 2)
+	mux := stream.NewMux(topic, sub, stream.WithOnRegister(func(s *stream.Stream) {
+		registered <- s
+	}))
 	go mux.Start(ctx)
 
 	// Create and Register Streams
@@ -44,8 +47,14 @@ func TestMux(t *testing.T) {
 	mux.Register(stream2)
 	defer mux.Unregister(stream2)
 
-	// Give the mux a moment to register the streams
-	time.Sleep(50 * time.Millisecond)
+	// Wait deterministically for both streams to be registered before publishing
+	for i := 0; i < 2; i++ {
+		select {
+		case <-registered:
+		case <-ctx.Done():
+			t.Fatal("timed out waiting for streams to register")
+		}
+	}
 
 	// Send a message for stream1
 	err = topic.Send(ctx, &pubsub.Message{

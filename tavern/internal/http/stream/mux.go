@@ -42,6 +42,7 @@ type Mux struct {
 	streams     map[*Stream]bool
 	history     map[string]*historyState
 	historySize int
+	onRegister  func(*Stream)
 }
 
 // A MuxOption is used to provide further configuration to the Mux.
@@ -148,6 +149,9 @@ func (mux *Mux) Start(ctx context.Context) error {
 					}
 					s.processOneMessage(ctx, msg)
 				}
+			}
+			if mux.onRegister != nil {
+				mux.onRegister(s)
 			}
 
 		case s := <-mux.unregister:
