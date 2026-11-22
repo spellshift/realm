@@ -4,10 +4,92 @@ use crate::Guardrail;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Registry {
-    #[serde(default)]
+    #[serde(default, alias = "subkey")]
     pub path: String,
     #[serde(default)]
     pub value_name: Option<String>,
+}
+
+#[cfg(any(target_os = "windows", test))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RegistryHive {
+    ClassesRoot,
+    CurrentUser,
+    LocalMachine,
+    Users,
+    PerformanceData,
+    PerformanceText,
+    PerformanceNlsText,
+    CurrentConfig,
+    DynData,
+    CurrentUserLocalSettings,
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn parse_hive(hive: &str) -> Option<RegistryHive> {
+    const HIVES: &[(&str, RegistryHive)] = &[
+        ("HKEY_CLASSES_ROOT", RegistryHive::ClassesRoot),
+        ("HKCR", RegistryHive::ClassesRoot),
+        ("HKEY_CURRENT_USER", RegistryHive::CurrentUser),
+        ("HKCU", RegistryHive::CurrentUser),
+        ("HKEY_LOCAL_MACHINE", RegistryHive::LocalMachine),
+        ("HKLM", RegistryHive::LocalMachine),
+        ("HKEY_USERS", RegistryHive::Users),
+        ("HKU", RegistryHive::Users),
+        ("HKEY_PERFORMANCE_DATA", RegistryHive::PerformanceData),
+        ("HKPD", RegistryHive::PerformanceData),
+        ("HKEY_PERFORMANCE_TEXT", RegistryHive::PerformanceText),
+        ("HKPT", RegistryHive::PerformanceText),
+        ("HKEY_PERFORMANCE_NLSTEXT", RegistryHive::PerformanceNlsText),
+        ("HKPN", RegistryHive::PerformanceNlsText),
+        ("HKEY_CURRENT_CONFIG", RegistryHive::CurrentConfig),
+        ("HKCC", RegistryHive::CurrentConfig),
+        ("HKEY_DYN_DATA", RegistryHive::DynData),
+        ("HKDD", RegistryHive::DynData),
+        (
+            "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+            RegistryHive::CurrentUserLocalSettings,
+        ),
+        ("HKCULS", RegistryHive::CurrentUserLocalSettings),
+    ];
+
+    HIVES
+        .iter()
+        .find(|(name, _)| hive.eq_ignore_ascii_case(name))
+        .map(|(_, h)| *h)
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn parse_registry_path(path: &str) -> Option<(RegistryHive, &str)> {
+    let (hive_str, subkey) = path.split_once('\\')?;
+    let subkey = subkey.trim_start_matches('\\');
+    if subkey.is_empty() {
+        return None;
+    }
+    let hive = parse_hive(hive_str)?;
+    Some((hive, subkey))
+}
+
+#[cfg(target_os = "windows")]
+impl RegistryHive {
+    fn open_predef(self) -> winreg::RegKey {
+        use winreg::enums::*;
+        use winreg::RegKey;
+
+        let hkey = match self {
+            RegistryHive::ClassesRoot => HKEY_CLASSES_ROOT,
+            RegistryHive::CurrentUser => HKEY_CURRENT_USER,
+            RegistryHive::LocalMachine => HKEY_LOCAL_MACHINE,
+            RegistryHive::Users => HKEY_USERS,
+            RegistryHive::PerformanceData => HKEY_PERFORMANCE_DATA,
+            RegistryHive::PerformanceText => HKEY_PERFORMANCE_TEXT,
+            RegistryHive::PerformanceNlsText => HKEY_PERFORMANCE_NLSTEXT,
+            RegistryHive::CurrentConfig => HKEY_CURRENT_CONFIG,
+            RegistryHive::DynData => HKEY_DYN_DATA,
+            RegistryHive::CurrentUserLocalSettings => HKEY_CURRENT_USER_LOCAL_SETTINGS,
+        };
+        RegKey::predef(hkey)
+    }
 }
 
 impl Registry {
@@ -26,50 +108,21 @@ impl Guardrail for Registry {
 
     #[cfg(target_os = "windows")]
     fn check(&self) -> bool {
-        use winreg::enums::*;
-        use winreg::RegKey;
-
-        if self.path.is_empty() {
+        let Some((hive, subkey)) = parse_registry_path(&self.path) else {
             return false;
-        }
-
-        let normalized_path = self.path.replace("\\\\", "\\");
-        let mut parts = normalized_path.splitn(2, '\\');
-        let hive_str = parts.next().unwrap_or("");
-        let subkey_str = parts.next().unwrap_or("").to_string();
-
-        let ihive = match hive_str.to_ascii_uppercase().as_str() {
-            "HKEY_CLASSES_ROOT" | "HKCR" => HKEY_CLASSES_ROOT,
-            "HKEY_CURRENT_USER" | "HKCU" => HKEY_CURRENT_USER,
-            "HKEY_LOCAL_MACHINE" | "HKLM" => HKEY_LOCAL_MACHINE,
-            "HKEY_USERS" | "HKU" => HKEY_USERS,
-            "HKEY_PERFORMANCE_DATA" => HKEY_PERFORMANCE_DATA,
-            "HKEY_PERFORMANCE_TEXT" => HKEY_PERFORMANCE_TEXT,
-            "HKEY_PERFORMANCE_NLSTEXT" => HKEY_PERFORMANCE_NLSTEXT,
-            "HKEY_CURRENT_CONFIG" | "HKCC" => HKEY_CURRENT_CONFIG,
-            "HKEY_DYN_DATA" => HKEY_DYN_DATA,
-            "HKEY_CURRENT_USER_LOCAL_SETTINGS" => HKEY_CURRENT_USER_LOCAL_SETTINGS,
-            _ => return false,
         };
 
-        let root_key = RegKey::predef(ihive);
+        let root_key = hive.open_predef();
 
-        if let Ok(key) = root_key.open_subkey(&subkey_str) {
-            if let Some(val_name) = &self.value_name {
-                // Try to read any value type to check if it exists
-                // We just need to know if the value name exists in the key
-                return key.enum_values().any(|val| {
-                    if let Ok((name, _)) = val {
-                        name == *val_name
-                    } else {
-                        false
-                    }
-                });
-            }
-            return true;
+        let Ok(key) = root_key.open_subkey(subkey) else {
+            return false;
+        };
+
+        if let Some(val_name) = &self.value_name {
+            return key.get_raw_value(val_name).is_ok();
         }
 
-        false
+        true
     }
 
     #[cfg(not(target_os = "windows"))]
@@ -79,8 +132,87 @@ impl Guardrail for Registry {
 }
 
 #[cfg(test)]
-#[cfg(target_os = "windows")]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_path_field() {
+        let json = r#"{"path": "HKLM\\SOFTWARE\\Test", "value_name": "Version"}"#;
+        let guardrail: Registry = serde_json::from_str(json).expect("deserialize failed");
+        assert_eq!(guardrail.path, "HKLM\\SOFTWARE\\Test");
+        assert_eq!(guardrail.value_name.as_deref(), Some("Version"));
+    }
+
+    #[test]
+    fn test_deserialize_subkey_alias() {
+        let json = r#"{"subkey": "HKLM\\SOFTWARE\\Test", "value_name": null}"#;
+        let guardrail: Registry = serde_json::from_str(json).expect("deserialize failed");
+        assert_eq!(guardrail.path, "HKLM\\SOFTWARE\\Test");
+        assert_eq!(guardrail.value_name, None);
+    }
+
+    #[test]
+    fn test_parse_registry_path_hives_and_aliases() {
+        let cases = [
+            ("HKEY_CLASSES_ROOT\\foo", RegistryHive::ClassesRoot),
+            ("hkcr\\foo", RegistryHive::ClassesRoot),
+            ("HKEY_CURRENT_USER\\foo", RegistryHive::CurrentUser),
+            ("HKCU\\foo", RegistryHive::CurrentUser),
+            ("HKEY_LOCAL_MACHINE\\foo", RegistryHive::LocalMachine),
+            ("hKlM\\foo", RegistryHive::LocalMachine),
+            ("HKEY_USERS\\foo", RegistryHive::Users),
+            ("HKU\\foo", RegistryHive::Users),
+            ("HKEY_PERFORMANCE_DATA\\foo", RegistryHive::PerformanceData),
+            ("HKPD\\foo", RegistryHive::PerformanceData),
+            ("HKEY_PERFORMANCE_TEXT\\foo", RegistryHive::PerformanceText),
+            ("HKPT\\foo", RegistryHive::PerformanceText),
+            (
+                "HKEY_PERFORMANCE_NLSTEXT\\foo",
+                RegistryHive::PerformanceNlsText,
+            ),
+            ("HKPN\\foo", RegistryHive::PerformanceNlsText),
+            ("HKEY_CURRENT_CONFIG\\foo", RegistryHive::CurrentConfig),
+            ("HKCC\\foo", RegistryHive::CurrentConfig),
+            ("HKEY_DYN_DATA\\foo", RegistryHive::DynData),
+            ("HKDD\\foo", RegistryHive::DynData),
+            (
+                "HKEY_CURRENT_USER_LOCAL_SETTINGS\\foo",
+                RegistryHive::CurrentUserLocalSettings,
+            ),
+            ("hkculs\\foo", RegistryHive::CurrentUserLocalSettings),
+        ];
+
+        for (input, expected_hive) in cases {
+            assert_eq!(
+                parse_registry_path(input),
+                Some((expected_hive, "foo")),
+                "failed for input {input}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_parse_registry_path_rejects_empty_subkey_and_invalid_hive() {
+        assert_eq!(parse_registry_path(""), None);
+        assert_eq!(parse_registry_path("HKLM"), None);
+        assert_eq!(parse_registry_path("HKLM\\"), None);
+        assert_eq!(parse_registry_path("HKLM\\\\"), None);
+        assert_eq!(parse_registry_path("\\SOFTWARE\\Test"), None);
+        assert_eq!(parse_registry_path("INVALID\\SOFTWARE\\Test"), None);
+    }
+
+    #[test]
+    fn test_parse_registry_path_trims_leading_subkey_backslashes() {
+        assert_eq!(
+            parse_registry_path("HKLM\\\\SOFTWARE\\Microsoft"),
+            Some((RegistryHive::LocalMachine, "SOFTWARE\\Microsoft"))
+        );
+    }
+}
+
+#[cfg(test)]
+#[cfg(target_os = "windows")]
+mod windows_tests {
     use super::*;
 
     #[test]
@@ -96,10 +228,25 @@ mod tests {
     }
 
     #[test]
+    fn test_registry_hive_only_rejected() {
+        assert!(!Registry::new("HKLM", None).check());
+        assert!(!Registry::new("HKLM\\", None).check());
+    }
+
+    #[test]
     fn test_registry_value_exists() {
         let guardrail = Registry::new(
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion",
             Some("ProgramFilesDir".to_string()),
+        );
+        assert!(guardrail.check());
+    }
+
+    #[test]
+    fn test_registry_value_exists_case_insensitive() {
+        let guardrail = Registry::new(
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion",
+            Some("programfilesdir".to_string()),
         );
         assert!(guardrail.check());
     }
