@@ -123,7 +123,9 @@ export const ProfileSelectionTable = ({ profiles, selectedProfileId, onSelectPro
                                         </span>
                                         <span className="text-gray-600 font-mono">{t.uri}</span>
                                     </div>
-                                    <span className="text-gray-400">{t.interval}s interval</span>
+                                    <span className="text-gray-400">
+                                        {t.interval}s interval{t.jitter ? ` (±${Math.round(t.jitter * 100)}% jitter)` : ""}
+                                    </span>
                                 </div>
                             ))}
                         </div>
