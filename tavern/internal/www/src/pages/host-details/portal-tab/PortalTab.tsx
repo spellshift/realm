@@ -28,10 +28,10 @@ export const PortalsHeader = () => {
                 <Menu as="div" className="relative">
                     <Menu.Button
                         as={Button}
-                        leftIcon={<DownloadIcon className="h-5 w-5" />}
                         buttonStyle={{ color: "purple", size: "sm" }}
                         rightIcon={<ChevronDownIcon className="h-5 w-5" aria-hidden="true" />}
                     >
+                        <DownloadIcon className="h-4 w-4 mr-2" aria-hidden="true" />
                         Download socks5
                     </Menu.Button>
                     <Transition
@@ -51,7 +51,7 @@ export const PortalsHeader = () => {
                                         as="a"
                                         href={`/assets/download/${asset}`}
                                         download
-                                        className={ghostButton({ color: "gray", size: "sm", className: "w-full" })}
+                                        className={ghostButton({ color: "gray", size: "sm", className: "w-full data-[focus]:bg-gray-100" })}
                                     >
                                         {platform}
                                     </Menu.Item>

@@ -1,8 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, it } from "vitest";
+import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { PortalsHeader } from "./PortalTab";
+
+beforeAll(() => {
+    vi.stubGlobal("ResizeObserver", class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    });
+});
+
+afterAll(() => {
+    vi.unstubAllGlobals();
+});
 
 it("offers a SOCKS5 download for every supported platform", async () => {
     const user = userEvent.setup();
@@ -21,4 +33,19 @@ it("offers a SOCKS5 download for every supported platform", async () => {
             `/assets/download/${asset}`
         );
     }
+});
+
+it("supports keyboard navigation through download options", async () => {
+    const user = userEvent.setup();
+    render(<PortalsHeader />);
+
+    await user.tab();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByRole("menuitem", { name: "Linux" })).toHaveAttribute("data-focus");
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("menuitem", { name: "macOS" })).toHaveAttribute("data-focus");
+
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("button", { name: /Download socks5/i })).toHaveAttribute("aria-expanded", "false");
 });
