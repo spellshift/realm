@@ -21,7 +21,7 @@ interface TaskCardType {
 }
 
 const taskTabClassName = ({ selected }: { selected: boolean }) =>
-    `flex flex-row gap-1 items-center py-2 px-4 focus:outline-none focus-visible:underline focus-visible:decoration-purple-600 focus-visible:underline-offset-4 ${selected ? 'bg-white rounded border-t-2 border-gray-200' : ''}`;
+    `flex flex-row gap-1 items-center py-2 px-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-400 ${selected ? 'bg-white rounded border-t-2 border-gray-200' : ''}`;
 
 const TaskCard: FC<TaskCardType> = ({ task }) => {
     const defaultOpenTabIndex = task?.error ? 3 : 2;
