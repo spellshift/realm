@@ -1,11 +1,31 @@
 use anyhow::Context;
-use guardrails::Guardrail;
 use host_unique::HostIDSelector;
+use std::fmt;
 use std::sync::OnceLock;
 use url::Url;
 use uuid::Uuid;
 
 use crate::c2::{AvailableTransports, Transport};
+
+/// Error returned when execution guardrails fail to parse or validate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GuardrailError {
+    /// Guardrails JSON failed to parse (fail closed).
+    ParseFailed,
+    /// None of the configured guardrails passed on this host.
+    CheckFailed,
+}
+
+impl fmt::Display for GuardrailError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            GuardrailError::ParseFailed => write!(f, "failed to parse guardrails configuration"),
+            GuardrailError::CheckFailed => write!(f, "execution guardrails check failed"),
+        }
+    }
+}
+
+impl std::error::Error for GuardrailError {}
 
 // ---------------------------------------------------------------------------
 // Runtime-settable imix configuration — owned by imix, not pb.
@@ -196,51 +216,66 @@ fn parse_callback_interval() -> anyhow::Result<u64> {
     parse_callback_interval_with(&runtime_config().callback_interval)
 }
 
-fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
-    let rt = runtime_config();
-    let final_res = match rt.unique_json {
+fn parse_host_unique_selectors_from(unique_json: Option<&str>) -> Vec<Box<dyn HostIDSelector>> {
+    match unique_json {
         Some(json) => {
-            if let Some(res) = host_unique::from_imix_unique(json) {
-                return res;
+            if let Some(res) = host_unique::from_imix_unique(json.to_owned()) {
+                res
             } else {
                 #[cfg(feature = "print_debug")]
                 log::error!(
                     "Error parsing uniqueness string (should have been caught at build time)"
                 );
-                return host_unique::defaults();
+                host_unique::defaults()
             }
         }
         None => host_unique::defaults(),
-    };
-    final_res
+    }
 }
 
-fn parse_guardrails() -> Vec<Box<dyn Guardrail>> {
-    let rt = runtime_config();
-    let final_res = match rt.guardrails_json {
-        Some(json) => {
-            if let Some(res) = guardrails::from_imix_guardrails(json) {
-                return res;
-            } else {
-                #[cfg(feature = "print_debug")]
-                log::error!(
-                    "Error parsing guardrails string (should have been caught at build time)"
-                );
-                return guardrails::defaults();
-            }
-        }
-        None => guardrails::defaults(),
+/// Evaluate a guardrails JSON string, failing closed on parse errors or unmet rules.
+pub fn enforce_guardrails_json(guardrails_json: Option<&str>) -> Result<(), GuardrailError> {
+    let Some(json) = guardrails_json else {
+        return Ok(());
     };
-    final_res
+
+    let Some(rules) = guardrails::from_imix_guardrails(json.to_owned()) else {
+        #[cfg(feature = "print_debug")]
+        log::error!("Error parsing guardrails string; failing closed");
+        return Err(GuardrailError::ParseFailed);
+    };
+
+    if !guardrails::check_guardrails(rules) {
+        #[cfg(feature = "print_debug")]
+        log::error!("Guardrails failed");
+        return Err(GuardrailError::CheckFailed);
+    }
+
+    Ok(())
+}
+
+/// Enforce the currently configured runtime guardrails without terminating the process.
+pub fn enforce_guardrails() -> Result<(), GuardrailError> {
+    let rt = runtime_config();
+    enforce_guardrails_json(rt.guardrails_json.as_deref())
 }
 
 impl Config {
-    pub fn default_with_imix_version(imix_version: &str) -> Self {
+    pub fn default_with_imix_version(imix_version: &str) -> anyhow::Result<Self> {
+        let rt = runtime_config();
+        Self::from_runtime_config(imix_version, &rt)
+    }
+
+    fn from_runtime_config(imix_version: &str, rt: &RuntimeImixConfig) -> anyhow::Result<Self> {
+        // Enforce guardrails FIRST, before host_unique (which may write files to disk)
+        // or network/host fingerprinting.
+        enforce_guardrails_json(rt.guardrails_json.as_deref())?;
+
         let agent = crate::c2::Agent {
             identifier: format!("imix-v{}", imix_version),
         };
 
-        let selectors = parse_host_unique_selectors();
+        let selectors = parse_host_unique_selectors_from(rt.unique_json.as_deref());
 
         let (primary_ip, subnet) = get_primary_ip_and_subnet();
         let host = crate::c2::Host {
@@ -254,21 +289,12 @@ impl Config {
         let beacon_id =
             std::env::var("IMIX_BEACON_ID").unwrap_or_else(|_| String::from(Uuid::new_v4()));
 
-        // Read callback URI at runtime (set by imix early in startup, or default).
-        let rt = runtime_config();
         let transports = parse_transports(&rt.callback_uri);
 
         let available_transports = AvailableTransports {
             transports,
             active_index: 0,
         };
-
-        let guardrails = parse_guardrails();
-        if !guardrails::check_guardrails(guardrails) {
-            #[cfg(feature = "print_debug")]
-            log::error!("Guardrails failed, exiting");
-            std::process::exit(0);
-        }
 
         let info = crate::c2::Beacon {
             identifier: beacon_id,
@@ -278,10 +304,10 @@ impl Config {
             agent: Some(agent),
         };
 
-        Config {
+        Ok(Config {
             info: Some(info),
-            run_once: runtime_config().run_once,
-        }
+            run_once: rt.run_once,
+        })
     }
 
     pub fn refresh_primary_ip_and_subnet(&mut self) {
@@ -498,7 +524,7 @@ mod tests {
 
     #[test]
     fn test_config_creates_available_transports() {
-        let config = Config::default_with_imix_version("v2");
+        let config = Config::default_with_imix_version("v2").expect("default config should build");
         assert!(config.info.is_some());
         let info = config.info.unwrap();
         assert!(info.available_transports.is_some());
@@ -508,6 +534,70 @@ mod tests {
             "Should have at least one transport"
         );
         assert_eq!(available.active_index, 0, "Active index should be 0");
+    }
+
+    #[test]
+    fn test_enforce_guardrails_fails_closed_on_malformed_json() {
+        assert_eq!(
+            enforce_guardrails_json(Some("{invalid json")),
+            Err(GuardrailError::ParseFailed)
+        );
+        assert_eq!(
+            enforce_guardrails_json(Some(r#"[{"type":"unknown","args":{}}]"#)),
+            Err(GuardrailError::ParseFailed)
+        );
+        assert_eq!(
+            enforce_guardrails_json(Some(r#"[{"type":"file"}]"#)),
+            Err(GuardrailError::ParseFailed)
+        );
+        assert_eq!(enforce_guardrails_json(None), Ok(()));
+        assert_eq!(enforce_guardrails_json(Some("[]")), Ok(()));
+    }
+
+    #[test]
+    fn test_guardrails_checked_before_host_unique_disk_write() {
+        let dir = tempfile::tempdir().unwrap();
+        let host_id_path = dir.path().join("should_not_be_created");
+        let unique_json = serde_json::json!([
+            {"type": "file", "args": {"path_override": host_id_path.to_str().unwrap()}}
+        ])
+        .to_string();
+
+        let rt = RuntimeImixConfig {
+            unique_json: Some(unique_json.clone()),
+            guardrails_json: Some(
+                r#"[{"type":"file","args":{"path":"/nonexistent/guardrail/check/path"}}]"#
+                    .to_string(),
+            ),
+            ..Default::default()
+        };
+
+        let err = Config::from_runtime_config("test", &rt)
+            .expect_err("failing guardrail should return Err instead of exiting process");
+        assert_eq!(
+            err.downcast_ref::<GuardrailError>(),
+            Some(&GuardrailError::CheckFailed)
+        );
+        assert!(
+            !host_id_path.exists(),
+            "host_unique file must not be written when guardrails fail"
+        );
+
+        let rt_bad = RuntimeImixConfig {
+            unique_json: Some(unique_json),
+            guardrails_json: Some("not-valid-json".to_string()),
+            ..Default::default()
+        };
+        let err_bad = Config::from_runtime_config("test", &rt_bad)
+            .expect_err("malformed guardrails should fail closed");
+        assert_eq!(
+            err_bad.downcast_ref::<GuardrailError>(),
+            Some(&GuardrailError::ParseFailed)
+        );
+        assert!(
+            !host_id_path.exists(),
+            "host_unique file must not be written when guardrails fail to parse"
+        );
     }
 
     #[test]

@@ -10,7 +10,7 @@ pub trait Guardrail {
     fn check(&self) -> bool;
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type", content = "args")]
 pub enum GuardrailSpec {
     #[serde(rename = "file")]
@@ -19,45 +19,6 @@ pub enum GuardrailSpec {
     Process(Process),
     #[serde(rename = "registry")]
     Registry(Registry),
-}
-
-#[derive(serde::Deserialize)]
-#[serde(tag = "type", content = "args")]
-enum GuardrailSpecDerived {
-    #[serde(rename = "file")]
-    File(File),
-    #[serde(rename = "process")]
-    Process(Process),
-    #[serde(rename = "registry")]
-    Registry(Registry),
-}
-
-impl From<GuardrailSpecDerived> for GuardrailSpec {
-    fn from(d: GuardrailSpecDerived) -> Self {
-        match d {
-            GuardrailSpecDerived::File(v) => GuardrailSpec::File(v),
-            GuardrailSpecDerived::Process(v) => GuardrailSpec::Process(v),
-            GuardrailSpecDerived::Registry(v) => GuardrailSpec::Registry(v),
-        }
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for GuardrailSpec {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        use serde_json::Value;
-
-        let mut v = Value::deserialize(deserializer)?;
-        if let Some(obj) = v.as_object_mut() {
-            obj.entry("args")
-                .or_insert_with(|| Value::Object(Default::default()));
-        }
-        GuardrailSpecDerived::deserialize(v)
-            .map(GuardrailSpec::from)
-            .map_err(serde::de::Error::custom)
-    }
 }
 
 impl GuardrailSpec {
@@ -70,6 +31,9 @@ impl GuardrailSpec {
     }
 }
 
+/// Evaluate configured guardrails using OR semantics:
+/// - Empty list: returns `true` (no guardrails configured).
+/// - Non-empty list: returns `true` if at least one guardrail passes, otherwise `false`.
 pub fn check_guardrails(guardrails: Vec<Box<dyn Guardrail>>) -> bool {
     if guardrails.is_empty() {
         return true;
@@ -87,10 +51,11 @@ pub fn check_guardrails(guardrails: Vec<Box<dyn Guardrail>>) -> bool {
     false
 }
 
+/// Parse guardrail JSON specifications without panicking.
+/// Returns `None` on malformed JSON, unknown guardrail types, or invalid args
+/// so callers can fail closed.
 pub fn from_imix_guardrails(json: String) -> Option<Vec<Box<dyn Guardrail>>> {
-    let specs: Vec<GuardrailSpec> = serde_json::from_str(&json).expect(
-        "IMIX_GUARDRAILS contains invalid JSON - this should have been caught at build time",
-    );
+    let specs: Vec<GuardrailSpec> = serde_json::from_str(&json).ok()?;
     Some(
         specs
             .into_iter()
@@ -107,12 +72,27 @@ pub fn defaults() -> Vec<Box<dyn Guardrail>> {
 mod tests {
     use super::*;
 
+    struct StaticGuardrail {
+        name: &'static str,
+        result: bool,
+    }
+
+    impl Guardrail for StaticGuardrail {
+        fn get_name(&self) -> String {
+            self.name.to_string()
+        }
+
+        fn check(&self) -> bool {
+            self.result
+        }
+    }
+
     #[test]
     fn test_guardrail_spec_roundtrip() {
         let json = r#"[
             {"type": "file", "args": {"path": "/tmp/test-id"}},
             {"type": "process", "args": {"name": "explorer.exe"}},
-            {"type": "registry", "args": {"subkey": "SOFTWARE\\Test", "value_name": null}}
+            {"type": "registry", "args": {"path": "HKLM\\SOFTWARE\\Test", "value_name": null}}
         ]"#;
 
         let specs: Vec<GuardrailSpec> = serde_json::from_str(json).expect("parse failed");
@@ -123,5 +103,50 @@ mod tests {
             .map(|s| s.into_guardrail().get_name())
             .collect();
         assert_eq!(names, ["file", "process", "registry"]);
+    }
+
+    #[test]
+    fn test_from_imix_guardrails_rejects_malformed_without_panic() {
+        assert!(from_imix_guardrails("not json".to_string()).is_none());
+        assert!(from_imix_guardrails("{}".to_string()).is_none());
+        assert!(from_imix_guardrails(r#"[{"type": "unknown", "args": {}}]"#.to_string()).is_none());
+        assert!(from_imix_guardrails(r#"[{"type": "file"}]"#.to_string()).is_none());
+        assert!(from_imix_guardrails(
+            r#"[{"type": "file", "args": {"wrong": "/tmp/a"}}]"#.to_string()
+        )
+        .is_none());
+        assert!(from_imix_guardrails(
+            r#"[{"type": "process", "args": {"name": "sshd", "extra": 1}}]"#.to_string()
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn test_check_guardrails_or_semantics() {
+        assert!(check_guardrails(vec![]));
+
+        let one_passes: Vec<Box<dyn Guardrail>> = vec![
+            Box::new(StaticGuardrail {
+                name: "fail",
+                result: false,
+            }),
+            Box::new(StaticGuardrail {
+                name: "pass",
+                result: true,
+            }),
+        ];
+        assert!(check_guardrails(one_passes));
+
+        let all_fail: Vec<Box<dyn Guardrail>> = vec![
+            Box::new(StaticGuardrail {
+                name: "fail1",
+                result: false,
+            }),
+            Box::new(StaticGuardrail {
+                name: "fail2",
+                result: false,
+            }),
+        ];
+        assert!(!check_guardrails(all_fail));
     }
 }

@@ -282,6 +282,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_URI");
     println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
     println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
+    println!("cargo:rerun-if-env-changed=IMIX_GUARDRAILS");
     println!("cargo:rerun-if-env-changed=IMIX_DEBUG");
     println!("cargo:rerun-if-env-changed=PROTOC");
 

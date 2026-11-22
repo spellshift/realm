@@ -68,10 +68,10 @@ pub fn build_runtime_config() -> RuntimeImixConfig {
             None
         });
 
-    let guardrails_json = std::env::var("IMIX_GUARDRAILS")
-        .ok()
-        .or_else(|| COMPILE_GUARDRAILS_JSON.map(|s| s.to_string()))
-        .or_else(|| None);
+    let guardrails_json = resolve_guardrails_json(
+        COMPILE_GUARDRAILS_JSON,
+        std::env::var("IMIX_GUARDRAILS").ok(),
+    );
 
     // Also check IMIX_TRANSPORT_EXTRA_{N} vars for DSN validation — delegate to
     // imix/build.rs's existing validate_dsn_config at build time. At runtime we
@@ -85,5 +85,79 @@ pub fn build_runtime_config() -> RuntimeImixConfig {
         transport_extra,
         unique_json,
         guardrails_json,
+    }
+}
+
+/// Resolve guardrails JSON while preventing the runtime `IMIX_GUARDRAILS` env var
+/// from disabling, weakening, or overriding compiled-in guardrails.
+///
+/// - If non-empty guardrails were compiled into the binary, they always take
+///   precedence and runtime `IMIX_GUARDRAILS` is ignored.
+/// - If no guardrails (or an empty `[]` array) were compiled in, a runtime
+///   `IMIX_GUARDRAILS` env var may supply guardrails (and malformed JSON fails
+///   closed during evaluation).
+pub(crate) fn resolve_guardrails_json(
+    compiled: Option<&str>,
+    runtime_env: Option<String>,
+) -> Option<String> {
+    match compiled {
+        Some(baked) => {
+            let is_empty_baked = baked.trim().is_empty()
+                || matches!(
+                    serde_json::from_str::<serde_json::Value>(baked),
+                    Ok(serde_json::Value::Array(arr)) if arr.is_empty()
+                );
+            if is_empty_baked {
+                runtime_env.or_else(|| Some(baked.to_string()))
+            } else {
+                Some(baked.to_string())
+            }
+        }
+        None => runtime_env,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compiled_guardrails_cannot_be_overridden_by_runtime_empty() {
+        let compiled = r#"[{"type":"file","args":{"path":"/etc/expected"}}]"#;
+        let resolved = resolve_guardrails_json(Some(compiled), Some("[]".to_string()));
+        assert_eq!(resolved.as_deref(), Some(compiled));
+    }
+
+    #[test]
+    fn test_compiled_guardrails_cannot_be_replaced_by_runtime_rule() {
+        let compiled = r#"[{"type":"file","args":{"path":"/etc/expected"}}]"#;
+        let attacker = r#"[{"type":"file","args":{"path":"/"}}]"#;
+        let resolved = resolve_guardrails_json(Some(compiled), Some(attacker.to_string()));
+        assert_eq!(resolved.as_deref(), Some(compiled));
+    }
+
+    #[test]
+    fn test_runtime_guardrails_used_when_compiled_unset_or_empty() {
+        let runtime = r#"[{"type":"file","args":{"path":"/etc/runtime"}}]"#;
+        assert_eq!(
+            resolve_guardrails_json(None, Some(runtime.to_string())).as_deref(),
+            Some(runtime)
+        );
+        assert_eq!(
+            resolve_guardrails_json(Some("[]"), Some(runtime.to_string())).as_deref(),
+            Some(runtime)
+        );
+        assert_eq!(
+            resolve_guardrails_json(Some(" [ ] "), Some(runtime.to_string())).as_deref(),
+            Some(runtime)
+        );
+        assert_eq!(resolve_guardrails_json(None, None), None);
+    }
+
+    #[test]
+    fn test_malformed_compiled_guardrails_preserved_for_fail_closed() {
+        let bad = "{not-json";
+        let resolved = resolve_guardrails_json(Some(bad), Some("[]".to_string()));
+        assert_eq!(resolved.as_deref(), Some(bad));
     }
 }

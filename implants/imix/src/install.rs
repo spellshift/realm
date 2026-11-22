@@ -9,6 +9,29 @@ use std::sync::Arc;
 
 #[cfg(feature = "install")]
 pub async fn install() -> Result<()> {
+    if let Err(_e) = pb::config::enforce_guardrails() {
+        #[cfg(feature = "print_debug")]
+        log::error!("Guardrails failed, aborting installation: {_e}");
+        return Ok(());
+    }
+
+    run_install_tomes().await
+}
+
+#[cfg(all(test, feature = "install"))]
+async fn install_with_guardrails(guardrails_json: Option<&str>) -> Result<bool> {
+    if let Err(_e) = pb::config::enforce_guardrails_json(guardrails_json) {
+        #[cfg(feature = "print_debug")]
+        log::error!("Guardrails failed, aborting installation: {_e}");
+        return Ok(false);
+    }
+
+    run_install_tomes().await?;
+    Ok(true)
+}
+
+#[cfg(feature = "install")]
+async fn run_install_tomes() -> Result<()> {
     #[cfg(feature = "print_debug")]
     log::info!("starting installation");
     let asset_backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
@@ -69,5 +92,23 @@ mod tests {
         // It might fail during execution due to permissions (trying to write to /bin/imix),
         // but the install function itself returns Ok(()) because we catch errors inside the loop.
         assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_install_aborts_when_guardrails_fail() {
+        let ran = install_with_guardrails(Some(
+            r#"[{"type":"file","args":{"path":"/nonexistent/guardrail/install/path"}}]"#,
+        ))
+        .await
+        .expect("guardrail failure should return Ok(false)");
+        assert!(!ran, "install should abort when guardrails fail");
+
+        let ran_malformed = install_with_guardrails(Some("{invalid"))
+            .await
+            .expect("malformed guardrail should fail closed cleanly");
+        assert!(
+            !ran_malformed,
+            "install should abort on malformed guardrails"
+        );
     }
 }

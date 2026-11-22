@@ -47,7 +47,7 @@ fn init_crypto() {
     }
 }
 
-fn init_runtime_config() {
+pub(crate) fn init_runtime_config() {
     let rt_cfg = crate::imix_config::build_runtime_config();
     pb::config::init_runtime_config(rt_cfg);
 }
@@ -58,7 +58,15 @@ pub async fn run_agent() -> Result<()> {
     init_runtime_config();
 
     // Load config / defaults — now reads from runtime config set above.
-    let config = Config::default_with_imix_version(VERSION);
+    let config = match Config::default_with_imix_version(VERSION) {
+        Ok(cfg) => cfg,
+        Err(e) if e.downcast_ref::<pb::config::GuardrailError>().is_some() => {
+            #[cfg(feature = "print_debug")]
+            log::error!("Guardrails failed, exiting: {e}");
+            return Ok(());
+        }
+        Err(e) => return Err(e),
+    };
     #[cfg(feature = "print_debug")]
     log::info!("Loaded config: {config:#?}");
 

@@ -47,3 +47,6 @@ libc = { workspace = true }
 [build-dependencies]
 tonic-prost-build = { workspace = true }
 which = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

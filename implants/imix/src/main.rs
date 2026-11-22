@@ -49,12 +49,20 @@ async fn main() -> Result<()> {
         .install_default()
         .ok();
 
+    run::init_runtime_config();
+
     #[cfg(feature = "install")]
     {
-        #[cfg(feature = "print_debug")]
-        log::info!("beginning installation");
-
         if std::env::args().any(|arg| arg == "install") {
+            if let Err(_e) = pb::config::enforce_guardrails() {
+                #[cfg(feature = "print_debug")]
+                log::error!("Guardrails failed, aborting installation: {_e}");
+                return Ok(());
+            }
+
+            #[cfg(feature = "print_debug")]
+            log::info!("beginning installation");
+
             return install::install().await;
         }
     }

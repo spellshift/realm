@@ -3,17 +3,10 @@ use std::path::Path;
 
 use crate::Guardrail;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
 pub struct File {
     pub path: String,
-}
-
-impl Default for File {
-    fn default() -> Self {
-        File {
-            path: "".to_string(),
-        }
-    }
 }
 
 impl File {
@@ -34,13 +27,10 @@ impl Guardrail for File {
             return false;
         }
 
-        let path_to_check = if cfg!(target_os = "windows") {
-            self.path.to_lowercase()
-        } else {
-            self.path.clone()
-        };
-
-        Path::new(&path_to_check).exists()
+        // Preserve original casing so host OS filesystem semantics apply directly
+        // (case-insensitive on default Windows/macOS, case-sensitive on Linux and
+        // Windows per-directory case-sensitive folders).
+        Path::new(&self.path).exists()
     }
 }
 
@@ -53,7 +43,7 @@ mod tests {
     #[test]
     fn test_file_guardrail_exists() {
         let dir = tempdir().unwrap();
-        let file_path = dir.path().join("test_file.txt");
+        let file_path = dir.path().join("MixedCase_Test_File.txt");
         fs::write(&file_path, "test").unwrap();
 
         let guardrail = File::new(file_path.to_str().unwrap());
@@ -63,6 +53,12 @@ mod tests {
     #[test]
     fn test_file_guardrail_not_exists() {
         let guardrail = File::new("/path/that/does/not/exist");
+        assert!(!guardrail.check());
+    }
+
+    #[test]
+    fn test_file_guardrail_empty_path_fails_closed() {
+        let guardrail = File::new("");
         assert!(!guardrail.check());
     }
 }
