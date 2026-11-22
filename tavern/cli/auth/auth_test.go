@@ -1,8 +1,11 @@
 package auth_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -303,4 +306,144 @@ func TestAuthenticate_EnvVarSkipsCacheValidation(t *testing.T) {
 	// Cache file should remain intact.
 	_, statErr := os.Stat(cachePath)
 	assert.NoError(t, statErr, "cache file should be preserved when env var provides token")
+}
+
+// TestAuthenticate_DefaultRDA verifies the default Remote Device Authentication
+// flow including trailing-slash URL normalization, plaintext HTTP warning,
+// polling until approved, and credential caching without opening a browser.
+func TestAuthenticate_DefaultRDA(t *testing.T) {
+	t.Setenv(auth.EnvUseBrowserOAuth, "")
+
+	const (
+		expectedDeviceCode = "dev-code-123"
+		expectedToken      = "rda-access-token"
+	)
+
+	var pollCount atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/auth/rda/code":
+			assert.Equal(t, http.MethodPost, r.Method)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"device_code":               expectedDeviceCode,
+				"user_code":                 "ABCD-EFGH",
+				"verification_uri":          "https://tavern.example/device",
+				"verification_uri_complete": "https://tavern.example/device?code=ABCD-EFGH",
+				"expires_in":                10,
+				"interval":                  1,
+			})
+		case "/auth/rda/token":
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, expectedDeviceCode, r.URL.Query().Get("device_code"))
+			if pollCount.Add(1) == 1 {
+				http.Error(w, `{"error":"authorization_pending"}`, http.StatusBadRequest)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"access_token": expectedToken,
+			})
+		default:
+			http.Error(w, "unexpected path: "+r.URL.Path, http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+
+	// Capture slog warnings to verify plaintext http:// warning fires in RDA flow.
+	var logBuf bytes.Buffer
+	prevLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logBuf, &slog.HandlerOptions{Level: slog.LevelWarn})))
+	defer slog.SetDefault(prevLogger)
+
+	browser := auth.BrowserFunc(func(string) error {
+		t.Fatalf("browser should not be opened in default RDA flow")
+		return nil
+	})
+
+	cachePath := filepath.Join(t.TempDir(), "cache")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Pass URL with trailing slash to verify normalization.
+	token, err := auth.Authenticate(ctx, browser, srv.URL+"/", auth.WithCacheFile(cachePath))
+	require.NoError(t, err)
+	assert.Equal(t, expectedToken, string(token))
+	assert.GreaterOrEqual(t, pollCount.Load(), int32(2))
+	assert.Contains(t, logBuf.String(), "using insecure access token url (http)")
+
+	cached, err := os.ReadFile(cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, expectedToken, string(cached))
+}
+
+// TestAuthenticate_DefaultRDA_InvalidURL verifies that invalid URLs fail fast
+// with ErrInvalidURL in the default RDA flow (without TAVERN_USE_BROWSER_OAUTH).
+func TestAuthenticate_DefaultRDA_InvalidURL(t *testing.T) {
+	t.Setenv(auth.EnvUseBrowserOAuth, "")
+
+	for _, rawURL := range []string{"💩://invalid", "", "not-a-url"} {
+		t.Run(rawURL, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+
+			token, err := auth.Authenticate(ctx, nil, rawURL)
+			assert.Empty(t, string(token))
+			assert.ErrorIs(t, err, auth.ErrInvalidURL)
+		})
+	}
+}
+
+// TestAuthenticate_BrowserOAuthOptIn verifies that browser OAuth can be enabled
+// both programmatically via WithBrowserOAuth() and via boolean env var values.
+func TestAuthenticate_BrowserOAuthOptIn(t *testing.T) {
+	const wantToken = "browser-opt-in-token"
+
+	tests := []struct {
+		name   string
+		envVal string
+		opts   []auth.AuthOption
+	}{
+		{
+			name:   "WithBrowserOAuthOption",
+			envVal: "",
+			opts:   []auth.AuthOption{auth.WithBrowserOAuth()},
+		},
+		{
+			name:   "EnvTrue",
+			envVal: "true",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(auth.EnvUseBrowserOAuth, tc.envVal)
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			browserCalled := false
+			browser := auth.BrowserFunc(func(loginURL string) error {
+				browserCalled = true
+				u, err := url.Parse(loginURL)
+				require.NoError(t, err)
+				assert.Equal(t, "/access_token/redirect", u.Path)
+				redirPort := u.Query().Get(tavernauth.ParamTokenRedirPort)
+				require.NotEmpty(t, redirPort)
+
+				callbackURL := fmt.Sprintf("http://127.0.0.1:%s/?%s=%s", redirPort, tavernauth.ParamTokenRedirToken, wantToken)
+				resp, err := http.Get(callbackURL)
+				if err != nil {
+					return err
+				}
+				resp.Body.Close()
+				return nil
+			})
+
+			token, err := auth.Authenticate(ctx, browser, "https://tavern.example/", tc.opts...)
+			require.NoError(t, err)
+			assert.True(t, browserCalled)
+			assert.Equal(t, wantToken, string(token))
+		})
+	}
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"realm.pub/tavern/cli/qrcode"
@@ -14,8 +16,10 @@ import (
 // AuthenticateRemoteDevice begins the remote device authentication flow by polling
 // the provided tavern URL until the device gets approved or rejected.
 func AuthenticateRemoteDevice(ctx context.Context, tavernURL string, tokenCh chan<- Token, errCh chan<- error) {
+	baseURL := strings.TrimRight(tavernURL, "/")
+
 	// 1. Request Code
-	codeReq, err := http.NewRequestWithContext(ctx, http.MethodPost, tavernURL+"/auth/rda/code", nil)
+	codeReq, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/auth/rda/code", nil)
 	if err != nil {
 		errCh <- fmt.Errorf("failed to build code request: %w", err)
 		return
@@ -70,7 +74,7 @@ func AuthenticateRemoteDevice(ctx context.Context, tavernURL string, tokenCh cha
 			return
 		case <-ticker.C:
 			// Poll token endpoint
-			tokenURL := fmt.Sprintf("%s/auth/rda/token?device_code=%s", tavernURL, codeRes.DeviceCode)
+			tokenURL := fmt.Sprintf("%s/auth/rda/token?device_code=%s", baseURL, url.QueryEscape(codeRes.DeviceCode))
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, tokenURL, nil)
 			if err != nil {
 				continue // try again

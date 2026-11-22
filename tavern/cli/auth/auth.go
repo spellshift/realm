@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -52,9 +54,15 @@ func (f BrowserFunc) OpenURL(tavernURL string) error {
 	return f(tavernURL)
 }
 
-// Authenticate the user to the Tavern API using the provided browser.
-// This will open the browser to a login URL, which will redirect to an http server (hosted locally)
-// with authentication credentials. This prevents the need for copy pasting tokens manually.
+// Authenticate authenticates the user to the Tavern API.
+// By default, it uses the Remote Device Authentication (RDA) flow, printing a
+// verification URL/code and polling until approved.
+//
+// The legacy local browser OAuth flow (which opens the provided browser to a
+// login URL that redirects to a local HTTP callback server, falling back to RDA
+// if opening the browser fails) can be opted into via WithBrowserOAuth() or by
+// setting TAVERN_USE_BROWSER_OAUTH=1 (or true). The browser parameter is only
+// used when browser OAuth is enabled.
 //
 // After authenticating, the resulting Token may be used to authenticate to Tavern for HTTP requests.
 // This should be done by calling the `Authenticate(request)` method on the returned token.
@@ -98,12 +106,27 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		}
 	}
 
+	// Validate & normalize Tavern URL before starting any auth flow.
+	parsedURL, err := url.Parse(tavernURL)
+	if err != nil {
+		return Token(""), fmt.Errorf("%w: %v", ErrInvalidURL, err)
+	}
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return Token(""), fmt.Errorf("%w: %q", ErrInvalidURL, tavernURL)
+	}
+	normalizedURL := strings.TrimRight(parsedURL.String(), "/")
+
+	// Log TLS Warning for plaintext HTTP regardless of auth flow.
+	if parsedURL.Scheme == "http" {
+		slog.WarnContext(ctx, "using insecure access token url (http), this may leak sensitive information")
+	}
+
 	// Create Channels
 	tokenCh := make(chan Token, 1)
 	errCh := make(chan error, 1)
 
 	// Use Browser OAuth Flow if Explicitly Enabled
-	if os.Getenv("TAVERN_USE_BROWSER_OAUTH") == "1" {
+	if shouldUseBrowserOAuth(options) {
 		// Create Listener
 		conn, err := net.Listen("tcp", ":0")
 		if err != nil {
@@ -112,23 +135,15 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		defer conn.Close()
 
 		// Build Access Token Endpoint
-		accessTokenRedirURL, err := url.Parse(tavernURL)
-		if err != nil {
-			return Token(""), fmt.Errorf("%w: %v", ErrInvalidURL, err)
-		}
 		_, redirPort, err := net.SplitHostPort(conn.Addr().String())
 		if err != nil {
 			return Token(""), fmt.Errorf("%w: %q: %v", ErrInvalidURL, conn.Addr().String(), err)
 		}
+		accessTokenRedirURL := *parsedURL
 		accessTokenRedirURL.RawQuery = url.Values{
 			auth.ParamTokenRedirPort: []string{redirPort},
 		}.Encode()
 		accessTokenRedirURL.Path = "/access_token/redirect"
-
-		// Log TLS Warning
-		if accessTokenRedirURL.Scheme == "http" {
-			slog.WarnContext(ctx, "using insecure access token url (http), this may leak sensitive information")
-		}
 
 		// Configure Server
 		srv := &http.Server{
@@ -141,7 +156,7 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := srv.Serve(conn); err != nil {
+			if err := srv.Serve(conn); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				errCh <- fmt.Errorf("http token redirect server failed: %w", err)
 			}
 		}()
@@ -166,11 +181,11 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		// Fallback to Remote Device Authentication if browser fails
 		if err != nil {
 			slog.WarnContext(ctx, "failed to open browser, falling back to remote device authentication", "error", err)
-			go AuthenticateRemoteDevice(ctx, tavernURL, tokenCh, errCh)
+			go AuthenticateRemoteDevice(ctx, normalizedURL, tokenCh, errCh)
 		}
 	} else {
 		// Default to Remote Device Authentication
-		go AuthenticateRemoteDevice(ctx, tavernURL, tokenCh, errCh)
+		go AuthenticateRemoteDevice(ctx, normalizedURL, tokenCh, errCh)
 	}
 
 	// Wait for Token, Error, or Cancellation
@@ -188,6 +203,18 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		}
 		return token, nil
 	}
+}
+
+func shouldUseBrowserOAuth(options AuthOptions) bool {
+	if options.UseBrowserOAuth {
+		return true
+	}
+	raw := os.Getenv(EnvUseBrowserOAuth)
+	if raw == "" {
+		return false
+	}
+	enabled, err := strconv.ParseBool(raw)
+	return err == nil && enabled
 }
 
 // validateToken verifies that the provided token is still accepted by the tavern
