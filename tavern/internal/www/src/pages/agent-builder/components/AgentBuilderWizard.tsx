@@ -57,12 +57,14 @@ const TARGET_FILTER_OPTIONS = [
 
 export type AgentBuilderWizardProps = {
     showHeader?: boolean;
+    initialProfileId?: string;
     onComplete?: (taskId: string) => void;
     onCancel?: () => void;
 };
 
 export const AgentBuilderWizard = ({
     showHeader = true,
+    initialProfileId,
     onComplete,
     onCancel,
 }: AgentBuilderWizardProps) => {
@@ -72,7 +74,7 @@ export const AgentBuilderWizard = ({
     const { profiles, loading, error: profilesError } = useBuildProfiles();
     const { platforms, loading: buildersLoading, error: buildersError } = useOnlineBuilderPlatforms();
     const { data: authorization } = useAuthorization();
-    const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+    const [selectedProfileId, setSelectedProfileId] = useState<string | null>(initialProfileId ?? null);
     const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
     const setSelectedProfile = (profile: BuildProfile) => setSelectedProfileId(profile.id);
     const [createTask, { loading: creating }] = useMutation(CREATE_BUILD_TASK);

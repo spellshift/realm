@@ -16,6 +16,7 @@ import AdminTabs from "./components/AdminTabs";
 import { ProfilesTab } from "../agent-builder/profiles-tab";
 import { BuildersTab } from "../agent-builder/builders-tab";
 import NewBuildProfileModal from "../agent-builder/components/NewBuildProfileModal";
+import AgentBuilderWizardModal from "../agent-builder/components/AgentBuilderWizardModal";
 import EnrollBuilderModal from "../agent-builder/components/EnrollBuilderModal";
 import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, useBuilders, useBuildProfiles } from "../agent-builder/queries";
 import { BuildProfile } from "../agent-builder/types";
@@ -32,6 +33,7 @@ export const AdminPortal = () => {
     const [enrollModalOpen, setEnrollModalOpen] = useState(false);
     const [newProfileModalOpen, setNewProfileModalOpen] = useState(false);
     const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
+    const [generatingProfileId, setGeneratingProfileId] = useState<string | null>(null);
     const [deleteProfile] = useMutation(DELETE_BUILD_PROFILE, {
         refetchQueries: [{ query: GET_BUILD_PROFILES }],
         onCompleted: () => {
@@ -128,6 +130,7 @@ export const AdminPortal = () => {
                                 loading={profilesLoading}
                                 error={profilesError}
                                 onAddProfile={goToNewProfile}
+                                onGenerateAsset={(profile) => setGeneratingProfileId(profile.id)}
                                 onEditProfile={goToEditProfile}
                                 onDeleteProfile={handleDeleteProfile}
                             />
@@ -152,6 +155,13 @@ export const AdminPortal = () => {
                         await refetchProfiles();
                     }}
                 />
+                {generatingProfileId !== null && (
+                    <AgentBuilderWizardModal
+                        isOpen={true}
+                        setOpen={(open) => { if (!open) setGeneratingProfileId(null); }}
+                        initialProfileId={generatingProfileId}
+                    />
+                )}
             </div>
         </AdminAccessGate>
     );
