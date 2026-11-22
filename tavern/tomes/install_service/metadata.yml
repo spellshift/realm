@@ -4,7 +4,25 @@ author: hulto
 support_model: FIRST_PARTY
 tactic: PERSISTENCE
 paramdefs:
-- name: service_configs
+- name: name
   type: string
-  label: Service configurations (JSON array)
-  placeholder: '[{"name":"imix_svc","windows_display_name":"","description":"Realm c2 agent service","executable_name":"imixd","executable_args":""}]'
+  label: Service name
+  placeholder: imix_svc
+- name: description
+  type: string
+  label: Service description
+  placeholder: Realm c2 agent service
+- name: executable_name
+  type: string
+  label: Executable name
+  placeholder: imixd
+- name: executable_args
+  type: string
+  label: Executable arguments
+  placeholder: --quiet
+  optional: true
+- name: windows_display_name
+  type: string
+  label: Windows display name
+  placeholder: Realm agent service
+  optional: true

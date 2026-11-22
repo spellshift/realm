@@ -79,7 +79,7 @@ export const ConfigureParams = ({ formik }: {
                     <FormControl key={field.name} isInvalid={Boolean(showError)}>
                         <FormLabel htmlFor={field.name}>
                             {field.label || field.name}
-                            <span className="text-red-500 ml-1">*</span>
+                            {!field.optional && <span className="text-red-500 ml-1">*</span>}
                         </FormLabel>
                         <Textarea
                             id={field.name}

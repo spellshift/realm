@@ -304,11 +304,7 @@ The install subcommand executes embedded tomes similar to golem.
 It will loop through all embedded files looking for main.eldritch.
 Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
 
-To bundle an installation script from Tavern, add the **Install Service** tome to a build profile in the builder. Its **Service configurations** parameter accepts a JSON array. The tome chooses one configuration and copies the agent binary to the chosen service path before installing the service. For example:
-
-```json
-[{"name":"imix_svc","windows_display_name":"","description":"Realm c2 agent service","executable_name":"imixd","executable_args":""}]
-```
+To bundle an installation script from Tavern, add the **Install Service** tome to a build profile in the builder. Enter a service name, description, and executable name. Executable arguments and a Windows display name are optional. The builder configures one service; the tome copies the agent binary to the selected service path before installing it.
 
 Other bundled tomes can also run during `imix install`. The source directory for build-time installation scripts is `realm/implants/imix/install_scripts`.
 
