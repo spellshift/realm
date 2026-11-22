@@ -12,15 +12,14 @@ on:
 
 permissions:
   actions: read
-  contents: read
-  pull-requests: write
   checks: write
-  issues: write
 
 jobs:
   flaky-monitor:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure' }}
+    if: >-
+      (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure') &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     steps:
       - name: 📥 Download JUnit Results
         uses: actions/download-artifact@v4
@@ -38,7 +37,7 @@ jobs:
 
       - name: 📊 Publish Unit Test Results
         id: publish
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@da5b7be67623cd59bbbd1a0ce4f022050a55605f # v2.26.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           junit_files: "junit-results/**/*.xml"
@@ -59,21 +58,25 @@ jobs:
           RUNS_FLAKY: ${{ steps.publish.outputs.runs_flaky }}
           TESTS_FLAKY: ${{ steps.publish.outputs.tests_flaky }}
           JSON: ${{ steps.publish.outputs.json }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+          WORKFLOW_RUN_URL: ${{ github.event.workflow_run.html_url }}
         run: |
           {
             echo "## Flaky Test Summary"
             echo ""
             echo "- Flaky tests: ${TESTS_FLAKY:-0}"
             echo "- Flaky runs: ${RUNS_FLAKY:-0}"
-            echo "- Source workflow run: [${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})"
+            echo "- Source workflow run: [${WORKFLOW_RUN_ID}](${WORKFLOW_RUN_URL})"
             echo ""
             if [ -n "${JSON}" ]; then
-              echo "<details><summary>Raw JSON output</summary>"
-              echo ""
-              echo '```json'
-              echo "${JSON}"
-              echo '```'
-              echo ""
-              echo "</details>"
+              if SANITIZED_JSON=$(printf '%s' "${JSON}" | jq . 2>/dev/null); then
+                echo "<details><summary>Raw JSON output</summary>"
+                echo ""
+                echo '```json'
+                printf '%s\n' "${SANITIZED_JSON}" | sed -e 's/```/\\u0060\\u0060\\u0060/g' -e 's#</#<\\/#g'
+                echo '```'
+                echo ""
+                echo "</details>"
+              fi
             fi
           } >> "$GITHUB_STEP_SUMMARY"

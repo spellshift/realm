@@ -31,7 +31,6 @@ jobs:
       run: |
         # Use latest gotestsum, Go 1.25.0 supports it
         go install gotest.tools/gotestsum@latest
-        go install github.com/ctrf-io/go-ctrf-json-reporter/cmd/go-ctrf-json-reporter@latest
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test
@@ -39,22 +38,10 @@ jobs:
       shell: bash
       run: |
         $(go env GOPATH)/bin/gotestsum \
-          --junitfile results.xml \
-          --jsonfile test-output.json \
+          --junitfile junit-tavern-${{ matrix.os }}.xml \
           --rerun-fails=2 \
           --packages="./tavern/..." \
           -- -v -race -coverprofile='coverage.out' -covermode=atomic
-    - name: 🔄 Convert to CTRF
-      if: always() # Run even if tests fail so we report the failures
-      shell: bash
-      run: |
-        if [ -f test-output.json ]; then
-          cat test-output.json | $(go env GOPATH)/bin/go-ctrf-json-reporter -o ctrf-tavern-${{ matrix.os }}.json
-          # Normalize timestamps to avoid 50+ year durations when merging with reports lacking timestamps
-          jq '.results.summary.stop = (.results.summary.stop - .results.summary.start) | .results.summary.start = 0' ctrf-tavern-${{ matrix.os }}.json > ctrf-tavern-${{ matrix.os }}.json.tmp && mv ctrf-tavern-${{ matrix.os }}.json.tmp ctrf-tavern-${{ matrix.os }}.json
-        else
-          echo "test-output.json not found, skipping CTRF conversion"
-        fi
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
       with:
@@ -62,18 +49,12 @@ jobs:
         files: ./coverage.out
         flags: tavern
         name: tavern-coverage
-    - name: 📤 Upload CTRF Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ctrf-tavern-${{ matrix.os }}
-        path: ctrf-tavern-${{ matrix.os }}.json
     - name: 📤 Upload JUnit Results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: junit-tavern-${{ matrix.os }}
-        path: results.xml
+        path: junit-tavern-${{ matrix.os }}.xml
         if-no-files-found: ignore
 
   implants:
@@ -149,13 +130,12 @@ jobs:
         cargo nextest run --profile ci -p eldritch-wasm --features fake_bindings
         cd ./lib/eldritch/stdlib/tests
         cargo llvm-cov nextest --config-file "$NEXTEST_CONFIG" --profile ci --lcov --output-path lcov.info
-    - name: 🔄 Convert to CTRF
+    - name: 📦 Collect JUnit Reports
       if: always()
       shell: bash # Explicitly use bash to support standard shell syntax on Windows
       run: |
         cd ./implants/
-        # Rename every junit.xml produced by nextest so we can upload them all as artifacts
-        # and so the CTRF converter has a stable, unique input file name.
+        # Rename every junit.xml produced by nextest with unique OS-scoped names for artifact upload.
         idx=0
         while IFS= read -r JUNIT_PATH; do
           [ -z "$JUNIT_PATH" ] && continue
@@ -166,13 +146,9 @@ jobs:
           fi
           mv "$JUNIT_PATH" "$DEST"
           idx=$((idx + 1))
-        done < <(find . -name junit.xml)
+        done < <(find . -name junit.xml | sort)
         if [ $idx -eq 0 ]; then
           echo "No JUnit report generated"
-        fi
-
-        if [ -f junit-implants-${{ matrix.os }}.xml ]; then
-          npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
         fi
     - name: 📶 Upload Coverage Results
       uses: codecov/codecov-action@v5
@@ -181,12 +157,6 @@ jobs:
         files: ./implants/lcov.info,./implants/lib/eldritch/stdlib/tests/lcov.info
         flags: implants
         name: implants-coverage-${{ matrix.os }}
-    - name: 📤 Upload CTRF Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ctrf-implants-${{ matrix.os }}
-        path: implants/ctrf-implants-${{ matrix.os }}.json
     - name: 📤 Upload JUnit Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -217,9 +187,6 @@ jobs:
     - name: 🔎 Run vitest with coverage
       # Generate JUnit XML
       run: npm test -- --run --coverage --reporter=junit --output-file=junit-ui-${{ matrix.os }}.xml
-    - name: 🔄 Convert to CTRF
-      if: always()
-      run: npx junit-to-ctrf junit-ui-${{ matrix.os }}.xml -o ctrf-ui-${{ matrix.os }}.json
     - name: 📶 Upload Coverage Results
       if: always()
       uses: codecov/codecov-action@v5
@@ -228,12 +195,6 @@ jobs:
         files: ./tavern/internal/www/coverage/lcov.info
         flags: ui-tests
         name: ui-tests-coverage
-    - name: 📤 Upload CTRF Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ctrf-ui-${{ matrix.os }}
-        path: tavern/internal/www/ctrf-ui-${{ matrix.os }}.json
     - name: 📤 Upload JUnit Results
       if: always()
       uses: actions/upload-artifact@v4
