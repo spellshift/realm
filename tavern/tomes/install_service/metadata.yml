@@ -1,0 +1,26 @@
+name: Install Service
+description: Copy the agent binary and install it as a service on the local system.
+author: hulto
+support_model: FIRST_PARTY
+tactic: PERSISTENCE
+paramdefs:
+- name: name
+  type: string
+  label: Service name
+  placeholder: imix_svc
+- name: description
+  type: string
+  label: Service description
+  placeholder: Realm c2 agent service
+- name: executable_name
+  type: string
+  label: Executable name
+  placeholder: imixd
+- name: executable_args
+  type: string
+  label: Executable arguments
+  placeholder: --quiet
+- name: windows_display_name
+  type: string
+  label: Windows display name
+  placeholder: Realm agent service
