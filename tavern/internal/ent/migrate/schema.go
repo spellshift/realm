@@ -167,7 +167,7 @@ var (
 				Symbol:     "build_tasks_build_profiles_profile",
 				Columns:    []*schema.Column{BuildTasksColumns[20]},
 				RefColumns: []*schema.Column{BuildProfilesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",

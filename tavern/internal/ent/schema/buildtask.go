@@ -137,6 +137,9 @@ func (BuildTask) Edges() []ent.Edge {
 		edge.To("profile", BuildProfile.Type).
 			Required().
 			Unique().
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
 			Comment("The profile assigned to this build Task"),
 		edge.To("artifact", Asset.Type).
 			Unique().
