@@ -1,11 +1,12 @@
 import { FC } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
-import { BookOpenIcon, FileText, ListVideo, FileCog } from "lucide-react";
+import { BookOpenIcon, Camera, FileText, ListVideo, FileCog } from "lucide-react";
 import TaskResults from "./components/TaskResults";
 import TaskShells from "./components/TaskShells";
 import TaskProcesses from "./components/TaskProcesses";
 import TaskFiles from "./components/TaskFiles";
+import TaskScreenshots from "./components/TaskScreenshots";
 import TaskTome from "./components/TaskTome";
 import TaskAttributes from "./components/TaskAttributes";
 import { TaskNode } from "../../utils/interfacesQuery";
@@ -56,6 +57,11 @@ const TaskCard: FC<TaskCardType> = ({ task }) => {
                             <NoSymbolIcon className="w-4" /> Error
                         </Tab>
                     )}
+                    {task?.screenshots?.totalCount > 0 && (
+                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                            <Camera className="w-4" /> Screenshots ({task.screenshots.totalCount})
+                        </Tab>
+                    )}
                     {task?.shells?.edges.length > 0 && (
                         <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
                             <CommandLineIcon className="w-4" /> Shells
@@ -85,6 +91,11 @@ const TaskCard: FC<TaskCardType> = ({ task }) => {
                     {task?.error && (
                         <TabPanel aria-label="error panel">
                             <TaskResults result={task?.error} />
+                        </TabPanel>
+                    )}
+                    {task?.screenshots?.totalCount > 0 && (
+                        <TabPanel aria-label="screenshots panel">
+                            <TaskScreenshots taskId={task.id} hostId={task.beacon.host?.id || ""} />
                         </TabPanel>
                     )}
                     {task?.shells?.edges.length > 0 && (
