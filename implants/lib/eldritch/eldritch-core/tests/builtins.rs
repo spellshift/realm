@@ -8,6 +8,7 @@ fn test_map_filter_reduce() {
         l = [1, 2, 3]
         res = map(lambda x: x * 2, l)
         assert_eq(res, [2, 4, 6])
+        assert_eq(map(lambda x: x * 2, []), [])
     "#,
     );
 
@@ -17,11 +18,13 @@ fn test_map_filter_reduce() {
         l = [1, 2, 3, 4, 5]
         res = filter(lambda x: x % 2 == 0, l)
         assert_eq(res, [2, 4])
+        assert_eq(filter(lambda x: x > 0, []), [])
 
         # Filter None (truthy)
         l = [0, 1, False, True]
         res = filter(None, l)
         assert_eq(res, [1, True])
+        assert_eq(filter(None, []), [])
     "#,
     );
 

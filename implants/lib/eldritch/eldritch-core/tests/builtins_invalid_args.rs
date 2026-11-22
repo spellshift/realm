@@ -96,6 +96,13 @@ mod tests {
     }
 
     #[test]
+    fn test_filter_invalid_args() {
+        assert!(run_code("filter()").is_err());
+        assert!(run_code("filter(1, [1])").is_err());
+        assert!(run_code("filter(lambda x: x, 1)").is_err());
+    }
+
+    #[test]
     fn test_float_invalid_args() {
         assert!(run_code("float(1, 2)").is_err());
         assert!(run_code("float('invalid')").is_err());
@@ -116,6 +123,14 @@ mod tests {
     fn test_list_invalid_args() {
         assert!(run_code("list(1, 2)").is_err());
         assert!(run_code("list(1)").is_err());
+    }
+
+    #[test]
+    fn test_map_invalid_args() {
+        assert!(run_code("map()").is_err());
+        assert!(run_code("map(1, [1])").is_err());
+        assert!(run_code("map(lambda x: x, 1)").is_err());
+        assert!(run_code("map(lambda x: x, [1], [2])").is_err());
     }
 
     #[test]

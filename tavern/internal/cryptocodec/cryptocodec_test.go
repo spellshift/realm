@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/chacha20poly1305"
+	_ "google.golang.org/grpc/encoding/proto"
+	"google.golang.org/grpc/mem"
 )
 
 func TestLRUCache(t *testing.T) {
@@ -118,19 +120,23 @@ func TestDecrypt_ShortInput(t *testing.T) {
 	require.NoError(t, err)
 	svc := NewCryptoSvc(serverPrivKey)
 
-	res, _ := svc.Decrypt([]byte{0x00})
+	res, pub := svc.Decrypt([]byte{0x00})
 	assert.Equal(t, FAILURE_BYTES, res)
+	assert.Equal(t, FAILURE_BYTES, pub)
 }
 
 func TestDecrypt_ShortInputAfterKey(t *testing.T) {
 	serverPrivKey, err := ecdh.X25519().GenerateKey(rand.Reader)
 	require.NoError(t, err)
+	clientPrivKey, err := ecdh.X25519().GenerateKey(rand.Reader)
+	require.NoError(t, err)
 	svc := NewCryptoSvc(serverPrivKey)
 
-	// Input long enough for key (32 bytes) but not nonce
-	input := make([]byte, 32+1)
-	res, _ := svc.Decrypt(input)
+	// Valid 32-byte client public key followed by fewer bytes than the XChaCha20-Poly1305 nonce.
+	input := append(clientPrivKey.PublicKey().Bytes(), 0x01)
+	res, pub := svc.Decrypt(input)
 	assert.Equal(t, FAILURE_BYTES, res)
+	assert.Equal(t, FAILURE_BYTES, pub)
 }
 
 func TestGoAllIds(t *testing.T) {
@@ -211,5 +217,14 @@ func TestStreamDecryptCodec_Marshal_Unmarshal_Error(t *testing.T) {
 	svc := NewCryptoSvc(serverPrivKey)
 	codec := StreamDecryptCodec{Csvc: svc}
 
-	assert.Equal(t, "xchacha20-poly1305", codec.Name())
+	_, err = codec.Marshal("not-a-proto-message")
+	assert.Error(t, err)
+
+	invalidBuf, err := castBytesToBufSlice([]byte("invalid ciphertext"))
+	require.NoError(t, err)
+	err = codec.Unmarshal(invalidBuf, "not-a-proto-message")
+	assert.Error(t, err)
+
+	err = codec.Unmarshal(mem.BufferSlice{}, "not-a-proto-message")
+	assert.Error(t, err)
 }

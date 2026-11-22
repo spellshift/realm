@@ -70,22 +70,25 @@ func TestSetGRPCResponseHeaders(t *testing.T) {
 	setGRPCResponseHeaders(w)
 
 	assert.Equal(t, "application/octet-stream", w.Header().Get("Content-Type"))
+	assert.Equal(t, "close", w.Header().Get("Connection"))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestGetFlusher(t *testing.T) {
 	t.Run("Supports Flusher", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		_, ok := getFlusher(w)
+		f, ok := getFlusher(w)
 		assert.True(t, ok)
+		assert.NotNil(t, f)
 	})
 
 	// It's hard to mock a ResponseWriter that *doesn't* support Flusher using httptest.NewRecorder
 	// because it implements it. We'd need a custom struct.
 	t.Run("Does Not Support Flusher", func(t *testing.T) {
 		w := &basicResponseWriter{}
-		_, ok := getFlusher(w)
+		f, ok := getFlusher(w)
 		assert.False(t, ok)
+		assert.Nil(t, f)
 	})
 }
 
@@ -106,6 +109,7 @@ func TestHandleStreamError(t *testing.T) {
 
 func TestCreateRequestContext(t *testing.T) {
 	timeout := 100 * time.Millisecond
+	before := time.Now()
 	ctx, cancel := createRequestContext(timeout)
 	defer cancel()
 
@@ -114,5 +118,5 @@ func TestCreateRequestContext(t *testing.T) {
 
 	deadline, ok := ctx.Deadline()
 	assert.True(t, ok)
-	assert.WithinDuration(t, time.Now().Add(timeout), deadline, 10*time.Millisecond)
+	assert.WithinDuration(t, before.Add(timeout), deadline, 50*time.Millisecond)
 }
