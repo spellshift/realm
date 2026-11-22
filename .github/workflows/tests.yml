@@ -8,6 +8,9 @@ on:
     branches: [ main ]
   merge_group:
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -56,6 +59,7 @@ jobs:
           echo "test-output.json not found, skipping CTRF conversion"
         fi
     - name: 📶 Upload Coverage Results
+      if: github.event_name != 'merge_group'
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -175,6 +179,7 @@ jobs:
           npx junit-to-ctrf junit-implants-${{ matrix.os }}.xml -o ctrf-implants-${{ matrix.os }}.json
         fi
     - name: 📶 Upload Coverage Results
+      if: github.event_name != 'merge_group'
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -221,7 +226,7 @@ jobs:
       if: always()
       run: npx junit-to-ctrf junit-ui-${{ matrix.os }}.xml -o ctrf-ui-${{ matrix.os }}.json
     - name: 📶 Upload Coverage Results
-      if: always()
+      if: always() && github.event_name != 'merge_group'
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}

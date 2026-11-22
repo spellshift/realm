@@ -8,6 +8,9 @@ on:
     branches: [ main ]
   merge_group:
 
+permissions:
+  contents: read
+
 jobs:
   e2e_repl_test:
     runs-on: ubuntu-latest
