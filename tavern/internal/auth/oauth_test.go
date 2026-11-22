@@ -94,6 +94,7 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 
 	// JWT assertions
 	assert.Equal(t, state, claims.ID)
+	assert.Equal(t, jwt.ClaimStrings{auth.OAuthStateAudience}, claims.Audience)
 	assert.GreaterOrEqual(t, claims.IssuedAt.Time.Unix(), time.Now().Add(-60*time.Second).Unix())
 	assert.Greater(t, claims.ExpiresAt.Time.Unix(), time.Now().Add(9*time.Minute).Unix())
 	assert.Less(t, claims.ExpiresAt.Time.Unix(), time.Now().Add(11*time.Minute).Unix())
@@ -232,10 +233,12 @@ func getSessionCookie(cookies []*http.Cookie) *http.Cookie {
 
 func getOAuthAuthorizationRequest(t *testing.T, privKey ed25519.PrivateKey, code string) *http.Request {
 	// Create a JWT
-	expiresAt := time.Now().Add(10 * time.Minute)
+	now := time.Now()
+	expiresAt := now.Add(10 * time.Minute)
 	claims := jwt.RegisteredClaims{
 		ID:        "ABCDEFG",
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Audience:  jwt.ClaimStrings{auth.OAuthStateAudience},
+		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(expiresAt),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -256,6 +259,119 @@ func getOAuthAuthorizationRequest(t *testing.T, privKey ed25519.PrivateKey, code
 	})
 	req.URL.RawQuery = params.Encode()
 	return req
+}
+
+func TestNewOAuthAuthorizationHandler_JWTHardening(t *testing.T) {
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	handler := auth.NewOAuthAuthorizationHandler(oauth2.Config{}, pubKey, graph, "https://example.invalid/profile")
+
+	const state = "ABCDEFG"
+	now := time.Now()
+
+	signEdDSA := func(claims jwt.RegisteredClaims) string {
+		t.Helper()
+		s, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).SignedString(privKey)
+		require.NoError(t, err)
+		return s
+	}
+
+	hs256Token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ID:        state,
+		Audience:  jwt.ClaimStrings{auth.OAuthStateAudience},
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+	}).SignedString([]byte(pubKey))
+	require.NoError(t, err)
+
+	noneToken, err := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.RegisteredClaims{
+		ID:        state,
+		Audience:  jwt.ClaimStrings{auth.OAuthStateAudience},
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+	}).SignedString(jwt.UnsafeAllowNoneSignatureType)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name  string
+		token string
+	}{
+		{
+			name: "missing_exp",
+			token: signEdDSA(jwt.RegisteredClaims{
+				ID:       state,
+				Audience: jwt.ClaimStrings{auth.OAuthStateAudience},
+				IssuedAt: jwt.NewNumericDate(now),
+			}),
+		},
+		{
+			name: "future_iat",
+			token: signEdDSA(jwt.RegisteredClaims{
+				ID:        state,
+				Audience:  jwt.ClaimStrings{auth.OAuthStateAudience},
+				IssuedAt:  jwt.NewNumericDate(now.Add(5 * time.Minute)),
+				ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+			}),
+		},
+		{
+			name:  "wrong_alg_hs256",
+			token: hs256Token,
+		},
+		{
+			name:  "wrong_alg_none",
+			token: noneToken,
+		},
+		{
+			name: "missing_aud",
+			token: signEdDSA(jwt.RegisteredClaims{
+				ID:        state,
+				IssuedAt:  jwt.NewNumericDate(now),
+				ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+			}),
+		},
+		{
+			name: "cross_audience_c2_task",
+			token: signEdDSA(jwt.RegisteredClaims{
+				ID:        state,
+				Audience:  jwt.ClaimStrings{"tavern.c2.task"},
+				IssuedAt:  jwt.NewNumericDate(now),
+				ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+			}),
+		},
+		{
+			name: "cross_audience_hostcheck",
+			token: signEdDSA(jwt.RegisteredClaims{
+				ID:        state,
+				Audience:  jwt.ClaimStrings{"/internal/host-check"},
+				IssuedAt:  jwt.NewNumericDate(now),
+				ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+			}),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/oauth/authorize", nil)
+			req.URL.RawQuery = url.Values{
+				"state": []string{state},
+				"code":  []string{"test-code"},
+			}.Encode()
+			req.AddCookie(&http.Cookie{
+				Name:     auth.OAuthCookieName,
+				Value:    tc.token,
+				Secure:   true,
+				HttpOnly: true,
+			})
+
+			resp := httptest.NewRecorder()
+			handler.ServeHTTP(resp, req)
+			assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+		})
+	}
 }
 
 // TestNewOAuthAuthorizationHandler_DBError ensures the OAuth Authorization Handler handles DB errors gracefully

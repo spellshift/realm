@@ -54,6 +54,7 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), func(int) string) {
 	mintBeaconJWT := func(beaconID int) string {
 		claims := jwt.MapClaims{
 			c2.ClaimBeaconID: beaconID,
+			"aud":            jwt.ClaimStrings{c2.TaskJWTAudience},
 			"iat":            time.Now().Unix(),
 			"exp":            time.Now().Add(1 * time.Hour).Unix(),
 		}

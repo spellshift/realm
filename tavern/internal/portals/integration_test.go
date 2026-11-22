@@ -44,6 +44,7 @@ type TestEnv struct {
 func generateJWT(t testing.TB, privKey ed25519.PrivateKey, beaconID int) string {
 	claims := jwt.MapClaims{
 		c2.ClaimBeaconID: beaconID,
+		"aud":            jwt.ClaimStrings{c2.TaskJWTAudience},
 		"iat":            time.Now().Unix(),
 		"exp":            time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}

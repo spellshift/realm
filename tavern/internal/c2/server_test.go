@@ -186,6 +186,7 @@ func TestJWTValidate(t *testing.T) {
 
 	claims := jwt.MapClaims{
 		ClaimBeaconID: 1234,
+		"aud":         jwt.ClaimStrings{TaskJWTAudience},
 		"iat":         time.Now().Unix(),
 		"exp":         time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
@@ -200,8 +201,16 @@ func TestJWTValidate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1234, beaconID)
 
+	// Verify server-generated task JWT succeeds and carries expected claims
+	generatedToken, err := srv.generateTaskJWT(5678)
+	require.NoError(t, err)
+	beaconID, err = srv.ValidateJWT(generatedToken)
+	require.NoError(t, err)
+	assert.Equal(t, 5678, beaconID)
+
 	// Verify unbound (legacy) token without beacon_id is rejected
 	legacyClaims := jwt.MapClaims{
+		"aud": jwt.ClaimStrings{TaskJWTAudience},
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(1 * time.Hour).Unix(),
 	}
@@ -216,12 +225,111 @@ func TestJWTValidate(t *testing.T) {
 	for _, bad := range []json.Number{"1.5", "9223372036854775808"} {
 		badToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
 			ClaimBeaconID: bad,
+			"aud":         jwt.ClaimStrings{TaskJWTAudience},
+			"iat":         time.Now().Unix(),
 			"exp":         time.Now().Add(time.Hour).Unix(),
 		})
 		badStr, err := badToken.SignedString(privKey)
 		assert.NoError(t, err)
 		_, err = srv.ValidateJWT(badStr)
 		assert.Error(t, err, "expected rejection for beacon_id claim %s", bad)
+	}
+}
+
+func TestJWTValidateHardening(t *testing.T) {
+	pubkey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	srv := Server{
+		jwtPrivateKey: privKey,
+		jwtPublicKey:  pubkey,
+	}
+
+	now := time.Now()
+	signEdDSA := func(claims jwt.MapClaims) string {
+		t.Helper()
+		s, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).SignedString(privKey)
+		require.NoError(t, err)
+		return s
+	}
+
+	hs256Token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		ClaimBeaconID: 1234,
+		"aud":         jwt.ClaimStrings{TaskJWTAudience},
+		"iat":         now.Unix(),
+		"exp":         now.Add(time.Hour).Unix(),
+	}).SignedString([]byte(pubkey))
+	require.NoError(t, err)
+
+	noneToken, err := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
+		ClaimBeaconID: 1234,
+		"aud":         jwt.ClaimStrings{TaskJWTAudience},
+		"iat":         now.Unix(),
+		"exp":         now.Add(time.Hour).Unix(),
+	}).SignedString(jwt.UnsafeAllowNoneSignatureType)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name  string
+		token string
+	}{
+		{
+			name: "missing_exp",
+			token: signEdDSA(jwt.MapClaims{
+				ClaimBeaconID: 1234,
+				"aud":         jwt.ClaimStrings{TaskJWTAudience},
+				"iat":         now.Unix(),
+			}),
+		},
+		{
+			name: "future_iat",
+			token: signEdDSA(jwt.MapClaims{
+				ClaimBeaconID: 1234,
+				"aud":         jwt.ClaimStrings{TaskJWTAudience},
+				"iat":         now.Add(5 * time.Minute).Unix(),
+				"exp":         now.Add(time.Hour).Unix(),
+			}),
+		},
+		{
+			name:  "wrong_alg_hs256",
+			token: hs256Token,
+		},
+		{
+			name:  "wrong_alg_none",
+			token: noneToken,
+		},
+		{
+			name: "missing_aud",
+			token: signEdDSA(jwt.MapClaims{
+				ClaimBeaconID: 1234,
+				"iat":         now.Unix(),
+				"exp":         now.Add(time.Hour).Unix(),
+			}),
+		},
+		{
+			name: "cross_audience_oauth",
+			token: signEdDSA(jwt.MapClaims{
+				ClaimBeaconID: 1234,
+				"aud":         jwt.ClaimStrings{"tavern.oauth.state"},
+				"iat":         now.Unix(),
+				"exp":         now.Add(time.Hour).Unix(),
+			}),
+		},
+		{
+			name: "cross_audience_hostcheck",
+			token: signEdDSA(jwt.MapClaims{
+				ClaimBeaconID: 1234,
+				"aud":         jwt.ClaimStrings{"/internal/host-check"},
+				"iat":         now.Unix(),
+				"exp":         now.Add(time.Hour).Unix(),
+			}),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := srv.ValidateJWT(tc.token)
+			require.Error(t, err)
+		})
 	}
 }
 
@@ -284,6 +392,7 @@ func TestJWTValidateAuditAndRedaction(t *testing.T) {
 
 	validToken, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
 		ClaimBeaconID: 4242,
+		"aud":         jwt.ClaimStrings{TaskJWTAudience},
 		"iat":         time.Now().Unix(),
 		"exp":         time.Now().Add(time.Hour).Unix(),
 	}).SignedString(privKey)
@@ -303,12 +412,14 @@ func TestJWTValidateAuditAndRedaction(t *testing.T) {
 
 	expiredToken, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
 		ClaimBeaconID: 4242,
+		"aud":         jwt.ClaimStrings{TaskJWTAudience},
 		"iat":         time.Now().Add(-2 * time.Hour).Unix(),
 		"exp":         time.Now().Add(-1 * time.Hour).Unix(),
 	}).SignedString(privKey)
 	require.NoError(t, err)
 
 	unboundToken, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, jwt.MapClaims{
+		"aud": jwt.ClaimStrings{TaskJWTAudience},
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(time.Hour).Unix(),
 	}).SignedString(privKey)
