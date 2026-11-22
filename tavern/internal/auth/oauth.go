@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
@@ -9,6 +10,8 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -35,6 +38,7 @@ var (
 	ErrOAuthFailedToParseProfileInfo  = fmt.Errorf("failed to parse profile information returned by identity provider")
 	ErrOAuthInvalidProfileInfo        = fmt.Errorf("failed to parse profile information returned by identity provider")
 	ErrOAuthFailedUserLookup          = fmt.Errorf("failed to lookup user account")
+	ErrOAuthFailedUserCreation        = fmt.Errorf("failed to create user account")
 )
 
 // NewOAuthLoginHandler returns an http endpoint that redirects the user to the configured OAuth consent flow
@@ -60,6 +64,8 @@ func NewOAuthLoginHandler(cfg oauth2.Config, privKey ed25519.PrivateKey) http.Ha
 // NewOAuthAuthorizationHandler returns an http endpoint that validates the request was
 // redirected from the identity provider after a consent flow and initializes a user session
 func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, graph *ent.Client, profileURL string) http.Handler {
+	var registerMu sync.Mutex
+
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
@@ -107,6 +113,9 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			http.Error(w, ErrOAuthInvalidState.Error(), http.StatusUnauthorized)
 			return
 		}
+
+		// Clear one-time OAuth state cookie after verification to prevent replay
+		http.SetCookie(w, clearOAuthStateCookie())
 
 		// Exchange the authorization code for an access token from the IDP
 		code := req.FormValue("code")
@@ -156,34 +165,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			Where(user.OauthID(profile.OAuthID)).
 			Only(ctx)
 		if err == nil {
-			http.SetCookie(w, &http.Cookie{
-				Name:     SessionCookieName,
-				Value:    usr.SessionToken,
-				Path:     "/",
-				HttpOnly: true,
-				Expires:  time.Now().AddDate(0, 1, 0),
-			})
-			authCtx := logging.WithActor(ctx, logging.Actor{
-				Kind:       logging.ActorUser,
-				ID:         strconv.Itoa(usr.ID),
-				Name:       usr.Name,
-				IsAdmin:    usr.IsAdmin,
-				AuthMethod: "oauth",
-			})
-			oauthLog.InfoContext(authCtx, "oauth user logged in",
-				"user_id", usr.ID,
-				"user_name", usr.Name,
-				"is_admin", usr.IsAdmin,
-				"is_activated", usr.IsActivated,
-			)
-			logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth user logged in",
-				"new_user", false,
-				"is_admin", usr.IsAdmin,
-				"is_activated", usr.IsActivated,
-				"user_id", usr.ID,
-				"user_name", usr.Name,
-			)
-			http.Redirect(w, req, "/", http.StatusFound)
+			completeOAuthLogin(w, req, usr, false)
 			return
 		}
 
@@ -195,46 +177,156 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			return
 		}
 
-		// If the user is not yet registered, create the user
-		// Tavern uses a TOFU model, if this is the first user they are the admin
-		isTOFU := graph.User.Query().CountX(ctx) == 0
-		usr = graph.User.Create().
-			SetName(profile.Name).
-			SetOauthID(profile.OAuthID).
-			SetPhotoURL(profile.PhotoURL).
-			SetIsAdmin(isTOFU).
-			SetIsActivated(isTOFU).
-			SaveX(ctx)
+		// If the user is not yet registered, create the user atomically in a transaction.
+		// Tavern uses a TOFU model: if this is the first user they are the admin.
+		usr, isNewUser, err := registerOrLookupOAuthUser(ctx, &registerMu, graph, profile.Name, profile.OAuthID, profile.PhotoURL)
+		if err != nil {
+			oauthLog.ErrorContext(ctx, "oauth failed to create user profile", "error", err)
+			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth user creation failed", "reason", "user_creation_failed")
+			http.Error(w, ErrOAuthFailedUserCreation.Error(), http.StatusInternalServerError)
+			return
+		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:     SessionCookieName,
-			Value:    usr.SessionToken,
-			Path:     "/",
-			HttpOnly: true,
-			Expires:  time.Now().AddDate(0, 1, 0),
-		})
-		authCtx := logging.WithActor(ctx, logging.Actor{
-			Kind:       logging.ActorUser,
-			ID:         strconv.Itoa(usr.ID),
-			Name:       usr.Name,
-			IsAdmin:    usr.IsAdmin,
-			AuthMethod: "oauth",
-		})
-		oauthLog.InfoContext(authCtx, "oauth registered new user",
-			"user_id", usr.ID,
-			"user_name", usr.Name,
-			"is_admin", usr.IsAdmin,
-			"is_activated", usr.IsActivated,
-		)
-		logging.Audit(authCtx, "auth", "oauth.login_succeeded", "oauth registered new user",
-			"new_user", true,
-			"is_admin", usr.IsAdmin,
-			"is_activated", usr.IsActivated,
-			"user_id", usr.ID,
-			"user_name", usr.Name,
-		)
-		http.Redirect(w, req, "/", http.StatusFound)
+		completeOAuthLogin(w, req, usr, isNewUser)
 	})
+}
+
+func registerOrLookupOAuthUser(
+	ctx context.Context,
+	mu *sync.Mutex,
+	graph *ent.Client,
+	name, oauthID, photoURL string,
+) (*ent.User, bool, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	tx, err := graph.Tx(ctx)
+	if err != nil {
+		return nil, false, fmt.Errorf("begin tx: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// Re-check inside the transaction in case a concurrent login already registered this user
+	existing, err := tx.User.Query().
+		Where(user.OauthID(oauthID)).
+		Only(ctx)
+	if err == nil {
+		return existing, false, nil
+	}
+	if !ent.IsNotFound(err) {
+		return nil, false, fmt.Errorf("lookup user in tx: %w", err)
+	}
+
+	userCount, err := tx.User.Query().Count(ctx)
+	if err != nil {
+		return nil, false, fmt.Errorf("count users: %w", err)
+	}
+	isTOFU := userCount == 0
+
+	usr, err := tx.User.Create().
+		SetName(name).
+		SetOauthID(oauthID).
+		SetPhotoURL(photoURL).
+		SetIsAdmin(isTOFU).
+		SetIsActivated(isTOFU).
+		Save(ctx)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			_ = tx.Rollback()
+			committed = true
+			existing, lookupErr := graph.User.Query().
+				Where(user.OauthID(oauthID)).
+				Only(ctx)
+			if lookupErr == nil {
+				return existing, false, nil
+			}
+		}
+		return nil, false, fmt.Errorf("save user: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, false, fmt.Errorf("commit tx: %w", err)
+	}
+	committed = true
+	return usr, true, nil
+}
+
+func completeOAuthLogin(w http.ResponseWriter, req *http.Request, usr *ent.User, isNewUser bool) {
+	http.SetCookie(w, newSessionCookie(req, usr.SessionToken))
+	authCtx := logging.WithActor(req.Context(), logging.Actor{
+		Kind:       logging.ActorUser,
+		ID:         strconv.Itoa(usr.ID),
+		Name:       usr.Name,
+		IsAdmin:    usr.IsAdmin,
+		AuthMethod: "oauth",
+	})
+	msg := "oauth user logged in"
+	if isNewUser {
+		msg = "oauth registered new user"
+	}
+	oauthLog.InfoContext(authCtx, msg,
+		"user_id", usr.ID,
+		"user_name", usr.Name,
+		"is_admin", usr.IsAdmin,
+		"is_activated", usr.IsActivated,
+	)
+	logging.Audit(authCtx, "auth", "oauth.login_succeeded", msg,
+		"new_user", isNewUser,
+		"is_admin", usr.IsAdmin,
+		"is_activated", usr.IsActivated,
+		"user_id", usr.ID,
+		"user_name", usr.Name,
+	)
+	http.Redirect(w, req, "/", http.StatusFound)
+}
+
+func newSessionCookie(req *http.Request, sessionToken string) *http.Cookie {
+	return &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    sessionToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   isSecureRequest(req),
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().AddDate(0, 1, 0),
+	}
+}
+
+func isSecureRequest(req *http.Request) bool {
+	if req == nil {
+		return false
+	}
+	if req.TLS != nil {
+		return true
+	}
+	if req.URL != nil && strings.EqualFold(req.URL.Scheme, "https") {
+		return true
+	}
+	if proto := req.Header.Get("X-Forwarded-Proto"); proto != "" {
+		first := strings.TrimSpace(strings.Split(proto, ",")[0])
+		if strings.EqualFold(first, "https") {
+			return true
+		}
+	}
+	return false
+}
+
+func clearOAuthStateCookie() *http.Cookie {
+	return &http.Cookie{
+		Name:     OAuthCookieName,
+		Value:    "",
+		Path:     "/",
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+	}
 }
 
 func newOAuthStateCookie(privKey ed25519.PrivateKey, state string) *http.Cookie {
@@ -253,8 +345,10 @@ func newOAuthStateCookie(privKey ed25519.PrivateKey, state string) *http.Cookie 
 	return &http.Cookie{
 		Name:     OAuthCookieName,
 		Value:    tokenStr,
+		Path:     "/",
 		Secure:   true,
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 		Expires:  expiresAt,
 	}
 }

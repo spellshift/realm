@@ -82,6 +82,10 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 		}
 	}
 	require.NotNil(t, oauthCookie)
+	assert.Equal(t, "/", oauthCookie.Path)
+	assert.True(t, oauthCookie.HttpOnly)
+	assert.True(t, oauthCookie.Secure)
+	assert.Equal(t, http.SameSiteLaxMode, oauthCookie.SameSite)
 
 	// Parse JWT
 	var claims jwt.RegisteredClaims
@@ -319,4 +323,322 @@ func TestNewOAuthAuthorizationHandler_DBError(t *testing.T) {
 	require.Len(t, entries, 1)
 	assert.Equal(t, "oauth.login_failed", entries[0].Action)
 	assert.Equal(t, logging.OutcomeFailure, entries[0].Outcome)
+
+	// State cookie should still be cleared after callback verification
+	clearedState := findCookie(result.Cookies(), auth.OAuthCookieName)
+	require.NotNil(t, clearedState)
+	assert.Equal(t, -1, clearedState.MaxAge)
+	assert.Empty(t, clearedState.Value)
+}
+
+func findCookie(cookies []*http.Cookie, name string) *http.Cookie {
+	for _, cookie := range cookies {
+		if cookie.Name == name {
+			return cookie
+		}
+	}
+	return nil
+}
+
+func TestNewOAuthAuthorizationHandler_ClearsStateCookie(t *testing.T) {
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	idp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token": "tok", "scope": "user", "token_type": "bearer", "expires_in": 86400}`))
+	}))
+	defer idp.Close()
+
+	rsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"sub":"state-clear-user","picture":"photos.com/u","email":"u@example.com","name":"State User","email_verified":true}`))
+	}))
+	defer rsrv.Close()
+
+	cfg := oauth2.Config{
+		ClientID:     "12345",
+		ClientSecret: "SuperSecret",
+		RedirectURL:  "REDIRECT_URL",
+		Endpoint: oauth2.Endpoint{
+			TokenURL:  idp.URL,
+			AuthStyle: oauth2.AuthStyleInParams,
+		},
+	}
+
+	handler := auth.NewOAuthAuthorizationHandler(cfg, pubKey, graph, rsrv.URL)
+
+	t.Run("cleared_after_valid_callback", func(t *testing.T) {
+		resp := httptest.NewRecorder()
+		req := getOAuthAuthorizationRequest(t, privKey, "valid-code")
+		handler.ServeHTTP(resp, req)
+
+		result := resp.Result()
+		require.Equal(t, http.StatusFound, result.StatusCode)
+
+		cleared := findCookie(result.Cookies(), auth.OAuthCookieName)
+		require.NotNil(t, cleared)
+		assert.Equal(t, -1, cleared.MaxAge)
+		assert.Empty(t, cleared.Value)
+		assert.Equal(t, "/", cleared.Path)
+		assert.True(t, cleared.HttpOnly)
+		assert.Equal(t, http.SameSiteLaxMode, cleared.SameSite)
+	})
+
+	t.Run("not_cleared_on_state_mismatch", func(t *testing.T) {
+		resp := httptest.NewRecorder()
+		req := getOAuthAuthorizationRequest(t, privKey, "valid-code")
+		q := req.URL.Query()
+		q.Set("state", "wrong-state")
+		req.URL.RawQuery = q.Encode()
+		handler.ServeHTTP(resp, req)
+
+		result := resp.Result()
+		require.Equal(t, http.StatusUnauthorized, result.StatusCode)
+		assert.Nil(t, findCookie(result.Cookies(), auth.OAuthCookieName))
+	})
+}
+
+func TestNewOAuthAuthorizationHandler_SessionCookieFlags(t *testing.T) {
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	idp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token": "tok", "scope": "user", "token_type": "bearer", "expires_in": 86400}`))
+	}))
+	defer idp.Close()
+
+	rsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"sub":"cookie-flags-user","picture":"photos.com/u","email":"u@example.com","name":"Cookie User","email_verified":true}`))
+	}))
+	defer rsrv.Close()
+
+	cfg := oauth2.Config{
+		ClientID:     "12345",
+		ClientSecret: "SuperSecret",
+		RedirectURL:  "REDIRECT_URL",
+		Endpoint: oauth2.Endpoint{
+			TokenURL:  idp.URL,
+			AuthStyle: oauth2.AuthStyleInParams,
+		},
+	}
+
+	handler := auth.NewOAuthAuthorizationHandler(cfg, pubKey, graph, rsrv.URL)
+
+	tests := []struct {
+		name           string
+		target         string
+		forwardedProto string
+		wantSecure     bool
+	}{
+		{
+			name:       "plain_http_localhost",
+			target:     "http://localhost:8000/oauth/authorize",
+			wantSecure: false,
+		},
+		{
+			name:       "direct_https",
+			target:     "https://tavern.example/oauth/authorize",
+			wantSecure: true,
+		},
+		{
+			name:           "x_forwarded_proto_https",
+			target:         "http://localhost:8000/oauth/authorize",
+			forwardedProto: "https",
+			wantSecure:     true,
+		},
+		{
+			name:           "x_forwarded_proto_chain_https_first",
+			target:         "http://localhost:8000/oauth/authorize",
+			forwardedProto: "https, http",
+			wantSecure:     true,
+		},
+		{
+			name:           "x_forwarded_proto_http",
+			target:         "http://localhost:8000/oauth/authorize",
+			forwardedProto: "http",
+			wantSecure:     false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := getOAuthAuthorizationRequest(t, privKey, "code")
+			httpsReq := httptest.NewRequest(http.MethodGet, tc.target, nil)
+			httpsReq.URL.RawQuery = req.URL.RawQuery
+			for _, c := range req.Cookies() {
+				httpsReq.AddCookie(c)
+			}
+			if tc.forwardedProto != "" {
+				httpsReq.Header.Set("X-Forwarded-Proto", tc.forwardedProto)
+			}
+
+			resp := httptest.NewRecorder()
+			handler.ServeHTTP(resp, httpsReq)
+
+			result := resp.Result()
+			require.Equal(t, http.StatusFound, result.StatusCode)
+
+			sessionCookie := getSessionCookie(result.Cookies())
+			assert.Equal(t, "/", sessionCookie.Path)
+			assert.True(t, sessionCookie.HttpOnly)
+			assert.Equal(t, http.SameSiteLaxMode, sessionCookie.SameSite)
+			assert.Equal(t, tc.wantSecure, sessionCookie.Secure)
+		})
+	}
+}
+
+func TestNewOAuthAuthorizationHandler_UserCreationError(t *testing.T) {
+	persister := &oauthAuditCapture{}
+	logging.SetAuditPersister(persister)
+	t.Cleanup(func() { logging.SetAuditPersister(nil) })
+
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	idp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"access_token": "tok", "scope": "user", "token_type": "bearer", "expires_in": 86400}`))
+	}))
+	defer idp.Close()
+
+	// Name "ab" fails User.Name MinLen(3) validation during Save, previously panicking in SaveX.
+	rsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"sub":"short-name-user","picture":"photos.com/u","email":"u@example.com","name":"ab","email_verified":true}`))
+	}))
+	defer rsrv.Close()
+
+	cfg := oauth2.Config{
+		ClientID:     "12345",
+		ClientSecret: "SuperSecret",
+		RedirectURL:  "REDIRECT_URL",
+		Endpoint: oauth2.Endpoint{
+			TokenURL:  idp.URL,
+			AuthStyle: oauth2.AuthStyleInParams,
+		},
+	}
+
+	handler := auth.NewOAuthAuthorizationHandler(cfg, pubKey, graph, rsrv.URL)
+	resp := httptest.NewRecorder()
+	req := getOAuthAuthorizationRequest(t, privKey, "code")
+
+	assert.NotPanics(t, func() {
+		handler.ServeHTTP(resp, req)
+	})
+
+	result := resp.Result()
+	assert.Equal(t, http.StatusInternalServerError, result.StatusCode)
+	assert.Equal(t, 0, graph.User.Query().CountX(context.Background()))
+
+	entries := persister.Snapshot()
+	require.Len(t, entries, 1)
+	assert.Equal(t, "oauth.login_failed", entries[0].Action)
+	assert.Equal(t, logging.OutcomeFailure, entries[0].Outcome)
+	assert.Equal(t, "user_creation_failed", entries[0].Details["reason"])
+}
+
+func TestNewOAuthAuthorizationHandler_ConcurrentTOFU(t *testing.T) {
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	graph := enttest.OpenTempDB(t)
+	defer graph.Close()
+
+	idp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		code := r.FormValue("code")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"access_token": "%s", "scope": "user", "token_type": "bearer", "expires_in": 86400}`, code)))
+	}))
+	defer idp.Close()
+
+	rsrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		sub := authHeader
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"sub":"%s","picture":"photos.com/u","email":"u@example.com","name":"User %s","email_verified":true}`, sub, sub[len(sub)-4:])))
+	}))
+	defer rsrv.Close()
+
+	cfg := oauth2.Config{
+		ClientID:     "12345",
+		ClientSecret: "SuperSecret",
+		RedirectURL:  "REDIRECT_URL",
+		Endpoint: oauth2.Endpoint{
+			TokenURL:  idp.URL,
+			AuthStyle: oauth2.AuthStyleInParams,
+		},
+	}
+
+	handler := auth.NewOAuthAuthorizationHandler(cfg, pubKey, graph, rsrv.URL)
+
+	const numUsers = 6
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	codes := make([]int, numUsers)
+
+	for i := 0; i < numUsers; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			req := getOAuthAuthorizationRequest(t, privKey, fmt.Sprintf("user-%04d", idx))
+			resp := httptest.NewRecorder()
+			<-start
+			handler.ServeHTTP(resp, req)
+			codes[idx] = resp.Result().StatusCode
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+
+	for i, status := range codes {
+		assert.Equal(t, http.StatusFound, status, "request %d failed", i)
+	}
+
+	users := graph.User.Query().AllX(context.Background())
+	require.Len(t, users, numUsers)
+
+	adminCount := 0
+	activatedCount := 0
+	for _, u := range users {
+		if u.IsAdmin {
+			adminCount++
+		}
+		if u.IsActivated {
+			activatedCount++
+		}
+	}
+	assert.Equal(t, 1, adminCount, "expected exactly one TOFU admin")
+	assert.Equal(t, 1, activatedCount, "expected exactly one TOFU activated user")
+
+	// Also verify concurrent first-time logins for the same OAuthID do not fail.
+	const sameUserReqs = 4
+	startSame := make(chan struct{})
+	sameCodes := make([]int, sameUserReqs)
+	for i := 0; i < sameUserReqs; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			req := getOAuthAuthorizationRequest(t, privKey, "same-9999")
+			resp := httptest.NewRecorder()
+			<-startSame
+			handler.ServeHTTP(resp, req)
+			sameCodes[idx] = resp.Result().StatusCode
+		}(i)
+	}
+	close(startSame)
+	wg.Wait()
+
+	for i, status := range sameCodes {
+		assert.Equal(t, http.StatusFound, status, "same-user request %d failed", i)
+	}
+	assert.Equal(t, numUsers+1, graph.User.Query().CountX(context.Background()))
 }
