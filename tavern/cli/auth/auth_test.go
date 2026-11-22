@@ -304,3 +304,99 @@ func TestAuthenticate_EnvVarSkipsCacheValidation(t *testing.T) {
 	_, statErr := os.Stat(cachePath)
 	assert.NoError(t, statErr, "cache file should be preserved when env var provides token")
 }
+
+func TestAuthenticate_TrimsEnvToken(t *testing.T) {
+	t.Setenv(auth.EnvAPIToken, "  env-token-with-whitespace \r\n")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	token, err := auth.Authenticate(
+		ctx,
+		nil,
+		"http://127.0.0.1",
+		auth.WithAPIKeyFromEnv(auth.EnvAPIToken),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, "env-token-with-whitespace", string(token))
+}
+
+func TestAuthenticate_WhitespaceOnlyEnvFallsBackToCache(t *testing.T) {
+	const validToken = "valid-cached-token"
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get(tavernauth.HeaderAPIAccessToken) == validToken {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"data":{"me":{"id":"1"}}}`))
+			return
+		}
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	cachePath := filepath.Join(t.TempDir(), "cache")
+	require.NoError(t, os.WriteFile(cachePath, []byte(validToken), 0600))
+
+	t.Setenv(auth.EnvAPIToken, "   \n\t  ")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	token, err := auth.Authenticate(
+		ctx,
+		nil,
+		srv.URL,
+		auth.WithAPIKeyFromEnv(auth.EnvAPIToken),
+		auth.WithCacheFile(cachePath),
+	)
+	require.NoError(t, err)
+	assert.Equal(t, validToken, string(token))
+}
+
+func TestAuthenticate_TrimsCachedToken(t *testing.T) {
+	const validToken = "valid-cached-token"
+
+	var receivedToken string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedToken = r.Header.Get(tavernauth.HeaderAPIAccessToken)
+		if receivedToken == validToken {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"data":{"me":{"id":"1"}}}`))
+			return
+		}
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	cachePath := filepath.Join(t.TempDir(), "cache")
+	require.NoError(t, os.WriteFile(cachePath, []byte("  "+validToken+" \r\n"), 0600))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	token, err := auth.Authenticate(ctx, nil, srv.URL, auth.WithCacheFile(cachePath))
+	require.NoError(t, err)
+	assert.Equal(t, validToken, receivedToken)
+	assert.Equal(t, validToken, string(token))
+}
+
+func TestAuthenticate_WhitespaceOnlyCacheIgnored(t *testing.T) {
+	var reqCount atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/graphql" {
+			reqCount.Add(1)
+		}
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	cachePath := filepath.Join(t.TempDir(), "cache")
+	require.NoError(t, os.WriteFile(cachePath, []byte(" \n\t "), 0600))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	_, err := auth.Authenticate(ctx, nil, srv.URL, auth.WithCacheFile(cachePath))
+	assert.Error(t, err)
+	assert.Equal(t, int32(0), reqCount.Load(), "whitespace-only cache file should not be validated as a token")
+}
