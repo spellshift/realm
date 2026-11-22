@@ -29,8 +29,8 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libpam0g-dev
     - name: 🔨 Install Tools
       run: |
-        # Use latest gotestsum, Go 1.25.0 supports it
-        go install gotest.tools/gotestsum@latest
+        # Pin gotestsum for reproducible CI builds and Go/flag compatibility (v1.13.0 requires Go 1.24+)
+        go install gotest.tools/gotestsum@v1.13.0
         go install github.com/ctrf-io/go-ctrf-json-reporter/cmd/go-ctrf-json-reporter@latest
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
