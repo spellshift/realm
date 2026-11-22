@@ -14,7 +14,7 @@ impl AesLibrary for AesLibraryFake {
         Ok(d)
     }
 
-    fn decrypt_file(&self, _src: String, _dst: String, _key: String) -> Result<(), String> {
+    fn decrypt_file(&self, _src: String, _dst: String, _key: Vec<u8>) -> Result<(), String> {
         Err("File decryption not supported in fake/wasm environment".into())
     }
 
@@ -24,7 +24,7 @@ impl AesLibrary for AesLibraryFake {
         Ok(d)
     }
 
-    fn encrypt_file(&self, _src: String, _dst: String, _key: String) -> Result<(), String> {
+    fn encrypt_file(&self, _src: String, _dst: String, _key: Vec<u8>) -> Result<(), String> {
         Err("File encryption not supported in fake/wasm environment".into())
     }
 }

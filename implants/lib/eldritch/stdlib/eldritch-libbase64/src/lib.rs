@@ -19,8 +19,8 @@ pub trait Base64Library {
     fn decode(&self, content: String, encode_type: Option<String>) -> Result<Vec<u8>, String>;
 
     #[eldritch_method]
-    /// Encodes a string into Base64.
+    /// Encodes bytes (or a string) into Base64.
     ///
     /// `encode_type` can be "STANDARD", "STANDARD_NO_PAD", "URL_SAFE", or "URL_SAFE_NO_PAD".
-    fn encode(&self, content: String, encode_type: Option<String>) -> Result<String, String>;
+    fn encode(&self, content: Vec<u8>, encode_type: Option<String>) -> Result<String, String>;
 }

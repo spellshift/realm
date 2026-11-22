@@ -14,11 +14,14 @@ impl Parser {
     }
 
     pub(crate) fn declaration(&mut self) -> Result<Stmt, EldritchError> {
-        if self.match_token(&[TokenKind::Def]) {
+        self.enter_depth()?;
+        let res = if self.match_token(&[TokenKind::Def]) {
             self.function_def()
         } else {
             self.statement()
-        }
+        };
+        self.depth -= 1;
+        res
     }
 
     fn function_def(&mut self) -> Result<Stmt, EldritchError> {

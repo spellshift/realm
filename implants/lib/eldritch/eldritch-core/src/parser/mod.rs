@@ -6,10 +6,13 @@ use alloc::vec::Vec;
 pub mod expr;
 pub mod stmt;
 
+pub(crate) const MAX_PARSE_DEPTH: usize = 32;
+
 pub struct Parser {
     pub(crate) tokens: Vec<Token>,
     pub(crate) current: usize,
     pub(crate) errors: Vec<EldritchError>,
+    pub(crate) depth: usize,
 }
 
 impl Parser {
@@ -18,7 +21,17 @@ impl Parser {
             tokens,
             current: 0,
             errors: Vec::new(),
+            depth: 0,
         }
+    }
+
+    #[inline]
+    pub(crate) fn enter_depth(&mut self) -> Result<(), EldritchError> {
+        if self.depth >= MAX_PARSE_DEPTH {
+            return self.error("Maximum nesting depth exceeded");
+        }
+        self.depth += 1;
+        Ok(())
     }
 
     pub(crate) fn peek(&self) -> &Token {
@@ -167,5 +180,51 @@ impl Parser {
                 expr.span,
             )),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lexer::Lexer;
+    use alloc::string::String;
+
+    #[test]
+    fn test_parser_depth_limit_parens() {
+        let depth = MAX_PARSE_DEPTH + 20;
+        let mut src = String::with_capacity(depth * 2 + 1);
+        for _ in 0..depth {
+            src.push('(');
+        }
+        src.push('1');
+        for _ in 0..depth {
+            src.push(')');
+        }
+        let tokens = Lexer::new(src).scan_tokens();
+        let (_, errors) = Parser::new(tokens).parse();
+        assert!(!errors.is_empty());
+        assert!(errors[0].message.contains("Maximum nesting depth"));
+    }
+
+    #[test]
+    fn test_parser_depth_limit_unary_and_not() {
+        let depth = MAX_PARSE_DEPTH + 20;
+        let mut src_not = String::new();
+        for _ in 0..depth {
+            src_not.push_str("not ");
+        }
+        src_not.push_str("True");
+        let tokens = Lexer::new(src_not).scan_tokens();
+        let (_, errors) = Parser::new(tokens).parse();
+        assert!(!errors.is_empty());
+
+        let mut src_neg = String::new();
+        for _ in 0..depth {
+            src_neg.push('-');
+        }
+        src_neg.push('1');
+        let tokens = Lexer::new(src_neg).scan_tokens();
+        let (_, errors) = Parser::new(tokens).parse();
+        assert!(!errors.is_empty());
     }
 }

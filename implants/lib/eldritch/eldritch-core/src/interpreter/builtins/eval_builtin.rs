@@ -62,6 +62,7 @@ pub(crate) fn builtin_eval_func(
         env: interp.env.clone(),
         flow: Flow::Next,
         depth: interp.depth + 1,
+        expr_depth: interp.expr_depth,
         call_stack: interp.call_stack.clone(),
         current_func_name: "<eval>".to_string(),
         is_scope_owner: false,

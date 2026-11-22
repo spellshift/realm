@@ -17,8 +17,8 @@ impl Base64Library for Base64LibraryFake {
         }
     }
 
-    fn encode(&self, content: String, _encode_type: Option<String>) -> Result<String, String> {
-        Ok(format!("B64:{}", content))
+    fn encode(&self, content: Vec<u8>, _encode_type: Option<String>) -> Result<String, String> {
+        Ok(format!("B64:{}", String::from_utf8_lossy(&content)))
     }
 }
 
@@ -29,9 +29,9 @@ mod tests {
     #[test]
     fn test_base64_fake() {
         let b64 = Base64LibraryFake;
-        let orig = "hello world".to_string();
+        let orig = b"hello world".to_vec();
         let b64_enc = b64.encode(orig.clone(), None).unwrap();
         let b64_dec = b64.decode(b64_enc, None).unwrap();
-        assert_eq!(orig.as_bytes(), b64_dec.as_slice());
+        assert_eq!(orig, b64_dec);
     }
 }

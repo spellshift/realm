@@ -23,10 +23,10 @@ pub trait CryptoLibrary {
     #[eldritch_deprecated(
         "crypto.aes_decrypt has been deprecated and will be removed in a future version of eldritch. Please use aes.decrypt instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
-    /// Decrypts data using AES (CBC mode).
+    /// Decrypts data using AES-128 (CBC mode).
     ///
     /// **Parameters**
-    /// - `key` (`Bytes`): The decryption key (must be 16, 24, or 32 bytes).
+    /// - `key` (`Bytes`): The decryption key (must be 16 bytes, AES-128).
     /// - `iv` (`Bytes`): The initialization vector (must be 16 bytes).
     /// - `data` (`Bytes`): The encrypted data to decrypt.
     ///
@@ -41,10 +41,10 @@ pub trait CryptoLibrary {
     #[eldritch_deprecated(
         "crypto.aes_encrypt has been deprecated and will be removed in a future version of eldritch. Please use aes.encrypt instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
-    /// Encrypts data using AES (CBC mode).
+    /// Encrypts data using AES-128 (CBC mode).
     ///
     /// **Parameters**
-    /// - `key` (`Bytes`): The encryption key (must be 16, 24, or 32 bytes).
+    /// - `key` (`Bytes`): The encryption key (must be 16 bytes, AES-128).
     /// - `iv` (`Bytes`): The initialization vector (must be 16 bytes).
     /// - `data` (`Bytes`): The data to encrypt.
     ///
@@ -59,37 +59,37 @@ pub trait CryptoLibrary {
     #[eldritch_deprecated(
         "crypto.aes_decrypt_file has been deprecated and will be removed in a future version of eldritch. Please use aes.decrypt_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
-    /// Decrypts a file using AES.
+    /// Decrypts a file using AES-128 (CBC mode).
     ///
     /// **Parameters**
     /// - `src` (`str`): The source file path.
     /// - `dst` (`str`): The destination file path.
-    /// - `key` (`str`): The decryption key.
+    /// - `key` (`Bytes` | `str`): The decryption key (must be 16 bytes, AES-128).
     ///
     /// **Returns**
     /// - `None`
     ///
     /// **Errors**
     /// - Returns an error string if decryption fails or file operations fail.
-    fn aes_decrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String>;
+    fn aes_decrypt_file(&self, src: String, dst: String, key: Vec<u8>) -> Result<(), String>;
 
     #[eldritch_method]
     #[eldritch_deprecated(
         "crypto.aes_encrypt_file has been deprecated and will be removed in a future version of eldritch. Please use aes.encrypt_file instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
-    /// Encrypts a file using AES.
+    /// Encrypts a file using AES-128 (CBC mode).
     ///
     /// **Parameters**
     /// - `src` (`str`): The source file path.
     /// - `dst` (`str`): The destination file path.
-    /// - `key` (`str`): The encryption key.
+    /// - `key` (`Bytes` | `str`): The encryption key (must be 16 bytes, AES-128).
     ///
     /// **Returns**
     /// - `None`
     ///
     /// **Errors**
     /// - Returns an error string if encryption fails or file operations fail.
-    fn aes_encrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String>;
+    fn aes_encrypt_file(&self, src: String, dst: String, key: Vec<u8>) -> Result<(), String>;
 
     #[eldritch_method]
     #[eldritch_deprecated(
@@ -160,10 +160,10 @@ pub trait CryptoLibrary {
     #[eldritch_deprecated(
         "crypto.encode_b64 has been deprecated and will be removed in a future version of eldritch. Please use base64.encode instead. You can also use our eldritch_migrate_0.4.1.py script to automatically update."
     )]
-    /// Encodes a string to Base64.
+    /// Encodes bytes or a string to Base64.
     ///
     /// **Parameters**
-    /// - `content` (`str`): The string content to encode.
+    /// - `content` (`Bytes` | `str`): The bytes or string content to encode.
     /// - `encode_type` (`Option<str>`): The encoding variant. Valid options: `STANDARD` (default), `STANDARD_NO_PAD`, `URL_SAFE`, `URL_SAFE_NO_PAD`
     ///
     /// **Returns**
@@ -171,7 +171,7 @@ pub trait CryptoLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the encoding type is invalid.
-    fn encode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String>;
+    fn encode_b64(&self, content: Vec<u8>, encode_type: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
     #[eldritch_deprecated(

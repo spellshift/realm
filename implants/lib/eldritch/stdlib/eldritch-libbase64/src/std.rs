@@ -15,7 +15,7 @@ impl Base64Library for StdBase64Library {
         decode_impl::decode_b64(content, encode_type)
     }
 
-    fn encode(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+    fn encode(&self, content: Vec<u8>, encode_type: Option<String>) -> Result<String, String> {
         encode_impl::encode_b64(content, encode_type)
     }
 }

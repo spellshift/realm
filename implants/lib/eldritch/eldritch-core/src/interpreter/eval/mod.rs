@@ -8,7 +8,7 @@ pub mod utils;
 
 use super::super::ast::{Expr, ExprKind, Value};
 use super::core::Interpreter;
-use super::error::EldritchError;
+use super::error::{EldritchError, EldritchErrorKind};
 use super::introspection::is_truthy;
 
 use self::access::{evaluate_getattr, evaluate_index, evaluate_slice};
@@ -26,8 +26,23 @@ pub(crate) use self::ops::apply_binary_op as apply_binary_op_pub;
 pub(crate) use self::utils::to_iterable;
 
 pub(crate) const MAX_RECURSION_DEPTH: usize = 64;
+pub(crate) const MAX_EXPR_DEPTH: usize = 128;
 
 pub fn evaluate(interp: &mut Interpreter, expr: &Expr) -> Result<Value, EldritchError> {
+    if interp.expr_depth >= MAX_EXPR_DEPTH {
+        return interp.error(
+            EldritchErrorKind::RecursionError,
+            "Maximum expression evaluation depth exceeded",
+            expr.span,
+        );
+    }
+    interp.expr_depth += 1;
+    let res = evaluate_inner(interp, expr);
+    interp.expr_depth -= 1;
+    res
+}
+
+fn evaluate_inner(interp: &mut Interpreter, expr: &Expr) -> Result<Value, EldritchError> {
     let span = expr.span;
     match &expr.kind {
         ExprKind::Literal(value) => Ok(value.clone()),
@@ -82,5 +97,48 @@ pub fn evaluate(interp: &mut Interpreter, expr: &Expr) -> Result<Value, Eldritch
             &format!("Runtime encountered syntax error node: {}", msg),
             span,
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::token::{Span, TokenKind};
+    use alloc::boxed::Box;
+
+    #[test]
+    fn test_evaluate_expr_depth_limit() {
+        let span = Span::new(0, 1, 1);
+        let mut expr = Expr {
+            kind: ExprKind::Literal(Value::Int(1)),
+            span,
+        };
+        for _ in 0..(MAX_EXPR_DEPTH + 10) {
+            expr = Expr {
+                kind: ExprKind::UnaryOp(TokenKind::Minus, Box::new(expr)),
+                span,
+            };
+        }
+        let mut interp = Interpreter::new();
+        let err = evaluate(&mut interp, &expr).unwrap_err();
+        assert_eq!(err.kind, EldritchErrorKind::RecursionError);
+    }
+
+    #[test]
+    fn test_unary_neg_i64_min_returns_runtime_error() {
+        let span = Span::new(0, 1, 1);
+        let expr = Expr {
+            kind: ExprKind::UnaryOp(
+                TokenKind::Minus,
+                Box::new(Expr {
+                    kind: ExprKind::Literal(Value::Int(i64::MIN)),
+                    span,
+                }),
+            ),
+            span,
+        };
+        let mut interp = Interpreter::new();
+        let err = evaluate(&mut interp, &expr).unwrap_err();
+        assert_eq!(err.kind, EldritchErrorKind::RuntimeError);
     }
 }

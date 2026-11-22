@@ -26,7 +26,10 @@ pub(crate) fn apply_unary_op(
     let val = evaluate(interp, right)?;
     match op {
         TokenKind::Minus => match val {
-            Value::Int(i) => Ok(Value::Int(-i)),
+            Value::Int(i) => match i.checked_neg() {
+                Some(neg) => Ok(Value::Int(neg)),
+                None => interp.error(EldritchErrorKind::RuntimeError, "integer overflow", span),
+            },
             Value::Float(f) => Ok(Value::Float(-f)),
             _ => interp.error(
                 EldritchErrorKind::TypeError,

@@ -17,7 +17,7 @@ impl AesLibrary for StdAesLibrary {
         decrypt_impl::aes_decrypt(key, iv, data)
     }
 
-    fn decrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String> {
+    fn decrypt_file(&self, src: String, dst: String, key: Vec<u8>) -> Result<(), String> {
         decrypt_file_impl::aes_decrypt_file(src, dst, key)
     }
 
@@ -25,7 +25,7 @@ impl AesLibrary for StdAesLibrary {
         encrypt_impl::aes_encrypt(key, iv, data)
     }
 
-    fn encrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String> {
+    fn encrypt_file(&self, src: String, dst: String, key: Vec<u8>) -> Result<(), String> {
         encrypt_file_impl::aes_encrypt_file(src, dst, key)
     }
 }

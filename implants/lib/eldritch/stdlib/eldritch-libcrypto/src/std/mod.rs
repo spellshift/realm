@@ -21,11 +21,11 @@ impl CryptoLibrary for StdCryptoLibrary {
         StdAesLibrary.decrypt(key, iv, data)
     }
 
-    fn aes_decrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String> {
+    fn aes_decrypt_file(&self, src: String, dst: String, key: Vec<u8>) -> Result<(), String> {
         StdAesLibrary.decrypt_file(src, dst, key)
     }
 
-    fn aes_encrypt_file(&self, src: String, dst: String, key: String) -> Result<(), String> {
+    fn aes_encrypt_file(&self, src: String, dst: String, key: Vec<u8>) -> Result<(), String> {
         StdAesLibrary.encrypt_file(src, dst, key)
     }
 
@@ -45,7 +45,7 @@ impl CryptoLibrary for StdCryptoLibrary {
         StdHashLibrary.file(file, algo)
     }
 
-    fn encode_b64(&self, content: String, encode_type: Option<String>) -> Result<String, String> {
+    fn encode_b64(&self, content: Vec<u8>, encode_type: Option<String>) -> Result<String, String> {
         StdBase64Library.encode(content, encode_type)
     }
 

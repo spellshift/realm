@@ -14,7 +14,7 @@ pub fn decode_b64(content: String, encode_type: Option<String>) -> Result<Vec<u8
         "URL_SAFE_NO_PAD" => general_purpose::URL_SAFE_NO_PAD,
         _ => {
             return Err(
-                "Invalid encode type. Valid types are: STANDARD, STANDARD_NO_PAD, URL_SAFE_PAD, URL_SAFE_NO_PAD"
+                "Invalid encode type. Valid types are: STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD"
                     .into(),
             )
         }

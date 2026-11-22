@@ -16,9 +16,27 @@ pub(crate) fn apply_arithmetic_op(
     span: Span,
 ) -> Result<Value, EldritchError> {
     match (a, op, b) {
-        (Value::Int(a), TokenKind::Plus, Value::Int(b)) => Ok(Value::Int(a + b)),
-        (Value::Int(a), TokenKind::Minus, Value::Int(b)) => Ok(Value::Int(a - b)),
-        (Value::Int(a), TokenKind::Star, Value::Int(b)) => Ok(Value::Int(a * b)),
+        (Value::Int(a), TokenKind::Plus, Value::Int(b)) => {
+            a.checked_add(*b).map(Value::Int).ok_or_else(|| {
+                interp
+                    .error::<Value>(EldritchErrorKind::RuntimeError, "integer overflow", span)
+                    .unwrap_err()
+            })
+        }
+        (Value::Int(a), TokenKind::Minus, Value::Int(b)) => {
+            a.checked_sub(*b).map(Value::Int).ok_or_else(|| {
+                interp
+                    .error::<Value>(EldritchErrorKind::RuntimeError, "integer overflow", span)
+                    .unwrap_err()
+            })
+        }
+        (Value::Int(a), TokenKind::Star, Value::Int(b)) => {
+            a.checked_mul(*b).map(Value::Int).ok_or_else(|| {
+                interp
+                    .error::<Value>(EldritchErrorKind::RuntimeError, "integer overflow", span)
+                    .unwrap_err()
+            })
+        }
         (Value::Int(a), TokenKind::Slash, Value::Int(b)) => {
             if *b == 0 {
                 return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
@@ -146,7 +164,13 @@ pub(crate) fn apply_arithmetic_op(
             if *b == 0 {
                 return interp.error(EldritchErrorKind::ZeroDivisionError, "divide by zero", span);
             }
-            let mut res = a / b;
+            let Some(mut res) = a.checked_div(*b) else {
+                return interp.error(
+                    EldritchErrorKind::RuntimeError,
+                    "integer division overflow",
+                    span,
+                );
+            };
             if (a % b != 0) && ((*a < 0) ^ (*b < 0)) {
                 res -= 1;
             }
@@ -156,7 +180,18 @@ pub(crate) fn apply_arithmetic_op(
             if *b == 0 {
                 return interp.error(EldritchErrorKind::ZeroDivisionError, "modulo by zero", span);
             }
-            let res = ((a % b) + b) % b;
+            let Some(rem) = a.checked_rem(*b) else {
+                return interp.error(
+                    EldritchErrorKind::RuntimeError,
+                    "integer modulo overflow",
+                    span,
+                );
+            };
+            let res = if rem != 0 && ((*a < 0) ^ (*b < 0)) {
+                rem + b
+            } else {
+                rem
+            };
             Ok(Value::Int(res))
         }
 
@@ -398,5 +433,79 @@ mod tests {
             span,
         );
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_apply_arithmetic_op_int_overflow_guards() {
+        let interp = Interpreter::new();
+        let span = dummy_span();
+
+        // i64::MIN // -1 and i64::MIN % -1 must return RuntimeError instead of panicking
+        let res = apply_arithmetic_op(
+            &interp,
+            &Value::Int(i64::MIN),
+            &TokenKind::SlashSlash,
+            &Value::Int(-1),
+            span,
+        );
+        assert_eq!(res.unwrap_err().kind, EldritchErrorKind::RuntimeError);
+
+        let res = apply_arithmetic_op(
+            &interp,
+            &Value::Int(i64::MIN),
+            &TokenKind::Percent,
+            &Value::Int(-1),
+            span,
+        );
+        assert_eq!(res.unwrap_err().kind, EldritchErrorKind::RuntimeError);
+
+        // (-1) % i64::MIN must not overflow when adjusting sign
+        let res = apply_arithmetic_op(
+            &interp,
+            &Value::Int(-1),
+            &TokenKind::Percent,
+            &Value::Int(i64::MIN),
+            span,
+        )
+        .unwrap();
+        assert_eq!(res, Value::Int(-1));
+
+        // Checked +, -, *
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(i64::MAX),
+                &TokenKind::Plus,
+                &Value::Int(1),
+                span,
+            )
+            .unwrap_err()
+            .kind,
+            EldritchErrorKind::RuntimeError
+        );
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(i64::MIN),
+                &TokenKind::Minus,
+                &Value::Int(1),
+                span,
+            )
+            .unwrap_err()
+            .kind,
+            EldritchErrorKind::RuntimeError
+        );
+        assert_eq!(
+            apply_arithmetic_op(
+                &interp,
+                &Value::Int(i64::MAX),
+                &TokenKind::Star,
+                &Value::Int(2),
+                span,
+            )
+            .unwrap_err()
+            .kind,
+            EldritchErrorKind::RuntimeError
+        );
     }
 }

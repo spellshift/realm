@@ -6,11 +6,38 @@ use aes::cipher::{
 use alloc::string::String;
 use alloc::vec::Vec;
 
+/// Validates PKCS#7 padding on the final 16-byte decrypted block in constant time.
+///
+/// Inspects every byte in `block` without data-dependent early returns so
+/// timing cannot distinguish invalid padding length from an invalid padding byte.
+pub(crate) fn validate_pkcs7_padding_ct(block: &[u8; 16]) -> Result<usize, String> {
+    let pad_len = block[15];
+    // Valid PKCS#7 pad_len is in 1..=16.
+    // `pad_len.wrapping_sub(1)` is in 0..=15 iff pad_len is in 1..=16 (upper 4 bits are 0).
+    let mut bad: u8 = pad_len.wrapping_sub(1) & 0xF0;
+
+    for (i, &b) in block.iter().enumerate() {
+        let dist = (16 - i) as u8;
+        // If dist <= pad_len, subtraction does not borrow -> high byte is 0x00 -> mask is 0xFF.
+        // If dist > pad_len, subtraction borrows -> high byte is 0xFF -> mask is 0x00.
+        let out_of_pad = ((pad_len as u16).wrapping_sub(dist as u16) >> 8) as u8;
+        let in_pad_mask = !out_of_pad;
+        bad |= (b ^ pad_len) & in_pad_mask;
+    }
+
+    if core::hint::black_box(bad) != 0 {
+        return Err("Invalid padding".into());
+    }
+    Ok(pad_len as usize)
+}
+
 /// Decrypts `data` with AES-128 in CBC mode, removing PKCS#7 padding.
 ///
 /// `key` must be exactly 16 bytes and `iv` must be exactly 16 bytes (the AES
 /// block size). The IV is mixed into every block via CBC chaining; it is not
 /// ignored.
+///
+/// Note: AES-CBC is unauthenticated (no integrity tag / MAC).
 pub fn aes_decrypt(key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
     if key.len() != 16 {
         return Err("Key size must be 16 bytes (128 bits)".into());
@@ -48,23 +75,14 @@ pub fn aes_decrypt(key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, 
         prev_block = ciphertext_block;
     }
 
-    // Unpadding (PKCS#7)
-    if let Some(&pad_len) = decrypted_data.last() {
-        let pad_len_usize = pad_len as usize;
-        if pad_len_usize == 0 || pad_len_usize > block_size || pad_len_usize > decrypted_data.len()
-        {
-            return Err("Invalid padding".into());
-        }
-        for i in 0..pad_len_usize {
-            if decrypted_data[decrypted_data.len() - 1 - i] != pad_len {
-                return Err("Invalid padding".into());
-            }
-        }
-        decrypted_data.truncate(decrypted_data.len() - pad_len_usize);
-        Ok(decrypted_data)
-    } else {
-        Err("Decryption failed: empty result before unpadding".into())
-    }
+    // Constant-time PKCS#7 unpadding over the final 16-byte block.
+    let last_block_start = decrypted_data.len() - block_size;
+    let last_block: &[u8; 16] = decrypted_data[last_block_start..]
+        .try_into()
+        .map_err(|_| String::from("Decryption failed: invalid final block size"))?;
+    let pad_len = validate_pkcs7_padding_ct(last_block)?;
+    decrypted_data.truncate(decrypted_data.len() - pad_len);
+    Ok(decrypted_data)
 }
 
 #[cfg(test)]
@@ -195,5 +213,30 @@ mod tests {
 
         let decrypted = aes_decrypt(key, iv, padded_ciphertext).unwrap();
         assert_eq!(decrypted, expected_plaintext);
+    }
+
+    #[test]
+    fn test_validate_pkcs7_padding_ct_all_lengths_and_invalid() {
+        // Valid padding for every length 1..=16.
+        for pad_len in 1u8..=16 {
+            let mut block = [0xAAu8; 16];
+            for b in &mut block[16 - pad_len as usize..] {
+                *b = pad_len;
+            }
+            assert_eq!(validate_pkcs7_padding_ct(&block).unwrap(), pad_len as usize);
+
+            // Corrupting any padding byte must fail.
+            for idx in (16 - pad_len as usize)..16 {
+                let mut corrupted = block;
+                corrupted[idx] ^= 0x01;
+                assert!(validate_pkcs7_padding_ct(&corrupted).is_err());
+            }
+        }
+
+        // Invalid pad lengths: 0, 17, 255.
+        for bad_len in [0u8, 17, 255] {
+            let block = [bad_len; 16];
+            assert!(validate_pkcs7_padding_ct(&block).is_err());
+        }
     }
 }

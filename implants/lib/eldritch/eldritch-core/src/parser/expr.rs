@@ -17,6 +17,13 @@ impl Parser {
     }
 
     pub(crate) fn expression(&mut self) -> Result<Expr, EldritchError> {
+        self.enter_depth()?;
+        let res = self.expression_inner();
+        self.depth -= 1;
+        res
+    }
+
+    fn expression_inner(&mut self) -> Result<Expr, EldritchError> {
         // Handle ternary if expression: x if cond else y
         if self.match_token(&[TokenKind::Lambda]) {
             return self.lambda_expression();
@@ -199,7 +206,10 @@ impl Parser {
     fn logic_not(&mut self) -> Result<Expr, EldritchError> {
         if self.match_token(&[TokenKind::Not]) {
             let operator = self.tokens[self.current - 1].clone();
-            let right = self.logic_not()?;
+            self.enter_depth()?;
+            let right_res = self.logic_not();
+            self.depth -= 1;
+            let right = right_res?;
             let start = operator.span;
             let end = right.span;
             return Ok(self.make_expr(
@@ -373,7 +383,10 @@ impl Parser {
     fn unary_expr(&mut self) -> Result<Expr, EldritchError> {
         if self.match_token(&[TokenKind::Minus, TokenKind::BitNot]) {
             let operator = self.tokens[self.current - 1].clone();
-            let right = self.unary_expr()?;
+            self.enter_depth()?;
+            let right_res = self.unary_expr();
+            self.depth -= 1;
+            let right = right_res?;
             let start = operator.span;
             let end = right.span;
             return Ok(self.make_expr(
