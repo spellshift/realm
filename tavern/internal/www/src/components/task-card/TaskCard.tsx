@@ -20,6 +20,9 @@ interface TaskCardType {
     task: TaskNode
 }
 
+const taskTabClassName = ({ selected }: { selected: boolean }) =>
+    `flex flex-row gap-1 items-center py-2 px-4 focus:outline-none focus-visible:underline focus-visible:decoration-purple-600 focus-visible:underline-offset-4 ${selected ? 'bg-white rounded border-t-2 border-gray-200' : ''}`;
+
 const TaskCard: FC<TaskCardType> = ({ task }) => {
     const defaultOpenTabIndex = task?.error ? 3 : 2;
 
@@ -43,37 +46,37 @@ const TaskCard: FC<TaskCardType> = ({ task }) => {
             </div>
             <TabGroup className="border-t-4 border-l-4 border-gray-100 rounded flex flex-col gap-1 lg:col-span-3" defaultIndex={defaultOpenTabIndex}>
                 <TabList className="flex flex-row gap-2 text-gray-600 bg-gray-100 text-sm">
-                    <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                    <Tab className={taskTabClassName}>
                         <FileCog className="w-4" /> Attributes
                     </Tab>
-                    <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                    <Tab className={taskTabClassName}>
                         <BookOpenIcon className="w-4" /> Tome
                     </Tab>
-                    <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                    <Tab className={taskTabClassName}>
                         <DocumentTextIcon className="w-4" /> Output
                     </Tab>
                     {task?.error && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <NoSymbolIcon className="w-4" /> Error
                         </Tab>
                     )}
                     {task?.screenshots?.totalCount > 0 && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <Camera className="w-4" /> Screenshots ({task.screenshots.totalCount})
                         </Tab>
                     )}
                     {task?.shells?.edges.length > 0 && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <CommandLineIcon className="w-4" /> Shells
                         </Tab>
                     )}
                     {task?.reportedProcesses?.totalCount > 0 && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <ListVideo className="w-4" /> Processes ({task?.reportedProcesses?.totalCount})
                         </Tab>
                     )}
                     {task?.reportedFiles?.totalCount > 0 && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <FileText className="w-4" /> Files ({task?.reportedFiles?.totalCount})
                         </Tab>
                     )}
