@@ -302,7 +302,7 @@ At runtime, you may use the `IMIX_LOG` environment variable to control log level
 
 The `install` subcommand runs each embedded `main.eldritch` script in turn. Imix embeds scripts from `implants/imix/install_scripts` when it is built; that directory contains only `.gitkeep` by default.
 
-To bundle an installation script from Tavern, add the **Install Service** tome to a build profile in the builder. Enter a service name, description, and executable name. Executable arguments and a Windows display name are optional. The builder configures one service; the tome copies the agent binary to the selected service path before installing it.
+To bundle an installation script from Tavern, add the **Install Service** tome to a build profile in the builder. Enter a service name, description, executable name, executable arguments, and Windows display name. The builder configures one service; the tome copies the agent binary to the selected service path before installing it.
 
 For a manual build, copy the default service install script from Tavern before compiling Imix. Run these commands from the repository root:
 
@@ -321,7 +321,7 @@ def main():
             "windows_display_name": "Realm Agent",
             "description": "Realm agent service",
             "executable_name": "imixd",
-            "executable_args": "",
+            "executable_args": "--quiet",
         },
         {
             "name": "imix_backup",

@@ -56,8 +56,6 @@ func TestUploadTomes(t *testing.T) {
 	assert.Equal(t, []string{"name", "description", "executable_name", "executable_args", "windows_display_name"}, []string{
 		installParams[0].Name, installParams[1].Name, installParams[2].Name, installParams[3].Name, installParams[4].Name,
 	})
-	assert.True(t, installParams[3].Optional)
-	assert.True(t, installParams[4].Optional)
 }
 
 func TestUploadTomes_InvalidTomeDoesNotSkipOthers(t *testing.T) {

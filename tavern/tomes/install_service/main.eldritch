@@ -431,10 +431,10 @@ def parse_and_persist(configs):
 def main():
     config = {
         'name': input_params['name'],
-        'windows_display_name': input_params.get('windows_display_name', ''),
+        'windows_display_name': input_params['windows_display_name'],
         'description': input_params['description'],
         'executable_name': input_params['executable_name'],
-        'executable_args': input_params.get('executable_args', ''),
+        'executable_args': input_params['executable_args'],
     }
     parse_and_persist([config])
     print("Implant copied, you may now delete this binary.")

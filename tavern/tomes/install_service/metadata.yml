@@ -20,9 +20,7 @@ paramdefs:
   type: string
   label: Executable arguments
   placeholder: --quiet
-  optional: true
 - name: windows_display_name
   type: string
   label: Windows display name
   placeholder: Realm agent service
-  optional: true

@@ -24,12 +24,11 @@ export const modalQuestSchema = yup.object().shape({
         .of(
             yup.object().shape({
                 name: yup.string().required(),
-                value: yup.mixed(),
-                optional: yup.boolean(),
+                value: yup.mixed().required("Parameter value is required"),
             })
         )
         .test("all-params-filled", "All parameters must have values", (params) => {
             if (!params || params.length === 0) return true;
-            return params.every((param) => param.optional || (param.value !== null && param.value !== undefined && param.value !== ""));
+            return params.every((param) => param.value !== null && param.value !== "");
         }),
 });
