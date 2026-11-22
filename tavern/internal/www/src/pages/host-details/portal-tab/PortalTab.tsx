@@ -43,7 +43,7 @@ export const PortalsHeader = () => {
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95"
                     >
-                        <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
+                        <Menu.Items className="absolute right-0 mt-2 w-40 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
                             <div className="px-1 py-1">
                                 {socks5Downloads.map(({ platform, asset }) => (
                                     <Menu.Item
@@ -51,7 +51,7 @@ export const PortalsHeader = () => {
                                         as="a"
                                         href={`/assets/download/${asset}`}
                                         download
-                                        className={ghostButton({ color: "gray", size: "md", className: "w-full" })}
+                                        className={ghostButton({ color: "gray", size: "sm", className: "w-full" })}
                                     >
                                         {platform}
                                     </Menu.Item>
