@@ -1,11 +1,12 @@
 import { FC } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
-import { BookOpenIcon, FileText, ListVideo, FileCog } from "lucide-react";
+import { BookOpenIcon, Camera, FileText, ListVideo, FileCog } from "lucide-react";
 import TaskResults from "./components/TaskResults";
 import TaskShells from "./components/TaskShells";
 import TaskProcesses from "./components/TaskProcesses";
 import TaskFiles from "./components/TaskFiles";
+import TaskScreenshots from "./components/TaskScreenshots";
 import TaskTome from "./components/TaskTome";
 import TaskAttributes from "./components/TaskAttributes";
 import { TaskNode } from "../../utils/interfacesQuery";
@@ -19,8 +20,11 @@ interface TaskCardType {
     task: TaskNode
 }
 
+const taskTabClassName = ({ selected }: { selected: boolean }) =>
+    `flex flex-row gap-1 items-center py-2 px-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-400 ${selected ? 'bg-white rounded border-t-2 border-gray-200' : ''}`;
+
 const TaskCard: FC<TaskCardType> = ({ task }) => {
-    const defaultOpenTabIndex = task?.error ? 3 : 2;
+    const defaultOpenTabIndex = task?.error || task?.screenshots?.totalCount > 0 ? 3 : 2;
 
     return (
         <div className="rounded-lg shadow border-gray-200 border-2 w-full text-gray-800">
@@ -42,32 +46,37 @@ const TaskCard: FC<TaskCardType> = ({ task }) => {
             </div>
             <TabGroup className="border-t-4 border-l-4 border-gray-100 rounded flex flex-col gap-1 lg:col-span-3" defaultIndex={defaultOpenTabIndex}>
                 <TabList className="flex flex-row gap-2 text-gray-600 bg-gray-100 text-sm">
-                    <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                    <Tab className={taskTabClassName}>
                         <FileCog className="w-4" /> Attributes
                     </Tab>
-                    <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                    <Tab className={taskTabClassName}>
                         <BookOpenIcon className="w-4" /> Tome
                     </Tab>
-                    <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                    <Tab className={taskTabClassName}>
                         <DocumentTextIcon className="w-4" /> Output
                     </Tab>
                     {task?.error && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <NoSymbolIcon className="w-4" /> Error
                         </Tab>
                     )}
+                    {task?.screenshots?.totalCount > 0 && (
+                        <Tab className={taskTabClassName}>
+                            <Camera className="w-4" /> Screenshots ({task.screenshots.totalCount})
+                        </Tab>
+                    )}
                     {task?.shells?.edges.length > 0 && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <CommandLineIcon className="w-4" /> Shells
                         </Tab>
                     )}
                     {task?.reportedProcesses?.totalCount > 0 && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <ListVideo className="w-4" /> Processes ({task?.reportedProcesses?.totalCount})
                         </Tab>
                     )}
                     {task?.reportedFiles?.totalCount > 0 && (
-                        <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}>
+                        <Tab className={taskTabClassName}>
                             <FileText className="w-4" /> Files ({task?.reportedFiles?.totalCount})
                         </Tab>
                     )}
@@ -85,6 +94,11 @@ const TaskCard: FC<TaskCardType> = ({ task }) => {
                     {task?.error && (
                         <TabPanel aria-label="error panel">
                             <TaskResults result={task?.error} />
+                        </TabPanel>
+                    )}
+                    {task?.screenshots?.totalCount > 0 && (
+                        <TabPanel aria-label="screenshots panel">
+                            <TaskScreenshots taskId={task.id} hostId={task.beacon.host?.id || ""} />
                         </TabPanel>
                     )}
                     {task?.shells?.edges.length > 0 && (

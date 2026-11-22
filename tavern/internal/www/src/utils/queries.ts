@@ -342,6 +342,9 @@ export const GET_TASK_QUERY = gql`
                     reportedFiles{
                         totalCount
                     }
+                    screenshots {
+                        totalCount
+                    }
                     quest {
                         id
                         name
