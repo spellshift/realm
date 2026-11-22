@@ -836,6 +836,8 @@ func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Contex
 				return ec.fieldContext_Quest_paramDefsAtCreation(ctx, field)
 			case "eldritchAtCreation":
 				return ec.fieldContext_Quest_eldritchAtCreation(ctx, field)
+			case "scheduledAt":
+				return ec.fieldContext_Quest_scheduledAt(ctx, field)
 			case "tome":
 				return ec.fieldContext_Quest_tome(ctx, field)
 			case "bundle":

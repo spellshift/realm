@@ -7712,6 +7712,20 @@ var (
 			}
 		},
 	}
+	// QuestOrderFieldScheduledAt orders Quest by scheduled_at.
+	QuestOrderFieldScheduledAt = &QuestOrderField{
+		Value: func(q *Quest) (ent.Value, error) {
+			return q.ScheduledAt, nil
+		},
+		column: quest.FieldScheduledAt,
+		toTerm: quest.ByScheduledAt,
+		toCursor: func(q *Quest) Cursor {
+			return Cursor{
+				ID:    q.ID,
+				Value: q.ScheduledAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -7724,6 +7738,8 @@ func (f QuestOrderField) String() string {
 		str = "LAST_MODIFIED_AT"
 	case QuestOrderFieldName.column:
 		str = "NAME"
+	case QuestOrderFieldScheduledAt.column:
+		str = "SCHEDULED_AT"
 	}
 	return str
 }
@@ -7746,6 +7762,8 @@ func (f *QuestOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *QuestOrderFieldLastModifiedAt
 	case "NAME":
 		*f = *QuestOrderFieldName
+	case "SCHEDULED_AT":
+		*f = *QuestOrderFieldScheduledAt
 	default:
 		return fmt.Errorf("%s is not a valid QuestOrderField", str)
 	}

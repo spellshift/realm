@@ -5416,6 +5416,11 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				selectedFields = append(selectedFields, quest.FieldEldritchAtCreation)
 				fieldSeen[quest.FieldEldritchAtCreation] = struct{}{}
 			}
+		case "scheduledAt":
+			if _, ok := fieldSeen[quest.FieldScheduledAt]; !ok {
+				selectedFields = append(selectedFields, quest.FieldScheduledAt)
+				fieldSeen[quest.FieldScheduledAt] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

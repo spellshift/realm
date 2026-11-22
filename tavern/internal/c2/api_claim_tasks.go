@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -50,6 +51,14 @@ func init() {
 	prometheus.MustRegister(metricTomeAutomationErrors)
 }
 
+// selectedAutomation is a scheduled task selected to run for a beacon, along with
+// the canonical cron fire-time (minute-aligned) when selected by schedule.
+// A zero fireTime means the task is non-cron (new beacon / first host, one-shot).
+type selectedAutomation struct {
+	task     *ent.ScheduledTask
+	fireTime time.Time
+}
+
 func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval time.Duration) {
 	// Tome Automation Logic
 	candidateTasks, err := srv.graph.ScheduledTask.Query().
@@ -74,12 +83,13 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		return
 	}
 
-	selectedTasks := make(map[int]*ent.ScheduledTask)
+	selectedTasks := make(map[int]selectedAutomation)
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	cutoff := now.Add(interval)
 
 	for _, t := range candidateTasks {
 		shouldRun := false
+		var fireTime time.Time
 
 		// Check RunOnNewBeaconCallback
 		if isNewBeacon && t.RunOnNewBeaconCallback {
@@ -105,6 +115,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 					next := sched.Next(currentMinute.Add(-1 * time.Second))
 					if next.Equal(currentMinute) {
 						isMatch = true
+						fireTime = currentMinute
 					}
 				} else {
 					// Check if any point between now and the next expected check-in matches the run schedule
@@ -112,6 +123,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 					next := sched.Next(now.Add(-1 * time.Second))
 					if !next.After(cutoff) {
 						isMatch = true
+						fireTime = next
 					}
 				}
 
@@ -125,32 +137,58 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		}
 
 		if shouldRun && t.Edges.Tome != nil {
-			selectedTasks[t.ID] = t
+			selectedTasks[t.ID] = selectedAutomation{task: t, fireTime: fireTime}
 		}
 	}
 
 	// Create Quest and Task for each selected ScheduledTask
-	for _, st := range selectedTasks {
+	for _, sel := range selectedTasks {
+		st := sel.task
+		fireTime := sel.fireTime
+		if !fireTime.IsZero() {
+			// Normalize to UTC so equality matching is stable across zones/drivers.
+			fireTime = fireTime.UTC()
+		}
 		tome := st.Edges.Tome
-		questCreate := srv.graph.Quest.Create().
-			SetName(fmt.Sprintf("Automated: %s", st.Name)).
-			SetTome(tome).
-			SetParameters(st.Parameters).
-			SetParamDefsAtCreation(tome.ParamDefs).
-			SetEldritchAtCreation(tome.Eldritch)
-		if st.Parameters != "" {
-			questCreate.SetParameters(st.Parameters)
-		}
-		q, err := questCreate.Save(ctx)
-		if err != nil {
-			claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
-			metricTomeAutomationErrors.Inc()
-			continue
-		}
 
-		// Link quest to scheduled task
-		if _, err := srv.graph.ScheduledTask.UpdateOneID(st.ID).AddQuests(q).Save(ctx); err != nil {
-			claimLog.ErrorContext(ctx, "failed to link automated quest to scheduled task", "error", err, "scheduled_task_id", st.ID, "quest_id", q.ID)
+		var q *ent.Quest
+		created := false
+		if !fireTime.IsZero() {
+			// Cron occurrence: find the shared quest for (scheduled task, fire time).
+			q, err = srv.graph.Quest.Query().
+				Where(
+					quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)),
+					quest.ScheduledAtEQ(fireTime),
+				).
+				Order(ent.Asc(quest.FieldID)).
+				First(ctx)
+			if err != nil && !ent.IsNotFound(err) {
+				claimLog.ErrorContext(ctx, "failed to query automated quest for occurrence", "error", err, "scheduled_task_id", st.ID, "fire_time", fireTime)
+				metricTomeAutomationErrors.Inc()
+				continue
+			}
+		}
+		if q == nil {
+			questCreate := srv.graph.Quest.Create().
+				SetName(fmt.Sprintf("Automated: %s", st.Name)).
+				SetTome(tome).
+				SetScheduledTaskID(st.ID).
+				SetParameters(st.Parameters).
+				SetParamDefsAtCreation(tome.ParamDefs).
+				SetEldritchAtCreation(tome.Eldritch)
+			if st.Parameters != "" {
+				questCreate.SetParameters(st.Parameters)
+			}
+			if !fireTime.IsZero() {
+				questCreate.SetScheduledAt(fireTime)
+			}
+			q, err = questCreate.Save(ctx)
+			if err != nil {
+				claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
+				metricTomeAutomationErrors.Inc()
+				continue
+			}
+			created = true
 		}
 
 		_, err = srv.graph.Task.Create().
@@ -160,6 +198,10 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		if err != nil {
 			claimLog.ErrorContext(ctx, "failed to create automated task", "error", err, "quest_id", q.ID)
 			metricTomeAutomationErrors.Inc()
+			continue
+		}
+
+		if !created {
 			continue
 		}
 
