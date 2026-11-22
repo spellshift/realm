@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	_ "gocloud.dev/pubsub/mempubsub"
 
-	entsql "entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
@@ -49,12 +48,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	ctx := context.Background()
 
 	// 1. Setup DB
-	db := enttest.NewDB(t)
-	drv := entsql.OpenDB("sqlite3", db)
-	entClient := ent.NewClient(ent.Driver(drv))
-
-	// Create Schema
-	require.NoError(t, entClient.Schema.Create(ctx))
+	entClient := enttest.OpenTempDB(t)
 
 	// 2. Setup Portal Mux
 	portalMux := mux.New()
