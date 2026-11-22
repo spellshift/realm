@@ -17,6 +17,7 @@ import { ProfilesTab } from "../agent-builder/profiles-tab";
 import { BuildersTab } from "../agent-builder/builders-tab";
 import NewBuildProfileModal from "../agent-builder/components/NewBuildProfileModal";
 import EnrollBuilderModal from "../agent-builder/components/EnrollBuilderModal";
+import AgentBuilderWizardModal from "../agent-builder/components/AgentBuilderWizardModal";
 import { DELETE_BUILD_PROFILE, GET_BUILD_PROFILES, useBuilders, useBuildProfiles } from "../agent-builder/queries";
 import { BuildProfile } from "../agent-builder/types";
 
@@ -32,6 +33,7 @@ export const AdminPortal = () => {
     const [enrollModalOpen, setEnrollModalOpen] = useState(false);
     const [newProfileModalOpen, setNewProfileModalOpen] = useState(false);
     const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
+    const [generateAssetProfile, setGenerateAssetProfile] = useState<BuildProfile | null>(null);
     const [deleteProfile] = useMutation(DELETE_BUILD_PROFILE, {
         refetchQueries: [{ query: GET_BUILD_PROFILES }],
         onCompleted: () => {
@@ -130,6 +132,7 @@ export const AdminPortal = () => {
                                 onAddProfile={goToNewProfile}
                                 onEditProfile={goToEditProfile}
                                 onDeleteProfile={handleDeleteProfile}
+                                onGenerateAsset={(profile) => setGenerateAssetProfile(profile)}
                             />
                         </TabPanel>
                         <TabPanel>
@@ -152,6 +155,15 @@ export const AdminPortal = () => {
                         await refetchProfiles();
                     }}
                 />
+                {generateAssetProfile && (
+                    <AgentBuilderWizardModal
+                        isOpen={!!generateAssetProfile}
+                        setOpen={(open) => {
+                            if (!open) setGenerateAssetProfile(null);
+                        }}
+                        initialProfileId={generateAssetProfile.id}
+                    />
+                )}
             </div>
         </AdminAccessGate>
     );
