@@ -47,6 +47,15 @@ Building in the dev container limits variables that might cause issues and is th
 
 **🚨 Note:** You must cd into the imix directory `implants/imix/` not `implants/` in order to build the agent.
 
+### Bundle Install Service for a manual build
+
+To make `imix install` install a service in a manual build, copy the default script from Tavern **before** running `cargo build`. Run these commands from the repository root, then configure the copied script's `main()` as shown in [Installation](#installation):
+
+```bash
+mkdir -p implants/imix/install_scripts/install_service
+cp tavern/tomes/install_service/main.eldritch implants/imix/install_scripts/install_service/main.eldritch
+```
+
 ## Setting encryption key
 
 By default, imix will automatically fetch the server's public key from the `IMIX_CALLBACK_URI` during the build process by querying the `/status` endpoint.
@@ -300,11 +309,37 @@ At runtime, you may use the `IMIX_LOG` environment variable to control log level
 
 ## Installation
 
-The install subcommand executes embedded tomes similar to golem.
-It will loop through all embedded files looking for main.eldritch.
-Each main.eldritch will execute in a new thread. This is done to allow imix to install redundantly or install additional (non dependent) tools.
+The `install` subcommand runs each embedded `main.eldritch` script in turn. Imix embeds scripts from `implants/imix/install_scripts` when it is built; that directory contains only `.gitkeep` by default.
 
-Installation scripts are specified in the `realm/implants/imix/install_scripts` directory.
+To bundle an installation script from Tavern, add the **Install Service** tome to a build profile in the builder. Enter a service name, description, executable name, executable arguments, and Windows display name. The builder configures one service; the tome copies the agent binary to the selected service path before installing it.
+
+For a manual build, [copy the script before compiling](#bundle-install-service-for-a-manual-build). The copied script's `main()` reads builder supplied `input_params`, so replace its `main()` function and final call with a configuration for the manual build. For example, this configures two possible services:
+
+```python
+def main():
+    configs = [
+        {
+            "name": "imix_svc",
+            "windows_display_name": "Realm Agent",
+            "description": "Realm agent service",
+            "executable_name": "imixd",
+            "executable_args": "--quiet",
+        },
+        {
+            "name": "imix_backup",
+            "windows_display_name": "Realm Backup Agent",
+            "description": "Realm backup agent service",
+            "executable_name": "imix_backupd",
+            "executable_args": "--quiet",
+        },
+    ]
+    parse_and_persist(configs)
+    print("Implant copied, you may now delete this binary.")
+
+main()
+```
+
+`parse_and_persist` checks whether any configured service executable is already running. If none is, it randomly chooses **one** configuration to install. Build Imix after editing the script, then run the resulting binary with `install` on the target system. Other scripts placed under `install_scripts` can also run during installation.
 
 This feature is currently under active development, and may change. We'll do our best to keep these docs updates in the meantime.
 
