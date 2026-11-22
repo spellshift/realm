@@ -16,7 +16,7 @@ nix = { workspace = true, optional = true }
 
 [target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
 xcap = { workspace = true, optional = true }
-image = { version = "0.25", optional = true }
+image = { workspace = true, optional = true }
 
 [features]
 default = ["stdlib"]

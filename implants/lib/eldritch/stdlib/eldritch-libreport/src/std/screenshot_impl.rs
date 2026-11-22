@@ -1,29 +1,25 @@
 use alloc::sync::Arc;
 use eldritch_agent::{Agent, Context};
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(any(test, target_os = "windows", target_os = "macos"))]
 use {
-    alloc::format,
     alloc::string::{String, ToString},
     alloc::vec::Vec,
-    image::ImageFormat,
     pb::c2::report_file_request,
     pb::{c2, eldritch},
-    std::io::Cursor,
-    std::sync::Mutex,
-    xcap::Monitor,
 };
 
-#[cfg(all(target_os = "macos", feature = "stdlib"))]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+use {alloc::format, image::ImageFormat, std::io::Cursor, xcap::Monitor};
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+const CHUNK_SIZE: usize = 1024 * 1024; // 1 MiB
+
+#[cfg(target_os = "macos")]
 fn get_hostname() -> String {
     nix::unistd::gethostname()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown".to_string())
-}
-
-#[cfg(all(target_os = "macos", not(feature = "stdlib")))]
-fn get_hostname() -> String {
-    std::env::var("HOSTNAME").unwrap_or_else(|_| "unknown".to_string())
 }
 
 #[cfg(target_os = "windows")]
@@ -31,10 +27,61 @@ fn get_hostname() -> String {
     std::env::var("COMPUTERNAME").unwrap_or_else(|_| "unknown".to_string())
 }
 
+#[cfg(any(test, target_os = "windows", target_os = "macos"))]
+fn stream_screenshot_with<F>(
+    context_val: &Option<report_file_request::Context>,
+    filename: String,
+    png_data: Vec<u8>,
+    chunk_size: usize,
+    send_stream: F,
+) -> Result<(), String>
+where
+    F: FnOnce(std::sync::mpsc::Receiver<c2::ReportFileRequest>) -> Result<(), String>,
+{
+    if png_data.is_empty() {
+        return Err("captured empty screenshot image".to_string());
+    }
+
+    // Use a sync channel with bound 1 to provide backpressure.
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let total_size = png_data.len();
+
+    std::thread::scope(|s| {
+        s.spawn(move || {
+            let mut filename = Some(filename);
+            for chunk in png_data.chunks(chunk_size) {
+                let metadata = filename.take().map(|path| eldritch::FileMetadata {
+                    path,
+                    size: total_size as u64,
+                    ..Default::default()
+                });
+
+                let file_msg = eldritch::File {
+                    metadata,
+                    chunk: chunk.to_vec(),
+                };
+
+                let req = c2::ReportFileRequest {
+                    context: context_val.clone(),
+                    chunk: Some(file_msg),
+                    kind: c2::ReportFileKind::Screenshot as i32,
+                };
+
+                if tx.send(req).is_err() {
+                    break;
+                }
+            }
+        });
+
+        send_stream(rx)
+    })
+}
+
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn screenshot(_agent: Arc<dyn Agent>, _context: Context) -> Result<(), String> {
     Err(
-        "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
+        "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported"
+            .to_string(),
     )
 }
 
@@ -43,10 +90,14 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
     let monitors = Monitor::all().map_err(|e| e.to_string())?;
 
     if monitors.is_empty() {
-        return Ok(());
+        return Err("no monitors found to capture screenshot".to_string());
     }
 
     let hostname = get_hostname();
+    let context_val = match context {
+        Context::Task(tc) => Some(report_file_request::Context::TaskContext(tc)),
+        Context::ShellTask(stc) => Some(report_file_request::Context::ShellTaskContext(stc)),
+    };
 
     for (i, monitor) in monitors.iter().enumerate() {
         // Capture image
@@ -66,80 +117,78 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
 
         let filename = format!("screenshot_{}_{}_{}.png", hostname, timestamp, i);
 
-        // Prepare context
-        let context_val = match context {
-            Context::Task(ref tc) => Some(report_file_request::Context::TaskContext(tc.clone())),
-            Context::ShellTask(ref stc) => {
-                Some(report_file_request::Context::ShellTaskContext(stc.clone()))
-            }
-        };
-
-        // Error handling for the streaming thread
-        let error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
-
-        // Use a sync channel with bound 1 to provide backpressure
-        let (tx, rx) = std::sync::mpsc::sync_channel(1);
-
-        let chunk_size = 1024 * 1024; // 1MB
-        let total_size = png_data.len();
-
-        let png_data_clone = png_data.clone();
-        let filename_clone = filename.clone();
-        let context_val_clone = context_val.clone();
-
-        // Spawn thread for streaming
-        std::thread::spawn(move || {
-            let mut offset = 0;
-            let mut metadata_sent = false;
-
-            loop {
-                if offset >= total_size {
-                    break;
-                }
-
-                let end = std::cmp::min(offset + chunk_size, total_size);
-                let chunk_data = png_data_clone[offset..end].to_vec();
-
-                let metadata = if !metadata_sent {
-                    metadata_sent = true;
-                    Some(eldritch::FileMetadata {
-                        path: filename_clone.clone(),
-                        permissions: "644".to_string(),
-                        owner: "root".to_string(),
-                        group: "root".to_string(),
-                        size: total_size as u64,
-                        ..Default::default()
-                    })
-                } else {
-                    None
-                };
-
-                let file_msg = eldritch::File {
-                    metadata,
-                    chunk: chunk_data,
-                };
-
-                let req = c2::ReportFileRequest {
-                    context: context_val_clone.clone(),
-                    chunk: Some(file_msg),
-                    kind: c2::ReportFileKind::Screenshot as i32,
-                };
-
-                if tx.send(req).is_err() {
-                    break;
-                }
-
-                offset += chunk_size;
-            }
-        });
-
-        // Send stream to agent (blocking)
-        agent.report_file(rx).map(|_| ())?;
-
-        if let Some(e) = error.lock().unwrap().as_ref() {
-            return Err(e.clone());
-        }
+        stream_screenshot_with(&context_val, filename, png_data, CHUNK_SIZE, |rx| {
+            agent.report_file(rx).map(|_| ())
+        })?;
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stream_screenshot_chunks_and_metadata() {
+        let ctx = Some(report_file_request::Context::TaskContext(c2::TaskContext {
+            task_id: 42,
+            jwt: "jwt-token".to_string(),
+        }));
+        let payload = b"0123456789".to_vec();
+        let mut received = Vec::new();
+
+        let res = stream_screenshot_with(
+            &ctx,
+            "screenshot_host_1_0.png".to_string(),
+            payload.clone(),
+            4,
+            |rx| {
+                for req in rx {
+                    received.push(req);
+                }
+                Ok(())
+            },
+        );
+        assert!(res.is_ok());
+        assert_eq!(received.len(), 3);
+
+        // First chunk carries metadata without fabricated Unix owner/permissions.
+        let first_file = received[0].chunk.as_ref().unwrap();
+        let meta = first_file.metadata.as_ref().unwrap();
+        assert_eq!(meta.path, "screenshot_host_1_0.png");
+        assert_eq!(meta.size, payload.len() as u64);
+        assert!(meta.owner.is_empty());
+        assert!(meta.group.is_empty());
+        assert!(meta.permissions.is_empty());
+        assert_eq!(received[0].kind, c2::ReportFileKind::Screenshot as i32);
+
+        // Subsequent chunks omit metadata.
+        assert!(received[1].chunk.as_ref().unwrap().metadata.is_none());
+        assert!(received[2].chunk.as_ref().unwrap().metadata.is_none());
+
+        // Reassembled payload matches original bytes.
+        let reassembled: Vec<u8> = received
+            .into_iter()
+            .flat_map(|r| r.chunk.unwrap().chunk)
+            .collect();
+        assert_eq!(reassembled, payload);
+    }
+
+    #[test]
+    fn test_stream_screenshot_empty_payload_errors() {
+        let res = stream_screenshot_with(&None, "empty.png".to_string(), Vec::new(), 4, |_| Ok(()));
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_stream_screenshot_receiver_drop_joins_cleanly() {
+        let payload = vec![0xAB; 16];
+        let res = stream_screenshot_with(&None, "abort.png".to_string(), payload, 4, |rx| {
+            let _first = rx.recv().unwrap();
+            drop(rx);
+            Err("aborted".to_string())
+        });
+        assert_eq!(res, Err("aborted".to_string()));
+    }
 }

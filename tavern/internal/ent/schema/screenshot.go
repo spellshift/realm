@@ -130,8 +130,13 @@ func HookDeriveScreenshotInfo() ent.Hook {
 				return nil, fmt.Errorf("expected screenshot mutation in schema hook, got: %+v", m)
 			}
 
+			// Only update size and hash when content is being mutated.
+			content, exists := s.Content()
+			if !exists {
+				return next.Mutate(ctx, m)
+			}
+
 			// Set the new size
-			content, _ := s.Content()
 			s.SetSize(uint64(len(content)))
 
 			// Set the new hash (if content exists)

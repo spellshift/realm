@@ -1,6 +1,7 @@
 package cdn
 
 import (
+	"bytes"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,6 +11,8 @@ import (
 	"realm.pub/tavern/internal/errors"
 	"realm.pub/tavern/internal/logging"
 )
+
+var pngMagic = []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}
 
 // NewScreenshotDownloadHandler returns an HTTP handler responsible for downloading a Screenshot from the CDN.
 func NewScreenshotDownloadHandler(graph *ent.Client, prefix string) http.Handler {
@@ -22,7 +25,7 @@ func NewScreenshotDownloadHandler(graph *ent.Client, prefix string) http.Handler
 			return ErrInvalidFileID
 		}
 		fileID, err := strconv.Atoi(fileIDStr)
-		if err != nil {
+		if err != nil || fileID <= 0 {
 			return ErrInvalidFileID
 		}
 
@@ -30,25 +33,37 @@ func NewScreenshotDownloadHandler(graph *ent.Client, prefix string) http.Handler
 
 		// If hash was provided, check to see if the file has been updated.
 		if hash := req.Header.Get(HeaderIfNoneMatch); hash != "" {
-			if exists := fileQuery.Clone().Where(screenshot.Hash(hash)).ExistX(ctx); exists {
+			exists, err := fileQuery.Clone().Where(screenshot.Hash(hash)).Exist(ctx)
+			if err != nil {
+				return err
+			}
+			if exists {
 				downloadLog.DebugContext(ctx, "screenshot not modified", "screenshot_id", fileID)
 				return ErrFileNotModified
 			}
 		}
 
-		// Ensure the file exists
-		if exists := fileQuery.Clone().ExistX(ctx); !exists {
+		f, err := fileQuery.WithHost().Only(ctx)
+		if ent.IsNotFound(err) {
 			downloadLog.DebugContext(ctx, "screenshot not found", "screenshot_id", fileID)
 			return ErrFileNotFound
 		}
-
-		f := fileQuery.WithHost().OnlyX(ctx)
+		if err != nil {
+			return err
+		}
 
 		// Set Etag to hash of file
 		w.Header().Set(HeaderEtag, f.Hash)
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 
-		// Set Content-Type and serve content in chunks
-		w.Header().Set("Content-Type", "image/png")
+		// Only serve inline as image/png if the payload actually starts with the PNG magic header;
+		// fall back to an octet-stream attachment for untrusted/non-PNG bytes.
+		if bytes.HasPrefix(f.Content, pngMagic) {
+			w.Header().Set("Content-Type", "image/png")
+		} else {
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.Header().Set("Content-Disposition", "attachment")
+		}
 		serveChunkedContent(w, f.Content, f.CreatedAt)
 
 		attrs := append(logging.TargetIntAttrs("screenshot", f.ID, f.Name),

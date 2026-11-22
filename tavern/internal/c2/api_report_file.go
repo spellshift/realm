@@ -13,18 +13,30 @@ import (
 	"realm.pub/tavern/internal/logging"
 )
 
+var (
+	// MaxReportFileSize is the maximum total payload size (in bytes) accepted by ReportFile
+	// for non-screenshot host files, preventing unbounded memory buffering.
+	MaxReportFileSize = 100 * 1024 * 1024 // 100 MiB
+
+	// MaxScreenshotSize is the maximum total payload size (in bytes) accepted by ReportFile
+	// for screenshots, preventing unbounded memory buffering.
+	MaxScreenshotSize = 50 * 1024 * 1024 // 50 MiB
+)
+
 func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	var (
-		taskID      int64
-		shellTaskID int64
-		jwtToken    string
-		path        string
-		owner       string
-		group       string
-		permissions string
-		size        uint64
-		hash        string
-		kind        c2pb.ReportFileKind
+		taskID        int64
+		shellTaskID   int64
+		jwtToken      string
+		beaconID      int
+		authenticated bool
+		path          string
+		owner         string
+		group         string
+		permissions   string
+		size          uint64
+		hash          string
+		kind          c2pb.ReportFileKind
 
 		content []byte
 	)
@@ -46,7 +58,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			kind = req.GetKind()
 		}
 
-		if taskID == 0 && shellTaskID == 0 {
+		if !authenticated {
 			if tc := req.GetTaskContext(); tc != nil {
 				taskID = tc.TaskId
 				jwtToken = tc.Jwt
@@ -54,6 +66,16 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 				shellTaskID = stc.ShellTaskId
 				jwtToken = stc.Jwt
 			}
+
+			if taskID == 0 && shellTaskID == 0 {
+				return status.Errorf(codes.InvalidArgument, "must provide valid task id or shell task id")
+			}
+
+			ctx, beaconID, err = srv.ValidateJWTContext(ctx, jwtToken)
+			if err != nil {
+				return err
+			}
+			authenticated = true
 		}
 
 		if req.Chunk != nil {
@@ -65,21 +87,24 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 				size = req.Chunk.Metadata.GetSize()
 				hash = req.Chunk.Metadata.GetSha3_256Hash()
 			}
-			content = append(content, req.Chunk.GetChunk()...)
+			chunk := req.Chunk.GetChunk()
+			maxSize := MaxReportFileSize
+			if kind == c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT {
+				maxSize = MaxScreenshotSize
+			}
+			if int64(len(content))+int64(len(chunk)) > int64(maxSize) {
+				return status.Errorf(codes.ResourceExhausted, "reported file exceeds maximum allowed size of %d bytes", maxSize)
+			}
+			content = append(content, chunk...)
 		}
 	}
 
 	// Input Validation
-	if taskID == 0 && shellTaskID == 0 {
+	if !authenticated {
 		return status.Errorf(codes.InvalidArgument, "must provide valid task id or shell task id")
 	}
 	if path == "" {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
-	}
-
-	ctx, beaconID, err := srv.ValidateJWTContext(ctx, jwtToken)
-	if err != nil {
-		return err
 	}
 
 	var host *ent.Host
@@ -121,6 +146,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	// Load Existing Files (only for HostFile)
 	var existingFiles []*ent.HostFile
 	if !isScreenshot {
+		var err error
 		existingFiles, err = host.QueryFiles().
 			Where(
 				hostfile.Path(path),

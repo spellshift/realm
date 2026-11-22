@@ -67,8 +67,8 @@ func TestDownloadScreenshot(t *testing.T) {
 			wantBody:   []byte(fmt.Sprintf("%s\n", cdn.ErrInvalidFileID.Error())),
 		},
 		{
-			name:   "Cached",
-			reqURL: fmt.Sprintf("/download/%d", existingScreenshot.ID),
+			name:       "Cached",
+			reqURL:     fmt.Sprintf("/download/%d", existingScreenshot.ID),
 			wantStatus: cdn.ErrFileNotModified.StatusCode,
 			wantBody:   []byte(fmt.Sprintf("%s\n", cdn.ErrFileNotModified.Error())),
 		},
@@ -96,6 +96,41 @@ func TestDownloadScreenshot(t *testing.T) {
 			assert.Equal(t, tc.wantBody, body)
 		})
 	}
+
+	t.Run("SecurityHeaders", func(t *testing.T) {
+		pngContent := append([]byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}, []byte("rest")...)
+		pngScreenshot := graph.Screenshot.Create().
+			SetName("real.png").
+			SetContent(pngContent).
+			SetHost(existingHost).
+			SaveX(ctx)
+
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/download/%d", pngScreenshot.ID), nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		assert.Equal(t, "nosniff", res.Header.Get("X-Content-Type-Options"))
+		assert.Equal(t, "image/png", res.Header.Get("Content-Type"))
+		assert.Empty(t, res.Header.Get("Content-Disposition"))
+
+		htmlScreenshot := graph.Screenshot.Create().
+			SetName("spoofed.png").
+			SetContent([]byte("<html><script>alert(1)</script></html>")).
+			SetHost(existingHost).
+			SaveX(ctx)
+
+		req2 := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/download/%d", htmlScreenshot.ID), nil)
+		w2 := httptest.NewRecorder()
+		handler.ServeHTTP(w2, req2)
+		res2 := w2.Result()
+		defer res2.Body.Close()
+		assert.Equal(t, http.StatusOK, res2.StatusCode)
+		assert.Equal(t, "nosniff", res2.Header.Get("X-Content-Type-Options"))
+		assert.Equal(t, "application/octet-stream", res2.Header.Get("Content-Type"))
+		assert.Equal(t, "attachment", res2.Header.Get("Content-Disposition"))
+	})
 
 	t.Run("ChunkedDownload", func(t *testing.T) {
 		// Set a small chunk size for testing

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
 	"realm.pub/tavern/internal/c2/epb"
@@ -103,5 +104,76 @@ func TestReportFile_Screenshot(t *testing.T) {
 			}
 		}
 		assert.True(t, found, "expected to find saved screenshot with invalid image content")
+	})
+
+	t.Run("InvalidJWT_RejectedOnFirstChunk", func(t *testing.T) {
+		origMax := c2.MaxScreenshotSize
+		c2.MaxScreenshotSize = 4
+		defer func() { c2.MaxScreenshotSize = origMax }()
+
+		rClient, err := client.ReportFile(ctx)
+		require.NoError(t, err)
+		_ = rClient.Send(&c2pb.ReportFileRequest{
+			Context: &c2pb.ReportFileRequest_TaskContext{
+				TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: "invalid-jwt"},
+			},
+			Kind: c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT,
+			Chunk: &epb.File{
+				Metadata: &epb.FileMetadata{Path: "screenshot_unauth.png"},
+				Chunk:    []byte("oversized-unauthenticated-payload"),
+			},
+		})
+		_, err = rClient.CloseAndRecv()
+		st, _ := status.FromError(err)
+		// JWT must be validated on the first chunk before size/buffering checks.
+		require.Equal(t, codes.PermissionDenied.String(), st.Code().String(), err)
+	})
+
+	t.Run("ScreenshotExceedsMaxSize", func(t *testing.T) {
+		origMax := c2.MaxScreenshotSize
+		c2.MaxScreenshotSize = 16
+		defer func() { c2.MaxScreenshotSize = origMax }()
+
+		rClient, err := client.ReportFile(ctx)
+		require.NoError(t, err)
+		_ = rClient.Send(&c2pb.ReportFileRequest{
+			Context: &c2pb.ReportFileRequest_TaskContext{
+				TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+			},
+			Kind: c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT,
+			Chunk: &epb.File{
+				Metadata: &epb.FileMetadata{Path: "screenshot_too_big.png"},
+				Chunk:    bytes.Repeat([]byte("A"), 10),
+			},
+		})
+		_ = rClient.Send(&c2pb.ReportFileRequest{
+			Chunk: &epb.File{
+				Chunk: bytes.Repeat([]byte("B"), 10),
+			},
+		})
+		_, err = rClient.CloseAndRecv()
+		st, _ := status.FromError(err)
+		require.Equal(t, codes.ResourceExhausted.String(), st.Code().String(), err)
+	})
+
+	t.Run("FileExceedsMaxSize", func(t *testing.T) {
+		origMax := c2.MaxReportFileSize
+		c2.MaxReportFileSize = 16
+		defer func() { c2.MaxReportFileSize = origMax }()
+
+		rClient, err := client.ReportFile(ctx)
+		require.NoError(t, err)
+		_ = rClient.Send(&c2pb.ReportFileRequest{
+			Context: &c2pb.ReportFileRequest_TaskContext{
+				TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+			},
+			Chunk: &epb.File{
+				Metadata: &epb.FileMetadata{Path: "/too_big.bin"},
+				Chunk:    bytes.Repeat([]byte("X"), 17),
+			},
+		})
+		_, err = rClient.CloseAndRecv()
+		st, _ := status.FromError(err)
+		require.Equal(t, codes.ResourceExhausted.String(), st.Code().String(), err)
 	})
 }
