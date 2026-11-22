@@ -9,7 +9,6 @@ stdlib = [
     "dep:anyhow",
     "dep:flate2",
     "dep:tar",
-    "dep:tempfile",
 ]
 fake_bindings = []
 
@@ -19,4 +18,6 @@ eldritch-macros = { workspace = true }
 anyhow = { workspace = true, optional = true }
 flate2 = { workspace = true, optional = true, features = ["rust_backend"] }
 tar = { workspace = true, optional = true }
-tempfile = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

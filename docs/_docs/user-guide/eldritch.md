@@ -991,7 +991,7 @@ The **gzip.decompress** method decompresses gzip-compressed bytes and returns th
 
 `gzip.decompress_file(src: str, dst: str) -> None`
 
-The **gzip.decompress_file** method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
+The **gzip.decompress_file** method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source file contains a tar archive, its contents will be extracted into a directory at the `dst` path (if `dst` already exists as a directory, extracted entries are merged into it). Note the original directory will also be added to the new directory.
 
 ```python
 gzip.compress_file('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')
