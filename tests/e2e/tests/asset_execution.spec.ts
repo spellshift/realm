@@ -8,57 +8,62 @@ test('End-to-end asset upload and execution test', async ({ page }) => {
   // 2. Click "Upload Assets"
   console.log('Clicking Upload Assets');
   await page.getByRole('button', { name: 'Upload Assets' }).click();
+  const uploadDialog = page.locator('[role="dialog"]');
+  await expect(uploadDialog).toBeVisible();
 
   // 3. Upload a file named test_script.sh
   console.log('Uploading test_script.sh');
-  const fileContent = Buffer.from('#!/bin/sh\necho "E2E Test Passed"', 'utf-8');
-  await page.getByTestId('file-upload-input').setInputFiles({
+  const fileContent = Buffer.from('#!/bin/sh\necho "E2E Test Passed"\n', 'utf-8');
+  await uploadDialog.getByTestId('file-upload-input').setInputFiles({
     name: 'test_script.sh',
     mimeType: 'text/x-sh',
-    buffer: fileContent
+    buffer: fileContent,
   });
 
-  // 4. Click the "Upload" button in the modal
+  // 4. Click the "Upload" button in the modal and wait for upload request to complete
   console.log('Confirming Upload');
-  await page.getByRole('button', { name: 'Upload', exact: true }).click();
+  const uploadResponsePromise = page.waitForResponse(
+    (resp) => resp.url().includes('/cdn/upload') && resp.ok()
+  );
+  await uploadDialog.getByRole('button', { name: 'Upload', exact: true }).click();
+  await uploadResponsePromise;
 
-  // 5. Wait for the upload to complete (modal closes)
+  // 5. Close upload modal and wait for the uploaded asset row to appear in the table
   console.log('Waiting for upload to complete');
-  // Wait for the file to appear in the table
-  await expect(page.getByText('test_script.sh').first()).toBeVisible();
+  const cancelButton = uploadDialog.getByRole('button', { name: 'Cancel' });
+  await expect(cancelButton).toBeEnabled();
+  await cancelButton.click();
+  await expect(uploadDialog).toBeHidden();
 
-  // 6. Create a Link for the asset
+  // 6. Create a Link for the specific asset row
   console.log('Creating Link for asset');
-
-  // Close the upload modal if it's still open (sometimes success state keeps it open)
-  const cancelButton = page.getByRole('button', { name: 'Cancel' });
-  if (await cancelButton.isVisible()) {
-      await cancelButton.click();
-  }
-
-  // Find the "Create Link" button in the row containing "test_script.sh"
-  const createLinkButton = page.locator('div').filter({ hasText: 'test_script.sh' }).getByLabel('Create Link').first();
-  await createLinkButton.click({ force: true });
+  const assetRow = page.locator('[data-index]').filter({ hasText: 'test_script.sh' }).first();
+  await expect(assetRow).toBeVisible();
+  const createLinkButton = assetRow.getByRole('button', { name: 'Create Link' });
+  await expect(createLinkButton).toBeVisible();
+  await createLinkButton.click();
 
   // 7. Wait for Create Link Modal
   console.log('Waiting for Create Link Modal');
-  await expect(page.getByText('Create link for test_script.sh')).toBeVisible();
+  const createLinkDialog = page.locator('[role="dialog"]');
+  await expect(createLinkDialog.getByText('Create link for test_script.sh')).toBeVisible();
 
   // 8. Submit Create Link Form
   console.log('Submitting Create Link Form');
-  const modal = page.locator('[role="dialog"]');
-  await modal.getByRole('button', { name: 'Create Link' }).click();
+  await createLinkDialog.getByRole('button', { name: 'Create Link' }).click();
 
   // 9. Get the generated link
   console.log('Getting generated link');
-  await expect(page.getByText('Link Created')).toBeVisible();
-  const linkTextElement = page.locator('.break-all.select-all');
+  await expect(createLinkDialog.getByText('Link Created')).toBeVisible();
+  const linkTextElement = createLinkDialog.locator('.break-all.select-all');
   await expect(linkTextElement).toBeVisible();
-  const downloadUrl = await linkTextElement.innerText();
+  const downloadUrl = (await linkTextElement.innerText()).trim();
+  expect(() => new URL(downloadUrl)).not.toThrow();
   console.log('Generated Link:', downloadUrl);
 
   // Close the modal
-  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await createLinkDialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(createLinkDialog).toBeHidden();
 
   // 10. Navigate to /quests and open Create Quest modal
   console.log('Navigating to /quests');
@@ -67,64 +72,61 @@ test('End-to-end asset upload and execution test', async ({ page }) => {
   // 11. Click "Create a quest" button to open the modal
   console.log('Opening Create Quest modal');
   await page.getByRole('button', { name: 'Create a quest' }).click();
+  const questDialog = page.locator('[role="dialog"]');
+  await expect(questDialog).toBeVisible();
 
   // 12. Wait for beacons to load
   console.log('Waiting for beacons to load');
-  await expect(page.getByText('Loading beacons...')).toBeHidden({ timeout: 15000 });
+  await expect(questDialog.getByText('Loading beacons...')).toBeHidden({ timeout: 15000 });
 
-  // Select the first beacon checkbox using aria-label (Chakra Checkbox with aria-label="Select beacon {name}")
-  const beaconCheckbox = page.getByLabel(/Select beacon/).first();
-  await expect(beaconCheckbox).toBeVisible();
+  // Select the first beacon via its Chakra Checkbox label to avoid force-clicking the hidden input
+  const beaconCheckbox = questDialog.getByLabel(/Select beacon/).first();
+  const beaconLabel = questDialog.locator('label').filter({ has: beaconCheckbox }).first();
+  await expect(beaconLabel).toBeVisible({ timeout: 15000 });
 
   // 13. Select the beacon
   console.log('Selecting beacon');
-  await beaconCheckbox.check({ force: true });
+  await beaconLabel.click();
+  await expect(beaconCheckbox).toBeChecked();
 
   // 14. Click Continue (Beacon Step)
   console.log('Clicking Continue (Beacon)');
-  await page.locator('[aria-label="continue beacon step"]').click();
+  await questDialog.locator('[aria-label="continue beacon step"]').click();
 
-  // 15. Select the "HTTP GET file and execute" tome
+  // 15. Select the "Shell command" tome to download and execute the asset and capture its output
   console.log('Selecting Tome');
-  await expect(page.getByText('Loading tomes...')).toBeHidden();
+  await expect(questDialog.getByText('Loading tomes...')).toBeHidden();
 
-  // Search for the tome first (virtualized table doesn't show all items)
-  const dialog = page.locator('[role="dialog"]');
-  const searchInput = dialog.getByPlaceholder('Tome name, description & params');
-  await searchInput.fill('HTTP GET file and execute');
-  await page.waitForTimeout(500); // Wait for search results to filter
+  const searchInput = questDialog.getByPlaceholder('Tome name, description & params');
+  await searchInput.fill('Shell command');
 
-  // Click the tome row (role="button") containing the tome name - scoped to dialog
-  const tomeRow = dialog.locator('[role="button"]').filter({ hasText: 'HTTP GET file and execute' });
+  const tomeRow = questDialog.locator('[role="button"]').filter({ hasText: 'Shell command' }).first();
   await expect(tomeRow).toBeVisible();
   await tomeRow.click();
 
-  // 16. Fill in the url parameter with the generated link
+  // 16. Fill in the cmd parameter to fetch, chmod, and execute the uploaded asset via its public link
   console.log('Filling parameters');
-  await page.getByPlaceholder('https://example.com/executable_file').fill(downloadUrl);
+  const cmdInput = questDialog.locator('#cmd');
+  await expect(cmdInput).toBeVisible();
+  await cmdInput.fill(
+    `tmp=$(mktemp) && trap 'rm -f "$tmp"' EXIT && curl -fsSL '${downloadUrl}' -o "$tmp" && chmod +x "$tmp" && "$tmp"`
+  );
 
   // 17. Click Continue (Tome Step)
   console.log('Clicking Continue (Tome)');
-  await page.locator('[aria-label="continue tome step"]').click();
+  await questDialog.locator('[aria-label="continue tome step"]').click();
 
   // 18. Submit Quest
   console.log('Submitting Quest');
-  await page.locator('[aria-label="submit quest"]').click();
+  await questDialog.locator('[aria-label="submit quest"]').click();
+  await expect(questDialog).toBeHidden({ timeout: 15000 });
 
-  // 19. Wait for execution and check output
+  // 19. Wait for polled execution output and verify the uploaded script actually executed
   console.log('Waiting for execution output');
-  await page.waitForTimeout(5000);
-
-  // Reload to refresh output
-  await page.reload();
-
-  const outputPanel = page.locator('[aria-label="task output"]');
-  await expect(outputPanel).toBeVisible();
-
-  // Check for the output indicating successful download start
-  // The script execution output is hidden because the tome disowns the process.
-  // We accept "Downloading" as success indicator.
-  await expect(outputPanel).toContainText('Downloading', { timeout: 30000 });
+  const outputPanel = page.locator('[aria-label="output panel"] [aria-label="task output"]');
+  await expect(outputPanel).toBeVisible({ timeout: 15000 });
+  await expect(outputPanel).toContainText('E2E Test Passed', { timeout: 30000 });
+  await expect(outputPanel).toContainText('status: 0', { timeout: 30000 });
 
   console.log('Test Complete');
 });

@@ -8,6 +8,9 @@ on:
     branches: [ main ]
   merge_group:
 
+permissions:
+  contents: read
+
 jobs:
   e2e_asset_execution_test:
     runs-on: ubuntu-latest
@@ -21,7 +24,7 @@ jobs:
         cache: true
 
     - name: Setup Rust
-      uses: dtolnay/rust-toolchain@master
+      uses: dtolnay/rust-toolchain@df2a88e9fe4098bad09cb42c3dec7187f15861fc # master
       with:
         toolchain: '1.81.0'
         default: true
@@ -33,7 +36,7 @@ jobs:
       with:
         node-version: '20'
         cache: 'npm'
-        cache-dependency-path: tavern/internal/www/package-lock.json
+        cache-dependency-path: tests/e2e/package-lock.json
 
     - name: 📦 Install System Dependencies
       run: |
@@ -71,9 +74,9 @@ jobs:
         # Run agent and pipe logs to a file
         ./build/debug/imix > agent.log 2>&1 &
 
-        # Give the agent a moment to perform the initial handshake
+        # Wait for the agent to complete its initial callback and register a beacon
         echo "Agent started. Waiting for initial callback..."
-        sleep 5
+        timeout 30 sh -c 'until curl -sf -X POST http://localhost:8000/graphql -H "Content-Type: application/json" -d "{\"query\":\"{ beacons { totalCount } }\"}" | jq -e ".data.beacons.totalCount > 0" > /dev/null 2>&1; do sleep 1; done'
     - name: 🎭 Install Playwright
       working-directory: tests/e2e
       run: |
