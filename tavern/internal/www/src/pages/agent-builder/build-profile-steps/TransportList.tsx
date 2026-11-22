@@ -29,13 +29,14 @@ export const TransportList = ({ transports, editingId, onEdit, onRemove, showDet
 
     return (
         <div className="min-w-0 overflow-x-auto rounded-lg border border-gray-200 bg-white">
-            <table className={`w-full table-fixed text-sm ${isSummary ? "min-w-[300px]" : "min-w-[560px]"}`}>
-                <colgroup><col className="w-[34%]" /><col /><col className="w-36" />{showActions && <col className="w-28" />}</colgroup>
+            <table className={`w-full table-fixed text-sm ${isSummary ? "min-w-[360px]" : "min-w-[620px]"}`}>
+                <colgroup><col className="w-[30%]" /><col /><col className="w-28" /><col className="w-20" />{showActions && <col className="w-28" />}</colgroup>
                 <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>
                         <th scope="col" className={cellClass}>Type</th>
                         <th scope="col" className={cellClass}>URI</th>
                         <th scope="col" className={cellClass}>Interval</th>
+                        <th scope="col" className={cellClass}>Jitter (%)</th>
                         {showActions && <th scope="col" className={cellClass}><span className="sr-only">Actions</span></th>}
                     </tr>
                 </thead>
@@ -52,6 +53,7 @@ export const TransportList = ({ transports, editingId, onEdit, onRemove, showDet
                                 ))}
                             </td>
                             <td className={`text-gray-900 ${cellClass}`}>{transport.interval}s</td>
+                            <td className={`text-gray-900 ${cellClass}`}>{Math.round((transport.jitter ?? 0) * 100)}%</td>
                             {showActions && <td className={cellClass}><div className="flex items-center justify-end gap-2">
                                 <button type="button" className="rounded p-1 text-gray-400 hover:text-gray-600" aria-label={`Edit ${label} transport`}
                                     onClick={() => onEdit(transport)}><Pencil className="h-4 w-4" /></button>

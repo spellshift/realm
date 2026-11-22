@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/base:trixie
 
-ARG ZIG_VERSION=0.16.0-dev.2877+627f03af9
+ARG ZIG_VERSION=0.16.0
 
 ENV GOPATH=/go
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install -y gnupg && echo "deb [arch=$(dpkg --print
     gpg --dearmor | tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null && \
     apt update && apt-get install -y terraform
 
-RUN wget "https://ziglang.org/builds/zig-$(uname -m)-linux-$ZIG_VERSION.tar.xz" -O /tmp/zig.tar.xz && \
+RUN wget "https://ziglang.org/download/$ZIG_VERSION/zig-$(uname -m)-linux-$ZIG_VERSION.tar.xz" -O /tmp/zig.tar.xz && \
     mkdir /usr/local/bin/zig && tar -xvf "/tmp/zig.tar.xz" --strip-components=1 -C /usr/local/bin/zig && \
     echo "export PATH=\"\$PATH:/usr/local/bin/zig/\"" >> /etc/bash.bashrc
 
@@ -133,4 +133,4 @@ RUN set -eux; \
     rustup component add rustfmt clippy; \
     rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu; \
     cargo install cargo-zigbuild; \
-    cargo +1.89.0 install cargo-xwin --locked
+    cargo +1.89.0 install cargo-xwin --version 0.23.1 --locked

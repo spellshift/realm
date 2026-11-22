@@ -841,6 +841,7 @@ func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.
 				Interval: t.Interval,
 				Type:     c2pb.Transport_Type(t.Type),
 				Extra:    extra,
+				Jitter:   t.Jitter,
 			}
 		}
 		creator.SetTransports(transports)
@@ -921,6 +922,7 @@ func (r *mutationResolver) UpdateBuildProfile(ctx context.Context, profileID int
 			Interval: t.Interval,
 			Type:     c2pb.Transport_Type(t.Type),
 			Extra:    extra,
+			Jitter:   t.Jitter,
 		}
 	}
 	updater.SetTransports(transports)
@@ -1007,6 +1009,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 				Interval: t.Interval,
 				Type:     c2pb.Transport_Type(t.Type),
 				Extra:    extra,
+				Jitter:   t.Jitter,
 			}
 		}
 	}

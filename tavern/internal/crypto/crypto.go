@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha512"
+	"errors"
 	"fmt"
 
 	"filippo.io/edwards25519"
@@ -64,7 +65,7 @@ func getKeyPair(secretsManager secrets.SecretsManager) (ed25519.PublicKey, ed255
 
 	// Check if we already have a key stored (now using ED25519)
 	privateKeyBytes, err := secretsManager.GetValue("tavern_ed25519_private_key")
-	if err != nil {
+	if errors.Is(err, secrets.ErrSecretNotFound) {
 		// Generate a new ED25519 key pair if it doesn't exist
 		pubKey, privKey, err := generateKeyPair()
 		if err != nil {
@@ -77,6 +78,11 @@ func getKeyPair(secretsManager secrets.SecretsManager) (ed25519.PublicKey, ed255
 			return nil, nil, fmt.Errorf("unable to set 'tavern_ed25519_private_key' using secrets manager: %v", err)
 		}
 		return pubKey, privKey, nil
+	}
+	if err != nil {
+		// Don't generate a new key on other errors (e.g. a transient secrets backend failure),
+		// that would replace the server key and cut off every deployed implant.
+		return nil, nil, fmt.Errorf("unable to get 'tavern_ed25519_private_key' using secrets manager: %w", err)
 	}
 
 	// ED25519 private key is 64 bytes
