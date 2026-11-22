@@ -132,6 +132,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 				Interval: t.Interval,
 				Type:     TransportTypeToString(t.Type),
 				Extra:    t.Extra,
+				Jitter:   t.Jitter,
 			}
 		}
 		imixCfg := ImixConfig{

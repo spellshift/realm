@@ -8,4 +8,7 @@ type BuildProfileTransport struct {
 	Interval int                 `json:"interval"`
 	Type     c2pb.Transport_Type `json:"type"`
 	Extra    string              `json:"extra,omitempty"`
+	// Jitter is the fraction (0.0-1.0) of the interval by which the agent's
+	// callback sleep is randomly shortened, to avoid predictable beacon timing.
+	Jitter float64 `json:"jitter,omitempty"`
 }

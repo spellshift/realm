@@ -192,6 +192,7 @@ type ComplexityRoot struct {
 	BuildProfileTransport struct {
 		Extra    func(childComplexity int) int
 		Interval func(childComplexity int) int
+		Jitter   func(childComplexity int) int
 		Type     func(childComplexity int) int
 		URI      func(childComplexity int) int
 	}
@@ -1680,6 +1681,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BuildProfileTransport.Interval(childComplexity), true
+
+	case "BuildProfileTransport.jitter":
+		if e.ComplexityRoot.BuildProfileTransport.Jitter == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildProfileTransport.Jitter(childComplexity), true
 
 	case "BuildProfileTransport.type":
 		if e.ComplexityRoot.BuildProfileTransport.Type == nil {
@@ -7369,9 +7377,9 @@ type BuildTask implements Node {
   """
   builder: Builder!
   """
-  The profile assigned to this build Task
+  The profile assigned to this build Task. Null if the profile was deleted; see profile_at_creation for the original inputs.
   """
-  profile: BuildProfile!
+  profile: BuildProfile
   """
   The compiled artifact produced by this build task, stored as an Asset.
   """
@@ -15504,6 +15512,9 @@ type BuildProfileTransport @goModel(model: "realm.pub/tavern/internal/builder/bu
 
   """Extra transport configuration."""
   extra: String
+
+  """The callback jitter, as a fraction of the interval (0.0-1.0)."""
+  jitter: Float!
 }
 
 """Input for a single transport configuration."""
@@ -15519,6 +15530,9 @@ input BuildProfileTransportInput {
 
   """Extra transport configuration."""
   extra: String
+
+  """The callback jitter, as a fraction of the interval (0.0-1.0). Defaults to 0 (no jitter)."""
+  jitter: Float! = 0
 }
 
 """A tome configuration in a build profile."""

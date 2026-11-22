@@ -142,7 +142,7 @@ var (
 		{Name: "unique", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "build_task_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "build_task_builder", Type: field.TypeInt},
-		{Name: "build_task_profile", Type: field.TypeInt},
+		{Name: "build_task_profile", Type: field.TypeInt, Nullable: true},
 		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
 	}
 	// BuildTasksTable holds the schema information for the "build_tasks" table.
@@ -167,7 +167,7 @@ var (
 				Symbol:     "build_tasks_build_profiles_profile",
 				Columns:    []*schema.Column{BuildTasksColumns[20]},
 				RefColumns: []*schema.Column{BuildProfilesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",

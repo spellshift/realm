@@ -135,9 +135,11 @@ func (BuildTask) Edges() []ent.Edge {
 			Unique().
 			Comment("The builder assigned to execute this build task."),
 		edge.To("profile", BuildProfile.Type).
-			Required().
 			Unique().
-			Comment("The profile assigned to this build Task"),
+			Annotations(
+				entsql.OnDelete(entsql.SetNull),
+			).
+			Comment("The profile assigned to this build Task. Null if the profile was deleted; see profile_at_creation for the original inputs."),
 		edge.To("artifact", Asset.Type).
 			Unique().
 			Comment("The compiled artifact produced by this build task, stored as an Asset."),
