@@ -417,6 +417,9 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if qu.mutation.ScheduledAtCleared() {
 		_spec.ClearField(quest.FieldScheduledAt, field.TypeTime)
 	}
+	if qu.mutation.OccurrenceKeyCleared() {
+		_spec.ClearField(quest.FieldOccurrenceKey, field.TypeString)
+	}
 	if qu.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1157,6 +1160,9 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 	}
 	if quo.mutation.ScheduledAtCleared() {
 		_spec.ClearField(quest.FieldScheduledAt, field.TypeTime)
+	}
+	if quo.mutation.OccurrenceKeyCleared() {
+		_spec.ClearField(quest.FieldOccurrenceKey, field.TypeString)
 	}
 	if quo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{

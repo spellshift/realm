@@ -2,6 +2,7 @@ package c2
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -549,4 +550,51 @@ func TestHandleTomeAutomation_OneShotNotDeduped(t *testing.T) {
 		assert.Equal(t, 1, quests[0].QueryTasks().CountX(ctx))
 	}
 	assert.Equal(t, 1, client.Task.Query().CountX(ctx))
+}
+
+func TestQuestOccurrenceKey_UniqueIndex(t *testing.T) {
+	ctx, client, _, _, _ := setupOccurrenceTest(t)
+	defer client.Close()
+
+	tome := client.Tome.Query().FirstX(ctx)
+	create := func() error {
+		return client.Quest.Create().
+			SetName("dup").
+			SetTome(tome).
+			SetOccurrenceKey("1-1698400800").
+			Exec(ctx)
+	}
+	assert.NoError(t, create())
+	assert.Error(t, create(), "duplicate occurrence_key must be rejected by the unique index")
+
+	// NULL keys (manual/one-shot quests) must not collide.
+	for i := 0; i < 2; i++ {
+		assert.NoError(t, client.Quest.Create().SetName("manual").SetTome(tome).Exec(ctx))
+	}
+}
+
+func TestHandleTomeAutomation_PreexistingOccurrenceQuestReused(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	st := client.ScheduledTask.Query().OnlyX(ctx)
+	tome := client.Tome.Query().OnlyX(ctx)
+
+	// Stand-in for a concurrent beacon having already created the occurrence quest.
+	existing := client.Quest.Create().
+		SetName("Automated: Occurrence ST").
+		SetTome(tome).
+		SetScheduledTaskID(st.ID).
+		SetScheduledAt(now).
+		SetOccurrenceKey(fmt.Sprintf("%d-%d", st.ID, now.Unix())).
+		SaveX(ctx)
+
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now, 0)
+
+	quests := client.Quest.Query().AllX(ctx)
+	if assert.Len(t, quests, 1, "must not create a second quest for the same occurrence") {
+		assert.Equal(t, existing.ID, quests[0].ID)
+		assert.Equal(t, 1, quests[0].QueryTasks().CountX(ctx))
+	}
 }

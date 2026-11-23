@@ -62,6 +62,15 @@ func (Quest) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
 			).
 			Comment("Canonical cron fire-time this quest was automated for (occurrence key); null for manually-created and one-shot automated quests."),
+		field.String("occurrence_key").
+			Optional().
+			Nillable().
+			Unique().
+			Immutable().
+			Annotations(
+				entgql.Skip(entgql.SkipAll),
+			).
+			Comment("Dedup key for automated cron occurrences: \"<scheduledTaskID>-<fireTimeUnix>\"; null for manual/one-shot quests."),
 	}
 }
 

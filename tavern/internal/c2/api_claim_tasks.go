@@ -154,21 +154,37 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		var q *ent.Quest
 		created := false
 		if !fireTime.IsZero() {
-			// Cron occurrence: find the shared quest for (scheduled task, fire time).
-			q, err = srv.graph.Quest.Query().
-				Where(
-					quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)),
-					quest.ScheduledAtEQ(fireTime),
-				).
-				Order(ent.Asc(quest.FieldID)).
-				First(ctx)
-			if err != nil && !ent.IsNotFound(err) {
-				claimLog.ErrorContext(ctx, "failed to query automated quest for occurrence", "error", err, "scheduled_task_id", st.ID, "fire_time", fireTime)
+			// Cron occurrence: atomically ensure the shared quest for this
+			// (scheduled task, fire time) exists; no-op on conflict.
+			key := fmt.Sprintf("%d-%d", st.ID, fireTime.Unix())
+			err = srv.graph.Quest.Create().
+				SetName(fmt.Sprintf("Automated: %s", st.Name)).
+				SetTome(tome).
+				SetScheduledTaskID(st.ID).
+				SetParameters(st.Parameters).
+				SetParamDefsAtCreation(tome.ParamDefs).
+				SetEldritchAtCreation(tome.Eldritch).
+				SetScheduledAt(fireTime).
+				SetOccurrenceKey(key).
+				OnConflictColumns(quest.FieldOccurrenceKey).
+				Ignore().
+				Exec(ctx)
+			if err != nil {
+				claimLog.ErrorContext(ctx, "failed to upsert automated quest", "error", err, "scheduled_task_id", st.ID, "occurrence_key", key)
 				metricTomeAutomationErrors.Inc()
 				continue
 			}
-		}
-		if q == nil {
+
+			// Load the one canonical row by its deterministic key.
+			q, err = srv.graph.Quest.Query().Where(quest.OccurrenceKeyEQ(key)).Only(ctx)
+			if err != nil {
+				claimLog.ErrorContext(ctx, "failed to load automated quest for occurrence", "error", err, "occurrence_key", key)
+				metricTomeAutomationErrors.Inc()
+				continue
+			}
+			// TODO(future): move quest.created audit to a Quest-create ent hook for exactly-once semantics.
+			created = q.CreatedAt.After(now)
+		} else {
 			questCreate := srv.graph.Quest.Create().
 				SetName(fmt.Sprintf("Automated: %s", st.Name)).
 				SetTome(tome).
@@ -176,9 +192,6 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 				SetParameters(st.Parameters).
 				SetParamDefsAtCreation(tome.ParamDefs).
 				SetEldritchAtCreation(tome.Eldritch)
-			if !fireTime.IsZero() {
-				questCreate.SetScheduledAt(fireTime)
-			}
 			q, err = questCreate.Save(ctx)
 			if err != nil {
 				claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
