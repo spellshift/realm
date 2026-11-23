@@ -5,9 +5,10 @@ test('End-to-end portal provisioning test', async ({ page }) => {
   console.log('Navigating to /quests');
   await page.goto('/quests');
 
-  // Click "Create a quest" button to open the modal
+  // Choose "Create quest" from the Create quest menu
   console.log('Opening Create Quest modal');
-  await page.getByRole('button', { name: 'Create a quest' }).click();
+  await page.getByRole('button', { name: 'Create quest', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Create quest' }).click();
 
   // Select the only visible beacon and click "continue"
   console.log('Waiting for beacons to load');

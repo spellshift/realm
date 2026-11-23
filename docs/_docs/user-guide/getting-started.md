@@ -91,7 +91,7 @@ Now it's time to provide our [Beacon](/user-guide/terminology#beacon) its first 
 
 #### Beacon Selection
 
-Now from the left navigation menu, select "Create new quest".
+From the left navigation menu, open "Quests", then choose "Create quest" from the "Create quest" menu.
 
 *Note: `Service + group` searches use `AND` while `service + service` or `group + group` searches use `OR`*
 
