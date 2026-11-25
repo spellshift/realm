@@ -1,9 +1,12 @@
+use {
+    alloc::sync::Arc,
+    eldritch_agent::{Agent, Context},
+    alloc::string::{String, ToString},
+};
+
 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 use {
-    alloc::string::{String, ToString},
-    alloc::sync::Arc,
     alloc::vec::Vec,
-    eldritch_agent::{Agent, Context},
     image::{ImageFormat, RgbaImage},
     pb::c2::report_file_request,
     pb::{c2, eldritch},
