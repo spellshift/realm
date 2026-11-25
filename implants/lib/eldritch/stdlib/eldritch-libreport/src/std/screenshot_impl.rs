@@ -252,7 +252,7 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
 
     for (i, monitor) in monitors.iter().enumerate() {
         let image = monitor.capture_image().map_err(|e| e.to_string())?;
-        report_to_tavern(agent, context, &image, i)?;
+        report_to_tavern(&agent, &context, &image, i)?;
     }
 
     Ok(())
