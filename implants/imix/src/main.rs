@@ -23,6 +23,7 @@ mod agent;
 mod assets;
 mod imix_config;
 mod install;
+mod memguard;
 mod portal;
 mod printer;
 mod run;
