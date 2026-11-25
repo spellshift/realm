@@ -1,4 +1,4 @@
-#[cfg(any(target_os = "windows", unix))]
+#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 use {
     alloc::string::{String, ToString},
     alloc::sync::Arc,
@@ -24,14 +24,14 @@ use {
     },
 };
 
-#[cfg(all(unix, feature = "stdlib"))]
+#[cfg(all(any(target_os = "linux", target_os = "macos"), feature = "stdlib"))]
 fn get_hostname() -> String {
     nix::unistd::gethostname()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown".to_string())
 }
 
-#[cfg(all(unix, not(feature = "stdlib")))]
+#[cfg(all(any(target_os = "linux", target_os = "macos"), not(feature = "stdlib")))]
 fn get_hostname() -> String {
     std::env::var("HOSTNAME").unwrap_or_else(|_| "unknown".to_string())
 }
@@ -41,14 +41,14 @@ fn get_hostname() -> String {
     std::env::var("COMPUTERNAME").unwrap_or_else(|_| "unknown".to_string())
 }
 
-#[cfg(not(any(target_os = "windows", unix)))]
+#[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
 pub fn screenshot(_agent: Arc<dyn Agent>, _context: Context) -> Result<(), String> {
     Err(
         "This OS isn't supported by the screenshot function.\nOnly windows, mac, and linux systems are supported".to_string()
     )
 }
 
-#[cfg(any(target_os = "windows", unix))]
+#[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 fn report_to_tavern(
     agent: &Arc<dyn Agent>,
     context: &Context,
