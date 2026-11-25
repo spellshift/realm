@@ -18,15 +18,15 @@ nix = { workspace = true, optional = true }
 xcap = { workspace = true, optional = true }
 image = { version = "0.25", optional = true }
 
-[target.'cfg(any(target_os = "linux"))'.dependencies]
-drm = { workspace = true, version="0.14" }
-memmap2 = { workspace=true, version="0.9" }
-image = { workspace=true, version = "0.25", default-features = false, features = ["png"] }
-framebuffer = { workspace=true, version="0.3" }
+[target.'cfg(target_os = "linux")'.dependencies]
+drm = { workspace = true, version="0.14", optional=true }
+memmap2 = { workspace=true, version="0.9", optional=true }
+image = { workspace=true, version = "0.25", default-features = false, features = ["png"], optional=true }
+framebuffer = { workspace=true, version="0.3", optional=true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image", "dep:memmap2", "dep:framebuffer", "dep:drm"]
 fake_bindings = []
 
 [dev-dependencies]
