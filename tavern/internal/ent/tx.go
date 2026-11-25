@@ -54,6 +54,10 @@ type Tx struct {
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
 	Quest *QuestClient
+	// Redirector is the client for interacting with the Redirector builders.
+	Redirector *RedirectorClient
+	// RedirectorEnrollmentToken is the client for interacting with the RedirectorEnrollmentToken builders.
+	RedirectorEnrollmentToken *RedirectorEnrollmentTokenClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
 	// ScheduledTask is the client for interacting with the ScheduledTask builders.
@@ -226,6 +230,8 @@ func (tx *Tx) init() {
 	tx.OperatorNote = NewOperatorNoteClient(tx.config)
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
+	tx.Redirector = NewRedirectorClient(tx.config)
+	tx.RedirectorEnrollmentToken = NewRedirectorEnrollmentTokenClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
 	tx.ScheduledTask = NewScheduledTaskClient(tx.config)
 	tx.Screenshot = NewScreenshotClient(tx.config)

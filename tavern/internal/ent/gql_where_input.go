@@ -32,6 +32,8 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/redirector"
+	"realm.pub/tavern/internal/ent/redirectorenrollmenttoken"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
@@ -9961,6 +9963,510 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 		return predicates[0], nil
 	default:
 		return quest.And(predicates...), nil
+	}
+}
+
+// RedirectorWhereInput represents a where input for filtering Redirector queries.
+type RedirectorWhereInput struct {
+	Predicates []predicate.Redirector  `json:"-"`
+	Not        *RedirectorWhereInput   `json:"not,omitempty"`
+	Or         []*RedirectorWhereInput `json:"or,omitempty"`
+	And        []*RedirectorWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "identifier" field predicates.
+	Identifier             *string  `json:"identifier,omitempty"`
+	IdentifierNEQ          *string  `json:"identifierNEQ,omitempty"`
+	IdentifierIn           []string `json:"identifierIn,omitempty"`
+	IdentifierNotIn        []string `json:"identifierNotIn,omitempty"`
+	IdentifierGT           *string  `json:"identifierGT,omitempty"`
+	IdentifierGTE          *string  `json:"identifierGTE,omitempty"`
+	IdentifierLT           *string  `json:"identifierLT,omitempty"`
+	IdentifierLTE          *string  `json:"identifierLTE,omitempty"`
+	IdentifierContains     *string  `json:"identifierContains,omitempty"`
+	IdentifierHasPrefix    *string  `json:"identifierHasPrefix,omitempty"`
+	IdentifierHasSuffix    *string  `json:"identifierHasSuffix,omitempty"`
+	IdentifierEqualFold    *string  `json:"identifierEqualFold,omitempty"`
+	IdentifierContainsFold *string  `json:"identifierContainsFold,omitempty"`
+
+	// "transport" field predicates.
+	Transport      *redirector.Transport  `json:"transport,omitempty"`
+	TransportNEQ   *redirector.Transport  `json:"transportNEQ,omitempty"`
+	TransportIn    []redirector.Transport `json:"transportIn,omitempty"`
+	TransportNotIn []redirector.Transport `json:"transportNotIn,omitempty"`
+
+	// "enabled" field predicates.
+	Enabled    *bool `json:"enabled,omitempty"`
+	EnabledNEQ *bool `json:"enabledNEQ,omitempty"`
+
+	// "last_seen_at" field predicates.
+	LastSeenAt       *time.Time  `json:"lastSeenAt,omitempty"`
+	LastSeenAtNEQ    *time.Time  `json:"lastSeenAtNEQ,omitempty"`
+	LastSeenAtIn     []time.Time `json:"lastSeenAtIn,omitempty"`
+	LastSeenAtNotIn  []time.Time `json:"lastSeenAtNotIn,omitempty"`
+	LastSeenAtGT     *time.Time  `json:"lastSeenAtGT,omitempty"`
+	LastSeenAtGTE    *time.Time  `json:"lastSeenAtGTE,omitempty"`
+	LastSeenAtLT     *time.Time  `json:"lastSeenAtLT,omitempty"`
+	LastSeenAtLTE    *time.Time  `json:"lastSeenAtLTE,omitempty"`
+	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
+	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *RedirectorWhereInput) AddPredicates(predicates ...predicate.Redirector) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the RedirectorWhereInput filter on the RedirectorQuery builder.
+func (i *RedirectorWhereInput) Filter(q *RedirectorQuery) (*RedirectorQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyRedirectorWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyRedirectorWhereInput is returned in case the RedirectorWhereInput is empty.
+var ErrEmptyRedirectorWhereInput = errors.New("ent: empty predicate RedirectorWhereInput")
+
+// P returns a predicate for filtering redirectors.
+// An error is returned if the input is empty or invalid.
+func (i *RedirectorWhereInput) P() (predicate.Redirector, error) {
+	var predicates []predicate.Redirector
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, redirector.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Redirector, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, redirector.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Redirector, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, redirector.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, redirector.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, redirector.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, redirector.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, redirector.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, redirector.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, redirector.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, redirector.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, redirector.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, redirector.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, redirector.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, redirector.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, redirector.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, redirector.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, redirector.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, redirector.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, redirector.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, redirector.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, redirector.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, redirector.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, redirector.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, redirector.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, redirector.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, redirector.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, redirector.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Identifier != nil {
+		predicates = append(predicates, redirector.IdentifierEQ(*i.Identifier))
+	}
+	if i.IdentifierNEQ != nil {
+		predicates = append(predicates, redirector.IdentifierNEQ(*i.IdentifierNEQ))
+	}
+	if len(i.IdentifierIn) > 0 {
+		predicates = append(predicates, redirector.IdentifierIn(i.IdentifierIn...))
+	}
+	if len(i.IdentifierNotIn) > 0 {
+		predicates = append(predicates, redirector.IdentifierNotIn(i.IdentifierNotIn...))
+	}
+	if i.IdentifierGT != nil {
+		predicates = append(predicates, redirector.IdentifierGT(*i.IdentifierGT))
+	}
+	if i.IdentifierGTE != nil {
+		predicates = append(predicates, redirector.IdentifierGTE(*i.IdentifierGTE))
+	}
+	if i.IdentifierLT != nil {
+		predicates = append(predicates, redirector.IdentifierLT(*i.IdentifierLT))
+	}
+	if i.IdentifierLTE != nil {
+		predicates = append(predicates, redirector.IdentifierLTE(*i.IdentifierLTE))
+	}
+	if i.IdentifierContains != nil {
+		predicates = append(predicates, redirector.IdentifierContains(*i.IdentifierContains))
+	}
+	if i.IdentifierHasPrefix != nil {
+		predicates = append(predicates, redirector.IdentifierHasPrefix(*i.IdentifierHasPrefix))
+	}
+	if i.IdentifierHasSuffix != nil {
+		predicates = append(predicates, redirector.IdentifierHasSuffix(*i.IdentifierHasSuffix))
+	}
+	if i.IdentifierEqualFold != nil {
+		predicates = append(predicates, redirector.IdentifierEqualFold(*i.IdentifierEqualFold))
+	}
+	if i.IdentifierContainsFold != nil {
+		predicates = append(predicates, redirector.IdentifierContainsFold(*i.IdentifierContainsFold))
+	}
+	if i.Transport != nil {
+		predicates = append(predicates, redirector.TransportEQ(*i.Transport))
+	}
+	if i.TransportNEQ != nil {
+		predicates = append(predicates, redirector.TransportNEQ(*i.TransportNEQ))
+	}
+	if len(i.TransportIn) > 0 {
+		predicates = append(predicates, redirector.TransportIn(i.TransportIn...))
+	}
+	if len(i.TransportNotIn) > 0 {
+		predicates = append(predicates, redirector.TransportNotIn(i.TransportNotIn...))
+	}
+	if i.Enabled != nil {
+		predicates = append(predicates, redirector.EnabledEQ(*i.Enabled))
+	}
+	if i.EnabledNEQ != nil {
+		predicates = append(predicates, redirector.EnabledNEQ(*i.EnabledNEQ))
+	}
+	if i.LastSeenAt != nil {
+		predicates = append(predicates, redirector.LastSeenAtEQ(*i.LastSeenAt))
+	}
+	if i.LastSeenAtNEQ != nil {
+		predicates = append(predicates, redirector.LastSeenAtNEQ(*i.LastSeenAtNEQ))
+	}
+	if len(i.LastSeenAtIn) > 0 {
+		predicates = append(predicates, redirector.LastSeenAtIn(i.LastSeenAtIn...))
+	}
+	if len(i.LastSeenAtNotIn) > 0 {
+		predicates = append(predicates, redirector.LastSeenAtNotIn(i.LastSeenAtNotIn...))
+	}
+	if i.LastSeenAtGT != nil {
+		predicates = append(predicates, redirector.LastSeenAtGT(*i.LastSeenAtGT))
+	}
+	if i.LastSeenAtGTE != nil {
+		predicates = append(predicates, redirector.LastSeenAtGTE(*i.LastSeenAtGTE))
+	}
+	if i.LastSeenAtLT != nil {
+		predicates = append(predicates, redirector.LastSeenAtLT(*i.LastSeenAtLT))
+	}
+	if i.LastSeenAtLTE != nil {
+		predicates = append(predicates, redirector.LastSeenAtLTE(*i.LastSeenAtLTE))
+	}
+	if i.LastSeenAtIsNil {
+		predicates = append(predicates, redirector.LastSeenAtIsNil())
+	}
+	if i.LastSeenAtNotNil {
+		predicates = append(predicates, redirector.LastSeenAtNotNil())
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyRedirectorWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return redirector.And(predicates...), nil
+	}
+}
+
+// RedirectorEnrollmentTokenWhereInput represents a where input for filtering RedirectorEnrollmentToken queries.
+type RedirectorEnrollmentTokenWhereInput struct {
+	Predicates []predicate.RedirectorEnrollmentToken  `json:"-"`
+	Not        *RedirectorEnrollmentTokenWhereInput   `json:"not,omitempty"`
+	Or         []*RedirectorEnrollmentTokenWhereInput `json:"or,omitempty"`
+	And        []*RedirectorEnrollmentTokenWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "token_hash" field predicates.
+	TokenHash             *string  `json:"tokenHash,omitempty"`
+	TokenHashNEQ          *string  `json:"tokenHashNEQ,omitempty"`
+	TokenHashIn           []string `json:"tokenHashIn,omitempty"`
+	TokenHashNotIn        []string `json:"tokenHashNotIn,omitempty"`
+	TokenHashGT           *string  `json:"tokenHashGT,omitempty"`
+	TokenHashGTE          *string  `json:"tokenHashGTE,omitempty"`
+	TokenHashLT           *string  `json:"tokenHashLT,omitempty"`
+	TokenHashLTE          *string  `json:"tokenHashLTE,omitempty"`
+	TokenHashContains     *string  `json:"tokenHashContains,omitempty"`
+	TokenHashHasPrefix    *string  `json:"tokenHashHasPrefix,omitempty"`
+	TokenHashHasSuffix    *string  `json:"tokenHashHasSuffix,omitempty"`
+	TokenHashEqualFold    *string  `json:"tokenHashEqualFold,omitempty"`
+	TokenHashContainsFold *string  `json:"tokenHashContainsFold,omitempty"`
+
+	// "used" field predicates.
+	Used    *bool `json:"used,omitempty"`
+	UsedNEQ *bool `json:"usedNEQ,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *RedirectorEnrollmentTokenWhereInput) AddPredicates(predicates ...predicate.RedirectorEnrollmentToken) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the RedirectorEnrollmentTokenWhereInput filter on the RedirectorEnrollmentTokenQuery builder.
+func (i *RedirectorEnrollmentTokenWhereInput) Filter(q *RedirectorEnrollmentTokenQuery) (*RedirectorEnrollmentTokenQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyRedirectorEnrollmentTokenWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyRedirectorEnrollmentTokenWhereInput is returned in case the RedirectorEnrollmentTokenWhereInput is empty.
+var ErrEmptyRedirectorEnrollmentTokenWhereInput = errors.New("ent: empty predicate RedirectorEnrollmentTokenWhereInput")
+
+// P returns a predicate for filtering redirectorenrollmenttokens.
+// An error is returned if the input is empty or invalid.
+func (i *RedirectorEnrollmentTokenWhereInput) P() (predicate.RedirectorEnrollmentToken, error) {
+	var predicates []predicate.RedirectorEnrollmentToken
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, redirectorenrollmenttoken.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.RedirectorEnrollmentToken, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, redirectorenrollmenttoken.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.RedirectorEnrollmentToken, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, redirectorenrollmenttoken.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, redirectorenrollmenttoken.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, redirectorenrollmenttoken.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.IDLTE(*i.IDLTE))
+	}
+	if i.TokenHash != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashEQ(*i.TokenHash))
+	}
+	if i.TokenHashNEQ != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashNEQ(*i.TokenHashNEQ))
+	}
+	if len(i.TokenHashIn) > 0 {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashIn(i.TokenHashIn...))
+	}
+	if len(i.TokenHashNotIn) > 0 {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashNotIn(i.TokenHashNotIn...))
+	}
+	if i.TokenHashGT != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashGT(*i.TokenHashGT))
+	}
+	if i.TokenHashGTE != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashGTE(*i.TokenHashGTE))
+	}
+	if i.TokenHashLT != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashLT(*i.TokenHashLT))
+	}
+	if i.TokenHashLTE != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashLTE(*i.TokenHashLTE))
+	}
+	if i.TokenHashContains != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashContains(*i.TokenHashContains))
+	}
+	if i.TokenHashHasPrefix != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashHasPrefix(*i.TokenHashHasPrefix))
+	}
+	if i.TokenHashHasSuffix != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashHasSuffix(*i.TokenHashHasSuffix))
+	}
+	if i.TokenHashEqualFold != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashEqualFold(*i.TokenHashEqualFold))
+	}
+	if i.TokenHashContainsFold != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.TokenHashContainsFold(*i.TokenHashContainsFold))
+	}
+	if i.Used != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.UsedEQ(*i.Used))
+	}
+	if i.UsedNEQ != nil {
+		predicates = append(predicates, redirectorenrollmenttoken.UsedNEQ(*i.UsedNEQ))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyRedirectorEnrollmentTokenWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return redirectorenrollmenttoken.And(predicates...), nil
 	}
 }
 

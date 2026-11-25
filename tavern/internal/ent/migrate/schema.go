@@ -682,6 +682,35 @@ var (
 			},
 		},
 	}
+	// RedirectorsColumns holds the columns for the "redirectors" table.
+	RedirectorsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "identifier", Type: field.TypeString, Unique: true},
+		{Name: "transport", Type: field.TypeEnum, Enums: []string{"http1", "grpc", "dns", "icmp", "quic"}},
+		{Name: "domains", Type: field.TypeJSON},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
+	}
+	// RedirectorsTable holds the schema information for the "redirectors" table.
+	RedirectorsTable = &schema.Table{
+		Name:       "redirectors",
+		Columns:    RedirectorsColumns,
+		PrimaryKey: []*schema.Column{RedirectorsColumns[0]},
+	}
+	// RedirectorEnrollmentTokensColumns holds the columns for the "redirector_enrollment_tokens" table.
+	RedirectorEnrollmentTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "token_hash", Type: field.TypeString, Unique: true},
+		{Name: "used", Type: field.TypeBool, Default: false},
+	}
+	// RedirectorEnrollmentTokensTable holds the schema information for the "redirector_enrollment_tokens" table.
+	RedirectorEnrollmentTokensTable = &schema.Table{
+		Name:       "redirector_enrollment_tokens",
+		Columns:    RedirectorEnrollmentTokensColumns,
+		PrimaryKey: []*schema.Column{RedirectorEnrollmentTokensColumns[0]},
+	}
 	// RepositoriesColumns holds the columns for the "repositories" table.
 	RepositoriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -1220,6 +1249,8 @@ var (
 		OperatorNotesTable,
 		PortalsTable,
 		QuestsTable,
+		RedirectorsTable,
+		RedirectorEnrollmentTokensTable,
 		RepositoriesTable,
 		ScheduledTasksTable,
 		ScreenshotsTable,

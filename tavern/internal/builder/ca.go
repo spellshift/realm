@@ -16,6 +16,9 @@ import (
 // ErrInvalidBuilderCSR identifies client-supplied certificate requests that cannot be signed.
 var ErrInvalidBuilderCSR = errors.New("invalid builder CSR")
 
+// ErrInvalidRedirectorCSR identifies invalid redirector certificate requests.
+var ErrInvalidRedirectorCSR = errors.New("invalid redirector CSR")
+
 // CreateCA creates a self-signed CA certificate from the provided ED25519 private key.
 // The certificate is generated in-memory each time — only the private key needs to be persisted.
 func CreateCA(privKey ed25519.PrivateKey) (*x509.Certificate, error) {
@@ -56,23 +59,33 @@ func CreateCA(privKey ed25519.PrivateKey) (*x509.Certificate, error) {
 // SignBuilderCertificate generates a client certificate for a builder, signed by the CA.
 // The certificate CN is set to "builder-{identifier}" for identity attribution.
 func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, builderIdentifier string, csrPEM string) ([]byte, error) {
+	return signIdentityCertificate(ca, caKey, "builder-"+builderIdentifier, csrPEM, "builder", ErrInvalidBuilderCSR)
+}
+
+// SignRedirectorCertificate signs a redirector CSR under the shared enrollment CA.
+// Its CN prefix keeps redirector credentials distinct from builder credentials.
+func SignRedirectorCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, identifier, csrPEM string) ([]byte, error) {
+	return signIdentityCertificate(ca, caKey, "redirector-"+identifier, csrPEM, "redirector", ErrInvalidRedirectorCSR)
+}
+
+func signIdentityCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, commonName, csrPEM, kind string, invalidCSR error) ([]byte, error) {
 	block, rest := pem.Decode([]byte(csrPEM))
 	if block == nil || block.Type != "CERTIFICATE REQUEST" || len(bytes.TrimSpace(rest)) != 0 {
-		return nil, fmt.Errorf("%w PEM", ErrInvalidBuilderCSR)
+		return nil, fmt.Errorf("%w PEM", invalidCSR)
 	}
 	csr, err := x509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidBuilderCSR, err)
+		return nil, fmt.Errorf("%w: %w", invalidCSR, err)
 	}
 	if err := csr.CheckSignature(); err != nil {
-		return nil, fmt.Errorf("%w signature: %w", ErrInvalidBuilderCSR, err)
+		return nil, fmt.Errorf("%w signature: %w", invalidCSR, err)
 	}
-	builderPub, ok := csr.PublicKey.(ed25519.PublicKey)
+	publicKey, ok := csr.PublicKey.(ed25519.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("%w: must use an Ed25519 public key", ErrInvalidBuilderCSR)
+		return nil, fmt.Errorf("%w: must use an Ed25519 public key", invalidCSR)
 	}
 	if ca == nil || len(caKey) != ed25519.PrivateKeySize {
-		return nil, fmt.Errorf("builder CA is not configured")
+		return nil, fmt.Errorf("%s CA is not configured", kind)
 	}
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
@@ -83,7 +96,7 @@ func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, buil
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:   fmt.Sprintf("builder-%s", builderIdentifier),
+			CommonName:   commonName,
 			Organization: []string{"Realm"},
 		},
 		NotBefore:             time.Now(),
@@ -93,9 +106,9 @@ func SignBuilderCertificate(ca *x509.Certificate, caKey ed25519.PrivateKey, buil
 		BasicConstraintsValid: true,
 	}
 
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, ca, builderPub, caKey)
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, ca, publicKey, caKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create builder certificate: %w", err)
+		return nil, fmt.Errorf("failed to create %s certificate: %w", kind, err)
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER}), nil
 }

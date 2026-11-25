@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"entgo.io/contrib/entgql"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
@@ -142,6 +143,14 @@ type QuestTimelineTacticBucket struct {
 	Count  int         `json:"count"`
 }
 
+// Ordering options for Redirector connections
+type RedirectorOrder struct {
+	// The ordering direction.
+	Direction entgql.OrderDirection `json:"direction"`
+	// The field by which to order Redirectors.
+	Field RedirectorOrderField `json:"field"`
+}
+
 type SubmitTaskResultInput struct {
 	// ID of the task to submit results for.
 	TaskID int `json:"taskID"`
@@ -200,6 +209,62 @@ type UpdateBuildProfileInput struct {
 	Tomes []*BuildProfileTomeInput `json:"tomes,omitempty"`
 	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
 	Unique *string `json:"unique,omitempty"`
+}
+
+// Properties by which Redirector connections can be ordered.
+type RedirectorOrderField string
+
+const (
+	RedirectorOrderFieldCreatedAt      RedirectorOrderField = "CREATED_AT"
+	RedirectorOrderFieldLastModifiedAt RedirectorOrderField = "LAST_MODIFIED_AT"
+)
+
+var AllRedirectorOrderField = []RedirectorOrderField{
+	RedirectorOrderFieldCreatedAt,
+	RedirectorOrderFieldLastModifiedAt,
+}
+
+func (e RedirectorOrderField) IsValid() bool {
+	switch e {
+	case RedirectorOrderFieldCreatedAt, RedirectorOrderFieldLastModifiedAt:
+		return true
+	}
+	return false
+}
+
+func (e RedirectorOrderField) String() string {
+	return string(e)
+}
+
+func (e *RedirectorOrderField) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RedirectorOrderField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RedirectorOrderField", str)
+	}
+	return nil
+}
+
+func (e RedirectorOrderField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RedirectorOrderField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RedirectorOrderField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type Role string

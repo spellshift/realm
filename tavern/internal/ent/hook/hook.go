@@ -261,6 +261,30 @@ func (f QuestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QuestMutation", m)
 }
 
+// The RedirectorFunc type is an adapter to allow the use of ordinary
+// function as Redirector mutator.
+type RedirectorFunc func(context.Context, *ent.RedirectorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RedirectorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RedirectorMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RedirectorMutation", m)
+}
+
+// The RedirectorEnrollmentTokenFunc type is an adapter to allow the use of ordinary
+// function as RedirectorEnrollmentToken mutator.
+type RedirectorEnrollmentTokenFunc func(context.Context, *ent.RedirectorEnrollmentTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RedirectorEnrollmentTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RedirectorEnrollmentTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RedirectorEnrollmentTokenMutation", m)
+}
+
 // The RepositoryFunc type is an adapter to allow the use of ordinary
 // function as Repository mutator.
 type RepositoryFunc func(context.Context, *ent.RepositoryMutation) (ent.Value, error)

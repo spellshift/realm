@@ -455,53 +455,54 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ClosePivot                   func(childComplexity int, pivotID int) int
-		ClosePortal                  func(childComplexity int, portalID int) int
-		CreateBuildProfile           func(childComplexity int, input models.CreateBuildProfileInput) int
-		CreateBuildTask              func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateBuilderEnrollmentToken func(childComplexity int) int
-		CreateCredential             func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink                   func(childComplexity int, input ent.CreateLinkInput) int
-		CreateNetwork                func(childComplexity int, input ent.CreateNetworkInput) int
-		CreateNetworkHost            func(childComplexity int, input ent.CreateNetworkHostInput) int
-		CreateOperatorNote           func(childComplexity int, input ent.CreateOperatorNoteInput) int
-		CreateQuest                  func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
-		CreateRepository             func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateScheduledTask          func(childComplexity int, input ent.CreateScheduledTaskInput) int
-		CreateShell                  func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag                    func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome                   func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteAllNotifications       func(childComplexity int) int
-		DeleteAsset                  func(childComplexity int, assetID int) int
-		DeleteBuildProfile           func(childComplexity int, profileID int) int
-		DeleteBuilder                func(childComplexity int, builderID int) int
-		DeleteNetwork                func(childComplexity int, networkID int) int
-		DeleteNetworkHost            func(childComplexity int, networkHostID int) int
-		DeleteOperatorNote           func(childComplexity int, operatorNoteID int) int
-		DeleteTome                   func(childComplexity int, tomeID int) int
-		DisableLink                  func(childComplexity int, linkID int) int
-		DisableScheduledTask         func(childComplexity int, scheduledTaskID int) int
-		DropAllData                  func(childComplexity int) int
-		FavoriteHost                 func(childComplexity int, hostID int) int
-		GroupHostsBySubnet           func(childComplexity int) int
-		ImportRepository             func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		MarkNotificationsAsArchived  func(childComplexity int, notificationIDs []int) int
-		MarkNotificationsAsRead      func(childComplexity int, notificationIDs []int) int
-		ResetUserAPIKey              func(childComplexity int) int
-		RunHostAutogroup             func(childComplexity int, k *int) int
-		SubscribeToHost              func(childComplexity int, hostID int) int
-		UnfavoriteHost               func(childComplexity int, hostID int) int
-		UnsubscribeFromHost          func(childComplexity int, hostID int) int
-		UpdateBeacon                 func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateBuildProfile           func(childComplexity int, profileID int, input models.UpdateBuildProfileInput) int
-		UpdateHost                   func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink                   func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateNetwork                func(childComplexity int, networkID int, input ent.UpdateNetworkInput) int
-		UpdateNetworkHost            func(childComplexity int, networkHostID int, input ent.UpdateNetworkHostInput) int
-		UpdateOperatorNote           func(childComplexity int, operatorNoteID int, input ent.UpdateOperatorNoteInput) int
-		UpdateTag                    func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome                   func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser                   func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		ClosePivot                      func(childComplexity int, pivotID int) int
+		ClosePortal                     func(childComplexity int, portalID int) int
+		CreateBuildProfile              func(childComplexity int, input models.CreateBuildProfileInput) int
+		CreateBuildTask                 func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateBuilderEnrollmentToken    func(childComplexity int) int
+		CreateCredential                func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink                      func(childComplexity int, input ent.CreateLinkInput) int
+		CreateNetwork                   func(childComplexity int, input ent.CreateNetworkInput) int
+		CreateNetworkHost               func(childComplexity int, input ent.CreateNetworkHostInput) int
+		CreateOperatorNote              func(childComplexity int, input ent.CreateOperatorNoteInput) int
+		CreateQuest                     func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
+		CreateRedirectorEnrollmentToken func(childComplexity int) int
+		CreateRepository                func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateScheduledTask             func(childComplexity int, input ent.CreateScheduledTaskInput) int
+		CreateShell                     func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag                       func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome                      func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteAllNotifications          func(childComplexity int) int
+		DeleteAsset                     func(childComplexity int, assetID int) int
+		DeleteBuildProfile              func(childComplexity int, profileID int) int
+		DeleteBuilder                   func(childComplexity int, builderID int) int
+		DeleteNetwork                   func(childComplexity int, networkID int) int
+		DeleteNetworkHost               func(childComplexity int, networkHostID int) int
+		DeleteOperatorNote              func(childComplexity int, operatorNoteID int) int
+		DeleteTome                      func(childComplexity int, tomeID int) int
+		DisableLink                     func(childComplexity int, linkID int) int
+		DisableScheduledTask            func(childComplexity int, scheduledTaskID int) int
+		DropAllData                     func(childComplexity int) int
+		FavoriteHost                    func(childComplexity int, hostID int) int
+		GroupHostsBySubnet              func(childComplexity int) int
+		ImportRepository                func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		MarkNotificationsAsArchived     func(childComplexity int, notificationIDs []int) int
+		MarkNotificationsAsRead         func(childComplexity int, notificationIDs []int) int
+		ResetUserAPIKey                 func(childComplexity int) int
+		RunHostAutogroup                func(childComplexity int, k *int) int
+		SubscribeToHost                 func(childComplexity int, hostID int) int
+		UnfavoriteHost                  func(childComplexity int, hostID int) int
+		UnsubscribeFromHost             func(childComplexity int, hostID int) int
+		UpdateBeacon                    func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateBuildProfile              func(childComplexity int, profileID int, input models.UpdateBuildProfileInput) int
+		UpdateHost                      func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink                      func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateNetwork                   func(childComplexity int, networkID int, input ent.UpdateNetworkInput) int
+		UpdateNetworkHost               func(childComplexity int, networkHostID int, input ent.UpdateNetworkHostInput) int
+		UpdateOperatorNote              func(childComplexity int, operatorNoteID int, input ent.UpdateOperatorNoteInput) int
+		UpdateTag                       func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome                      func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser                      func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	Network struct {
@@ -3094,6 +3095,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateQuest(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateQuestInput), args["prevNodeID"].(*int)), true
+
+	case "Mutation.createRedirectorEnrollmentToken":
+		if e.ComplexityRoot.Mutation.CreateRedirectorEnrollmentToken == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.CreateRedirectorEnrollmentToken(childComplexity), true
 
 	case "Mutation.createRepository":
 		if e.ComplexityRoot.Mutation.CreateRepository == nil {
@@ -5945,6 +5953,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
 		ec.unmarshalInputQuestWhereInput,
+		ec.unmarshalInputRedirectorEnrollmentTokenWhereInput,
+		ec.unmarshalInputRedirectorOrder,
+		ec.unmarshalInputRedirectorWhereInput,
 		ec.unmarshalInputRepositoryOrder,
 		ec.unmarshalInputRepositoryWhereInput,
 		ec.unmarshalInputScheduledTaskOrder,
@@ -11751,6 +11762,144 @@ input QuestWhereInput {
   hasEvents: Boolean
   hasEventsWith: [EventWhereInput!]
 }
+"""
+RedirectorEnrollmentTokenWhereInput is used for filtering RedirectorEnrollmentToken objects.
+Input was generated by ent.
+"""
+input RedirectorEnrollmentTokenWhereInput {
+  not: RedirectorEnrollmentTokenWhereInput
+  and: [RedirectorEnrollmentTokenWhereInput!]
+  or: [RedirectorEnrollmentTokenWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  used field predicates
+  """
+  used: Boolean
+  usedNEQ: Boolean
+}
+"""
+Ordering options for Redirector connections
+"""
+input RedirectorOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Redirectors.
+  """
+  field: RedirectorOrderField!
+}
+"""
+Properties by which Redirector connections can be ordered.
+"""
+enum RedirectorOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+RedirectorTransport is enum for the field transport
+"""
+enum RedirectorTransport @goModel(model: "realm.pub/tavern/internal/ent/redirector.Transport") {
+  http1
+  grpc
+  dns
+  icmp
+  quic
+}
+"""
+RedirectorWhereInput is used for filtering Redirector objects.
+Input was generated by ent.
+"""
+input RedirectorWhereInput {
+  not: RedirectorWhereInput
+  and: [RedirectorWhereInput!]
+  or: [RedirectorWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  identifier field predicates
+  """
+  identifier: String
+  identifierNEQ: String
+  identifierIn: [String!]
+  identifierNotIn: [String!]
+  identifierGT: String
+  identifierGTE: String
+  identifierLT: String
+  identifierLTE: String
+  identifierContains: String
+  identifierHasPrefix: String
+  identifierHasSuffix: String
+  identifierEqualFold: String
+  identifierContainsFold: String
+  """
+  transport field predicates
+  """
+  transport: RedirectorTransport
+  transportNEQ: RedirectorTransport
+  transportIn: [RedirectorTransport!]
+  transportNotIn: [RedirectorTransport!]
+  """
+  enabled field predicates
+  """
+  enabled: Boolean
+  enabledNEQ: Boolean
+  """
+  last_seen_at field predicates
+  """
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
+}
 type Repository implements Node {
   id: ID!
   """
@@ -15400,6 +15549,7 @@ scalar Uint64
     # Builder
     ###
     createBuilderEnrollmentToken: String! @requireRole(role: ADMIN)
+	createRedirectorEnrollmentToken: String! @requireRole(role: ADMIN)
     deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###

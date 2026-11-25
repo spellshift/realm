@@ -69,6 +69,12 @@ type Portal func(*sql.Selector)
 // Quest is the predicate function for quest builders.
 type Quest func(*sql.Selector)
 
+// Redirector is the predicate function for redirector builders.
+type Redirector func(*sql.Selector)
+
+// RedirectorEnrollmentToken is the predicate function for redirectorenrollmenttoken builders.
+type RedirectorEnrollmentToken func(*sql.Selector)
+
 // Repository is the predicate function for repository builders.
 type Repository func(*sql.Selector)
 

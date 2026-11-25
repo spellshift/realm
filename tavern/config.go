@@ -148,7 +148,8 @@ var (
 
 	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
 	// EnvBuilderEnrollmentTokens seeds one-time builder enrollment tokens at startup.
-	EnvBuilderEnrollmentTokens = EnvString{"REALM_BUILDER_ENROLLMENT_TOKENS", ""}
+	EnvBuilderEnrollmentTokens    = EnvString{"REALM_BUILDER_ENROLLMENT_TOKENS", ""}
+	EnvRedirectorEnrollmentTokens = EnvString{"REALM_REDIRECTOR_ENROLLMENT_TOKENS", ""}
 )
 
 // Config holds information that controls the behaviour of Tavern
