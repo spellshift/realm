@@ -13,16 +13,14 @@ glob = { workspace = true }
 log = { workspace = true }
 [target.'cfg(all(unix, not(target_os = "solaris")))'.dependencies]
 nix = { workspace = true, optional = true }
-
-[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
-xcap = { workspace = true, optional = true }
-image = { version = "0.25", optional = true }
-
-[target.'cfg(target_os = "linux")'.dependencies]
 drm = { workspace = true, version="0.14", optional=true }
 memmap2 = { workspace=true, version="0.9", optional=true }
 image = { workspace=true, version = "0.25", default-features = false, features = ["png"], optional=true }
 framebuffer = { workspace=true, version="0.3", optional=true }
+
+[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
+xcap = { workspace = true, optional = true }
+image = { version = "0.25", optional = true }
 
 [features]
 default = ["stdlib"]
