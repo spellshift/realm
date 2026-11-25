@@ -11,7 +11,7 @@ use {
 };
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
-use {alloc::format, image::ImageFormat, xcap::Monitor};
+use {alloc::format, xcap::Monitor};
 
 #[cfg(target_os = "linux")]
 use {
