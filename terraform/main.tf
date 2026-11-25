@@ -5,7 +5,7 @@
 terraform {
   required_providers {
     google = {
-      source = "hashicorp/google"
+      source  = "hashicorp/google"
       version = "5.15.0"
     }
     random = {
@@ -51,10 +51,53 @@ output "builder_enrollment_token" {
   sensitive   = true
 }
 
+variable "redirector_enrollment_tokens" {
+  type        = list(string)
+  description = "One one-time token per logical redirector deployment, in HTTP, DNS, ICMP, QUIC order. Empty generates one per deployment."
+  default     = []
+  sensitive   = true
+
+  validation {
+    condition = alltrue([
+      for t in var.redirector_enrollment_tokens :
+      try(length(t) >= 32 && length(t) <= 4096 && !can(regex("[,\\s]", t)), false)
+    ])
+    error_message = "Each token in redirector_enrollment_tokens must be 32 to 4096 characters long and must not be empty or contain whitespace or commas."
+  }
+}
+
+resource "random_password" "redirector_enrollment" {
+  for_each = nonsensitive(length(var.redirector_enrollment_tokens)) == 0 ? toset(local.redirector_deployment_keys) : toset([])
+  length   = 43
+  special  = false
+}
+
+locals {
+  redirector_http_keys        = [for redir in local.http_redirectors : "${redir.transport}:${redir.domain}"]
+  redirector_dns_key          = "dns:${join(",", sort([for redir in local.dns_redirectors : redir.domain]))}"
+  redirector_icmp_keys        = [for redir in local.icmp_redirectors : "icmp:${redir.domain}"]
+  redirector_quic_keys        = [for redir in local.quic_redirectors : "quic:${redir.domain}"]
+  redirector_deployment_keys  = concat(local.redirector_http_keys, length(local.dns_redirectors) > 0 ? [local.redirector_dns_key] : [], local.redirector_icmp_keys, local.redirector_quic_keys)
+  redirector_deployment_count = length(local.redirector_deployment_keys)
+  redirector_tokens           = length(var.redirector_enrollment_tokens) > 0 ? var.redirector_enrollment_tokens : [for key in local.redirector_deployment_keys : random_password.redirector_enrollment[key].result]
+  redirector_token_by_key     = { for index, key in local.redirector_deployment_keys : key => try(local.redirector_tokens[index], "") }
+  redirector_management_url   = var.oauth_domain != "" ? "https://${var.oauth_domain}" : google_cloud_run_service.tavern.status[0].url
+}
+
+resource "terraform_data" "redirector_token_count" {
+  input = local.redirector_deployment_count
+  lifecycle {
+    precondition {
+      condition     = length(distinct(local.redirector_deployment_keys)) == local.redirector_deployment_count && length(local.redirector_tokens) == local.redirector_deployment_count && length(distinct(local.redirector_tokens)) == length(local.redirector_tokens)
+      error_message = "redirector_enrollment_tokens must contain one unique token per logical redirector deployment"
+    }
+  }
+}
+
 variable "redirector_upstream" {
-  type = string
+  type        = string
   description = "Upstream that redirectors should point to. Defaults to oauth_domain when unset."
-  default = ""
+  default     = ""
 }
 
 locals {
@@ -63,9 +106,9 @@ locals {
 }
 
 variable "redirector_dns_ns_prefix" {
-  type = string
+  type        = string
   description = "DNS NS record prefix for DNS redirectors."
-  default = "ns1"
+  default     = "ns1"
 }
 
 variable "redirectors" {
@@ -74,7 +117,7 @@ variable "redirectors" {
     transport = string
   }))
   description = "List of redirector domains and transports to configure."
-  default = []
+  default     = []
 }
 # redirectors = [{
 #   transport = "grpc",
@@ -97,27 +140,27 @@ variable "redirectors" {
 
 
 variable "tavern_container_image" {
-  type = string
+  type        = string
   description = "Docker container to deploy"
-  default = "ghcr.io/spellshift/realm/tavern:latest"
+  default     = "ghcr.io/spellshift/realm/tavern:latest"
 }
 
 variable "redirector_boot_disk_image" {
-  type = string
+  type        = string
   description = "Boot disk image for redirector compute instances"
-  default = "projects/cos-cloud/global/images/cos-stable-121-18867-294-134"
+  default     = "projects/cos-cloud/global/images/cos-stable-121-18867-294-134"
 }
 
 variable "redirector_boot_disk_size" {
-  type = number
+  type        = number
   description = "Boot disk size in GB for redirector compute instances"
-  default = 10
+  default     = 10
 }
 
 variable "redirector_machine_type" {
-  type = string
+  type        = string
   description = "Machine type for redirector compute instances"
-  default = "e2-small"
+  default     = "e2-small"
 }
 
 variable "builder_enabled" {
@@ -174,21 +217,21 @@ variable "builder_enrollment_token" {
 }
 
 variable "tavern_request_timeout_seconds" {
-  type = number
+  type        = number
   description = "How many seconds before a request is dropped, defaults to 3600 (the maximum) to accommodate reverse shells (which are killed when this timeout is reached)"
-  default = 3600
+  default     = 3600
 
   validation {
-    condition = var.tavern_request_timeout_seconds >= 1 && var.tavern_request_timeout_seconds <= 3600
+    condition     = var.tavern_request_timeout_seconds >= 1 && var.tavern_request_timeout_seconds <= 3600
     error_message = "tavern_request_timeout_seconds must be a value between 1 and 3600 seconds"
   }
 }
 
 variable "gcp_project" {
-  type = string
+  type        = string
   description = "GCP Project ID for deployment"
   validation {
-    condition = length(var.gcp_project) > 0
+    condition     = length(var.gcp_project) > 0
     error_message = "Must provide a valid gcp_project"
   }
 }
@@ -208,8 +251,8 @@ locals {
     zone.dns_name => zone.name
   }
   oauth_top_domain_arr = split(".", var.oauth_domain)
-  oauth_top_domain = format("%s.", join(".", slice(local.oauth_top_domain_arr, length(local.oauth_top_domain_arr)-2, length(local.oauth_top_domain_arr))))
-  oauth_domain_zone = contains(keys(local.domain_zone_map), local.oauth_top_domain) ? local.domain_zone_map[local.oauth_top_domain] : ""
+  oauth_top_domain     = format("%s.", join(".", slice(local.oauth_top_domain_arr, length(local.oauth_top_domain_arr) - 2, length(local.oauth_top_domain_arr))))
+  oauth_domain_zone    = contains(keys(local.domain_zone_map), local.oauth_top_domain) ? local.domain_zone_map[local.oauth_top_domain] : ""
 }
 
 output "oauth_domain_configuration" {
@@ -218,14 +261,14 @@ output "oauth_domain_configuration" {
 
 data "google_dns_managed_zone" "oauth_dns_zone" {
   count = local.oauth_domain_zone == "" ? 0 : 1
-  name = local.oauth_domain_zone
+  name  = local.oauth_domain_zone
 }
 
 resource "google_dns_record_set" "oauth_dns_record" {
   count = local.oauth_domain_zone == "" ? 0 : 1
-  name = format("%s.", var.oauth_domain)
-  type = "CNAME"
-  ttl  = 300
+  name  = format("%s.", var.oauth_domain)
+  type  = "CNAME"
+  ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.oauth_dns_zone[count.index].name
 
@@ -234,85 +277,85 @@ resource "google_dns_record_set" "oauth_dns_record" {
 
 
 variable "gcp_region" {
-  type = string
+  type        = string
   description = "GCP Region for deployment"
-  default = "us-east4"
+  default     = "us-east4"
 }
 
 variable "disable_gcp_pubsub" {
-  type = bool
+  type        = bool
   description = "Disables GCP pubsub setup and instead defaults to inmem pubsub, suitable for use-cases where only one tavern instance will exist and distributed orchestration is unnecessary"
-  default = false
+  default     = false
 }
 
 variable "gcp_pubsub_topic_shell_input" {
-  type = string
+  type        = string
   description = "Name of the GCP pubsub topic to create for shell input"
-  default = "shell_input"
+  default     = "shell_input"
 }
 
 variable "gcp_pubsub_topic_shell_output" {
-  type = string
+  type        = string
   description = "Name of the GCP pubsub topic to create for shell output"
-  default = "shell_output"
+  default     = "shell_output"
 }
 
 variable "mysql_user" {
-  type = string
+  type        = string
   description = "Username to set for the configured MySQL instance"
-  default = "tavern"
+  default     = "tavern"
 }
 variable "mysql_passwd" {
-  type = string
+  type        = string
   description = "Password to set for the configured MySQL instance"
-  sensitive = true
-  default = ""
+  sensitive   = true
+  default     = ""
 }
 variable "mysql_dbname" {
-  type = string
+  type        = string
   description = "Name of the DB to create for the configured MySQL instance"
-  default = "tavern"
+  default     = "tavern"
 }
 variable "mysql_tier" {
-  type = string
+  type        = string
   description = "Instance tier to run the SQL database on, see `gcloud sql tiers list` for options"
-  default = "db-custom-2-7680"
+  default     = "db-custom-2-7680"
 }
 variable "oauth_client_id" {
-  type = string
+  type        = string
   description = "OAUTH_CLIENT_ID used to configure Tavern OAuth"
-  default = ""
+  default     = ""
 }
 variable "oauth_client_secret" {
-  type = string
+  type        = string
   description = "OAUTH_CLIENT_SECRET used to configure Tavern OAuth"
-  default = ""
-  sensitive = true
+  default     = ""
+  sensitive   = true
 }
 variable "oauth_domain" {
-  type = string
+  type        = string
   description = "OAUTH_DOMAIN used to configure Tavern OAuth"
-  default = ""
+  default     = ""
 }
 variable "min_scale" {
-  type = string
+  type        = string
   description = "Minimum number of CloudRun containers to keep running"
-  default = "0"
+  default     = "0"
 }
 variable "max_scale" {
-  type = string
+  type        = string
   description = "Maximum number of CloudRun containers to run"
-  default = "10"
+  default     = "10"
 }
 variable "enable_metrics" {
-  type = bool
+  type        = bool
   description = "Enable prometheus sidecar and Tavern metrics collection"
-  default = false
+  default     = false
 }
 variable "enable_mcp" {
-  type = bool
+  type        = bool
   description = "Enable the AI MCP (Model Context Protocol) server endpoint"
-  default = false
+  default     = false
 }
 
 provider "google" {
@@ -321,34 +364,34 @@ provider "google" {
 }
 
 resource "google_project_service" "compute_api" {
-  service = "compute.googleapis.com"
+  service            = "compute.googleapis.com"
   disable_on_destroy = false
 }
 
 resource "google_project_service" "cloud_run_api" {
-  service = "run.googleapis.com"
+  service            = "run.googleapis.com"
   disable_on_destroy = false
 }
 
 resource "google_project_service" "secret_manager" {
-  service = "secretmanager.googleapis.com"
+  service            = "secretmanager.googleapis.com"
   disable_on_destroy = false
 }
 
 resource "google_project_service" "cloud_sqladmin_api" {
-  service = "sqladmin.googleapis.com"
+  service            = "sqladmin.googleapis.com"
   disable_on_destroy = false
 }
 
 resource "google_project_service" "cloud_scheduler_api" {
-  service = "cloudscheduler.googleapis.com"
+  service            = "cloudscheduler.googleapis.com"
   disable_on_destroy = false
 }
 
 resource "google_sql_database_instance" "tavern-sql-instance" {
-  name             = "${local.resource_prefix}-db"
-  database_version = "MYSQL_8_0"
-  region           = var.gcp_region
+  name                = "${local.resource_prefix}-db"
+  database_version    = "MYSQL_8_0"
+  region              = var.gcp_region
   deletion_protection = false
 
   settings {
@@ -378,12 +421,12 @@ resource "google_sql_database" "tavern-db" {
 }
 
 locals {
-  tavern_container_name = "tavern"
+  tavern_container_name     = "tavern"
   prometheus_container_name = "prometheus-sidecar"
 }
 
 resource "google_service_account" "svctavern" {
-  account_id = "${local.resource_prefix}-svctavern"
+  account_id  = "${local.resource_prefix}-svctavern"
   description = "The service account Realm's Tavern uses to connect to GCP based services. Managed by Terraform."
 }
 
@@ -397,18 +440,18 @@ resource "google_secret_manager_secret" "tavern-grpc-priv-key" {
 }
 
 resource "google_secret_manager_secret_iam_binding" "tavern-secrets-read-binding" {
-  project = var.gcp_project
+  project   = var.gcp_project
   secret_id = google_secret_manager_secret.tavern-grpc-priv-key.secret_id
-  role = "roles/secretmanager.secretAccessor"
+  role      = "roles/secretmanager.secretAccessor"
   members = [
     "serviceAccount:${google_service_account.svctavern.email}",
   ]
 }
 
 resource "google_secret_manager_secret_iam_binding" "tavern-secrets-write-binding" {
-  project = var.gcp_project
+  project   = var.gcp_project
   secret_id = google_secret_manager_secret.tavern-grpc-priv-key.secret_id
-  role = "roles/secretmanager.secretVersionAdder"
+  role      = "roles/secretmanager.secretVersionAdder"
   members = [
     "serviceAccount:${google_service_account.svctavern.email}",
   ]
@@ -489,7 +532,7 @@ resource "google_cloud_run_service" "tavern" {
       timeout_seconds = var.tavern_request_timeout_seconds
 
       containers {
-        name = local.tavern_container_name
+        name  = local.tavern_container_name
         image = var.tavern_container_image
 
         ports {
@@ -500,87 +543,91 @@ resource "google_cloud_run_service" "tavern" {
           value = local.resource_prefix
         }
         env {
-          name = "MYSQL_NET"
+          name  = "MYSQL_NET"
           value = "unix"
         }
         env {
-          name = "MYSQL_USER"
+          name  = "MYSQL_USER"
           value = google_sql_user.tavern-user.name
         }
         env {
-          name = "MYSQL_PASSWD"
+          name  = "MYSQL_PASSWD"
           value = google_sql_user.tavern-user.password
         }
         env {
-          name = "MYSQL_DB"
+          name  = "MYSQL_DB"
           value = google_sql_database.tavern-db.name
         }
         env {
-          name = "MYSQL_ADDR"
+          name  = "MYSQL_ADDR"
           value = format("/cloudsql/%s", google_sql_database_instance.tavern-sql-instance.connection_name)
         }
         env {
-          name = "OAUTH_CLIENT_ID"
+          name  = "OAUTH_CLIENT_ID"
           value = var.oauth_client_id
         }
         env {
-          name = "OAUTH_CLIENT_SECRET"
+          name  = "OAUTH_CLIENT_SECRET"
           value = var.oauth_client_secret
         }
         env {
-          name = "OAUTH_DOMAIN"
+          name  = "OAUTH_DOMAIN"
           value = format("https://%s", var.oauth_domain)
         }
         env {
-          name = "GCP_PROJECT_ID"
+          name  = "GCP_PROJECT_ID"
           value = var.gcp_project
         }
         env {
           name  = "REALM_BUILDER_ENROLLMENT_TOKENS"
           value = local.builder_enrollment_token
         }
+        env {
+          name  = "REALM_REDIRECTOR_ENROLLMENT_TOKENS"
+          value = join(",", local.redirector_tokens)
+        }
 
         // Only configure GCP pubsub if it is not disabled
         dynamic "env" {
           for_each = var.disable_gcp_pubsub ? [] : [
             {
-              name = "PUBSUB_TOPIC_SHELL_INPUT"
+              name  = "PUBSUB_TOPIC_SHELL_INPUT"
               value = format("gcppubsub://%s", google_pubsub_topic.shell_input[0].id)
             },
             {
-              name = "PUBSUB_SUBSCRIPTION_SHELL_INPUT"
+              name  = "PUBSUB_SUBSCRIPTION_SHELL_INPUT"
               value = format("gcppubsub://%s", google_pubsub_subscription.shell_input-sub[0].id)
             },
             {
-              name = "PUBSUB_TOPIC_SHELL_OUTPUT"
+              name  = "PUBSUB_TOPIC_SHELL_OUTPUT"
               value = format("gcppubsub://%s", google_pubsub_topic.shell_output[0].id)
             },
             {
-              name = "PUBSUB_SUBSCRIPTION_SHELL_OUTPUT"
+              name  = "PUBSUB_SUBSCRIPTION_SHELL_OUTPUT"
               value = format("gcppubsub://%s", google_pubsub_subscription.shell_output-sub[0].id)
             }
           ]
           content {
-            name = env.value.name
+            name  = env.value.name
             value = env.value.value
           }
         }
 
         env {
-          name = "DISABLE_DEFAULT_TOMES"
+          name  = "DISABLE_DEFAULT_TOMES"
           value = ""
         }
         env {
-          name = "TAVERN_LOG"
+          name  = "TAVERN_LOG"
           value = "prod"
         }
 
         env {
-          name = "ENABLE_METRICS"
+          name  = "ENABLE_METRICS"
           value = var.enable_metrics ? "1" : ""
         }
         env {
-          name = "ENABLE_AI_MCP"
+          name  = "ENABLE_AI_MCP"
           value = var.enable_mcp ? "1" : ""
         }
       }
@@ -588,11 +635,11 @@ resource "google_cloud_run_service" "tavern" {
       // Only create prometheus sidecar if metrics enabled
       dynamic "containers" {
         for_each = var.enable_metrics ? [{
-            image = "us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.0.0"
-            name = local.prometheus_container_name
-          }] : []
+          image = "us-docker.pkg.dev/cloud-ops-agents-artifacts/cloud-run-gmp-sidecar/cloud-run-gmp-sidecar:1.0.0"
+          name  = local.prometheus_container_name
+        }] : []
         content {
-          name = containers.value.name
+          name  = containers.value.name
           image = containers.value.image
         }
       }
@@ -601,13 +648,13 @@ resource "google_cloud_run_service" "tavern" {
     metadata {
       annotations = {
         for k, v in {
-        "autoscaling.knative.dev/minScale"      = var.min_scale
-        "autoscaling.knative.dev/maxScale"      = var.max_scale
-        "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.tavern-sql-instance.connection_name
-        "run.googleapis.com/client-name"        = "terraform"
-        "run.googleapis.com/sessionAffinity"    = true
-        "run.googleapis.com/container-dependencies" = var.enable_metrics ? jsonencode({"${local.prometheus_container_name}" = [local.tavern_container_name]}) : ""
-      }: k => v if v != ""
+          "autoscaling.knative.dev/minScale"          = var.min_scale
+          "autoscaling.knative.dev/maxScale"          = var.max_scale
+          "run.googleapis.com/cloudsql-instances"     = google_sql_database_instance.tavern-sql-instance.connection_name
+          "run.googleapis.com/client-name"            = "terraform"
+          "run.googleapis.com/sessionAffinity"        = true
+          "run.googleapis.com/container-dependencies" = var.enable_metrics ? jsonencode({ "${local.prometheus_container_name}" = [local.tavern_container_name] }) : ""
+        } : k => v if v != ""
       }
     }
   }
@@ -625,7 +672,8 @@ resource "google_cloud_run_service" "tavern" {
     google_project_service.cloud_sqladmin_api,
     google_project_service.cloud_scheduler_api,
     google_sql_user.tavern-user,
-    google_sql_database.tavern-db
+    google_sql_database.tavern-db,
+    terraform_data.redirector_token_count
   ]
 }
 
@@ -641,40 +689,68 @@ resource "google_cloud_run_service_iam_binding" "no-auth-required" {
 
 
 # === Redirectors ===
-# Setup redirectors svc account
+# Setup redirectors svc accounts (one per logical deployment)
 resource "google_service_account" "svctavern_redirector" {
-  account_id = "${local.resource_prefix}-svctavern-redirector"
+  for_each    = toset(local.redirector_deployment_keys)
+  account_id  = "r-${lower(local.resource_prefix)}-${substr(sha256(each.key), 0, 16)}"
   description = "The service account Realm's Tavern Redirector uses to connect to GCP based services. Managed by Terraform."
 }
 
+resource "google_secret_manager_secret" "redirector_identity" {
+  for_each  = toset(local.redirector_deployment_keys)
+  secret_id = "${local.resource_prefix}-redirector-identity-${substr(sha256(each.key), 0, 24)}"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.secret_manager]
+}
+
+resource "google_secret_manager_secret_iam_member" "redirector_identity_read" {
+  for_each  = toset(local.redirector_deployment_keys)
+  project   = var.gcp_project
+  secret_id = google_secret_manager_secret.redirector_identity[each.key].secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "redirector_identity_write" {
+  for_each  = toset(local.redirector_deployment_keys)
+  project   = var.gcp_project
+  secret_id = google_secret_manager_secret.redirector_identity[each.key].secret_id
+  role      = "roles/secretmanager.secretVersionAdder"
+  member    = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
+}
+
 resource "google_project_iam_member" "redirector-metricwriter-binding" {
-  project = var.gcp_project
-  role    = "roles/monitoring.metricWriter"
-  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+  for_each = toset(local.redirector_deployment_keys)
+  project  = var.gcp_project
+  role     = "roles/monitoring.metricWriter"
+  member   = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
 }
 
 resource "google_project_iam_member" "redirector-logwriter-binding" {
-  project = var.gcp_project
-  role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+  for_each = toset(local.redirector_deployment_keys)
+  project  = var.gcp_project
+  role     = "roles/logging.logWriter"
+  member   = "serviceAccount:${google_service_account.svctavern_redirector[each.key].email}"
 }
 
 # Setup builder svc account
 resource "google_service_account" "svcbuiltavern_builder" {
-  account_id = "${local.resource_prefix}-svcbuiltavern-builder"
+  account_id  = "${local.resource_prefix}-svcbuiltavern-builder"
   description = "The service account Realm's Tavern Builder VM uses to connect to GCP based services. Managed by Terraform."
 }
 
 resource "google_project_iam_member" "builder-metricwriter-binding" {
-  project    = var.gcp_project
-  role       = "roles/monitoring.metricWriter"
-  member     = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
+  project = var.gcp_project
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
 }
 
 resource "google_project_iam_member" "builder-logwriter-binding" {
-  project    = var.gcp_project
-  role       = "roles/logging.logWriter"
-  member     = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
+  project = var.gcp_project
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.svcbuiltavern_builder.email}"
 }
 
 # Lookup the redirector domain if able
@@ -684,35 +760,35 @@ locals {
     zone.dns_name => zone.name
   }
   redirectors_top_domains = {
-    for redir in var.redirectors : redir.domain => format("%s.", join(".", slice(split(".", redir.domain), length(split(".", redir.domain))-2, length(split(".", redir.domain)))))
+    for redir in var.redirectors : redir.domain => format("%s.", join(".", slice(split(".", redir.domain), length(split(".", redir.domain)) - 2, length(split(".", redir.domain)))))
   }
   redirector_zones_http = [
-    for redir in var.redirectors: {
-      "domain": redir.domain,
-      "zone": lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
+    for redir in var.redirectors : {
+      "domain" : redir.domain,
+      "zone" : lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
     }
     if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && (redir.transport == "http1" || redir.transport == "grpc")
   ]
   redirector_zones_dns = [
-    for redir in var.redirectors: {
-      "domain": redir.domain,
-      "zone": lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
+    for redir in var.redirectors : {
+      "domain" : redir.domain,
+      "zone" : lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
     }
     if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && redir.transport == "dns"
   ]
   redirector_zones_missing = [
-    for redir in var.redirectors: redir.domain
+    for redir in var.redirectors : redir.domain
     if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") == ""
   ]
   http_redirectors = [
-    for redir in var.redirectors: redir
+    for redir in var.redirectors : redir
     if redir.transport == "http1" || redir.transport == "grpc"
   ]
   dns_redirectors = [
-    for redir in var.redirectors: redir
+    for redir in var.redirectors : redir
     if redir.transport == "dns"
   ]
-  dns_domain_dsn = trimsuffix(join("", [for redir in local.dns_redirectors: "domain=${redir.domain}&"]), "&")
+  dns_domain_dsn = trimsuffix(join("", [for redir in local.dns_redirectors : "domain=${redir.domain}&"]), "&")
   icmp_redirectors = [
     for redir in var.redirectors : redir
     if redir.transport == "icmp"
@@ -738,16 +814,17 @@ locals {
     }
     if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != ""
   ]
-  quic_gce_defs = [for redir in local.quic_redirectors : yamlencode({
+  quic_gce_defs = [for idx, redir in local.quic_redirectors : yamlencode({
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "quic", "--listen", "0.0.0.0:443", local.redirector_upstream]
+        command = ["./tavern", "redirector", "--managed", "--transport", "quic", "--domain", redir.domain, "--identity-secret", google_secret_manager_secret.redirector_identity[local.redirector_quic_keys[idx]].id, "--management-url", local.redirector_management_url, "--listen", "0.0.0.0:443", local.redirector_upstream]
         env = [
           { name = "TAVERN_LOG", value = "prod" },
           { name = "TAVERN_RESOURCE_PREFIX", value = local.resource_prefix },
+          { name = "REALM_REDIRECTOR_ENROLLMENT_TOKEN", value = local.redirector_token_by_key[local.redirector_quic_keys[idx]] },
         ]
-        ports   = [
+        ports = [
           {
             containerPort = 443
             hostPort      = 443
@@ -779,14 +856,14 @@ output "redir_domain_configuration" {
 # Setup DNS for grpc / http transports
 data "google_dns_managed_zone" "redir_dns_zone_http" {
   count = length(local.redirector_zones_http)
-  name = local.redirector_zones_http[count.index].zone
+  name  = local.redirector_zones_http[count.index].zone
 }
 
 resource "google_dns_record_set" "redir_dns_record" {
   count = length(local.redirector_zones_http)
-  name = format("%s.", local.redirector_zones_http[count.index].domain)
-  type = "CNAME"
-  ttl  = 300
+  name  = format("%s.", local.redirector_zones_http[count.index].domain)
+  type  = "CNAME"
+  ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_http[count.index].name
 
@@ -805,17 +882,21 @@ resource "google_cloud_run_service" "redirector" {
 
   template {
     spec {
-      service_account_name = google_service_account.svctavern_redirector.email
+      service_account_name = google_service_account.svctavern_redirector[local.redirector_http_keys[count.index]].email
       // Controls request timeout, must be long-lived to enable reverse shell support
       timeout_seconds = var.tavern_request_timeout_seconds
 
       containers {
-        name = local.tavern_container_name
-        image = var.tavern_container_image
-        command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, local.redirector_upstream]
+        name    = local.tavern_container_name
+        image   = var.tavern_container_image
+        command = ["/app/tavern", "redirector", "--managed", "--transport", local.http_redirectors[count.index].transport, "--domain", local.http_redirectors[count.index].domain, "--identity-secret", google_secret_manager_secret.redirector_identity[local.redirector_http_keys[count.index]].id, "--management-url", local.redirector_management_url, local.redirector_upstream]
         env {
-          name = "TAVERN_LOG"
+          name  = "TAVERN_LOG"
           value = "prod"
+        }
+        env {
+          name  = "REALM_REDIRECTOR_ENROLLMENT_TOKEN"
+          value = local.redirector_token_by_key[local.redirector_http_keys[count.index]]
         }
         env {
           name  = "TAVERN_RESOURCE_PREFIX"
@@ -830,11 +911,12 @@ resource "google_cloud_run_service" "redirector" {
     metadata {
       annotations = {
         for k, v in {
-        "autoscaling.knative.dev/minScale"      = var.min_scale
-        "autoscaling.knative.dev/maxScale"      = var.max_scale
-        "run.googleapis.com/client-name"        = "terraform"
-        "run.googleapis.com/sessionAffinity"    = true
-      }: k => v if v != ""
+          "autoscaling.knative.dev/minScale"   = var.min_scale
+          "autoscaling.knative.dev/maxScale"   = var.max_scale
+          "run.googleapis.com/client-name"     = "terraform"
+          "run.googleapis.com/sessionAffinity" = true
+          "run.googleapis.com/cpu-throttling"  = "false"
+        } : k => v if v != ""
       }
     }
   }
@@ -843,6 +925,10 @@ resource "google_cloud_run_service" "redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.cloud_run_api
   ]
 }
@@ -867,20 +953,20 @@ resource "google_cloud_run_domain_mapping" "redirector-domain" {
 # Setup DNS for DNS transports
 data "google_dns_managed_zone" "redir_dns_zone_dns" {
   count = length(local.redirector_zones_dns)
-  name = local.redirector_zones_dns[count.index].zone
+  name  = local.redirector_zones_dns[count.index].zone
 }
 locals {
   dns_redirector_ip = length(local.redirector_zones_dns) > 0 ? google_compute_instance.dns_redirector[0].network_interface[0].access_config[0].nat_ip : "no dns redirectors set"
-  dns_locals = [for index,value in local.redirector_zones_dns : {
-    "dns_ns_domain": format("%s.%s.", var.redirector_dns_ns_prefix, join(".", slice(split(".", local.redirector_zones_dns[index].domain), length(split(".", local.redirector_zones_dns[index].domain))-2, length(split(".", local.redirector_zones_dns[index].domain))))) # c2.example.com -> ns.example.com
-    "dns_top_domain": format("%s.", join(".", slice(split(".", local.redirector_zones_dns[index].domain), length(split(".", local.redirector_zones_dns[index].domain))-2, length(split(".", local.redirector_zones_dns[index].domain))))) # c2.example.com -> example.com
+  dns_locals = [for index, value in local.redirector_zones_dns : {
+    "dns_ns_domain" : format("%s.%s.", var.redirector_dns_ns_prefix, join(".", slice(split(".", local.redirector_zones_dns[index].domain), length(split(".", local.redirector_zones_dns[index].domain)) - 2, length(split(".", local.redirector_zones_dns[index].domain))))) # c2.example.com -> ns.example.com
+    "dns_top_domain" : format("%s.", join(".", slice(split(".", local.redirector_zones_dns[index].domain), length(split(".", local.redirector_zones_dns[index].domain)) - 2, length(split(".", local.redirector_zones_dns[index].domain)))))                                 # c2.example.com -> example.com
   }]
 }
 resource "google_dns_record_set" "redir_dns_record_dns_a_subdomain" {
   count = length(local.dns_locals)
-  name = local.dns_locals[count.index].dns_ns_domain # A record ns1.example.com -> IP
-  type = "A"
-  ttl  = 300
+  name  = local.dns_locals[count.index].dns_ns_domain # A record ns1.example.com -> IP
+  type  = "A"
+  ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_dns[count.index].name
 
@@ -889,9 +975,9 @@ resource "google_dns_record_set" "redir_dns_record_dns_a_subdomain" {
 
 resource "google_dns_record_set" "redir_dns_record_dns_a_topdomain" {
   count = length(local.dns_locals)
-  name =  local.dns_locals[count.index].dns_top_domain # A record example.com -> IP
-  type = "A"
-  ttl  = 300
+  name  = local.dns_locals[count.index].dns_top_domain # A record example.com -> IP
+  type  = "A"
+  ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_dns[count.index].name
 
@@ -900,9 +986,9 @@ resource "google_dns_record_set" "redir_dns_record_dns_a_topdomain" {
 
 resource "google_dns_record_set" "redir_dns_record_dns_ns" {
   count = length(local.dns_locals)
-  name = format("%s.", local.redirector_zones_dns[count.index].domain) # NS record c2.example.com -> ns1.example.com
-  type = "NS"
-  ttl  = 300
+  name  = format("%s.", local.redirector_zones_dns[count.index].domain) # NS record c2.example.com -> ns1.example.com
+  type  = "NS"
+  ttl   = 300
 
   managed_zone = data.google_dns_managed_zone.redir_dns_zone_dns[count.index].name
 
@@ -910,11 +996,11 @@ resource "google_dns_record_set" "redir_dns_record_dns_ns" {
 }
 
 locals {
-  gce_def = yamlencode({
+  gce_def = length(local.dns_redirectors) > 0 ? yamlencode({
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", local.redirector_upstream]
+        command = concat(["./tavern", "redirector", "--managed", "--transport", "dns", "--identity-secret", google_secret_manager_secret.redirector_identity[local.redirector_dns_key].id, "--management-url", local.redirector_management_url], flatten([for redir in local.dns_redirectors : ["--domain", redir.domain]]), ["--listen", "0.0.0.0:53?${local.dns_domain_dsn}", local.redirector_upstream])
         env = [
           {
             name  = "TAVERN_LOG"
@@ -923,9 +1009,13 @@ locals {
           {
             name  = "TAVERN_RESOURCE_PREFIX"
             value = local.resource_prefix
-          }
+          },
+          {
+            name  = "REALM_REDIRECTOR_ENROLLMENT_TOKEN"
+            value = local.redirector_token_by_key[local.redirector_dns_key]
+          },
         ]
-        ports   = [
+        ports = [
           {
             containerPort = 53
             hostPort      = 53
@@ -940,7 +1030,7 @@ locals {
       }]
       restartPolicy = "Always"
     }
-  })
+  }) : ""
   user_data_def = <<EOT
 #cloud-config
 
@@ -975,8 +1065,8 @@ resource "google_compute_firewall" "dns_redirector_allow_dns" {
     ports    = ["53"]
   }
 
-  source_ranges = ["0.0.0.0/0"]
-  target_service_accounts = [google_service_account.svctavern_redirector.email]
+  source_ranges           = ["0.0.0.0/0"]
+  target_service_accounts = [google_service_account.svctavern_redirector[local.redirector_dns_key].email]
 }
 
 # Hash the config content so we can force rebuilds on update
@@ -1005,13 +1095,13 @@ resource "google_compute_instance" "dns_redirector" {
 
   metadata = {
     gce-container-declaration = local.gce_def
-    user-data = local.user_data_def
+    user-data                 = local.user_data_def
   }
 
   allow_stopping_for_update = true
 
   service_account {
-    email  = google_service_account.svctavern_redirector.email
+    email  = google_service_account.svctavern_redirector[local.redirector_dns_key].email
     scopes = ["cloud-platform"]
   }
 
@@ -1024,20 +1114,25 @@ resource "google_compute_instance" "dns_redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.compute_api
   ]
 }
 
 # Setup ICMP redirectors (one VM per redirector for unique IPs)
 locals {
-  icmp_gce_defs = [for redir in local.icmp_redirectors : yamlencode({
+  icmp_gce_defs = [for idx, redir in local.icmp_redirectors : yamlencode({
     spec = {
       containers = [{
         image   = var.tavern_container_image
-        command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", local.redirector_upstream]
+        command = ["./tavern", "redirector", "--managed", "--transport", "icmp", "--domain", redir.domain, "--identity-secret", google_secret_manager_secret.redirector_identity[local.redirector_icmp_keys[idx]].id, "--management-url", local.redirector_management_url, "--listen", "0.0.0.0", local.redirector_upstream]
         env = [
           { name = "TAVERN_LOG", value = "prod" },
           { name = "TAVERN_RESOURCE_PREFIX", value = local.resource_prefix },
+          { name = "REALM_REDIRECTOR_ENROLLMENT_TOKEN", value = local.redirector_token_by_key[local.redirector_icmp_keys[idx]] },
         ]
       }]
       restartPolicy = "Always"
@@ -1066,7 +1161,7 @@ resource "google_compute_firewall" "icmp_redirector_allow_icmp" {
   }
 
   source_ranges           = ["0.0.0.0/0"]
-  target_service_accounts = [google_service_account.svctavern_redirector.email]
+  target_service_accounts = [for key in local.redirector_icmp_keys : google_service_account.svctavern_redirector[key].email]
 }
 
 resource "terraform_data" "icmp_redirector_metadata_hash" {
@@ -1100,7 +1195,7 @@ resource "google_compute_instance" "icmp_redirector" {
   allow_stopping_for_update = true
 
   service_account {
-    email  = google_service_account.svctavern_redirector.email
+    email  = google_service_account.svctavern_redirector[local.redirector_icmp_keys[count.index]].email
     scopes = ["cloud-platform"]
   }
 
@@ -1113,6 +1208,10 @@ resource "google_compute_instance" "icmp_redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.compute_api
   ]
 }
@@ -1144,7 +1243,7 @@ resource "google_compute_firewall" "quic_redirector_allow_quic" {
   }
 
   source_ranges           = ["0.0.0.0/0"]
-  target_service_accounts = [google_service_account.svctavern_redirector.email]
+  target_service_accounts = [for key in local.redirector_quic_keys : google_service_account.svctavern_redirector[key].email]
 }
 
 resource "terraform_data" "quic_redirector_metadata_hash" {
@@ -1178,7 +1277,7 @@ resource "google_compute_instance" "quic_redirector" {
   allow_stopping_for_update = true
 
   service_account {
-    email  = google_service_account.svctavern_redirector.email
+    email  = google_service_account.svctavern_redirector[local.redirector_quic_keys[count.index]].email
     scopes = ["cloud-platform"]
   }
 
@@ -1191,6 +1290,10 @@ resource "google_compute_instance" "quic_redirector" {
   depends_on = [
     google_project_iam_member.redirector-metricwriter-binding,
     google_project_iam_member.redirector-logwriter-binding,
+    google_secret_manager_secret_iam_member.redirector_identity_read,
+    google_secret_manager_secret_iam_member.redirector_identity_write,
+    terraform_data.redirector_token_count,
+    google_cloud_run_service.tavern,
     google_project_service.compute_api
   ]
 }
@@ -1381,7 +1484,7 @@ resource "google_cloud_run_service_iam_binding" "no-auth-required-redirector" {
 }
 
 resource "google_cloud_run_domain_mapping" "tavern-domain" {
-  count = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
+  count    = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
   location = google_cloud_run_service.tavern.location
   name     = var.oauth_domain
 
