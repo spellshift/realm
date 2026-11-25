@@ -1,9 +1,10 @@
-use alloc::sync::Arc;
-use eldritch_agent::{Agent, Context};
-use image::{ImageFormat, RgbaImage};
+#[cfg(any(target_os = "windows", unix))]
 use {
     alloc::string::{String, ToString},
+    alloc::sync::Arc,
     alloc::vec::Vec,
+    eldritch_agent::{Agent, Context},
+    image::{ImageFormat, RgbaImage},
     pb::c2::report_file_request,
     pb::{c2, eldritch},
     std::io::Cursor,
@@ -23,14 +24,14 @@ use {
     },
 };
 
-#[cfg(all(any(target_os = "macos", target_os = "linux"), feature = "stdlib"))]
+#[cfg(all(unix, feature = "stdlib"))]
 fn get_hostname() -> String {
     nix::unistd::gethostname()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|_| "unknown".to_string())
 }
 
-#[cfg(all(any(target_os = "macos", target_os = "linux"), not(feature = "stdlib")))]
+#[cfg(all(unix, not(feature = "stdlib")))]
 fn get_hostname() -> String {
     std::env::var("HOSTNAME").unwrap_or_else(|_| "unknown".to_string())
 }
@@ -40,13 +41,14 @@ fn get_hostname() -> String {
     std::env::var("COMPUTERNAME").unwrap_or_else(|_| "unknown".to_string())
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+#[cfg(not(any(target_os = "windows", unix)))]
 pub fn screenshot(_agent: Arc<dyn Agent>, _context: Context) -> Result<(), String> {
     Err(
-        "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
+        "This OS isn't supported by the screenshot function.\nOnly windows, mac, and linux systems are supported".to_string()
     )
 }
 
+#[cfg(any(target_os = "windows", unix))]
 fn report_to_tavern(
     agent: &Arc<dyn Agent>,
     context: &Context,
