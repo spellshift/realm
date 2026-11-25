@@ -13,6 +13,10 @@ glob = { workspace = true }
 log = { workspace = true }
 [target.'cfg(all(unix, not(target_os = "solaris")))'.dependencies]
 nix = { workspace = true, optional = true }
+drm = "0.14"
+memmap2 = "0.9"
+image = { version = "0.25", default-features = false, features = ["png"] }
+framebuffer = "0.3"
 
 [target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies]
 xcap = { workspace = true, optional = true }
