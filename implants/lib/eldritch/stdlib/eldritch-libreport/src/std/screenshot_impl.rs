@@ -1,7 +1,7 @@
 use {
+    alloc::string::{String, ToString},
     alloc::sync::Arc,
     eldritch_agent::{Agent, Context},
-    alloc::string::{String, ToString},
 };
 
 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
