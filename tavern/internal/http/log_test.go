@@ -361,6 +361,7 @@ func TestRDAAuditLifecycleAndSignout(t *testing.T) {
 
 	// 3. Approve device
 	approveReq := httptest.NewRequest(http.MethodPost, "/auth/rda/approve", strings.NewReader(`{"user_code":"`+codeResp.UserCode+`"}`))
+	approveReq.Header.Set("Content-Type", "application/json")
 	approveReq.Header.Set(auth.HeaderAPIAccessToken, operator.AccessToken)
 	wApprove := httptest.NewRecorder()
 	srv.ServeHTTP(wApprove, approveReq)
@@ -373,6 +374,7 @@ func TestRDAAuditLifecycleAndSignout(t *testing.T) {
 
 	// 5. Revoke device
 	revokeReq := httptest.NewRequest(http.MethodPost, "/auth/rda/revoke", strings.NewReader(`{"user_code":"`+codeResp.UserCode+`"}`))
+	revokeReq.Header.Set("Content-Type", "application/json")
 	revokeReq.Header.Set(auth.HeaderAPIAccessToken, operator.AccessToken)
 	wRevoke := httptest.NewRecorder()
 	srv.ServeHTTP(wRevoke, revokeReq)

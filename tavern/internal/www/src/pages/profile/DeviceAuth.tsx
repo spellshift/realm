@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useToast, Input } from '@chakra-ui/react';
 import { createColumnHelper } from '@tanstack/react-table';
 import Button from '../../components/tavern-base-ui/button/Button';
@@ -7,6 +7,8 @@ import { EmptyState, EmptyStateType } from '../../components/tavern-base-ui/Empt
 import { DeviceAuthNode } from './Profile';
 import { Trash2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+
+const columnHelper = createColumnHelper<{ node: DeviceAuthNode }>();
 
 interface DeviceAuthProps {
     devices: { node: DeviceAuthNode }[];
@@ -51,7 +53,7 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
         }
     };
 
-    const handleRevokeDevice = async (userCodeToRevoke: string) => {
+    const handleRevokeDevice = useCallback(async (userCodeToRevoke: string) => {
         try {
             const res = await fetch('/auth/rda/revoke', {
                 method: 'POST',
@@ -68,9 +70,8 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
         } catch (err: any) {
             toast({ title: 'Error', description: err.message, status: 'error', duration: 3000 });
         }
-    };
+    }, [refetch, toast]);
 
-    const columnHelper = createColumnHelper<{ node: DeviceAuthNode }>();
     const columns = useMemo(() => [
         columnHelper.accessor('node.userCode', {
             header: 'Device Code',
@@ -97,7 +98,7 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
                 return null;
             }
         })
-    ], [columnHelper, handleRevokeDevice]);
+    ], [handleRevokeDevice]);
 
     return (
         <div className="bg-white p-6 shadow-sm rounded-md border border-gray-200">
