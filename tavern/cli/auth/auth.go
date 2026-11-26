@@ -19,6 +19,9 @@ import (
 // HeaderAPIAccessToken is re-exported from internal/auth
 const HeaderAPIAccessToken = auth.HeaderAPIAccessToken
 
+// EnvAPIToken is the default environment variable name used to provide a Tavern API token.
+const EnvAPIToken = "TAVERN_API_TOKEN"
+
 // RedactedToken is the value returned by calling String() on a Token.
 const RedactedToken = "--REDACTED--"
 
@@ -63,7 +66,7 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 
 	// 1. Check Environment Variable
 	if options.EnvAPIKeyName != "" {
-		if token := os.Getenv(options.EnvAPIKeyName); token != "" {
+		if token := strings.TrimSpace(os.Getenv(options.EnvAPIKeyName)); token != "" {
 			return Token(token), nil
 		}
 	}
@@ -71,8 +74,11 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 	// 2. Check Cache File
 	if options.CachePath != "" {
 		tokenData, err := os.ReadFile(options.CachePath)
-		if err == nil {
-			cachedToken := Token(tokenData)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				slog.Warn("failed to read credential cache", "path", options.CachePath, "error", err)
+			}
+		} else if cachedToken := Token(strings.TrimSpace(string(tokenData))); cachedToken != "" {
 			valid, valErr := validateToken(ctx, tavernURL, cachedToken)
 			switch {
 			case valErr != nil:
@@ -93,8 +99,6 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 					slog.Warn("failed to remove invalid credential cache", "path", options.CachePath, "error", rmErr)
 				}
 			}
-		} else if !os.IsNotExist(err) {
-			slog.Warn("failed to read credential cache", "path", options.CachePath, "error", err)
 		}
 	}
 

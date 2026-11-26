@@ -2,19 +2,26 @@ package main
 
 import (
 	"context"
+	"os"
+	"strings"
 
 	"realm.pub/tavern/cli/auth"
 )
 
-// EnvAPIKey is the name of the environment variable to optionally provide an API key
-const EnvAPIKey = "TAVERN_API_KEY"
+// legacyEnvAPIKey is retained for backwards compatibility with older pwnboard-go deployments.
+const legacyEnvAPIKey = "TAVERN_API_KEY"
 
 func getAuthToken(ctx context.Context, tavernURL, cachePath string) (auth.Token, error) {
+	envVar := auth.EnvAPIToken
+	if strings.TrimSpace(os.Getenv(auth.EnvAPIToken)) == "" && strings.TrimSpace(os.Getenv(legacyEnvAPIKey)) != "" {
+		envVar = legacyEnvAPIKey
+	}
+
 	return auth.Authenticate(
 		ctx,
 		auth.DefaultBrowser{},
 		tavernURL,
 		auth.WithCacheFile(cachePath),
-		auth.WithAPIKeyFromEnv(EnvAPIKey),
+		auth.WithAPIKeyFromEnv(envVar),
 	)
 }
