@@ -202,6 +202,9 @@ export interface TaskNode {
     reportedFiles: {
         totalCount: number;
     };
+    screenshots: {
+        totalCount: number;
+    };
     quest: QuestNode;
     beacon: BeaconNode;
 }

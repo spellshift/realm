@@ -27,6 +27,24 @@ impl Default for FileLibraryFake {
         // /tmp
         root_map.insert("tmp".to_string(), FsEntry::Dir(BTreeMap::new()));
 
+        // Executable returned by the fake process library and a destination for copies.
+        root_map.insert("bin".to_string(), FsEntry::Dir(BTreeMap::new()));
+        root_map.insert("sbin".to_string(), FsEntry::Dir(BTreeMap::new()));
+        let mut debug_map = BTreeMap::new();
+        debug_map.insert(
+            "golem".to_string(),
+            FsEntry::File(b"fake executable".to_vec()),
+        );
+        let mut target_map = BTreeMap::new();
+        target_map.insert("debug".to_string(), FsEntry::Dir(debug_map));
+        let mut implants_map = BTreeMap::new();
+        implants_map.insert("target".to_string(), FsEntry::Dir(target_map));
+        let mut realm_map = BTreeMap::new();
+        realm_map.insert("implants".to_string(), FsEntry::Dir(implants_map));
+        let mut workspaces_map = BTreeMap::new();
+        workspaces_map.insert("realm".to_string(), FsEntry::Dir(realm_map));
+        root_map.insert("workspaces".to_string(), FsEntry::Dir(workspaces_map));
+
         // /home/user
         let mut user_map = BTreeMap::new();
         user_map.insert(
