@@ -5,20 +5,30 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
+
+func cloneMote(mote *portalpb.Mote) *portalpb.Mote {
+	if mote == nil {
+		return nil
+	}
+	return proto.Clone(mote).(*portalpb.Mote)
+}
 
 // Publish sends a message to the specified topic.
 func (m *Mux) Publish(ctx context.Context, topicID string, mote *portalpb.Mote) error {
 	log.TraceContext(ctx, "publishing mote via mux", "topic", topicID, "stream_id", mote.GetStreamId(), "seq_id", mote.GetSeqId())
 
+	snapshot := cloneMote(mote)
+
 	// 1. Fast Path (Local)
-	m.dispatch(topicID, mote)
+	m.dispatch(topicID, snapshot)
 
 	// 2. Slow Path (Global)
 	// Add to history
-	m.addToHistory(topicID, mote)
+	m.addToHistory(topicID, snapshot)
 
 	// Metrics
 	msgsPublished.WithLabelValues(topicID, "attempt").Inc()
@@ -30,7 +40,7 @@ func (m *Mux) Publish(ctx context.Context, topicID string, mote *portalpb.Mote) 
 	}
 
 	// Send
-	err = t.Publish(ctx, mote)
+	err = t.Publish(ctx, snapshot)
 	if err != nil {
 		msgsPublished.WithLabelValues(topicID, "error_send").Inc()
 		return fmt.Errorf("failed to publish to topic %s: %w", topicID, err)
@@ -78,7 +88,7 @@ func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mot
 			log.Trace("replaying topic history to subscriber", "topic", topicID, "count", len(msgs))
 			for _, msg := range msgs {
 				select {
-				case ch <- msg:
+				case ch <- cloneMote(msg):
 				default:
 					log.Warn("subscriber channel full during history replay", "topic", topicID)
 				}
@@ -96,7 +106,12 @@ func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mot
 		for i, c := range subs {
 			if c == ch {
 				// Remove from slice
-				m.subs.subs[topicID] = append(subs[:i], subs[i+1:]...)
+				updated := append(subs[:i], subs[i+1:]...)
+				if len(updated) == 0 {
+					delete(m.subs.subs, topicID)
+				} else {
+					m.subs.subs[topicID] = updated
+				}
 				close(ch)
 				break
 			}
@@ -114,7 +129,7 @@ func (m *Mux) dispatch(topicID string, mote *portalpb.Mote) {
 	subs := m.subs.subs[topicID]
 	for _, ch := range subs {
 		select {
-		case ch <- mote:
+		case ch <- cloneMote(mote):
 		case <-time.After(100 * time.Millisecond):
 			// Drop message if subscriber is slow
 			log.Warn("dropping message for slow subscriber", "topic", topicID, "queue_len", len(ch), "queue_cap", cap(ch))
@@ -133,7 +148,7 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 		buf = NewHistoryBuffer(m.history.size)
 		m.history.buffers[topicID] = buf
 	}
-	buf.Add(mote)
+	buf.Add(cloneMote(mote))
 }
 
 func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub pubsub.Subscriber) {

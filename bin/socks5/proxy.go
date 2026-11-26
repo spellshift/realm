@@ -323,28 +323,88 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 	wg.Wait()
 }
 
+func peerIP(addr net.Addr) net.IP {
+	if addr == nil {
+		return nil
+	}
+	switch a := addr.(type) {
+	case *net.TCPAddr:
+		return a.IP
+	case *net.UDPAddr:
+		return a.IP
+	default:
+		host, _, err := net.SplitHostPort(addr.String())
+		if err != nil {
+			return nil
+		}
+		return net.ParseIP(host)
+	}
+}
+
+func (p *Proxy) udpBindIP(conn net.Conn) net.IP {
+	localIP := peerIP(conn.LocalAddr())
+	if host, _, err := net.SplitHostPort(p.listenAddr); err == nil && host != "" {
+		if ip := net.ParseIP(host); ip != nil {
+			if !ip.IsUnspecified() {
+				return ip
+			}
+		} else if ips, err := net.LookupIP(host); err == nil {
+			wantV4 := localIP != nil && localIP.To4() != nil
+			var fallback net.IP
+			for _, ip := range ips {
+				if ip.IsUnspecified() {
+					continue
+				}
+				if fallback == nil {
+					fallback = ip
+				}
+				if localIP != nil && (ip.To4() != nil) == wantV4 {
+					return ip
+				}
+			}
+			if fallback != nil {
+				return fallback
+			}
+		}
+	}
+	if localIP != nil && !localIP.IsUnspecified() {
+		return localIP
+	}
+	return net.IPv4(127, 0, 0, 1)
+}
+
 func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn net.Conn, writer *stream.OrderedWriter, reader *stream.OrderedReader, streamID string) {
 	logger := slog.With("stream_id", streamID, "protocol", "udp")
 	logger.Info("Starting UDP handler")
 	defer logger.Info("UDP handler finished")
 
-	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 0})
+	bindIP := p.udpBindIP(conn)
+	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: bindIP, Port: 0})
 	if err != nil {
-		logger.Error("Failed to listen UDP", "error", err)
+		logger.Error("Failed to listen UDP", "bind_ip", bindIP.String(), "error", err)
 		replyGeneralFailure(conn)
 		return
 	}
 	defer udpConn.Close()
 
 	lAddr := udpConn.LocalAddr().(*net.UDPAddr)
-	resp := []byte{0x05, 0x00, 0x00, 0x01}
-	resp = append(resp, net.IP{127, 0, 0, 1}...)
+	replyIP := lAddr.IP
+	if replyIP == nil || replyIP.IsUnspecified() {
+		replyIP = bindIP
+	}
+	var resp []byte
+	if ip4 := replyIP.To4(); ip4 != nil {
+		resp = append([]byte{0x05, 0x00, 0x00, 0x01}, ip4...)
+	} else {
+		resp = append([]byte{0x05, 0x00, 0x00, 0x04}, replyIP.To16()...)
+	}
 	portBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(portBytes, uint16(lAddr.Port))
 	resp = append(resp, portBytes...)
 	conn.Write(resp)
 
-	var clientAddr atomic.Value // net.Addr
+	expectedClientIP := peerIP(conn.RemoteAddr())
+	var clientAddr atomic.Pointer[net.UDPAddr]
 
 	var wg sync.WaitGroup
 	wg.Add(3) // Uplink, Downlink, Keepalive
@@ -375,9 +435,25 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 				}
 				break
 			}
-			clientAddr.Store(addr)
+			if expectedClientIP != nil && !expectedClientIP.Equal(addr.IP) {
+				logger.Warn("Dropping UDP packet from unauthorized peer", "peer", addr.String(), "expected_ip", expectedClientIP.String())
+				continue
+			}
 
-			if n < 3 {
+			locked := clientAddr.Load()
+			if locked == nil {
+				if clientAddr.CompareAndSwap(nil, addr) {
+					locked = addr
+				} else {
+					locked = clientAddr.Load()
+				}
+			}
+			if !locked.IP.Equal(addr.IP) || locked.Port != addr.Port {
+				logger.Warn("Dropping UDP packet from unexpected peer address", "peer", addr.String(), "expected_peer", locked.String())
+				continue
+			}
+
+			if n < 4 {
 				continue
 			}
 			pos := 3
@@ -438,11 +514,10 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 			}
 
 			if udpMote, ok := mote.Payload.(*portalpb.Mote_Udp); ok {
-				cAddrVal := clientAddr.Load()
-				if cAddrVal == nil {
+				cAddr := clientAddr.Load()
+				if cAddr == nil {
 					continue // Drop if we don't know where to send yet
 				}
-				cAddr := cAddrVal.(net.Addr)
 
 				// Header Construction
 				var addrBytes []byte
@@ -469,9 +544,7 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 				pkt = append(pkt, pb...)
 				pkt = append(pkt, udpMote.Udp.Data...)
 
-				if uAddr, ok := cAddr.(*net.UDPAddr); ok {
-					udpConn.WriteToUDP(pkt, uAddr)
-				}
+				udpConn.WriteToUDP(pkt, cAddr)
 			}
 		}
 	}()

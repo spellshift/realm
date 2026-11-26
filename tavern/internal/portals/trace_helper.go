@@ -9,15 +9,15 @@ import (
 	"realm.pub/tavern/portals/tracepb"
 )
 
-func AddTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) error {
+func AddTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) (*portalpb.Mote, error) {
 	bm := mote.GetBytes()
 	if bm == nil || bm.Kind != portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_TRACE {
-		return nil
+		return mote, nil
 	}
 
 	var traceData tracepb.TraceData
 	if err := proto.Unmarshal(bm.Data, &traceData); err != nil {
-		return fmt.Errorf("failed to unmarshal trace data: %w", err)
+		return mote, fmt.Errorf("failed to unmarshal trace data: %w", err)
 	}
 
 	traceData.Events = append(traceData.Events, &tracepb.TraceEvent{
@@ -27,9 +27,10 @@ func AddTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) error {
 
 	newData, err := proto.Marshal(&traceData)
 	if err != nil {
-		return fmt.Errorf("failed to marshal trace data: %w", err)
+		return mote, fmt.Errorf("failed to marshal trace data: %w", err)
 	}
 
-	bm.Data = newData
-	return nil
+	cloned := proto.Clone(mote).(*portalpb.Mote)
+	cloned.GetBytes().Data = newData
+	return cloned, nil
 }

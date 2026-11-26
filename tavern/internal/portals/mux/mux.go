@@ -190,3 +190,33 @@ func (m *Mux) ensureSub(ctx context.Context, topicID, subID string) error {
 	_, err := m.pubsub.EnsureSubscriber(ctx, topicID, subID)
 	return err
 }
+
+// cleanupTopic evicts cached history, publisher handles, empty subscriber entries,
+// and per-topic Prometheus metric series to avoid unbounded memory/cardinality growth.
+func (m *Mux) cleanupTopic(topicID string) {
+	m.history.Lock()
+	delete(m.history.buffers, topicID)
+	m.history.Unlock()
+
+	m.topics.Lock()
+	t, ok := m.topics.topics[topicID]
+	if ok {
+		delete(m.topics.topics, topicID)
+	}
+	m.topics.Unlock()
+	if ok {
+		if stopper, canStop := t.(interface{ Stop() }); canStop {
+			stopper.Stop()
+		}
+	}
+
+	m.subs.Lock()
+	if len(m.subs.subs[topicID]) == 0 {
+		delete(m.subs.subs, topicID)
+	}
+	m.subs.Unlock()
+
+	msgsPublished.DeletePartialMatch(prometheus.Labels{"topic": topicID})
+	msgsReceived.DeleteLabelValues(topicID)
+	msgsDropped.DeleteLabelValues(topicID)
+}

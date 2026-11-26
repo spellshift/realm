@@ -3,10 +3,13 @@ package mux
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -256,4 +259,162 @@ func TestMux_CreatePortal_ShellTask(t *testing.T) {
 	require.Equal(t, st.ID, p.QueryShellTask().OnlyIDX(ctx))
 	require.Equal(t, b.ID, p.QueryBeacon().OnlyIDX(ctx))
 	require.Equal(t, u.ID, p.QueryOwner().OnlyIDX(ctx))
+}
+
+func countTopicSeries(t *testing.T, c prometheus.Collector, topic string) int {
+	t.Helper()
+	ch := make(chan prometheus.Metric, 256)
+	go func() {
+		c.Collect(ch)
+		close(ch)
+	}()
+	count := 0
+	for metric := range ch {
+		var pb dto.Metric
+		require.NoError(t, metric.Write(&pb))
+		for _, lp := range pb.GetLabel() {
+			if lp.GetName() == "topic" && lp.GetValue() == topic {
+				count++
+			}
+		}
+	}
+	return count
+}
+
+func TestMux_TeardownEvictsStateAndMetrics(t *testing.T) {
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
+
+	m := New(WithResourcePrefix("evicttest"))
+	ctx := context.Background()
+
+	u := client.User.Create().SetName("evictuser").SetOauthID("oauth-evict").SetPhotoURL("photo").SaveX(ctx)
+	h := client.Host.Create().SetName("host-evict").SetIdentifier("ident-evict").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
+	b := client.Beacon.Create().SetName("beacon-evict").SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
+	tomeEnt := client.Tome.Create().SetName("tome-evict").SetDescription("desc").SetAuthor(u.Name).SetUploader(u).SetTactic(tome.TacticRECON).SetEldritch("print(1)").SaveX(ctx)
+	quest := client.Quest.Create().SetName("quest-evict").SetParameters("").SetCreator(u).SetTome(tomeEnt).SaveX(ctx)
+	taskEnt := client.Task.Create().SetQuest(quest).SetBeacon(b).SaveX(ctx)
+
+	portalID, teardown, err := m.CreatePortal(ctx, client, taskEnt.ID, 0, b.ID)
+	require.NoError(t, err)
+
+	topicIn := m.TopicIn(portalID)
+	topicOut := m.TopicOut(portalID)
+
+	chIn, cancelIn := m.Subscribe(topicIn)
+	require.NoError(t, m.Publish(ctx, topicIn, &portalpb.Mote{
+		Payload: &portalpb.Mote_Bytes{Bytes: &portalpb.BytesPayload{Data: []byte("in")}},
+	}))
+	require.NoError(t, m.Publish(ctx, topicOut, &portalpb.Mote{
+		Payload: &portalpb.Mote_Bytes{Bytes: &portalpb.BytesPayload{Data: []byte("out")}},
+	}))
+	<-chIn
+	cancelIn()
+
+	// Seed received/dropped series for both topics so we verify eviction across all three counters
+	msgsReceived.WithLabelValues(topicIn).Inc()
+	msgsDropped.WithLabelValues(topicIn).Inc()
+	msgsReceived.WithLabelValues(topicOut).Inc()
+	msgsDropped.WithLabelValues(topicOut).Inc()
+
+	assert.Greater(t, countTopicSeries(t, msgsPublished, topicIn), 0)
+	assert.Greater(t, countTopicSeries(t, msgsPublished, topicOut), 0)
+	assert.Equal(t, 1, countTopicSeries(t, msgsReceived, topicIn))
+	assert.Equal(t, 1, countTopicSeries(t, msgsDropped, topicOut))
+
+	teardown()
+
+	m.history.RLock()
+	_, hasHistIn := m.history.buffers[topicIn]
+	_, hasHistOut := m.history.buffers[topicOut]
+	m.history.RUnlock()
+	assert.False(t, hasHistIn, "topicIn history buffer should be evicted")
+	assert.False(t, hasHistOut, "topicOut history buffer should be evicted")
+
+	m.topics.RLock()
+	_, hasTopicIn := m.topics.topics[topicIn]
+	_, hasTopicOut := m.topics.topics[topicOut]
+	m.topics.RUnlock()
+	assert.False(t, hasTopicIn, "topicIn publisher cache should be evicted")
+	assert.False(t, hasTopicOut, "topicOut publisher cache should be evicted")
+
+	m.subs.RLock()
+	_, hasSubIn := m.subs.subs[topicIn]
+	_, hasSubOut := m.subs.subs[topicOut]
+	m.subs.RUnlock()
+	assert.False(t, hasSubIn, "empty topicIn subscriber slice should be removed")
+	assert.False(t, hasSubOut, "empty topicOut subscriber slice should be removed")
+
+	assert.Zero(t, countTopicSeries(t, msgsPublished, topicIn))
+	assert.Zero(t, countTopicSeries(t, msgsPublished, topicOut))
+	assert.Zero(t, countTopicSeries(t, msgsReceived, topicIn))
+	assert.Zero(t, countTopicSeries(t, msgsReceived, topicOut))
+	assert.Zero(t, countTopicSeries(t, msgsDropped, topicIn))
+	assert.Zero(t, countTopicSeries(t, msgsDropped, topicOut))
+}
+
+func TestMux_OpenPortalTeardownEvictsWhenNoLocalCreate(t *testing.T) {
+	m := New(WithResourcePrefix("openevict"))
+	ctx := context.Background()
+	portalID := 789
+	topicOut := m.TopicOut(portalID)
+
+	teardown, err := m.OpenPortal(ctx, portalID)
+	require.NoError(t, err)
+
+	require.NoError(t, m.Publish(ctx, topicOut, &portalpb.Mote{
+		Payload: &portalpb.Mote_Bytes{Bytes: &portalpb.BytesPayload{Data: []byte("hello")}},
+	}))
+
+	teardown()
+
+	m.history.RLock()
+	_, hasHistOut := m.history.buffers[topicOut]
+	m.history.RUnlock()
+	assert.False(t, hasHistOut)
+
+	m.topics.RLock()
+	_, hasTopicOut := m.topics.topics[topicOut]
+	m.topics.RUnlock()
+	assert.False(t, hasTopicOut)
+	assert.Zero(t, countTopicSeries(t, msgsPublished, topicOut))
+}
+
+func TestMux_PublishClonesForConcurrentSubscribers(t *testing.T) {
+	m := New()
+	ctx := context.Background()
+	topicID := "clone-race-topic"
+
+	ch1, cancel1 := m.Subscribe(topicID)
+	defer cancel1()
+	ch2, cancel2 := m.Subscribe(topicID)
+	defer cancel2()
+
+	const count = 40
+	var wg sync.WaitGroup
+	mutateSubscriber := func(ch <-chan *portalpb.Mote, tag byte) {
+		defer wg.Done()
+		for i := 0; i < count; i++ {
+			mote := <-ch
+			mote.GetBytes().Data = append(mote.GetBytes().Data, tag)
+		}
+	}
+
+	wg.Add(2)
+	go mutateSubscriber(ch1, 'A')
+	go mutateSubscriber(ch2, 'B')
+
+	for i := 0; i < count; i++ {
+		mote := &portalpb.Mote{
+			Payload: &portalpb.Mote_Bytes{
+				Bytes: &portalpb.BytesPayload{
+					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_DATA,
+					Data: []byte("payload"),
+				},
+			},
+		}
+		require.NoError(t, m.Publish(ctx, topicID, mote))
+	}
+
+	wg.Wait()
 }
