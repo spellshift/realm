@@ -11,10 +11,12 @@ mod list;
 mod set;
 mod str;
 
+pub use bytes::decode_utf16le_bytes;
 use bytes::handle_bytes_methods;
 use dict::handle_dict_methods;
 use list::handle_list_methods;
 use set::handle_set_methods;
+pub use str::encode_utf16le_str;
 use str::handle_string_methods;
 
 // --- Argument Validation Helper ---

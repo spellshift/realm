@@ -737,6 +737,7 @@
 
 //: str.encode
 //: Encodes the string into Bytes using the specified encoding ("utf8" or "utf16le").
+//: For "utf16le", no leading BOM is written.
 //:
 //: **Parameters**
 //: - `encoding` (Option<String>): The encoding to use ("utf8" (default) or "utf16le").
@@ -750,6 +751,7 @@
 
 //: bytes.decode
 //: Decodes the Bytes into a string using the specified encoding ("utf8" or "utf16le").
+//: For "utf16le", a leading BOM (0xFF 0xFE) is preserved as U+FEFF rather than stripped.
 //:
 //: **Parameters**
 //: - `encoding` (Option<String>): The encoding to use ("utf8" (default) or "utf16le").

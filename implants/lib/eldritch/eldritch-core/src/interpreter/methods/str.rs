@@ -7,6 +7,23 @@ use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
 
+/// Encodes a UTF-8 string into UTF-16LE bytes (without a leading BOM).
+pub fn encode_utf16le_str(s: &str) -> Result<Vec<u8>, String> {
+    let byte_len = s
+        .encode_utf16()
+        .count()
+        .checked_mul(2)
+        .ok_or_else(|| "MemoryError: UTF-16LE encoded length overflow".to_string())?;
+    let mut encoded = Vec::new();
+    encoded
+        .try_reserve_exact(byte_len)
+        .map_err(|e| alloc::format!("MemoryError: {}", e))?;
+    for c in s.encode_utf16() {
+        encoded.extend_from_slice(&c.to_le_bytes());
+    }
+    Ok(encoded)
+}
+
 pub fn handle_string_methods(
     s: &str,
     method: &str,
@@ -302,15 +319,7 @@ pub fn handle_string_methods(
 
             match encoding.as_str() {
                 "utf8" => Ok(Value::Bytes(s.as_bytes().to_vec())),
-                "utf16le" => {
-                    let mut encoded: Vec<u8> = Vec::with_capacity(s.len() * 2);
-                    for c in s.encode_utf16() {
-                        let bytes = c.to_le_bytes();
-                        encoded.push(bytes[0]);
-                        encoded.push(bytes[1]);
-                    }
-                    Ok(Value::Bytes(encoded))
-                }
+                "utf16le" => encode_utf16le_str(s).map(Value::Bytes),
                 _ => Err(alloc::format!("LookupError: unknown encoding: {}", args[0])),
             }
         })()),

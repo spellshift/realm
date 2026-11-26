@@ -176,6 +176,63 @@ fn test_encode_decode() {
 }
 
 #[test]
+fn test_utf16le_edge_cases() {
+    assert::pass(
+        r#"
+        # Empty string and bytes
+        assert_eq("".encode("utf16le"), b"")
+        assert_eq(b"".decode("utf16le"), "")
+
+        # Encoding name normalization
+        assert_eq("Hi".encode("UTF-16LE"), b"H\x00i\x00")
+        assert_eq("Hi".encode("utf_16_le"), b"H\x00i\x00")
+
+        # Multibyte BMP characters (2-byte and 3-byte UTF-8)
+        bmp = "café 日本語"
+        bmp_bytes = bmp.encode("utf16le")
+        assert_eq(bmp_bytes.decode("utf16le"), bmp)
+        assert_eq("€".encode("utf16le"), b"\xac\x20")
+        assert_eq(b"\xac\x20".decode("utf16le"), "€")
+
+        # Non-BMP characters (valid UTF-16 surrogate pairs: U+1F980 -> 0xD83E 0xDD80)
+        crab = "🦀"
+        crab_bytes = crab.encode("utf16le")
+        assert_eq(crab_bytes, b"\x3e\xd8\x80\xdd")
+        assert_eq(crab_bytes.decode("utf16le"), crab)
+        mixed = "hi 🦀 café"
+        assert_eq(mixed.encode("utf16le").decode("utf16le"), mixed)
+
+        # BOM handling: encode emits no BOM; decode preserves leading BOM as U+FEFF (65279)
+        assert_eq("H".encode("utf16le"), b"H\x00")
+        bom_decoded = b"\xff\xfeH\x00".decode("utf16le")
+        assert_eq(bom_decoded.codepoints(), [65279, 72])
+    "#,
+    );
+
+    // Odd byte lengths
+    assert::fail(r#"b"\x00".decode("utf16le")"#, "multiple of 2");
+    assert::fail(r#"b"H\x00e".decode("utf16le")"#, "multiple of 2");
+
+    // Unpaired high surrogate followed by non-surrogate
+    assert::fail(
+        r#"b"\x00\xd8H\x00".decode("utf16le")"#,
+        "UnicodeDecodeError",
+    );
+    // Trailing lone high surrogate
+    assert::fail(r#"b"\x00\xd8".decode("utf16le")"#, "UnicodeDecodeError");
+    // Unpaired low surrogate
+    assert::fail(
+        r#"b"\x00\xdcH\x00".decode("utf16le")"#,
+        "UnicodeDecodeError",
+    );
+    // Reversed surrogate pair (low then high)
+    assert::fail(
+        r#"b"\x80\xdd\x3e\xd8".decode("utf16le")"#,
+        "UnicodeDecodeError",
+    );
+}
+
+#[test]
 fn test_print_and_from_value_bytes_and_strings() {
     use eldritch_core::conversion::FromValue;
     use eldritch_core::{BufferPrinter, Interpreter, Value};

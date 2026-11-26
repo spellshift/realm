@@ -1,7 +1,7 @@
 use super::CryptoLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
-use eldritch_core::{Value, call_bound_method};
+use eldritch_core::{Value, decode_utf16le_bytes, encode_utf16le_str};
 use eldritch_libaes::{AesLibrary, std::StdAesLibrary};
 use eldritch_libbase64::{Base64Library, std::StdBase64Library};
 use eldritch_libhash::{HashLibrary, std::StdHashLibrary};
@@ -66,24 +66,10 @@ impl CryptoLibrary for StdCryptoLibrary {
     }
 
     fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String> {
-        match call_bound_method(
-            &Value::String(content),
-            "encode",
-            &[Value::String("utf16le".into())],
-        )? {
-            Value::Bytes(b) => Ok(b),
-            _ => unreachable!(),
-        }
+        encode_utf16le_str(&content)
     }
 
     fn decode_utf16le(&self, content: Vec<u8>) -> Result<String, String> {
-        match call_bound_method(
-            &Value::Bytes(content),
-            "decode",
-            &[Value::String("utf16le".into())],
-        )? {
-            Value::String(s) => Ok(s),
-            _ => unreachable!(),
-        }
+        decode_utf16le_bytes(&content)
     }
 }

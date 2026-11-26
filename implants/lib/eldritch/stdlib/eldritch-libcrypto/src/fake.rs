@@ -1,7 +1,7 @@
 use super::CryptoLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
-use eldritch_core::{Value, call_bound_method};
+use eldritch_core::{Value, decode_utf16le_bytes, encode_utf16le_str};
 use eldritch_libaes::{AesLibrary, fake::AesLibraryFake};
 use eldritch_libbase64::{Base64Library, fake::Base64LibraryFake};
 use eldritch_libhash::{HashLibrary, fake::HashLibraryFake};
@@ -66,25 +66,11 @@ impl CryptoLibrary for CryptoLibraryFake {
     }
 
     fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String> {
-        match call_bound_method(
-            &Value::String(content),
-            "encode",
-            &[Value::String("utf16le".into())],
-        )? {
-            Value::Bytes(b) => Ok(b),
-            _ => unreachable!(),
-        }
+        encode_utf16le_str(&content)
     }
 
     fn decode_utf16le(&self, content: Vec<u8>) -> Result<String, String> {
-        match call_bound_method(
-            &Value::Bytes(content),
-            "decode",
-            &[Value::String("utf16le".into())],
-        )? {
-            Value::String(s) => Ok(s),
-            _ => unreachable!(),
-        }
+        decode_utf16le_bytes(&content)
     }
 }
 
@@ -99,5 +85,9 @@ mod tests {
         let enc = crypto.aes_encrypt(vec![], vec![], data.clone()).unwrap();
         let dec = crypto.aes_decrypt(vec![], vec![], enc).unwrap();
         assert_eq!(data, dec);
+
+        let utf16 = crypto.encode_utf16le("hi 🦀".into()).unwrap();
+        assert_eq!(crypto.decode_utf16le(utf16).unwrap(), "hi 🦀");
+        assert!(crypto.decode_utf16le(vec![0x00, 0xd8]).is_err());
     }
 }

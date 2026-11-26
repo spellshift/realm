@@ -13,5 +13,5 @@ pub use self::core::Interpreter;
 pub use self::error::EldritchError;
 #[allow(unused_imports)]
 pub use self::error::EldritchErrorKind;
-pub use self::methods::call_bound_method;
+pub use self::methods::{call_bound_method, decode_utf16le_bytes, encode_utf16le_str};
 pub use self::printer::{BufferPrinter, NoopPrinter, Printer, StdoutPrinter};
