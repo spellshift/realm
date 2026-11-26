@@ -21,8 +21,9 @@ import (
 var oauthLog = logging.For("auth.oauth")
 
 const (
-	OAuthCookieName   = "oauth-state"
-	SessionCookieName = "auth-session"
+	OAuthCookieName    = "oauth-state"
+	SessionCookieName  = "auth-session"
+	OAuthStateAudience = "tavern.oauth.state"
 )
 
 var (
@@ -94,7 +95,12 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			}
 
 			return pubKey, nil
-		})
+		},
+			jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
+			jwt.WithExpirationRequired(),
+			jwt.WithIssuedAt(),
+			jwt.WithAudience(OAuthStateAudience),
+		)
 		if err != nil || !stateToken.Valid {
 			logging.AuditFailure(ctx, "auth", "oauth.login_failed", "oauth authorization invalid state cookie", "reason", "invalid_cookie")
 			http.Error(w, ErrOAuthInvalidCookie.Error(), http.StatusBadRequest)
@@ -238,10 +244,12 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 }
 
 func newOAuthStateCookie(privKey ed25519.PrivateKey, state string) *http.Cookie {
-	expiresAt := time.Now().Add(10 * time.Minute)
+	now := time.Now()
+	expiresAt := now.Add(10 * time.Minute)
 	claims := jwt.RegisteredClaims{
 		ID:        state,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Audience:  jwt.ClaimStrings{OAuthStateAudience},
+		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(expiresAt),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)

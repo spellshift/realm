@@ -125,14 +125,19 @@ func enrichC2Context(ctx context.Context) (context.Context, string) {
 	return ctx, clientIP
 }
 
-const ClaimBeaconID = "beacon_id"
+const (
+	ClaimBeaconID   = "beacon_id"
+	TaskJWTAudience = "tavern.c2.task"
+)
 
 // generateTaskJWT creates a signed JWT token containing the beacon ID
 func (srv *Server) generateTaskJWT(beaconID int) (string, error) {
+	now := time.Now()
 	claims := jwt.MapClaims{
 		ClaimBeaconID: beaconID,
-		"iat":         time.Now().Unix(),
-		"exp":         time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		"aud":         jwt.ClaimStrings{TaskJWTAudience},
+		"iat":         now.Unix(),
+		"exp":         now.Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -175,7 +180,13 @@ func (srv *Server) ValidateJWTContext(ctx context.Context, jwttoken string) (con
 		}
 		// 2. Return the PUBLIC key for verification
 		return srv.jwtPublicKey, nil
-	}, jwt.WithJSONNumber())
+	},
+		jwt.WithJSONNumber(),
+		jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
+		jwt.WithExpirationRequired(),
+		jwt.WithIssuedAt(),
+		jwt.WithAudience(TaskJWTAudience),
+	)
 
 	if err != nil || !token.Valid {
 		logging.AuditDenied(ctx, "c2", "c2.jwt_denied", "invalid C2 task JWT",
