@@ -27,7 +27,7 @@ var (
 const LRUCACHE_SIZE = 10480
 
 type SyncMap struct {
-	Map *lru.Cache[int, []byte] // Example data map
+	Map *lru.Cache[int, []byte]
 }
 
 func NewSyncMap() *SyncMap {
@@ -56,8 +56,9 @@ func (s *SyncMap) Store(key int, value []byte) {
 	s.Map.Add(key, value)
 }
 
-// TODO: Should we make this a random long byte array in case it gets used anywhere to avoid encrypting data with a weak key? - Sliver handles errors in this way.
-var FAILURE_BYTES = []byte{}
+func (s *SyncMap) Remove(key int) {
+	s.Map.Remove(key)
+}
 
 func castBytesToBufSlice(buf []byte) (mem.BufferSlice, error) {
 	r := bytes.NewBuffer(buf)
@@ -84,19 +85,29 @@ func NewStreamDecryptCodec() StreamDecryptCodec {
 
 func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 	proto := encoding.GetCodecV2("proto")
+	if proto == nil {
+		log.Error("proto codec is not registered")
+		return nil, errors.New("'proto' codec is not registered")
+	}
 	res, err := proto.Marshal(v)
 	if err != nil {
 		log.Error("failed to marshal protobuf message", "error", err)
-		return res, err
+		return nil, err
 	}
-	enc_res := s.Csvc.Encrypt(res.Materialize())
-	byte_enc_res, err := castBytesToBufSlice(enc_res)
+	defer res.Free()
 
-	return byte_enc_res, err
+	enc_res, err := s.Csvc.Encrypt(res.Materialize())
+	if err != nil {
+		return nil, err
+	}
+	return castBytesToBufSlice(enc_res)
 }
 
 func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
-	dec_buf, _ := s.Csvc.Decrypt(buf.Materialize())
+	dec_buf, _, err := s.Csvc.Decrypt(buf.Materialize())
+	if err != nil {
+		return err
+	}
 
 	proto := encoding.GetCodecV2("proto")
 	if proto == nil {
@@ -108,6 +119,8 @@ func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
 		log.Error("failed to cast decrypted bytes to buffer slice", "error", err)
 		return err
 	}
+	defer dec_mem_slice.Free()
+
 	return proto.Unmarshal(dec_mem_slice, v)
 }
 
@@ -116,7 +129,6 @@ func (s StreamDecryptCodec) Name() string {
 }
 
 type CryptoSvc struct {
-	// Aead cipher.AEAD
 	priv_key *ecdh.PrivateKey
 }
 
@@ -126,73 +138,78 @@ func NewCryptoSvc(priv_key *ecdh.PrivateKey) CryptoSvc {
 	}
 }
 
-func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
-	x22519_curve := ecdh.X25519()
-	client_pub_key, err := x22519_curve.NewPublicKey(client_pub_key_bytes)
+func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) ([]byte, error) {
+	if csvc.priv_key == nil {
+		return nil, errors.New("server private key is nil")
+	}
+	x25519Curve := ecdh.X25519()
+	client_pub_key, err := x25519Curve.NewPublicKey(client_pub_key_bytes)
 	if err != nil {
 		log.Debug("failed to parse client x25519 public key", "key_len", len(client_pub_key_bytes), "error", err)
-		return FAILURE_BYTES
+		return nil, fmt.Errorf("failed to parse client x25519 public key: %w", err)
 	}
 
 	shared_key, err := csvc.priv_key.ECDH(client_pub_key)
 	if err != nil {
 		log.Debug("failed to derive x25519 shared secret", "error", err)
-		return FAILURE_BYTES
+		return nil, fmt.Errorf("failed to derive x25519 shared secret: %w", err)
 	}
 
-	return shared_key
+	return shared_key, nil
 }
 
-func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
+func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte, error) {
 	if len(in_arr) == 0 {
 		log.Trace("received empty encrypted c2 frame")
-		return FAILURE_BYTES, FAILURE_BYTES
+		return nil, nil, errors.New("empty encrypted c2 frame")
 	}
 	if len(in_arr) < x25519.Size {
 		log.Debug("encrypted c2 frame shorter than x25519 public key", "input_len", len(in_arr), "min_len", x25519.Size)
-		return FAILURE_BYTES, FAILURE_BYTES
+		return nil, nil, fmt.Errorf("encrypted c2 frame shorter than x25519 public key: got %d, need at least %d", len(in_arr), x25519.Size)
 	}
 
-	// CRITICAL FIX: Make a distinct copy of the public key.
-	// Previously, 'in_arr[:32]' retained the capacity of the entire 'in_arr'.
-	// This caused the subsequent 'Encrypt' to append into shared memory (Data Race).
+	// Make a distinct copy of the public key so it does not alias the input buffer.
 	client_pub_key_bytes := make([]byte, x25519.Size)
 	copy(client_pub_key_bytes, in_arr[:x25519.Size])
 
-	ids, err := goAllIds()
-	if err != nil {
-		log.Error("failed to inspect goroutine id", "error", err)
-		return FAILURE_BYTES, FAILURE_BYTES
-	}
-	session_pub_keys.Store(ids.Id, client_pub_key_bytes)
-
 	// Generate shared secret
-	derived_key := csvc.generate_shared_key(client_pub_key_bytes)
+	derived_key, err := csvc.generate_shared_key(client_pub_key_bytes)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	aead, err := chacha20poly1305.NewX(derived_key)
 	if err != nil {
 		log.Debug("failed to initialize xchacha20-poly1305 cipher", "error", err)
-		return FAILURE_BYTES, FAILURE_BYTES
+		return nil, nil, fmt.Errorf("failed to initialize xchacha20-poly1305 cipher: %w", err)
 	}
 
 	// Progress in_arr buf
-	in_arr = in_arr[x25519.Size:]
+	payload := in_arr[x25519.Size:]
 
 	// Read nonce & cipher text
-	if len(in_arr) < aead.NonceSize() {
-		log.Debug("encrypted c2 payload shorter than nonce", "payload_len", len(in_arr), "min_len", aead.NonceSize())
-		return FAILURE_BYTES, FAILURE_BYTES
+	minPayloadLen := aead.NonceSize() + aead.Overhead()
+	if len(payload) < minPayloadLen {
+		log.Debug("encrypted c2 payload shorter than nonce and auth tag", "payload_len", len(payload), "min_len", minPayloadLen)
+		return nil, nil, fmt.Errorf("encrypted c2 payload shorter than nonce and auth tag: got %d, need at least %d", len(payload), minPayloadLen)
 	}
-	nonce, ciphertext := in_arr[:aead.NonceSize()], in_arr[aead.NonceSize():]
+	nonce, ciphertext := payload[:aead.NonceSize()], payload[aead.NonceSize():]
 
-	// Decrypt
+	// Decrypt and authenticate before mutating session state
 	plaintext, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		log.Warn("failed to decrypt c2 frame", "error", err)
-		return FAILURE_BYTES, FAILURE_BYTES
+		return nil, nil, fmt.Errorf("failed to decrypt c2 frame: %w", err)
 	}
 
-	return plaintext, client_pub_key_bytes
+	ids, err := goAllIds()
+	if err != nil {
+		log.Error("failed to inspect goroutine id", "error", err)
+		return nil, nil, fmt.Errorf("failed to inspect goroutine id: %w", err)
+	}
+	session_pub_keys.Store(ids.Id, client_pub_key_bytes)
+
+	return plaintext, client_pub_key_bytes, nil
 }
 
 // RegisterCurrentGoroutine associates the current goroutine ID with client public key bytes.
@@ -204,15 +221,12 @@ func RegisterCurrentGoroutine(clientPubKey []byte) {
 	if err != nil {
 		return
 	}
-	session_pub_keys.Store(ids.Id, clientPubKey)
+	keyCopy := make([]byte, len(clientPubKey))
+	copy(keyCopy, clientPubKey)
+	session_pub_keys.Store(ids.Id, keyCopy)
 }
 
-// GetSessionPubKey attempts to retrieve the client public key for the current goroutine or its ancestors.
-func GetSessionPubKey() ([]byte, bool) {
-	ids, err := goAllIds()
-	if err != nil {
-		return nil, false
-	}
+func lookupSessionPubKey(ids GoidTrace) ([]byte, bool) {
 	candidateIDs := append([]int{ids.Id, ids.ParentId}, ids.Others...)
 	for _, id := range candidateIDs {
 		if id == 0 {
@@ -225,47 +239,51 @@ func GetSessionPubKey() ([]byte, bool) {
 	return nil, false
 }
 
-// TODO: Don't use [] ref.
-func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
+// GetSessionPubKey attempts to retrieve the client public key for the current goroutine or its ancestors.
+func GetSessionPubKey() ([]byte, bool) {
+	ids, err := goAllIds()
+	if err != nil {
+		return nil, false
+	}
+	return lookupSessionPubKey(ids)
+}
+
+func (csvc *CryptoSvc) Encrypt(in_arr []byte) ([]byte, error) {
 	ids, err := goAllIds()
 	if err != nil {
 		log.Error("failed to inspect goroutine id", "error", err)
-		return FAILURE_BYTES
+		return nil, fmt.Errorf("failed to inspect goroutine id: %w", err)
 	}
 
-	var client_pub_key_bytes []byte
-	ok := false
-	candidateIDs := append([]int{ids.Id, ids.ParentId}, ids.Others...)
-	for _, candID := range candidateIDs {
-		if candID == 0 {
-			continue
-		}
-		client_pub_key_bytes, ok = session_pub_keys.Load(candID)
-		if ok {
-			break
-		}
-	}
-
+	client_pub_key_bytes, ok := lookupSessionPubKey(ids)
 	if !ok {
 		log.Debug("session public key not found for goroutine", "goid", ids.Id, "parent_goid", ids.ParentId)
-		return FAILURE_BYTES
+		return nil, errors.New("session public key not found for goroutine")
 	}
 
 	// Generate shared secret
-	shared_key := csvc.generate_shared_key(client_pub_key_bytes)
+	shared_key, err := csvc.generate_shared_key(client_pub_key_bytes)
+	if err != nil {
+		return nil, err
+	}
 	aead, err := chacha20poly1305.NewX(shared_key)
 	if err != nil {
 		log.Error("failed to initialize xchacha20-poly1305 cipher", "error", err)
-		return FAILURE_BYTES
+		return nil, fmt.Errorf("failed to initialize xchacha20-poly1305 cipher: %w", err)
 	}
 
-	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(in_arr)+aead.Overhead())
+	// Allocate a single output buffer: [client_pub_key || nonce || ciphertext+tag]
+	// without mutating the cached client_pub_key_bytes slice.
+	pubLen := len(client_pub_key_bytes)
+	nonceLen := aead.NonceSize()
+	out := make([]byte, pubLen+nonceLen, pubLen+nonceLen+len(in_arr)+aead.Overhead())
+	copy(out, client_pub_key_bytes)
+	nonce := out[pubLen : pubLen+nonceLen]
 	if _, err := rand.Read(nonce); err != nil {
 		log.Error("failed to generate xchacha20-poly1305 nonce", "error", err)
-		return FAILURE_BYTES
+		return nil, fmt.Errorf("failed to generate xchacha20-poly1305 nonce: %w", err)
 	}
-	encryptedMsg := aead.Seal(nonce, nonce, in_arr, nil)
-	return append(client_pub_key_bytes, encryptedMsg...)
+	return aead.Seal(out, nonce, in_arr, nil), nil
 }
 
 type GoidTrace struct {
@@ -275,23 +293,32 @@ type GoidTrace struct {
 }
 
 func goAllIds() (GoidTrace, error) {
-	buf := debug.Stack()
-	// slog.Info(fmt.Sprintf("debug stack: %s", buf))
+	return parseGoroutineIDs(debug.Stack())
+}
+
+func parseGoroutineIDs(stack []byte) (GoidTrace, error) {
 	var ids []int
-	elems := bytes.Fields(buf)
+	elems := bytes.Fields(stack)
 	for i, elem := range elems {
 		if bytes.Equal(elem, []byte("goroutine")) && i+1 < len(elems) {
 			id, err := strconv.Atoi(string(elems[i+1]))
 			if err != nil {
-				return GoidTrace{}, err
+				continue
 			}
 			ids = append(ids, id)
 		}
 	}
+	if len(ids) == 0 {
+		return GoidTrace{}, errors.New("no goroutine id found in stack trace")
+	}
 	res := GoidTrace{
-		Id:       ids[0],
-		ParentId: ids[1],
-		Others:   ids[2:],
+		Id: ids[0],
+	}
+	if len(ids) > 1 {
+		res.ParentId = ids[1]
+	}
+	if len(ids) > 2 {
+		res.Others = ids[2:]
 	}
 	return res, nil
 }

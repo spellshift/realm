@@ -34,9 +34,9 @@ func BenchmarkEncrypt(b *testing.B) {
 	b.SetBytes(int64(len(payload)))
 
 	for i := 0; i < b.N; i++ {
-		encrypted := svc.Encrypt(payload)
-		if len(encrypted) == 0 {
-			b.Fatal("Encrypt returned empty slice")
+		encrypted, err := svc.Encrypt(payload)
+		if err != nil || len(encrypted) == 0 {
+			b.Fatalf("Encrypt failed: %v", err)
 		}
 	}
 }
@@ -79,9 +79,9 @@ func BenchmarkDecrypt(b *testing.B) {
 	b.SetBytes(int64(len(plaintext)))
 
 	for i := 0; i < b.N; i++ {
-		decrypted, _ := svc.Decrypt(payload)
-		if len(decrypted) == 0 {
-			b.Fatal("Decrypt returned empty slice")
+		decrypted, _, err := svc.Decrypt(payload)
+		if err != nil || len(decrypted) == 0 {
+			b.Fatalf("Decrypt failed: %v", err)
 		}
 	}
 }

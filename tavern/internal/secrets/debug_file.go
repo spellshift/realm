@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
 
-const DEFAULT_PERMS = 0644
+const DEFAULT_PERMS = 0600
 const DELIMITER = "="
 const MEGABYTES = 1000000
 const MAX_FILE_SIZE = 128 * MEGABYTES
@@ -51,17 +52,20 @@ func (s DebugFileSecrets) SetValue(key string, value []byte) ([]byte, error) {
 	}
 
 	var old_value []byte = []byte{}
+	found := false
 
 	// If the value exists update it
 	for idx, k := range secrets {
 		if k.Key == key {
 			secrets[idx].Value = string(value)
 			old_value = []byte(k.Value)
+			found = true
+			break
 		}
 	}
 
 	// If the value doesn't exist create it
-	if len(old_value) == 0 {
+	if !found {
 		secrets = append(
 			secrets,
 			Secret{
@@ -110,24 +114,50 @@ func (s DebugFileSecrets) setYamlStruct(path string, secrets Secrets) error {
 		return err
 	}
 
-	file, err := os.OpenFile(path, os.O_RDWR, DEFAULT_PERMS)
+	// Write atomically via a 0600 temp file and rename so shrinking never leaves trailing bytes
+	// and permissions are always restricted to the owner.
+	dir := filepath.Dir(path)
+	tmpFile, err := os.CreateTemp(dir, ".secrets-*.tmp")
 	if err != nil {
-		log.Error("failed to open secrets file", "path", path, "error", err)
+		log.Error("failed to create temp secrets file", "path", path, "error", err)
 		return err
 	}
-	defer file.Close()
+	tmpPath := tmpFile.Name()
+	cleanup := true
+	defer func() {
+		if cleanup {
+			_ = os.Remove(tmpPath)
+		}
+	}()
 
-	_, err = file.Write(data)
-	if err != nil {
+	if err := tmpFile.Chmod(DEFAULT_PERMS); err != nil {
+		_ = tmpFile.Close()
+		log.Error("failed to set secrets file permissions", "path", path, "error", err)
+		return err
+	}
+
+	if _, err := tmpFile.Write(data); err != nil {
+		_ = tmpFile.Close()
 		log.Error("failed to write secrets file", "path", path, "error", err)
 		return err
 	}
 
+	if err := tmpFile.Close(); err != nil {
+		log.Error("failed to close temp secrets file", "path", path, "error", err)
+		return err
+	}
+
+	if err := os.Rename(tmpPath, path); err != nil {
+		log.Error("failed to replace secrets file", "path", path, "error", err)
+		return err
+	}
+
+	cleanup = false
 	return nil
 }
 
 func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
-	file, err := os.OpenFile(path, os.O_RDWR, DEFAULT_PERMS)
+	file, err := os.Open(path)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			log.Error("failed to open secrets file", "path", path, "error", err)
@@ -136,16 +166,16 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 	}
 	defer file.Close()
 
-	data := make([]byte, MAX_FILE_SIZE)
-	n, err := file.Read(data)
-	if err != nil && !errors.Is(err, io.EOF) {
+	data, err := io.ReadAll(io.LimitReader(file, MAX_FILE_SIZE+1))
+	if err != nil {
 		log.Error("failed to read secrets file", "path", path, "error", err)
 		return Secrets{}, err
 	}
-	// An empty (e.g. freshly created or `touch`-ed) secrets file reads as (0, io.EOF), not an
-	// error: treat it the same as a file with no secrets in it yet.
-
-	data = data[0:n]
+	if len(data) > MAX_FILE_SIZE {
+		err := fmt.Errorf("secrets file exceeds maximum size of %d bytes", MAX_FILE_SIZE)
+		log.Error("secrets file exceeds maximum size", "path", path, "max_size", MAX_FILE_SIZE)
+		return Secrets{}, err
+	}
 
 	var secrets Secrets
 	err = yaml.Unmarshal(data, &secrets)
@@ -159,21 +189,17 @@ func (s DebugFileSecrets) getYamlStruct(path string) (Secrets, error) {
 
 func (s DebugFileSecrets) ensureSecretsFileExist() (string, error) {
 	_, err := os.Stat(s.Path)
-	if errors.Is(err, os.ErrNotExist) {
-		// Create file
-		f, err := os.OpenFile(s.Path, os.O_CREATE, DEFAULT_PERMS)
-		if err != nil {
-			log.Error("failed to create secrets file", "path", s.Path, "error", err)
-			return s.Path, err
-		}
-		defer f.Close()
+	if err == nil {
+		return s.Path, nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		log.Error("failed to stat secrets file", "path", s.Path, "error", err)
+		return s.Path, err
+	}
 
-		// Write empty struct to file
-		err = s.setYamlStruct(s.Path, Secrets{})
-		if err != nil {
-			log.Error("failed to initialize secrets YAML file", "path", s.Path, "error", err)
-			return s.Path, err
-		}
+	if err := s.setYamlStruct(s.Path, Secrets{}); err != nil {
+		log.Error("failed to initialize secrets YAML file", "path", s.Path, "error", err)
+		return s.Path, err
 	}
 	return s.Path, nil
 }

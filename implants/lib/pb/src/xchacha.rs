@@ -42,6 +42,7 @@ fn get_server_pubkey() -> [u8; 32] {
 const KEY_CACHE_SIZE: usize = 1024;
 const PUBKEY_LEN: usize = 32;
 const NONCE_LEN: usize = 24;
+const TAG_LEN: usize = 16;
 
 // The client and server may have multiple connections open and they may not resolve in order or sequentially.
 // To handle this ephemeral public keys and shared secrets are stored in a hashmap key_history where they can be looked up
@@ -52,14 +53,17 @@ fn key_history() -> &'static Mutex<LruCache<[u8; 32], [u8; 32]>> {
 }
 
 fn add_key_history(pub_key: [u8; 32], shared_secret: [u8; 32]) {
-    key_history().lock().unwrap().put(pub_key, shared_secret); // Mutex's must unwrap
+    key_history()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .put(pub_key, shared_secret);
 }
 
 fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
     // Lookup the shared secret based on the public key
     let res = *key_history()
         .lock()
-        .unwrap() // Mutex's must unwrap
+        .unwrap_or_else(|e| e.into_inner())
         .get(&pub_key)
         .context("Unable to find shared secret for the public key received")?;
     Ok(res)
@@ -97,7 +101,7 @@ fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
     };
 
     // Build result: pubkey + nonce + ciphertext
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(PUBKEY_LEN + NONCE_LEN + ciphertext.len());
     result.extend_from_slice(client_public.as_bytes());
     result.extend_from_slice(nonce.as_slice());
     result.extend_from_slice(&ciphertext);
@@ -106,12 +110,12 @@ fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
 }
 
 fn decrypt_impl(ct_vec: Vec<u8>) -> Result<Vec<u8>> {
-    if ct_vec.is_empty() {
-        return Ok(vec![]);
-    }
-
-    if ct_vec.len() < PUBKEY_LEN + NONCE_LEN {
-        anyhow::bail!("Message too small to contain public key and nonce");
+    if ct_vec.len() < PUBKEY_LEN + NONCE_LEN + TAG_LEN {
+        anyhow::bail!(
+            "Message too small to contain public key, nonce, and auth tag: got {}, need at least {}",
+            ct_vec.len(),
+            PUBKEY_LEN + NONCE_LEN + TAG_LEN
+        );
     }
 
     // Extract components
@@ -127,12 +131,11 @@ fn decrypt_impl(ct_vec: Vec<u8>) -> Result<Vec<u8>> {
         .get(PUBKEY_LEN + NONCE_LEN..)
         .context("Input buffer doesn't have enough bytes for ciphertext")?;
 
-    // Get private key based on messages public key
-
-    let client_private_bytes = get_key(client_public.try_into()?).map_err(from_anyhow_error)?;
+    // Get shared secret based on message's public key
+    let shared_secret_bytes = get_key(client_public.try_into()?)?;
 
     let cipher =
-        chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&client_private_bytes));
+        chacha20poly1305::XChaCha20Poly1305::new(GenericArray::from_slice(&shared_secret_bytes));
 
     let plaintext = cipher
         .decrypt(GenericArray::from_slice(nonce), ciphertext)
@@ -196,10 +199,10 @@ where
             log::debug!("DANGER can't add to the buffer.");
         }
 
-        let _ = match encrypt_impl(item.encode_to_vec()) {
-            Ok(pub_nonce_ct) => buf.writer().write_all(&pub_nonce_ct),
-            Err(err) => return Err(Status::new(tonic::Code::Internal, err.to_string())),
-        };
+        let pub_nonce_ct = encrypt_impl(item.encode_to_vec()).map_err(from_anyhow_error)?;
+        buf.writer()
+            .write_all(&pub_nonce_ct)
+            .map_err(|err| Status::new(tonic::Code::Internal, err.to_string()))?;
 
         Ok(())
     }
@@ -220,7 +223,7 @@ where
     type Error = Status;
 
     fn decode(&mut self, buf: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
-        // public key + xchacha nonce + ciphertext
+        // public key + xchacha nonce + ciphertext + poly1305 tag
         let mut reader = buf.reader();
         let mut bytes_in = Vec::new();
         let bytes_read = match reader.read_to_end(&mut bytes_in) {
@@ -237,18 +240,9 @@ where
 
         log::debug!("Bytes read from server: {}", bytes_read);
 
-        if bytes_read == 0 {
-            let item = Message::decode(bytes_in.get(0..bytes_read).unwrap())
-                .map(Option::Some)
-                .map_err(from_decode_error)?;
+        let plaintext = decrypt_impl(bytes_in).map_err(from_anyhow_error)?;
 
-            return Ok(item);
-        }
-
-        let plaintext = decrypt_impl(bytes_in.get(0..bytes_read).unwrap().to_vec())
-            .map_err(from_anyhow_error)?;
-
-        // Serialize
+        // Deserialize
         let item = Message::decode(bytes::Bytes::from(plaintext))
             .map(Option::Some)
             .map_err(from_decode_error)?;
@@ -281,21 +275,18 @@ where
     U: Message + Default + Send + 'static,
 {
     // Decode protobuf
-    match decrypt_impl(data.to_vec()) {
-        Ok(plaintext) => {
-            U::decode(bytes::Bytes::from(plaintext)).context("Failed to decode protobuf message")
-        }
-        Err(err) => Err(err),
-    }
+    let plaintext = decrypt_impl(data.to_vec())?;
+    U::decode(bytes::Bytes::from(plaintext)).context("Failed to decode protobuf message")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::c2::ReportOutputResponse;
 
     #[test]
     fn test_key_history_bounded() {
-        let mut key_history = key_history().lock().unwrap();
+        let mut key_history = key_history().lock().unwrap_or_else(|e| e.into_inner());
         for i in 0..KEY_CACHE_SIZE * 2 {
             let mut pub_key = [0u8; 32];
             let mut shared_secret = [0u8; 32];
@@ -306,5 +297,35 @@ mod tests {
             key_history.put(pub_key, shared_secret);
         }
         assert_eq!(key_history.len(), KEY_CACHE_SIZE);
+    }
+
+    #[test]
+    fn test_decrypt_rejects_empty_and_short_frames() {
+        assert!(decrypt_impl(vec![]).is_err());
+        assert!(decrypt_impl(vec![0u8; PUBKEY_LEN]).is_err());
+        assert!(decrypt_impl(vec![0u8; PUBKEY_LEN + NONCE_LEN]).is_err());
+        assert!(decrypt_impl(vec![0u8; PUBKEY_LEN + NONCE_LEN + TAG_LEN - 1]).is_err());
+        assert!(decode_with_chacha::<ReportOutputResponse, ReportOutputResponse>(&[]).is_err());
+    }
+
+    #[test]
+    fn test_decrypt_roundtrip_and_tamper_rejected() {
+        let mut encrypted = encode_with_chacha::<ReportOutputResponse, ReportOutputResponse>(
+            ReportOutputResponse::default(),
+        )
+        .expect("encrypt empty protobuf should succeed");
+        assert_eq!(encrypted.len(), PUBKEY_LEN + NONCE_LEN + TAG_LEN);
+
+        // Decrypting valid authenticated empty protobuf succeeds.
+        let decoded = decode_with_chacha::<ReportOutputResponse, ReportOutputResponse>(&encrypted)
+            .expect("decrypt valid frame should succeed");
+        assert_eq!(decoded, ReportOutputResponse::default());
+
+        // Flipping a bit in the ciphertext/tag must fail authentication.
+        let last = encrypted.len() - 1;
+        encrypted[last] ^= 0xff;
+        assert!(
+            decode_with_chacha::<ReportOutputResponse, ReportOutputResponse>(&encrypted).is_err()
+        );
     }
 }
