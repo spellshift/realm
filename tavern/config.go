@@ -11,6 +11,7 @@ import (
 
 	gcppubsub "cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 	"gocloud.dev/pubsub"
@@ -185,7 +186,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	}
 
 	var (
-		mysqlDSN = "file:ent?mode=memory&cache=shared&_fk=1"
+		mysqlDSN = "file:ent?mode=memory&cache=shared&_fk=1&_loc=UTC"
 		driver   = "sqlite3"
 	)
 	if cfg != nil && cfg.mysqlDSN != "" {
@@ -219,7 +220,13 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
-	client := ent.NewClient(append(options, ent.Driver(drv))...)
+
+	var entDriver dialect.Driver = drv
+	if driver == "sqlite3" {
+		entDriver = &utcDriver{Driver: drv}
+	}
+
+	client := ent.NewClient(append(options, ent.Driver(entDriver))...)
 	client.Host.Use(ent.HookDeriveHostEvents())
 	client.Host.Use(ent.HookDeriveNetworkHost())
 	client.Task.Use(ent.HookDeriveQuestEvents())

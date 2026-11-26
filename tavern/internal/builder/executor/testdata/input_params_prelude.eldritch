@@ -1,0 +1,1 @@
+input_params = {"a": "line1\nline2\ttab\r", "b": "say \"hi\" \\ back", "c": "\x01\x7f", "d": "nul\x00end", "e": "trail\\", "k\"ey\\\n": "v", "u": "héllo 世界 😀 <&>"}

@@ -6,8 +6,8 @@ import { AssetFilterBarProps } from "./types";
 
 // Combined "Asset fields" filter -- same single grouped-Select idiom as
 // BeaconFilterBar (see components/beacon-filter-bar), replacing the
-// separate User and Type selects that used to sit side by side. Users
-// come first in the option groups, then the agent type filter.
+// separate User and Type selects that used to sit side by side. The agent
+// type filter comes first in the option groups, then users.
 export function AssetFilterBar({ userId, agentOnly, onChange, isDisabled }: AssetFilterBarProps) {
     const { options, isLoading } = useAssetFilterBar();
 

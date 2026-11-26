@@ -1,4 +1,4 @@
-import { ArrowDownToLine, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowDownToLine, Camera, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -6,13 +6,24 @@ import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/E
 import Tooltip from "../../../components/tavern-base-ui/Tooltip";
 import { VirtualizedCardList } from "../../../components/tavern-base-ui/virtualized-card-list";
 import { SortingControls } from "../../../context/SortContext";
+import { useCreateQuestModal } from "../../../context/CreateQuestModalContext";
 import { PageNavItem } from "../../../utils/enums";
 import { formatBytes } from "../../../utils/utils";
 import { useScreenshots } from "./useScreenshots";
+import { useScreenshotQuestFormData } from "./useScreenshotQuestFormData";
 import { capturedAt, downloadAllURL, imageURL, sourceLabel, thumbnailURL } from "./utils";
 
 const ScreenshotsTab = () => {
     const { hostId } = useParams();
+    const { openModal } = useCreateQuestModal();
+    const { fetchFormData, loading: questLoading } = useScreenshotQuestFormData();
+    const handleTakeScreenshot = async () => {
+        const initialFormData = await fetchFormData();
+        openModal({
+            initialFormData,
+            refetchQueries: ["GetHostContext", "GetHostScreenshots"],
+        });
+    };
     const {
         screenshots,
         screenshotIds,
@@ -75,6 +86,15 @@ const ScreenshotsTab = () => {
                     <Button
                         buttonVariant="ghost"
                         buttonStyle={{ color: "gray", size: "sm" }}
+                        leftIcon={<Camera className="w-4 h-4" />}
+                        disabled={questLoading || !hostId}
+                        onClick={handleTakeScreenshot}
+                    >
+                        {questLoading ? "Loading..." : "Take screenshot"}
+                    </Button>
+                    <Button
+                        buttonVariant="ghost"
+                        buttonStyle={{ color: "gray", size: "sm" }}
                         leftIcon={<ArrowDownToLine className="w-4 h-4" />}
                         disabled={!hostId}
                         onClick={() => window.location.assign(downloadAllURL(hostId || ""))}
@@ -88,7 +108,17 @@ const ScreenshotsTab = () => {
             {(error || !hostId) && <EmptyState type={EmptyStateType.error} label="Error loading data" details={error?.message || "Host ID not found"} />}
             {!error && hostId && initialLoading && <EmptyState type={EmptyStateType.loading} label="Loading screenshots..." />}
             {!error && hostId && !initialLoading && totalCount === 0 && (
-                <EmptyState type={EmptyStateType.noData} label="No screenshots reported" />
+                <EmptyState type={EmptyStateType.noData} label="No screenshots reported">
+                    <Button
+                        buttonVariant="solid"
+                        buttonStyle={{ color: "purple", size: "md" }}
+                        leftIcon={<Camera className="w-5 h-5" />}
+                        disabled={questLoading}
+                        onClick={handleTakeScreenshot}
+                    >
+                        {questLoading ? "Loading..." : "Take screenshot"}
+                    </Button>
+                </EmptyState>
             )}
 
             {!error && screenshots.length > 0 && selected && (

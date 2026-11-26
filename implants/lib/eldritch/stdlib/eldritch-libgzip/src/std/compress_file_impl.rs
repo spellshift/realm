@@ -1,58 +1,77 @@
+use crate::std::{is_same_file, resolve_path};
 use alloc::string::{String, ToString};
-use anyhow::{Context, Result as AnyhowResult};
-use std::fs::File;
+use anyhow::{Context, Result as AnyhowResult, anyhow};
+use flate2::Compression;
+use flate2::write::GzEncoder;
+use std::ffi::OsStr;
+use std::fs::{self, File};
+use std::io::{self, BufReader, BufWriter, Write};
 use std::path::Path;
+use tar::{Builder, HeaderMode};
 
 pub fn compress_file(src: String, dst: String) -> Result<(), String> {
     compress_impl(src, dst).map_err(|e| e.to_string())
 }
 
-fn compress_impl(src: String, dst: String) -> AnyhowResult<()> {
-    use flate2::Compression;
-    use std::fs::OpenOptions;
-    use tempfile::NamedTempFile;
+fn compress_dir(src_name: &OsStr, src_dir: &Path, dst_path: &Path) -> AnyhowResult<()> {
+    let f_dst = BufWriter::new(File::create(dst_path)?);
+    let deflater = GzEncoder::new(f_dst, Compression::fast());
 
-    let src_path = Path::new(&src);
+    let mut tar_builder = Builder::new(deflater);
+    tar_builder.mode(HeaderMode::Deterministic);
+    tar_builder.follow_symlinks(false);
+    tar_builder.append_dir_all(src_name, src_dir)?;
 
-    // Determine if we need to tar
-    let tmp_tar_file_src = NamedTempFile::new()?;
-    let tmp_src = if src_path.is_dir() {
-        let tmp_path = tmp_tar_file_src.path().to_str().unwrap().to_string();
-        tar_dir(&src, &tmp_path)?;
-        tmp_path
-    } else {
-        src.clone()
-    };
-
-    let f_src = ::std::io::BufReader::new(File::open(&tmp_src)?);
-    let f_dst = ::std::io::BufWriter::new(
-        OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(false)
-            .open(&dst)?,
-    );
-
-    let mut deflater = flate2::write::GzEncoder::new(f_dst, Compression::fast());
-    let mut reader = f_src;
-    ::std::io::copy(&mut reader, &mut deflater)?;
-    deflater.finish()?;
-
+    let deflater = tar_builder.into_inner()?;
+    deflater.finish()?.flush()?;
     Ok(())
 }
 
-fn tar_dir(src: &str, dst: &str) -> AnyhowResult<()> {
-    use tar::{Builder, HeaderMode};
+fn compress_single_file(src_file: &Path, dst_path: &Path) -> AnyhowResult<()> {
+    let mut reader = BufReader::new(File::open(src_file)?);
+    let f_dst = BufWriter::new(File::create(dst_path)?);
+    let mut deflater = GzEncoder::new(f_dst, Compression::fast());
 
-    let src_path = Path::new(src);
-    let file = File::create(dst)?;
-    let mut tar_builder = Builder::new(file);
-    tar_builder.mode(HeaderMode::Deterministic);
+    io::copy(&mut reader, &mut deflater)?;
+    deflater.finish()?.flush()?;
+    Ok(())
+}
 
-    let src_name = src_path.file_name().context("Failed to get file name")?;
+fn compress_impl(src: String, dst: String) -> AnyhowResult<()> {
+    let src_path = Path::new(&src);
+    let dst_path = Path::new(&dst);
 
-    tar_builder.append_dir_all(src_name, src_path)?;
-    tar_builder.finish()?;
+    let canonical_src = fs::canonicalize(src_path)?;
+    if is_same_file(src_path, dst_path)? {
+        return Err(anyhow!(
+            "Source and destination refer to the same file: {src}"
+        ));
+    }
+
+    let dst_existed = dst_path.symlink_metadata().is_ok();
+
+    let res = if canonical_src.is_dir() {
+        let resolved_dst = resolve_path(dst_path)?;
+        if resolved_dst.starts_with(&canonical_src) {
+            return Err(anyhow!(
+                "Destination path cannot be inside source directory: {dst}"
+            ));
+        }
+
+        let src_name = canonical_src
+            .file_name()
+            .context("Failed to get directory name for source path")?;
+        compress_dir(src_name, &canonical_src, dst_path)
+    } else {
+        compress_single_file(&canonical_src, dst_path)
+    };
+
+    if let Err(err) = res {
+        if !dst_existed {
+            let _ = fs::remove_file(dst_path);
+        }
+        return Err(err);
+    }
     Ok(())
 }
 

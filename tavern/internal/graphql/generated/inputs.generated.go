@@ -293,6 +293,8 @@ func (ec *executionContext) fieldContext_BuildProfileSnapshot_transports(_ conte
 				return ec.fieldContext_BuildProfileTransport_type(ctx, field)
 			case "extra":
 				return ec.fieldContext_BuildProfileTransport_extra(ctx, field)
+			case "jitter":
+				return ec.fieldContext_BuildProfileTransport_jitter(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuildProfileTransport", field.Name)
 		},
@@ -511,6 +513,35 @@ func (ec *executionContext) fieldContext_BuildProfileTransport_extra(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _BuildProfileTransport_jitter(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileTransport) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildProfileTransport_jitter,
+		func(ctx context.Context) (any, error) {
+			return obj.Jitter, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildProfileTransport_jitter(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildProfileTransport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BuildTomeSnapshot_tomeID(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTomeSnapshot) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -653,8 +684,11 @@ func (ec *executionContext) unmarshalInputBuildProfileTransportInput(ctx context
 	if _, present := asMap["interval"]; !present {
 		asMap["interval"] = 5
 	}
+	if _, present := asMap["jitter"]; !present {
+		asMap["jitter"] = 0
+	}
 
-	fieldsInOrder := [...]string{"uri", "interval", "type", "extra"}
+	fieldsInOrder := [...]string{"uri", "interval", "type", "extra", "jitter"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -689,6 +723,13 @@ func (ec *executionContext) unmarshalInputBuildProfileTransportInput(ctx context
 				return it, err
 			}
 			it.Extra = data
+		case "jitter":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jitter"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Jitter = data
 		}
 	}
 	return it, nil
@@ -1318,6 +1359,11 @@ func (ec *executionContext) _BuildProfileTransport(ctx context.Context, sel ast.
 			}
 		case "extra":
 			out.Values[i] = ec._BuildProfileTransport_extra(ctx, field, obj)
+		case "jitter":
+			out.Values[i] = ec._BuildProfileTransport_jitter(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

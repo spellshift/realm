@@ -84,10 +84,16 @@ export type TransportConfig = {
     uri: string;
     interval: number;
     extra?: string;
+    // Fraction (0.0-1.0) of the interval by which the callback sleep is
+    // randomly shortened, to avoid predictable beacon timing. Defaults to 0.
+    jitter: number;
 };
 
 // Callback interval (seconds) every new transport starts with, whatever its type.
 export const DEFAULT_TRANSPORT_INTERVAL = 30;
+
+// Default jitter (no jitter) every new transport starts with.
+export const DEFAULT_TRANSPORT_JITTER = 0;
 
 // Pre-filled transport for a new profile. Same URI/type as
 // builder.DefaultTransports (tavern/internal/builder/build_config.go), but with
@@ -97,6 +103,7 @@ export const DEFAULT_TRANSPORT: TransportConfig = {
     type: SupportedTransports.GRPC,
     uri: "http://127.0.0.1:8000",
     interval: DEFAULT_TRANSPORT_INTERVAL,
+    jitter: DEFAULT_TRANSPORT_JITTER,
 };
 
 // Mirrors builderpb.BuildProfileTome (TomeID, Params) -- a reference to a

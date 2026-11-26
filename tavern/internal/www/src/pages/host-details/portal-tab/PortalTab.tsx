@@ -1,28 +1,23 @@
-import { useState, useEffect } from "react";
+import { Fragment } from "react";
+import { Menu, Transition } from "@headlessui/react";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { PlugIcon, DownloadIcon } from "lucide-react";
 import { VirtualizedTableWrapper } from "../../../components/tavern-base-ui/virtualized-table";
 import { PortalsTable } from "./PortalsTable";
 import { usePortalIds } from "./usePortalIds";
 import { useParams } from "react-router-dom";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import { ghostButton } from "../../../components/tavern-base-ui/button/ButtonStyles";
 import { CreatePortalQuestButton } from "./CreatePortalQuestButton";
 
-const PortalsHeader = () => {
-    const [downloadAsset, setDownloadAsset] = useState<string>("linux/socks5");
+const socks5Downloads = [
+    { platform: "Linux", asset: "linux/socks5" },
+    { platform: "macOS", asset: "macos/socks5" },
+    { platform: "Windows", asset: "windows/socks5.exe" },
+    { platform: "FreeBSD", asset: "bsd/socks5" },
+];
 
-    useEffect(() => {
-        const ua = navigator.userAgent.toLowerCase();
-        if (ua.includes("win")) {
-            setDownloadAsset("windows/socks5.exe");
-        } else if (ua.includes("mac")) {
-            setDownloadAsset("macos/socks5");
-        } else if (ua.includes("linux")) {
-            setDownloadAsset("linux/socks5");
-        } else if (ua.includes("bsd")) {
-            setDownloadAsset("bsd/socks5");
-        }
-    }, []);
-
+export const PortalsHeader = () => {
     return (
         <div className="flex flex-col flex-1 bg-white">
             <div className="px-4 py-3 bg-gray-50 flex justify-between items-center shadow-sm border-b border-gray-200">
@@ -30,12 +25,41 @@ const PortalsHeader = () => {
                     <PlugIcon className="w-5 h-5 text-gray-400" />
                     <span>Download the SOCKS5 proxy client for your platform</span>
                 </div>
-                <a href={`/assets/download/${downloadAsset}`} download onClick={(e) => e.stopPropagation()}>
-                    <Button buttonStyle={{ color: "purple", size: 'sm' }} buttonVariant="solid">
-                        <DownloadIcon className="w-4 h-4 mr-2" />
+                <Menu as="div" className="relative">
+                    <Menu.Button
+                        as={Button}
+                        buttonStyle={{ color: "purple", size: "sm" }}
+                        rightIcon={<ChevronDownIcon className="h-5 w-5" aria-hidden="true" />}
+                    >
+                        <DownloadIcon className="h-4 w-4 mr-2" aria-hidden="true" />
                         Download socks5
-                    </Button>
-                </a>
+                    </Menu.Button>
+                    <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                    >
+                        <Menu.Items className="absolute right-0 mt-2 w-40 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
+                            <div className="px-1 py-1">
+                                {socks5Downloads.map(({ platform, asset }) => (
+                                    <Menu.Item
+                                        key={platform}
+                                        as="a"
+                                        href={`/assets/download/${asset}`}
+                                        download
+                                        className={ghostButton({ color: "gray", size: "sm", className: "w-full data-[focus]:bg-gray-100" })}
+                                    >
+                                        {platform}
+                                    </Menu.Item>
+                                ))}
+                            </div>
+                        </Menu.Items>
+                    </Transition>
+                </Menu>
             </div>
         </div>
     );

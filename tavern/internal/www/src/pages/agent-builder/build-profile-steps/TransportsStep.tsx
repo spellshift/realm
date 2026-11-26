@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useState } from "react";
-import { FormControl, FormErrorMessage, FormLabel, Heading, Input } from "@chakra-ui/react";
+import { FormControl, FormErrorMessage, FormLabel, Heading, Input, InputGroup, InputRightElement } from "@chakra-ui/react";
 import { Plus } from "lucide-react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { SupportedTransports } from "../../../utils/enums";
@@ -41,25 +41,33 @@ type FieldProps = {
     placeholder?: string;
     type?: "text" | "number";
     min?: number;
+    max?: number;
+    step?: number;
     required?: boolean;
+    suffix?: string;
 };
 
-const TransportField = ({ id, label, value, onChange, onBlur, error, placeholder, type, min, required }: FieldProps) => (
+const TransportField = ({ id, label, value, onChange, onBlur, error, placeholder, type, min, max, step, required, suffix }: FieldProps) => (
     <FormControl isInvalid={!!error} className="min-w-0">
         <FormLabel htmlFor={id} className="mb-1 text-sm font-medium text-gray-700">{label}{required && <RequiredMark />}</FormLabel>
-        <Input
-            id={id}
-            name={id}
-            size="sm"
-            colorScheme="purple"
-            value={value}
-            placeholder={placeholder}
-            type={type}
-            min={min}
-            required={required}
-            onChange={(event) => onChange(event.target.value)}
-            onBlur={onBlur}
-        />
+        <InputGroup size="sm">
+            <Input
+                id={id}
+                name={id}
+                size="sm"
+                colorScheme="purple"
+                value={value}
+                placeholder={placeholder}
+                type={type}
+                min={min}
+                max={max}
+                step={step}
+                required={required}
+                onChange={(event) => onChange(event.target.value)}
+                onBlur={onBlur}
+            />
+            {suffix && <InputRightElement pointerEvents="none" className="text-sm text-gray-500" width="2.25rem">{suffix}</InputRightElement>}
+        </InputGroup>
         {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>
 );
@@ -79,7 +87,7 @@ const TransportEditor = ({ form, editing, error, setForm, onTypeChange, onCancel
     // existing problem is visible immediately; a blank new form stays quiet
     // until the user actually leaves each field.
     const [touched, setTouched] = useState<Record<keyof TransportFieldErrors, boolean>>(
-        () => ({ uri: editing, domain: editing, interval: editing, httpProxy: editing })
+        () => ({ uri: editing, domain: editing, interval: editing, jitter: editing, httpProxy: editing })
     );
     const touch = (field: keyof TransportFieldErrors) => setTouched((current) => ({ ...current, [field]: true }));
     const errors = transportFieldErrors(form);
@@ -104,7 +112,7 @@ const TransportEditor = ({ form, editing, error, setForm, onTypeChange, onCancel
                 {type === SupportedTransports.TCP_BIND && <p className="mt-2 text-sm text-gray-600">The agent listens at this address for an upstream agent to connect.</p>}
             </div>
 
-            <div className={isDNS ? "grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]" : "grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]"}>
+            <div className={isDNS ? "grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_7rem]" : "grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_7rem_7rem]"}>
                 <TransportField id="transportUri" label="URI" required value={form.transport.uri}
                     placeholder={transportUriPlaceholder[type]} error={fieldError("uri")} onBlur={() => {
                         touch("uri");
@@ -120,6 +128,10 @@ const TransportEditor = ({ form, editing, error, setForm, onTypeChange, onCancel
                 <TransportField id="transportInterval" label="Interval (s)" required type="number" min={1} value={form.transport.interval}
                     error={fieldError("interval")} onBlur={() => touch("interval")}
                     onChange={(value) => update((current) => ({ ...current, transport: { ...current.transport, interval: Number(value) } }))} />
+                <TransportField id="transportJitter" label="Jitter" required type="number" min={0} max={100} step={5} suffix="%"
+                    value={Math.round(form.transport.jitter * 100)}
+                    error={fieldError("jitter")} onBlur={() => touch("jitter")}
+                    onChange={(value) => update((current) => ({ ...current, transport: { ...current.transport, jitter: Number(value) / 100 } }))} />
             </div>
 
             {isDNS && <div>

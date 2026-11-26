@@ -28,7 +28,7 @@ export type BuildTask = {
     finishedAt: string | null;
     exitCode: number | null;
     error: string | null;
-    profile: { id: string; name: string };
+    profile: { id: string; name: string } | null;
     profileAtCreation: { name: string } | null;
     artifact: { id: string; name: string; size: number; hash: string; status: "FINISHED" | "IN_PROGRESS" | "ERROR"; creator?: UserNode | null } | null;
 };

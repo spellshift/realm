@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Gcp struct {
@@ -37,6 +38,10 @@ func (g Gcp) GetValue(key string) ([]byte, error) {
 
 	// Call the API.
 	result, err := g.client.AccessSecretVersion(g.clientctx, accessRequest)
+	if status.Code(err) == codes.NotFound {
+		log.Debug("secret not found in GCP secret manager", "key", key, "project_id", g.projectID)
+		return []byte{}, fmt.Errorf("%w: %w", ErrSecretNotFound, err)
+	}
 	if err != nil {
 		log.Error("failed to access secret version", "key", key, "project_id", g.projectID, "error", err)
 		return []byte{}, err
@@ -80,7 +85,7 @@ func (g Gcp) SetValue(key string, value []byte) ([]byte, error) {
 	parent := fmt.Sprintf("projects/%s", g.projectID)
 
 	old_value, err := g.GetValue(key)
-	if err != nil && !strings.Contains(err.Error(), "code = NotFound") {
+	if err != nil && !errors.Is(err, ErrSecretNotFound) {
 		log.Error("failed to get existing secret", "key", key, "project_id", g.projectID, "error", err)
 		return []byte{}, err
 	}

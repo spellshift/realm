@@ -57,12 +57,14 @@ const TARGET_FILTER_OPTIONS = [
 
 export type AgentBuilderWizardProps = {
     showHeader?: boolean;
+    initialProfileId?: string;
     onComplete?: (taskId: string) => void;
     onCancel?: () => void;
 };
 
 export const AgentBuilderWizard = ({
     showHeader = true,
+    initialProfileId,
     onComplete,
     onCancel,
 }: AgentBuilderWizardProps) => {
@@ -72,7 +74,7 @@ export const AgentBuilderWizard = ({
     const { profiles, loading, error: profilesError } = useBuildProfiles();
     const { platforms, loading: buildersLoading, error: buildersError } = useOnlineBuilderPlatforms();
     const { data: authorization } = useAuthorization();
-    const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+    const [selectedProfileId, setSelectedProfileId] = useState<string | null>(initialProfileId ?? null);
     const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? profiles[0] ?? null;
     const setSelectedProfile = (profile: BuildProfile) => setSelectedProfileId(profile.id);
     const [createTask, { loading: creating }] = useMutation(CREATE_BUILD_TASK);
@@ -429,7 +431,9 @@ export const AgentBuilderWizard = ({
                                                                     <span className="font-semibold text-gray-900">{typeLabel}</span>
                                                                     <span className="text-gray-500 font-mono break-all">{transport.uri}</span>
                                                                 </div>
-                                                                <span className="text-gray-500 flex-shrink-0 ml-2">{transport.interval}s interval</span>
+                                                                <span className="text-gray-500 flex-shrink-0 ml-2">
+                                                                    {transport.interval}s interval{transport.jitter ? ` (±${Math.round(transport.jitter * 100)}% jitter)` : ""}
+                                                                </span>
                                                             </div>
                                                             {transport.extra && <div className="flex gap-2 text-gray-500">
                                                                 <span className="flex-shrink-0">Extra:</span>

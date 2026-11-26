@@ -1,5 +1,5 @@
 import { SupportedTransports } from "../../../utils/enums";
-import { DEFAULT_TRANSPORT_INTERVAL, TransportConfig, TransportTypeValue } from "../types";
+import { DEFAULT_TRANSPORT_INTERVAL, DEFAULT_TRANSPORT_JITTER, TransportConfig, TransportTypeValue } from "../types";
 
 export type RecordType = "txt" | "a" | "aaaa";
 export type DohProvider = "system" | "cloudflare" | "google" | "quad9";
@@ -12,13 +12,13 @@ export type TransportForm = {
     httpProxy: string;
 };
 
-const defaults: Record<TransportTypeValue, { uri: string; interval: number }> = {
-    [SupportedTransports.GRPC]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
-    [SupportedTransports.HTTP1]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
-    [SupportedTransports.DNS]: { uri: "dns://*", interval: DEFAULT_TRANSPORT_INTERVAL },
-    [SupportedTransports.ICMP]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
-    [SupportedTransports.QUIC]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
-    [SupportedTransports.TCP_BIND]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL },
+const defaults: Record<TransportTypeValue, { uri: string; interval: number; jitter: number }> = {
+    [SupportedTransports.GRPC]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL, jitter: DEFAULT_TRANSPORT_JITTER },
+    [SupportedTransports.HTTP1]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL, jitter: DEFAULT_TRANSPORT_JITTER },
+    [SupportedTransports.DNS]: { uri: "dns://*", interval: DEFAULT_TRANSPORT_INTERVAL, jitter: DEFAULT_TRANSPORT_JITTER },
+    [SupportedTransports.ICMP]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL, jitter: DEFAULT_TRANSPORT_JITTER },
+    [SupportedTransports.QUIC]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL, jitter: DEFAULT_TRANSPORT_JITTER },
+    [SupportedTransports.TCP_BIND]: { uri: "", interval: DEFAULT_TRANSPORT_INTERVAL, jitter: DEFAULT_TRANSPORT_JITTER },
 };
 
 export const transportUriHint: Record<TransportTypeValue, string> = {
@@ -95,15 +95,18 @@ export type TransportFieldErrors = {
     uri?: string;
     domain?: string;
     interval?: string;
+    jitter?: string;
     httpProxy?: string;
 };
 
 export const transportFieldErrors = (form: TransportForm): TransportFieldErrors => {
-    const { type, uri, interval } = form.transport;
+    const { type, uri, interval, jitter } = form.transport;
     const value = normalizeTransportUri(type, uri);
     const errors: TransportFieldErrors = {};
 
     if (!Number.isInteger(interval) || interval < 1) errors.interval = "Enter an interval of at least one second.";
+
+    if (!Number.isFinite(jitter) || jitter < 0 || jitter > 1) errors.jitter = "Enter a jitter between 0% and 100%.";
 
     if (!value) {
         errors.uri = "Enter a URI.";
@@ -161,7 +164,7 @@ export const transportFieldErrors = (form: TransportForm): TransportFieldErrors 
 /** Collapses `transportFieldErrors` into a single message, for callers that just need overall validity. */
 export const transportFormError = (form: TransportForm): string | null => {
     const errors = transportFieldErrors(form);
-    return errors.uri ?? errors.domain ?? errors.interval ?? errors.httpProxy ?? null;
+    return errors.uri ?? errors.domain ?? errors.interval ?? errors.jitter ?? errors.httpProxy ?? null;
 };
 
 export const transportConfigFromForm = (form: TransportForm): TransportConfig => {

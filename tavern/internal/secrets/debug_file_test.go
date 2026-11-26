@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/secrets"
 )
 
@@ -112,4 +113,51 @@ func TestSetSecretsNewFile(t *testing.T) {
 	res, err = secretsManager.GetValue("super_secret_test_data")
 	assert.Nil(t, err)
 	assert.Equal(t, []byte{0x99, 0x99}, res)
+}
+
+func TestGetSecretsMissingKey(t *testing.T) {
+	path := createTestSecrets(t)
+
+	secretsManager, err := secrets.NewDebugFileSecrets(path)
+	require.NoError(t, err)
+
+	res, err := secretsManager.GetValue("does_not_exist")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, secrets.ErrSecretNotFound)
+	assert.Equal(t, []byte{}, res)
+}
+
+func TestGetSecretsEmptyFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := path.Join(tmpDir, "secrets.yaml")
+	require.NoError(t, os.WriteFile(path, []byte{}, 0644))
+
+	secretsManager, err := secrets.NewDebugFileSecrets(path)
+	require.NoError(t, err)
+
+	res, err := secretsManager.GetValue("super_secret_test_data")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, secrets.ErrSecretNotFound)
+	assert.Equal(t, []byte{}, res)
+
+	old, err := secretsManager.SetValue("super_secret_test_data", []byte("hello world!"))
+	require.NoError(t, err)
+	assert.Equal(t, []byte{}, old)
+
+	res, err = secretsManager.GetValue("super_secret_test_data")
+	require.NoError(t, err)
+	assert.Equal(t, []byte("hello world!"), res)
+}
+
+func TestGetSecretsNoFile(t *testing.T) {
+	path := path.Join(t.TempDir(), "secrets.yaml")
+
+	secretsManager, err := secrets.NewDebugFileSecrets(path)
+	require.NoError(t, err)
+
+	res, err := secretsManager.GetValue("super_secret_test_data")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, secrets.ErrSecretNotFound)
+	assert.ErrorIs(t, err, os.ErrNotExist)
+	assert.Equal(t, []byte{}, res)
 }

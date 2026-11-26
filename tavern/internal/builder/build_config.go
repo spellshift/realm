@@ -117,10 +117,11 @@ func TransportTypeToString(t c2pb.Transport_Type) string {
 
 // ImixTransportConfig represents the transport section of the IMIX configuration.
 type ImixTransportConfig struct {
-	URI      string `yaml:"URI"`
-	Interval int    `yaml:"interval"`
-	Type     string `yaml:"type"`
-	Extra    string `yaml:"extra"`
+	URI      string  `yaml:"URI"`
+	Interval int     `yaml:"interval"`
+	Type     string  `yaml:"type"`
+	Extra    string  `yaml:"extra"`
+	Jitter   float64 `yaml:"jitter,omitempty"`
 }
 
 // ImixConfig represents the IMIX agent configuration YAML.

@@ -46,6 +46,8 @@ type BuildProfileTransportInput struct {
 	Type c2pb.Transport_Type `json:"type"`
 	// Extra transport configuration.
 	Extra *string `json:"extra,omitempty"`
+	// The callback jitter, as a fraction of the interval (0.0-1.0). Defaults to 0 (no jitter).
+	Jitter float64 `json:"jitter"`
 }
 
 type ClaimTasksInput struct {

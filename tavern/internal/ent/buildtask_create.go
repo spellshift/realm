@@ -269,6 +269,14 @@ func (btc *BuildTaskCreate) SetProfileID(id int) *BuildTaskCreate {
 	return btc
 }
 
+// SetNillableProfileID sets the "profile" edge to the BuildProfile entity by ID if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableProfileID(id *int) *BuildTaskCreate {
+	if id != nil {
+		btc = btc.SetProfileID(*id)
+	}
+	return btc
+}
+
 // SetProfile sets the "profile" edge to the BuildProfile entity.
 func (btc *BuildTaskCreate) SetProfile(b *BuildProfile) *BuildTaskCreate {
 	return btc.SetProfileID(b.ID)
@@ -405,9 +413,6 @@ func (btc *BuildTaskCreate) check() error {
 	}
 	if len(btc.mutation.BuilderIDs()) == 0 {
 		return &ValidationError{Name: "builder", err: errors.New(`ent: missing required edge "BuildTask.builder"`)}
-	}
-	if len(btc.mutation.ProfileIDs()) == 0 {
-		return &ValidationError{Name: "profile", err: errors.New(`ent: missing required edge "BuildTask.profile"`)}
 	}
 	return nil
 }

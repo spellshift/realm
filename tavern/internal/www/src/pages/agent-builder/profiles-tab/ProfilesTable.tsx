@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Trash2 } from "lucide-react";
+import { Bug, Pencil, Trash2 } from "lucide-react";
 import Tooltip from "../../../components/tavern-base-ui/Tooltip";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -9,11 +9,12 @@ import { BuildProfile, DEFAULT_BUILD_PROFILE_NAME, TRANSPORT_TYPES } from "../ty
 /**
  * Columns for the Profiles tab table. The Default build profile (seeded by
  * Tavern on startup, see ensureDefaultBuildProfile in tavern/app.go) is the
- * oldest row named Default. Later duplicates retain their actions so operators
- * can recover them.
+ * oldest row named Default. It can generate assets, while later duplicates also
+ * retain edit and delete actions so operators can recover them.
  */
 export const getProfileColumns = (
     profiles: BuildProfile[],
+    onGenerateAsset: (profile: BuildProfile) => void,
     onEdit: (profile: BuildProfile) => void,
     onDelete: (profile: BuildProfile) => void
 ): ColumnDef<BuildProfile>[] => {
@@ -65,35 +66,48 @@ export const getProfileColumns = (
             header: "Actions",
             cell: ({ row }) => {
                 const profile = row.original;
-                if (profile.id === defaultProfileId) {
-                    return null;
-                }
                 return (
                     <div className="flex flex-row gap-2 justify-end">
-                        <Tooltip label="Edit">
+                        <Tooltip label="Generate asset">
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
-                                leftIcon={<Pencil className="w-4 h-4" />}
+                                leftIcon={<Bug className="w-4 h-4" />}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onEdit(profile);
+                                    onGenerateAsset(profile);
                                 }}
-                                aria-label="Edit"
+                                aria-label={`Generate asset from ${profile.name}`}
                             />
                         </Tooltip>
-                        <Tooltip label="Delete">
-                            <Button
-                                buttonVariant="ghost"
-                                buttonStyle={{ color: "red", size: "xs" }}
-                                leftIcon={<Trash2 className="w-4 h-4" />}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(profile);
-                                }}
-                                aria-label="Delete"
-                            />
-                        </Tooltip>
+                        {profile.id !== defaultProfileId && (
+                            <>
+                                <Tooltip label="Edit">
+                                    <Button
+                                        buttonVariant="ghost"
+                                        buttonStyle={{ color: "gray", size: "xs" }}
+                                        leftIcon={<Pencil className="w-4 h-4" />}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEdit(profile);
+                                        }}
+                                        aria-label="Edit"
+                                    />
+                                </Tooltip>
+                                <Tooltip label="Delete">
+                                    <Button
+                                        buttonVariant="ghost"
+                                        buttonStyle={{ color: "red", size: "xs" }}
+                                        leftIcon={<Trash2 className="w-4 h-4" />}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDelete(profile);
+                                        }}
+                                        aria-label="Delete"
+                                    />
+                                </Tooltip>
+                            </>
+                        )}
                     </div>
                 );
             },
