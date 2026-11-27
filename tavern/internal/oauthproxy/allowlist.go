@@ -9,8 +9,13 @@ import (
 const CompletePath = "/oauth/complete"
 
 // IsAllowedReturnTo reports whether returnTo is a URL whose host matches one of the allowed
-// suffixes. A suffix is either an exact host (e.g. "tavern.example.com") or a dot-prefixed
-// domain suffix (e.g. ".run.app", matching any subdomain of run.app as well as run.app itself).
+// patterns. A pattern is one of:
+//   - an exact host (e.g. "tavern.example.com"),
+//   - a dot-prefixed domain suffix (e.g. ".example.com", matching any subdomain of example.com as
+//     well as example.com itself), or
+//   - a leading-wildcard pattern (e.g. "*-tavern-749076704275.us-east4.run.app" or
+//     "*.example.com"), where "*" matches a non-empty prefix within the leftmost DNS label (no "."
+//     characters).
 //
 // returnTo's path must be exactly CompletePath, with no userinfo, query or fragment.
 //
@@ -46,24 +51,36 @@ func IsAllowedReturnTo(returnTo string, allowedSuffixes []string) bool {
 		}
 	}
 
-	for _, suffix := range allowedSuffixes {
-		suffix = strings.ToLower(strings.TrimSpace(suffix))
-		if suffix == "" {
-			continue
-		}
-		if strings.HasPrefix(suffix, ".") {
-			bare := suffix[1:]
-			if host == bare || strings.HasSuffix(host, suffix) {
-				return true
-			}
-			continue
-		}
-		if host == suffix {
+	for _, pattern := range allowedSuffixes {
+		if matchAllowedHost(host, pattern) {
 			return true
 		}
 	}
 
 	return false
+}
+
+func matchAllowedHost(host, pattern string) bool {
+	pattern = strings.ToLower(strings.TrimSpace(pattern))
+	if pattern == "" {
+		return false
+	}
+	if strings.HasPrefix(pattern, ".") {
+		bare := pattern[1:]
+		return bare != "" && (host == bare || strings.HasSuffix(host, pattern))
+	}
+	if strings.HasPrefix(pattern, "*") {
+		rest := pattern[1:]
+		if rest == "" || strings.Contains(rest, "*") || !strings.Contains(rest, ".") || strings.HasSuffix(rest, ".") {
+			return false
+		}
+		if !strings.HasSuffix(host, rest) {
+			return false
+		}
+		prefix := strings.TrimSuffix(host, rest)
+		return prefix != "" && !strings.Contains(prefix, ".")
+	}
+	return host == pattern
 }
 
 // isLoopbackHost reports whether host is a well-known loopback address/name.

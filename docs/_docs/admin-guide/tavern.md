@@ -91,7 +91,7 @@ gcloud run deploy oauthproxy \
   --set-secrets=OAUTH_CLIENT_SECRET=oauthproxy-client-secret:latest
 ```
 
-Register `https://<PROXY_DOMAIN>/oauth/callback` as the Authorized redirect URI on the Google OAuth client, then deploy each Tavern with `oauth_proxy_url=https://<PROXY_DOMAIN>` (`oauth_client_id`/`oauth_client_secret` are not needed, and `oauth_domain` is optional: it defaults to the deployment's Cloud Run URL, `<resource_prefix>-tavern-<project number>.<region>.run.app`). The proxy only accepts return URLs of the form `https://<tenant>/oauth/complete`, and each login assertion is only valid for the Tavern that started the login. By default the proxy only redirects back to `*.run.app` hosts; set `OAUTH_PROXY_ALLOWED_SUFFIXES` (comma separated) to change that.
+Register `https://<PROXY_DOMAIN>/oauth/callback` as the Authorized redirect URI on the Google OAuth client, then deploy each Tavern with `oauth_proxy_url=https://<PROXY_DOMAIN>` (`oauth_client_id`/`oauth_client_secret` are not needed, and `oauth_domain` is optional: it defaults to the deployment's Cloud Run URL, `<resource_prefix>-tavern-<project number>.<region>.run.app`). The proxy only accepts return URLs of the form `https://<tenant>/oauth/complete`, and each login assertion is only valid for the Tavern that started the login. By default the proxy only redirects back to `*-tavern-749076704275.us-east4.run.app` hosts; set `OAUTH_PROXY_ALLOWED_SUFFIXES` (comma separated exact hosts, dot-prefixed domain suffixes, or leading-`*` single-label wildcards) to change that.
 
 ### 3. Google Cloud CLI
 

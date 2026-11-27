@@ -75,3 +75,59 @@ func TestIsAllowedReturnToDotPrefixMatchesSubdomains(t *testing.T) {
 		t.Error("expected lookalike domain to be rejected")
 	}
 }
+
+func TestIsAllowedReturnToLeadingWildcard(t *testing.T) {
+	patterns := []string{"*-tavern-749076704275.us-east4.run.app"}
+
+	tests := []struct {
+		name     string
+		returnTo string
+		want     bool
+	}{
+		{"six-char prefix matches", "https://abc123-tavern-749076704275.us-east4.run.app/oauth/complete", true},
+		{"default tavern prefix matches", "https://tavern-tavern-749076704275.us-east4.run.app/oauth/complete", true},
+		{"hyphenated prefix matches", "https://my-dev-tavern-749076704275.us-east4.run.app/oauth/complete", true},
+		{"uppercase host matches case-insensitively", "https://ABC123-TAVERN-749076704275.US-EAST4.RUN.APP/oauth/complete", true},
+		{"empty wildcard prefix rejected", "https://-tavern-749076704275.us-east4.run.app/oauth/complete", false},
+		{"missing prefix and hyphen rejected", "https://tavern-749076704275.us-east4.run.app/oauth/complete", false},
+		{"multi-label wildcard match rejected", "https://sub.abc123-tavern-749076704275.us-east4.run.app/oauth/complete", false},
+		{"different project id rejected", "https://abc123-tavern-999999999999.us-east4.run.app/oauth/complete", false},
+		{"different region rejected", "https://abc123-tavern-749076704275.us-central1.run.app/oauth/complete", false},
+		{"different service name rejected", "https://abc123-other-749076704275.us-east4.run.app/oauth/complete", false},
+		{"arbitrary run.app host rejected", "https://attacker.run.app/oauth/complete", false},
+		{"bare run.app rejected", "https://run.app/oauth/complete", false},
+		{"lookalike suffix rejected", "https://abc123-tavern-749076704275.us-east4.run.app.attacker.net/oauth/complete", false},
+		{"http scheme rejected", "http://abc123-tavern-749076704275.us-east4.run.app/oauth/complete", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := IsAllowedReturnTo(tc.returnTo, patterns)
+			if got != tc.want {
+				t.Errorf("IsAllowedReturnTo(%q) = %v, want %v", tc.returnTo, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestIsAllowedReturnToWildcardSubdomainAndInvalidPatterns(t *testing.T) {
+	if !IsAllowedReturnTo("https://sub.example.com/oauth/complete", []string{"*.example.com"}) {
+		t.Error("expected single-label subdomain to match *.example.com")
+	}
+	if IsAllowedReturnTo("https://a.b.example.com/oauth/complete", []string{"*.example.com"}) {
+		t.Error("expected nested subdomain to be rejected by *.example.com")
+	}
+	if IsAllowedReturnTo("https://example.com/oauth/complete", []string{"*.example.com"}) {
+		t.Error("expected bare domain to be rejected by *.example.com")
+	}
+
+	invalidPatterns := []string{"*", "*.", "*com", "**-tavern-749076704275.us-east4.run.app", "."}
+	for _, pat := range invalidPatterns {
+		if IsAllowedReturnTo("https://abc123-tavern-749076704275.us-east4.run.app/oauth/complete", []string{pat}) {
+			t.Errorf("expected invalid/overbroad pattern %q to be rejected", pat)
+		}
+		if IsAllowedReturnTo("https://anything./oauth/complete", []string{pat}) {
+			t.Errorf("expected trailing-dot host to be rejected for pattern %q", pat)
+		}
+	}
+}
