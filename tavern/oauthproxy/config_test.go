@@ -74,6 +74,30 @@ func TestLoadConfigErrors(t *testing.T) {
 			name: "whitespace only allowed suffixes",
 			env:  map[string]string{EnvAllowedSuffixes.Key: " , , "},
 		},
+		{
+			name: "bare wildcard allowed suffix",
+			env:  map[string]string{EnvAllowedSuffixes.Key: "*"},
+		},
+		{
+			name: "double wildcard allowed suffix",
+			env:  map[string]string{EnvAllowedSuffixes.Key: "**-tavern-749076704275.us-east4.run.app"},
+		},
+		{
+			name: "mid-host wildcard allowed suffix",
+			env:  map[string]string{EnvAllowedSuffixes.Key: "foo.*.example.com"},
+		},
+		{
+			name: "url instead of host in allowed suffixes",
+			env:  map[string]string{EnvAllowedSuffixes.Key: "https://tenant.example.com"},
+		},
+		{
+			name: "bare dot allowed suffix",
+			env:  map[string]string{EnvAllowedSuffixes.Key: "."},
+		},
+		{
+			name: "wildcard label suffix ending with hyphen",
+			env:  map[string]string{EnvAllowedSuffixes.Key: "*-tavern-.us-east4.run.app"},
+		},
 	}
 
 	for _, tc := range cases {

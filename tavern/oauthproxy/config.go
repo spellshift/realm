@@ -30,8 +30,8 @@ var (
 	// a dot-prefixed domain suffix (e.g. ".example.com", matching any subdomain and the bare
 	// domain itself), or a leading-wildcard single-label pattern (e.g.
 	// "*-tavern-749076704275.us-east4.run.app"). Defaults to
-	// "*-tavern-749076704275.us-east4.run.app" so only this project's Tavern Cloud Run
-	// deployments are allowed with no further configuration.
+	// "*-tavern-749076704275.us-east4.run.app" (hardcoded for the Spellshift dev GCP project
+	// and us-east4 region; override this env var when deploying for other projects or regions).
 	EnvAllowedSuffixes = envString{"OAUTH_PROXY_ALLOWED_SUFFIXES", "*-tavern-749076704275.us-east4.run.app"}
 
 	// EnvGCPProjectID and EnvSecretsManagerPath select where the proxy's ed25519 signing key is
@@ -92,9 +92,13 @@ func loadConfig() (*Config, error) {
 	var suffixes []string
 	for _, s := range strings.Split(EnvAllowedSuffixes.String(), ",") {
 		s = strings.TrimSpace(s)
-		if s != "" {
-			suffixes = append(suffixes, s)
+		if s == "" {
+			continue
 		}
+		if err := oauthproxy.ValidateAllowedPattern(s); err != nil {
+			return nil, fmt.Errorf("invalid entry %q in 'OAUTH_PROXY_ALLOWED_SUFFIXES': %w", s, err)
+		}
+		suffixes = append(suffixes, s)
 	}
 	if len(suffixes) == 0 {
 		return nil, fmt.Errorf("must provide at least one suffix in 'OAUTH_PROXY_ALLOWED_SUFFIXES'")
