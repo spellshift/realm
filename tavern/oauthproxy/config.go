@@ -25,11 +25,14 @@ var (
 	// or a custom domain), used to build its one fixed redirect_uri and as the JWKS issuer.
 	EnvProxyDomain = envString{"OAUTH_PROXY_DOMAIN", ""}
 
-	// EnvAllowedSuffixes is a comma-separated list of host suffixes the proxy will redirect back
-	// to after a successful login. A suffix starting with "." matches any subdomain of it (and
-	// the bare domain itself); otherwise it must match a tenant host exactly. Defaults to
-	// ".run.app" so any tenant's default Cloud Run URL works with no further configuration.
-	EnvAllowedSuffixes = envString{"OAUTH_PROXY_ALLOWED_SUFFIXES", ".run.app"}
+	// EnvAllowedSuffixes is a comma-separated list of host patterns the proxy will redirect back
+	// to after a successful login. Each entry may be an exact host (e.g. "tavern.example.com"),
+	// a dot-prefixed domain suffix (e.g. ".example.com", matching any subdomain and the bare
+	// domain itself), or a leading-wildcard single-label pattern (e.g.
+	// "*-tavern-749076704275.us-east4.run.app"). Defaults to
+	// "*-tavern-749076704275.us-east4.run.app" so only this project's Tavern Cloud Run
+	// deployments are allowed with no further configuration.
+	EnvAllowedSuffixes = envString{"OAUTH_PROXY_ALLOWED_SUFFIXES", "*-tavern-749076704275.us-east4.run.app"}
 
 	// EnvGCPProjectID and EnvSecretsManagerPath select where the proxy's ed25519 signing key is
 	// persisted, mirroring Tavern's own secrets manager selection (tavern/app.go,

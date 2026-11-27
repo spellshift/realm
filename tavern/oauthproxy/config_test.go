@@ -24,20 +24,20 @@ func TestLoadConfigValid(t *testing.T) {
 	assert.Equal(t, "client-secret", cfg.OAuth.ClientSecret)
 	assert.Equal(t, "https://proxy.example.com", cfg.ProxyDomain)
 	assert.Equal(t, "https://proxy.example.com/oauth/callback", cfg.OAuth.RedirectURL)
-	assert.Equal(t, []string{".run.app"}, cfg.AllowedSuffixes)
+	assert.Equal(t, []string{"*-tavern-749076704275.us-east4.run.app"}, cfg.AllowedSuffixes)
 	assert.True(t, cfg.secureCookies())
 }
 
 func TestLoadConfigLoopbackHTTP(t *testing.T) {
 	setValidProxyEnv(t)
 	t.Setenv(EnvProxyDomain.Key, "http://localhost:8080/")
-	t.Setenv(EnvAllowedSuffixes.Key, " localhost , .run.app ")
+	t.Setenv(EnvAllowedSuffixes.Key, " localhost , *-tavern-749076704275.us-east4.run.app ")
 
 	cfg, err := loadConfig()
 	require.NoError(t, err)
 	assert.Equal(t, "http://localhost:8080", cfg.ProxyDomain)
 	assert.Equal(t, "http://localhost:8080/oauth/callback", cfg.OAuth.RedirectURL)
-	assert.Equal(t, []string{"localhost", ".run.app"}, cfg.AllowedSuffixes)
+	assert.Equal(t, []string{"localhost", "*-tavern-749076704275.us-east4.run.app"}, cfg.AllowedSuffixes)
 	assert.False(t, cfg.secureCookies())
 }
 

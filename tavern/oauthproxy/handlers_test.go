@@ -63,14 +63,14 @@ func TestStartHandler(t *testing.T) {
 					AuthURL: "https://accounts.example.com/auth",
 				},
 			},
-			AllowedSuffixes: []string{".run.app", "localhost"},
+			AllowedSuffixes: []string{"*-tavern-749076704275.us-east4.run.app", "localhost"},
 			ProxyDomain:     proxyDomain,
 		}
 	}
 
 	t.Run("https sets secure state cookie and redirects", func(t *testing.T) {
 		h := newStartHandler(newCfg("https://proxy.run.app"), priv)
-		returnTo := "https://tenant.run.app/oauth/complete"
+		returnTo := "https://abc123-tavern-749076704275.us-east4.run.app/oauth/complete"
 		req := httptest.NewRequest(http.MethodGet, "/oauth/start?return_to="+url.QueryEscape(returnTo)+"&nonce=client-nonce-1", nil)
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, req)
@@ -112,8 +112,9 @@ func TestStartHandler(t *testing.T) {
 		badURLs := []string{
 			"/oauth/start",
 			"/oauth/start?return_to=https://evil.com/oauth/complete&nonce=n1",
-			"/oauth/start?return_to=https://tenant.run.app/oauth/complete",
-			"/oauth/start?return_to=https://tenant.run.app/oauth/complete&nonce=" + strings.Repeat("a", maxClientNonceLen+1),
+			"/oauth/start?return_to=https://other.run.app/oauth/complete&nonce=n1",
+			"/oauth/start?return_to=https://abc123-tavern-749076704275.us-east4.run.app/oauth/complete",
+			"/oauth/start?return_to=https://abc123-tavern-749076704275.us-east4.run.app/oauth/complete&nonce=" + strings.Repeat("a", maxClientNonceLen+1),
 		}
 		for _, u := range badURLs {
 			rec := httptest.NewRecorder()
@@ -156,11 +157,11 @@ func TestCallbackHandlerEndToEnd(t *testing.T) {
 			},
 		},
 		ProfileURL:      profileSrv.URL,
-		AllowedSuffixes: []string{".run.app"},
+		AllowedSuffixes: []string{"*-tavern-749076704275.us-east4.run.app"},
 		ProxyDomain:     "https://proxy.run.app",
 	}
 
-	returnTo := "https://tenant.run.app/oauth/complete"
+	returnTo := "https://abc123-tavern-749076704275.us-east4.run.app/oauth/complete"
 	clientNonce := "tenant-nonce-xyz"
 	stateNonce := "proxy-state-nonce"
 	state, err := oauthproxy.SignState(priv, returnTo, clientNonce, stateNonce, time.Minute)
@@ -187,7 +188,7 @@ func TestCallbackHandlerEndToEnd(t *testing.T) {
 
 		loc, err := url.Parse(rec.Header().Get("Location"))
 		require.NoError(t, err)
-		assert.Equal(t, "tenant.run.app", loc.Host)
+		assert.Equal(t, "abc123-tavern-749076704275.us-east4.run.app", loc.Host)
 		assert.Equal(t, "/oauth/complete", loc.Path)
 
 		assertion := loc.Query().Get("assertion")
