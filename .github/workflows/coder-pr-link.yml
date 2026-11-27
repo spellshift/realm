@@ -55,8 +55,26 @@ jobs:
               return;
             }
 
+            // Coder workspace names allow only [a-z0-9] separated by single
+            // hyphens. Derive one from the branch, kept under 16 characters.
+            const MAX_NAME_LEN = 15;
+            let wsName = (livePr.head.ref || '')
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')
+              .slice(0, MAX_NAME_LEN)
+              .replace(/-+$/g, '');
+            if (!wsName) {
+              wsName = `pr-${pr.number}`.slice(0, MAX_NAME_LEN);
+            }
+
             const shaPattern = /param\.realm_image_sha=(?:__PR_HEAD_SHA__|[0-9a-f]{40})(?![0-9a-f])/g;
-            const newBlock = block[0].replace(shaPattern, `param.realm_image_sha=${headSha}`);
+            // Matches the placeholder or a previously filled-in name; stops at
+            // the next query param or the closing `)` of the markdown link.
+            const namePattern = /([?&])name=[^&)\s]*/g;
+            const newBlock = block[0]
+              .replace(shaPattern, `param.realm_image_sha=${headSha}`)
+              .replace(namePattern, (_, sep) => `${sep}name=${wsName}`);
             if (newBlock === block[0]) {
               core.info('Coder button already up to date or has no SHA param; nothing to do.');
               return;
@@ -70,4 +88,4 @@ jobs:
               pull_number: pr.number,
               body: newBody,
             });
-            core.info(`Updated Coder button to ${headSha}.`);
+            core.info(`Updated Coder button: workspace ${wsName}, sha ${headSha}.`);
