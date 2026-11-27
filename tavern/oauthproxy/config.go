@@ -59,6 +59,10 @@ type Config struct {
 	ProxyDomain     string
 }
 
+func (c *Config) secureCookies() bool {
+	return strings.HasPrefix(c.ProxyDomain, "https://")
+}
+
 // loadConfig reads and validates the proxy's configuration from the environment.
 func loadConfig() (*Config, error) {
 	clientID := EnvOAuthClientID.String()
@@ -76,6 +80,9 @@ func loadConfig() (*Config, error) {
 	}
 	domain, err := oauthproxy.NormalizeBaseURL(domain)
 	if err != nil {
+		return nil, fmt.Errorf("invalid 'OAUTH_PROXY_DOMAIN': %w", err)
+	}
+	if err := oauthproxy.RequireSecureURL(domain); err != nil {
 		return nil, fmt.Errorf("invalid 'OAUTH_PROXY_DOMAIN': %w", err)
 	}
 

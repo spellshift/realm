@@ -60,14 +60,35 @@ And that's it! In the below sections on deployment, please ensure you properly c
 
 Google OAuth clients can't have redirect URIs managed via an API/Terraform and don't support wildcards, so registering every Tavern deployment's domain by hand doesn't scale. The `oauthproxy` service (image `ghcr.io/spellshift/realm/oauthproxy`) is a small Cloud Run app that owns one shared Google OAuth client with a single redirect URI (its own `/oauth/callback`) and relays the verified identity back to whichever Tavern started the login.
 
-Deploy the proxy once:
+Create the signing-key secret container (which `oauthproxy` populates with an Ed25519 key on first boot), store the Google OAuth client secret in Secret Manager, grant the Cloud Run service account access to both, and deploy the proxy once:
 
 ```sh
+# 1. Create the signing-key secret container (replace "oauthproxy" if OAUTH_PROXY_RESOURCE_PREFIX is customized)
+#    and store the Google OAuth client secret:
+gcloud secrets create oauthproxy-REALM_tavern_ed25519_private_key \
+  --project=<PROXY_PROJECT_ID> --replication-policy=automatic
+printf '%s' '<OAUTH_CLIENT_SECRET>' | gcloud secrets create oauthproxy-client-secret \
+  --project=<PROXY_PROJECT_ID> --replication-policy=automatic --data-file=-
+
+# 2. Grant the Cloud Run service account access to read/write the signing key and read the client secret:
+gcloud secrets add-iam-policy-binding oauthproxy-REALM_tavern_ed25519_private_key \
+  --project=<PROXY_PROJECT_ID> \
+  --member="serviceAccount:<CLOUD_RUN_SA>" --role="roles/secretmanager.secretAccessor"
+gcloud secrets add-iam-policy-binding oauthproxy-REALM_tavern_ed25519_private_key \
+  --project=<PROXY_PROJECT_ID> \
+  --member="serviceAccount:<CLOUD_RUN_SA>" --role="roles/secretmanager.secretVersionAdder"
+gcloud secrets add-iam-policy-binding oauthproxy-client-secret \
+  --project=<PROXY_PROJECT_ID> \
+  --member="serviceAccount:<CLOUD_RUN_SA>" --role="roles/secretmanager.secretAccessor"
+
+# 3. Deploy the proxy:
 gcloud run deploy oauthproxy \
   --project=<PROXY_PROJECT_ID> --region=<REGION> \
+  --service-account=<CLOUD_RUN_SA> \
   --image=ghcr.io/spellshift/realm/oauthproxy:edge \
   --allow-unauthenticated \
-  --set-env-vars=OAUTH_CLIENT_ID=<OAUTH_CLIENT_ID>,OAUTH_CLIENT_SECRET=<OAUTH_CLIENT_SECRET>,OAUTH_PROXY_DOMAIN=<PROXY_DOMAIN>,GCP_PROJECT_ID=<PROXY_PROJECT_ID>
+  --set-env-vars=OAUTH_CLIENT_ID=<OAUTH_CLIENT_ID>,OAUTH_PROXY_DOMAIN=<PROXY_DOMAIN>,GCP_PROJECT_ID=<PROXY_PROJECT_ID> \
+  --set-secrets=OAUTH_CLIENT_SECRET=oauthproxy-client-secret:latest
 ```
 
 Register `https://<PROXY_DOMAIN>/oauth/callback` as the Authorized redirect URI on the Google OAuth client, then deploy each Tavern with `oauth_proxy_url=https://<PROXY_DOMAIN>` (`oauth_client_id`/`oauth_client_secret` are not needed, and `oauth_domain` is optional: it defaults to the deployment's Cloud Run URL, `<resource_prefix>-tavern-<project number>.<region>.run.app`). The proxy only accepts return URLs of the form `https://<tenant>/oauth/complete`, and each login assertion is only valid for the Tavern that started the login. By default the proxy only redirects back to `*.run.app` hosts; set `OAUTH_PROXY_ALLOWED_SUFFIXES` (comma separated) to change that.

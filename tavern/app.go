@@ -581,16 +581,6 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
-		"/oauth/authorize": tavernhttp.Endpoint{
-			Handler: auth.NewOAuthAuthorizationHandler(
-				cfg.oauth,
-				pubKey,
-				client,
-				cfg.userProfiles,
-			),
-			AllowUnauthenticated: true,
-			AllowUnactivated:     true,
-		},
 		"/graphql": tavernhttp.Endpoint{Handler: gqlHandler, AllowUnactivated: true},
 		"/auth/builder/enroll": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewBuilderEnrollHandler(client, builderCACert, builderCAKey),
@@ -664,12 +654,23 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 	}
 
-	// When OAuth is configured via a centralized oauthproxy (OAUTH_PROXY_URL), register the
-	// endpoint that verifies the proxy's signed identity assertion and completes login. This is
-	// only meaningful in proxy mode: cfg.oauthProxyKeySource is nil otherwise.
+	// Register the OAuth callback matching the configured mode: /oauth/complete verifies signed
+	// assertions from oauthproxy in proxy mode, whereas /oauth/authorize handles direct IDP
+	// callbacks otherwise.
 	if cfg.oauthProxyEnabled() {
 		routes["/oauth/complete"] = tavernhttp.Endpoint{
 			Handler:              auth.NewProxyAssertionHandler(cfg.oauthProxyKeySource, client, cfg.oauthProxyReturnTo),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		}
+	} else {
+		routes["/oauth/authorize"] = tavernhttp.Endpoint{
+			Handler: auth.NewOAuthAuthorizationHandler(
+				cfg.oauth,
+				pubKey,
+				client,
+				cfg.userProfiles,
+			),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		}

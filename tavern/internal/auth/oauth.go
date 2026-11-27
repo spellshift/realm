@@ -309,8 +309,6 @@ func NewProxyAssertionHandler(keySource *oauthproxy.KeySource, graph *ent.Client
 			http.Error(w, "missing oauth login cookie", http.StatusBadRequest)
 			return
 		}
-		// Single use: clear it regardless of the outcome below.
-		http.SetCookie(w, &http.Cookie{Name: OAuthProxyNonceCookieName, Value: "", Path: "/", MaxAge: -1})
 
 		assertion := req.FormValue("assertion")
 		if assertion == "" {
@@ -341,6 +339,19 @@ func NewProxyAssertionHandler(keySource *oauthproxy.KeySource, graph *ent.Client
 			http.Error(w, "invalid oauth proxy assertion", http.StatusUnauthorized)
 			return
 		}
+
+		// Consume the login nonce only after verifying the assertion and binding, so a stray or
+		// forged cross-site request cannot wipe a user's in-flight login cookie.
+		http.SetCookie(w, &http.Cookie{
+			Name:     OAuthProxyNonceCookieName,
+			Value:    "",
+			Path:     "/",
+			Secure:   strings.HasPrefix(returnTo, "https://"),
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   -1,
+			Expires:  time.Unix(0, 0),
+		})
 
 		completeOAuthLogin(ctx, w, req, graph, oauthProfile{
 			OAuthID:    claims.OAuthID,

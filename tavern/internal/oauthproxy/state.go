@@ -2,6 +2,7 @@ package oauthproxy
 
 import (
 	"crypto/ed25519"
+	"crypto/subtle"
 	"fmt"
 	"time"
 
@@ -73,7 +74,9 @@ func VerifyState(pubKey ed25519.PublicKey, tokenStr, expectedNonce string) (retu
 		}
 		return pubKey, nil
 	},
+		jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
 		jwt.WithIssuer(stateIssuer),
+		jwt.WithIssuedAt(),
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil {
@@ -82,7 +85,7 @@ func VerifyState(pubKey ed25519.PublicKey, tokenStr, expectedNonce string) (retu
 	if !token.Valid {
 		return "", "", fmt.Errorf("oauthproxy: state token is not valid")
 	}
-	if expectedNonce == "" || claims.ID != expectedNonce {
+	if expectedNonce == "" || subtle.ConstantTimeCompare([]byte(claims.ID), []byte(expectedNonce)) != 1 {
 		return "", "", fmt.Errorf("oauthproxy: state nonce mismatch")
 	}
 	if claims.ReturnTo == "" || claims.ClientNonce == "" {

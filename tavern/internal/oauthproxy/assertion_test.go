@@ -188,3 +188,52 @@ func TestVerifyAssertionRequiresExpiry(t *testing.T) {
 		t.Fatal("expected error verifying assertion without exp, got nil")
 	}
 }
+
+func TestVerifyAssertionRejectsFutureIssuedAt(t *testing.T) {
+	pub, priv := mustKeyPair(t)
+
+	now := time.Now()
+	claims := ProfileAssertionClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    assertionIssuer,
+			Audience:  jwt.ClaimStrings{testAudience},
+			IssuedAt:  jwt.NewNumericDate(now.Add(5 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+		},
+		Nonce:   "nonce-1",
+		OAuthID: "subject-123",
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	token.Header["typ"] = assertionTyp
+	signed, err := token.SignedString(priv)
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+	if _, err := VerifyAssertion(pub, signed, testAudience); err == nil {
+		t.Fatal("expected error verifying assertion with future iat, got nil")
+	}
+}
+
+func TestVerifyAssertionRejectsWrongAlg(t *testing.T) {
+	pub, _ := mustKeyPair(t)
+
+	claims := ProfileAssertionClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    assertionIssuer,
+			Audience:  jwt.ClaimStrings{testAudience},
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+		},
+		Nonce:   "nonce-1",
+		OAuthID: "subject-123",
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token.Header["typ"] = assertionTyp
+	signed, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+	if _, err := VerifyAssertion(pub, signed, testAudience); err == nil {
+		t.Fatal("expected error verifying HS256 assertion, got nil")
+	}
+}

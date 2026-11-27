@@ -6,9 +6,14 @@
 package main
 
 import (
+	"context"
 	"crypto/ed25519"
+	"errors"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"realm.pub/tavern/internal/crypto"
 	tavernhttp "realm.pub/tavern/internal/http"
@@ -16,6 +21,14 @@ import (
 )
 
 var startupLog = logging.For("oauthproxy.startup")
+
+const (
+	serverReadHeaderTimeout = 10 * time.Second
+	serverReadTimeout       = 30 * time.Second
+	serverWriteTimeout      = 30 * time.Second
+	serverIdleTimeout       = 120 * time.Second
+	serverShutdownTimeout   = 10 * time.Second
+)
 
 func main() {
 	cfg, err := loadConfig()
@@ -47,8 +60,41 @@ func main() {
 	srv := tavernhttp.NewServer(routes)
 
 	addr := EnvHTTPListenAddr.String()
-	startupLog.Info("oauth proxy starting", "addr", addr, "proxy_domain", cfg.ProxyDomain, "allowed_suffixes", cfg.AllowedSuffixes)
-	if err := http.ListenAndServe(addr, srv); err != nil {
-		log.Fatalf("[FATAL] oauth proxy server failed: %v", err)
+	httpSrv := &http.Server{
+		Addr:              addr,
+		Handler:           srv,
+		ReadHeaderTimeout: serverReadHeaderTimeout,
+		ReadTimeout:       serverReadTimeout,
+		WriteTimeout:      serverWriteTimeout,
+		IdleTimeout:       serverIdleTimeout,
+	}
+
+	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+
+	errCh := make(chan error, 1)
+	go func() {
+		startupLog.Info("oauth proxy starting", "addr", addr, "proxy_domain", cfg.ProxyDomain, "allowed_suffixes", cfg.AllowedSuffixes)
+		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+		}
+		close(errCh)
+	}()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			log.Fatalf("[FATAL] oauth proxy server failed: %v", err)
+		}
+	case <-sigCtx.Done():
+		startupLog.Info("oauth proxy shutting down")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
+		defer cancel()
+		if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+			log.Fatalf("[FATAL] oauth proxy graceful shutdown failed: %v", err)
+		}
+		if err := <-errCh; err != nil {
+			log.Fatalf("[FATAL] oauth proxy server failed: %v", err)
+		}
 	}
 }

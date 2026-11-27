@@ -12,11 +12,12 @@ COPY ./tavern /app/tavern
 
 # Production Build
 FROM build-cache as prod-build
-RUN go build -ldflags='-w -s -extldflags "-static"' -o /app/build/oauthproxy ./tavern/oauthproxy
+RUN CGO_ENABLED=0 go build -ldflags='-w -s -extldflags "-static"' -o /app/build/oauthproxy ./tavern/oauthproxy
 
 # Production
 FROM debian:trixie as production
 WORKDIR /app
-CMD ["/app/oauthproxy"]
-RUN apt-get update -y && apt-get install -y ca-certificates
+RUN apt-get update -y && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=prod-build /app/build/oauthproxy /app/oauthproxy
+USER nobody
+CMD ["/app/oauthproxy"]

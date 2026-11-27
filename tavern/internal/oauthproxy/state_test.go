@@ -3,6 +3,8 @@ package oauthproxy
 import (
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func TestSignAndVerifyState(t *testing.T) {
@@ -80,5 +82,54 @@ func TestVerifyStateRejectsAssertion(t *testing.T) {
 	}
 	if _, _, err := VerifyState(pub, assertion, "nonce-1"); err == nil {
 		t.Fatal("expected error verifying an assertion as a state token, got nil")
+	}
+}
+
+func TestVerifyStateRejectsFutureIssuedAt(t *testing.T) {
+	pub, priv := mustKeyPair(t)
+
+	now := time.Now()
+	claims := StateClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    stateIssuer,
+			ID:        "nonce-a",
+			IssuedAt:  jwt.NewNumericDate(now.Add(5 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(now.Add(10 * time.Minute)),
+		},
+		ReturnTo:    "https://tenant.run.app/oauth/complete",
+		ClientNonce: "client-nonce",
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	token.Header["typ"] = stateTyp
+	signed, err := token.SignedString(priv)
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+	if _, _, err := VerifyState(pub, signed, "nonce-a"); err == nil {
+		t.Fatal("expected error verifying state with future iat, got nil")
+	}
+}
+
+func TestVerifyStateRejectsWrongAlg(t *testing.T) {
+	pub, _ := mustKeyPair(t)
+
+	claims := StateClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    stateIssuer,
+			ID:        "nonce-a",
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+		},
+		ReturnTo:    "https://tenant.run.app/oauth/complete",
+		ClientNonce: "client-nonce",
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token.Header["typ"] = stateTyp
+	signed, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+	if _, _, err := VerifyState(pub, signed, "nonce-a"); err == nil {
+		t.Fatal("expected error verifying HS256 state token, got nil")
 	}
 }

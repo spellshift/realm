@@ -19,6 +19,9 @@ func TestNormalizeBaseURL(t *testing.T) {
 		{in: "https://", wantErr: true},
 		{in: "https://tavern.example.com/?a=b", wantErr: true},
 		{in: "https://tavern.example.com/#frag", wantErr: true},
+		{in: "https://user:pass@tavern.example.com", wantErr: true},
+		{in: "https://tavern.example.com/subpath", wantErr: true},
+		{in: "https://tavern.example.com/a/b/", wantErr: true},
 	}
 	for _, tt := range tests {
 		got, err := NormalizeBaseURL(tt.in)

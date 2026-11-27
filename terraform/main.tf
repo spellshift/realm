@@ -299,7 +299,7 @@ variable "oauth_domain" {
 }
 variable "oauth_proxy_url" {
   type        = string
-  description = "URL of a shared oauthproxy deployment (dev only). When set, Tavern authenticates through the proxy and oauth_client_id/oauth_client_secret are not required; oauth_domain is still required."
+  description = "URL of a shared oauthproxy deployment (dev only). When set, Tavern authenticates through the proxy and oauth_client_id/oauth_client_secret are not required; oauth_domain is optional and defaults to the Cloud Run URL."
   default     = ""
 }
 variable "min_scale" {

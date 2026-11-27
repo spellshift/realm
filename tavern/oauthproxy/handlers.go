@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"realm.pub/tavern/internal/logging"
 	"realm.pub/tavern/internal/oauthproxy"
@@ -23,6 +24,9 @@ const stateCookieName = "oauth-proxy-state"
 
 // maxClientNonceLen bounds the tenant-supplied nonce echoed into the state and assertion tokens.
 const maxClientNonceLen = 128
+
+// maxProfileBytes bounds how much of an upstream userinfo response is read.
+const maxProfileBytes = 64 << 10
 
 // newStartHandler begins a login: validates the tenant's requested return_to against the
 // allow-list, then redirects to Google's consent screen using the proxy's single, shared OAuth
@@ -69,7 +73,7 @@ func newStartHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			Name:     stateCookieName,
 			Value:    nonce,
 			Path:     "/",
-			Secure:   true,
+			Secure:   cfg.secureCookies(),
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 			MaxAge:   int(stateTTL.Seconds()),
@@ -100,7 +104,6 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			http.Error(w, "missing oauth state cookie", http.StatusBadRequest)
 			return
 		}
-		clearStateCookie(w)
 
 		returnTo, clientNonce, err := oauthproxy.VerifyState(privKey.Public().(ed25519.PublicKey), state, cookie.Value)
 		if err != nil {
@@ -108,6 +111,10 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			http.Error(w, "invalid oauth state", http.StatusBadRequest)
 			return
 		}
+		// Consume the state cookie only after verification succeeds so a stray or forged
+		// cross-site request cannot wipe a user's in-flight login cookie.
+		clearStateCookie(w, cfg.secureCookies())
+
 		// Re-check the allow-list here too: this is the boundary before we attach a real
 		// identity assertion to a redirect, and must not rely solely on the earlier /oauth/start
 		// check (e.g. if the allow-list was narrowed between the two requests).
@@ -139,6 +146,12 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 		}
 		defer resp.Body.Close()
 
+		if resp.StatusCode != http.StatusOK {
+			proxyLog.ErrorContext(ctx, "profile endpoint returned non-200 status", "status_code", resp.StatusCode)
+			http.Error(w, "failed to obtain profile information", http.StatusInternalServerError)
+			return
+		}
+
 		var profile struct {
 			OAuthID       string `json:"sub"`
 			PhotoURL      string `json:"picture"`
@@ -146,7 +159,7 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			Name          string `json:"name"`
 			EmailVerified bool   `json:"email_verified"`
 		}
-		if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
+		if err := json.NewDecoder(io.LimitReader(resp.Body, maxProfileBytes)).Decode(&profile); err != nil {
 			proxyLog.ErrorContext(ctx, "failed to parse profile", "error", err)
 			http.Error(w, "failed to parse profile information", http.StatusInternalServerError)
 			return
@@ -208,15 +221,16 @@ func newStatusHandler() http.Handler {
 	})
 }
 
-func clearStateCookie(w http.ResponseWriter) {
+func clearStateCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     stateCookieName,
 		Value:    "",
 		Path:     "/",
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
 	})
 }
 

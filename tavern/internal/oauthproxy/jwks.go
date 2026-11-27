@@ -10,31 +10,45 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"realm.pub/tavern/internal/logging"
 )
+
+var jwksLog = logging.For("oauthproxy.jwks")
 
 // jwksKeyID is the single key identifier the proxy currently publishes. A future key-rotation
 // scheme could publish multiple entries and have assertions/state carry a "kid", but a single
 // always-current key is sufficient for this deployment.
 const jwksKeyID = "default"
 
-// jwkKey is a minimal, intentionally non-standard key entry: both producer (oauthproxy) and
-// consumer (Tavern) of this document are this same codebase, so a plain base64-encoded raw
-// Ed25519 public key is simpler than conforming to RFC 7517's OKP encoding.
+// jwkKey is an RFC 7517 / RFC 8037 Octet Key Pair (OKP) JWK entry for an Ed25519 public key.
 type jwkKey struct {
-	Kid       string `json:"kid"`
-	PublicKey string `json:"public_key"`
+	Kty string `json:"kty"`
+	Crv string `json:"crv"`
+	Kid string `json:"kid"`
+	Use string `json:"use,omitempty"`
+	Alg string `json:"alg,omitempty"`
+	X   string `json:"x"`
 }
 
 type jwkSet struct {
 	Keys []jwkKey `json:"keys"`
 }
 
-// EncodeJWKS renders pubKey as the proxy's published key-set document, served from
+// EncodeJWKS renders pubKey as a standard RFC 7517 / RFC 8037 OKP JWKS document, served from
 // /.well-known/jwks.json.
 func EncodeJWKS(pubKey ed25519.PublicKey) ([]byte, error) {
+	if len(pubKey) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("oauthproxy: invalid public key size: got %d, expected %d", len(pubKey), ed25519.PublicKeySize)
+	}
+
 	data, err := json.Marshal(jwkSet{Keys: []jwkKey{{
-		Kid:       jwksKeyID,
-		PublicKey: base64.StdEncoding.EncodeToString(pubKey),
+		Kty: "OKP",
+		Crv: "Ed25519",
+		Kid: jwksKeyID,
+		Use: "sig",
+		Alg: "EdDSA",
+		X:   base64.RawURLEncoding.EncodeToString(pubKey),
 	}}})
 	if err != nil {
 		return nil, fmt.Errorf("oauthproxy: failed to encode jwks: %w", err)
@@ -42,7 +56,8 @@ func EncodeJWKS(pubKey ed25519.PublicKey) ([]byte, error) {
 	return data, nil
 }
 
-// decodeJWKS parses a document produced by EncodeJWKS, returning its first key.
+// decodeJWKS parses an RFC 7517 / RFC 8037 OKP JWKS document produced by EncodeJWKS, returning
+// its first Ed25519 public key.
 func decodeJWKS(data []byte) (ed25519.PublicKey, error) {
 	var set jwkSet
 	if err := json.Unmarshal(data, &set); err != nil {
@@ -52,7 +67,18 @@ func decodeJWKS(data []byte) (ed25519.PublicKey, error) {
 		return nil, fmt.Errorf("oauthproxy: jwks contained no keys")
 	}
 
-	raw, err := base64.StdEncoding.DecodeString(set.Keys[0].PublicKey)
+	k := set.Keys[0]
+	if k.Kty != "OKP" || k.Crv != "Ed25519" {
+		return nil, fmt.Errorf("oauthproxy: unsupported jwks key type %q/%q (expected OKP/Ed25519)", k.Kty, k.Crv)
+	}
+	if k.Use != "" && k.Use != "sig" {
+		return nil, fmt.Errorf("oauthproxy: unsupported jwks key use %q", k.Use)
+	}
+	if k.Alg != "" && k.Alg != "EdDSA" {
+		return nil, fmt.Errorf("oauthproxy: unsupported jwks key alg %q", k.Alg)
+	}
+
+	raw, err := base64.RawURLEncoding.DecodeString(k.X)
 	if err != nil {
 		return nil, fmt.Errorf("oauthproxy: failed to decode jwks public key: %w", err)
 	}
@@ -70,32 +96,53 @@ type KeySource struct {
 	JWKSURL    string
 	HTTPClient *http.Client
 	CacheTTL   time.Duration
+	MaxStale   time.Duration
 
 	mu       sync.Mutex
 	cached   ed25519.PublicKey
 	cachedAt time.Time
 }
 
+const (
+	defaultCacheTTL = 5 * time.Minute
+	defaultMaxStale = 24 * time.Hour
+)
+
 // defaultHTTPClient is used when KeySource.HTTPClient is nil. Unlike http.DefaultClient it has a
-// timeout, so an unresponsive proxy can't hang logins indefinitely.
-var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
+// timeout (so an unresponsive proxy can't hang logins indefinitely) and refuses HTTP redirects
+// (so a redirect from JWKSURL cannot downgrade to plaintext HTTP or target an internal address).
+var defaultHTTPClient = &http.Client{
+	Timeout: 10 * time.Second,
+	CheckRedirect: func(*http.Request, []*http.Request) error {
+		return fmt.Errorf("oauthproxy: redirects are not allowed when fetching jwks")
+	},
+}
 
 // maxJWKSBytes bounds how much of a JWKS response is read.
 const maxJWKSBytes = 64 << 10
 
 // PublicKey returns the proxy's current public key, refreshing from the JWKS endpoint once the
 // cached value has expired. A transient fetch failure after a key has already been cached once
-// serves the stale key rather than breaking login entirely. The network fetch happens without
-// holding the lock, so a slow proxy never blocks callers that can be served from the cache.
+// serves the stale key (up to MaxStale, defaulting to 24h) and logs a warning rather than
+// breaking login immediately. The network fetch happens without holding the lock, so a slow
+// proxy never blocks callers that can be served from the cache.
 func (ks *KeySource) PublicKey(ctx context.Context) (ed25519.PublicKey, error) {
 	ttl := ks.CacheTTL
 	if ttl <= 0 {
-		ttl = 5 * time.Minute
+		ttl = defaultCacheTTL
+	}
+	maxStale := ks.MaxStale
+	if maxStale <= 0 {
+		maxStale = defaultMaxStale
+	}
+	if maxStale < ttl {
+		maxStale = ttl
 	}
 
 	ks.mu.Lock()
 	stale := ks.cached
-	if stale != nil && time.Since(ks.cachedAt) < ttl {
+	cachedAt := ks.cachedAt
+	if stale != nil && time.Since(cachedAt) < ttl {
 		ks.mu.Unlock()
 		return stale, nil
 	}
@@ -103,7 +150,12 @@ func (ks *KeySource) PublicKey(ctx context.Context) (ed25519.PublicKey, error) {
 
 	pubKey, err := ks.fetch(ctx)
 	if err != nil {
-		if stale != nil {
+		if stale != nil && time.Since(cachedAt) < maxStale {
+			jwksLog.WarnContext(ctx, "failed to refresh jwks; serving cached public key",
+				"jwks_url", ks.JWKSURL,
+				"cache_age", time.Since(cachedAt).Round(time.Second).String(),
+				"error", err,
+			)
 			return stale, nil
 		}
 		return nil, err

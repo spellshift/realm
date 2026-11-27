@@ -103,8 +103,10 @@ func VerifyAssertion(pubKey ed25519.PublicKey, tokenStr, audience string) (*Prof
 		}
 		return pubKey, nil
 	},
+		jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
 		jwt.WithIssuer(assertionIssuer),
 		jwt.WithAudience(audience),
+		jwt.WithIssuedAt(),
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil {
