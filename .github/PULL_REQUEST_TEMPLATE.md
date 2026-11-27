@@ -7,9 +7,9 @@
 #### Test in Coder
 
 <!--
-The placeholder SHA in the link below will be auto-filled by CI (planned; the
-Action that does this does not exist yet) with the full 40-character PR head
-commit SHA on each commit.
+The placeholder SHA in the link below is filled in automatically by CI (the
+"Coder PR Link" workflow) with the full 40-character PR head commit SHA on each
+commit.
 The placeholder is only visible in the link URL (on hover, or in the raw
 markdown), not on the rendered badge image itself. If the URL still contains the
 placeholder, the CI has not run yet.

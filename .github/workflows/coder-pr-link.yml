@@ -1,0 +1,73 @@
+# Keeps the "Test in Coder" button in the PR body pointed at the current head SHA.
+#
+# SECURITY: this uses `pull_request_target`, which runs with a write token even
+# for fork PRs. It is safe ONLY because this job never checks out or executes PR
+# code: it only reads the head SHA and PR body via the GitHub API (both are
+# data, never executed) and edits the PR body. Do not add `actions/checkout`
+# of the PR head or any build/run steps.
+name: Coder PR Link
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: coder-pr-link-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  update-pr-body:
+    name: Sync Coder button SHA in PR body
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update realm_image_sha in PR body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            // The event payload is a snapshot; fetch the live PR to avoid
+            // clobbering concurrent description edits or restoring an old SHA.
+            const { data: livePr } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: pr.number,
+            });
+            const headSha = livePr.head.sha;
+            const body = livePr.body;
+
+            if (!/^[0-9a-f]{40}$/.test(headSha)) {
+              core.setFailed(`Unexpected head SHA format: ${headSha}`);
+              return;
+            }
+
+            if (!body) {
+              core.info('PR body is empty; skipping Coder button update.');
+              return;
+            }
+
+            const blockPattern = /<!-- coder-pr-link:start -->[\s\S]*?<!-- coder-pr-link:end -->/;
+            const block = body.match(blockPattern);
+            if (!block) {
+              core.info('Coder markers not found in PR body; skipping.');
+              return;
+            }
+
+            const shaPattern = /param\.realm_image_sha=(?:__PR_HEAD_SHA__|[0-9a-f]{40})(?![0-9a-f])/g;
+            const newBlock = block[0].replace(shaPattern, `param.realm_image_sha=${headSha}`);
+            if (newBlock === block[0]) {
+              core.info('Coder button already up to date or has no SHA param; nothing to do.');
+              return;
+            }
+
+            // Function replacer avoids `$` special patterns in the replacement.
+            const newBody = body.replace(blockPattern, () => newBlock);
+
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number: pr.number,
+              body: newBody,
+            });
+            core.info(`Updated Coder button to ${headSha}.`);
