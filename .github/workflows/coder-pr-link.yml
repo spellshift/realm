@@ -56,17 +56,17 @@ jobs:
             }
 
             // Coder workspace names allow only [a-z0-9] separated by single
-            // hyphens. Derive one from the branch, kept under 16 characters.
+            // hyphens. Derive one from the branch, kept under 16 characters,
+            // and end it with the PR number so truncated names stay unique.
             const MAX_NAME_LEN = 15;
-            let wsName = (livePr.head.ref || '')
+            const suffix = `-${pr.number}`;
+            const prefix = (livePr.head.ref || '')
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-+|-+$/g, '')
-              .slice(0, MAX_NAME_LEN)
+              .slice(0, MAX_NAME_LEN - suffix.length)
               .replace(/-+$/g, '');
-            if (!wsName) {
-              wsName = `pr-${pr.number}`.slice(0, MAX_NAME_LEN);
-            }
+            const wsName = `${prefix || 'pr'}${suffix}`;
 
             const shaPattern = /param\.realm_image_sha=(?:__PR_HEAD_SHA__|[0-9a-f]{40})(?![0-9a-f])/g;
             // Matches the placeholder or a previously filled-in name; stops at

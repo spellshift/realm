@@ -9,7 +9,7 @@
 <!--
 The placeholders in the link below are filled in automatically by CI (the
 "Coder PR Link" workflow) on each commit: the workspace name (derived from the
-PR branch name, truncated to 15 characters) and the full 40-character PR head
+PR branch name plus the PR number, kept to 15 characters) and the full 40-character PR head
 commit SHA.
 The placeholders are only visible in the link URL (on hover, or in the raw
 markdown), not on the rendered badge image itself. If the URL still contains
