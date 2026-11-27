@@ -4,6 +4,21 @@
 2. Ensure you have added or ran the appropriate tests for your PR
 -->
 
+#### Test in Coder
+
+<!--
+The placeholder SHA in the link below will be auto-filled by CI (planned; the
+Action that does this does not exist yet) with the full 40-character PR head
+commit SHA on each commit.
+The placeholder is only visible in the link URL (on hover, or in the raw
+markdown), not on the rendered badge image itself. If the URL still contains the
+placeholder, the CI has not run yet.
+The markers below are used by CI to replace this whole block; do not remove them.
+-->
+<!-- coder-pr-link:start -->
+[![Test in Coder](https://img.shields.io/badge/Test%20in-Coder-5a6ff6?style=for-the-badge&logo=coder&logoColor=white)](https://coder.astral-labs.work/templates/realm/workspace?param.realm_image_sha=__PR_HEAD_SHA__)
+<!-- coder-pr-link:end -->
+
 #### What type of PR is this?
 
 <!--
