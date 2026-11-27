@@ -1,0 +1,75 @@
+# Build and publish the tavern docker image on every pull request.
+# Mirrors the production build in docker-dev.yml, but tags images as pr-<sha>.
+# Pull requests from forks (and Dependabot) only build (no push) since they
+# have no secrets and a read-only token.
+
+name: Publish Docker Images (on pull request)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: docker-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  GHCR_REGISTRY: ghcr.io
+  GHCR_IMAGE_NAME: ${{ github.repository }}/tavern
+  # Make type=sha (and the OCI revision label) use the PR head sha, not the merge commit
+  DOCKER_METADATA_PR_HEAD_SHA: 'true'
+  # Only same-repo, non-Dependabot PRs have secrets and a writable GITHUB_TOKEN
+  PUSH_ENABLED: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+
+jobs:
+  tavern-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          lfs: 'true'
+      - name: Replace lfs references with files
+        run: git lfs pull
+      - name: Log in to Docker Hub
+        if: env.PUSH_ENABLED == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Log in to the Container registry
+        if: env.PUSH_ENABLED == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            spellshift/tavern
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
+          tags: |
+            type=ref,event=pr
+            type=sha,format=long,prefix=pr-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          file: ./docker/tavern.Dockerfile
+          context: .
+          push: ${{ env.PUSH_ENABLED == 'true' }}
+          target: production
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
