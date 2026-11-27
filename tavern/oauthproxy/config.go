@@ -60,10 +60,18 @@ type Config struct {
 	ProfileURL      string
 	AllowedSuffixes []string
 	ProxyDomain     string
+	allowlist       *oauthproxy.Allowlist
 }
 
 func (c *Config) secureCookies() bool {
 	return strings.HasPrefix(c.ProxyDomain, "https://")
+}
+
+func (c *Config) isAllowedReturnTo(returnTo string) bool {
+	if c.allowlist != nil {
+		return c.allowlist.IsAllowedReturnTo(returnTo)
+	}
+	return oauthproxy.IsAllowedReturnTo(returnTo, c.AllowedSuffixes)
 }
 
 // loadConfig reads and validates the proxy's configuration from the environment.
@@ -95,13 +103,14 @@ func loadConfig() (*Config, error) {
 		if s == "" {
 			continue
 		}
-		if err := oauthproxy.ValidateAllowedPattern(s); err != nil {
-			return nil, fmt.Errorf("invalid entry %q in 'OAUTH_PROXY_ALLOWED_SUFFIXES': %w", s, err)
-		}
 		suffixes = append(suffixes, s)
 	}
 	if len(suffixes) == 0 {
 		return nil, fmt.Errorf("must provide at least one suffix in 'OAUTH_PROXY_ALLOWED_SUFFIXES'")
+	}
+	allowlist, err := oauthproxy.NewAllowlist(suffixes)
+	if err != nil {
+		return nil, fmt.Errorf("invalid 'OAUTH_PROXY_ALLOWED_SUFFIXES': %w", err)
 	}
 
 	return &Config{
@@ -118,6 +127,7 @@ func loadConfig() (*Config, error) {
 		ProfileURL:      "https://www.googleapis.com/oauth2/v3/userinfo",
 		AllowedSuffixes: suffixes,
 		ProxyDomain:     domain,
+		allowlist:       allowlist,
 	}, nil
 }
 

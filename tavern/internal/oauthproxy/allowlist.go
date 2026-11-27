@@ -2,25 +2,79 @@ package oauthproxy
 
 import (
 	"fmt"
-	"net"
+	"net/netip"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
 // CompletePath is the only path on a tenant that may receive an assertion.
 const CompletePath = "/oauth/complete"
 
+type patternKind uint8
+
+const (
+	patternExactHost patternKind = iota
+	patternExactIP
+	patternDomainSuffix
+	patternLeadingWildcard
+)
+
+type allowedPattern struct {
+	kind  patternKind
+	value string
+	bare  string // non-empty for patternDomainSuffix (value without leading ".")
+}
+
+// Allowlist is a pre-validated, compiled set of allowed return_to host patterns.
+type Allowlist struct {
+	patterns []allowedPattern
+}
+
+// NewAllowlist parses and validates every entry in patterns, returning a compiled Allowlist that
+// can be reused across requests without re-parsing patterns.
+func NewAllowlist(patterns []string) (*Allowlist, error) {
+	compiled := make([]allowedPattern, 0, len(patterns))
+	for _, raw := range patterns {
+		p, err := parseAllowedPattern(raw)
+		if err != nil {
+			return nil, err
+		}
+		compiled = append(compiled, p)
+	}
+	return &Allowlist{patterns: compiled}, nil
+}
+
+// IsAllowedReturnTo reports whether returnTo is allowed by the compiled allowlist.
+func (a *Allowlist) IsAllowedReturnTo(returnTo string) bool {
+	if a == nil {
+		return false
+	}
+	host, isIP, ok := parseReturnToHost(returnTo)
+	if !ok {
+		return false
+	}
+	for _, p := range a.patterns {
+		if p.matches(host, isIP) {
+			return true
+		}
+	}
+	return false
+}
+
 // IsAllowedReturnTo reports whether returnTo is a URL whose host matches one of the allowed
 // patterns. A pattern is one of:
 //   - an exact host (e.g. "tavern.example.com", "localhost", or an IP literal like "127.0.0.1"),
-//   - a dot-prefixed domain suffix (e.g. ".example.com", matching any subdomain of example.com as
-//     well as example.com itself), or
-//   - a leading-wildcard pattern (e.g. "*-tavern-749076704275.us-east4.run.app" or
-//     "*.example.com"), where "*" matches a non-empty prefix within the leftmost DNS label (no "."
-//     characters).
+//   - a dot-prefixed multi-label domain suffix (e.g. ".example.com", matching any subdomain of
+//     example.com as well as example.com itself), or
+//   - a leading-wildcard pattern over a multi-label domain (e.g.
+//     "*-tavern-749076704275.us-east4.run.app" or "*.example.com"), where "*" matches a non-empty
+//     prefix within the leftmost DNS label (no "." characters).
 //
-// returnTo's host must be an ASCII IP literal or valid ASCII DNS hostname (rejecting non-ASCII
-// Unicode dot separators like U+3002/U+FF0E/U+FF61 and invalid label syntax).
+// returnTo's host must be an ASCII IP literal (with brackets required for and restricted to IPv6)
+// or valid ASCII DNS hostname (rejecting non-ASCII Unicode dot separators like
+// U+3002/U+FF0E/U+FF61, all-numeric TLDs / partial or octal IPv4 forms, and invalid label syntax).
+// Any explicit port must be in 1..65535.
 // returnTo's path must be exactly CompletePath, with no userinfo, query or fragment.
 //
 // returnTo must use https, with one exception: a loopback host (localhost/127.0.0.1/::1) may use
@@ -33,34 +87,17 @@ const CompletePath = "/oauth/complete"
 // attacker-controlled destination (an open-redirect / credential-relay risk), so callers must
 // invoke it both before starting a flow and again before completing one.
 func IsAllowedReturnTo(returnTo string, allowedSuffixes []string) bool {
-	u, err := url.Parse(returnTo)
-	if err != nil {
+	host, isIP, ok := parseReturnToHost(returnTo)
+	if !ok {
 		return false
 	}
 
-	// Only Tavern's own completion endpoint may receive an assertion: no other path, no
-	// userinfo, and no query or fragment that could corrupt or hide the appended assertion.
-	if u.Path != CompletePath || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" {
-		return false
-	}
-
-	rawHost := u.Hostname()
-	if rawHost == "" || !isASCII(rawHost) {
-		return false
-	}
-	host := strings.ToLower(rawHost)
-	if net.ParseIP(host) == nil && !isValidDNSName(host) {
-		return false
-	}
-
-	if u.Scheme != "https" {
-		if u.Scheme != "http" || !isLoopbackHost(host) {
-			return false
+	for _, raw := range allowedSuffixes {
+		p, err := parseAllowedPattern(raw)
+		if err != nil {
+			continue
 		}
-	}
-
-	for _, pattern := range allowedSuffixes {
-		if matchAllowedHost(host, pattern) {
+		if p.matches(host, isIP) {
 			return true
 		}
 	}
@@ -69,79 +106,140 @@ func IsAllowedReturnTo(returnTo string, allowedSuffixes []string) bool {
 }
 
 // ValidateAllowedPattern reports whether pattern is a syntactically valid host allowlist entry:
-// an exact ASCII DNS hostname or IP literal, a dot-prefixed ASCII domain suffix (e.g.
-// ".example.com"), or a leading-wildcard single-label pattern (e.g.
+// an exact ASCII DNS hostname or IP literal, a dot-prefixed multi-label ASCII domain suffix (e.g.
+// ".example.com"), or a leading-wildcard single-label pattern over a multi-label domain (e.g.
 // "*-tavern-749076704275.us-east4.run.app" or "*.example.com").
 func ValidateAllowedPattern(pattern string) error {
+	_, err := parseAllowedPattern(pattern)
+	return err
+}
+
+func parseReturnToHost(returnTo string) (host string, isIP bool, ok bool) {
+	u, err := url.Parse(returnTo)
+	if err != nil {
+		return "", false, false
+	}
+
+	// Only Tavern's own completion endpoint may receive an assertion: no other path, no
+	// userinfo, and no query or fragment that could corrupt or hide the appended assertion.
+	if u.Path != CompletePath || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" {
+		return "", false, false
+	}
+
+	rawHost := u.Hostname()
+	if rawHost == "" || !isASCII(rawHost) {
+		return "", false, false
+	}
+
+	// Reject empty ports (e.g. "host:" or "[::1]:") and out-of-range ports (0 or >65535).
+	if strings.HasSuffix(u.Host, ":") {
+		return "", false, false
+	}
+	if portStr := u.Port(); portStr != "" {
+		port, err := strconv.ParseUint(portStr, 10, 16)
+		if err != nil || port == 0 {
+			return "", false, false
+		}
+	}
+
+	bracketed := strings.HasPrefix(u.Host, "[")
+	if addr, err := netip.ParseAddr(rawHost); err == nil {
+		if addr.Zone() != "" || bracketed != addr.Is6() {
+			return "", false, false
+		}
+		host = addr.String()
+		isIP = true
+	} else {
+		if bracketed {
+			return "", false, false
+		}
+		host = strings.ToLower(rawHost)
+		if !isValidDNSName(host) {
+			return "", false, false
+		}
+	}
+
+	if u.Scheme != "https" {
+		if u.Scheme != "http" || !isLoopbackHost(host) {
+			return "", false, false
+		}
+	}
+
+	return host, isIP, true
+}
+
+func parseAllowedPattern(pattern string) (allowedPattern, error) {
 	raw := strings.TrimSpace(pattern)
 	if raw == "" {
-		return fmt.Errorf("oauthproxy: empty allowlist pattern")
+		return allowedPattern{}, fmt.Errorf("oauthproxy: empty allowlist pattern")
 	}
 	if !isASCII(raw) {
-		return fmt.Errorf("oauthproxy: allowlist pattern %q must contain only ASCII characters", raw)
+		return allowedPattern{}, fmt.Errorf("oauthproxy: allowlist pattern %q must contain only ASCII characters", raw)
 	}
 	p := strings.ToLower(raw)
 
 	if strings.HasPrefix(p, ".") {
 		bare := p[1:]
-		if net.ParseIP(bare) != nil || !isValidDNSName(bare) {
-			return fmt.Errorf("oauthproxy: invalid dot-prefixed allowlist suffix %q", raw)
+		if !isValidMultiLabelDNSName(bare) {
+			return allowedPattern{}, fmt.Errorf("oauthproxy: invalid dot-prefixed allowlist suffix %q", raw)
 		}
-		return nil
+		return allowedPattern{kind: patternDomainSuffix, value: p, bare: bare}, nil
 	}
 
 	if strings.HasPrefix(p, "*") {
 		rest := p[1:]
-		if rest == "" || strings.Contains(rest, "*") {
-			return fmt.Errorf("oauthproxy: invalid wildcard allowlist pattern %q", raw)
+		if rest == "" || strings.Contains(rest, "*") || len(p) > 253 {
+			return allowedPattern{}, fmt.Errorf("oauthproxy: invalid wildcard allowlist pattern %q", raw)
 		}
 		if strings.HasPrefix(rest, ".") {
 			domain := rest[1:]
-			if net.ParseIP(domain) != nil || !isValidDNSName(domain) {
-				return fmt.Errorf("oauthproxy: invalid wildcard allowlist pattern %q", raw)
+			if !isValidMultiLabelDNSName(domain) {
+				return allowedPattern{}, fmt.Errorf("oauthproxy: invalid wildcard allowlist pattern %q", raw)
 			}
-			return nil
+			return allowedPattern{kind: patternLeadingWildcard, value: rest}, nil
 		}
 		labelSuffix, domain, ok := strings.Cut(rest, ".")
-		if !ok || net.ParseIP(domain) != nil || !isValidDNSName(domain) {
-			return fmt.Errorf("oauthproxy: invalid wildcard allowlist pattern %q", raw)
+		if !ok || !isValidMultiLabelDNSName(domain) {
+			return allowedPattern{}, fmt.Errorf("oauthproxy: invalid wildcard allowlist pattern %q", raw)
 		}
 		if !isValidWildcardLabelSuffix(labelSuffix) {
-			return fmt.Errorf("oauthproxy: invalid wildcard label suffix in %q", raw)
+			return allowedPattern{}, fmt.Errorf("oauthproxy: invalid wildcard label suffix in %q", raw)
 		}
-		return nil
+		return allowedPattern{kind: patternLeadingWildcard, value: rest}, nil
 	}
 
-	if net.ParseIP(p) != nil || isValidDNSName(p) {
-		return nil
+	if addr, err := netip.ParseAddr(p); err == nil {
+		if addr.Zone() != "" {
+			return allowedPattern{}, fmt.Errorf("oauthproxy: invalid allowlist host %q", raw)
+		}
+		return allowedPattern{kind: patternExactIP, value: addr.String()}, nil
 	}
-	return fmt.Errorf("oauthproxy: invalid allowlist host %q", raw)
+	if isValidDNSName(p) {
+		return allowedPattern{kind: patternExactHost, value: p}, nil
+	}
+	return allowedPattern{}, fmt.Errorf("oauthproxy: invalid allowlist host %q", raw)
 }
 
-func matchAllowedHost(host, pattern string) bool {
-	if err := ValidateAllowedPattern(pattern); err != nil {
+func (p allowedPattern) matches(host string, isIP bool) bool {
+	switch p.kind {
+	case patternExactIP:
+		return isIP && host == p.value
+	case patternExactHost:
+		return !isIP && host == p.value
+	case patternDomainSuffix:
+		if isIP {
+			return false
+		}
+		return host == p.bare || strings.HasSuffix(host, p.value)
+	case patternLeadingWildcard:
+		if isIP || !strings.HasSuffix(host, p.value) {
+			return false
+		}
+		prefix := strings.TrimSuffix(host, p.value)
+		return prefix != "" && !strings.Contains(prefix, ".")
+	default:
 		return false
 	}
-	pattern = strings.ToLower(strings.TrimSpace(pattern))
-	if strings.HasPrefix(pattern, ".") {
-		if net.ParseIP(host) != nil {
-			return false
-		}
-		bare := pattern[1:]
-		return host == bare || strings.HasSuffix(host, pattern)
-	}
-	if strings.HasPrefix(pattern, "*") {
-		if net.ParseIP(host) != nil {
-			return false
-		}
-		rest := pattern[1:]
-		if !strings.HasSuffix(host, rest) {
-			return false
-		}
-		prefix := strings.TrimSuffix(host, rest)
-		return prefix != "" && !strings.Contains(prefix, ".")
-	}
-	return host == pattern
 }
 
 func isASCII(s string) bool {
@@ -153,12 +251,31 @@ func isASCII(s string) bool {
 	return true
 }
 
+func isValidMultiLabelDNSName(host string) bool {
+	return strings.Contains(host, ".") && isValidDNSName(host)
+}
+
 func isValidDNSName(host string) bool {
 	if len(host) == 0 || len(host) > 253 {
 		return false
 	}
-	for _, label := range strings.Split(host, ".") {
+	labels := strings.Split(host, ".")
+	for _, label := range labels {
 		if !isValidDNSLabel(label) {
+			return false
+		}
+	}
+	// Reject all-numeric rightmost labels (RFC 1123 §2.1 / RFC 3696 §2) so partial, octal, or
+	// decimal IPv4 forms (e.g. "0177.0.0.1", "0.0.1", "2130706433") cannot pass as DNS names.
+	return !isAllDigits(labels[len(labels)-1])
+}
+
+func isAllDigits(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
 			return false
 		}
 	}
