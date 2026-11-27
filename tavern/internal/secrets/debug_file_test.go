@@ -73,6 +73,28 @@ func TestSetSecretsAddFile(t *testing.T) {
 	assert.Equal(t, []byte{0x15, 0xef, 0x04, 0xfd, 0x25, 0x5f, 0xec, 0xc2, 0xe0, 0x08, 0x7c, 0xc1, 0x5a, 0xf8, 0xdd, 0x9d, 0xab, 0xde, 0x8e, 0xc2, 0x62, 0x8c, 0x96, 0x43, 0xf6, 0x63, 0xef, 0x2d, 0x06, 0xe0, 0xc9, 0xb1}, res)
 }
 
+func TestSetSecretsEmptyExistingFile(t *testing.T) {
+	// Regression test: a pre-created but empty secrets file (e.g. from `touch`) reads back as
+	// (0, io.EOF), which must be treated the same as "no secrets yet" rather than an error -
+	// otherwise SetValue can never write the first secret into such a file.
+	tmpDir := t.TempDir()
+	path := path.Join(tmpDir, "secrets.yaml")
+	if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+		t.Fatalf("failed to create empty secrets file: %v", err)
+	}
+
+	secretsManager, err := secrets.NewDebugFileSecrets(path)
+	assert.Nil(t, err)
+
+	res, err := secretsManager.SetValue("tavern_ed25519_private_key", []byte{0x01, 0x02})
+	assert.Nil(t, err)
+	assert.Equal(t, []byte{}, res)
+
+	res, err = secretsManager.GetValue("tavern_ed25519_private_key")
+	assert.Nil(t, err)
+	assert.Equal(t, []byte{0x01, 0x02}, res)
+}
+
 func TestSetSecretsNewFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := path.Join(tmpDir, "secrets.yaml")

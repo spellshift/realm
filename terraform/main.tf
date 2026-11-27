@@ -32,7 +32,9 @@ variable "resource_prefix" {
 }
 
 locals {
-  resource_prefix = var.resource_prefix
+  resource_prefix      = var.resource_prefix
+  default_oauth_domain = "${local.resource_prefix}-tavern-${data.google_project.project.number}.${var.gcp_region}.run.app"
+  oauth_domain         = var.oauth_domain != "" ? var.oauth_domain : local.default_oauth_domain
 }
 
 output "resource_prefix" {
@@ -58,8 +60,8 @@ variable "redirector_upstream" {
 }
 
 locals {
-  # Fall back to the oauth_domain when no explicit redirector_upstream is given.
-  redirector_upstream = var.redirector_upstream != "" ? var.redirector_upstream : var.oauth_domain
+  # Fall back to the oauth_domain (or its deterministic Cloud Run default) when no explicit redirector_upstream is given.
+  redirector_upstream = var.redirector_upstream != "" ? var.redirector_upstream : local.oauth_domain
 }
 
 variable "redirector_dns_ns_prefix" {
@@ -208,8 +210,9 @@ locals {
     zone.dns_name => zone.name
   }
   oauth_top_domain_arr = split(".", var.oauth_domain)
-  oauth_top_domain = format("%s.", join(".", slice(local.oauth_top_domain_arr, length(local.oauth_top_domain_arr)-2, length(local.oauth_top_domain_arr))))
-  oauth_domain_zone = contains(keys(local.domain_zone_map), local.oauth_top_domain) ? local.domain_zone_map[local.oauth_top_domain] : ""
+  # Skip when oauth_domain is unset: split("", ".") yields a single-element list, which slice() below can't handle.
+  oauth_top_domain = var.oauth_domain == "" ? "" : format("%s.", join(".", slice(local.oauth_top_domain_arr, length(local.oauth_top_domain_arr)-2, length(local.oauth_top_domain_arr))))
+  oauth_domain_zone = local.oauth_top_domain == "" ? "" : (contains(keys(local.domain_zone_map), local.oauth_top_domain) ? local.domain_zone_map[local.oauth_top_domain] : "")
 }
 
 output "oauth_domain_configuration" {
@@ -293,6 +296,11 @@ variable "oauth_domain" {
   type = string
   description = "OAUTH_DOMAIN used to configure Tavern OAuth"
   default = ""
+}
+variable "oauth_proxy_url" {
+  type        = string
+  description = "URL of a shared oauthproxy deployment (dev only). When set, Tavern authenticates through the proxy and oauth_client_id/oauth_client_secret are not required; oauth_domain is optional and defaults to the Cloud Run URL."
+  default     = ""
 }
 variable "min_scale" {
   type = string
@@ -529,7 +537,20 @@ resource "google_cloud_run_service" "tavern" {
         }
         env {
           name = "OAUTH_DOMAIN"
-          value = format("https://%s", var.oauth_domain)
+          value = format("https://%s", local.oauth_domain)
+        }
+        // Only set OAUTH_PROXY_URL when an oauthproxy is in use.
+        dynamic "env" {
+          for_each = var.oauth_proxy_url == "" ? [] : [
+            {
+              name  = "OAUTH_PROXY_URL"
+              value = var.oauth_proxy_url
+            },
+          ]
+          content {
+            name  = env.value.name
+            value = env.value.value
+          }
         }
         env {
           name = "GCP_PROJECT_ID"
@@ -1217,9 +1238,7 @@ resource "google_dns_record_set" "redir_quic_record_a" {
 # generated builder config file into the container.
 locals {
   # Upstream Tavern URL the builder enrolls against and connects to via gRPC.
-  builder_upstream = var.builder_upstream != "" ? var.builder_upstream : (
-    var.oauth_domain != "" ? "https://${var.oauth_domain}" : google_cloud_run_service.tavern.status[0].url
-  )
+  builder_upstream = var.builder_upstream != "" ? var.builder_upstream : "https://${local.oauth_domain}"
 
   # Enrollment token handed to the builder for first-time enrollment. Prefer a
   # preset token (var.builder_enrollment_token) and fall back to the generated one.

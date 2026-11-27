@@ -168,6 +168,22 @@ func TestConfigureOAuthFromEnv(t *testing.T) {
 
 		assert.Equal(t, expectedCfg, cfg.oauth)
 	})
+
+	t.Run("ProxyMode", func(t *testing.T) {
+		t.Setenv(EnvOAuthClientID.Key, "")
+		t.Setenv(EnvOAuthClientSecret.Key, "")
+		t.Setenv(EnvOAuthDomain.Key, "tenant.run.app")
+		t.Setenv(EnvOAuthProxyURL.Key, "https://proxy.run.app/")
+
+		cfg := &Config{}
+		ConfigureOAuthFromEnv("/oauth/authorize")(cfg)
+
+		assert.True(t, cfg.oauthProxyEnabled())
+		assert.Equal(t, "https://proxy.run.app", cfg.oauthProxyURL)
+		assert.Equal(t, "https://tenant.run.app/oauth/complete", cfg.oauthProxyReturnTo)
+		require.NotNil(t, cfg.oauthProxyKeySource)
+		assert.Equal(t, "https://proxy.run.app/.well-known/jwks.json", cfg.oauthProxyKeySource.JWKSURL)
+	})
 }
 
 func TestConfigurePubSubFromEnv(t *testing.T) {

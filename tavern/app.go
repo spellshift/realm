@@ -433,7 +433,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Configure Authentication
 	var withAuthentication tavernhttp.Option
-	if cfg.oauth.ClientID != "" {
+	if cfg.oauth.ClientID != "" || cfg.oauthProxyEnabled() {
 		withAuthentication = tavernhttp.WithAuthentication(client)
 	} else {
 		withAuthentication = tavernhttp.WithAuthenticationBypass(client)
@@ -538,6 +538,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// GraphQL Handler (shared with MCP)
 	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
 
+	// Login via the oauth proxy when configured, otherwise directly against the identity provider
+	oauthLoginHandler := auth.NewOAuthLoginHandler(cfg.oauth, privKey)
+	if cfg.oauthProxyEnabled() {
+		oauthLoginHandler = auth.NewProxyLoginHandler(cfg.oauthProxyURL, cfg.oauthProxyReturnTo)
+	}
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -571,17 +577,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			LoginRedirectURI: "/oauth/login",
 		},
 		"/oauth/login": tavernhttp.Endpoint{
-			Handler:              auth.NewOAuthLoginHandler(cfg.oauth, privKey),
-			AllowUnauthenticated: true,
-			AllowUnactivated:     true,
-		},
-		"/oauth/authorize": tavernhttp.Endpoint{
-			Handler: auth.NewOAuthAuthorizationHandler(
-				cfg.oauth,
-				pubKey,
-				client,
-				cfg.userProfiles,
-			),
+			Handler:              oauthLoginHandler,
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -656,6 +652,28 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler:          playground.Handler("Realm - Red Team Engagement Platform", "/graphql"),
 			LoginRedirectURI: "/oauth/login",
 		},
+	}
+
+	// Register the OAuth callback matching the configured mode: /oauth/complete verifies signed
+	// assertions from oauthproxy in proxy mode, whereas /oauth/authorize handles direct IDP
+	// callbacks otherwise.
+	if cfg.oauthProxyEnabled() {
+		routes["/oauth/complete"] = tavernhttp.Endpoint{
+			Handler:              auth.NewProxyAssertionHandler(cfg.oauthProxyKeySource, client, cfg.oauthProxyReturnTo),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		}
+	} else {
+		routes["/oauth/authorize"] = tavernhttp.Endpoint{
+			Handler: auth.NewOAuthAuthorizationHandler(
+				cfg.oauth,
+				pubKey,
+				client,
+				cfg.userProfiles,
+			),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		}
 	}
 
 	// Setup Profiling
