@@ -1,14 +1,15 @@
-# Keeps the "Test in Coder" button in the PR body pointed at the current head SHA.
+# Keeps the "Test in Coder" button in the PR body pointed at the current head
+# SHA, with a workspace name derived from the branch.
 #
-# SECURITY: this uses `pull_request_target`, which runs with a write token even
-# for fork PRs. It is safe ONLY because this job never checks out or executes PR
-# code: it only reads the head SHA and PR body via the GitHub API (both are
-# data, never executed) and edits the PR body. Do not add `actions/checkout`
-# of the PR head or any build/run steps.
+# Only runs for PRs from branches in spellshift/realm (matching docker-pr.yml,
+# which only publishes images for those). Same-repo PRs get a writable
+# GITHUB_TOKEN on plain `pull_request`, so this deliberately does not use
+# `pull_request_target`. It never checks out or runs PR code: it reads the PR
+# via the API and rewrites the marked block in the PR body.
 name: Coder PR Link
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
 
 permissions:
@@ -20,20 +21,34 @@ concurrency:
 
 jobs:
   update-pr-body:
-    name: Sync Coder button SHA in PR body
+    name: Sync Coder button in PR body
+    # github.actor is whoever triggered the run, so also check the PR author to
+    # catch Dependabot PRs reopened or re-run by a maintainer.
+    if: >-
+      github.repository == 'spellshift/realm' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Update realm_image_sha in PR body
-        uses: actions/github-script@v7
+      - name: Rewrite Coder button in PR body
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
-            const pr = context.payload.pull_request;
+            const CODER_URL = 'https://coder.astral-labs.work/templates/realm/workspace';
+            const BADGE_URL = 'https://img.shields.io/badge/Test%20in-Coder-5a6ff6?style=for-the-badge&logo=coder&logoColor=white';
+            const START = '<!-- coder-pr-link:start -->';
+            const END = '<!-- coder-pr-link:end -->';
+            const MAX_NAME_LEN = 15;
+
+            const prNumber = context.payload.pull_request.number;
 
             // The event payload is a snapshot; fetch the live PR to avoid
             // clobbering concurrent description edits or restoring an old SHA.
             const { data: livePr } = await github.rest.pulls.get({
               ...context.repo,
-              pull_number: pr.number,
+              pull_number: prNumber,
             });
             const headSha = livePr.head.sha;
             const body = livePr.body;
@@ -42,50 +57,67 @@ jobs:
               core.setFailed(`Unexpected head SHA format: ${headSha}`);
               return;
             }
-
             if (!body) {
               core.info('PR body is empty; skipping Coder button update.');
               return;
             }
 
-            const blockPattern = /<!-- coder-pr-link:start -->[\s\S]*?<!-- coder-pr-link:end -->/;
-            const block = body.match(blockPattern);
-            if (!block) {
-              core.info('Coder markers not found in PR body; skipping.');
-              return;
-            }
-
             // Coder workspace names allow only [a-z0-9] separated by single
-            // hyphens. Derive one from the branch, kept under 16 characters,
-            // and end it with the PR number so truncated names stay unique.
-            const MAX_NAME_LEN = 15;
-            const suffix = `-${pr.number}`;
+            // hyphens. Use <branch-prefix>-<pr-number>, kept under 16 chars;
+            // the PR number keeps truncated names unique.
+            const suffix = `-${prNumber}`;
             const prefix = (livePr.head.ref || '')
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-+|-+$/g, '')
-              .slice(0, MAX_NAME_LEN - suffix.length)
+              .slice(0, Math.max(0, MAX_NAME_LEN - suffix.length))
               .replace(/-+$/g, '');
             const wsName = `${prefix || 'pr'}${suffix}`;
 
-            const shaPattern = /param\.realm_image_sha=(?:__PR_HEAD_SHA__|[0-9a-f]{40})(?![0-9a-f])/g;
-            // Matches the placeholder or a previously filled-in name; stops at
-            // the next query param or the closing `)` of the markdown link.
-            const namePattern = /([?&])name=[^&)\s]*/g;
-            const newBlock = block[0]
-              .replace(shaPattern, `param.realm_image_sha=${headSha}`)
-              .replace(namePattern, (_, sep) => `${sep}name=${wsName}`);
-            if (newBlock === block[0]) {
-              core.info('Coder button already up to date or has no SHA param; nothing to do.');
+            // Ranges covered by fenced code blocks, so a quoted copy of the
+            // template inside ``` or ~~~ is never treated as the real button.
+            const fenced = [];
+            const fenceRe = /^ {0,3}(`{3,}|~{3,})/gm;
+            let open = null;
+            for (let m; (m = fenceRe.exec(body)); ) {
+              const fence = m[1];
+              if (!open) {
+                open = { start: m.index, char: fence[0], len: fence.length };
+              } else if (fence[0] === open.char && fence.length >= open.len) {
+                fenced.push([open.start, m.index + m[0].length]);
+                open = null;
+              }
+            }
+            if (open) fenced.push([open.start, body.length]);
+            const inFence = (i) => fenced.some(([s, e]) => i >= s && i < e);
+
+            const blockRe = /<!-- coder-pr-link:start -->[\s\S]*?<!-- coder-pr-link:end -->/g;
+            let target = null;
+            for (let m; (m = blockRe.exec(body)); ) {
+              if (!inFence(m.index)) {
+                target = m;
+                break;
+              }
+            }
+            if (!target) {
+              core.info('Coder markers not found in PR body; skipping.');
               return;
             }
 
-            // Function replacer avoids `$` special patterns in the replacement.
-            const newBody = body.replace(blockPattern, () => newBlock);
+            // Regenerate the whole block so a hand-mangled link self-heals.
+            const link = `${CODER_URL}?name=${wsName}&param.realm_image_sha=${headSha}`;
+            const newBlock = `${START}\n[![Test in Coder](${BADGE_URL})](${link})\n${END}`;
+            const newBody =
+              body.slice(0, target.index) + newBlock + body.slice(target.index + target[0].length);
+
+            if (newBody === body) {
+              core.info('Coder button already up to date; nothing to do.');
+              return;
+            }
 
             await github.rest.pulls.update({
               ...context.repo,
-              pull_number: pr.number,
+              pull_number: prNumber,
               body: newBody,
             });
             core.info(`Updated Coder button: workspace ${wsName}, sha ${headSha}.`);

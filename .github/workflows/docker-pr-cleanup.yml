@@ -1,0 +1,74 @@
+# Delete a pull request's tavern images from GHCR once the PR is closed
+# (merged or not). Images are found by the pr-<number>-<sha> tag that
+# docker-pr.yml adds, which also catches images for commits that were
+# force-pushed away.
+#
+# Requires spellshift/realm to have the Admin role on the realm/tavern package
+# (Package settings -> Manage Actions access) so GITHUB_TOKEN can delete versions.
+
+name: Clean up PR Docker Images
+
+on:
+  pull_request:
+    types: [closed]
+
+# Same group as docker-pr.yml: closing the PR cancels an in-flight build so it
+# can't push a new image after cleanup has run.
+concurrency:
+  group: docker-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  delete-pr-images:
+    if: >-
+      github.repository == 'spellshift/realm' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete pr-<number>-* images
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const org = context.repo.owner;
+            const packageName = `${context.repo.repo}/tavern`;
+            const prTagPrefix = `pr-${context.payload.pull_request.number}-`;
+
+            let versions;
+            try {
+              versions = await github.paginate(
+                github.rest.packages.getAllPackageVersionsForPackageOwnedByOrg,
+                { org, package_type: 'container', package_name: packageName, state: 'active', per_page: 100 },
+              );
+            } catch (err) {
+              if (err.status === 404) {
+                core.info(`Package ${packageName} not found; nothing to clean up.`);
+                return;
+              }
+              throw err;
+            }
+
+            let deleted = 0;
+            for (const version of versions) {
+              const tags = version.metadata?.container?.tags ?? [];
+              if (!tags.some((t) => t.startsWith(prTagPrefix))) continue;
+              // Never delete an image that also carries a non-PR tag (e.g. a
+              // main or release tag that happens to point at the same digest).
+              if (!tags.every((t) => t.startsWith('pr-'))) {
+                core.warning(`Skipping version ${version.id}: has non-PR tags ${tags.join(', ')}`);
+                continue;
+              }
+              await github.rest.packages.deletePackageVersionForOrg({
+                org,
+                package_type: 'container',
+                package_name: packageName,
+                package_version_id: version.id,
+              });
+              core.info(`Deleted version ${version.id} (${tags.join(', ')})`);
+              deleted++;
+            }
+            core.info(`Deleted ${deleted} image version(s) for PR #${context.payload.pull_request.number}.`);
