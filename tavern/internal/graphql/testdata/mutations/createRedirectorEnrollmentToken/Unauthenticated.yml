@@ -1,0 +1,5 @@
+query: |
+  mutation CreateRedirectorEnrollmentToken {
+    createRedirectorEnrollmentToken
+  }
+expected_error: "permission denied"

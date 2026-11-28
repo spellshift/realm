@@ -8,9 +8,7 @@ package graphql
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/enrollment"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
@@ -773,18 +772,23 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 
 // CreateBuilderEnrollmentToken is the resolver for the createBuilderEnrollmentToken field.
 func (r *mutationResolver) CreateBuilderEnrollmentToken(ctx context.Context) (string, error) {
-	raw := make([]byte, 32)
-	if _, err := rand.Read(raw); err != nil {
-		return "", err
-	}
-	token := base64.RawURLEncoding.EncodeToString(raw)
-	hash := sha256.Sum256([]byte(token))
-	tok, err := r.client.BuilderEnrollmentToken.Create().SetTokenHash(hex.EncodeToString(hash[:])).Save(ctx)
+	token, id, err := enrollment.Issue(ctx, r.client, enrollment.Builder)
 	if err != nil {
 		return "", err
 	}
-	attrs := append(logging.TargetIntAttrs("builder_enrollment_token", tok.ID, ""), "token_id", tok.ID)
+	attrs := append(logging.TargetIntAttrs("builder_enrollment_token", id, ""), "token_id", id)
 	logging.Audit(auditCtx(ctx), "admin", "builder.enrollment_token_created", "builder enrollment token created", attrs...)
+	return token, nil
+}
+
+// CreateRedirectorEnrollmentToken is the resolver for the createRedirectorEnrollmentToken field.
+func (r *mutationResolver) CreateRedirectorEnrollmentToken(ctx context.Context) (string, error) {
+	token, id, err := enrollment.Issue(ctx, r.client, enrollment.Redirector)
+	if err != nil {
+		return "", err
+	}
+	attrs := append(logging.TargetIntAttrs("redirector_enrollment_token", id, ""), "token_id", id)
+	logging.Audit(auditCtx(ctx), "admin", "redirector.enrollment_token_created", "redirector enrollment token created", attrs...)
 	return token, nil
 }
 

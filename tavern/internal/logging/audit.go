@@ -202,6 +202,7 @@ var targetInferenceOrder = []inferredTargetRule{
 	{tType: "build_task", idKey: "build_task_id", nameKey: "profile_name"},
 	{tType: "build_profile", idKey: "build_profile_id", nameKey: "profile_name"},
 	{tType: "builder", idKey: "builder_id", nameKey: "builder_identifier"},
+	{tType: "redirector", idKey: "redirector_id", nameKey: "redirector_identifier"},
 	{tType: "link", idKey: "link_id", nameKey: "link_path"},
 	{tType: "asset", idKey: "asset_id", nameKey: "asset_name"},
 	{tType: "tome", idKey: "tome_id", nameKey: "tome_name"},

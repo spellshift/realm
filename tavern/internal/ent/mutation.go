@@ -36,6 +36,8 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/redirector"
+	"realm.pub/tavern/internal/ent/redirectorenrollmenttoken"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
@@ -57,37 +59,39 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdventure              = "Adventure"
-	TypeAsset                  = "Asset"
-	TypeBeacon                 = "Beacon"
-	TypeBeaconHistory          = "BeaconHistory"
-	TypeBuildProfile           = "BuildProfile"
-	TypeBuildTask              = "BuildTask"
-	TypeBuilder                = "Builder"
-	TypeBuilderEnrollmentToken = "BuilderEnrollmentToken"
-	TypeDeviceAuth             = "DeviceAuth"
-	TypeEvent                  = "Event"
-	TypeHost                   = "Host"
-	TypeHostCredential         = "HostCredential"
-	TypeHostFile               = "HostFile"
-	TypeHostProcess            = "HostProcess"
-	TypeLink                   = "Link"
-	TypeNetwork                = "Network"
-	TypeNetworkHost            = "NetworkHost"
-	TypeNotification           = "Notification"
-	TypeOperatorNote           = "OperatorNote"
-	TypePortal                 = "Portal"
-	TypeQuest                  = "Quest"
-	TypeRepository             = "Repository"
-	TypeScheduledTask          = "ScheduledTask"
-	TypeScreenshot             = "Screenshot"
-	TypeShell                  = "Shell"
-	TypeShellPivot             = "ShellPivot"
-	TypeShellTask              = "ShellTask"
-	TypeTag                    = "Tag"
-	TypeTask                   = "Task"
-	TypeTome                   = "Tome"
-	TypeUser                   = "User"
+	TypeAdventure                 = "Adventure"
+	TypeAsset                     = "Asset"
+	TypeBeacon                    = "Beacon"
+	TypeBeaconHistory             = "BeaconHistory"
+	TypeBuildProfile              = "BuildProfile"
+	TypeBuildTask                 = "BuildTask"
+	TypeBuilder                   = "Builder"
+	TypeBuilderEnrollmentToken    = "BuilderEnrollmentToken"
+	TypeDeviceAuth                = "DeviceAuth"
+	TypeEvent                     = "Event"
+	TypeHost                      = "Host"
+	TypeHostCredential            = "HostCredential"
+	TypeHostFile                  = "HostFile"
+	TypeHostProcess               = "HostProcess"
+	TypeLink                      = "Link"
+	TypeNetwork                   = "Network"
+	TypeNetworkHost               = "NetworkHost"
+	TypeNotification              = "Notification"
+	TypeOperatorNote              = "OperatorNote"
+	TypePortal                    = "Portal"
+	TypeQuest                     = "Quest"
+	TypeRedirector                = "Redirector"
+	TypeRedirectorEnrollmentToken = "RedirectorEnrollmentToken"
+	TypeRepository                = "Repository"
+	TypeScheduledTask             = "ScheduledTask"
+	TypeScreenshot                = "Screenshot"
+	TypeShell                     = "Shell"
+	TypeShellPivot                = "ShellPivot"
+	TypeShellTask                 = "ShellTask"
+	TypeTag                       = "Tag"
+	TypeTask                      = "Task"
+	TypeTome                      = "Tome"
+	TypeUser                      = "User"
 )
 
 // AdventureMutation represents an operation that mutates the Adventure nodes in the graph.
@@ -20008,6 +20012,1074 @@ func (m *QuestMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Quest edge %s", name)
+}
+
+// RedirectorMutation represents an operation that mutates the Redirector nodes in the graph.
+type RedirectorMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	identifier       *string
+	transport        *redirector.Transport
+	domains          *[]string
+	appenddomains    []string
+	enabled          *bool
+	last_seen_at     *time.Time
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*Redirector, error)
+	predicates       []predicate.Redirector
+}
+
+var _ ent.Mutation = (*RedirectorMutation)(nil)
+
+// redirectorOption allows management of the mutation configuration using functional options.
+type redirectorOption func(*RedirectorMutation)
+
+// newRedirectorMutation creates new mutation for the Redirector entity.
+func newRedirectorMutation(c config, op Op, opts ...redirectorOption) *RedirectorMutation {
+	m := &RedirectorMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRedirector,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRedirectorID sets the ID field of the mutation.
+func withRedirectorID(id int) redirectorOption {
+	return func(m *RedirectorMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Redirector
+		)
+		m.oldValue = func(ctx context.Context) (*Redirector, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Redirector.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRedirector sets the old Redirector of the mutation.
+func withRedirector(node *Redirector) redirectorOption {
+	return func(m *RedirectorMutation) {
+		m.oldValue = func(context.Context) (*Redirector, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RedirectorMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RedirectorMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RedirectorMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RedirectorMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Redirector.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RedirectorMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RedirectorMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Redirector entity.
+// If the Redirector object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RedirectorMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *RedirectorMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *RedirectorMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Redirector entity.
+// If the Redirector object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *RedirectorMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetIdentifier sets the "identifier" field.
+func (m *RedirectorMutation) SetIdentifier(s string) {
+	m.identifier = &s
+}
+
+// Identifier returns the value of the "identifier" field in the mutation.
+func (m *RedirectorMutation) Identifier() (r string, exists bool) {
+	v := m.identifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdentifier returns the old "identifier" field's value of the Redirector entity.
+// If the Redirector object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorMutation) OldIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdentifier: %w", err)
+	}
+	return oldValue.Identifier, nil
+}
+
+// ResetIdentifier resets all changes to the "identifier" field.
+func (m *RedirectorMutation) ResetIdentifier() {
+	m.identifier = nil
+}
+
+// SetTransport sets the "transport" field.
+func (m *RedirectorMutation) SetTransport(r redirector.Transport) {
+	m.transport = &r
+}
+
+// Transport returns the value of the "transport" field in the mutation.
+func (m *RedirectorMutation) Transport() (r redirector.Transport, exists bool) {
+	v := m.transport
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransport returns the old "transport" field's value of the Redirector entity.
+// If the Redirector object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorMutation) OldTransport(ctx context.Context) (v redirector.Transport, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransport is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransport requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransport: %w", err)
+	}
+	return oldValue.Transport, nil
+}
+
+// ResetTransport resets all changes to the "transport" field.
+func (m *RedirectorMutation) ResetTransport() {
+	m.transport = nil
+}
+
+// SetDomains sets the "domains" field.
+func (m *RedirectorMutation) SetDomains(s []string) {
+	m.domains = &s
+	m.appenddomains = nil
+}
+
+// Domains returns the value of the "domains" field in the mutation.
+func (m *RedirectorMutation) Domains() (r []string, exists bool) {
+	v := m.domains
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDomains returns the old "domains" field's value of the Redirector entity.
+// If the Redirector object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorMutation) OldDomains(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDomains is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDomains requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDomains: %w", err)
+	}
+	return oldValue.Domains, nil
+}
+
+// AppendDomains adds s to the "domains" field.
+func (m *RedirectorMutation) AppendDomains(s []string) {
+	m.appenddomains = append(m.appenddomains, s...)
+}
+
+// AppendedDomains returns the list of values that were appended to the "domains" field in this mutation.
+func (m *RedirectorMutation) AppendedDomains() ([]string, bool) {
+	if len(m.appenddomains) == 0 {
+		return nil, false
+	}
+	return m.appenddomains, true
+}
+
+// ResetDomains resets all changes to the "domains" field.
+func (m *RedirectorMutation) ResetDomains() {
+	m.domains = nil
+	m.appenddomains = nil
+}
+
+// SetEnabled sets the "enabled" field.
+func (m *RedirectorMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *RedirectorMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the Redirector entity.
+// If the Redirector object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *RedirectorMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (m *RedirectorMutation) SetLastSeenAt(t time.Time) {
+	m.last_seen_at = &t
+}
+
+// LastSeenAt returns the value of the "last_seen_at" field in the mutation.
+func (m *RedirectorMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.last_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "last_seen_at" field's value of the Redirector entity.
+// If the Redirector object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorMutation) OldLastSeenAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
+	}
+	return oldValue.LastSeenAt, nil
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (m *RedirectorMutation) ClearLastSeenAt() {
+	m.last_seen_at = nil
+	m.clearedFields[redirector.FieldLastSeenAt] = struct{}{}
+}
+
+// LastSeenAtCleared returns if the "last_seen_at" field was cleared in this mutation.
+func (m *RedirectorMutation) LastSeenAtCleared() bool {
+	_, ok := m.clearedFields[redirector.FieldLastSeenAt]
+	return ok
+}
+
+// ResetLastSeenAt resets all changes to the "last_seen_at" field.
+func (m *RedirectorMutation) ResetLastSeenAt() {
+	m.last_seen_at = nil
+	delete(m.clearedFields, redirector.FieldLastSeenAt)
+}
+
+// Where appends a list predicates to the RedirectorMutation builder.
+func (m *RedirectorMutation) Where(ps ...predicate.Redirector) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RedirectorMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RedirectorMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Redirector, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RedirectorMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RedirectorMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Redirector).
+func (m *RedirectorMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RedirectorMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, redirector.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, redirector.FieldLastModifiedAt)
+	}
+	if m.identifier != nil {
+		fields = append(fields, redirector.FieldIdentifier)
+	}
+	if m.transport != nil {
+		fields = append(fields, redirector.FieldTransport)
+	}
+	if m.domains != nil {
+		fields = append(fields, redirector.FieldDomains)
+	}
+	if m.enabled != nil {
+		fields = append(fields, redirector.FieldEnabled)
+	}
+	if m.last_seen_at != nil {
+		fields = append(fields, redirector.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RedirectorMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case redirector.FieldCreatedAt:
+		return m.CreatedAt()
+	case redirector.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case redirector.FieldIdentifier:
+		return m.Identifier()
+	case redirector.FieldTransport:
+		return m.Transport()
+	case redirector.FieldDomains:
+		return m.Domains()
+	case redirector.FieldEnabled:
+		return m.Enabled()
+	case redirector.FieldLastSeenAt:
+		return m.LastSeenAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RedirectorMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case redirector.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case redirector.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case redirector.FieldIdentifier:
+		return m.OldIdentifier(ctx)
+	case redirector.FieldTransport:
+		return m.OldTransport(ctx)
+	case redirector.FieldDomains:
+		return m.OldDomains(ctx)
+	case redirector.FieldEnabled:
+		return m.OldEnabled(ctx)
+	case redirector.FieldLastSeenAt:
+		return m.OldLastSeenAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Redirector field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RedirectorMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case redirector.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case redirector.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case redirector.FieldIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdentifier(v)
+		return nil
+	case redirector.FieldTransport:
+		v, ok := value.(redirector.Transport)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransport(v)
+		return nil
+	case redirector.FieldDomains:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDomains(v)
+		return nil
+	case redirector.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
+		return nil
+	case redirector.FieldLastSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSeenAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Redirector field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RedirectorMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RedirectorMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RedirectorMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Redirector numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RedirectorMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(redirector.FieldLastSeenAt) {
+		fields = append(fields, redirector.FieldLastSeenAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RedirectorMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RedirectorMutation) ClearField(name string) error {
+	switch name {
+	case redirector.FieldLastSeenAt:
+		m.ClearLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Redirector nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RedirectorMutation) ResetField(name string) error {
+	switch name {
+	case redirector.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case redirector.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case redirector.FieldIdentifier:
+		m.ResetIdentifier()
+		return nil
+	case redirector.FieldTransport:
+		m.ResetTransport()
+		return nil
+	case redirector.FieldDomains:
+		m.ResetDomains()
+		return nil
+	case redirector.FieldEnabled:
+		m.ResetEnabled()
+		return nil
+	case redirector.FieldLastSeenAt:
+		m.ResetLastSeenAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Redirector field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RedirectorMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RedirectorMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RedirectorMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RedirectorMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RedirectorMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RedirectorMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RedirectorMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown Redirector unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RedirectorMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown Redirector edge %s", name)
+}
+
+// RedirectorEnrollmentTokenMutation represents an operation that mutates the RedirectorEnrollmentToken nodes in the graph.
+type RedirectorEnrollmentTokenMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	token_hash    *string
+	used          *bool
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*RedirectorEnrollmentToken, error)
+	predicates    []predicate.RedirectorEnrollmentToken
+}
+
+var _ ent.Mutation = (*RedirectorEnrollmentTokenMutation)(nil)
+
+// redirectorenrollmenttokenOption allows management of the mutation configuration using functional options.
+type redirectorenrollmenttokenOption func(*RedirectorEnrollmentTokenMutation)
+
+// newRedirectorEnrollmentTokenMutation creates new mutation for the RedirectorEnrollmentToken entity.
+func newRedirectorEnrollmentTokenMutation(c config, op Op, opts ...redirectorenrollmenttokenOption) *RedirectorEnrollmentTokenMutation {
+	m := &RedirectorEnrollmentTokenMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRedirectorEnrollmentToken,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRedirectorEnrollmentTokenID sets the ID field of the mutation.
+func withRedirectorEnrollmentTokenID(id int) redirectorenrollmenttokenOption {
+	return func(m *RedirectorEnrollmentTokenMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RedirectorEnrollmentToken
+		)
+		m.oldValue = func(ctx context.Context) (*RedirectorEnrollmentToken, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RedirectorEnrollmentToken.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRedirectorEnrollmentToken sets the old RedirectorEnrollmentToken of the mutation.
+func withRedirectorEnrollmentToken(node *RedirectorEnrollmentToken) redirectorenrollmenttokenOption {
+	return func(m *RedirectorEnrollmentTokenMutation) {
+		m.oldValue = func(context.Context) (*RedirectorEnrollmentToken, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RedirectorEnrollmentTokenMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RedirectorEnrollmentTokenMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RedirectorEnrollmentTokenMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RedirectorEnrollmentTokenMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RedirectorEnrollmentToken.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTokenHash sets the "token_hash" field.
+func (m *RedirectorEnrollmentTokenMutation) SetTokenHash(s string) {
+	m.token_hash = &s
+}
+
+// TokenHash returns the value of the "token_hash" field in the mutation.
+func (m *RedirectorEnrollmentTokenMutation) TokenHash() (r string, exists bool) {
+	v := m.token_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenHash returns the old "token_hash" field's value of the RedirectorEnrollmentToken entity.
+// If the RedirectorEnrollmentToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorEnrollmentTokenMutation) OldTokenHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenHash: %w", err)
+	}
+	return oldValue.TokenHash, nil
+}
+
+// ResetTokenHash resets all changes to the "token_hash" field.
+func (m *RedirectorEnrollmentTokenMutation) ResetTokenHash() {
+	m.token_hash = nil
+}
+
+// SetUsed sets the "used" field.
+func (m *RedirectorEnrollmentTokenMutation) SetUsed(b bool) {
+	m.used = &b
+}
+
+// Used returns the value of the "used" field in the mutation.
+func (m *RedirectorEnrollmentTokenMutation) Used() (r bool, exists bool) {
+	v := m.used
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsed returns the old "used" field's value of the RedirectorEnrollmentToken entity.
+// If the RedirectorEnrollmentToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RedirectorEnrollmentTokenMutation) OldUsed(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsed: %w", err)
+	}
+	return oldValue.Used, nil
+}
+
+// ResetUsed resets all changes to the "used" field.
+func (m *RedirectorEnrollmentTokenMutation) ResetUsed() {
+	m.used = nil
+}
+
+// Where appends a list predicates to the RedirectorEnrollmentTokenMutation builder.
+func (m *RedirectorEnrollmentTokenMutation) Where(ps ...predicate.RedirectorEnrollmentToken) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RedirectorEnrollmentTokenMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RedirectorEnrollmentTokenMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RedirectorEnrollmentToken, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RedirectorEnrollmentTokenMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RedirectorEnrollmentTokenMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RedirectorEnrollmentToken).
+func (m *RedirectorEnrollmentTokenMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RedirectorEnrollmentTokenMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.token_hash != nil {
+		fields = append(fields, redirectorenrollmenttoken.FieldTokenHash)
+	}
+	if m.used != nil {
+		fields = append(fields, redirectorenrollmenttoken.FieldUsed)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RedirectorEnrollmentTokenMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case redirectorenrollmenttoken.FieldTokenHash:
+		return m.TokenHash()
+	case redirectorenrollmenttoken.FieldUsed:
+		return m.Used()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RedirectorEnrollmentTokenMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case redirectorenrollmenttoken.FieldTokenHash:
+		return m.OldTokenHash(ctx)
+	case redirectorenrollmenttoken.FieldUsed:
+		return m.OldUsed(ctx)
+	}
+	return nil, fmt.Errorf("unknown RedirectorEnrollmentToken field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RedirectorEnrollmentTokenMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case redirectorenrollmenttoken.FieldTokenHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenHash(v)
+		return nil
+	case redirectorenrollmenttoken.FieldUsed:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsed(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RedirectorEnrollmentToken field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RedirectorEnrollmentTokenMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RedirectorEnrollmentTokenMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RedirectorEnrollmentTokenMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown RedirectorEnrollmentToken numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RedirectorEnrollmentTokenMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RedirectorEnrollmentTokenMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RedirectorEnrollmentTokenMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown RedirectorEnrollmentToken nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RedirectorEnrollmentTokenMutation) ResetField(name string) error {
+	switch name {
+	case redirectorenrollmenttoken.FieldTokenHash:
+		m.ResetTokenHash()
+		return nil
+	case redirectorenrollmenttoken.FieldUsed:
+		m.ResetUsed()
+		return nil
+	}
+	return fmt.Errorf("unknown RedirectorEnrollmentToken field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RedirectorEnrollmentTokenMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RedirectorEnrollmentTokenMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RedirectorEnrollmentTokenMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RedirectorEnrollmentTokenMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RedirectorEnrollmentTokenMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RedirectorEnrollmentTokenMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RedirectorEnrollmentTokenMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown RedirectorEnrollmentToken unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RedirectorEnrollmentTokenMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown RedirectorEnrollmentToken edge %s", name)
 }
 
 // RepositoryMutation represents an operation that mutates the Repository nodes in the graph.

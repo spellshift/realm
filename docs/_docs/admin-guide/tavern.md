@@ -213,6 +213,12 @@ Below are some deployment gotchas and notes that we try to address with Terrafor
 
 By default Tavern only supports gRPC connections directly to the server. To enable additional protocols or additional IPs/domain names in your callbacks, utilize Tavern redirectors which receive traffic using a specific protocol (like HTTP/1.1 or DNS) and then forward it to an upstream Tavern server over gRPC.
 
+### Redirector enrollment tokens
+
+Tavern accepts one-time redirector enrollment tokens from the `REALM_REDIRECTOR_ENROLLMENT_TOKENS` environment variable (a comma-separated list) or the admin-only `createRedirectorEnrollmentToken` GraphQL mutation. A redirector can exchange one token and an Ed25519 CSR at `POST /auth/redirector/enroll` for a signed certificate and stable redirector ID. The request also supplies its transport and DNS domains.
+
+Tavern commits the new identity and consumes the token before sending the HTTP response. If the response is lost before the certificate is saved, that token cannot recover the certificate or enroll again. Issue a fresh token and repeat enrollment; the original redirector record remains offline. Keep token use single-use even when the client cannot confirm whether enrollment succeeded.
+
 ### Available Redirectors
 
 Realm includes five built-in redirector implementations:
