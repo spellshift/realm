@@ -75,26 +75,6 @@ func (qu *QuestUpdate) ClearParameters() *QuestUpdate {
 	return qu
 }
 
-// SetScheduledAt sets the "scheduled_at" field.
-func (qu *QuestUpdate) SetScheduledAt(t time.Time) *QuestUpdate {
-	qu.mutation.SetScheduledAt(t)
-	return qu
-}
-
-// SetNillableScheduledAt sets the "scheduled_at" field if the given value is not nil.
-func (qu *QuestUpdate) SetNillableScheduledAt(t *time.Time) *QuestUpdate {
-	if t != nil {
-		qu.SetScheduledAt(*t)
-	}
-	return qu
-}
-
-// ClearScheduledAt clears the value of the "scheduled_at" field.
-func (qu *QuestUpdate) ClearScheduledAt() *QuestUpdate {
-	qu.mutation.ClearScheduledAt()
-	return qu
-}
-
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (qu *QuestUpdate) SetTomeID(id int) *QuestUpdate {
 	qu.mutation.SetTomeID(id)
@@ -433,9 +413,6 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if qu.mutation.EldritchAtCreationCleared() {
 		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
-	}
-	if value, ok := qu.mutation.ScheduledAt(); ok {
-		_spec.SetField(quest.FieldScheduledAt, field.TypeTime, value)
 	}
 	if qu.mutation.ScheduledAtCleared() {
 		_spec.ClearField(quest.FieldScheduledAt, field.TypeTime)
@@ -809,26 +786,6 @@ func (quo *QuestUpdateOne) ClearParameters() *QuestUpdateOne {
 	return quo
 }
 
-// SetScheduledAt sets the "scheduled_at" field.
-func (quo *QuestUpdateOne) SetScheduledAt(t time.Time) *QuestUpdateOne {
-	quo.mutation.SetScheduledAt(t)
-	return quo
-}
-
-// SetNillableScheduledAt sets the "scheduled_at" field if the given value is not nil.
-func (quo *QuestUpdateOne) SetNillableScheduledAt(t *time.Time) *QuestUpdateOne {
-	if t != nil {
-		quo.SetScheduledAt(*t)
-	}
-	return quo
-}
-
-// ClearScheduledAt clears the value of the "scheduled_at" field.
-func (quo *QuestUpdateOne) ClearScheduledAt() *QuestUpdateOne {
-	quo.mutation.ClearScheduledAt()
-	return quo
-}
-
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (quo *QuestUpdateOne) SetTomeID(id int) *QuestUpdateOne {
 	quo.mutation.SetTomeID(id)
@@ -1197,9 +1154,6 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 	}
 	if quo.mutation.EldritchAtCreationCleared() {
 		_spec.ClearField(quest.FieldEldritchAtCreation, field.TypeString)
-	}
-	if value, ok := quo.mutation.ScheduledAt(); ok {
-		_spec.SetField(quest.FieldScheduledAt, field.TypeTime, value)
 	}
 	if quo.mutation.ScheduledAtCleared() {
 		_spec.ClearField(quest.FieldScheduledAt, field.TypeTime)

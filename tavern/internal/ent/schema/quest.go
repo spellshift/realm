@@ -54,6 +54,7 @@ func (Quest) Fields() []ent.Field {
 			).
 			Comment("Eldritch script that was evaluated at the time of this quest creation."),
 		field.Time("scheduled_at").
+			Immutable().
 			Optional().
 			Nillable().
 			Annotations(

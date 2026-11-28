@@ -643,24 +643,6 @@ func (u *QuestUpsert) ClearParameters() *QuestUpsert {
 	return u
 }
 
-// SetScheduledAt sets the "scheduled_at" field.
-func (u *QuestUpsert) SetScheduledAt(v time.Time) *QuestUpsert {
-	u.Set(quest.FieldScheduledAt, v)
-	return u
-}
-
-// UpdateScheduledAt sets the "scheduled_at" field to the value that was provided on create.
-func (u *QuestUpsert) UpdateScheduledAt() *QuestUpsert {
-	u.SetExcluded(quest.FieldScheduledAt)
-	return u
-}
-
-// ClearScheduledAt clears the value of the "scheduled_at" field.
-func (u *QuestUpsert) ClearScheduledAt() *QuestUpsert {
-	u.SetNull(quest.FieldScheduledAt)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -680,6 +662,9 @@ func (u *QuestUpsertOne) UpdateNewValues() *QuestUpsertOne {
 		}
 		if _, exists := u.create.mutation.EldritchAtCreation(); exists {
 			s.SetIgnore(quest.FieldEldritchAtCreation)
+		}
+		if _, exists := u.create.mutation.ScheduledAt(); exists {
+			s.SetIgnore(quest.FieldScheduledAt)
 		}
 	}))
 	return u
@@ -758,27 +743,6 @@ func (u *QuestUpsertOne) UpdateParameters() *QuestUpsertOne {
 func (u *QuestUpsertOne) ClearParameters() *QuestUpsertOne {
 	return u.Update(func(s *QuestUpsert) {
 		s.ClearParameters()
-	})
-}
-
-// SetScheduledAt sets the "scheduled_at" field.
-func (u *QuestUpsertOne) SetScheduledAt(v time.Time) *QuestUpsertOne {
-	return u.Update(func(s *QuestUpsert) {
-		s.SetScheduledAt(v)
-	})
-}
-
-// UpdateScheduledAt sets the "scheduled_at" field to the value that was provided on create.
-func (u *QuestUpsertOne) UpdateScheduledAt() *QuestUpsertOne {
-	return u.Update(func(s *QuestUpsert) {
-		s.UpdateScheduledAt()
-	})
-}
-
-// ClearScheduledAt clears the value of the "scheduled_at" field.
-func (u *QuestUpsertOne) ClearScheduledAt() *QuestUpsertOne {
-	return u.Update(func(s *QuestUpsert) {
-		s.ClearScheduledAt()
 	})
 }
 
@@ -967,6 +931,9 @@ func (u *QuestUpsertBulk) UpdateNewValues() *QuestUpsertBulk {
 			if _, exists := b.mutation.EldritchAtCreation(); exists {
 				s.SetIgnore(quest.FieldEldritchAtCreation)
 			}
+			if _, exists := b.mutation.ScheduledAt(); exists {
+				s.SetIgnore(quest.FieldScheduledAt)
+			}
 		}
 	}))
 	return u
@@ -1045,27 +1012,6 @@ func (u *QuestUpsertBulk) UpdateParameters() *QuestUpsertBulk {
 func (u *QuestUpsertBulk) ClearParameters() *QuestUpsertBulk {
 	return u.Update(func(s *QuestUpsert) {
 		s.ClearParameters()
-	})
-}
-
-// SetScheduledAt sets the "scheduled_at" field.
-func (u *QuestUpsertBulk) SetScheduledAt(v time.Time) *QuestUpsertBulk {
-	return u.Update(func(s *QuestUpsert) {
-		s.SetScheduledAt(v)
-	})
-}
-
-// UpdateScheduledAt sets the "scheduled_at" field to the value that was provided on create.
-func (u *QuestUpsertBulk) UpdateScheduledAt() *QuestUpsertBulk {
-	return u.Update(func(s *QuestUpsert) {
-		s.UpdateScheduledAt()
-	})
-}
-
-// ClearScheduledAt clears the value of the "scheduled_at" field.
-func (u *QuestUpsertBulk) ClearScheduledAt() *QuestUpsertBulk {
-	return u.Update(func(s *QuestUpsert) {
-		s.ClearScheduledAt()
 	})
 }
 

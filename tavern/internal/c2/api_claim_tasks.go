@@ -176,9 +176,6 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 				SetParameters(st.Parameters).
 				SetParamDefsAtCreation(tome.ParamDefs).
 				SetEldritchAtCreation(tome.Eldritch)
-			if st.Parameters != "" {
-				questCreate.SetParameters(st.Parameters)
-			}
 			if !fireTime.IsZero() {
 				questCreate.SetScheduledAt(fireTime)
 			}
