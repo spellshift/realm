@@ -70,6 +70,11 @@ func Identifier(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldIdentifier, v))
 }
 
+// Hostname applies equality check predicate on the "hostname" field. It's identical to HostnameEQ.
+func Hostname(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldHostname, v))
+}
+
 // Upstream applies equality check predicate on the "upstream" field. It's identical to UpstreamEQ.
 func Upstream(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldUpstream, v))
@@ -228,6 +233,81 @@ func IdentifierEqualFold(v string) predicate.Builder {
 // IdentifierContainsFold applies the ContainsFold predicate on the "identifier" field.
 func IdentifierContainsFold(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldContainsFold(FieldIdentifier, v))
+}
+
+// HostnameEQ applies the EQ predicate on the "hostname" field.
+func HostnameEQ(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldHostname, v))
+}
+
+// HostnameNEQ applies the NEQ predicate on the "hostname" field.
+func HostnameNEQ(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldNEQ(FieldHostname, v))
+}
+
+// HostnameIn applies the In predicate on the "hostname" field.
+func HostnameIn(vs ...string) predicate.Builder {
+	return predicate.Builder(sql.FieldIn(FieldHostname, vs...))
+}
+
+// HostnameNotIn applies the NotIn predicate on the "hostname" field.
+func HostnameNotIn(vs ...string) predicate.Builder {
+	return predicate.Builder(sql.FieldNotIn(FieldHostname, vs...))
+}
+
+// HostnameGT applies the GT predicate on the "hostname" field.
+func HostnameGT(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldGT(FieldHostname, v))
+}
+
+// HostnameGTE applies the GTE predicate on the "hostname" field.
+func HostnameGTE(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldGTE(FieldHostname, v))
+}
+
+// HostnameLT applies the LT predicate on the "hostname" field.
+func HostnameLT(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldLT(FieldHostname, v))
+}
+
+// HostnameLTE applies the LTE predicate on the "hostname" field.
+func HostnameLTE(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldLTE(FieldHostname, v))
+}
+
+// HostnameContains applies the Contains predicate on the "hostname" field.
+func HostnameContains(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldContains(FieldHostname, v))
+}
+
+// HostnameHasPrefix applies the HasPrefix predicate on the "hostname" field.
+func HostnameHasPrefix(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldHasPrefix(FieldHostname, v))
+}
+
+// HostnameHasSuffix applies the HasSuffix predicate on the "hostname" field.
+func HostnameHasSuffix(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldHasSuffix(FieldHostname, v))
+}
+
+// HostnameIsNil applies the IsNil predicate on the "hostname" field.
+func HostnameIsNil() predicate.Builder {
+	return predicate.Builder(sql.FieldIsNull(FieldHostname))
+}
+
+// HostnameNotNil applies the NotNil predicate on the "hostname" field.
+func HostnameNotNil() predicate.Builder {
+	return predicate.Builder(sql.FieldNotNull(FieldHostname))
+}
+
+// HostnameEqualFold applies the EqualFold predicate on the "hostname" field.
+func HostnameEqualFold(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldEqualFold(FieldHostname, v))
+}
+
+// HostnameContainsFold applies the ContainsFold predicate on the "hostname" field.
+func HostnameContainsFold(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldContainsFold(FieldHostname, v))
 }
 
 // UpstreamEQ applies the EQ predicate on the "upstream" field.

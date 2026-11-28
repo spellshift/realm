@@ -13,8 +13,8 @@ const platformBadges = (platforms: Platform[]) => (
 
 export const builderColumns: ColumnDef<Builder>[] = [
     {
-        accessorKey: "identifier",
-        header: "Identifier",
+        accessorKey: "hostname",
+        header: "Hostname",
         cell: ({ row }) => (
             <div className="flex flex-row items-center gap-2">
                 {row.original.online ? (
@@ -22,13 +22,14 @@ export const builderColumns: ColumnDef<Builder>[] = [
                 ) : (
                     <CircleX className="w-5 h-5 text-red-600 shrink-0" />
                 )}
-                <span className="font-mono text-xs font-semibold text-gray-900">{row.original.identifier}</span>
+                <span className="text-sm font-semibold text-gray-900">{row.original.hostname ?? "Unknown host"}</span>
             </div>
         ),
     },
     { accessorKey: "supportedTargets", header: "Supports", cell: ({ row }) => platformBadges(row.original.supportedTargets) },
     {
-        accessorKey: "lastSeenAt",
+        id: "lastSeenAt",
+        accessorFn: (builder) => builder.lastSeenAtRaw ?? "",
         header: "Last seen",
         cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.lastSeenAt ?? "Never"}</span>,
     },

@@ -20,12 +20,12 @@ export const GET_BUILD_PROFILES = gql`
 `;
 export const GET_BUILDERS = gql`
     query AgentBuilders {
-        builders { edges { node { id identifier supportedTargets upstream pollInterval lastSeenAt } } }
+        builders { edges { node { id identifier hostname supportedTargets upstream pollInterval lastSeenAt } } }
     }
 `;
 export const GET_ENROLLED_BUILDER = gql`
     query EnrolledAgentBuilder($identifier: String!) {
-        builders(where: { identifier: $identifier }) { edges { node { id identifier supportedTargets upstream pollInterval lastSeenAt } } }
+        builders(where: { identifier: $identifier }) { edges { node { id identifier hostname supportedTargets upstream pollInterval lastSeenAt } } }
     }
 `;
 export const GET_ONLINE_BUILDER_PLATFORMS = gql`

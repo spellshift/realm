@@ -265,11 +265,11 @@ func init() {
 	// builder.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	builder.IdentifierValidator = builderDescIdentifier.Validators[0].(func(string) error)
 	// builderDescUpstream is the schema descriptor for upstream field.
-	builderDescUpstream := builderFields[2].Descriptor()
+	builderDescUpstream := builderFields[3].Descriptor()
 	// builder.DefaultUpstream holds the default value on creation for the upstream field.
 	builder.DefaultUpstream = builderDescUpstream.Default.(string)
 	// builderDescPollInterval is the schema descriptor for poll_interval field.
-	builderDescPollInterval := builderFields[3].Descriptor()
+	builderDescPollInterval := builderFields[4].Descriptor()
 	// builder.DefaultPollInterval holds the default value on creation for the poll_interval field.
 	builder.DefaultPollInterval = builderDescPollInterval.Default.(int)
 	// builder.PollIntervalValidator is a validator for the "poll_interval" field. It is called by the builders before save.

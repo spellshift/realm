@@ -6195,6 +6195,7 @@ type BuilderMutation struct {
 	created_at              *time.Time
 	last_modified_at        *time.Time
 	identifier              *string
+	hostname                *string
 	supported_targets       *[]c2pb.Host_Platform
 	appendsupported_targets []c2pb.Host_Platform
 	upstream                *string
@@ -6415,6 +6416,55 @@ func (m *BuilderMutation) OldIdentifier(ctx context.Context) (v string, err erro
 // ResetIdentifier resets all changes to the "identifier" field.
 func (m *BuilderMutation) ResetIdentifier() {
 	m.identifier = nil
+}
+
+// SetHostname sets the "hostname" field.
+func (m *BuilderMutation) SetHostname(s string) {
+	m.hostname = &s
+}
+
+// Hostname returns the value of the "hostname" field in the mutation.
+func (m *BuilderMutation) Hostname() (r string, exists bool) {
+	v := m.hostname
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHostname returns the old "hostname" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldHostname(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHostname is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHostname requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHostname: %w", err)
+	}
+	return oldValue.Hostname, nil
+}
+
+// ClearHostname clears the value of the "hostname" field.
+func (m *BuilderMutation) ClearHostname() {
+	m.hostname = nil
+	m.clearedFields[builder.FieldHostname] = struct{}{}
+}
+
+// HostnameCleared returns if the "hostname" field was cleared in this mutation.
+func (m *BuilderMutation) HostnameCleared() bool {
+	_, ok := m.clearedFields[builder.FieldHostname]
+	return ok
+}
+
+// ResetHostname resets all changes to the "hostname" field.
+func (m *BuilderMutation) ResetHostname() {
+	m.hostname = nil
+	delete(m.clearedFields, builder.FieldHostname)
 }
 
 // SetSupportedTargets sets the "supported_targets" field.
@@ -6733,7 +6783,7 @@ func (m *BuilderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuilderMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, builder.FieldCreatedAt)
 	}
@@ -6742,6 +6792,9 @@ func (m *BuilderMutation) Fields() []string {
 	}
 	if m.identifier != nil {
 		fields = append(fields, builder.FieldIdentifier)
+	}
+	if m.hostname != nil {
+		fields = append(fields, builder.FieldHostname)
 	}
 	if m.supported_targets != nil {
 		fields = append(fields, builder.FieldSupportedTargets)
@@ -6772,6 +6825,8 @@ func (m *BuilderMutation) Field(name string) (ent.Value, bool) {
 		return m.LastModifiedAt()
 	case builder.FieldIdentifier:
 		return m.Identifier()
+	case builder.FieldHostname:
+		return m.Hostname()
 	case builder.FieldSupportedTargets:
 		return m.SupportedTargets()
 	case builder.FieldUpstream:
@@ -6797,6 +6852,8 @@ func (m *BuilderMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLastModifiedAt(ctx)
 	case builder.FieldIdentifier:
 		return m.OldIdentifier(ctx)
+	case builder.FieldHostname:
+		return m.OldHostname(ctx)
 	case builder.FieldSupportedTargets:
 		return m.OldSupportedTargets(ctx)
 	case builder.FieldUpstream:
@@ -6836,6 +6893,13 @@ func (m *BuilderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIdentifier(v)
+		return nil
+	case builder.FieldHostname:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHostname(v)
 		return nil
 	case builder.FieldSupportedTargets:
 		v, ok := value.([]c2pb.Host_Platform)
@@ -6917,6 +6981,9 @@ func (m *BuilderMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BuilderMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(builder.FieldHostname) {
+		fields = append(fields, builder.FieldHostname)
+	}
 	if m.FieldCleared(builder.FieldLastSeenAt) {
 		fields = append(fields, builder.FieldLastSeenAt)
 	}
@@ -6934,6 +7001,9 @@ func (m *BuilderMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BuilderMutation) ClearField(name string) error {
 	switch name {
+	case builder.FieldHostname:
+		m.ClearHostname()
+		return nil
 	case builder.FieldLastSeenAt:
 		m.ClearLastSeenAt()
 		return nil
@@ -6953,6 +7023,9 @@ func (m *BuilderMutation) ResetField(name string) error {
 		return nil
 	case builder.FieldIdentifier:
 		m.ResetIdentifier()
+		return nil
+	case builder.FieldHostname:
+		m.ResetHostname()
 		return nil
 	case builder.FieldSupportedTargets:
 		m.ResetSupportedTargets()

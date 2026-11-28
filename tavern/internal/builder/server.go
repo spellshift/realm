@@ -50,10 +50,12 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		return nil, status.Error(codes.Unauthenticated, "builder not authenticated")
 	}
 
-	// Update builder's last_seen_at timestamp
-	if _, err := s.graph.Builder.UpdateOne(b).
-		SetLastSeenAt(now).
-		Save(ctx); err != nil {
+	// Update builder's last_seen_at timestamp and its reported hostname.
+	update := s.graph.Builder.UpdateOne(b).SetLastSeenAt(now)
+	if req.GetHostname() != "" {
+		update.SetHostname(req.GetHostname())
+	}
+	if _, err := update.Save(ctx); err != nil {
 		serverLog.ErrorContext(ctx, "failed to update builder last_seen_at",
 			"builder_id", b.ID, "error", err)
 	}

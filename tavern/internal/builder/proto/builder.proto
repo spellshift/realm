@@ -27,7 +27,9 @@ message DownloadTomeResponse {
     bytes chunk = 2;
 }
 
-message ClaimBuildTasksRequest {}
+message ClaimBuildTasksRequest {
+    string hostname = 1;
+}
 
 message BuildTaskSpec {
     int64 id = 1;

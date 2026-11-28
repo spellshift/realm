@@ -37,6 +37,26 @@ func (bu *BuilderUpdate) SetLastModifiedAt(t time.Time) *BuilderUpdate {
 	return bu
 }
 
+// SetHostname sets the "hostname" field.
+func (bu *BuilderUpdate) SetHostname(s string) *BuilderUpdate {
+	bu.mutation.SetHostname(s)
+	return bu
+}
+
+// SetNillableHostname sets the "hostname" field if the given value is not nil.
+func (bu *BuilderUpdate) SetNillableHostname(s *string) *BuilderUpdate {
+	if s != nil {
+		bu.SetHostname(*s)
+	}
+	return bu
+}
+
+// ClearHostname clears the value of the "hostname" field.
+func (bu *BuilderUpdate) ClearHostname() *BuilderUpdate {
+	bu.mutation.ClearHostname()
+	return bu
+}
+
 // SetSupportedTargets sets the "supported_targets" field.
 func (bu *BuilderUpdate) SetSupportedTargets(cp []c2pb.Host_Platform) *BuilderUpdate {
 	bu.mutation.SetSupportedTargets(cp)
@@ -225,6 +245,12 @@ func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := bu.mutation.LastModifiedAt(); ok {
 		_spec.SetField(builder.FieldLastModifiedAt, field.TypeTime, value)
 	}
+	if value, ok := bu.mutation.Hostname(); ok {
+		_spec.SetField(builder.FieldHostname, field.TypeString, value)
+	}
+	if bu.mutation.HostnameCleared() {
+		_spec.ClearField(builder.FieldHostname, field.TypeString)
+	}
 	if value, ok := bu.mutation.SupportedTargets(); ok {
 		_spec.SetField(builder.FieldSupportedTargets, field.TypeJSON, value)
 	}
@@ -319,6 +345,26 @@ type BuilderUpdateOne struct {
 // SetLastModifiedAt sets the "last_modified_at" field.
 func (buo *BuilderUpdateOne) SetLastModifiedAt(t time.Time) *BuilderUpdateOne {
 	buo.mutation.SetLastModifiedAt(t)
+	return buo
+}
+
+// SetHostname sets the "hostname" field.
+func (buo *BuilderUpdateOne) SetHostname(s string) *BuilderUpdateOne {
+	buo.mutation.SetHostname(s)
+	return buo
+}
+
+// SetNillableHostname sets the "hostname" field if the given value is not nil.
+func (buo *BuilderUpdateOne) SetNillableHostname(s *string) *BuilderUpdateOne {
+	if s != nil {
+		buo.SetHostname(*s)
+	}
+	return buo
+}
+
+// ClearHostname clears the value of the "hostname" field.
+func (buo *BuilderUpdateOne) ClearHostname() *BuilderUpdateOne {
+	buo.mutation.ClearHostname()
 	return buo
 }
 
@@ -539,6 +585,12 @@ func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err e
 	}
 	if value, ok := buo.mutation.LastModifiedAt(); ok {
 		_spec.SetField(builder.FieldLastModifiedAt, field.TypeTime, value)
+	}
+	if value, ok := buo.mutation.Hostname(); ok {
+		_spec.SetField(builder.FieldHostname, field.TypeString, value)
+	}
+	if buo.mutation.HostnameCleared() {
+		_spec.ClearField(builder.FieldHostname, field.TypeString)
 	}
 	if value, ok := buo.mutation.SupportedTargets(); ok {
 		_spec.SetField(builder.FieldSupportedTargets, field.TypeJSON, value)

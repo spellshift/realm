@@ -172,9 +172,19 @@ func TestBuilderE2E(t *testing.T) {
 		defer conn.Close()
 
 		authClient := builderpb.NewBuilderClient(conn)
-		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{Hostname: "builder-host.example"})
 		require.NoError(t, err)
 		require.NotNil(t, claimResp)
+		enrolled, err := graph.Builder.Query().Only(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, enrolled.Hostname)
+		require.Equal(t, "builder-host.example", *enrolled.Hostname)
+		_, err = authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		require.NoError(t, err)
+		enrolled, err = graph.Builder.Query().Only(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, enrolled.Hostname)
+		require.Equal(t, "builder-host.example", *enrolled.Hostname)
 	})
 
 	profile := graph.BuildProfile.Create().

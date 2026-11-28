@@ -23,6 +23,8 @@ const (
 	FieldLastModifiedAt = "last_modified_at"
 	// FieldIdentifier holds the string denoting the identifier field in the database.
 	FieldIdentifier = "identifier"
+	// FieldHostname holds the string denoting the hostname field in the database.
+	FieldHostname = "hostname"
 	// FieldSupportedTargets holds the string denoting the supported_targets field in the database.
 	FieldSupportedTargets = "supported_targets"
 	// FieldUpstream holds the string denoting the upstream field in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldLastModifiedAt,
 	FieldIdentifier,
+	FieldHostname,
 	FieldSupportedTargets,
 	FieldUpstream,
 	FieldPollInterval,
@@ -135,6 +138,11 @@ func ByLastModifiedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByIdentifier orders the results by the identifier field.
 func ByIdentifier(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIdentifier, opts...).ToFunc()
+}
+
+// ByHostname orders the results by the hostname field.
+func ByHostname(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHostname, opts...).ToFunc()
 }
 
 // ByUpstream orders the results by the upstream field.

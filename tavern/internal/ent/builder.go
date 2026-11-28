@@ -25,6 +25,8 @@ type Builder struct {
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// Unique identifier for the builder, embedded in its mTLS certificate CN.
 	Identifier string `json:"identifier,omitempty"`
+	// Hostname reported by the builder on its most recent task poll.
+	Hostname *string `json:"hostname,omitempty"`
 	// The platforms this builder can build agents for.
 	SupportedTargets []c2pb.Host_Platform `json:"supported_targets,omitempty"`
 	// The server address that the builder should connect to.
@@ -72,7 +74,7 @@ func (*Builder) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case builder.FieldID, builder.FieldPollInterval:
 			values[i] = new(sql.NullInt64)
-		case builder.FieldIdentifier, builder.FieldUpstream, builder.FieldExecutor:
+		case builder.FieldIdentifier, builder.FieldHostname, builder.FieldUpstream, builder.FieldExecutor:
 			values[i] = new(sql.NullString)
 		case builder.FieldCreatedAt, builder.FieldLastModifiedAt, builder.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
@@ -114,6 +116,13 @@ func (b *Builder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field identifier", values[i])
 			} else if value.Valid {
 				b.Identifier = value.String
+			}
+		case builder.FieldHostname:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field hostname", values[i])
+			} else if value.Valid {
+				b.Hostname = new(string)
+				*b.Hostname = value.String
 			}
 		case builder.FieldSupportedTargets:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -197,6 +206,11 @@ func (b *Builder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("identifier=")
 	builder.WriteString(b.Identifier)
+	builder.WriteString(", ")
+	if v := b.Hostname; v != nil {
+		builder.WriteString("hostname=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("supported_targets=")
 	builder.WriteString(fmt.Sprintf("%v", b.SupportedTargets))
