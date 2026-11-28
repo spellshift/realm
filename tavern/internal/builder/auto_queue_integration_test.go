@@ -73,6 +73,12 @@ func TestAutomaticDefaultBuildsFirstRepeatAndFormats(t *testing.T) {
 			require.Equal(t, DockerBuildDir+"/realm/implants/target/x86_64-pc-windows-gnu/release/"+paths[task.TargetFormat], task.ArtifactPath)
 			require.Equal(t, task.ArtifactPath, task.ProfileAtCreation.ArtifactPath)
 		}
+		if task.TargetOs == c2pb.Host_PLATFORM_LINUX {
+			require.Equal(t, DockerBuildDir+"/realm/implants/target/x86_64-unknown-linux-musl/release/imix", task.ArtifactPath)
+		}
+		if task.TargetOs == c2pb.Host_PLATFORM_MACOS {
+			require.Equal(t, DockerBuildDir+"/realm/implants/target/aarch64-apple-darwin/release/imix", task.ArtifactPath)
+		}
 	}
 }
 

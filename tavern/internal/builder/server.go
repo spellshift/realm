@@ -99,16 +99,20 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		}
 	}()
 
-	// Update all ClaimedAt timestamps to claim tasks
+	// Claim only tasks that are still unclaimed. Concurrent polls can both
+	// read the same task above, but only one conditional update may win.
 	taskIDs := make([]int, 0, len(tasks))
 	for _, t := range tasks {
-		_, err := client.BuildTask.UpdateOne(t).
+		affected, err := client.BuildTask.Update().
+			Where(buildtask.IDEQ(t.ID), buildtask.ClaimedAtIsNil(), buildtask.HasBuilderWith(entbuilder.ID(b.ID))).
 			SetClaimedAt(now).
 			Save(ctx)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to update build task %d: %w", t.ID, err))
 		}
-		taskIDs = append(taskIDs, t.ID)
+		if affected == 1 {
+			taskIDs = append(taskIDs, t.ID)
+		}
 	}
 
 	// Commit the transaction

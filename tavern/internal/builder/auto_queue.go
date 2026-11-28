@@ -78,8 +78,8 @@ func (s *Server) tryQueueMissingDefaultBuild(ctx context.Context, builderID, pro
 	return err
 }
 
-// A SQLite read transaction cannot be promoted to a writer after another
-// connection commits. Restart the entire check and creation transaction.
+// A SQLite read transaction in CreateBuildTask cannot become a writer after
+// another connection commits. Retry the existence check and creation attempt.
 func retryAutoBuildOnLock(ctx context.Context, create func() error) error {
 	backoff := 10 * time.Millisecond
 	var lastErr error
