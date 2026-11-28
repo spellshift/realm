@@ -30,8 +30,8 @@ var (
 	// a dot-prefixed domain suffix (e.g. ".example.com", matching any subdomain and the bare
 	// domain itself), or a leading-wildcard single-label pattern (e.g.
 	// "*-tavern-749076704275.us-east4.run.app"). Defaults to
-	// "*-tavern-749076704275.us-east4.run.app" so only this project's Tavern Cloud Run
-	// deployments are allowed with no further configuration.
+	// "*-tavern-749076704275.us-east4.run.app" (hardcoded for the Spellshift dev GCP project
+	// and us-east4 region; override this env var when deploying for other projects or regions).
 	EnvAllowedSuffixes = envString{"OAUTH_PROXY_ALLOWED_SUFFIXES", "*-tavern-749076704275.us-east4.run.app"}
 
 	// EnvGCPProjectID and EnvSecretsManagerPath select where the proxy's ed25519 signing key is
@@ -60,10 +60,18 @@ type Config struct {
 	ProfileURL      string
 	AllowedSuffixes []string
 	ProxyDomain     string
+	allowlist       *oauthproxy.Allowlist
 }
 
 func (c *Config) secureCookies() bool {
 	return strings.HasPrefix(c.ProxyDomain, "https://")
+}
+
+func (c *Config) isAllowedReturnTo(returnTo string) bool {
+	if c.allowlist != nil {
+		return c.allowlist.IsAllowedReturnTo(returnTo)
+	}
+	return oauthproxy.IsAllowedReturnTo(returnTo, c.AllowedSuffixes)
 }
 
 // loadConfig reads and validates the proxy's configuration from the environment.
@@ -92,12 +100,17 @@ func loadConfig() (*Config, error) {
 	var suffixes []string
 	for _, s := range strings.Split(EnvAllowedSuffixes.String(), ",") {
 		s = strings.TrimSpace(s)
-		if s != "" {
-			suffixes = append(suffixes, s)
+		if s == "" {
+			continue
 		}
+		suffixes = append(suffixes, s)
 	}
 	if len(suffixes) == 0 {
 		return nil, fmt.Errorf("must provide at least one suffix in 'OAUTH_PROXY_ALLOWED_SUFFIXES'")
+	}
+	allowlist, err := oauthproxy.NewAllowlist(suffixes)
+	if err != nil {
+		return nil, fmt.Errorf("invalid 'OAUTH_PROXY_ALLOWED_SUFFIXES': %w", err)
 	}
 
 	return &Config{
@@ -114,6 +127,7 @@ func loadConfig() (*Config, error) {
 		ProfileURL:      "https://www.googleapis.com/oauth2/v3/userinfo",
 		AllowedSuffixes: suffixes,
 		ProxyDomain:     domain,
+		allowlist:       allowlist,
 	}, nil
 }
 

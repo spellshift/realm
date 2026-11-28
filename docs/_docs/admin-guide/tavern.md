@@ -87,11 +87,11 @@ gcloud run deploy oauthproxy \
   --service-account=<CLOUD_RUN_SA> \
   --image=ghcr.io/spellshift/realm/oauthproxy:edge \
   --allow-unauthenticated \
-  --set-env-vars=OAUTH_CLIENT_ID=<OAUTH_CLIENT_ID>,OAUTH_PROXY_DOMAIN=<PROXY_DOMAIN>,GCP_PROJECT_ID=<PROXY_PROJECT_ID> \
+  --set-env-vars='OAUTH_CLIENT_ID=<OAUTH_CLIENT_ID>,OAUTH_PROXY_DOMAIN=<PROXY_DOMAIN>,GCP_PROJECT_ID=<PROXY_PROJECT_ID>,OAUTH_PROXY_ALLOWED_SUFFIXES=*-tavern-<TENANT_PROJECT_NUMBER>.<TENANT_REGION>.run.app' \
   --set-secrets=OAUTH_CLIENT_SECRET=oauthproxy-client-secret:latest
 ```
 
-Register `https://<PROXY_DOMAIN>/oauth/callback` as the Authorized redirect URI on the Google OAuth client, then deploy each Tavern with `oauth_proxy_url=https://<PROXY_DOMAIN>` (`oauth_client_id`/`oauth_client_secret` are not needed, and `oauth_domain` is optional: it defaults to the deployment's Cloud Run URL, `<resource_prefix>-tavern-<project number>.<region>.run.app`). The proxy only accepts return URLs of the form `https://<tenant>/oauth/complete`, and each login assertion is only valid for the Tavern that started the login. By default the proxy only redirects back to `*-tavern-749076704275.us-east4.run.app` hosts; set `OAUTH_PROXY_ALLOWED_SUFFIXES` (comma separated exact hosts, dot-prefixed domain suffixes, or leading-`*` single-label wildcards) to change that.
+Register `https://<PROXY_DOMAIN>/oauth/callback` as the Authorized redirect URI on the Google OAuth client, then deploy each Tavern with `oauth_proxy_url=https://<PROXY_DOMAIN>` (`oauth_client_id`/`oauth_client_secret` are not needed, and `oauth_domain` is optional: it defaults to the deployment's Cloud Run URL, `<resource_prefix>-tavern-<project number>.<region>.run.app`). The proxy only accepts return URLs of the form `https://<tenant>/oauth/complete`, and each login assertion is only valid for the Tavern that started the login. By default `OAUTH_PROXY_ALLOWED_SUFFIXES` is scoped to `*-tavern-749076704275.us-east4.run.app`; when deploying for another GCP project or region, you must set `OAUTH_PROXY_ALLOWED_SUFFIXES` (comma-separated exact hosts, dot-prefixed multi-label domain suffixes, or leading-`*` single-label wildcards, such as `*-tavern-<TENANT_PROJECT_NUMBER>.<TENANT_REGION>.run.app`). When passing multiple comma-separated patterns via `gcloud --set-env-vars`, use gcloud's custom delimiter syntax (e.g. `--set-env-vars='^:^...'`) or `--env-vars-file`.
 
 ### 3. Google Cloud CLI
 

@@ -40,7 +40,7 @@ func newStartHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 			http.Error(w, "missing return_to parameter", http.StatusBadRequest)
 			return
 		}
-		if !oauthproxy.IsAllowedReturnTo(returnTo, cfg.AllowedSuffixes) {
+		if !cfg.isAllowedReturnTo(returnTo) {
 			proxyLog.WarnContext(ctx, "rejected disallowed return_to", "return_to", returnTo)
 			http.Error(w, "return_to is not an allowed destination", http.StatusBadRequest)
 			return
@@ -118,7 +118,7 @@ func newCallbackHandler(cfg *Config, privKey ed25519.PrivateKey) http.Handler {
 		// Re-check the allow-list here too: this is the boundary before we attach a real
 		// identity assertion to a redirect, and must not rely solely on the earlier /oauth/start
 		// check (e.g. if the allow-list was narrowed between the two requests).
-		if !oauthproxy.IsAllowedReturnTo(returnTo, cfg.AllowedSuffixes) {
+		if !cfg.isAllowedReturnTo(returnTo) {
 			proxyLog.WarnContext(ctx, "rejected disallowed return_to on callback", "return_to", returnTo)
 			http.Error(w, "return_to is not an allowed destination", http.StatusBadRequest)
 			return
