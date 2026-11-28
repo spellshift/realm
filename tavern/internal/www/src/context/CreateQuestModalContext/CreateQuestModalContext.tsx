@@ -1,5 +1,5 @@
-import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { CreateQuestModal } from '../../components/create-quest-modal';
+import React, { createContext, useCallback, useContext, useState } from 'react';
+import { CreateQuestModal, CreateScheduledQuestModal } from '../../components/create-quest-modal';
 import {
     CreateQuestModalContextType,
     OpenCreateQuestModalOptions,
@@ -18,28 +18,28 @@ const CreateQuestModalContext = createContext<CreateQuestModalContextType | unde
 
 export function CreateQuestModalProvider({ children }: { children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [options, setOptions] = useState<OpenCreateQuestModalOptions | undefined>(undefined);
     const navigate = useNavigate();
-    const optionsRef = useRef<OpenCreateQuestModalOptions | undefined>(undefined);
 
-    const openModal = useCallback((options?: OpenCreateQuestModalOptions) => {
-        optionsRef.current = options;
+    const openModal = useCallback((nextOptions?: OpenCreateQuestModalOptions) => {
+        setOptions(nextOptions);
         setIsOpen(true);
     }, []);
 
     const closeModal = useCallback(() => {
         setIsOpen(false);
-        optionsRef.current = undefined;
+        setOptions(undefined);
     }, []);
 
     const handleComplete = useCallback((questId: string) => {
-        if (optionsRef.current?.onComplete) {
-            optionsRef.current.onComplete(questId);
+        if (options?.onComplete) {
+            options.onComplete(questId);
         }
-        if(optionsRef?.current?.navigateToQuest){
-            navigate(`/tasks/${questId}`)
+        if (options?.navigateToQuest) {
+            navigate(`/tasks/${questId}`);
         }
         closeModal();
-    }, [closeModal, navigate]);
+    }, [closeModal, navigate, options]);
 
     const handleSetOpen = useCallback((open: boolean) => {
         if (!open) {
@@ -52,13 +52,20 @@ export function CreateQuestModalProvider({ children }: { children: React.ReactNo
     return (
         <CreateQuestModalContext.Provider value={{ isOpen, openModal, closeModal }}>
             {children}
-            {isOpen && (
+            {isOpen && options?.mode === "scheduled" && (
+                <CreateScheduledQuestModal
+                    isOpen={isOpen}
+                    setOpen={handleSetOpen}
+                    scheduledHost={options.scheduledHost}
+                />
+            )}
+            {isOpen && options?.mode !== "scheduled" && (
                 <CreateQuestModal
                     isOpen={isOpen}
                     setOpen={handleSetOpen}
-                    initialFormData={optionsRef.current?.initialFormData}
+                    initialFormData={options?.initialFormData}
                     onComplete={handleComplete}
-                    refetchQueries={optionsRef.current?.refetchQueries}
+                    refetchQueries={options?.refetchQueries}
                 />
             )}
         </CreateQuestModalContext.Provider>

@@ -64,9 +64,10 @@ test('End-to-end asset upload and execution test', async ({ page }) => {
   console.log('Navigating to /quests');
   await page.goto('/quests');
 
-  // 11. Click "Create a quest" button to open the modal
+  // 11. Choose "Create quest" from the Create quest menu
   console.log('Opening Create Quest modal');
-  await page.getByRole('button', { name: 'Create a quest' }).click();
+  await page.getByRole('button', { name: 'Create quest', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Create quest' }).click();
 
   // 12. Wait for beacons to load
   console.log('Waiting for beacons to load');

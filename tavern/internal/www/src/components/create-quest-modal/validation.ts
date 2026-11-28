@@ -1,5 +1,12 @@
 import * as yup from "yup";
 
+const isFilledParamValue = (value: unknown): boolean => {
+    if (typeof value === "string") {
+        return value.trim() !== "";
+    }
+    return value !== null && value !== undefined && value !== "";
+};
+
 export const modalQuestSchema = yup.object().shape({
     name: yup
         .string()
@@ -24,11 +31,14 @@ export const modalQuestSchema = yup.object().shape({
         .of(
             yup.object().shape({
                 name: yup.string().required(),
-                value: yup.mixed().required("Parameter value is required"),
+                value: yup
+                    .mixed()
+                    .required("Parameter value is required")
+                    .test("is-filled", "Parameter value is required", isFilledParamValue),
             })
         )
         .test("all-params-filled", "All parameters must have values", (params) => {
             if (!params || params.length === 0) return true;
-            return params.every((param) => param.value !== null && param.value !== "");
+            return params.every((param) => isFilledParamValue(param.value));
         }),
 });

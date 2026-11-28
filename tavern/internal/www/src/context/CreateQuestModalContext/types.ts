@@ -11,12 +11,19 @@ export interface CreateQuestInitialData {
     initialFilters?: Partial<Filters>;
 }
 
+export interface ScheduledQuestHostScope {
+    id: string;
+    name: string;
+}
+
 // RefetchQuery can be a DocumentNode or a string (operation name)
 // Using operation names (strings) is more reliable for query matching
 export type RefetchQuery = DocumentNode | string;
 
 export interface OpenCreateQuestModalOptions {
+    mode?: "quest" | "scheduled";
     initialFormData?: CreateQuestInitialData;
+    scheduledHost?: ScheduledQuestHostScope;
     onComplete?: (questId: string) => void;
     navigateToQuest?: boolean;
     refetchQueries?: RefetchQuery[];

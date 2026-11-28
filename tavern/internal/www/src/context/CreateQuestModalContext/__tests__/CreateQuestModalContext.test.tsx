@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { render, renderHook, screen, act } from '@testing-library/react';
 import { CreateQuestModalProvider, useCreateQuestModal } from '../CreateQuestModalContext';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
@@ -23,6 +23,15 @@ vi.mock('../../../components/create-quest-modal', () => ({
     <div data-testid="mock-create-quest-modal">
       <button data-testid="close-button" onClick={() => setOpen(false)}>Close</button>
       <button data-testid="complete-button" onClick={() => onComplete('test-quest-id')}>Complete</button>
+    </div>
+  )),
+  CreateScheduledQuestModal: vi.fn(({ setOpen, scheduledHost }: {
+    isOpen: boolean;
+    setOpen: (open: boolean) => void;
+    scheduledHost?: { id: string; name: string };
+  }) => (
+    <div data-testid="mock-create-scheduled-quest-modal" data-host-id={scheduledHost?.id ?? ''}>
+      <button data-testid="close-scheduled-button" onClick={() => setOpen(false)}>Close</button>
     </div>
   )),
 }));
@@ -159,6 +168,42 @@ describe('CreateQuestModalContext', () => {
 
       expect(result.current.openModal).toBe(initialOpenModal);
       expect(result.current.closeModal).toBe(initialCloseModal);
+    });
+  });
+
+  describe('mode switching while open', () => {
+    it('re-renders when openModal is called with different mode/options while already open', () => {
+      const TriggerButtons = () => {
+        const { openModal } = useCreateQuestModal();
+        return (
+          <div>
+            <button onClick={() => openModal({ mode: 'quest' })}>Open quest</button>
+            <button onClick={() => openModal({ mode: 'scheduled', scheduledHost: { id: 'h-1', name: 'Host 1' } })}>
+              Open scheduled
+            </button>
+          </div>
+        );
+      };
+
+      render(
+        <MemoryRouter>
+          <CreateQuestModalProvider>
+            <TriggerButtons />
+          </CreateQuestModalProvider>
+        </MemoryRouter>
+      );
+
+      act(() => {
+        screen.getByText('Open quest').click();
+      });
+      expect(screen.getByTestId('mock-create-quest-modal')).toBeInTheDocument();
+
+      act(() => {
+        screen.getByText('Open scheduled').click();
+      });
+      const scheduledModal = screen.getByTestId('mock-create-scheduled-quest-modal');
+      expect(scheduledModal).toBeInTheDocument();
+      expect(scheduledModal).toHaveAttribute('data-host-id', 'h-1');
     });
   });
 });
