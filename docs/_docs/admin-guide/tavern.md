@@ -426,6 +426,8 @@ MYSQL_USER="admin" MYSQL_ADDR="127.0.0.1:3306" go run ./tavern
 
 When no value is set for `MYSQL_ADDR`, the default SQLite backend is used:
 
+Tavern keeps one connection open for this in-memory SQLite database for its lifetime to avoid shared-cache locking errors and data loss when a connection expires. Database pool size and connection lifetime settings continue to apply to MySQL.
+
 ```sh
 MYSQL_USER="admin" go run ./tavern/
 ```
@@ -542,6 +544,8 @@ Running Tavern with the `DISABLE_DEFAULT_TOMES` environment variable set will di
 ```sh
 DISABLE_DEFAULT_TOMES=1 go run ./tavern
 ```
+
+Tavern automatically queues one build for each OS and format supported by a builder when it polls, using the Default build profile. Existing Default-profile build tasks count even if they failed. Set `DISABLE_AUTO_AGENT_BUILDS=1` (or `true`, `yes`, or `on`, ignoring case and surrounding spaces) to disable this automatic queueing. A manual Default build created at the same instant as the first automatic poll can produce an additional task for that OS and format; manual rebuilds remain available intentionally.
 
 ### PPROF
 

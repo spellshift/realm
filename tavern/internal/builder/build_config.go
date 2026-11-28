@@ -62,8 +62,8 @@ type buildKey struct {
 var buildCommands = map[buildKey]string{
 	{c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN}:               "cargo build --release --bin imix --target=x86_64-unknown-linux-musl",
 	{c2pb.Host_PLATFORM_MACOS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:               "cargo zigbuild --release --target aarch64-apple-darwin",
-	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:             "cargo build --release --target=x86_64-pc-windows-gnu",
-	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE}: "cargo build --release --features win_service --target=x86_64-pc-windows-gnu",
+	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:             "cargo build --release --bin imix --target=x86_64-pc-windows-gnu",
+	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE}: "cargo build --release --bin imix --features win_service --target=x86_64-pc-windows-gnu",
 	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_CDYLIB}:          "cargo build --release --lib --target=x86_64-pc-windows-gnu",
 }
 
@@ -131,11 +131,18 @@ type ImixConfig struct {
 }
 
 // DeriveArtifactPath returns the artifact path inside the build container
-// based on the target OS, rooted at buildDir.
-func DeriveArtifactPath(os c2pb.Host_Platform, buildDir string) string {
+// based on the target OS and format, rooted at buildDir.
+func DeriveArtifactPath(os c2pb.Host_Platform, format TargetFormat, buildDir string) string {
+	name := "imix"
+	if os == c2pb.Host_PLATFORM_WINDOWS {
+		name = "imix.exe"
+		if format == builderpb.TargetFormat_TARGET_FORMAT_CDYLIB {
+			name = "imix.dll"
+		}
+	}
 	target, ok := buildTarget[os]
 	if !ok {
-		return fmt.Sprintf("%s/realm/implants/target/release/imix", buildDir)
+		return fmt.Sprintf("%s/realm/implants/target/release/%s", buildDir, name)
 	}
-	return fmt.Sprintf("%s/realm/implants/target/%s/release/imix", buildDir, target)
+	return fmt.Sprintf("%s/realm/implants/target/%s/release/%s", buildDir, target, name)
 }

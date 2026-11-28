@@ -33,6 +33,8 @@ type BuildTask struct {
 	TargetOs c2pb.Host_Platform `json:"target_os,omitempty"`
 	// The output format for the build (BIN, CDYLIB, WINDOWS_SERVICE).
 	TargetFormat builderpb.TargetFormat `json:"target_format,omitempty"`
+	// Global OS and format key for an automatically queued Default build.
+	AutoBuildKey *string `json:"auto_build_key,omitempty"`
 	// The derived script to execute inside the build container.
 	BuildScript string `json:"build_script,omitempty"`
 	// Timestamp of when a builder claimed this task, null if unclaimed.
@@ -141,7 +143,7 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case buildtask.FieldID, buildtask.FieldOutputSize, buildtask.FieldErrorSize, buildtask.FieldExitCode:
 			values[i] = new(sql.NullInt64)
-		case buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath, buildtask.FieldSetupscript, buildtask.FieldUnique:
+		case buildtask.FieldAutoBuildKey, buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath, buildtask.FieldSetupscript, buildtask.FieldUnique:
 			values[i] = new(sql.NullString)
 		case buildtask.FieldCreatedAt, buildtask.FieldLastModifiedAt, buildtask.FieldClaimedAt, buildtask.FieldStartedAt, buildtask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -205,6 +207,13 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field target_format", values[i])
 			} else if value != nil {
 				bt.TargetFormat = *value
+			}
+		case buildtask.FieldAutoBuildKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field auto_build_key", values[i])
+			} else if value.Valid {
+				bt.AutoBuildKey = new(string)
+				*bt.AutoBuildKey = value.String
 			}
 		case buildtask.FieldBuildScript:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -377,6 +386,11 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("target_format=")
 	builder.WriteString(fmt.Sprintf("%v", bt.TargetFormat))
+	builder.WriteString(", ")
+	if v := bt.AutoBuildKey; v != nil {
+		builder.WriteString("auto_build_key=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("build_script=")
 	builder.WriteString(bt.BuildScript)

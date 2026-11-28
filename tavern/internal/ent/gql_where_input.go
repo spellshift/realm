@@ -2345,6 +2345,23 @@ type BuildTaskWhereInput struct {
 	TargetFormatIn    []builderpb.TargetFormat `json:"targetFormatIn,omitempty"`
 	TargetFormatNotIn []builderpb.TargetFormat `json:"targetFormatNotIn,omitempty"`
 
+	// "auto_build_key" field predicates.
+	AutoBuildKey             *string  `json:"autoBuildKey,omitempty"`
+	AutoBuildKeyNEQ          *string  `json:"autoBuildKeyNEQ,omitempty"`
+	AutoBuildKeyIn           []string `json:"autoBuildKeyIn,omitempty"`
+	AutoBuildKeyNotIn        []string `json:"autoBuildKeyNotIn,omitempty"`
+	AutoBuildKeyGT           *string  `json:"autoBuildKeyGT,omitempty"`
+	AutoBuildKeyGTE          *string  `json:"autoBuildKeyGTE,omitempty"`
+	AutoBuildKeyLT           *string  `json:"autoBuildKeyLT,omitempty"`
+	AutoBuildKeyLTE          *string  `json:"autoBuildKeyLTE,omitempty"`
+	AutoBuildKeyContains     *string  `json:"autoBuildKeyContains,omitempty"`
+	AutoBuildKeyHasPrefix    *string  `json:"autoBuildKeyHasPrefix,omitempty"`
+	AutoBuildKeyHasSuffix    *string  `json:"autoBuildKeyHasSuffix,omitempty"`
+	AutoBuildKeyIsNil        bool     `json:"autoBuildKeyIsNil,omitempty"`
+	AutoBuildKeyNotNil       bool     `json:"autoBuildKeyNotNil,omitempty"`
+	AutoBuildKeyEqualFold    *string  `json:"autoBuildKeyEqualFold,omitempty"`
+	AutoBuildKeyContainsFold *string  `json:"autoBuildKeyContainsFold,omitempty"`
+
 	// "build_script" field predicates.
 	BuildScript             *string  `json:"buildScript,omitempty"`
 	BuildScriptNEQ          *string  `json:"buildScriptNEQ,omitempty"`
@@ -2696,6 +2713,51 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	}
 	if len(i.TargetFormatNotIn) > 0 {
 		predicates = append(predicates, buildtask.TargetFormatNotIn(i.TargetFormatNotIn...))
+	}
+	if i.AutoBuildKey != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyEQ(*i.AutoBuildKey))
+	}
+	if i.AutoBuildKeyNEQ != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyNEQ(*i.AutoBuildKeyNEQ))
+	}
+	if len(i.AutoBuildKeyIn) > 0 {
+		predicates = append(predicates, buildtask.AutoBuildKeyIn(i.AutoBuildKeyIn...))
+	}
+	if len(i.AutoBuildKeyNotIn) > 0 {
+		predicates = append(predicates, buildtask.AutoBuildKeyNotIn(i.AutoBuildKeyNotIn...))
+	}
+	if i.AutoBuildKeyGT != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyGT(*i.AutoBuildKeyGT))
+	}
+	if i.AutoBuildKeyGTE != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyGTE(*i.AutoBuildKeyGTE))
+	}
+	if i.AutoBuildKeyLT != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyLT(*i.AutoBuildKeyLT))
+	}
+	if i.AutoBuildKeyLTE != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyLTE(*i.AutoBuildKeyLTE))
+	}
+	if i.AutoBuildKeyContains != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyContains(*i.AutoBuildKeyContains))
+	}
+	if i.AutoBuildKeyHasPrefix != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyHasPrefix(*i.AutoBuildKeyHasPrefix))
+	}
+	if i.AutoBuildKeyHasSuffix != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyHasSuffix(*i.AutoBuildKeyHasSuffix))
+	}
+	if i.AutoBuildKeyIsNil {
+		predicates = append(predicates, buildtask.AutoBuildKeyIsNil())
+	}
+	if i.AutoBuildKeyNotNil {
+		predicates = append(predicates, buildtask.AutoBuildKeyNotNil())
+	}
+	if i.AutoBuildKeyEqualFold != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyEqualFold(*i.AutoBuildKeyEqualFold))
+	}
+	if i.AutoBuildKeyContainsFold != nil {
+		predicates = append(predicates, buildtask.AutoBuildKeyContainsFold(*i.AutoBuildKeyContainsFold))
 	}
 	if i.BuildScript != nil {
 		predicates = append(predicates, buildtask.BuildScriptEQ(*i.BuildScript))

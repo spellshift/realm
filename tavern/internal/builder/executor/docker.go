@@ -393,11 +393,11 @@ func cachedArtifactSpec(spec BuildSpec, cargoTargetDir string) BuildSpec {
 	return spec
 }
 
-// cacheKeyFor separates images and target platforms.
-// Cargo handles recipe differences and concurrent builds within each directory.
+// cacheKeyFor separates build recipes that may produce different artifacts at
+// the same target path. Cargo still shares a cache for identical recipes.
 func cacheKeyFor(spec BuildSpec) string {
 	h := sha256.New()
-	for _, s := range []string{spec.BuildImage, spec.TargetOS} {
+	for _, s := range []string{spec.BuildImage, spec.TargetOS, spec.BuildScript, spec.ArtifactPath} {
 		_, _ = h.Write([]byte(s))
 		h.Write([]byte{0})
 	}

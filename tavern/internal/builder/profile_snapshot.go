@@ -104,7 +104,7 @@ func ResolveBuildRecipe(profile *ent.BuildProfile, setupScript string, os c2pb.H
 	buildDir := DockerBuildDir
 	values := map[string]string{
 		"BuildCommand": command,
-		"ArtifactPath": DeriveArtifactPath(os, buildDir),
+		"ArtifactPath": DeriveArtifactPath(os, format, buildDir),
 		"BuildDir":     buildDir,
 		"TargetOS":     os.String(),
 		"TargetFormat": format.String(),

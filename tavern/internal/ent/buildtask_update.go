@@ -481,6 +481,9 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := btu.mutation.TargetFormat(); ok {
 		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
 	}
+	if btu.mutation.AutoBuildKeyCleared() {
+		_spec.ClearField(buildtask.FieldAutoBuildKey, field.TypeString)
+	}
 	if value, ok := btu.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 	}
@@ -1137,6 +1140,9 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if value, ok := btuo.mutation.TargetFormat(); ok {
 		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
+	}
+	if btuo.mutation.AutoBuildKeyCleared() {
+		_spec.ClearField(buildtask.FieldAutoBuildKey, field.TypeString)
 	}
 	if value, ok := btuo.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)

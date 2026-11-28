@@ -5038,6 +5038,8 @@ func (ec *executionContext) fieldContext_BuildProfile_buildtasks(_ context.Conte
 				return ec.fieldContext_BuildTask_targetOs(ctx, field)
 			case "targetFormat":
 				return ec.fieldContext_BuildTask_targetFormat(ctx, field)
+			case "autoBuildKey":
+				return ec.fieldContext_BuildTask_autoBuildKey(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
 			case "claimedAt":
@@ -5457,6 +5459,35 @@ func (ec *executionContext) fieldContext_BuildTask_targetFormat(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type BuildTaskTargetFormat does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildTask_autoBuildKey(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildTask_autoBuildKey,
+		func(ctx context.Context) (any, error) {
+			return obj.AutoBuildKey, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildTask_autoBuildKey(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6159,6 +6190,8 @@ func (ec *executionContext) fieldContext_BuildTaskEdge_node(_ context.Context, f
 				return ec.fieldContext_BuildTask_targetOs(ctx, field)
 			case "targetFormat":
 				return ec.fieldContext_BuildTask_targetFormat(ctx, field)
+			case "autoBuildKey":
+				return ec.fieldContext_BuildTask_autoBuildKey(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
 			case "claimedAt":
@@ -26122,7 +26155,7 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "setupscript", "setupscriptNEQ", "setupscriptIn", "setupscriptNotIn", "setupscriptGT", "setupscriptGTE", "setupscriptLT", "setupscriptLTE", "setupscriptContains", "setupscriptHasPrefix", "setupscriptHasSuffix", "setupscriptIsNil", "setupscriptNotNil", "setupscriptEqualFold", "setupscriptContainsFold", "unique", "uniqueNEQ", "uniqueIn", "uniqueNotIn", "uniqueGT", "uniqueGTE", "uniqueLT", "uniqueLTE", "uniqueContains", "uniqueHasPrefix", "uniqueHasSuffix", "uniqueIsNil", "uniqueNotNil", "uniqueEqualFold", "uniqueContainsFold", "hasBundle", "hasBundleWith", "hasBuilder", "hasBuilderWith", "hasProfile", "hasProfileWith", "hasArtifact", "hasArtifactWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "autoBuildKey", "autoBuildKeyNEQ", "autoBuildKeyIn", "autoBuildKeyNotIn", "autoBuildKeyGT", "autoBuildKeyGTE", "autoBuildKeyLT", "autoBuildKeyLTE", "autoBuildKeyContains", "autoBuildKeyHasPrefix", "autoBuildKeyHasSuffix", "autoBuildKeyIsNil", "autoBuildKeyNotNil", "autoBuildKeyEqualFold", "autoBuildKeyContainsFold", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "setupscript", "setupscriptNEQ", "setupscriptIn", "setupscriptNotIn", "setupscriptGT", "setupscriptGTE", "setupscriptLT", "setupscriptLTE", "setupscriptContains", "setupscriptHasPrefix", "setupscriptHasSuffix", "setupscriptIsNil", "setupscriptNotNil", "setupscriptEqualFold", "setupscriptContainsFold", "unique", "uniqueNEQ", "uniqueIn", "uniqueNotIn", "uniqueGT", "uniqueGTE", "uniqueLT", "uniqueLTE", "uniqueContains", "uniqueHasPrefix", "uniqueHasSuffix", "uniqueIsNil", "uniqueNotNil", "uniqueEqualFold", "uniqueContainsFold", "hasBundle", "hasBundleWith", "hasBuilder", "hasBuilderWith", "hasProfile", "hasProfileWith", "hasArtifact", "hasArtifactWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -26374,6 +26407,111 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.TargetFormatNotIn = data
+		case "autoBuildKey":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKey"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKey = data
+		case "autoBuildKeyNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyNEQ = data
+		case "autoBuildKeyIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyIn = data
+		case "autoBuildKeyNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyNotIn = data
+		case "autoBuildKeyGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyGT = data
+		case "autoBuildKeyGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyGTE = data
+		case "autoBuildKeyLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyLT = data
+		case "autoBuildKeyLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyLTE = data
+		case "autoBuildKeyContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyContains = data
+		case "autoBuildKeyHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyHasPrefix = data
+		case "autoBuildKeyHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyHasSuffix = data
+		case "autoBuildKeyIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyIsNil = data
+		case "autoBuildKeyNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyNotNil = data
+		case "autoBuildKeyEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyEqualFold = data
+		case "autoBuildKeyContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoBuildKeyContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoBuildKeyContainsFold = data
 		case "buildScript":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildScript"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -46260,6 +46398,8 @@ func (ec *executionContext) _BuildTask(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "autoBuildKey":
+			out.Values[i] = ec._BuildTask_autoBuildKey(ctx, field, obj)
 		case "buildScript":
 			out.Values[i] = ec._BuildTask_buildScript(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
