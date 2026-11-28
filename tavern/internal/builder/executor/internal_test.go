@@ -43,12 +43,45 @@ func TestCacheKeyFor_DiffersOnInputs(t *testing.T) {
 		BuildScript: "cargo build --release",
 	}), "different target OS must change the key")
 
-	require.Equal(t, cacheKeyFor(base), cacheKeyFor(BuildSpec{
+	require.NotEqual(t, cacheKeyFor(base), cacheKeyFor(BuildSpec{
 		BuildImage:     "spellshift/devcontainer:main",
 		TargetOS:       "linux",
 		BuildScript:    "cargo build --release --features extra",
 		PreBuildScript: "echo hi",
-	}), "recipe differences share Cargo's cache and file locks")
+	}), "different build commands need separate target directories")
+
+	require.NotEqual(t, cacheKeyFor(base), cacheKeyFor(BuildSpec{
+		BuildImage:   base.BuildImage,
+		TargetOS:     base.TargetOS,
+		BuildScript:  base.BuildScript,
+		ArtifactPath: "/another/artifact",
+	}), "different artifact paths need separate target directories")
+}
+
+func TestWindowsFormatsUseSeparateCachedArtifacts(t *testing.T) {
+	cacheDir := t.TempDir()
+	targetDir := "/tmp/realm-build/realm/implants/target/x86_64-pc-windows-gnu/release/"
+	formats := []struct {
+		name, command, artifact string
+	}{
+		{"bin", "cargo build --release --bin imix --target=x86_64-pc-windows-gnu", "imix.exe"},
+		{"service", "cargo build --release --bin imix --features win_service --target=x86_64-pc-windows-gnu", "imix.exe"},
+		{"cdylib", "cargo build --release --lib --target=x86_64-pc-windows-gnu", "imix.dll"},
+	}
+	seen := make(map[string]bool)
+	for _, format := range formats {
+		spec := BuildSpec{
+			CacheDir: cacheDir, BuildImage: "builder:latest", TargetOS: "PLATFORM_WINDOWS",
+			BuildScript: format.command, ArtifactPath: targetDir + format.artifact,
+		}
+		_, env, cached, err := prepareBuildCache(spec)
+		require.NoError(t, err)
+		key := cacheKeyFor(spec)
+		require.False(t, seen[key], format.name+" shares a Cargo target directory")
+		seen[key] = true
+		require.Contains(t, env, "CARGO_TARGET_DIR=/realm-cache/target/"+key)
+		require.Equal(t, "/realm-cache/target/"+key+"/x86_64-pc-windows-gnu/release/"+format.artifact, cached.ArtifactPath)
+	}
 }
 
 func TestRemapArtifactPath(t *testing.T) {

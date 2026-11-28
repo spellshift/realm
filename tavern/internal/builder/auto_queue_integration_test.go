@@ -72,6 +72,9 @@ func TestAutomaticDefaultBuildsFirstRepeatAndFormats(t *testing.T) {
 		if task.TargetOs == c2pb.Host_PLATFORM_WINDOWS {
 			require.Equal(t, DockerBuildDir+"/realm/implants/target/x86_64-pc-windows-gnu/release/"+paths[task.TargetFormat], task.ArtifactPath)
 			require.Equal(t, task.ArtifactPath, task.ProfileAtCreation.ArtifactPath)
+			if task.TargetFormat != builderpb.TargetFormat_TARGET_FORMAT_CDYLIB {
+				require.Contains(t, task.BuildScript, "--bin imix")
+			}
 		}
 		if task.TargetOs == c2pb.Host_PLATFORM_LINUX {
 			require.Equal(t, DockerBuildDir+"/realm/implants/target/x86_64-unknown-linux-musl/release/imix", task.ArtifactPath)
@@ -164,6 +167,20 @@ func TestRetryAutoBuildOnSQLiteLock(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, 3, attempts)
+}
+
+func TestAutoAgentBuildsDisableSwitch(t *testing.T) {
+	for _, tc := range []struct {
+		value    string
+		disabled bool
+	}{
+		{"", false}, {"0", false}, {"false", false}, {"FALSE", false},
+		{"1", true}, {" 1 ", true}, {"true", true}, {"TRUE", true},
+		{"yes", true}, {" on ", true},
+	} {
+		t.Setenv("DISABLE_AUTO_AGENT_BUILDS", tc.value)
+		require.Equal(t, tc.disabled, autoAgentBuildsDisabled(), tc.value)
+	}
 }
 
 func TestAutomaticDefaultBuildsDisabledAndFailure(t *testing.T) {

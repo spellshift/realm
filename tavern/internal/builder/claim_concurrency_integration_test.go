@@ -2,16 +2,62 @@ package builder
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"testing"
 	"time"
 
 	entgo "entgo.io/ent"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 )
+
+// Tavern's default DSN uses SQLite shared-cache memory mode. Its one-connection
+// pool is required because SQLITE_LOCKED does not honor SQLite's busy timeout.
+func TestConcurrentPollsDefaultSQLiteDSN(t *testing.T) {
+	t.Setenv("DISABLE_AUTO_AGENT_BUILDS", "0")
+	db, err := sql.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1&_loc=UTC")
+	require.NoError(t, err)
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	t.Cleanup(func() { db.Close() })
+	graph := ent.NewClient(ent.Driver(entsql.OpenDB("sqlite3", db)))
+	require.NoError(t, graph.Schema.Create(context.Background()))
+	ctx := context.Background()
+	graph.BuildProfile.Create().SetName(DefaultBuildProfileName).SetDescription("default").SaveX(ctx)
+	worker := graph.Builder.Create().SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_WINDOWS}).SaveX(ctx)
+	server := New(graph, "test-key")
+
+	start := make(chan struct{})
+	type result struct {
+		response *builderpb.ClaimBuildTasksResponse
+		err      error
+	}
+	results := make(chan result, 8)
+	for range 8 {
+		go func() {
+			<-start
+			pollCtx := context.WithValue(ctx, builderContextKey{}, worker)
+			response, err := server.ClaimBuildTasks(pollCtx, &builderpb.ClaimBuildTasksRequest{})
+			results <- result{response, err}
+		}()
+	}
+	close(start)
+	seen := make(map[int64]bool)
+	for range 8 {
+		result := <-results
+		require.NoError(t, result.err)
+		for _, task := range result.response.Tasks {
+			require.False(t, seen[task.Id], "task returned by two concurrent polls")
+			seen[task.Id] = true
+		}
+	}
+	require.Len(t, seen, 3)
+	require.Equal(t, 3, graph.BuildTask.Query().CountX(ctx))
+}
 
 // Both polls must finish reading the same pending task before either can
 // update it. This reproduces a real overlap without relying on scheduler luck.

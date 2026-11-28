@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
@@ -16,6 +18,15 @@ import (
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/logging"
 )
+
+func autoAgentBuildsDisabled() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("DISABLE_AUTO_AGENT_BUILDS"))) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
+}
 
 // queueMissingDefaultBuilds queues each supported Default build once globally.
 // The unique auto_build_key protects the check and creation across Tavern
@@ -78,8 +89,8 @@ func (s *Server) tryQueueMissingDefaultBuild(ctx context.Context, builderID, pro
 	return err
 }
 
-// A SQLite read transaction in CreateBuildTask cannot become a writer after
-// another connection commits. Retry the existence check and creation attempt.
+// Concurrent SQLite reads and writes can return SQLITE_BUSY or SQLITE_LOCKED.
+// Retry the full existence check and creation attempt on either error.
 func retryAutoBuildOnLock(ctx context.Context, create func() error) error {
 	backoff := 10 * time.Millisecond
 	var lastErr error

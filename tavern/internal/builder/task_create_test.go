@@ -53,7 +53,7 @@ func TestCreateDefaultBuildTaskWithExplicitBuilder(t *testing.T) {
 		command string
 	}{
 		{builderpb.TargetFormat_TARGET_FORMAT_CDYLIB, "cargo build --release --lib"},
-		{builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE, "cargo build --release --features win_service"},
+		{builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE, "cargo build --release --bin imix --features win_service"},
 	} {
 		windowsTask, err := builder.CreateDefaultBuildTask(ctx, graph, worker.ID, c2pb.Host_PLATFORM_WINDOWS, tc.format)
 		require.NoError(t, err)
