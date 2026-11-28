@@ -45,6 +45,25 @@ func TestDefaultSQLiteConcurrentWrites(t *testing.T) {
 	}
 }
 
+func TestDefaultSQLiteSurvivesConfiguredConnectionLifetime(t *testing.T) {
+	const lifetime = 11 * time.Second // Smallest value accepted by Connect.
+	t.Setenv(EnvDBMaxConnLifetime.Key, "11")
+	client, err := (&Config{}).Connect()
+	require.NoError(t, err)
+	t.Cleanup(func() { client.Close() })
+	ctx := context.Background()
+	require.NoError(t, client.Schema.Create(ctx))
+
+	name := fmt.Sprintf("sqlite-lifetime-%d", time.Now().UnixNano())
+	_, err = client.Tag.Create().SetName(name).SetKind(tag.KindGroup).Save(ctx)
+	require.NoError(t, err)
+	time.Sleep(lifetime + 250*time.Millisecond)
+
+	count, err := client.Tag.Query().Where(tag.NameEQ(name)).Count(ctx)
+	require.NoError(t, err, "the in-memory schema must survive connection lifetime settings")
+	require.Equal(t, 1, count)
+}
+
 // TestConfigureMySQLFromEnv ensures environment variables set the proper config values.
 func TestConfigureMySQLFromEnv(t *testing.T) {
 	cleanup := func() {

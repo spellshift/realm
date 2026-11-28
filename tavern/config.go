@@ -216,11 +216,13 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	}
 	// Shared-cache in-memory SQLite returns SQLITE_LOCKED instead of waiting
 	// when concurrent connections read and write the same tables. Keep its
-	// single database connection alive and serialize access through database/sql.
+	// single database connection alive indefinitely and serialize access through
+	// database/sql. Expiring the connection would erase the in-memory database.
 	// MySQL retains the configured pool sizes.
 	if driver == "sqlite3" {
 		maxOpenConns = 1
 		maxIdleConns = 1
+		maxConnLifetime = 0
 	}
 
 	// Get the underlying sql.DB object of the driver.
@@ -228,6 +230,9 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
+	if driver == "sqlite3" {
+		db.SetConnMaxIdleTime(0)
+	}
 
 	var entDriver dialect.Driver = drv
 	if driver == "sqlite3" {

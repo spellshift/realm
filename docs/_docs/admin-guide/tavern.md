@@ -426,7 +426,7 @@ MYSQL_USER="admin" MYSQL_ADDR="127.0.0.1:3306" go run ./tavern
 
 When no value is set for `MYSQL_ADDR`, the default SQLite backend is used:
 
-Tavern keeps one connection open for this in-memory SQLite database to avoid shared-cache locking errors during concurrent requests. Database pool size settings continue to apply to MySQL.
+Tavern keeps one connection open for this in-memory SQLite database for its lifetime to avoid shared-cache locking errors and data loss when a connection expires. Database pool size and connection lifetime settings continue to apply to MySQL.
 
 ```sh
 MYSQL_USER="admin" go run ./tavern/
