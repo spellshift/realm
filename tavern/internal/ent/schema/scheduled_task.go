@@ -43,6 +43,7 @@ func (ScheduledTask) Fields() []ent.Field {
 			Comment("Value of parameters that will be used when creating quests from this scheduled task (as a JSON string)."),
 		field.String("run_on_schedule").
 			Default("").
+			Validate(validators.NewCronSchedule()).
 			Comment("Cron-like schedule for this tome to be automatically queued."),
 		field.Bool("disabled").
 			Default(false).

@@ -8,9 +8,11 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/logging"
 )
 
 func TestHandleTomeAutomation(t *testing.T) {
@@ -597,4 +599,60 @@ func TestHandleTomeAutomation_PreexistingOccurrenceQuestReused(t *testing.T) {
 		assert.Equal(t, existing.ID, quests[0].ID)
 		assert.Equal(t, 1, quests[0].QueryTasks().CountX(ctx))
 	}
+}
+
+func TestHandleTomeAutomation_OccurrenceAuditEmittedExactlyOnce(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	logBuf := &syncTestBuffer{}
+	audits := &testAuditSink{}
+	require.NoError(t, logging.Configure(logging.Options{
+		Spec:      "trace",
+		Format:    logging.FormatJSON,
+		Output:    logBuf,
+		Persister: audits,
+	}))
+	t.Cleanup(func() {
+		logging.SetAuditPersister(nil)
+		_ = logging.Configure(logging.Options{Spec: "dev"})
+	})
+
+	// Use a synthetic past timestamp (where q.CreatedAt.After(now) would always be true)
+	// to ensure creation detection does not rely on comparing CreatedAt against now.
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now, 0)
+	srv.handleTomeAutomation(ctx, beacons[1].ID, hosts[1].ID, false, false, now, 0)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now.Add(15*time.Second), 0)
+
+	var createdAudits []logging.AuditEntry
+	for _, entry := range audits.Entries() {
+		if entry.Action == "quest.created" {
+			createdAudits = append(createdAudits, entry)
+		}
+	}
+	assert.Len(t, createdAudits, 1, "quest.created audit must fire only once for the winning creator")
+}
+
+func TestScheduledTask_CronValidation(t *testing.T) {
+	ctx, client, _, _, _ := setupOccurrenceTest(t)
+	defer client.Close()
+
+	tome := client.Tome.Query().FirstX(ctx)
+
+	_, err := client.ScheduledTask.Create().
+		SetName("Invalid DOW 7").
+		SetDescription("Test").
+		SetTome(tome).
+		SetRunOnSchedule("0 0 * * 7").
+		Save(ctx)
+	assert.Error(t, err, "robfig/cron/v3 rejects day-of-week 7")
+
+	_, err = client.ScheduledTask.Create().
+		SetName("Valid Stepped Range").
+		SetDescription("Test").
+		SetTome(tome).
+		SetRunOnSchedule("0-30/5 9-17/2 * * MON-FRI").
+		Save(ctx)
+	assert.NoError(t, err)
 }

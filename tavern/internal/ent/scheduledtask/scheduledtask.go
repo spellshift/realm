@@ -115,6 +115,8 @@ var (
 	ParametersValidator func(string) error
 	// DefaultRunOnSchedule holds the default value on creation for the "run_on_schedule" field.
 	DefaultRunOnSchedule string
+	// RunOnScheduleValidator is a validator for the "run_on_schedule" field. It is called by the builders before save.
+	RunOnScheduleValidator func(string) error
 	// DefaultDisabled holds the default value on creation for the "disabled" field.
 	DefaultDisabled bool
 )

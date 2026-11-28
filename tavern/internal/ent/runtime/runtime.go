@@ -667,6 +667,8 @@ func init() {
 	scheduledtaskDescRunOnSchedule := scheduledtaskFields[5].Descriptor()
 	// scheduledtask.DefaultRunOnSchedule holds the default value on creation for the run_on_schedule field.
 	scheduledtask.DefaultRunOnSchedule = scheduledtaskDescRunOnSchedule.Default.(string)
+	// scheduledtask.RunOnScheduleValidator is a validator for the "run_on_schedule" field. It is called by the builders before save.
+	scheduledtask.RunOnScheduleValidator = scheduledtaskDescRunOnSchedule.Validators[0].(func(string) error)
 	// scheduledtaskDescDisabled is the schema descriptor for disabled field.
 	scheduledtaskDescDisabled := scheduledtaskFields[6].Descriptor()
 	// scheduledtask.DefaultDisabled holds the default value on creation for the disabled field.

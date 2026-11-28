@@ -154,36 +154,43 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		var q *ent.Quest
 		created := false
 		if !fireTime.IsZero() {
-			// Cron occurrence: atomically ensure the shared quest for this
-			// (scheduled task, fire time) exists; no-op on conflict.
+			// Cron occurrence: look up the shared quest by its unique occurrence key
+			// first so steady-state check-ins stay read-only (avoiding InnoDB
+			// AUTO_INCREMENT burn and SQLite write locks). Only attempt a create on
+			// miss, falling back to a reload if another beacon won the race.
 			key := fmt.Sprintf("%d-%d", st.ID, fireTime.Unix())
-			err = srv.graph.Quest.Create().
-				SetName(fmt.Sprintf("Automated: %s", st.Name)).
-				SetTome(tome).
-				SetScheduledTaskID(st.ID).
-				SetParameters(st.Parameters).
-				SetParamDefsAtCreation(tome.ParamDefs).
-				SetEldritchAtCreation(tome.Eldritch).
-				SetScheduledAt(fireTime).
-				SetOccurrenceKey(key).
-				OnConflictColumns(quest.FieldOccurrenceKey).
-				Ignore().
-				Exec(ctx)
-			if err != nil {
-				claimLog.ErrorContext(ctx, "failed to upsert automated quest", "error", err, "scheduled_task_id", st.ID, "occurrence_key", key)
-				metricTomeAutomationErrors.Inc()
-				continue
-			}
-
-			// Load the one canonical row by its deterministic key.
 			q, err = srv.graph.Quest.Query().Where(quest.OccurrenceKeyEQ(key)).Only(ctx)
-			if err != nil {
-				claimLog.ErrorContext(ctx, "failed to load automated quest for occurrence", "error", err, "occurrence_key", key)
+			if ent.IsNotFound(err) {
+				q, err = srv.graph.Quest.Create().
+					SetName(fmt.Sprintf("Automated: %s", st.Name)).
+					SetTome(tome).
+					SetScheduledTaskID(st.ID).
+					SetParameters(st.Parameters).
+					SetParamDefsAtCreation(tome.ParamDefs).
+					SetEldritchAtCreation(tome.Eldritch).
+					SetScheduledAt(fireTime).
+					SetOccurrenceKey(key).
+					Save(ctx)
+				if err == nil {
+					created = true
+				} else if ent.IsConstraintError(err) {
+					// Another beacon created the occurrence quest concurrently; load the winning row.
+					q, err = srv.graph.Quest.Query().Where(quest.OccurrenceKeyEQ(key)).Only(ctx)
+					if err != nil {
+						claimLog.ErrorContext(ctx, "failed to load automated quest for occurrence", "error", err, "occurrence_key", key)
+						metricTomeAutomationErrors.Inc()
+						continue
+					}
+				} else {
+					claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "occurrence_key", key)
+					metricTomeAutomationErrors.Inc()
+					continue
+				}
+			} else if err != nil {
+				claimLog.ErrorContext(ctx, "failed to query automated quest for occurrence", "error", err, "occurrence_key", key)
 				metricTomeAutomationErrors.Inc()
 				continue
 			}
-			// TODO(future): move quest.created audit to a Quest-create ent hook for exactly-once semantics.
-			created = q.CreatedAt.After(now)
 		} else {
 			questCreate := srv.graph.Quest.Create().
 				SetName(fmt.Sprintf("Automated: %s", st.Name)).
