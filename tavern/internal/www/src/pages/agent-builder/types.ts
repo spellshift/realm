@@ -137,10 +137,11 @@ export type BuildProfile = {
 };
 
 // Mirrors the Builder ent schema (tavern/internal/ent/schema/builder.go):
-// identifier, supported_targets, upstream, poll_interval, last_seen_at.
+// identifier, hostname, supported_targets, upstream, poll_interval, last_seen_at.
 export type Builder = {
     id: string;
     identifier: string;
+    hostname: string | null;
     supportedTargets: Platform[];
     upstream: string;
     pollInterval: number;

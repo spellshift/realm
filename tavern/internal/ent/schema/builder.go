@@ -29,6 +29,13 @@ func (Builder) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Unique identifier for the builder, embedded in its mTLS certificate CN."),
+		field.String("hostname").
+			Optional().
+			Nillable().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Hostname reported by the builder on its most recent task poll."),
 		field.JSON("supported_targets", []c2pb.Host_Platform{}).
 			Annotations(
 				entgql.Type("[HostPlatform!]"),

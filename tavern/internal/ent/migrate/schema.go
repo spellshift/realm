@@ -183,6 +183,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "identifier", Type: field.TypeString, Unique: true},
+		{Name: "hostname", Type: field.TypeString, Nullable: true},
 		{Name: "supported_targets", Type: field.TypeJSON},
 		{Name: "upstream", Type: field.TypeString, Default: "http://127.0.0.1:8000"},
 		{Name: "poll_interval", Type: field.TypeInt, Default: 5},

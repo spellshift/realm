@@ -3,6 +3,7 @@ package builder
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 	"time"
 
@@ -139,15 +140,31 @@ func TestExecuteTask_CancelsBuildContextOnStreamSendFailure(t *testing.T) {
 // doesn't care about streamed output, only whether/when the build starts).
 type fakeClaimClient struct {
 	builderpb.BuilderClient
-	tasks []*builderpb.BuildTaskSpec
+	tasks    []*builderpb.BuildTaskSpec
+	hostname string
 }
 
 func (f *fakeClaimClient) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildTasksRequest, opts ...grpc.CallOption) (*builderpb.ClaimBuildTasksResponse, error) {
+	f.hostname = req.GetHostname()
 	return &builderpb.ClaimBuildTasksResponse{Tasks: f.tasks}, nil
 }
 
 func (f *fakeClaimClient) StreamBuildTaskOutput(ctx context.Context, opts ...grpc.CallOption) (builderpb.Builder_StreamBuildTaskOutputClient, error) {
 	return &fakeStreamOutputClient{}, nil
+}
+
+func TestClaimAndExecuteTasksReportsHostname(t *testing.T) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		t.Skipf("hostname unavailable: %v", err)
+	}
+	client := &fakeClaimClient{}
+	if err := claimAndExecuteTasks(context.Background(), "", client, nil, semaphore.NewWeighted(1)); err != nil {
+		t.Fatal(err)
+	}
+	if client.hostname != hostname {
+		t.Fatalf("reported hostname %q, want %q", client.hostname, hostname)
+	}
 }
 
 // TestClaimAndExecuteTasks_DoesNotBlockWhenAtCapacity verifies that

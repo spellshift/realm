@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -172,9 +173,33 @@ func TestBuilderE2E(t *testing.T) {
 		defer conn.Close()
 
 		authClient := builderpb.NewBuilderClient(conn)
-		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{Hostname: "  builder-host.example  "})
 		require.NoError(t, err)
 		require.NotNil(t, claimResp)
+		enrolled, err := graph.Builder.Query().Only(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, enrolled.Hostname)
+		require.Equal(t, "builder-host.example", *enrolled.Hostname)
+		_, err = authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		require.NoError(t, err)
+		enrolled, err = graph.Builder.Query().Only(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, enrolled.Hostname)
+		require.Equal(t, "builder-host.example", *enrolled.Hostname)
+		_, err = authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{Hostname: "   \t\n  "})
+		require.NoError(t, err)
+		enrolled, err = graph.Builder.Query().Only(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, enrolled.Hostname)
+		require.Equal(t, "builder-host.example", *enrolled.Hostname)
+		oversized := strings.Repeat("a", 300)
+		_, err = authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{Hostname: oversized})
+		require.NoError(t, err)
+		enrolled, err = graph.Builder.Query().Only(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, enrolled.Hostname)
+		require.Equal(t, strings.Repeat("a", 255), *enrolled.Hostname)
+		require.NotNil(t, enrolled.LastSeenAt)
 	})
 
 	profile := graph.BuildProfile.Create().

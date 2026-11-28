@@ -66,6 +66,20 @@ func (bc *BuilderCreate) SetNillableIdentifier(s *string) *BuilderCreate {
 	return bc
 }
 
+// SetHostname sets the "hostname" field.
+func (bc *BuilderCreate) SetHostname(s string) *BuilderCreate {
+	bc.mutation.SetHostname(s)
+	return bc
+}
+
+// SetNillableHostname sets the "hostname" field if the given value is not nil.
+func (bc *BuilderCreate) SetNillableHostname(s *string) *BuilderCreate {
+	if s != nil {
+		bc.SetHostname(*s)
+	}
+	return bc
+}
+
 // SetSupportedTargets sets the "supported_targets" field.
 func (bc *BuilderCreate) SetSupportedTargets(cp []c2pb.Host_Platform) *BuilderCreate {
 	bc.mutation.SetSupportedTargets(cp)
@@ -281,6 +295,10 @@ func (bc *BuilderCreate) createSpec() (*Builder, *sqlgraph.CreateSpec) {
 		_spec.SetField(builder.FieldIdentifier, field.TypeString, value)
 		_node.Identifier = value
 	}
+	if value, ok := bc.mutation.Hostname(); ok {
+		_spec.SetField(builder.FieldHostname, field.TypeString, value)
+		_node.Hostname = &value
+	}
 	if value, ok := bc.mutation.SupportedTargets(); ok {
 		_spec.SetField(builder.FieldSupportedTargets, field.TypeJSON, value)
 		_node.SupportedTargets = value
@@ -378,6 +396,24 @@ func (u *BuilderUpsert) SetLastModifiedAt(v time.Time) *BuilderUpsert {
 // UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
 func (u *BuilderUpsert) UpdateLastModifiedAt() *BuilderUpsert {
 	u.SetExcluded(builder.FieldLastModifiedAt)
+	return u
+}
+
+// SetHostname sets the "hostname" field.
+func (u *BuilderUpsert) SetHostname(v string) *BuilderUpsert {
+	u.Set(builder.FieldHostname, v)
+	return u
+}
+
+// UpdateHostname sets the "hostname" field to the value that was provided on create.
+func (u *BuilderUpsert) UpdateHostname() *BuilderUpsert {
+	u.SetExcluded(builder.FieldHostname)
+	return u
+}
+
+// ClearHostname clears the value of the "hostname" field.
+func (u *BuilderUpsert) ClearHostname() *BuilderUpsert {
+	u.SetNull(builder.FieldHostname)
 	return u
 }
 
@@ -512,6 +548,27 @@ func (u *BuilderUpsertOne) SetLastModifiedAt(v time.Time) *BuilderUpsertOne {
 func (u *BuilderUpsertOne) UpdateLastModifiedAt() *BuilderUpsertOne {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetHostname sets the "hostname" field.
+func (u *BuilderUpsertOne) SetHostname(v string) *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetHostname(v)
+	})
+}
+
+// UpdateHostname sets the "hostname" field to the value that was provided on create.
+func (u *BuilderUpsertOne) UpdateHostname() *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdateHostname()
+	})
+}
+
+// ClearHostname clears the value of the "hostname" field.
+func (u *BuilderUpsertOne) ClearHostname() *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.ClearHostname()
 	})
 }
 
@@ -824,6 +881,27 @@ func (u *BuilderUpsertBulk) SetLastModifiedAt(v time.Time) *BuilderUpsertBulk {
 func (u *BuilderUpsertBulk) UpdateLastModifiedAt() *BuilderUpsertBulk {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdateLastModifiedAt()
+	})
+}
+
+// SetHostname sets the "hostname" field.
+func (u *BuilderUpsertBulk) SetHostname(v string) *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetHostname(v)
+	})
+}
+
+// UpdateHostname sets the "hostname" field to the value that was provided on create.
+func (u *BuilderUpsertBulk) UpdateHostname() *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdateHostname()
+	})
+}
+
+// ClearHostname clears the value of the "hostname" field.
+func (u *BuilderUpsertBulk) ClearHostname() *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.ClearHostname()
 	})
 }
 

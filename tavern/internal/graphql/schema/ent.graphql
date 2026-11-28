@@ -1660,6 +1660,10 @@ type Builder implements Node {
   """
   identifier: String!
   """
+  Hostname reported by the builder on its most recent task poll.
+  """
+  hostname: String
+  """
   The platforms this builder can build agents for.
   """
   supportedTargets: [HostPlatform!]!
@@ -1851,6 +1855,24 @@ input BuilderWhereInput {
   identifierHasSuffix: String
   identifierEqualFold: String
   identifierContainsFold: String
+  """
+  hostname field predicates
+  """
+  hostname: String
+  hostnameNEQ: String
+  hostnameIn: [String!]
+  hostnameNotIn: [String!]
+  hostnameGT: String
+  hostnameGTE: String
+  hostnameLT: String
+  hostnameLTE: String
+  hostnameContains: String
+  hostnameHasPrefix: String
+  hostnameHasSuffix: String
+  hostnameIsNil: Boolean
+  hostnameNotNil: Boolean
+  hostnameEqualFold: String
+  hostnameContainsFold: String
   """
   upstream field predicates
   """

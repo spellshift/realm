@@ -243,6 +243,7 @@ type ComplexityRoot struct {
 		Buildtasks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
 		CreatedAt        func(childComplexity int) int
 		Executor         func(childComplexity int) int
+		Hostname         func(childComplexity int) int
 		ID               func(childComplexity int) int
 		Identifier       func(childComplexity int) int
 		LastModifiedAt   func(childComplexity int) int
@@ -1939,6 +1940,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Builder.Executor(childComplexity), true
+
+	case "Builder.hostname":
+		if e.ComplexityRoot.Builder.Hostname == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Builder.Hostname(childComplexity), true
 
 	case "Builder.id":
 		if e.ComplexityRoot.Builder.ID == nil {
@@ -7730,6 +7738,10 @@ type Builder implements Node {
   """
   identifier: String!
   """
+  Hostname reported by the builder on its most recent task poll.
+  """
+  hostname: String
+  """
   The platforms this builder can build agents for.
   """
   supportedTargets: [HostPlatform!]!
@@ -7921,6 +7933,24 @@ input BuilderWhereInput {
   identifierHasSuffix: String
   identifierEqualFold: String
   identifierContainsFold: String
+  """
+  hostname field predicates
+  """
+  hostname: String
+  hostnameNEQ: String
+  hostnameIn: [String!]
+  hostnameNotIn: [String!]
+  hostnameGT: String
+  hostnameGTE: String
+  hostnameLT: String
+  hostnameLTE: String
+  hostnameContains: String
+  hostnameHasPrefix: String
+  hostnameHasSuffix: String
+  hostnameIsNil: Boolean
+  hostnameNotNil: Boolean
+  hostnameEqualFold: String
+  hostnameContainsFold: String
   """
   upstream field predicates
   """

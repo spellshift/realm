@@ -61,7 +61,7 @@ export const BuildersTab = ({
             ) : (
                 <div className="rounded-md border border-gray-200 border-t-0 overflow-x-auto max-w-full">
                     <div className="min-w-[720px] w-full">
-                        <Table data={builders} columns={builderColumns} />
+                        <Table data={builders} columns={builderColumns} initialSorting={[{ id: "lastSeenAt", desc: true }]} />
                     </div>
                 </div>
             )}

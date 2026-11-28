@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,6 +24,22 @@ import (
 )
 
 var serverLog = logging.For("builder.server")
+
+const maxBuilderHostnameLen = 255
+
+func sanitizeBuilderHostname(raw string) string {
+	hostname := strings.TrimSpace(raw)
+	if len(hostname) <= maxBuilderHostnameLen {
+		return hostname
+	}
+	// Truncate to at most maxBuilderHostnameLen bytes on a valid UTF-8 rune
+	// boundary so MySQL varchar(255) never rejects the update and poisons last_seen_at.
+	n := maxBuilderHostnameLen
+	for n > 0 && !utf8.RuneStart(hostname[n]) {
+		n--
+	}
+	return strings.TrimSpace(hostname[:n])
+}
 
 // Server implements the Builder gRPC service.
 type Server struct {
@@ -50,11 +67,15 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		return nil, status.Error(codes.Unauthenticated, "builder not authenticated")
 	}
 
-	// Update builder's last_seen_at timestamp
-	if _, err := s.graph.Builder.UpdateOne(b).
-		SetLastSeenAt(now).
-		Save(ctx); err != nil {
-		serverLog.ErrorContext(ctx, "failed to update builder last_seen_at",
+	// Update builder's last_seen_at timestamp and its reported hostname.
+	update := s.graph.Builder.UpdateOne(b).SetLastSeenAt(now)
+	if hostname := sanitizeBuilderHostname(req.GetHostname()); hostname != "" {
+		if b.Hostname == nil || *b.Hostname != hostname {
+			update.SetHostname(hostname)
+		}
+	}
+	if _, err := update.Save(ctx); err != nil {
+		serverLog.ErrorContext(ctx, "failed to update builder heartbeat",
 			"builder_id", b.ID, "error", err)
 	}
 
