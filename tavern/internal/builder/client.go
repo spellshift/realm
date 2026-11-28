@@ -194,7 +194,10 @@ func claimAndExecuteTasks(ctx context.Context, cacheDir string, client builderpb
 	// the server, so this call must happen on every poll regardless of how
 	// many builds are currently running, instead of being blocked behind a
 	// full semaphore (see spellshift/realm#2400).
-	hostname, _ := os.Hostname()
+	hostname, err := os.Hostname()
+	if err != nil {
+		clientLog.WarnContext(ctx, "failed to determine builder hostname", "error", err)
+	}
 	resp, err := client.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{Hostname: hostname})
 	if err != nil {
 		return fmt.Errorf("failed to claim build tasks: %w", err)

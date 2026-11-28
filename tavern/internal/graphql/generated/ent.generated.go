@@ -28376,20 +28376,13 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"hostname", "supportedTargets", "upstream", "pollInterval", "executor"}
+	fieldsInOrder := [...]string{"supportedTargets", "upstream", "pollInterval", "executor"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "hostname":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hostname"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Hostname = data
 		case "supportedTargets":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("supportedTargets"))
 			data, err := ec.unmarshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx, v)

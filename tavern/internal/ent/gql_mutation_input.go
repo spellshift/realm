@@ -81,7 +81,6 @@ func (c *BeaconHistoryCreate) SetInput(i CreateBeaconHistoryInput) *BeaconHistor
 
 // CreateBuilderInput represents a mutation input for creating builders.
 type CreateBuilderInput struct {
-	Hostname         *string
 	SupportedTargets []c2pb.Host_Platform
 	Upstream         *string
 	PollInterval     *int
@@ -90,9 +89,6 @@ type CreateBuilderInput struct {
 
 // Mutate applies the CreateBuilderInput on the BuilderMutation builder.
 func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
-	if v := i.Hostname; v != nil {
-		m.SetHostname(*v)
-	}
 	if v := i.SupportedTargets; v != nil {
 		m.SetSupportedTargets(v)
 	}
