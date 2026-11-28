@@ -29,7 +29,7 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                     <span className="sr-only">Open sidebar</span>
                     <Bars3Icon className="h-6 w-6" aria-hidden="true" />
                 </button>
-                <div className="flex-1 text-sm font-semibold leading-6 text-white">Realm</div>
+                <div className="flex-1 text-sm font-semibold leading-6 text-white">Tavern</div>
             </div>
             <Transition.Root show={sidebarOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-40 lg:hidden" onClose={handleSidebarOpen}>

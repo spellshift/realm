@@ -31,7 +31,7 @@ const FullSidebarNav = ({ currNavItem, handleSidebarMinimized }: FullSidebarNavP
                                 width="40"
                                 height="40"
                             />
-                            <div className="text-white text-3xl leading-6 font-semibold tracking-wide">Realm</div>
+                            <div className="text-white text-3xl leading-6 font-semibold tracking-wide">Tavern</div>
                         </div>
                     </a>
                     <button className='p-2 text-gray-500 -mr-4 hover:text-gray-300' onClick={() => handleSidebarMinimized(true)}>
