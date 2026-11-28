@@ -67,6 +67,11 @@ func LastModifiedAt(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
+// AutoBuildKey applies equality check predicate on the "auto_build_key" field. It's identical to AutoBuildKeyEQ.
+func AutoBuildKey(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldAutoBuildKey, v))
+}
+
 // BuildScript applies equality check predicate on the "build_script" field. It's identical to BuildScriptEQ.
 func BuildScript(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldBuildScript, v))
@@ -255,6 +260,81 @@ func TargetFormatIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
 // TargetFormatNotIn applies the NotIn predicate on the "target_format" field.
 func TargetFormatNotIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldNotIn(FieldTargetFormat, vs...))
+}
+
+// AutoBuildKeyEQ applies the EQ predicate on the "auto_build_key" field.
+func AutoBuildKeyEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyNEQ applies the NEQ predicate on the "auto_build_key" field.
+func AutoBuildKeyNEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyIn applies the In predicate on the "auto_build_key" field.
+func AutoBuildKeyIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldAutoBuildKey, vs...))
+}
+
+// AutoBuildKeyNotIn applies the NotIn predicate on the "auto_build_key" field.
+func AutoBuildKeyNotIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldAutoBuildKey, vs...))
+}
+
+// AutoBuildKeyGT applies the GT predicate on the "auto_build_key" field.
+func AutoBuildKeyGT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyGTE applies the GTE predicate on the "auto_build_key" field.
+func AutoBuildKeyGTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyLT applies the LT predicate on the "auto_build_key" field.
+func AutoBuildKeyLT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyLTE applies the LTE predicate on the "auto_build_key" field.
+func AutoBuildKeyLTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyContains applies the Contains predicate on the "auto_build_key" field.
+func AutoBuildKeyContains(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContains(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyHasPrefix applies the HasPrefix predicate on the "auto_build_key" field.
+func AutoBuildKeyHasPrefix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasPrefix(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyHasSuffix applies the HasSuffix predicate on the "auto_build_key" field.
+func AutoBuildKeyHasSuffix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasSuffix(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyIsNil applies the IsNil predicate on the "auto_build_key" field.
+func AutoBuildKeyIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldAutoBuildKey))
+}
+
+// AutoBuildKeyNotNil applies the NotNil predicate on the "auto_build_key" field.
+func AutoBuildKeyNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldAutoBuildKey))
+}
+
+// AutoBuildKeyEqualFold applies the EqualFold predicate on the "auto_build_key" field.
+func AutoBuildKeyEqualFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEqualFold(FieldAutoBuildKey, v))
+}
+
+// AutoBuildKeyContainsFold applies the ContainsFold predicate on the "auto_build_key" field.
+func AutoBuildKeyContainsFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContainsFold(FieldAutoBuildKey, v))
 }
 
 // BuildScriptEQ applies the EQ predicate on the "build_script" field.

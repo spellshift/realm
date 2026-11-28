@@ -131,11 +131,18 @@ type ImixConfig struct {
 }
 
 // DeriveArtifactPath returns the artifact path inside the build container
-// based on the target OS, rooted at buildDir.
-func DeriveArtifactPath(os c2pb.Host_Platform, buildDir string) string {
+// based on the target OS and format, rooted at buildDir.
+func DeriveArtifactPath(os c2pb.Host_Platform, format TargetFormat, buildDir string) string {
+	name := "imix"
+	if os == c2pb.Host_PLATFORM_WINDOWS {
+		name = "imix.exe"
+		if format == builderpb.TargetFormat_TARGET_FORMAT_CDYLIB {
+			name = "imix.dll"
+		}
+	}
 	target, ok := buildTarget[os]
 	if !ok {
-		return fmt.Sprintf("%s/realm/implants/target/release/imix", buildDir)
+		return fmt.Sprintf("%s/realm/implants/target/release/%s", buildDir, name)
 	}
-	return fmt.Sprintf("%s/realm/implants/target/%s/release/imix", buildDir, target)
+	return fmt.Sprintf("%s/realm/implants/target/%s/release/%s", buildDir, target, name)
 }

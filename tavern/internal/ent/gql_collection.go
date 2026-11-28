@@ -1420,6 +1420,11 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldTargetFormat)
 				fieldSeen[buildtask.FieldTargetFormat] = struct{}{}
 			}
+		case "autoBuildKey":
+			if _, ok := fieldSeen[buildtask.FieldAutoBuildKey]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldAutoBuildKey)
+				fieldSeen[buildtask.FieldAutoBuildKey] = struct{}{}
+			}
 		case "buildScript":
 			if _, ok := fieldSeen[buildtask.FieldBuildScript]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldBuildScript)

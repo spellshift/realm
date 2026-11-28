@@ -73,6 +73,20 @@ func (btc *BuildTaskCreate) SetTargetFormat(bf builderpb.TargetFormat) *BuildTas
 	return btc
 }
 
+// SetAutoBuildKey sets the "auto_build_key" field.
+func (btc *BuildTaskCreate) SetAutoBuildKey(s string) *BuildTaskCreate {
+	btc.mutation.SetAutoBuildKey(s)
+	return btc
+}
+
+// SetNillableAutoBuildKey sets the "auto_build_key" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableAutoBuildKey(s *string) *BuildTaskCreate {
+	if s != nil {
+		btc.SetAutoBuildKey(*s)
+	}
+	return btc
+}
+
 // SetBuildScript sets the "build_script" field.
 func (btc *BuildTaskCreate) SetBuildScript(s string) *BuildTaskCreate {
 	btc.mutation.SetBuildScript(s)
@@ -460,6 +474,10 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.TargetFormat(); ok {
 		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
 		_node.TargetFormat = value
+	}
+	if value, ok := btc.mutation.AutoBuildKey(); ok {
+		_spec.SetField(buildtask.FieldAutoBuildKey, field.TypeString, value)
+		_node.AutoBuildKey = &value
 	}
 	if value, ok := btc.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
@@ -897,6 +915,9 @@ func (u *BuildTaskUpsertOne) UpdateNewValues() *BuildTaskUpsertOne {
 		}
 		if _, exists := u.create.mutation.ProfileAtCreation(); exists {
 			s.SetIgnore(buildtask.FieldProfileAtCreation)
+		}
+		if _, exists := u.create.mutation.AutoBuildKey(); exists {
+			s.SetIgnore(buildtask.FieldAutoBuildKey)
 		}
 	}))
 	return u
@@ -1404,6 +1425,9 @@ func (u *BuildTaskUpsertBulk) UpdateNewValues() *BuildTaskUpsertBulk {
 			}
 			if _, exists := b.mutation.ProfileAtCreation(); exists {
 				s.SetIgnore(buildtask.FieldProfileAtCreation)
+			}
+			if _, exists := b.mutation.AutoBuildKey(); exists {
+				s.SetIgnore(buildtask.FieldAutoBuildKey)
 			}
 		}
 	}))

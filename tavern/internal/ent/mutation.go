@@ -4467,6 +4467,7 @@ type BuildTaskMutation struct {
 	profile_at_creation **builderpb.BuildProfileSnapshot
 	target_os           *c2pb.Host_Platform
 	target_format       *builderpb.TargetFormat
+	auto_build_key      *string
 	build_script        *string
 	claimed_at          *time.Time
 	started_at          *time.Time
@@ -4785,6 +4786,55 @@ func (m *BuildTaskMutation) OldTargetFormat(ctx context.Context) (v builderpb.Ta
 // ResetTargetFormat resets all changes to the "target_format" field.
 func (m *BuildTaskMutation) ResetTargetFormat() {
 	m.target_format = nil
+}
+
+// SetAutoBuildKey sets the "auto_build_key" field.
+func (m *BuildTaskMutation) SetAutoBuildKey(s string) {
+	m.auto_build_key = &s
+}
+
+// AutoBuildKey returns the value of the "auto_build_key" field in the mutation.
+func (m *BuildTaskMutation) AutoBuildKey() (r string, exists bool) {
+	v := m.auto_build_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutoBuildKey returns the old "auto_build_key" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldAutoBuildKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutoBuildKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutoBuildKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutoBuildKey: %w", err)
+	}
+	return oldValue.AutoBuildKey, nil
+}
+
+// ClearAutoBuildKey clears the value of the "auto_build_key" field.
+func (m *BuildTaskMutation) ClearAutoBuildKey() {
+	m.auto_build_key = nil
+	m.clearedFields[buildtask.FieldAutoBuildKey] = struct{}{}
+}
+
+// AutoBuildKeyCleared returns if the "auto_build_key" field was cleared in this mutation.
+func (m *BuildTaskMutation) AutoBuildKeyCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldAutoBuildKey]
+	return ok
+}
+
+// ResetAutoBuildKey resets all changes to the "auto_build_key" field.
+func (m *BuildTaskMutation) ResetAutoBuildKey() {
+	m.auto_build_key = nil
+	delete(m.clearedFields, buildtask.FieldAutoBuildKey)
 }
 
 // SetBuildScript sets the "build_script" field.
@@ -5587,7 +5637,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -5602,6 +5652,9 @@ func (m *BuildTaskMutation) Fields() []string {
 	}
 	if m.target_format != nil {
 		fields = append(fields, buildtask.FieldTargetFormat)
+	}
+	if m.auto_build_key != nil {
+		fields = append(fields, buildtask.FieldAutoBuildKey)
 	}
 	if m.build_script != nil {
 		fields = append(fields, buildtask.FieldBuildScript)
@@ -5657,6 +5710,8 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.TargetOs()
 	case buildtask.FieldTargetFormat:
 		return m.TargetFormat()
+	case buildtask.FieldAutoBuildKey:
+		return m.AutoBuildKey()
 	case buildtask.FieldBuildScript:
 		return m.BuildScript()
 	case buildtask.FieldClaimedAt:
@@ -5700,6 +5755,8 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldTargetOs(ctx)
 	case buildtask.FieldTargetFormat:
 		return m.OldTargetFormat(ctx)
+	case buildtask.FieldAutoBuildKey:
+		return m.OldAutoBuildKey(ctx)
 	case buildtask.FieldBuildScript:
 		return m.OldBuildScript(ctx)
 	case buildtask.FieldClaimedAt:
@@ -5767,6 +5824,13 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTargetFormat(v)
+		return nil
+	case buildtask.FieldAutoBuildKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutoBuildKey(v)
 		return nil
 	case buildtask.FieldBuildScript:
 		v, ok := value.(string)
@@ -5924,6 +5988,9 @@ func (m *BuildTaskMutation) ClearedFields() []string {
 	if m.FieldCleared(buildtask.FieldProfileAtCreation) {
 		fields = append(fields, buildtask.FieldProfileAtCreation)
 	}
+	if m.FieldCleared(buildtask.FieldAutoBuildKey) {
+		fields = append(fields, buildtask.FieldAutoBuildKey)
+	}
 	if m.FieldCleared(buildtask.FieldClaimedAt) {
 		fields = append(fields, buildtask.FieldClaimedAt)
 	}
@@ -5967,6 +6034,9 @@ func (m *BuildTaskMutation) ClearField(name string) error {
 	switch name {
 	case buildtask.FieldProfileAtCreation:
 		m.ClearProfileAtCreation()
+		return nil
+	case buildtask.FieldAutoBuildKey:
+		m.ClearAutoBuildKey()
 		return nil
 	case buildtask.FieldClaimedAt:
 		m.ClearClaimedAt()
@@ -6017,6 +6087,9 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 		return nil
 	case buildtask.FieldTargetFormat:
 		m.ResetTargetFormat()
+		return nil
+	case buildtask.FieldAutoBuildKey:
+		m.ResetAutoBuildKey()
 		return nil
 	case buildtask.FieldBuildScript:
 		m.ResetBuildScript()

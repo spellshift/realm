@@ -3195,6 +3195,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_targetOs(ctx, field)
 			case "targetFormat":
 				return ec.fieldContext_BuildTask_targetFormat(ctx, field)
+			case "autoBuildKey":
+				return ec.fieldContext_BuildTask_autoBuildKey(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
 			case "claimedAt":

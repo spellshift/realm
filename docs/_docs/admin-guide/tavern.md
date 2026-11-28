@@ -543,6 +543,8 @@ Running Tavern with the `DISABLE_DEFAULT_TOMES` environment variable set will di
 DISABLE_DEFAULT_TOMES=1 go run ./tavern
 ```
 
+Tavern automatically queues one build for each OS and format supported by a builder when it polls, using the Default build profile. Existing Default-profile build tasks count even if they failed. Set `DISABLE_AUTO_AGENT_BUILDS=1` to disable this automatic queueing.
+
 ### PPROF
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).

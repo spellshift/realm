@@ -46,6 +46,13 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.Type("BuildTaskTargetFormat"),
 			).
 			Comment("The output format for the build (BIN, CDYLIB, WINDOWS_SERVICE)."),
+		field.String("auto_build_key").
+			Optional().
+			Nillable().
+			Unique().
+			Immutable().
+			Annotations(entgql.Skip(entgql.SkipMutationCreateInput)).
+			Comment("Global OS and format key for an automatically queued Default build."),
 		field.Text("build_script").
 			NotEmpty().
 			SchemaType(map[string]string{

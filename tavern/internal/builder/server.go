@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 
@@ -56,6 +57,9 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		Save(ctx); err != nil {
 		serverLog.ErrorContext(ctx, "failed to update builder last_seen_at",
 			"builder_id", b.ID, "error", err)
+	}
+	if os.Getenv("DISABLE_AUTO_AGENT_BUILDS") != "1" {
+		s.queueMissingDefaultBuilds(ctx, b)
 	}
 
 	// Load unclaimed build tasks assigned to this builder

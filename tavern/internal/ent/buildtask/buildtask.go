@@ -29,6 +29,8 @@ const (
 	FieldTargetOs = "target_os"
 	// FieldTargetFormat holds the string denoting the target_format field in the database.
 	FieldTargetFormat = "target_format"
+	// FieldAutoBuildKey holds the string denoting the auto_build_key field in the database.
+	FieldAutoBuildKey = "auto_build_key"
 	// FieldBuildScript holds the string denoting the build_script field in the database.
 	FieldBuildScript = "build_script"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
@@ -101,6 +103,7 @@ var Columns = []string{
 	FieldProfileAtCreation,
 	FieldTargetOs,
 	FieldTargetFormat,
+	FieldAutoBuildKey,
 	FieldBuildScript,
 	FieldClaimedAt,
 	FieldStartedAt,
@@ -210,6 +213,11 @@ func ByTargetOs(opts ...sql.OrderTermOption) OrderOption {
 // ByTargetFormat orders the results by the target_format field.
 func ByTargetFormat(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTargetFormat, opts...).ToFunc()
+}
+
+// ByAutoBuildKey orders the results by the auto_build_key field.
+func ByAutoBuildKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutoBuildKey, opts...).ToFunc()
 }
 
 // ByBuildScript orders the results by the build_script field.

@@ -200,6 +200,7 @@ type ComplexityRoot struct {
 	BuildTask struct {
 		Artifact          func(childComplexity int) int
 		ArtifactPath      func(childComplexity int) int
+		AutoBuildKey      func(childComplexity int) int
 		BuildScript       func(childComplexity int) int
 		Builder           func(childComplexity int) int
 		Bundle            func(childComplexity int) int
@@ -1717,6 +1718,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BuildTask.ArtifactPath(childComplexity), true
+
+	case "BuildTask.autoBuildKey":
+		if e.ComplexityRoot.BuildTask.AutoBuildKey == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BuildTask.AutoBuildKey(childComplexity), true
 
 	case "BuildTask.buildScript":
 		if e.ComplexityRoot.BuildTask.BuildScript == nil {
@@ -7329,6 +7337,10 @@ type BuildTask implements Node {
   """
   targetFormat: BuildTaskTargetFormat!
   """
+  Global OS and format key for an automatically queued Default build.
+  """
+  autoBuildKey: String
+  """
   The derived script to execute inside the build container.
   """
   buildScript: String!
@@ -7514,6 +7526,24 @@ input BuildTaskWhereInput {
   targetFormatNEQ: BuildTaskTargetFormat
   targetFormatIn: [BuildTaskTargetFormat!]
   targetFormatNotIn: [BuildTaskTargetFormat!]
+  """
+  auto_build_key field predicates
+  """
+  autoBuildKey: String
+  autoBuildKeyNEQ: String
+  autoBuildKeyIn: [String!]
+  autoBuildKeyNotIn: [String!]
+  autoBuildKeyGT: String
+  autoBuildKeyGTE: String
+  autoBuildKeyLT: String
+  autoBuildKeyLTE: String
+  autoBuildKeyContains: String
+  autoBuildKeyHasPrefix: String
+  autoBuildKeyHasSuffix: String
+  autoBuildKeyIsNil: Boolean
+  autoBuildKeyNotNil: Boolean
+  autoBuildKeyEqualFold: String
+  autoBuildKeyContainsFold: String
   """
   build_script field predicates
   """

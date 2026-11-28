@@ -29,13 +29,14 @@ type CreateBuildTaskInput struct {
 	PreBuildScript  *string
 	PostBuildScript *string
 	Unique          *string
+	AutoBuildKey    *string
 }
 
 // CreateDefaultBuildTask creates a task from the seeded Default profile for an
 // explicitly chosen builder and target format. It does not require GraphQL
 // authentication or select a random healthy builder.
 func CreateDefaultBuildTask(ctx context.Context, graph *ent.Client, builderID int, targetOS c2pb.Host_Platform, targetFormat builderpb.TargetFormat) (*ent.BuildTask, error) {
-	profile, err := graph.BuildProfile.Query().Where(buildprofile.Name(DefaultBuildProfileName)).Only(ctx)
+	profile, err := graph.BuildProfile.Query().Where(buildprofile.Name(DefaultBuildProfileName)).Order(ent.Asc(buildprofile.FieldID)).First(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load default build profile: %w", err)
 	}
@@ -177,6 +178,9 @@ func CreateBuildTask(ctx context.Context, client *ent.Client, input CreateBuildT
 	}
 	if unique != nil {
 		create.SetUnique(*unique)
+	}
+	if input.AutoBuildKey != nil {
+		create.SetAutoBuildKey(*input.AutoBuildKey)
 	}
 	bt, err := create.Save(ctx)
 	if err != nil {

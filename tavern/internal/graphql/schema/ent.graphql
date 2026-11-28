@@ -1259,6 +1259,10 @@ type BuildTask implements Node {
   """
   targetFormat: BuildTaskTargetFormat!
   """
+  Global OS and format key for an automatically queued Default build.
+  """
+  autoBuildKey: String
+  """
   The derived script to execute inside the build container.
   """
   buildScript: String!
@@ -1444,6 +1448,24 @@ input BuildTaskWhereInput {
   targetFormatNEQ: BuildTaskTargetFormat
   targetFormatIn: [BuildTaskTargetFormat!]
   targetFormatNotIn: [BuildTaskTargetFormat!]
+  """
+  auto_build_key field predicates
+  """
+  autoBuildKey: String
+  autoBuildKeyNEQ: String
+  autoBuildKeyIn: [String!]
+  autoBuildKeyNotIn: [String!]
+  autoBuildKeyGT: String
+  autoBuildKeyGTE: String
+  autoBuildKeyLT: String
+  autoBuildKeyLTE: String
+  autoBuildKeyContains: String
+  autoBuildKeyHasPrefix: String
+  autoBuildKeyHasSuffix: String
+  autoBuildKeyIsNil: Boolean
+  autoBuildKeyNotNil: Boolean
+  autoBuildKeyEqualFold: String
+  autoBuildKeyContainsFold: String
   """
   build_script field predicates
   """
