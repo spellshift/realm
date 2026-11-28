@@ -26,6 +26,8 @@ const (
 	FieldParamDefsAtCreation = "param_defs_at_creation"
 	// FieldEldritchAtCreation holds the string denoting the eldritch_at_creation field in the database.
 	FieldEldritchAtCreation = "eldritch_at_creation"
+	// FieldScheduledAt holds the string denoting the scheduled_at field in the database.
+	FieldScheduledAt = "scheduled_at"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
 	EdgeTome = "tome"
 	// EdgeBundle holds the string denoting the bundle edge name in mutations.
@@ -114,6 +116,7 @@ var Columns = []string{
 	FieldParameters,
 	FieldParamDefsAtCreation,
 	FieldEldritchAtCreation,
+	FieldScheduledAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "quests"
@@ -193,6 +196,11 @@ func ByParamDefsAtCreation(opts ...sql.OrderTermOption) OrderOption {
 // ByEldritchAtCreation orders the results by the eldritch_at_creation field.
 func ByEldritchAtCreation(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEldritchAtCreation, opts...).ToFunc()
+}
+
+// ByScheduledAt orders the results by the scheduled_at field.
+func ByScheduledAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldScheduledAt, opts...).ToFunc()
 }
 
 // ByTomeField orders the results by tome field.

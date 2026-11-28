@@ -18607,6 +18607,7 @@ type QuestMutation struct {
 	parameters             *string
 	param_defs_at_creation *string
 	eldritch_at_creation   *string
+	scheduled_at           *time.Time
 	clearedFields          map[string]struct{}
 	tome                   *int
 	clearedtome            bool
@@ -18985,6 +18986,55 @@ func (m *QuestMutation) EldritchAtCreationCleared() bool {
 func (m *QuestMutation) ResetEldritchAtCreation() {
 	m.eldritch_at_creation = nil
 	delete(m.clearedFields, quest.FieldEldritchAtCreation)
+}
+
+// SetScheduledAt sets the "scheduled_at" field.
+func (m *QuestMutation) SetScheduledAt(t time.Time) {
+	m.scheduled_at = &t
+}
+
+// ScheduledAt returns the value of the "scheduled_at" field in the mutation.
+func (m *QuestMutation) ScheduledAt() (r time.Time, exists bool) {
+	v := m.scheduled_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScheduledAt returns the old "scheduled_at" field's value of the Quest entity.
+// If the Quest object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuestMutation) OldScheduledAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScheduledAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScheduledAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScheduledAt: %w", err)
+	}
+	return oldValue.ScheduledAt, nil
+}
+
+// ClearScheduledAt clears the value of the "scheduled_at" field.
+func (m *QuestMutation) ClearScheduledAt() {
+	m.scheduled_at = nil
+	m.clearedFields[quest.FieldScheduledAt] = struct{}{}
+}
+
+// ScheduledAtCleared returns if the "scheduled_at" field was cleared in this mutation.
+func (m *QuestMutation) ScheduledAtCleared() bool {
+	_, ok := m.clearedFields[quest.FieldScheduledAt]
+	return ok
+}
+
+// ResetScheduledAt resets all changes to the "scheduled_at" field.
+func (m *QuestMutation) ResetScheduledAt() {
+	m.scheduled_at = nil
+	delete(m.clearedFields, quest.FieldScheduledAt)
 }
 
 // SetTomeID sets the "tome" edge to the Tome entity by id.
@@ -19417,7 +19467,7 @@ func (m *QuestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QuestMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, quest.FieldCreatedAt)
 	}
@@ -19435,6 +19485,9 @@ func (m *QuestMutation) Fields() []string {
 	}
 	if m.eldritch_at_creation != nil {
 		fields = append(fields, quest.FieldEldritchAtCreation)
+	}
+	if m.scheduled_at != nil {
+		fields = append(fields, quest.FieldScheduledAt)
 	}
 	return fields
 }
@@ -19456,6 +19509,8 @@ func (m *QuestMutation) Field(name string) (ent.Value, bool) {
 		return m.ParamDefsAtCreation()
 	case quest.FieldEldritchAtCreation:
 		return m.EldritchAtCreation()
+	case quest.FieldScheduledAt:
+		return m.ScheduledAt()
 	}
 	return nil, false
 }
@@ -19477,6 +19532,8 @@ func (m *QuestMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldParamDefsAtCreation(ctx)
 	case quest.FieldEldritchAtCreation:
 		return m.OldEldritchAtCreation(ctx)
+	case quest.FieldScheduledAt:
+		return m.OldScheduledAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Quest field %s", name)
 }
@@ -19528,6 +19585,13 @@ func (m *QuestMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEldritchAtCreation(v)
 		return nil
+	case quest.FieldScheduledAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScheduledAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)
 }
@@ -19567,6 +19631,9 @@ func (m *QuestMutation) ClearedFields() []string {
 	if m.FieldCleared(quest.FieldEldritchAtCreation) {
 		fields = append(fields, quest.FieldEldritchAtCreation)
 	}
+	if m.FieldCleared(quest.FieldScheduledAt) {
+		fields = append(fields, quest.FieldScheduledAt)
+	}
 	return fields
 }
 
@@ -19589,6 +19656,9 @@ func (m *QuestMutation) ClearField(name string) error {
 		return nil
 	case quest.FieldEldritchAtCreation:
 		m.ClearEldritchAtCreation()
+		return nil
+	case quest.FieldScheduledAt:
+		m.ClearScheduledAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest nullable field %s", name)
@@ -19615,6 +19685,9 @@ func (m *QuestMutation) ResetField(name string) error {
 		return nil
 	case quest.FieldEldritchAtCreation:
 		m.ResetEldritchAtCreation()
+		return nil
+	case quest.FieldScheduledAt:
+		m.ResetScheduledAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest field %s", name)

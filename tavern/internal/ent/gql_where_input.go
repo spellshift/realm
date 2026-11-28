@@ -9437,6 +9437,18 @@ type QuestWhereInput struct {
 	EldritchAtCreationEqualFold    *string  `json:"eldritchAtCreationEqualFold,omitempty"`
 	EldritchAtCreationContainsFold *string  `json:"eldritchAtCreationContainsFold,omitempty"`
 
+	// "scheduled_at" field predicates.
+	ScheduledAt       *time.Time  `json:"scheduledAt,omitempty"`
+	ScheduledAtNEQ    *time.Time  `json:"scheduledAtNEQ,omitempty"`
+	ScheduledAtIn     []time.Time `json:"scheduledAtIn,omitempty"`
+	ScheduledAtNotIn  []time.Time `json:"scheduledAtNotIn,omitempty"`
+	ScheduledAtGT     *time.Time  `json:"scheduledAtGT,omitempty"`
+	ScheduledAtGTE    *time.Time  `json:"scheduledAtGTE,omitempty"`
+	ScheduledAtLT     *time.Time  `json:"scheduledAtLT,omitempty"`
+	ScheduledAtLTE    *time.Time  `json:"scheduledAtLTE,omitempty"`
+	ScheduledAtIsNil  bool        `json:"scheduledAtIsNil,omitempty"`
+	ScheduledAtNotNil bool        `json:"scheduledAtNotNil,omitempty"`
+
 	// "tome" edge predicates.
 	HasTome     *bool             `json:"hasTome,omitempty"`
 	HasTomeWith []*TomeWhereInput `json:"hasTomeWith,omitempty"`
@@ -9790,6 +9802,36 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 	}
 	if i.EldritchAtCreationContainsFold != nil {
 		predicates = append(predicates, quest.EldritchAtCreationContainsFold(*i.EldritchAtCreationContainsFold))
+	}
+	if i.ScheduledAt != nil {
+		predicates = append(predicates, quest.ScheduledAtEQ(*i.ScheduledAt))
+	}
+	if i.ScheduledAtNEQ != nil {
+		predicates = append(predicates, quest.ScheduledAtNEQ(*i.ScheduledAtNEQ))
+	}
+	if len(i.ScheduledAtIn) > 0 {
+		predicates = append(predicates, quest.ScheduledAtIn(i.ScheduledAtIn...))
+	}
+	if len(i.ScheduledAtNotIn) > 0 {
+		predicates = append(predicates, quest.ScheduledAtNotIn(i.ScheduledAtNotIn...))
+	}
+	if i.ScheduledAtGT != nil {
+		predicates = append(predicates, quest.ScheduledAtGT(*i.ScheduledAtGT))
+	}
+	if i.ScheduledAtGTE != nil {
+		predicates = append(predicates, quest.ScheduledAtGTE(*i.ScheduledAtGTE))
+	}
+	if i.ScheduledAtLT != nil {
+		predicates = append(predicates, quest.ScheduledAtLT(*i.ScheduledAtLT))
+	}
+	if i.ScheduledAtLTE != nil {
+		predicates = append(predicates, quest.ScheduledAtLTE(*i.ScheduledAtLTE))
+	}
+	if i.ScheduledAtIsNil {
+		predicates = append(predicates, quest.ScheduledAtIsNil())
+	}
+	if i.ScheduledAtNotNil {
+		predicates = append(predicates, quest.ScheduledAtNotNil())
 	}
 
 	if i.HasTome != nil {

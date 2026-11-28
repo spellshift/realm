@@ -53,6 +53,15 @@ func (Quest) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Eldritch script that was evaluated at the time of this quest creation."),
+		field.Time("scheduled_at").
+			Immutable().
+			Optional().
+			Nillable().
+			Annotations(
+				entgql.OrderField("SCHEDULED_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("Canonical cron fire-time this quest was automated for (occurrence key); null for manually-created and one-shot automated quests."),
 	}
 }
 

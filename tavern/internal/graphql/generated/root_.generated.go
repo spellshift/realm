@@ -664,6 +664,7 @@ type ComplexityRoot struct {
 		Parameters          func(childComplexity int) int
 		PreviousQuest       func(childComplexity int) int
 		RelatedQuests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		ScheduledAt         func(childComplexity int) int
 		ScheduledTask       func(childComplexity int) int
 		Tasks               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tome                func(childComplexity int) int
@@ -4407,6 +4408,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Quest.RelatedQuests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
+
+	case "Quest.scheduledAt":
+		if e.ComplexityRoot.Quest.ScheduledAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Quest.ScheduledAt(childComplexity), true
 
 	case "Quest.scheduledTask":
 		if e.ComplexityRoot.Quest.ScheduledTask == nil {
@@ -11426,6 +11434,10 @@ type Quest implements Node {
   """
   eldritchAtCreation: String
   """
+  Canonical cron fire-time this quest was automated for (occurrence key); null for manually-created and one-shot automated quests.
+  """
+  scheduledAt: Time
+  """
   Tome that this quest will be executing
   """
   tome: Tome!
@@ -11593,6 +11605,7 @@ enum QuestOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   NAME
+  SCHEDULED_AT
 }
 """
 QuestWhereInput is used for filtering Quest objects.
@@ -11705,6 +11718,19 @@ input QuestWhereInput {
   eldritchAtCreationNotNil: Boolean
   eldritchAtCreationEqualFold: String
   eldritchAtCreationContainsFold: String
+  """
+  scheduled_at field predicates
+  """
+  scheduledAt: Time
+  scheduledAtNEQ: Time
+  scheduledAtIn: [Time!]
+  scheduledAtNotIn: [Time!]
+  scheduledAtGT: Time
+  scheduledAtGTE: Time
+  scheduledAtLT: Time
+  scheduledAtLTE: Time
+  scheduledAtIsNil: Boolean
+  scheduledAtNotNil: Boolean
   """
   tome edge predicates
   """

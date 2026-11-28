@@ -105,6 +105,20 @@ func (qc *QuestCreate) SetNillableEldritchAtCreation(s *string) *QuestCreate {
 	return qc
 }
 
+// SetScheduledAt sets the "scheduled_at" field.
+func (qc *QuestCreate) SetScheduledAt(t time.Time) *QuestCreate {
+	qc.mutation.SetScheduledAt(t)
+	return qc
+}
+
+// SetNillableScheduledAt sets the "scheduled_at" field if the given value is not nil.
+func (qc *QuestCreate) SetNillableScheduledAt(t *time.Time) *QuestCreate {
+	if t != nil {
+		qc.SetScheduledAt(*t)
+	}
+	return qc
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (qc *QuestCreate) SetTomeID(id int) *QuestCreate {
 	qc.mutation.SetTomeID(id)
@@ -381,6 +395,10 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 		_spec.SetField(quest.FieldEldritchAtCreation, field.TypeString, value)
 		_node.EldritchAtCreation = value
 	}
+	if value, ok := qc.mutation.ScheduledAt(); ok {
+		_spec.SetField(quest.FieldScheduledAt, field.TypeTime, value)
+		_node.ScheduledAt = &value
+	}
 	if nodes := qc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -644,6 +662,9 @@ func (u *QuestUpsertOne) UpdateNewValues() *QuestUpsertOne {
 		}
 		if _, exists := u.create.mutation.EldritchAtCreation(); exists {
 			s.SetIgnore(quest.FieldEldritchAtCreation)
+		}
+		if _, exists := u.create.mutation.ScheduledAt(); exists {
+			s.SetIgnore(quest.FieldScheduledAt)
 		}
 	}))
 	return u
@@ -909,6 +930,9 @@ func (u *QuestUpsertBulk) UpdateNewValues() *QuestUpsertBulk {
 			}
 			if _, exists := b.mutation.EldritchAtCreation(); exists {
 				s.SetIgnore(quest.FieldEldritchAtCreation)
+			}
+			if _, exists := b.mutation.ScheduledAt(); exists {
+				s.SetIgnore(quest.FieldScheduledAt)
 			}
 		}
 	}))

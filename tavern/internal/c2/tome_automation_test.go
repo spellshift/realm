@@ -323,3 +323,144 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	count = client.Task.Query().CountX(ctx)
 	assert.Equal(t, 0, count, "Range tome should NOT run at 05:55:00 even with lookahead")
 }
+
+func setupOccurrenceTest(t *testing.T) (context.Context, *ent.Client, *Server, [2]*ent.Beacon, [2]*ent.Host) {
+	ctx := context.Background()
+	client := enttest.OpenTempDB(t)
+
+	var hosts [2]*ent.Host
+	var beacons [2]*ent.Beacon
+	for i, id := range []string{"occ-1", "occ-2"} {
+		hosts[i] = client.Host.Create().
+			SetIdentifier(id).
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			SaveX(ctx)
+		beacons[i] = client.Beacon.Create().
+			SetIdentifier(id).
+			SetHost(hosts[i]).
+			SetTransport(c2pb.Transport_TRANSPORT_HTTP1).
+			SaveX(ctx)
+	}
+
+	tome := client.Tome.Create().
+		SetName("Occurrence Tome").
+		SetDescription("Test").
+		SetAuthor("Test Author").
+		SetEldritch("print('occ')").
+		SaveX(ctx)
+	client.ScheduledTask.Create().
+		SetName("Occurrence ST").
+		SetDescription("Test").
+		SetTome(tome).
+		SetRunOnSchedule("* * * * *").
+		SaveX(ctx)
+
+	return ctx, client, &Server{graph: client}, beacons, hosts
+}
+
+func TestHandleTomeAutomation_OccurrenceSharedQuest(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	for i := range beacons {
+		srv.handleTomeAutomation(ctx, beacons[i].ID, hosts[i].ID, false, false, now, 0)
+	}
+
+	quests := client.Quest.Query().AllX(ctx)
+	assert.Len(t, quests, 1, "beacons firing the same occurrence should share one quest")
+	if assert.NotNil(t, quests[0].ScheduledAt) {
+		assert.True(t, quests[0].ScheduledAt.Equal(now))
+	}
+	assert.Equal(t, 2, quests[0].QueryTasks().CountX(ctx), "each beacon should get a task on the shared quest")
+}
+
+func TestHandleTomeAutomation_OccurrenceDifferentMinutes(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now, 0)
+	srv.handleTomeAutomation(ctx, beacons[1].ID, hosts[1].ID, false, false, now.Add(5*time.Minute), 0)
+
+	assert.Equal(t, 2, client.Quest.Query().CountX(ctx), "different occurrences should create separate quests")
+	assert.Equal(t, 2, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_OccurrenceLookAheadShared(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	base := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, base.Add(30*time.Second), 60*time.Second)
+	srv.handleTomeAutomation(ctx, beacons[1].ID, hosts[1].ID, false, false, base.Add(50*time.Second), 60*time.Second)
+
+	quests := client.Quest.Query().AllX(ctx)
+	assert.Len(t, quests, 1)
+	if assert.NotNil(t, quests[0].ScheduledAt) {
+		assert.True(t, quests[0].ScheduledAt.Equal(base.Add(time.Minute)))
+	}
+	assert.Equal(t, 2, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_OccurrenceRangeShared(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	client.ScheduledTask.Update().SetRunOnSchedule("0-5 10 * * *").ExecX(ctx)
+
+	base := time.Date(2023, 10, 27, 10, 2, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, base.Add(5*time.Second), 0)
+	srv.handleTomeAutomation(ctx, beacons[1].ID, hosts[1].ID, false, false, base.Add(40*time.Second), 0)
+
+	quests := client.Quest.Query().AllX(ctx)
+	assert.Len(t, quests, 1)
+	if assert.NotNil(t, quests[0].ScheduledAt) {
+		assert.True(t, quests[0].ScheduledAt.Equal(base))
+	}
+	assert.Equal(t, 2, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_OneShotUngrouped(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	client.ScheduledTask.Update().SetRunOnSchedule("").SetRunOnNewBeaconCallback(true).ExecX(ctx)
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	for i := range beacons {
+		srv.handleTomeAutomation(ctx, beacons[i].ID, hosts[i].ID, true, false, now, 0)
+	}
+
+	quests := client.Quest.Query().AllX(ctx)
+	assert.Len(t, quests, 2)
+	for _, q := range quests {
+		assert.Nil(t, q.ScheduledAt)
+	}
+}
+
+func TestHandleTomeAutomation_OccurrenceDifferentScheduledTasks(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	tome2 := client.Tome.Create().
+		SetName("Occurrence Tome 2").
+		SetDescription("Test").
+		SetAuthor("Test Author").
+		SetEldritch("print('occ2')").
+		SaveX(ctx)
+	client.ScheduledTask.Create().
+		SetName("Occurrence ST 2").
+		SetDescription("Test").
+		SetTome(tome2).
+		SetRunOnSchedule("* * * * *").
+		SaveX(ctx)
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	for i := range beacons {
+		srv.handleTomeAutomation(ctx, beacons[i].ID, hosts[i].ID, false, false, now, 0)
+	}
+
+	assert.Equal(t, 2, client.Quest.Query().CountX(ctx))
+	assert.Equal(t, 4, client.Task.Query().CountX(ctx))
+}
