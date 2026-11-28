@@ -22,14 +22,16 @@ func TestCreateDefaultBuildTaskWithExplicitBuilder(t *testing.T) {
 	profile := graph.BuildProfile.Create().SetName(builder.DefaultBuildProfileName).
 		SetDescription("seeded profile").SetBuildScript("{{.BuildCommand}}").
 		SetArtifactPath("{{.ArtifactPath}}").SaveX(ctx)
-	worker := graph.Builder.Create().SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).SaveX(ctx)
+	worker := graph.Builder.Create().SetSupportedTargets([]c2pb.Host_Platform{
+		c2pb.Host_PLATFORM_LINUX, c2pb.Host_PLATFORM_WINDOWS,
+	}).SaveX(ctx)
 	assetInput := graph.Asset.Create().SetName("config.txt").SetContent([]byte("initial")).SaveX(ctx)
 	tome := graph.Tome.Create().SetName("test-tome").SetDescription("test").SetAuthor("test").
 		SetEldritch("print('initial')").AddAssets(assetInput).SaveX(ctx)
 	graph.BuildProfile.UpdateOne(profile).SetTomes([]builderpb.BuildProfileTome{{TomeID: tome.ID}}).SaveX(ctx)
 
 	// The selected builder has never checked in; explicit assignment must still work.
-	task, err := builder.CreateDefaultBuildTask(ctx, graph, worker.ID, c2pb.Host_PLATFORM_LINUX)
+	task, err := builder.CreateDefaultBuildTask(ctx, graph, worker.ID, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN)
 	require.NoError(t, err)
 	assert.Equal(t, worker.ID, task.QueryBuilder().OnlyIDX(ctx))
 	assert.Equal(t, profile.ID, task.QueryProfile().OnlyIDX(ctx))
@@ -46,6 +48,20 @@ func TestCreateDefaultBuildTaskWithExplicitBuilder(t *testing.T) {
 	assert.Equal(t, asset.StatusIN_PROGRESS, artifact.Status)
 	assert.Empty(t, artifact.Content)
 
+	for _, tc := range []struct {
+		format  builderpb.TargetFormat
+		command string
+	}{
+		{builderpb.TargetFormat_TARGET_FORMAT_CDYLIB, "cargo build --release --lib"},
+		{builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE, "cargo build --release --features win_service"},
+	} {
+		windowsTask, err := builder.CreateDefaultBuildTask(ctx, graph, worker.ID, c2pb.Host_PLATFORM_WINDOWS, tc.format)
+		require.NoError(t, err)
+		assert.Equal(t, tc.format, windowsTask.TargetFormat)
+		assert.Contains(t, windowsTask.BuildScript, tc.command)
+		assert.Equal(t, asset.StatusIN_PROGRESS, windowsTask.QueryArtifact().OnlyX(ctx).Status)
+	}
+
 	graph.BuildProfile.UpdateOne(profile).SetName("changed").SaveX(ctx)
 	graph.Tome.UpdateOne(tome).SetName("changed-tome").SaveX(ctx)
 	persisted := graph.BuildTask.GetX(ctx, task.ID)
@@ -55,15 +71,21 @@ func TestCreateDefaultBuildTaskWithExplicitBuilder(t *testing.T) {
 
 func TestCreateBuildTaskRollsBackWithExplicitBuilder(t *testing.T) {
 	ctx := context.Background()
-	graph := enttest.OpenTempDB(t)
+	graph, db := enttest.OpenTempDBWithDB(t)
 	defer graph.Close()
 	profile := graph.BuildProfile.Create().SetName(builder.DefaultBuildProfileName).
-		SetDescription("seeded profile").SetBuildScript("{{.UnknownVariable}}").SaveX(ctx)
+		SetDescription("seeded profile").SaveX(ctx)
 	worker := graph.Builder.Create().SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).SaveX(ctx)
+	tome := graph.Tome.Create().SetName("rollback-tome").SetDescription("test").SetAuthor("test").
+		SetEldritch("print('rollback')").SaveX(ctx)
+	graph.BuildProfile.UpdateOne(profile).SetTomes([]builderpb.BuildProfileTome{{TomeID: tome.ID}}).SaveX(ctx)
+	_, err := db.ExecContext(ctx, `CREATE TRIGGER fail_build_task_insert BEFORE INSERT ON build_tasks
+		BEGIN SELECT RAISE(ABORT, 'forced build task failure'); END`)
+	require.NoError(t, err)
 	assetsBefore := graph.Asset.Query().CountX(ctx)
 	tasksBefore := graph.BuildTask.Query().CountX(ctx)
-	_, err := builder.CreateDefaultBuildTask(ctx, graph, worker.ID, c2pb.Host_PLATFORM_LINUX)
-	require.ErrorContains(t, err, "resolve build recipe")
+	_, err = builder.CreateDefaultBuildTask(ctx, graph, worker.ID, c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN)
+	require.ErrorContains(t, err, "forced build task failure")
 	assert.Equal(t, assetsBefore, graph.Asset.Query().CountX(ctx))
 	assert.Equal(t, tasksBefore, graph.BuildTask.Query().CountX(ctx))
 	assert.Equal(t, profile.ID, graph.BuildProfile.Query().OnlyIDX(ctx))
