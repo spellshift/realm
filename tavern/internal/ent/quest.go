@@ -36,6 +36,8 @@ type Quest struct {
 	EldritchAtCreation string `json:"eldritch_at_creation,omitempty"`
 	// Canonical cron fire-time this quest was automated for (occurrence key); null for manually-created and one-shot automated quests.
 	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
+	// Dedup key for automated cron occurrences: "<scheduledTaskID>-<fireTimeUnix>"; null for manual/one-shot quests.
+	OccurrenceKey *string `json:"occurrence_key,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the QuestQuery when eager-loading is set.
 	Edges                 QuestEdges `json:"edges"`
@@ -179,7 +181,7 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case quest.FieldID:
 			values[i] = new(sql.NullInt64)
-		case quest.FieldName, quest.FieldParameters, quest.FieldParamDefsAtCreation, quest.FieldEldritchAtCreation:
+		case quest.FieldName, quest.FieldParameters, quest.FieldParamDefsAtCreation, quest.FieldEldritchAtCreation, quest.FieldOccurrenceKey:
 			values[i] = new(sql.NullString)
 		case quest.FieldCreatedAt, quest.FieldLastModifiedAt, quest.FieldScheduledAt:
 			values[i] = new(sql.NullTime)
@@ -258,6 +260,13 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				q.ScheduledAt = new(time.Time)
 				*q.ScheduledAt = value.Time
+			}
+		case quest.FieldOccurrenceKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field occurrence_key", values[i])
+			} else if value.Valid {
+				q.OccurrenceKey = new(string)
+				*q.OccurrenceKey = value.String
 			}
 		case quest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -403,6 +412,11 @@ func (q *Quest) String() string {
 	if v := q.ScheduledAt; v != nil {
 		builder.WriteString("scheduled_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := q.OccurrenceKey; v != nil {
+		builder.WriteString("occurrence_key=")
+		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')
 	return builder.String()

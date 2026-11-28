@@ -2,14 +2,17 @@ package c2
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/logging"
 )
 
 func TestHandleTomeAutomation(t *testing.T) {
@@ -463,4 +466,193 @@ func TestHandleTomeAutomation_OccurrenceDifferentScheduledTasks(t *testing.T) {
 
 	assert.Equal(t, 2, client.Quest.Query().CountX(ctx))
 	assert.Equal(t, 4, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_DedupLookAheadAcrossCheckins(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	base := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, base.Add(30*time.Second), 60*time.Second)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, base.Add(45*time.Second), 60*time.Second)
+
+	assert.Equal(t, 1, client.Quest.Query().CountX(ctx))
+	assert.Equal(t, 1, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_DedupRangeWithinMinute(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	client.ScheduledTask.Update().SetRunOnSchedule("0-5 10 * * *").ExecX(ctx)
+
+	base := time.Date(2023, 10, 27, 10, 2, 0, 0, time.UTC)
+	for _, sec := range []int{5, 20, 50} {
+		srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, base.Add(time.Duration(sec)*time.Second), 0)
+	}
+
+	assert.Equal(t, 1, client.Quest.Query().CountX(ctx))
+	assert.Equal(t, 1, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_DedupIsPerBeacon(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	for i := range beacons {
+		srv.handleTomeAutomation(ctx, beacons[i].ID, hosts[i].ID, false, false, now, 0)
+	}
+
+	quests := client.Quest.Query().AllX(ctx)
+	assert.Len(t, quests, 1)
+	assert.Equal(t, 2, quests[0].QueryTasks().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_DedupNextOccurrenceRuns(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now, 0)
+	assert.Equal(t, 1, client.Task.Query().CountX(ctx))
+
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now.Add(time.Minute), 0)
+	assert.Equal(t, 2, client.Quest.Query().CountX(ctx))
+	assert.Equal(t, 2, client.Task.Query().CountX(ctx))
+}
+
+func TestHandleTomeAutomation_DedupCountsClaimedTasks(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now, 0)
+	assert.Equal(t, 1, client.Task.Query().CountX(ctx))
+
+	client.Task.Update().SetClaimedAt(now).ExecX(ctx)
+
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now.Add(10*time.Second), 0)
+	assert.Equal(t, 1, client.Quest.Query().CountX(ctx))
+	assert.Equal(t, 1, client.Task.Query().CountX(ctx), "claimed task must still dedup the occurrence")
+}
+
+func TestHandleTomeAutomation_OneShotNotDeduped(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	client.ScheduledTask.Update().SetRunOnSchedule("").SetRunOnNewBeaconCallback(true).ExecX(ctx)
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, true, false, now, 0)
+
+	quests := client.Quest.Query().AllX(ctx)
+	if assert.Len(t, quests, 1) {
+		assert.Nil(t, quests[0].ScheduledAt)
+		assert.Equal(t, 1, quests[0].QueryTasks().CountX(ctx))
+	}
+	assert.Equal(t, 1, client.Task.Query().CountX(ctx))
+}
+
+func TestQuestOccurrenceKey_UniqueIndex(t *testing.T) {
+	ctx, client, _, _, _ := setupOccurrenceTest(t)
+	defer client.Close()
+
+	tome := client.Tome.Query().FirstX(ctx)
+	create := func() error {
+		return client.Quest.Create().
+			SetName("dup").
+			SetTome(tome).
+			SetOccurrenceKey("1-1698400800").
+			Exec(ctx)
+	}
+	assert.NoError(t, create())
+	assert.Error(t, create(), "duplicate occurrence_key must be rejected by the unique index")
+
+	// NULL keys (manual/one-shot quests) must not collide.
+	for i := 0; i < 2; i++ {
+		assert.NoError(t, client.Quest.Create().SetName("manual").SetTome(tome).Exec(ctx))
+	}
+}
+
+func TestHandleTomeAutomation_PreexistingOccurrenceQuestReused(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	st := client.ScheduledTask.Query().OnlyX(ctx)
+	tome := client.Tome.Query().OnlyX(ctx)
+
+	// Stand-in for a concurrent beacon having already created the occurrence quest.
+	existing := client.Quest.Create().
+		SetName("Automated: Occurrence ST").
+		SetTome(tome).
+		SetScheduledTaskID(st.ID).
+		SetScheduledAt(now).
+		SetOccurrenceKey(fmt.Sprintf("%d-%d", st.ID, now.Unix())).
+		SaveX(ctx)
+
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now, 0)
+
+	quests := client.Quest.Query().AllX(ctx)
+	if assert.Len(t, quests, 1, "must not create a second quest for the same occurrence") {
+		assert.Equal(t, existing.ID, quests[0].ID)
+		assert.Equal(t, 1, quests[0].QueryTasks().CountX(ctx))
+	}
+}
+
+func TestHandleTomeAutomation_OccurrenceAuditEmittedExactlyOnce(t *testing.T) {
+	ctx, client, srv, beacons, hosts := setupOccurrenceTest(t)
+	defer client.Close()
+
+	logBuf := &syncTestBuffer{}
+	audits := &testAuditSink{}
+	require.NoError(t, logging.Configure(logging.Options{
+		Spec:      "trace",
+		Format:    logging.FormatJSON,
+		Output:    logBuf,
+		Persister: audits,
+	}))
+	t.Cleanup(func() {
+		logging.SetAuditPersister(nil)
+		_ = logging.Configure(logging.Options{Spec: "dev"})
+	})
+
+	// Use a synthetic past timestamp (where q.CreatedAt.After(now) would always be true)
+	// to ensure creation detection does not rely on comparing CreatedAt against now.
+	now := time.Date(2023, 10, 27, 10, 0, 0, 0, time.UTC)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now, 0)
+	srv.handleTomeAutomation(ctx, beacons[1].ID, hosts[1].ID, false, false, now, 0)
+	srv.handleTomeAutomation(ctx, beacons[0].ID, hosts[0].ID, false, false, now.Add(15*time.Second), 0)
+
+	var createdAudits []logging.AuditEntry
+	for _, entry := range audits.Entries() {
+		if entry.Action == "quest.created" {
+			createdAudits = append(createdAudits, entry)
+		}
+	}
+	assert.Len(t, createdAudits, 1, "quest.created audit must fire only once for the winning creator")
+}
+
+func TestScheduledTask_CronValidation(t *testing.T) {
+	ctx, client, _, _, _ := setupOccurrenceTest(t)
+	defer client.Close()
+
+	tome := client.Tome.Query().FirstX(ctx)
+
+	_, err := client.ScheduledTask.Create().
+		SetName("Invalid DOW 7").
+		SetDescription("Test").
+		SetTome(tome).
+		SetRunOnSchedule("0 0 * * 7").
+		Save(ctx)
+	assert.Error(t, err, "robfig/cron/v3 rejects day-of-week 7")
+
+	_, err = client.ScheduledTask.Create().
+		SetName("Valid Stepped Range").
+		SetDescription("Test").
+		SetTome(tome).
+		SetRunOnSchedule("0-30/5 9-17/2 * * MON-FRI").
+		Save(ctx)
+	assert.NoError(t, err)
 }

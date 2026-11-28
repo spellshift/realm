@@ -154,21 +154,44 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		var q *ent.Quest
 		created := false
 		if !fireTime.IsZero() {
-			// Cron occurrence: find the shared quest for (scheduled task, fire time).
-			q, err = srv.graph.Quest.Query().
-				Where(
-					quest.HasScheduledTaskWith(scheduledtask.ID(st.ID)),
-					quest.ScheduledAtEQ(fireTime),
-				).
-				Order(ent.Asc(quest.FieldID)).
-				First(ctx)
-			if err != nil && !ent.IsNotFound(err) {
-				claimLog.ErrorContext(ctx, "failed to query automated quest for occurrence", "error", err, "scheduled_task_id", st.ID, "fire_time", fireTime)
+			// Cron occurrence: look up the shared quest by its unique occurrence key
+			// first so steady-state check-ins stay read-only (avoiding InnoDB
+			// AUTO_INCREMENT burn and SQLite write locks). Only attempt a create on
+			// miss, falling back to a reload if another beacon won the race.
+			key := fmt.Sprintf("%d-%d", st.ID, fireTime.Unix())
+			q, err = srv.graph.Quest.Query().Where(quest.OccurrenceKeyEQ(key)).Only(ctx)
+			if ent.IsNotFound(err) {
+				q, err = srv.graph.Quest.Create().
+					SetName(fmt.Sprintf("Automated: %s", st.Name)).
+					SetTome(tome).
+					SetScheduledTaskID(st.ID).
+					SetParameters(st.Parameters).
+					SetParamDefsAtCreation(tome.ParamDefs).
+					SetEldritchAtCreation(tome.Eldritch).
+					SetScheduledAt(fireTime).
+					SetOccurrenceKey(key).
+					Save(ctx)
+				if err == nil {
+					created = true
+				} else if ent.IsConstraintError(err) {
+					// Another beacon created the occurrence quest concurrently; load the winning row.
+					q, err = srv.graph.Quest.Query().Where(quest.OccurrenceKeyEQ(key)).Only(ctx)
+					if err != nil {
+						claimLog.ErrorContext(ctx, "failed to load automated quest for occurrence", "error", err, "occurrence_key", key)
+						metricTomeAutomationErrors.Inc()
+						continue
+					}
+				} else {
+					claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "occurrence_key", key)
+					metricTomeAutomationErrors.Inc()
+					continue
+				}
+			} else if err != nil {
+				claimLog.ErrorContext(ctx, "failed to query automated quest for occurrence", "error", err, "occurrence_key", key)
 				metricTomeAutomationErrors.Inc()
 				continue
 			}
-		}
-		if q == nil {
+		} else {
 			questCreate := srv.graph.Quest.Create().
 				SetName(fmt.Sprintf("Automated: %s", st.Name)).
 				SetTome(tome).
@@ -176,9 +199,6 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 				SetParameters(st.Parameters).
 				SetParamDefsAtCreation(tome.ParamDefs).
 				SetEldritchAtCreation(tome.Eldritch)
-			if !fireTime.IsZero() {
-				questCreate.SetScheduledAt(fireTime)
-			}
 			q, err = questCreate.Save(ctx)
 			if err != nil {
 				claimLog.ErrorContext(ctx, "failed to create automated quest", "error", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
@@ -186,6 +206,22 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 				continue
 			}
 			created = true
+		}
+
+		if !fireTime.IsZero() {
+			// A beacon runs a given cron occurrence at most once, regardless of
+			// how many times it checks in within the look-ahead/range window.
+			exists, err := q.QueryTasks().
+				Where(task.HasBeaconWith(beacon.ID(beaconID))).
+				Exist(ctx)
+			if err != nil {
+				claimLog.ErrorContext(ctx, "failed to check for existing automated task", "error", err, "quest_id", q.ID, "beacon_id", beaconID)
+				metricTomeAutomationErrors.Inc()
+				continue
+			}
+			if exists {
+				continue
+			}
 		}
 
 		_, err = srv.graph.Task.Create().

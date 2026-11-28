@@ -119,6 +119,20 @@ func (qc *QuestCreate) SetNillableScheduledAt(t *time.Time) *QuestCreate {
 	return qc
 }
 
+// SetOccurrenceKey sets the "occurrence_key" field.
+func (qc *QuestCreate) SetOccurrenceKey(s string) *QuestCreate {
+	qc.mutation.SetOccurrenceKey(s)
+	return qc
+}
+
+// SetNillableOccurrenceKey sets the "occurrence_key" field if the given value is not nil.
+func (qc *QuestCreate) SetNillableOccurrenceKey(s *string) *QuestCreate {
+	if s != nil {
+		qc.SetOccurrenceKey(*s)
+	}
+	return qc
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (qc *QuestCreate) SetTomeID(id int) *QuestCreate {
 	qc.mutation.SetTomeID(id)
@@ -399,6 +413,10 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 		_spec.SetField(quest.FieldScheduledAt, field.TypeTime, value)
 		_node.ScheduledAt = &value
 	}
+	if value, ok := qc.mutation.OccurrenceKey(); ok {
+		_spec.SetField(quest.FieldOccurrenceKey, field.TypeString, value)
+		_node.OccurrenceKey = &value
+	}
 	if nodes := qc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -665,6 +683,9 @@ func (u *QuestUpsertOne) UpdateNewValues() *QuestUpsertOne {
 		}
 		if _, exists := u.create.mutation.ScheduledAt(); exists {
 			s.SetIgnore(quest.FieldScheduledAt)
+		}
+		if _, exists := u.create.mutation.OccurrenceKey(); exists {
+			s.SetIgnore(quest.FieldOccurrenceKey)
 		}
 	}))
 	return u
@@ -933,6 +954,9 @@ func (u *QuestUpsertBulk) UpdateNewValues() *QuestUpsertBulk {
 			}
 			if _, exists := b.mutation.ScheduledAt(); exists {
 				s.SetIgnore(quest.FieldScheduledAt)
+			}
+			if _, exists := b.mutation.OccurrenceKey(); exists {
+				s.SetIgnore(quest.FieldOccurrenceKey)
 			}
 		}
 	}))
