@@ -24,22 +24,25 @@ const HostHeader = () => {
             <Breadcrumbs pages={BreadcrumbsList} />
             <div className="flex flex-row gap-2 items-center">
                 {host?.id && <HostSubscriptionButton hostId={host.id} />}
-                <CreateQuestDropdown primaryOpenOptions={{
-                    initialFormData: host ? {
-                        initialFilters: {
-                            beaconFields: [{
-                                id: host.id,
-                                name: host.name,
-                                value: host.id,
-                                label: host.name,
-                                kind: "host",
-                            }]
+                <CreateQuestDropdown
+                    scheduledHost={host ? { id: host.id, name: host.name } : undefined}
+                    primaryOpenOptions={{
+                        initialFormData: host ? {
+                            initialFilters: {
+                                beaconFields: [{
+                                    id: host.id,
+                                    name: host.name,
+                                    value: host.id,
+                                    label: host.name,
+                                    kind: "host",
+                                }]
+                            }
+                        } : undefined,
+                        onComplete: () => {
+                            setSearchParams({ tab: "tasks" });
                         }
-                    } : undefined,
-                    onComplete: () => {
-                        setSearchParams({ tab: "tasks" });
-                    }
-                }} />
+                    }}
+                />
             </div>
         </div>
     );

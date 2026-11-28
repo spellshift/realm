@@ -51,4 +51,16 @@ describe("HostHeader", () => {
         openModal.mock.calls[0][0].onComplete("quest-1");
         expect(setSearchParams).toHaveBeenCalledWith({ tab: "tasks" });
     });
+
+    it("scopes scheduled quests opened from the host header to this host", async () => {
+        render(<HostHeader />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Create quest" }));
+        fireEvent.click(await screen.findByRole("menuitem", { name: "Schedule quest" }));
+
+        expect(openModal).toHaveBeenCalledWith({
+            mode: "scheduled",
+            scheduledHost: { id: "host-1", name: "Test host" },
+        });
+    });
 });

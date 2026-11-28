@@ -4,14 +4,13 @@ import { useFormik } from "formik";
 import { useState } from "react";
 import { FormStep, FormSteps } from "../form-steps/FormSteps";
 import Modal from "../tavern-base-ui/Modal";
-import { TomeNode } from "../../utils/interfacesQuery";
+import { ScheduledQuestHostScope } from "../../context/CreateQuestModalContext/types";
 import { getRandomQuestName } from "../../utils/questNames";
-import { safelyJsonParse } from "../../utils/utils";
+import { TomeSelectionStep } from "./tome-selection/TomeSelectionStep";
 import { ModalQuestFormValues } from "./types";
 import { modalQuestSchema } from "./validation";
 import {
     ScheduledQuestConfirmStep,
-    ScheduledQuestTomeStep,
     ScheduledQuestTrigger,
     ScheduledQuestTriggerStep,
 } from "./ScheduledQuestSteps";
@@ -31,31 +30,77 @@ const STEPS: FormStep[] = [
     { name: "Confirm", description: "Step 3", href: "#", step: 2 },
 ];
 
-const CRON_FIELD_BOUNDS: [number, number][] = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]];
+type CronFieldSpec = {
+    min: number;
+    max: number;
+    names?: Record<string, number>;
+};
 
-const isValidCronField = (field: string, min: number, max: number): boolean =>
+const MONTH_NAMES: Record<string, number> = {
+    JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+    JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12,
+};
+
+const DOW_NAMES: Record<string, number> = {
+    SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6,
+};
+
+// Matches robfig/cron/v3 (Minute | Hour | Dom | Month | Dow), where Dow is 0–6 (Sunday = 0).
+const CRON_FIELD_SPECS: CronFieldSpec[] = [
+    { min: 0, max: 59 },
+    { min: 0, max: 23 },
+    { min: 1, max: 31 },
+    { min: 1, max: 12, names: MONTH_NAMES },
+    { min: 0, max: 6, names: DOW_NAMES },
+];
+
+const parseCronAtom = (token: string, spec: CronFieldSpec): number | null => {
+    if (/^\d+$/.test(token)) {
+        const value = Number(token);
+        return value >= spec.min && value <= spec.max ? value : null;
+    }
+    const named = spec.names?.[token.toUpperCase()];
+    return named !== undefined ? named : null;
+};
+
+const isValidCronField = (field: string, spec: CronFieldSpec): boolean =>
     field.split(",").every((part) => {
-        if (part === "*") return true;
-        if (/^\*\/[1-9]\d*$/.test(part)) return Number(part.slice(2)) <= max - min + 1;
-        if (/^\d+$/.test(part)) return Number(part) >= min && Number(part) <= max;
-        if (!/^\d+-\d+$/.test(part)) return false;
+        const stepParts = part.split("/");
+        if (stepParts.length > 2) return false;
 
-        const [start, end] = part.split("-").map(Number);
-        return start >= min && start <= end && end <= max;
+        const [rangePart, stepStr] = stepParts;
+        if (stepStr !== undefined) {
+            if (!/^[1-9]\d*$/.test(stepStr)) return false;
+            if (Number(stepStr) > spec.max - spec.min + 1) return false;
+        }
+
+        if (rangePart === "*") return true;
+
+        const bounds = rangePart.split("-");
+        if (bounds.length === 1) {
+            return parseCronAtom(bounds[0], spec) !== null;
+        }
+        if (bounds.length === 2) {
+            const start = parseCronAtom(bounds[0], spec);
+            const end = parseCronAtom(bounds[1], spec);
+            return start !== null && end !== null && start <= end;
+        }
+        return false;
     });
 
-const isValidCronSchedule = (schedule: string): boolean => {
+export const isValidCronSchedule = (schedule: string): boolean => {
     const fields = schedule.trim().split(/\s+/);
-    return fields.length === CRON_FIELD_BOUNDS.length && fields.every((field, index) =>
-        isValidCronField(field, ...CRON_FIELD_BOUNDS[index]));
+    return fields.length === CRON_FIELD_SPECS.length && fields.every((field, index) =>
+        isValidCronField(field, CRON_FIELD_SPECS[index]));
 };
 
 interface CreateScheduledQuestModalProps {
     isOpen: boolean;
     setOpen: (open: boolean) => void;
+    scheduledHost?: ScheduledQuestHostScope;
 }
 
-export const CreateScheduledQuestModal = ({ isOpen, setOpen }: CreateScheduledQuestModalProps) => {
+export const CreateScheduledQuestModal = ({ isOpen, setOpen, scheduledHost }: CreateScheduledQuestModalProps) => {
     const [generatedName] = useState(() => getRandomQuestName());
     const [currStep, setCurrStep] = useState(0);
     const [trigger, setTrigger] = useState<ScheduledQuestTrigger>("schedule");
@@ -81,6 +126,7 @@ export const CreateScheduledQuestModal = ({ isOpen, setOpen }: CreateScheduledQu
                             runOnSchedule: trigger === "schedule" ? schedule.trim() : "",
                             runOnFirstHostCallback: trigger === "newHost",
                             runOnNewBeaconCallback: trigger === "newBeacon",
+                            ...(scheduledHost ? { scheduledHostIDs: [scheduledHost.id] } : {}),
                         },
                     },
                 });
@@ -108,29 +154,14 @@ export const CreateScheduledQuestModal = ({ isOpen, setOpen }: CreateScheduledQu
         setCurrStep(1);
     };
 
-    const selectTome = (tome: TomeNode) => {
-        const { params } = safelyJsonParse(tome.paramDefs || "");
-        formik.setFieldValue("tomeId", tome.id);
-        formik.setFieldValue("params", params || []);
-    };
-
-    const advanceFromTome = async () => {
-        const errors = await formik.validateForm();
-        await formik.setFieldTouched("tomeId", true, false);
-        formik.values.params.forEach((_, index) => {
-            formik.setFieldTouched(`params.${index}.value`, true, false);
-        });
-        if (!formik.values.tomeId || errors.tomeId || errors.params) return;
-        setCurrStep(2);
-    };
-
     return (
         <Modal isOpen={isOpen} setOpen={setOpen} size="xl">
             <form
+                noValidate
                 className="flex flex-col gap-4"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    if (currStep === 2) void formik.submitForm();
+                    if (currStep === 2 && !loading) void formik.submitForm();
                 }}
             >
                 <div className="flex flex-row gap-6">
@@ -151,11 +182,13 @@ export const CreateScheduledQuestModal = ({ isOpen, setOpen }: CreateScheduledQu
                             />
                         )}
                         {currStep === 1 && (
-                            <ScheduledQuestTomeStep
+                            <TomeSelectionStep
                                 formik={formik}
-                                onSelectTome={selectTome}
-                                onBack={() => setCurrStep(0)}
-                                onNext={advanceFromTome}
+                                setCurrStep={setCurrStep}
+                                subtitle="Choose a tome to execute on configured triggers"
+                                controlsPosition="top"
+                                backAriaLabel=""
+                                continueAriaLabel=""
                             />
                         )}
                         {currStep === 2 && (
@@ -163,6 +196,7 @@ export const CreateScheduledQuestModal = ({ isOpen, setOpen }: CreateScheduledQu
                                 formik={formik}
                                 trigger={trigger}
                                 schedule={schedule}
+                                scheduledHost={scheduledHost}
                                 loading={loading}
                                 onBack={() => setCurrStep(1)}
                             />

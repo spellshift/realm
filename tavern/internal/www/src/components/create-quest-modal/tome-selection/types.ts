@@ -24,6 +24,12 @@ export interface TomeSelectionStepProps {
     setCurrStep: (step: number) => void;
     formik: ModalQuestFormikProps;
     initialFilters?: Partial<Filters>;
+    subtitle?: string;
+    controlsPosition?: "top" | "bottom";
+    onBack?: () => void;
+    onNext?: () => void;
+    backAriaLabel?: string;
+    continueAriaLabel?: string;
 }
 
 export interface UseTomesResult {

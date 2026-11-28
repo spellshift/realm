@@ -2,11 +2,14 @@ import { TomeSelectionStepProps } from "./types";
 import { FieldInputParams } from "../../../utils/interfacesUI";
 import Button from "../../tavern-base-ui/button/Button";
 
-
 export const StepControls = ({
     formik,
     setCurrStep,
-}: TomeSelectionStepProps ) => {
+    onBack,
+    onNext,
+    backAriaLabel = "back to beacons",
+    continueAriaLabel = "continue tome step",
+}: TomeSelectionStepProps) => {
     const params = formik.values.params;
     const selectedTomeId = formik.values.tomeId;
 
@@ -20,6 +23,8 @@ export const StepControls = ({
             params.forEach((_, index) => {
                 formik.setFieldTouched(`params.${index}.value`, true, false);
             });
+        } else if (onNext) {
+            onNext();
         } else {
             setCurrStep(2);
         }
@@ -33,13 +38,13 @@ export const StepControls = ({
             (param: FieldInputParams) => !param.value || param.value.trim() === ""
         ) ?? false;
     };
-    
+
     return (
         <div className="flex flex-row gap-2">
             <Button
-                onClick={() => setCurrStep(0)}
+                onClick={onBack ?? (() => setCurrStep(0))}
                 buttonVariant="ghost"
-                aria-label="back to beacons"
+                {...(backAriaLabel ? { "aria-label": backAriaLabel } : {})}
             >
                 Back
             </Button>
@@ -47,10 +52,10 @@ export const StepControls = ({
                 buttonStyle={{ color: "purple", size: "md" }}
                 onClick={validateAndContinue}
                 disabled={isContinueDisabled()}
-                aria-label="continue tome step"
+                {...(continueAriaLabel ? { "aria-label": continueAriaLabel } : {})}
             >
                 Continue
             </Button>
         </div>
-    )
-}
+    );
+};
